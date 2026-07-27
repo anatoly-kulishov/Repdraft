@@ -1,0 +1,154 @@
+@import 'tailwindcss';
+
+:root {
+	--color-bg: #e8ecf0;
+	--color-surface: #f7f9fb;
+	--color-surface-muted: #dde3ea;
+	--color-ink: #12141a;
+	--color-muted: #5b6470;
+	--color-accent: #0f766e;
+	--color-accent-hover: #0d9488;
+	--color-border: #c5ced8;
+	--font-display: 'Syne', system-ui, sans-serif;
+	--font-body: 'Manrope', system-ui, sans-serif;
+}
+
+html,
+body {
+	margin: 0;
+	min-height: 100%;
+	font-family: var(--font-body);
+	color: var(--color-ink);
+	background-color: var(--color-bg);
+	background-image:
+		repeating-linear-gradient(
+			-18deg,
+			transparent,
+			transparent 11px,
+			rgb(18 20 26 / 0.03) 11px,
+			rgb(18 20 26 / 0.03) 12px
+		);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.field {
+	border: 1px solid var(--color-border);
+	border-radius: 0.6rem;
+	background: var(--color-surface);
+	padding: 0.55rem 0.75rem;
+	font: inherit;
+	color: var(--color-ink);
+}
+
+.field:focus {
+	outline: 2px solid color-mix(in srgb, var(--color-accent) 45%, white);
+	outline-offset: 1px;
+	border-color: var(--color-accent);
+}
+
+.btn-primary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	border-radius: 0.65rem;
+	background: var(--color-accent);
+	color: white;
+	font-weight: 600;
+	padding: 0.65rem 1rem;
+	border: none;
+	cursor: pointer;
+	transition: background 160ms ease, transform 160ms ease;
+}
+
+.btn-primary:hover {
+	background: var(--color-accent-hover);
+}
+
+.btn-secondary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	border-radius: 0.65rem;
+	background: var(--color-surface);
+	color: var(--color-ink);
+	font-weight: 600;
+	padding: 0.65rem 1rem;
+	border: 1px solid var(--color-border);
+	cursor: pointer;
+}
+
+.btn-secondary:hover {
+	border-color: var(--color-accent);
+	color: var(--color-accent);
+}
+
+.btn-ghost {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 2rem;
+	min-height: 2rem;
+	border-radius: 0.5rem;
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+	color: var(--color-ink);
+	cursor: pointer;
+}
+
+.btn-ghost:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes badgePop {
+	0% {
+		transform: scale(1);
+	}
+	40% {
+		transform: scale(1.2);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+.badge-pop {
+	animation: badgePop 280ms ease;
+}
+
+.catalog-grid {
+	animation: fadeIn 220ms ease;
+}
