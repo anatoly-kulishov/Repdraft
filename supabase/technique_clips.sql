@@ -1,5 +1,6 @@
 -- Community technique clips (video → GIF)
 -- Run in Supabase SQL Editor after the base schema.sql
+-- Then also run technique_clips_moderation.sql (reports + rate limit)
 
 create table if not exists public.technique_clips (
   id uuid primary key default gen_random_uuid(),

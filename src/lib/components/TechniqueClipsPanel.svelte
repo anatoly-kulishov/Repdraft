@@ -4,12 +4,16 @@
 	import {
 		deleteTechniqueClip,
 		listClipsForExercise,
-		publishTechniqueClip
+		publishTechniqueClip,
+		reportTechniqueClip
 	} from '$lib/storage/techniqueClipsRepository';
+	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
+	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { isSupabaseConfigured } from '$lib/supabase/client';
 	import { page } from '$app/stores';
+	import { replaceState } from '$app/navigation';
 
 	let { exerciseId }: { exerciseId: string } = $props();
 
@@ -21,10 +25,23 @@
 	let title = $state('');
 	let previewUrl = $state<string | null>(null);
 	let gifBlob = $state<Blob | null>(null);
-	let fileInput: HTMLInputElement | undefined = $state();
+	let composerOpen = $state(false);
+	let dragOver = $state(false);
+	let highlightId = $state<string | null>(null);
+	let lightbox = $state<TechniqueClip | null>(null);
+	let galleryInput: HTMLInputElement | undefined = $state();
+	let cameraInput: HTMLInputElement | undefined = $state();
+	let sectionEl: HTMLElement | undefined = $state();
 
 	let currentUserId = $derived($auth.user?.id ?? null);
 	let cloudReady = $derived(isSupabaseConfigured());
+	let lang = $derived($resolvedLocale);
+	let gifSizeLabel = $derived(
+		gifBlob ? translate(lang, 'clips.kb', { n: (gifBlob.size / 1024).toFixed(0) }) : null
+	);
+	let canShareNative = $derived(
+		typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+	);
 
 	async function refresh() {
 		loading = true;
@@ -32,7 +49,7 @@
 			clips = await listClipsForExercise(exerciseId);
 		} catch (err) {
 			console.error(err);
-			toasts.show(err instanceof Error ? err.message : 'Не удалось загрузить клипы', 'error');
+			toasts.show(err instanceof Error ? err.message : translate(lang, 'clips.loadFail'), 'error');
 			clips = [];
 		} finally {
 			loading = false;
@@ -44,48 +61,91 @@
 		void refresh();
 	});
 
+	$effect(() => {
+		const id = $page.url.searchParams.get('clip');
+		if (!id || loading || clips.length === 0) return;
+		highlightId = id;
+		const exists = clips.some((c) => c.id === id);
+		if (!exists) return;
+		queueMicrotask(() => {
+			sectionEl
+				?.querySelector(`[data-clip-id="${CSS.escape(id)}"]`)
+				?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		});
+	});
+
 	function clearPreview() {
 		if (previewUrl) URL.revokeObjectURL(previewUrl);
 		previewUrl = null;
 		gifBlob = null;
 		progress = '';
 		progressRatio = 0;
-		if (fileInput) fileInput.value = '';
+		if (galleryInput) galleryInput.value = '';
+		if (cameraInput) cameraInput.value = '';
 	}
 
-	async function onFileChange(event: Event) {
-		const input = event.currentTarget as HTMLInputElement;
-		const file = input.files?.[0];
-		if (!file) return;
-
+	function openComposer() {
 		if (!$auth.user) {
-			toasts.show('Войдите, чтобы публиковать технику', 'info');
-			input.value = '';
+			toasts.show(translate(lang, 'clips.signInToast'), 'info');
+			return;
+		}
+		composerOpen = true;
+	}
+
+	function closeComposer() {
+		composerOpen = false;
+		clearPreview();
+		title = '';
+	}
+
+	async function processFile(file: File | undefined | null) {
+		if (!file) return;
+		if (!$auth.user) {
+			toasts.show(translate(lang, 'clips.signInToast'), 'info');
+			return;
+		}
+		if (!file.type.startsWith('video/')) {
+			toasts.show(translate(lang, 'clips.needVideo'), 'error');
 			return;
 		}
 		if (file.size > CLIP_LIMITS.maxVideoBytes) {
-			toasts.show('Видео больше 15 МБ — возьмите короткий ролик', 'error');
-			input.value = '';
+			toasts.show(translate(lang, 'clips.tooBig'), 'error');
 			return;
 		}
 
 		busy = true;
-		clearPreview();
+		composerOpen = true;
+		if (previewUrl) URL.revokeObjectURL(previewUrl);
+		previewUrl = null;
+		gifBlob = null;
+		progress = '';
+		progressRatio = 0;
+
 		try {
 			const blob = await videoFileToGif(file, {
 				onProgress: (p) => {
-					progress = p.message;
+					progress = translate(lang, `clips.phase.${p.phase}`);
 					progressRatio = p.ratio;
 				}
 			});
 			gifBlob = blob;
 			previewUrl = URL.createObjectURL(blob);
-			toasts.show('GIF готов — можно публиковать', 'success');
 		} catch (err) {
-			toasts.show(err instanceof Error ? err.message : 'Не удалось сделать GIF', 'error');
+			toasts.show(err instanceof Error ? err.message : translate(lang, 'clips.gifFail'), 'error');
 		} finally {
 			busy = false;
 		}
+	}
+
+	function onFileChange(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		void processFile(input.files?.[0]);
+	}
+
+	function onDrop(event: DragEvent) {
+		event.preventDefault();
+		dragOver = false;
+		void processFile(event.dataTransfer?.files?.[0]);
 	}
 
 	async function publish() {
@@ -98,13 +158,26 @@
 				gifBlob
 			});
 			clips = [clip, ...clips];
+			highlightId = clip.id;
 			title = '';
 			clearPreview();
-			toasts.show('Опубликовано в сообществе', 'success');
+			composerOpen = false;
+			toasts.show(translate(lang, 'clips.published'), 'success');
+			queueMicrotask(() => {
+				sectionEl
+					?.querySelector(`[data-clip-id="${CSS.escape(clip.id)}"]`)
+					?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			});
 		} catch (err) {
-			const msg = err instanceof Error ? err.message : 'Ошибка публикации';
-			if (/relation .*technique_clips/i.test(msg) || /bucket/i.test(msg) || /not find/i.test(msg)) {
-				toasts.show('Сначала выполните supabase/technique_clips.sql в Supabase', 'error');
+			const msg = err instanceof Error ? err.message : translate(lang, 'clips.gifFail');
+			if (msg === 'RATE_LIMIT') {
+				toasts.show(translate(lang, 'clips.rateLimit'), 'error');
+			} else if (
+				/relation .*technique_clips/i.test(msg) ||
+				/bucket/i.test(msg) ||
+				/not find/i.test(msg)
+			) {
+				toasts.show(translate(lang, 'clips.needSql'), 'error');
 			} else {
 				toasts.show(msg, 'error');
 			}
@@ -113,39 +186,97 @@
 		}
 	}
 
+	function clipPageUrl(clip: TechniqueClip): string {
+		return `${$page.url.origin}/exercise/${exerciseId}?clip=${clip.id}`;
+	}
+
 	async function shareClip(clip: TechniqueClip) {
-		const link = `${$page.url.origin}/exercise/${exerciseId}?clip=${clip.id}`;
+		const link = clipPageUrl(clip);
+		const text = clip.title || translate(lang, 'clips.shareText');
+
+		if (canShareNative) {
+			try {
+				const res = await fetch(clip.gifUrl);
+				const blob = await res.blob();
+				const file = new File([blob], 'technique.gif', { type: 'image/gif' });
+				if (navigator.canShare?.({ files: [file] })) {
+					await navigator.share({ title: text, text, url: link, files: [file] });
+					return;
+				}
+				await navigator.share({ title: text, text, url: link });
+				return;
+			} catch (err) {
+				if (err instanceof DOMException && err.name === 'AbortError') return;
+			}
+		}
+
 		try {
 			await navigator.clipboard.writeText(link);
-			toasts.show('Ссылка скопирована', 'success');
+			toasts.show(translate(lang, 'clips.linkCopied'), 'success');
 		} catch {
 			toasts.show(link, 'info');
 		}
 	}
 
-	async function shareGif(clip: TechniqueClip) {
+	async function copyGifUrl(clip: TechniqueClip) {
 		try {
 			await navigator.clipboard.writeText(clip.gifUrl);
-			toasts.show('Ссылка на GIF скопирована', 'success');
+			toasts.show(translate(lang, 'clips.gifCopied'), 'success');
 		} catch {
 			toasts.show(clip.gifUrl, 'info');
 		}
 	}
 
 	async function removeClip(clip: TechniqueClip) {
-		if (!confirm('Удалить этот GIF?')) return;
+		if (!confirm(translate(lang, 'clips.confirmDelete'))) return;
 		try {
 			await deleteTechniqueClip(clip);
 			clips = clips.filter((c) => c.id !== clip.id);
-			toasts.show('Удалено', 'info');
+			if (lightbox?.id === clip.id) lightbox = null;
+			if (highlightId === clip.id) {
+				highlightId = null;
+				const url = new URL($page.url);
+				url.searchParams.delete('clip');
+				replaceState(url.pathname + url.search, {});
+			}
+			toasts.show(translate(lang, 'clips.deleted'), 'info');
 		} catch (err) {
-			toasts.show(err instanceof Error ? err.message : 'Не удалось удалить', 'error');
+			toasts.show(err instanceof Error ? err.message : translate(lang, 'clips.deleteFail'), 'error');
+		}
+	}
+
+	async function reportClip(clip: TechniqueClip) {
+		if (!$auth.user) {
+			toasts.show(translate(lang, 'clips.signInToast'), 'info');
+			return;
+		}
+		if (!confirm(translate(lang, 'clips.confirmReport'))) return;
+		try {
+			const { hidden } = await reportTechniqueClip(clip.id);
+			if (hidden) {
+				clips = clips.filter((c) => c.id !== clip.id);
+				if (lightbox?.id === clip.id) lightbox = null;
+				toasts.show(translate(lang, 'clips.reportedHidden'), 'info');
+			} else {
+				toasts.show(translate(lang, 'clips.reported'), 'success');
+			}
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : '';
+			if (msg === 'ALREADY_REPORTED') {
+				toasts.show(translate(lang, 'clips.alreadyReported'), 'info');
+			} else if (msg === 'NEED_AUTH') {
+				toasts.show(translate(lang, 'clips.signInToast'), 'info');
+			} else if (msg === 'NEED_SQL') {
+				toasts.show(translate(lang, 'clips.needModSql'), 'error');
+			} else {
+				toasts.show(msg || translate(lang, 'clips.reportFail'), 'error');
+			}
 		}
 	}
 
 	function formatDate(iso: string): string {
 		try {
-			return new Intl.DateTimeFormat('ru-RU', {
+			return new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-US', {
 				day: 'numeric',
 				month: 'short'
 			}).format(new Date(iso));
@@ -153,59 +284,150 @@
 			return iso;
 		}
 	}
+
+	function clipTitle(clip: TechniqueClip): string {
+		return clip.title || translate(lang, 'clips.technique');
+	}
+
+	function onKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape' && lightbox) lightbox = null;
+	}
+
+	$effect(() => {
+		if (typeof document === 'undefined') return;
+		if (!lightbox) return;
+		const prev = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+		return () => {
+			document.body.style.overflow = prev;
+		};
+	});
 </script>
 
-<section class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-	<div class="mb-3">
-		<h2 class="font-[family-name:var(--font-display)] text-xl">Техника сообщества</h2>
-		<p class="mt-1 text-xs text-[var(--color-muted)]">
-			Загрузите короткое видео (до ~{CLIP_LIMITS.maxDurationSec} сек) — мы сделаем GIF для обмена.
-		</p>
+<svelte:window onkeydown={onKeydown} />
+
+<section
+	bind:this={sectionEl}
+	class="panel"
+	aria-labelledby="clips-heading"
+>
+	<div class="mb-3 flex flex-wrap items-start justify-between gap-3">
+		<div>
+			<h2 id="clips-heading" class="section-title">
+				{translate(lang, 'clips.title')}
+			</h2>
+			<p class="mt-1 text-xs text-[var(--color-muted)]">
+				{translate(lang, 'clips.lead')}
+			</p>
+		</div>
+		{#if cloudReady && $auth.user && !composerOpen}
+			<button type="button" class="btn-primary shrink-0 text-sm" onclick={openComposer}>
+				{translate(lang, 'clips.add')}
+			</button>
+		{/if}
 	</div>
 
 	{#if !cloudReady}
-		<p class="mb-4 rounded-lg border border-dashed border-[var(--color-border)] px-3 py-3 text-sm text-[var(--color-muted)]">
-			Нужен Supabase и скрипт <code class="text-[var(--color-ink)]">technique_clips.sql</code>, чтобы публиковать GIF.
+		<p
+			class="panel-dashed mb-4 text-sm text-[var(--color-muted)]"
+		>
+			{translate(lang, 'clips.needSql')}
 		</p>
 	{:else if !$auth.user}
-		<p class="mb-4 rounded-lg border border-dashed border-[var(--color-border)] px-3 py-3 text-sm text-[var(--color-muted)]">
-			<a class="font-semibold text-[var(--color-accent)] underline" href="/auth">Войдите</a>, чтобы публиковать свою технику.
+		<p
+			class="panel-dashed mb-4 text-sm text-[var(--color-muted)]"
+		>
+			<a class="font-semibold text-[var(--color-accent)] underline" href="/auth">{translate(lang, 'clips.signInPublish')}</a>{translate(lang, 'clips.signInSuffix')}
 		</p>
-	{:else}
-		<div class="mb-4 space-y-3 rounded-xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg)_55%,white)] p-3">
-			<label class="block text-xs font-medium text-[var(--color-muted)]">
-				Видео с техникой
+	{:else if composerOpen}
+		<div
+			class="panel-inset mb-4 space-y-3"
+		>
+			<div class="flex items-center justify-between gap-2">
+				<p class="text-sm font-semibold">{translate(lang, 'clips.new')}</p>
+				<button type="button" class="btn-ghost px-3 text-sm" disabled={busy} onclick={closeComposer}>
+					{translate(lang, 'clips.close')}
+				</button>
+			</div>
+
+			<div
+				class="relative rounded-xl border-2 border-dashed px-3 py-6 text-center transition-colors"
+				class:border-[var(--color-accent)]={dragOver}
+				class:bg-[color-mix(in_srgb,var(--color-accent)_8%,white)]={dragOver}
+				class:border-[var(--color-border)]={!dragOver}
+				role="region"
+				aria-label={translate(lang, 'clips.dropZone')}
+				ondragover={(e) => {
+					e.preventDefault();
+					dragOver = true;
+				}}
+				ondragleave={() => {
+					dragOver = false;
+				}}
+				ondrop={onDrop}
+			>
+				<p class="text-sm font-medium">{translate(lang, 'clips.drop')}</p>
+				<p class="mt-1 text-xs text-[var(--color-muted)]">
+					{translate(lang, 'clips.limits', { sec: CLIP_LIMITS.maxDurationSec })}
+				</p>
+				<div class="mt-3 flex flex-wrap justify-center gap-2">
+					<button
+						type="button"
+						class="btn-secondary text-sm"
+						disabled={busy}
+						onclick={() => galleryInput?.click()}
+					>
+						{translate(lang, 'clips.gallery')}
+					</button>
+					<button
+						type="button"
+						class="btn-secondary text-sm"
+						disabled={busy}
+						onclick={() => cameraInput?.click()}
+					>
+						{translate(lang, 'clips.camera')}
+					</button>
+				</div>
 				<input
-					bind:this={fileInput}
-					class="mt-1 block w-full text-sm"
+					bind:this={galleryInput}
+					class="sr-only"
 					type="file"
 					accept={CLIP_LIMITS.accept}
 					disabled={busy}
 					onchange={onFileChange}
 				/>
-			</label>
+				<input
+					bind:this={cameraInput}
+					class="sr-only"
+					type="file"
+					accept="video/*"
+					capture="environment"
+					disabled={busy}
+					onchange={onFileChange}
+				/>
+			</div>
 
-			<label class="block text-xs font-medium text-[var(--color-muted)]">
-				Подпись (необязательно)
+			<label class="field-label">
+				{translate(lang, 'clips.caption')}
 				<input
 					class="field mt-1"
 					type="text"
 					maxlength="80"
-					placeholder="например: без рывка, локти внутрь"
+					placeholder={translate(lang, 'clips.captionPh')}
 					bind:value={title}
 					disabled={busy}
 				/>
 			</label>
 
 			{#if busy || progress}
-				<div class="space-y-1">
+				<div class="space-y-1" aria-live="polite">
 					<div class="h-2 overflow-hidden rounded-full bg-[var(--color-surface-muted)]">
 						<div
 							class="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-200"
 							style={`width: ${Math.round(progressRatio * 100)}%`}
 						></div>
 					</div>
-					<p class="text-xs text-[var(--color-muted)]">{progress || 'Обработка…'}</p>
+					<p class="text-xs text-[var(--color-muted)]">{progress || translate(lang, 'clips.processing')}</p>
 				</div>
 			{/if}
 
@@ -213,15 +435,18 @@
 				<div class="flex flex-col gap-3 sm:flex-row sm:items-end">
 					<img
 						src={previewUrl}
-						alt="Превью GIF"
-						class="h-40 w-40 rounded-lg border border-[var(--color-border)] bg-black object-contain"
+						alt={translate(lang, 'clips.preview')}
+						class="mx-auto h-44 w-44 rounded-lg border border-[var(--color-border)] bg-black object-contain sm:mx-0"
 					/>
 					<div class="flex flex-1 flex-col gap-2">
+						{#if gifSizeLabel}
+							<p class="text-xs text-[var(--color-muted)]">{translate(lang, 'clips.size', { size: gifSizeLabel })}</p>
+						{/if}
 						<button type="button" class="btn-primary" disabled={busy} onclick={publish}>
-							Опубликовать GIF
+							{translate(lang, 'clips.publish')}
 						</button>
 						<button type="button" class="btn-secondary" disabled={busy} onclick={clearPreview}>
-							Сбросить
+							{translate(lang, 'clips.otherVideo')}
 						</button>
 					</div>
 				</div>
@@ -230,40 +455,88 @@
 	{/if}
 
 	{#if loading}
-		<p class="text-sm text-[var(--color-muted)]">Загрузка клипов…</p>
+		<ul class="grid grid-cols-1 gap-3 sm:grid-cols-2" aria-busy="true">
+			{#each [0, 1] as i (i)}
+				<li
+					class="h-56 animate-pulse rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]"
+				></li>
+			{/each}
+		</ul>
 	{:else if clips.length === 0}
-		<p class="text-sm text-[var(--color-muted)]">Пока никто не делился техникой для этого упражнения.</p>
+		<div
+			class="panel-dashed py-8 text-center"
+		>
+			<p class="text-sm font-medium">{translate(lang, 'clips.emptyTitle')}</p>
+			<p class="mt-1 text-xs text-[var(--color-muted)]">
+				{translate(lang, 'clips.emptyDesc')}
+			</p>
+			{#if cloudReady && $auth.user && !composerOpen}
+				<button type="button" class="btn-primary mt-4 text-sm" onclick={openComposer}>
+					{translate(lang, 'clips.add')}
+				</button>
+			{/if}
+		</div>
 	{:else}
 		<ul class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			{#each clips as clip (clip.id)}
-				<li class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white">
-					<img
-						src={clip.gifUrl}
-						alt={clip.title || 'Техника'}
-						class="aspect-square w-full bg-[var(--color-surface-muted)] object-contain"
-						loading="lazy"
-					/>
+				<li
+					data-clip-id={clip.id}
+					class="overflow-hidden rounded-[var(--radius-panel)] border bg-[var(--color-surface)] transition-[box-shadow,border-color]"
+					class:border-[var(--color-accent)]={highlightId === clip.id}
+					class:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-accent)_28%,transparent)]={highlightId ===
+						clip.id}
+					class:border-[var(--color-border)]={highlightId !== clip.id}
+				>
+					<button
+						type="button"
+						class="block w-full cursor-zoom-in bg-[var(--color-surface-muted)] p-0"
+						onclick={() => (lightbox = clip)}
+						aria-label={translate(lang, 'clips.open', { title: clipTitle(clip) })}
+					>
+						<img
+							src={clip.gifUrl}
+							alt={clipTitle(clip)}
+							class="aspect-square w-full object-contain"
+							loading="lazy"
+						/>
+					</button>
 					<div class="space-y-2 p-3">
 						<div>
-							<p class="font-semibold leading-snug">{clip.title || 'Техника'}</p>
+							<p class="font-semibold leading-snug">{clipTitle(clip)}</p>
 							<p class="text-xs text-[var(--color-muted)]">
 								{clip.authorLabel} · {formatDate(clip.createdAt)}
 							</p>
 						</div>
 						<div class="grid grid-cols-2 gap-2">
-							<button type="button" class="btn-secondary text-sm" onclick={() => void shareClip(clip)}>
-								Ссылка
+							<button
+								type="button"
+								class="btn-secondary text-sm"
+								onclick={() => void shareClip(clip)}
+							>
+								{canShareNative ? translate(lang, 'clips.share') : translate(lang, 'clips.link')}
 							</button>
-							<button type="button" class="btn-secondary text-sm" onclick={() => void shareGif(clip)}>
-								GIF URL
+							<button
+								type="button"
+								class="btn-secondary text-sm"
+								onclick={() => void copyGifUrl(clip)}
+							>
+								{translate(lang, 'clips.copyGif')}
 							</button>
 							{#if currentUserId === clip.userId}
 								<button
 									type="button"
-									class="btn-ghost col-span-2 text-sm text-red-700"
+									class="btn-danger col-span-2 text-sm"
 									onclick={() => void removeClip(clip)}
 								>
-									Удалить
+									{translate(lang, 'clips.delete')}
+								</button>
+							{:else if currentUserId}
+								<button
+									type="button"
+									class="btn-secondary col-span-2 text-sm text-[var(--color-muted)]"
+									onclick={() => void reportClip(clip)}
+								>
+									{translate(lang, 'clips.report')}
 								</button>
 							{/if}
 						</div>
@@ -273,3 +546,57 @@
 		</ul>
 	{/if}
 </section>
+
+{#if lightbox}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 pb-[calc(var(--safe-bottom)+1rem)] backdrop-blur-[2px]"
+		role="dialog"
+		aria-modal="true"
+		tabindex="-1"
+		aria-label={clipTitle(lightbox)}
+		onclick={(e) => {
+			if (e.target === e.currentTarget) lightbox = null;
+		}}
+	>
+		<div
+			class="panel max-h-[90vh] w-full max-w-md overflow-auto !rounded-2xl shadow-xl"
+		>
+			<img
+				src={lightbox.gifUrl}
+				alt={clipTitle(lightbox)}
+				class="mx-auto max-h-[60vh] w-full bg-black object-contain"
+			/>
+			<div class="space-y-3 p-4">
+				<div>
+					<p class="font-semibold">{clipTitle(lightbox)}</p>
+					<p class="text-xs text-[var(--color-muted)]">
+						{lightbox.authorLabel} · {formatDate(lightbox.createdAt)}
+					</p>
+				</div>
+				<div class="grid grid-cols-2 gap-2">
+					<button
+						type="button"
+						class="btn-primary text-sm"
+						onclick={() => void shareClip(lightbox!)}
+					>
+						{canShareNative ? translate(lang, 'clips.share') : translate(lang, 'clips.link')}
+					</button>
+					<button type="button" class="btn-secondary text-sm" onclick={() => (lightbox = null)}>
+						{translate(lang, 'clips.close')}
+					</button>
+					{#if currentUserId && currentUserId !== lightbox.userId}
+						<button
+							type="button"
+							class="btn-secondary col-span-2 text-sm text-[var(--color-muted)]"
+							onclick={() => void reportClip(lightbox!)}
+						>
+							{translate(lang, 'clips.report')}
+						</button>
+					{/if}
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}

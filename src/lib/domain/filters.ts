@@ -1,3 +1,5 @@
+import type { AppLocale } from '$lib/i18n/locale';
+import { exerciseName, exerciseNameSortLocale } from './exerciseName';
 import type { BodyPart, ExerciseFilters, ExerciseIndexItem } from './types';
 
 export function uniqueSorted(
@@ -9,7 +11,8 @@ export function uniqueSorted(
 
 export function filterExercises(
 	items: ExerciseIndexItem[],
-	filters: ExerciseFilters
+	filters: ExerciseFilters,
+	locale: AppLocale = 'ru'
 ): ExerciseIndexItem[] {
 	const query = filters.query.trim().toLowerCase();
 
@@ -20,15 +23,21 @@ export function filterExercises(
 
 		if (!query) return true;
 
+		const display = exerciseName(item, locale).toLowerCase();
 		return (
+			display.includes(query) ||
 			item.name.toLowerCase().includes(query) ||
+			(item.name_ru ?? '').toLowerCase().includes(query) ||
 			item.target.toLowerCase().includes(query) ||
 			item.equipment.toLowerCase().includes(query) ||
 			item.body_part.toLowerCase().includes(query)
 		);
 	});
 
-	return filtered.sort((a, b) => a.name.localeCompare(b.name, 'en'));
+	const sortLocale = exerciseNameSortLocale(locale);
+	return filtered.sort((a, b) =>
+		exerciseName(a, locale).localeCompare(exerciseName(b, locale), sortLocale)
+	);
 }
 
 export function isBodyPart(value: string): value is BodyPart {

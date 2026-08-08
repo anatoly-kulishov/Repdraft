@@ -1,3 +1,6 @@
+import type { AppLocale } from '$lib/i18n/locale';
+import { titleCaseEn } from '$lib/i18n/messages';
+
 export const BODY_PART_LABELS: Record<string, string> = {
 	back: 'Спина',
 	cardio: 'Кардио',
@@ -64,14 +67,17 @@ export const EQUIPMENT_LABELS: Record<string, string> = {
 	'wheel roller': 'Колесо'
 };
 
-export function labelBodyPart(value: string): string {
+export function labelBodyPart(value: string, locale: AppLocale = 'ru'): string {
+	if (locale === 'en') return titleCaseEn(value);
 	return BODY_PART_LABELS[value] ?? value;
 }
 
-export function labelTarget(value: string): string {
+export function labelTarget(value: string, locale: AppLocale = 'ru'): string {
+	if (locale === 'en') return titleCaseEn(value);
 	return TARGET_LABELS[value] ?? value;
 }
 
-export function labelEquipment(value: string): string {
+export function labelEquipment(value: string, locale: AppLocale = 'ru'): string {
+	if (locale === 'en') return titleCaseEn(value);
 	return EQUIPMENT_LABELS[value] ?? value;
 }

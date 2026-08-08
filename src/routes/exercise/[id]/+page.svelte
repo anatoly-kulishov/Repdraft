@@ -8,7 +8,10 @@
 		labelTarget
 	} from '$lib/domain/labels.ru';
 	import type { Exercise } from '$lib/domain/types';
+	import { exerciseName } from '$lib/domain/exerciseName';
+	import { translate } from '$lib/i18n/messages';
 	import { draft } from '$lib/stores/draft';
+	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import PersonalRecordPanel from '$lib/components/PersonalRecordPanel.svelte';
 	import TechniqueClipsPanel from '$lib/components/TechniqueClipsPanel.svelte';
@@ -16,6 +19,13 @@
 	let exercise = $state<Exercise | null>(null);
 	let loading = $state(true);
 	let notFound = $state(false);
+	let lang = $derived($resolvedLocale);
+	let title = $derived(exercise ? exerciseName(exercise, lang) : '');
+	let steps = $derived.by(() => {
+		if (!exercise) return [] as string[];
+		const map = exercise.instruction_steps ?? {};
+		return map[lang] ?? map.ru ?? map.en ?? [];
+	});
 
 	$effect(() => {
 		const id = $page.params.id;
@@ -56,34 +66,36 @@
 		if (!exercise) return;
 		const result = draft.addToDraft(exercise.id);
 		if (result.added) {
-			toasts.show('Добавлено в черновик', 'success');
+			toasts.show(translate(lang, 'exercise.added'), 'success');
 		} else {
-			toasts.show('Уже в черновике', 'info');
+			toasts.show(translate(lang, 'exercise.already'), 'info');
 		}
 	}
 </script>
 
 <svelte:head>
-	<title>{exercise ? `${exercise.name} — Repdraft` : 'Упражнение — Repdraft'}</title>
+	<title>{exercise ? `${title} — Repdraft` : `${translate(lang, 'exercise.loading')} — Repdraft`}</title>
 </svelte:head>
 
 {#if loading}
-	<p class="text-sm text-[var(--color-muted)]">Загрузка…</p>
+	<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'exercise.loading')}</p>
 {:else if notFound || !exercise}
 	<EmptyState
-		title="Упражнение не найдено"
-		description="Проверьте ссылку или вернитесь в каталог."
+		title={translate(lang, 'exercise.notFoundTitle')}
+		description={translate(lang, 'exercise.notFoundDesc')}
 		actionHref="/"
-		actionLabel="К каталогу"
+		actionLabel={translate(lang, 'builder.toCatalog')}
 	/>
 {:else}
-	<article class="grid gap-5 pb-24 lg:grid-cols-[280px_1fr] lg:gap-6 lg:pb-0">
+	<article class="grid gap-5 pb-28 lg:grid-cols-[280px_1fr] lg:gap-6 lg:pb-0">
 		<div>
-			<a href="/" class="mb-3 inline-flex text-sm font-medium text-[var(--color-accent)] md:hidden">← Каталог</a>
-			<div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+			<a href="/" class="mb-3 inline-flex text-sm font-medium text-[var(--color-accent)] md:hidden"
+				>{translate(lang, 'exercise.back')}</a
+			>
+			<div class="panel overflow-hidden">
 				<img
 					src={`/${exercise.gif_url}`}
-					alt={exercise.name}
+					alt={title}
 					width="180"
 					height="180"
 					class="mx-auto h-[180px] w-[180px] object-contain"
@@ -94,57 +106,59 @@
 
 		<div class="flex flex-col gap-4">
 			<div>
-				<p class="text-sm text-[var(--color-muted)]">{labelBodyPart(exercise.body_part)}</p>
-				<h1 class="font-[family-name:var(--font-display)] text-2xl leading-tight text-[var(--color-ink)] sm:text-3xl">
-					{exercise.name}
-				</h1>
+				<p class="text-sm text-[var(--color-muted)]">{labelBodyPart(exercise.body_part, lang)}</p>
+				<h1 class="page-title sm:text-3xl">{title}</h1>
 			</div>
 
-			<dl class="grid gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm sm:grid-cols-2">
+			<dl class="panel grid gap-3 !p-3 text-sm sm:grid-cols-2">
 				<div>
-					<dt class="text-[var(--color-muted)]">Оборудование</dt>
-					<dd class="font-medium">{labelEquipment(exercise.equipment)}</dd>
+					<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.equipment')}</dt>
+					<dd class="font-medium">{labelEquipment(exercise.equipment, lang)}</dd>
 				</div>
 				<div>
-					<dt class="text-[var(--color-muted)]">Целевая мышца</dt>
-					<dd class="font-medium">{labelTarget(exercise.target)}</dd>
+					<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.target')}</dt>
+					<dd class="font-medium">{labelTarget(exercise.target, lang)}</dd>
 				</div>
 				<div class="sm:col-span-2">
-					<dt class="text-[var(--color-muted)]">Дополнительно</dt>
+					<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.secondary')}</dt>
 					<dd class="font-medium">
 						{#if exercise.secondary_muscles.length}
-							{exercise.secondary_muscles.map(labelTarget).join(', ')}
+							{exercise.secondary_muscles.map((m) => labelTarget(m, lang)).join(', ')}
 						{:else}
-							—
+							{translate(lang, 'exercise.dash')}
 						{/if}
 					</dd>
 				</div>
 			</dl>
 
-			<div class="hidden flex-wrap gap-2 md:flex">
-				<button type="button" class="btn-primary" onclick={addToDraft}>Добавить в черновик</button>
-				<a class="btn-secondary" href="/builder">Открыть конструктор</a>
+			<div class="actions-inline !mb-0">
+				<button type="button" class="btn-primary" onclick={addToDraft}
+					>{translate(lang, 'exercise.addDraft')}</button
+				>
+				<a class="btn-secondary" href="/builder">{translate(lang, 'exercise.openBuilder')}</a>
 			</div>
 
-			<PersonalRecordPanel exerciseId={exercise.id} />
-
-			<TechniqueClipsPanel exerciseId={exercise.id} />
-
 			<section>
-				<h2 class="mb-2 font-[family-name:var(--font-display)] text-xl">Как выполнять</h2>
+				<h2 class="section-title mb-2">{translate(lang, 'exercise.howTo')}</h2>
 				<ol class="list-decimal space-y-2.5 pl-5 text-sm leading-relaxed text-[var(--color-ink)]">
-					{#each exercise.instruction_steps.ru ?? [] as step, i (i)}
+					{#each steps as step, i (i)}
 						<li>{step}</li>
 					{/each}
 				</ol>
 			</section>
+
+			<PersonalRecordPanel exerciseId={exercise.id} />
+
+			<TechniqueClipsPanel exerciseId={exercise.id} />
 		</div>
 	</article>
 
-	<div class="sticky-actions md:hidden">
+	<div class="sticky-actions">
 		<div class="mx-auto grid max-w-6xl grid-cols-2 gap-2">
-			<button type="button" class="btn-primary" onclick={addToDraft}>В черновик</button>
-			<a class="btn-secondary" href="/builder">Конструктор</a>
+			<button type="button" class="btn-primary" onclick={addToDraft}
+				>{translate(lang, 'exercise.toDraft')}</button
+			>
+			<a class="btn-secondary" href="/builder">{translate(lang, 'exercise.builder')}</a>
 		</div>
 	</div>
 {/if}

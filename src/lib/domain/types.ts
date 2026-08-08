@@ -13,6 +13,8 @@ export type BodyPart =
 export type ExerciseIndexItem = {
 	id: string;
 	name: string;
+	/** Russian display title (generated; falls back to name). */
+	name_ru?: string;
 	body_part: string;
 	equipment: string;
 	target: string;
