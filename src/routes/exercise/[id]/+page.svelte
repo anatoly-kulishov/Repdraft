@@ -11,6 +11,7 @@
 	import { draft } from '$lib/stores/draft';
 	import { toasts } from '$lib/stores/toasts';
 	import PersonalRecordPanel from '$lib/components/PersonalRecordPanel.svelte';
+	import TechniqueClipsPanel from '$lib/components/TechniqueClipsPanel.svelte';
 
 	let exercise = $state<Exercise | null>(null);
 	let loading = $state(true);
@@ -126,6 +127,8 @@
 			</div>
 
 			<PersonalRecordPanel exerciseId={exercise.id} />
+
+			<TechniqueClipsPanel exerciseId={exercise.id} />
 
 			<section>
 				<h2 class="mb-2 font-[family-name:var(--font-display)] text-xl">Как выполнять</h2>
