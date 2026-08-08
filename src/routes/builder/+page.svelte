@@ -4,12 +4,15 @@
 	import WorkoutExerciseRow from '$lib/components/WorkoutExerciseRow.svelte';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
+	import { translate } from '$lib/i18n/messages';
 	import { draft } from '$lib/stores/draft';
 	import { plans } from '$lib/stores/plans';
+	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let savedBanner = $state(false);
+	let lang = $derived($resolvedLocale);
 
 	onMount(() => {
 		loadExerciseIndex().then((items) => {
@@ -21,21 +24,24 @@
 		try {
 			await plans.saveCurrent();
 			savedBanner = true;
-			toasts.show('Тренировка сохранена', 'success');
+			toasts.show(translate(lang, 'builder.savedToast'), 'success');
 		} catch (err) {
-			toasts.show(err instanceof Error ? err.message : 'Не удалось сохранить', 'error');
+			toasts.show(err instanceof Error ? err.message : translate(lang, 'builder.saveFail'), 'error');
 		}
 	}
 
 	function clearDraft() {
-		if (confirm('Очистить черновик?')) {
+		if (confirm(translate(lang, 'builder.confirmClear'))) {
 			draft.resetDraft();
 			savedBanner = false;
 		}
 	}
 
 	function newWorkout() {
-		if ($draft.exercises.length > 0 && !confirm('Начать новую тренировку? Текущий черновик будет сброшен.')) {
+		if (
+			$draft.exercises.length > 0 &&
+			!confirm(translate(lang, 'builder.confirmNew'))
+		) {
 			return;
 		}
 		draft.resetDraft();
@@ -44,20 +50,22 @@
 </script>
 
 <svelte:head>
-	<title>Конструктор — Repdraft</title>
+	<title>{translate(lang, 'builder.title')} — Repdraft</title>
 </svelte:head>
 
-<section class="pb-28 md:pb-24">
-	<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+<section class="pb-28 md:pb-0">
+	<div class="page-header flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 		<div>
-			<h1 class="font-[family-name:var(--font-display)] text-2xl md:text-3xl">Конструктор</h1>
-			<p class="mt-1 text-sm text-[var(--color-muted)]">Соберите план: подходы, повторы и отдых.</p>
+			<h1 class="page-title">{translate(lang, 'builder.title')}</h1>
+			<p class="page-lead">{translate(lang, 'builder.lead')}</p>
 		</div>
-		<button type="button" class="btn-secondary w-full sm:w-auto" onclick={newWorkout}>Новая тренировка</button>
+		<button type="button" class="btn-secondary w-full sm:w-auto" onclick={newWorkout}>
+			{translate(lang, 'builder.new')}
+		</button>
 	</div>
 
-	<label class="mb-4 block text-sm font-medium text-[var(--color-muted)]">
-		Название
+	<label class="field-label mb-4">
+		{translate(lang, 'builder.name')}
 		<input
 			class="field mt-1 w-full max-w-xl"
 			type="text"
@@ -66,19 +74,31 @@
 		/>
 	</label>
 
+	<div class="actions-inline">
+		<button type="button" class="btn-primary" onclick={save} disabled={$draft.exercises.length === 0}>
+			{translate(lang, 'builder.save')}
+		</button>
+		<button type="button" class="btn-secondary" onclick={clearDraft}>{translate(lang, 'builder.clear')}</button>
+		<a class="btn-secondary" href="/">{translate(lang, 'builder.toCatalog')}</a>
+	</div>
+
 	{#if savedBanner}
-		<p class="mb-4 rounded-lg border border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_10%,white)] px-3 py-2 text-sm">
-			Сохранено.
-			<a class="font-semibold text-[var(--color-accent)] underline" href="/workouts">Мои тренировки</a>
+		<p
+			class="mb-4 rounded-lg border border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_10%,white)] px-3 py-2 text-sm"
+		>
+			{translate(lang, 'builder.saved')}
+			<a class="font-semibold text-[var(--color-accent)] underline" href="/workouts"
+				>{translate(lang, 'builder.myWorkouts')}</a
+			>
 		</p>
 	{/if}
 
 	{#if $draft.exercises.length === 0}
 		<EmptyState
-			title="Черновик пуст"
-			description="Добавьте упражнения из каталога."
+			title={translate(lang, 'builder.emptyTitle')}
+			description={translate(lang, 'builder.emptyDesc')}
 			actionHref="/"
-			actionLabel="К каталогу"
+			actionLabel={translate(lang, 'builder.toCatalog')}
 		/>
 	{:else}
 		<div class="flex flex-col gap-3">
@@ -97,19 +117,17 @@
 	{/if}
 
 	<div class="sticky-actions">
-		<div class="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+		<div class="mx-auto grid max-w-6xl grid-cols-2 gap-2">
 			<button
 				type="button"
-				class="btn-primary btn-block sm:w-auto"
+				class="btn-primary col-span-2"
 				onclick={save}
 				disabled={$draft.exercises.length === 0}
 			>
-				Сохранить
+				{translate(lang, 'builder.save')}
 			</button>
-			<div class="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
-				<button type="button" class="btn-secondary" onclick={clearDraft}>Очистить</button>
-				<a class="btn-secondary" href="/">К каталогу</a>
-			</div>
+			<button type="button" class="btn-secondary" onclick={clearDraft}>{translate(lang, 'builder.clear')}</button>
+			<a class="btn-secondary" href="/">{translate(lang, 'builder.toCatalog')}</a>
 		</div>
 	</div>
 </section>

@@ -12,10 +12,8 @@
 	} = $props();
 </script>
 
-<div
-	class="flex flex-col items-start gap-3 rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-8"
->
-	<h2 class="font-[family-name:var(--font-display)] text-xl text-[var(--color-ink)]">{title}</h2>
+<div class="panel-dashed flex flex-col items-start gap-3 py-8">
+	<h2 class="section-title">{title}</h2>
 	{#if description}
 		<p class="max-w-md text-sm text-[var(--color-muted)]">{description}</p>
 	{/if}

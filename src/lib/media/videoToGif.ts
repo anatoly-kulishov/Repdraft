@@ -1,4 +1,6 @@
-import { GIFEncoder, quantize, applyPalette } from 'gifenc';
+import gifenc from 'gifenc';
+
+const { GIFEncoder, quantize, applyPalette } = gifenc;
 
 export type ConvertProgress = {
 	phase: 'load' | 'frames' | 'encode' | 'done';

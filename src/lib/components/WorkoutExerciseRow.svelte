@@ -1,6 +1,9 @@
 <script lang="ts">
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import type { WorkoutExercise } from '$lib/domain/types';
+	import { exerciseName } from '$lib/domain/exerciseName';
+	import { translate } from '$lib/i18n/messages';
+	import { resolvedLocale } from '$lib/stores/locale';
 
 	let {
 		item,
@@ -19,9 +22,11 @@
 		onmove: (from: number, to: number) => void;
 		onremove: () => void;
 	} = $props();
+
+	let lang = $derived($resolvedLocale);
 </script>
 
-<article class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+<article class="panel !p-3">
 	<div class="mb-3 flex items-start gap-3">
 		{#if meta}
 			<img
@@ -36,11 +41,13 @@
 					class="line-clamp-2 font-semibold leading-snug text-[var(--color-ink)] hover:text-[var(--color-accent)]"
 					href={`/exercise/${item.exerciseId}`}
 				>
-					{meta.name}
+					{exerciseName(meta, lang)}
 				</a>
 			</div>
 		{:else}
-			<p class="text-sm text-[var(--color-muted)]">Упражнение {item.exerciseId}</p>
+			<p class="text-sm text-[var(--color-muted)]">
+				{translate(lang, 'records.fallback', { id: item.exerciseId })}
+			</p>
 		{/if}
 
 		<div class="flex shrink-0 gap-1">
@@ -49,7 +56,7 @@
 				class="btn-ghost"
 				disabled={index === 0}
 				onclick={() => onmove(index, index - 1)}
-				aria-label="Выше"
+				aria-label={translate(lang, 'builder.up')}
 			>
 				↑
 			</button>
@@ -58,19 +65,24 @@
 				class="btn-ghost"
 				disabled={index >= total - 1}
 				onclick={() => onmove(index, index + 1)}
-				aria-label="Ниже"
+				aria-label={translate(lang, 'builder.down')}
 			>
 				↓
 			</button>
-			<button type="button" class="btn-ghost text-red-700" onclick={onremove} aria-label="Удалить">
+			<button
+				type="button"
+				class="btn-ghost is-danger"
+				onclick={onremove}
+				aria-label={translate(lang, 'builder.remove')}
+			>
 				✕
 			</button>
 		</div>
 	</div>
 
 	<div class="grid grid-cols-3 gap-2">
-		<label class="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-			Подходы
+		<label class="field-label">
+			{translate(lang, 'builder.sets')}
 			<input
 				class="field mt-1"
 				type="number"
@@ -84,8 +96,8 @@
 					})}
 			/>
 		</label>
-		<label class="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-			Повторы
+		<label class="field-label">
+			{translate(lang, 'builder.reps')}
 			<input
 				class="field mt-1"
 				type="number"
@@ -99,8 +111,8 @@
 					})}
 			/>
 		</label>
-		<label class="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-			Отдых, с
+		<label class="field-label">
+			{translate(lang, 'builder.rest')}
 			<input
 				class="field mt-1"
 				type="number"

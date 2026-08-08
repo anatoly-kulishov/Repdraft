@@ -28,7 +28,7 @@
 </script>
 
 <label class="block w-full">
-	<span class="sr-only">Поиск</span>
+	<span class="sr-only">{placeholder}</span>
 	<input
 		type="search"
 		class="field w-full"
