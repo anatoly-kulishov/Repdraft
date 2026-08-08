@@ -88,7 +88,7 @@
 							<p class="text-xs text-[var(--color-muted)]">{formatDate(record.updatedAt)}</p>
 						</div>
 					</div>
-					<div class="flex flex-wrap gap-2">
+					<div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
 						<a class="btn-secondary" href={`/exercise/${record.exerciseId}`}>Изменить</a>
 						<button
 							type="button"
