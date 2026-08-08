@@ -1,17 +1,23 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
+	import { completedSetCount, totalSetCount } from '$lib/domain/session';
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
+	import { live } from '$lib/stores/live';
 	import { plans, plansReady } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 
 	let lang = $derived($resolvedLocale);
+	let active = $derived($live.session);
 
 	onMount(() => {
 		void plans.refresh();
+		live.hydrate();
+		void live.refreshHistory();
 	});
 
 	function formatDate(iso: string): string {
@@ -43,6 +49,15 @@
 			toasts.show(err instanceof Error ? err.message : 'Error', 'error');
 		}
 	}
+
+	function onStart(planId: string) {
+		void goto(`/live/${planId}`);
+	}
+
+	function onResume() {
+		if (!active?.planId) return;
+		void goto(`/live/${active.planId}`);
+	}
 </script>
 
 <svelte:head>
@@ -69,6 +84,24 @@
 		</p>
 	</div>
 
+	{#if active && !active.finishedAt}
+		<div class="panel mb-4 flex flex-wrap items-center justify-between gap-3 !p-3">
+			<div class="min-w-0">
+				<p class="text-sm font-semibold text-[var(--color-ink)]">{active.planName}</p>
+				<p class="text-xs text-[var(--color-muted)]">
+					{translate(lang, 'workouts.activeHint')} ·
+					{translate(lang, 'live.progress', {
+						done: completedSetCount(active),
+						total: totalSetCount(active)
+					})}
+				</p>
+			</div>
+			<button type="button" class="btn-primary" onclick={onResume}
+				>{translate(lang, 'workouts.resume')}</button
+			>
+		</div>
+	{/if}
+
 	{#if !$plansReady}
 		<PageSkeleton rows={3} />
 	{:else if $plans.length === 0}
@@ -82,6 +115,14 @@
 		<ul class="soft-enter flex flex-col gap-2.5">
 			{#each $plans as plan (plan.id)}
 				<li class="list-row !gap-3 !py-3.5">
+					<button
+						type="button"
+						class="btn-primary shrink-0"
+						onclick={() => onStart(plan.id)}
+						disabled={plan.exercises.length === 0}
+					>
+						{translate(lang, 'workouts.start')}
+					</button>
 					<a
 						class="group flex min-w-0 flex-1 items-center gap-2 no-underline"
 						href={`/builder/${plan.id}`}

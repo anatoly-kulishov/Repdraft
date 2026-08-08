@@ -8,6 +8,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { draft, draftHydrated } from '$lib/stores/draft';
+	import { live } from '$lib/stores/live';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { page } from '$app/stores';
@@ -32,6 +33,7 @@
 
 	onMount(() => {
 		draft.hydrate();
+		live.hydrate();
 		void auth.init();
 	});
 

@@ -14,15 +14,24 @@ type AuthState = {
 };
 
 function createAuthStore() {
-	const { subscribe, set, update } = writable<AuthState>({
+	const { subscribe, set } = writable<AuthState>({
 		configured: false,
 		ready: false,
 		session: null,
 		user: null
 	});
 
-	async function applySession(session: Session | null) {
+	/** Skip duplicate INITIAL_SESSION from getSession + onAuthStateChange. */
+	let lastUserId: string | null | undefined = undefined;
+
+	async function applySession(session: Session | null, opts?: { force?: boolean }) {
 		const loggedIn = Boolean(session?.user);
+		const userId = session?.user?.id ?? null;
+		if (!opts?.force && userId === lastUserId) {
+			return;
+		}
+		lastUserId = userId;
+
 		setCloudMode(loggedIn);
 		set({
 			configured: isSupabaseConfigured(),
@@ -31,15 +40,14 @@ function createAuthStore() {
 			user: session?.user ?? null
 		});
 
-		if (loggedIn) {
-			try {
-				await migrateLocalToCloud();
-			} catch (err) {
-				console.error('migrateLocalToCloud failed', err);
-			}
-		}
+		// Paint local (then cloud) immediately — never wait on migrate.
+		void Promise.all([plans.refresh(), records.refresh()]);
 
-		await Promise.all([plans.refresh(), records.refresh()]);
+		if (loggedIn) {
+			void migrateLocalToCloud()
+				.then(() => Promise.all([plans.refresh(), records.refresh()]))
+				.catch((err) => console.error('migrateLocalToCloud failed', err));
+		}
 	}
 
 	async function init() {
@@ -52,6 +60,7 @@ function createAuthStore() {
 		if (!configured) {
 			setCloudMode(false);
 			set({ configured: false, ready: true, session: null, user: null });
+			lastUserId = null;
 			await Promise.all([plans.refresh(), records.refresh()]);
 			return;
 		}
@@ -63,9 +72,11 @@ function createAuthStore() {
 		}
 
 		const { data } = await supabase.auth.getSession();
-		await applySession(data.session);
+		await applySession(data.session, { force: true });
 
-		supabase.auth.onAuthStateChange((_event, session) => {
+		supabase.auth.onAuthStateChange((event, session) => {
+			// getSession already applied the initial session.
+			if (event === 'INITIAL_SESSION') return;
 			void applySession(session);
 		});
 	}
