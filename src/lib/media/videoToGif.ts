@@ -30,26 +30,30 @@ type ConvertPreset = {
 	maxFrames: number;
 	playCapture: boolean;
 	playbackRate: number;
+	paletteEvery: number;
 };
 
 const DESKTOP: ConvertPreset = {
 	maxDurationSec: 6,
-	maxWidth: 240,
-	fps: 8,
-	colors: 96,
-	maxFrames: 48,
+	maxWidth: 320,
+	fps: 10,
+	colors: 160,
+	maxFrames: 60,
 	playCapture: false,
-	playbackRate: 1
+	playbackRate: 1,
+	paletteEvery: 2
 };
 
+/** Higher default quality; Worker keeps encode off the UI thread. */
 const MOBILE: ConvertPreset = {
-	maxDurationSec: 3,
-	maxWidth: 120,
-	fps: 4,
-	colors: 32,
-	maxFrames: 12,
+	maxDurationSec: 6,
+	maxWidth: 280,
+	fps: 8,
+	colors: 128,
+	maxFrames: 48,
 	playCapture: true,
-	playbackRate: 2
+	playbackRate: 1.25,
+	paletteEvery: 2
 };
 
 function isLikelyPhone(): boolean {
@@ -116,6 +120,8 @@ function grabFrame(
 	width: number,
 	height: number
 ): Uint8ClampedArray {
+	ctx.imageSmoothingEnabled = true;
+	ctx.imageSmoothingQuality = 'high';
 	ctx.drawImage(video, 0, 0, width, height);
 	return new Uint8ClampedArray(ctx.getImageData(0, 0, width, height).data);
 }
@@ -247,11 +253,16 @@ async function encodeOnMainThread(
 	height: number,
 	delayMs: number,
 	colors: number,
+	paletteEvery: number,
 	onProgress?: (i: number, total: number) => void
 ): Promise<Blob> {
-	const palette = quantize(frames[0]!, colors, { format: 'rgb565' });
+	const refreshEvery = Math.max(1, paletteEvery);
 	const gif = GIFEncoder();
+	let palette: ReturnType<typeof quantize> | null = null;
 	for (let i = 0; i < frames.length; i++) {
+		if (!palette || i % refreshEvery === 0) {
+			palette = quantize(frames[i]!, colors, { format: 'rgb565' });
+		}
 		const index = applyPalette(frames[i]!, palette);
 		gif.writeFrame(index, width, height, {
 			palette,
@@ -272,6 +283,7 @@ function encodeInWorker(
 	height: number,
 	delayMs: number,
 	colors: number,
+	paletteEvery: number,
 	onProgress?: (i: number, total: number) => void
 ): Promise<Blob> {
 	return new Promise((resolve, reject) => {
@@ -294,7 +306,8 @@ function encodeInWorker(
 			width,
 			height,
 			delayMs,
-			colors
+			colors,
+			paletteEvery
 		};
 
 		worker.onmessage = (
@@ -393,9 +406,25 @@ export async function videoFileToGif(
 
 		let blob: Blob;
 		try {
-			blob = await encodeInWorker(frames, width, height, delayMs, colors, onEncodeProgress);
+			blob = await encodeInWorker(
+				frames,
+				width,
+				height,
+				delayMs,
+				colors,
+				preset.paletteEvery,
+				onEncodeProgress
+			);
 		} catch {
-			blob = await encodeOnMainThread(frames, width, height, delayMs, colors, onEncodeProgress);
+			blob = await encodeOnMainThread(
+				frames,
+				width,
+				height,
+				delayMs,
+				colors,
+				preset.paletteEvery,
+				onEncodeProgress
+			);
 		}
 
 		onProgress?.({ phase: 'done', ratio: 1, message: 'Готово' });

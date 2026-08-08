@@ -8,6 +8,8 @@ export type EncodeRequest = {
 	height: number;
 	delayMs: number;
 	colors: number;
+	/** Recompute palette every N frames (1 = every frame). */
+	paletteEvery: number;
 };
 
 export type EncodeProgressMsg = { type: 'progress'; ratio: number; index: number; total: number };
@@ -21,7 +23,7 @@ declare const self: {
 
 self.onmessage = (event: MessageEvent<EncodeRequest>) => {
 	try {
-		const { frames, width, height, delayMs, colors } = event.data;
+		const { frames, width, height, delayMs, colors, paletteEvery } = event.data;
 		if (!frames.length) {
 			self.postMessage({
 				type: 'error',
@@ -30,13 +32,16 @@ self.onmessage = (event: MessageEvent<EncodeRequest>) => {
 			return;
 		}
 
-		const first = new Uint8ClampedArray(frames[0]!);
-		const palette = quantize(first, colors, { format: 'rgb565' });
+		const refreshEvery = Math.max(1, paletteEvery || 1);
 		const gif = GIFEncoder();
 		const total = frames.length;
+		let palette: ReturnType<typeof quantize> | null = null;
 
 		for (let i = 0; i < total; i++) {
 			const data = new Uint8ClampedArray(frames[i]!);
+			if (!palette || i % refreshEvery === 0) {
+				palette = quantize(data, colors, { format: 'rgb565' });
+			}
 			const index = applyPalette(data, palette);
 			gif.writeFrame(index, width, height, {
 				palette,
