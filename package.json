@@ -24,6 +24,7 @@
 		"vite": "^8.0.16"
 	},
 	"dependencies": {
-		"@supabase/supabase-js": "^2.110.8"
+		"@supabase/supabase-js": "^2.110.8",
+		"gifenc": "^1.0.3"
 	}
 }
