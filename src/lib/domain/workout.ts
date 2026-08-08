@@ -1,4 +1,5 @@
 import type { WorkoutExercise, WorkoutPlan } from './types';
+import { newId } from './id';
 
 export const DEFAULT_SETS = 3;
 export const DEFAULT_REPS = 10;
@@ -6,10 +7,6 @@ export const DEFAULT_REST_SEC = 90;
 
 function nowIso(): string {
 	return new Date().toISOString();
-}
-
-function newId(): string {
-	return crypto.randomUUID();
 }
 
 export function createEmptyDraft(): WorkoutPlan {

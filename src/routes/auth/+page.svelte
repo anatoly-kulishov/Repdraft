@@ -1,5 +1,8 @@
 <script lang="ts">
+	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
+	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 
 	let mode = $state<'signin' | 'signup'>('signin');
@@ -7,6 +10,7 @@
 	let password = $state('');
 	let loading = $state(false);
 	let message = $state<string | null>(null);
+	let lang = $derived($resolvedLocale);
 
 	async function submit() {
 		if (!$auth.configured) {
@@ -46,20 +50,25 @@
 </script>
 
 <svelte:head>
-	<title>Аккаунт — Repdraft</title>
+	<title>{translate(lang, 'auth.title')} — Repdraft</title>
 </svelte:head>
 
 <section class="mx-auto max-w-md">
-	<h1 class="font-[family-name:var(--font-display)] text-2xl md:text-3xl">Аккаунт</h1>
-	<p class="mt-2 text-sm text-[var(--color-muted)]">
-		Войдите, чтобы планы и рекорды были доступны с телефона и компьютера в одном аккаунте.
-	</p>
+	<div class="page-header">
+		<h1 class="page-title">{translate(lang, 'auth.title')}</h1>
+		<p class="page-lead">{translate(lang, 'auth.lead')}</p>
+	</div>
+
+	<div class="panel mb-4">
+		<LanguageSwitcher />
+		<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'lang.hint')}</p>
+	</div>
 
 	{#if !$auth.ready}
-		<p class="mt-6 text-sm text-[var(--color-muted)]">Загрузка…</p>
+		<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.loading')}</p>
 	{:else if !$auth.configured}
-		<div class="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm">
-			<p class="font-semibold">Облако пока не подключено</p>
+		<div class="panel text-sm">
+			<p class="font-semibold">{translate(lang, 'auth.cloudOffTitle')}</p>
 			<p class="mt-2 text-[var(--color-muted)]">
 				Создайте проект на
 				<a class="underline" href="https://supabase.com" target="_blank" rel="noreferrer">supabase.com</a>,
@@ -67,28 +76,31 @@
 				<code class="text-[var(--color-ink)]">.env.example</code> в
 				<code class="text-[var(--color-ink)]">.env</code> и укажите URL + anon key. Подробности в README.
 			</p>
-			<p class="mt-2 text-[var(--color-muted)]">
-				Без этого приложение работает локально на устройстве (как раньше).
-			</p>
 		</div>
 	{:else if $auth.user}
-		<div class="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-			<p class="text-sm text-[var(--color-muted)]">Вы вошли как</p>
+		<div class="panel">
+			<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.signedInAs')}</p>
 			<p class="font-semibold">{$auth.user.email}</p>
-			<p class="mt-2 text-xs text-[var(--color-muted)]">
-				Планы и рекорды сохраняются в облаке и доступны с любого устройства.
-			</p>
-			<button type="button" class="btn-secondary mt-4" onclick={logout}>Выйти</button>
+			<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'auth.syncedHint')}</p>
+			<button type="button" class="btn-secondary mt-4" onclick={logout}>
+				{translate(lang, 'auth.logout')}
+			</button>
 		</div>
 	{:else}
-		<form class="mt-6 flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4" onsubmit={(e) => { e.preventDefault(); void submit(); }}>
+		<form
+			class="panel flex flex-col gap-3"
+			onsubmit={(e) => {
+				e.preventDefault();
+				void submit();
+			}}
+		>
 			<div class="flex gap-2 text-sm">
 				<button
 					type="button"
 					class={mode === 'signin' ? 'font-semibold text-[var(--color-accent)]' : 'text-[var(--color-muted)]'}
 					onclick={() => (mode = 'signin')}
 				>
-					Вход
+					{translate(lang, 'auth.signInTab')}
 				</button>
 				<span class="text-[var(--color-border)]">|</span>
 				<button
@@ -96,16 +108,16 @@
 					class={mode === 'signup' ? 'font-semibold text-[var(--color-accent)]' : 'text-[var(--color-muted)]'}
 					onclick={() => (mode = 'signup')}
 				>
-					Регистрация
+					{translate(lang, 'auth.signUpTab')}
 				</button>
 			</div>
 
-			<label class="text-xs font-medium text-[var(--color-muted)]">
-				Email
+			<label class="field-label">
+				{translate(lang, 'auth.email')}
 				<input class="field mt-1 w-full" type="email" required autocomplete="email" bind:value={email} />
 			</label>
-			<label class="text-xs font-medium text-[var(--color-muted)]">
-				Пароль
+			<label class="field-label">
+				{translate(lang, 'auth.password')}
 				<input
 					class="field mt-1 w-full"
 					type="password"
@@ -121,7 +133,11 @@
 			{/if}
 
 			<button type="submit" class="btn-primary" disabled={loading}>
-				{loading ? 'Подождите…' : mode === 'signup' ? 'Зарегистрироваться' : 'Войти'}
+				{loading
+					? translate(lang, 'auth.wait')
+					: mode === 'signup'
+						? translate(lang, 'auth.submitSignUp')
+						: translate(lang, 'auth.submitSignIn')}
 			</button>
 		</form>
 	{/if}
