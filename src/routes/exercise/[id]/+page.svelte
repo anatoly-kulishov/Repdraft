@@ -1,13 +1,10 @@
 <script lang="ts">
-	import { page } from '$app/stores';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import { getExerciseById } from '$lib/data/loadExercises';
 	import {
 		labelBodyPart,
 		labelEquipment,
 		labelTarget
 	} from '$lib/domain/labels.ru';
-	import type { Exercise } from '$lib/domain/types';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { translate } from '$lib/i18n/messages';
 	import { draft } from '$lib/stores/draft';
@@ -16,50 +13,15 @@
 	import PersonalRecordPanel from '$lib/components/PersonalRecordPanel.svelte';
 	import TechniqueClipsPanel from '$lib/components/TechniqueClipsPanel.svelte';
 
-	let exercise = $state<Exercise | null>(null);
-	let loading = $state(true);
-	let notFound = $state(false);
+	let { data } = $props();
+
+	let exercise = $derived(data.exercise);
 	let lang = $derived($resolvedLocale);
 	let title = $derived(exercise ? exerciseName(exercise, lang) : '');
 	let steps = $derived.by(() => {
 		if (!exercise) return [] as string[];
 		const map = exercise.instruction_steps ?? {};
 		return map[lang] ?? map.ru ?? map.en ?? [];
-	});
-
-	$effect(() => {
-		const id = $page.params.id;
-		let cancelled = false;
-		loading = true;
-		notFound = false;
-		exercise = null;
-
-		if (!id) {
-			notFound = true;
-			loading = false;
-			return;
-		}
-
-		getExerciseById(id)
-			.then((ex) => {
-				if (cancelled) return;
-				if (!ex) {
-					notFound = true;
-				} else {
-					exercise = ex;
-				}
-				loading = false;
-			})
-			.catch(() => {
-				if (!cancelled) {
-					notFound = true;
-					loading = false;
-				}
-			});
-
-		return () => {
-			cancelled = true;
-		};
 	});
 
 	function addToDraft() {
@@ -74,12 +36,10 @@
 </script>
 
 <svelte:head>
-	<title>{exercise ? `${title} — Repdraft` : `${translate(lang, 'exercise.loading')} — Repdraft`}</title>
+	<title>{exercise ? `${title} — Repdraft` : `${translate(lang, 'exercise.notFoundTitle')} — Repdraft`}</title>
 </svelte:head>
 
-{#if loading}
-	<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'exercise.loading')}</p>
-{:else if notFound || !exercise}
+{#if !exercise}
 	<EmptyState
 		title={translate(lang, 'exercise.notFoundTitle')}
 		description={translate(lang, 'exercise.notFoundDesc')}
@@ -87,17 +47,19 @@
 		actionLabel={translate(lang, 'builder.toCatalog')}
 	/>
 {:else}
-	<article class="grid gap-5 pb-28 lg:grid-cols-[280px_1fr] lg:gap-6 lg:pb-0">
+	<article class="grid gap-5 pb-mobile-actions lg:grid-cols-[280px_1fr] lg:gap-6 lg:pb-0">
 		<div>
 			<a href="/" class="mb-3 inline-flex text-sm font-medium text-[var(--color-accent)] md:hidden"
 				>{translate(lang, 'exercise.back')}</a
 			>
-			<div class="panel overflow-hidden">
+			<div class="panel overflow-hidden !p-2">
 				<img
 					src={`/${exercise.gif_url}`}
 					alt={title}
 					width="180"
 					height="180"
+					fetchpriority="high"
+					decoding="async"
 					class="mx-auto h-[180px] w-[180px] object-contain"
 				/>
 			</div>
@@ -107,7 +69,7 @@
 		<div class="flex flex-col gap-4">
 			<div>
 				<p class="text-sm text-[var(--color-muted)]">{labelBodyPart(exercise.body_part, lang)}</p>
-				<h1 class="page-title sm:text-3xl">{title}</h1>
+				<h1 class="page-title">{title}</h1>
 			</div>
 
 			<dl class="panel grid gap-3 !p-3 text-sm sm:grid-cols-2">
@@ -131,7 +93,7 @@
 				</div>
 			</dl>
 
-			<div class="actions-inline !mb-0">
+			<div class="actions-inline">
 				<button type="button" class="btn-primary" onclick={addToDraft}
 					>{translate(lang, 'exercise.addDraft')}</button
 				>
@@ -154,11 +116,11 @@
 	</article>
 
 	<div class="sticky-actions">
-		<div class="mx-auto grid max-w-6xl grid-cols-2 gap-2">
-			<button type="button" class="btn-primary" onclick={addToDraft}
+		<div class="mx-auto flex max-w-6xl flex-col gap-1">
+			<button type="button" class="btn-primary btn-block" onclick={addToDraft}
 				>{translate(lang, 'exercise.toDraft')}</button
 			>
-			<a class="btn-secondary" href="/builder">{translate(lang, 'exercise.builder')}</a>
+			<a class="btn-link" href="/builder">{translate(lang, 'exercise.openBuilder')}</a>
 		</div>
 	</div>
 {/if}

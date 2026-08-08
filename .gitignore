@@ -18,6 +18,10 @@ Thumbs.db
 !.env.example
 !.env.test
 
+# DB / ops scripts — not for the public repo
+supabase/*.sql
+scripts/set-vercel-env.mjs
+
 # IDE
 .idea/
 

@@ -1,0 +1,52 @@
+---
+description: Repdraft architecture layers and where new code belongs
+alwaysApply: true
+---
+
+# Архитектура Repdraft
+
+SvelteKit + TypeScript + Tailwind. Слои тонкие и явные - без лишних абстракций.
+
+## Карта `src/`
+
+| Путь | Ответственность |
+|------|-----------------|
+| `routes/` | Страницы, layout, `layout.css` (дизайн-токены) |
+| `lib/components/` | UI-компоненты без прямого доступа к Storage/Supabase (кроме явных panel-виджетов) |
+| `lib/domain/` | Чистые типы и функции (workout, records, filters). Без DOM, без fetch |
+| `lib/stores/` | Состояние приложения (draft, plans, auth, locale, toasts) |
+| `lib/storage/` | Репозитории: localStorage / Supabase. Единственное место CRUD данных пользователя |
+| `lib/data/` | Чтение статических каталогов (`static/data`) |
+| `lib/media/` | Клиентская обработка медиа (GIF encode, workers) |
+| `lib/i18n/` | Строки UI (`messages.ts`), хелперы локали |
+| `lib/supabase/` | Создание клиента. Только `PUBLIC_*` из env |
+
+## Зависимости (направление)
+
+```text
+routes / components
+    → stores / i18n / domain
+        → storage / data / media
+            → supabase client / browser APIs
+```
+
+- `domain` **не** импортирует `stores`, `components`, `$app`.
+- `storage` не импортирует UI.
+- Новая фича: сначала тип/логика в `domain`, потом store/repo, потом UI.
+
+## Данные
+
+- Планы/рекорды: интерфейсы в `domain/repository.ts`, реализации `local*` / `supabase*`, выбор через `storage/dataAccess.ts`.
+- Клипы техники: `techniqueClipsRepository.ts`; SQL-миграции **только локально** (не в публичном git).
+- Секреты и ключи - только `.env` / Vercel env. Никаких URL/JWT в исходниках.
+
+## UI
+
+- Токены и примитивы: `routes/layout.css` (`.panel`, `.btn-*`, `.page-title`, `.pb-mobile-actions`).
+- Mobile / PWA first: tabbar, safe-area, одна primary CTA на секцию.
+- i18n: все пользовательские строки через `translate()`; язык переключается в `/auth`.
+- Не плодить параллельные стили «в обход» токенов без причины.
+
+## Релизы
+
+См. `release-branches.mdc`: ветка `cursor/vX.Y.Z-slug`, semver patch/minor.

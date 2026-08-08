@@ -1,0 +1,23 @@
+---
+description: Feature work goes on release-numbered branches, then PR and GitHub release
+alwaysApply: true
+---
+
+# Ветки и релизы
+
+- Фичи и фиксы - **в отдельной ветке**, не напрямую в `main` / `develop`.
+- Имя ветки с **следующим semver** и коротким slug:
+
+```text
+cursor/v0.2.1-clips-rename
+cursor/v0.3.0-supersets-ui
+```
+
+- Префикс `cursor/`, затем `vMAJOR.MINOR.PATCH`, затем `-` и kebab-case.
+- Смотри последний тег (`gh release list` / `git tag`) и выбирай **следующий** номер:
+  - **patch** (`0.2.1`) - багфиксы, UX/UI polish, мелкие правки
+  - **minor** (`0.3.0`) - новая пользовательская фича
+  - **major** (`1.0.0`) - ломающие изменения
+- Не прыгай через номера без причины. Не возвращайся на старую линию (после `v0.2.0` не делай `v0.1.1`).
+- После мержа в `main` по запросу - GitHub Release с **тем же** тегом, что в имени ветки.
+- Не пушь / PR / release без явной просьбы (кроме явных commit-and-push / create PR / create release).

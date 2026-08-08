@@ -5,8 +5,10 @@
 		deleteTechniqueClip,
 		listClipsForExercise,
 		publishTechniqueClip,
+		renameTechniqueClip,
 		reportTechniqueClip
 	} from '$lib/storage/techniqueClipsRepository';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -274,6 +276,19 @@
 		}
 	}
 
+	async function renameClip(clip: TechniqueClip) {
+		const next = prompt(translate(lang, 'clips.renamePrompt'), clip.title || '');
+		if (next === null) return;
+		try {
+			const title = await renameTechniqueClip(clip.id, next);
+			clips = clips.map((c) => (c.id === clip.id ? { ...c, title } : c));
+			if (lightbox?.id === clip.id) lightbox = { ...lightbox, title };
+			toasts.show(translate(lang, 'clips.renamed'), 'success');
+		} catch (err) {
+			toasts.show(err instanceof Error ? err.message : translate(lang, 'clips.renameFail'), 'error');
+		}
+	}
+
 	function formatDate(iso: string): string {
 		try {
 			return new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-US', {
@@ -320,7 +335,7 @@
 				{translate(lang, 'clips.lead')}
 			</p>
 		</div>
-		{#if cloudReady && $auth.user && !composerOpen}
+		{#if cloudReady && $auth.user && !composerOpen && clips.length > 0}
 			<button type="button" class="btn-primary shrink-0 text-sm" onclick={openComposer}>
 				{translate(lang, 'clips.add')}
 			</button>
@@ -345,7 +360,7 @@
 		>
 			<div class="flex items-center justify-between gap-2">
 				<p class="text-sm font-semibold">{translate(lang, 'clips.new')}</p>
-				<button type="button" class="btn-ghost px-3 text-sm" disabled={busy} onclick={closeComposer}>
+				<button type="button" class="btn-secondary" disabled={busy} onclick={closeComposer}>
 					{translate(lang, 'clips.close')}
 				</button>
 			</div>
@@ -455,13 +470,9 @@
 	{/if}
 
 	{#if loading}
-		<ul class="grid grid-cols-1 gap-3 sm:grid-cols-2" aria-busy="true">
-			{#each [0, 1] as i (i)}
-				<li
-					class="h-56 animate-pulse rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]"
-				></li>
-			{/each}
-		</ul>
+		<div class="py-6">
+			<Spinner label={translate(lang, 'common.loading')} />
+		</div>
 	{:else if clips.length === 0}
 		<div
 			class="panel-dashed py-8 text-center"
@@ -525,7 +536,14 @@
 							{#if currentUserId === clip.userId}
 								<button
 									type="button"
-									class="btn-danger col-span-2 text-sm"
+									class="btn-secondary text-sm"
+									onclick={() => void renameClip(clip)}
+								>
+									{translate(lang, 'clips.rename')}
+								</button>
+								<button
+									type="button"
+									class="btn-danger text-sm"
 									onclick={() => void removeClip(clip)}
 								>
 									{translate(lang, 'clips.delete')}
@@ -586,7 +604,15 @@
 					<button type="button" class="btn-secondary text-sm" onclick={() => (lightbox = null)}>
 						{translate(lang, 'clips.close')}
 					</button>
-					{#if currentUserId && currentUserId !== lightbox.userId}
+					{#if currentUserId && currentUserId === lightbox.userId}
+						<button
+							type="button"
+							class="btn-secondary col-span-2 text-sm"
+							onclick={() => void renameClip(lightbox!)}
+						>
+							{translate(lang, 'clips.rename')}
+						</button>
+					{:else if currentUserId && currentUserId !== lightbox.userId}
 						<button
 							type="button"
 							class="btn-secondary col-span-2 text-sm text-[var(--color-muted)]"

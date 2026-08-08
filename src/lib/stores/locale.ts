@@ -7,12 +7,13 @@ import {
 } from '$lib/i18n/locale';
 import { writable } from 'svelte/store';
 
-function readLocale(): AppLocale {
+function bootLocale(): AppLocale {
 	if (!browser) return 'ru';
 	try {
+		const fromDom = document.documentElement.dataset.locale;
+		if (fromDom && isAppLocale(fromDom)) return fromDom;
 		const raw = localStorage.getItem(LOCALE_STORAGE_KEY);
 		if (raw && isAppLocale(raw)) return raw;
-		// Migrate former "auto" (or empty) → detected concrete locale.
 		const detected = detectBrowserLocale();
 		localStorage.setItem(LOCALE_STORAGE_KEY, detected);
 		return detected;
@@ -24,9 +25,11 @@ function readLocale(): AppLocale {
 function applyDocumentLang(locale: AppLocale) {
 	if (!browser) return;
 	document.documentElement.lang = locale;
+	document.documentElement.dataset.locale = locale;
 }
 
-const localeStore = writable<AppLocale>(readLocale());
+const initial = bootLocale();
+const localeStore = writable<AppLocale>(initial);
 
 export const resolvedLocale = {
 	subscribe: localeStore.subscribe,
@@ -43,5 +46,5 @@ export const resolvedLocale = {
 };
 
 if (browser) {
-	applyDocumentLang(readLocale());
+	applyDocumentLang(initial);
 }
