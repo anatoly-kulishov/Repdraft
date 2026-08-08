@@ -6,10 +6,12 @@ import { get, writable } from 'svelte/store';
 
 function createRecordsStore() {
 	const store = writable<PersonalRecord[]>([]);
+	const ready = writable(false);
 
 	async function refresh() {
 		if (!browser) {
 			store.set([]);
+			ready.set(true);
 			return;
 		}
 		try {
@@ -18,11 +20,14 @@ function createRecordsStore() {
 		} catch (err) {
 			console.error('records.refresh failed', err);
 			store.set([]);
+		} finally {
+			ready.set(true);
 		}
 	}
 
 	return {
 		subscribe: store.subscribe,
+		ready: { subscribe: ready.subscribe },
 		refresh,
 		get(exerciseId: string): PersonalRecord | null {
 			return get(store).find((r) => r.exerciseId === exerciseId) ?? null;
@@ -47,3 +52,4 @@ function createRecordsStore() {
 }
 
 export const records = createRecordsStore();
+export const recordsReady = { subscribe: records.ready.subscribe };

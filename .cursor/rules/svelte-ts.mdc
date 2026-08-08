@@ -1,0 +1,44 @@
+---
+description: TypeScript and Svelte coding conventions for Repdraft
+globs: src/**/*.{ts,svelte}
+alwaysApply: false
+---
+
+# Кодстайл Svelte / TS
+
+## TypeScript
+
+- Строгие типы на границах (`WorkoutPlan`, `TechniqueClip`, repo interfaces).
+- Без `any`; узкий `unknown` + сужение при необходимости.
+- Импорты **только сверху файла** (не внутри функций).
+- Чистые функции домена - синхронные и предсказуемые; side effects в stores/storage/media.
+- `switch` по union/enum - с `default` и `never` check, если есть дискриминант.
+
+## Svelte 5
+
+- Руны: `$state`, `$derived`, `$effect`, `$props` - как в существующих страницах.
+- Сторы (`writable`) для кросс-страничного состояния; локальный UI state - в компоненте.
+- Не тащить тяжёлую работу в `$effect` без отмены/guard (`cancelled` flag).
+- События: `onclick={...}`, не устаревший `on:click` в новом коде.
+
+## i18n
+
+- Ключи вида `area.thing` в `messages.ts` (ru + en вместе).
+- Не хардкодить видимый текст в компонентах (кроме редких dev-ошибок).
+
+## Асинхронность и ошибки
+
+- Repo/media бросают Error; UI ловит и показывает `toasts` + понятный i18n текст.
+- После upload/insert - откат storage при ошибке записи в БД (как в clips).
+
+## Производительность (телефон)
+
+- Тяжёлое (GIF encode) - Worker / yield; не блокировать UI на секунды.
+- Списки каталога: не грузить полный `exercises.json` без нужды (index first).
+- Избегать лишних подписок и тяжёлых `$effect` на каждую карточку.
+
+## Минимализм
+
+- Не добавлять зависимости, если хватает stdlib / уже установленных пакетов.
+- Не создавать wrappers «на вырост».
+- Удалять мёртвый код вместе с фичей.

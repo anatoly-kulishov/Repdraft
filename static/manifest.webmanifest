@@ -1,0 +1,26 @@
+{
+	"name": "Repdraft",
+	"short_name": "Repdraft",
+	"description": "Каталог упражнений и конструктор тренировок",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"orientation": "portrait-primary",
+	"background_color": "#e8ecf0",
+	"theme_color": "#0f766e",
+	"lang": "ru",
+	"icons": [
+		{
+			"src": "/icon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "maskable"
+		}
+	]
+}

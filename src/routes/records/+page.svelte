@@ -1,5 +1,6 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import { formatPersonalRecord } from '$lib/domain/records';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { translate } from '$lib/i18n/messages';
@@ -7,26 +8,31 @@
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { records } from '$lib/stores/records';
+	import { records, recordsReady } from '$lib/stores/records';
 	import { toasts } from '$lib/stores/toasts';
 	import { onMount } from 'svelte';
 
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
+	let indexReady = $state(false);
 	let lang = $derived($resolvedLocale);
+	let pageReady = $derived($recordsReady && ($records.length === 0 || indexReady));
 
 	onMount(() => {
 		void records.refresh();
-		loadExerciseIndex().then((items) => {
-			indexById = new Map(items.map((item) => [item.id, item]));
-		});
+		loadExerciseIndex()
+			.then((items) => {
+				indexById = new Map(items.map((item) => [item.id, item]));
+			})
+			.finally(() => {
+				indexReady = true;
+			});
 	});
 
 	function formatDate(iso: string): string {
 		try {
 			return new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-US', {
 				day: 'numeric',
-				month: 'short',
-				year: 'numeric'
+				month: 'short'
 			}).format(new Date(iso));
 		} catch {
 			return iso;
@@ -52,17 +58,26 @@
 	<div class="page-header">
 		<h1 class="page-title">{translate(lang, 'records.title')}</h1>
 		<p class="page-lead">
-			{#if $auth.user}
+			{#if !$auth.ready}
+				<span
+					class="inline-block h-4 w-48 max-w-full animate-pulse rounded bg-[var(--color-surface-muted)]"
+					aria-hidden="true"
+				></span>
+			{:else if $auth.user}
 				{translate(lang, 'records.cloud')}
 			{:else}
 				{translate(lang, 'records.local')}
-				<a class="text-[var(--color-accent)] underline" href="/auth">{translate(lang, 'records.signIn')}</a
+				{' '}
+				<a class="font-semibold text-[var(--color-accent)] underline" href="/auth"
+					>{translate(lang, 'records.signIn')}</a
 				>{translate(lang, 'records.syncSuffix')}
 			{/if}
 		</p>
 	</div>
 
-	{#if $records.length === 0}
+	{#if !pageReady}
+		<PageSkeleton rows={4} />
+	{:else if $records.length === 0}
 		<EmptyState
 			title={translate(lang, 'records.emptyTitle')}
 			description={translate(lang, 'records.emptyDesc')}
@@ -70,51 +85,55 @@
 			actionLabel={translate(lang, 'builder.toCatalog')}
 		/>
 	{:else}
-		<ul class="flex flex-col gap-3">
+		<ul class="soft-enter flex flex-col gap-2.5">
 			{#each $records as record (record.exerciseId)}
 				{@const meta = indexById.get(record.exerciseId)}
-				<li class="list-row">
-					<div class="flex min-w-0 items-center gap-3">
+				{@const title = meta
+					? exerciseName(meta, lang)
+					: translate(lang, 'records.fallback', { id: record.exerciseId })}
+				<li class="list-row !gap-3 !py-3">
+					<a
+						class="flex min-w-0 flex-1 items-center gap-3 no-underline"
+						href={`/exercise/${record.exerciseId}`}
+					>
 						{#if meta}
 							<img
 								src={`/${meta.image}`}
 								alt=""
-								width="56"
-								height="56"
-								class="h-14 w-14 shrink-0 rounded-lg bg-[var(--color-surface-muted)] object-contain"
+								width="48"
+								height="48"
+								class="h-12 w-12 shrink-0 rounded-lg bg-[var(--color-surface-muted)] object-contain"
 							/>
+						{:else}
+							<div
+								class="h-12 w-12 shrink-0 animate-pulse rounded-lg bg-[var(--color-surface-muted)]"
+								aria-hidden="true"
+							></div>
 						{/if}
 						<div class="min-w-0">
-							<a
-								class="font-semibold hover:text-[var(--color-accent)]"
-								href={`/exercise/${record.exerciseId}`}
-							>
-								{meta
-									? exerciseName(meta, lang)
-									: translate(lang, 'records.fallback', { id: record.exerciseId })}
-							</a>
+							<p class="truncate font-semibold text-[var(--color-ink)]">{title}</p>
 							<p class="text-sm font-semibold text-[var(--color-accent)]">
 								{formatPersonalRecord(record, lang)}
 							</p>
 							<p class="text-xs text-[var(--color-muted)]">{formatDate(record.updatedAt)}</p>
 						</div>
-					</div>
-					<div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-						<a class="btn-secondary" href={`/exercise/${record.exerciseId}`}
-							>{translate(lang, 'records.edit')}</a
-						>
-						<button
-							type="button"
-							class="btn-danger"
-							onclick={() =>
-								void onRemove(
-									record.exerciseId,
-									meta ? exerciseName(meta, lang) : record.exerciseId
-								)}
-						>
-							{translate(lang, 'records.delete')}
-						</button>
-					</div>
+					</a>
+					<button
+						type="button"
+						class="btn-ghost is-danger shrink-0"
+						aria-label={translate(lang, 'records.delete')}
+						onclick={() => void onRemove(record.exerciseId, title)}
+					>
+						<svg viewBox="0 0 24 24" class="h-[1.15rem] w-[1.15rem]" aria-hidden="true">
+							<path
+								d="M6 6l12 12M18 6L6 18"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.8"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</button>
 				</li>
 			{/each}
 		</ul>
