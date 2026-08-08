@@ -2,31 +2,51 @@ import { browser } from '$app/environment';
 import {
 	addExercise,
 	createEmptyDraft,
+	dissolveSuperset as dissolveSupersetInPlan,
+	formSuperset as formSupersetInPlan,
 	moveExercise as moveExerciseInPlan,
+	moveWithinGroup as moveWithinGroupInPlan,
 	removeExercise as removeExerciseFromPlan,
 	updateExercise as updateExerciseInPlan,
+	updateGroupRest as updateGroupRestInPlan,
+	updateGroupSets as updateGroupSetsInPlan,
 	type AddExerciseResult
 } from '$lib/domain/workout';
 import type { WorkoutExercise, WorkoutPlan } from '$lib/domain/types';
 import { readDraft, writeDraft } from '$lib/storage/localWorkoutRepository';
 import { writable } from 'svelte/store';
 
-function initialDraft(): WorkoutPlan {
-	if (!browser) return createEmptyDraft();
-	return readDraft() ?? createEmptyDraft();
-}
-
+/**
+ * SSR + first client paint use an empty draft so HTML matches.
+ * Real localStorage draft is applied in `hydrate()` (layout onMount) — avoids name/list jumps.
+ */
 function createDraftStore() {
-	const { subscribe, set, update } = writable<WorkoutPlan>(initialDraft());
+	const { subscribe, set, update } = writable<WorkoutPlan>(createEmptyDraft());
+	const hydratedStore = writable(false);
+	let persist = false;
 
 	if (browser) {
 		subscribe((plan) => {
+			if (!persist) return;
 			writeDraft(plan);
 		});
 	}
 
 	return {
 		subscribe,
+		hydrated: {
+			subscribe: hydratedStore.subscribe
+		},
+		hydrate() {
+			if (!browser) {
+				hydratedStore.set(true);
+				return;
+			}
+			const stored = readDraft();
+			if (stored) set(stored);
+			persist = true;
+			hydratedStore.set(true);
+		},
 		set,
 		update,
 		addToDraft(exerciseId: string): AddExerciseResult {
@@ -46,6 +66,21 @@ function createDraftStore() {
 		moveExercise(fromIndex: number, toIndex: number) {
 			update((plan) => moveExerciseInPlan(plan, fromIndex, toIndex));
 		},
+		moveWithinGroup(fromIndex: number, toIndex: number) {
+			update((plan) => moveWithinGroupInPlan(plan, fromIndex, toIndex));
+		},
+		formSuperset(exerciseIds: string[]) {
+			update((plan) => formSupersetInPlan(plan, exerciseIds));
+		},
+		dissolveSuperset(groupId: string) {
+			update((plan) => dissolveSupersetInPlan(plan, groupId));
+		},
+		updateGroupSets(groupId: string, sets: number) {
+			update((plan) => updateGroupSetsInPlan(plan, groupId, sets));
+		},
+		updateGroupRest(groupId: string, restSec: number) {
+			update((plan) => updateGroupRestInPlan(plan, groupId, restSec));
+		},
 		setName(name: string) {
 			update((plan) => ({ ...plan, name }));
 		},
@@ -62,3 +97,8 @@ function createDraftStore() {
 }
 
 export const draft = createDraftStore();
+
+/** True after local draft has been read (or SSR no-op). */
+export const draftHydrated = {
+	subscribe: draft.hydrated.subscribe
+};

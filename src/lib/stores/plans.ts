@@ -7,10 +7,12 @@ import { draft } from './draft';
 
 function createPlansStore() {
 	const { subscribe, set } = writable<WorkoutPlan[]>([]);
+	const ready = writable(false);
 
 	async function refresh() {
 		if (!browser) {
 			set([]);
+			ready.set(true);
 			return;
 		}
 		try {
@@ -19,11 +21,14 @@ function createPlansStore() {
 		} catch (err) {
 			console.error('plans.refresh failed', err);
 			set([]);
+		} finally {
+			ready.set(true);
 		}
 	}
 
 	return {
 		subscribe,
+		ready: { subscribe: ready.subscribe },
 		refresh,
 		async saveCurrent(): Promise<WorkoutPlan> {
 			const current = withSavedName(get(draft));
@@ -51,3 +56,4 @@ function createPlansStore() {
 }
 
 export const plans = createPlansStore();
+export const plansReady = { subscribe: plans.ready.subscribe };

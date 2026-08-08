@@ -174,6 +174,26 @@ export async function deleteTechniqueClip(clip: TechniqueClip): Promise<void> {
 	await supabase.storage.from(BUCKET).remove([clip.gifPath]);
 }
 
+export async function renameTechniqueClip(clipId: string, title: string): Promise<string> {
+	const supabase = getSupabase();
+	if (!supabase) throw new Error('Облако не подключено');
+
+	const { data: userData, error: userError } = await supabase.auth.getUser();
+	if (userError || !userData.user) throw new Error('NEED_AUTH');
+
+	const nextTitle = title.trim() || 'Техника';
+	const { data, error } = await supabase
+		.from('technique_clips')
+		.update({ title: nextTitle })
+		.eq('id', clipId)
+		.eq('user_id', userData.user.id)
+		.select('title')
+		.single();
+
+	if (error) throw error;
+	return (data as { title: string }).title;
+}
+
 export async function reportTechniqueClip(clipId: string, reason = ''): Promise<{ hidden: boolean }> {
 	const supabase = getSupabase();
 	if (!supabase) throw new Error('Облако не подключено');

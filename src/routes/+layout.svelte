@@ -2,31 +2,36 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import AttributionFooter from '$lib/components/AttributionFooter.svelte';
-	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import AccountChip from '$lib/components/AccountChip.svelte';
 	import Logo from '$lib/components/Logo.svelte';
 	import ToastStack from '$lib/components/ToastStack.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
-	import { draft } from '$lib/stores/draft';
+	import { draft, draftHydrated } from '$lib/stores/draft';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { page } from '$app/stores';
+	import { onNavigate } from '$app/navigation';
 	import { onMount } from 'svelte';
 
 	let { children } = $props();
 
-	let draftCount = $derived($draft.exercises.length);
+	let draftCount = $derived($draftHydrated ? $draft.exercises.length : 0);
 	let path = $derived($page.url.pathname);
 	let lang = $derived($resolvedLocale);
-	let accountLabel = $derived(
-		!$auth.configured
-			? translate(lang, 'nav.account')
-			: $auth.user
-				? translate(lang, 'nav.profile')
-				: translate(lang, 'nav.signIn')
-	);
+
+	onNavigate((navigation) => {
+		if (typeof document === 'undefined' || !document.startViewTransition) return;
+		return new Promise<void>((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
+	});
 
 	onMount(() => {
+		draft.hydrate();
 		void auth.init();
 	});
 
@@ -35,28 +40,33 @@
 	}
 
 	function navClass(href: string): string {
-		return isActive(href)
-			? 'text-[var(--color-accent)] font-semibold'
-			: 'text-[var(--color-muted)] hover:text-[var(--color-ink)]';
+		return isActive(href) ? 'nav-link' : 'nav-link';
 	}
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
+	<link rel="manifest" href="/manifest.webmanifest" />
 	<meta name="theme-color" content="#0f766e" />
+	<meta name="apple-mobile-web-app-title" content="Repdraft" />
 	<title>Repdraft</title>
 </svelte:head>
 
 <div class="app-shell flex min-h-dvh flex-col">
+	<a class="skip-link" href="#main-content">{translate(lang, 'a11y.skip')}</a>
 	<header
-		class="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-surface)_90%,white)] pt-[var(--safe-top)] backdrop-blur"
+		class="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-surface)_92%,white)] pt-[var(--safe-top)] backdrop-blur"
 	>
 		<div class="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 md:h-16 md:px-6">
 			<Logo />
-			<div class="flex items-center gap-3 md:gap-4">
+			<div class="flex items-center gap-3 md:gap-5">
 				<nav class="hidden items-center gap-4 text-sm md:flex lg:gap-5">
-					<a class={navClass('/')} href="/">{translate(lang, 'nav.catalog')}</a>
-					<a class={`relative ${navClass('/builder')}`} href="/builder">
+					<a class={navClass('/')} data-active={isActive('/')} href="/">{translate(lang, 'nav.catalog')}</a>
+					<a
+						class={`relative ${navClass('/builder')}`}
+						data-active={isActive('/builder')}
+						href="/builder"
+					>
 						{translate(lang, 'nav.builder')}
 						{#if draftCount > 0}
 							<span
@@ -66,25 +76,29 @@
 							</span>
 						{/if}
 					</a>
-					<a class={navClass('/workouts')} href="/workouts">{translate(lang, 'nav.workouts')}</a>
-					<a class={navClass('/records')} href="/records">{translate(lang, 'nav.records')}</a>
-					<a class={navClass('/auth')} href="/auth">{accountLabel}</a>
+					<a
+						class={navClass('/workouts')}
+						data-active={isActive('/workouts')}
+						href="/workouts">{translate(lang, 'nav.workouts')}</a
+					>
+					<a
+						class={navClass('/records')}
+						data-active={isActive('/records')}
+						href="/records">{translate(lang, 'nav.records')}</a
+					>
+					<AccountChip active={isActive('/auth')} />
 				</nav>
-				<div class="block">
-					<LanguageSwitcher compact />
+				<div class="md:hidden">
+					<AccountChip active={isActive('/auth')} />
 				</div>
-				<a
-					class={`inline-flex min-h-10 items-center rounded-lg px-2 text-sm font-semibold md:hidden ${navClass('/auth')}`}
-					href="/auth"
-				>
-					{accountLabel}
-				</a>
 			</div>
 		</div>
 	</header>
 
 	<main
-		class="mx-auto w-full max-w-6xl flex-1 px-4 py-4 pb-[calc(var(--tabbar-h)+var(--safe-bottom)+1rem)] md:px-6 md:py-6 md:pb-8"
+		id="main-content"
+		class="mx-auto w-full max-w-6xl flex-1 px-4 py-4 pb-[calc(var(--tabbar-h)+var(--safe-bottom)+1.25rem)] md:px-6 md:py-6 md:pb-8"
+		tabindex="-1"
 	>
 		{@render children()}
 	</main>

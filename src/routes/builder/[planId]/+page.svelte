@@ -2,8 +2,13 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { browser } from '$app/environment';
+	import Spinner from '$lib/components/Spinner.svelte';
+	import { translate } from '$lib/i18n/messages';
 	import { draft } from '$lib/stores/draft';
 	import { plans } from '$lib/stores/plans';
+	import { resolvedLocale } from '$lib/stores/locale';
+
+	let lang = $derived($resolvedLocale);
 
 	$effect(() => {
 		if (!browser) return;
@@ -30,4 +35,4 @@
 	});
 </script>
 
-<p class="text-sm text-[var(--color-muted)]">Открываем план…</p>
+<Spinner label={translate(lang, 'builder.opening')} />

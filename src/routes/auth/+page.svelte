@@ -1,5 +1,7 @@
 <script lang="ts">
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -65,14 +67,14 @@
 	</div>
 
 	{#if !$auth.ready}
-		<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.loading')}</p>
+		<PageSkeleton rows={2} showField={true} />
 	{:else if !$auth.configured}
 		<div class="panel text-sm">
 			<p class="font-semibold">{translate(lang, 'auth.cloudOffTitle')}</p>
 			<p class="mt-2 text-[var(--color-muted)]">
 				Создайте проект на
 				<a class="underline" href="https://supabase.com" target="_blank" rel="noreferrer">supabase.com</a>,
-				выполните SQL из <code class="text-[var(--color-ink)]">supabase/schema.sql</code>, скопируйте
+				примените схему БД локально, скопируйте
 				<code class="text-[var(--color-ink)]">.env.example</code> в
 				<code class="text-[var(--color-ink)]">.env</code> и укажите URL + anon key. Подробности в README.
 			</p>
@@ -114,7 +116,15 @@
 
 			<label class="field-label">
 				{translate(lang, 'auth.email')}
-				<input class="field mt-1 w-full" type="email" required autocomplete="email" bind:value={email} />
+				<input
+					class="field mt-1 w-full"
+					type="email"
+					required
+					autocomplete="email"
+					inputmode="email"
+					placeholder={translate(lang, 'auth.emailPh')}
+					bind:value={email}
+				/>
 			</label>
 			<label class="field-label">
 				{translate(lang, 'auth.password')}
@@ -124,6 +134,7 @@
 					required
 					minlength="6"
 					autocomplete={mode === 'signup' ? 'new-password' : 'current-password'}
+					placeholder={translate(lang, 'auth.passwordPh')}
 					bind:value={password}
 				/>
 			</label>
@@ -133,11 +144,16 @@
 			{/if}
 
 			<button type="submit" class="btn-primary" disabled={loading}>
-				{loading
-					? translate(lang, 'auth.wait')
-					: mode === 'signup'
+				{#if loading}
+					<span class="inline-flex items-center gap-2">
+						<Spinner size="sm" block={false} />
+						{translate(lang, 'auth.wait')}
+					</span>
+				{:else}
+					{mode === 'signup'
 						? translate(lang, 'auth.submitSignUp')
 						: translate(lang, 'auth.submitSignIn')}
+				{/if}
 			</button>
 		</form>
 	{/if}

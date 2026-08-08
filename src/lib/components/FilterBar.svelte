@@ -36,10 +36,8 @@
 	}
 </script>
 
-<div
-	class="sticky top-14 z-20 -mx-4 mb-4 border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg)_94%,white)] px-4 py-3 backdrop-blur md:top-16 md:-mx-6 md:px-6"
->
-	<div class="mx-auto flex max-w-6xl flex-col gap-2.5">
+<div class="mb-5">
+	<div class="panel space-y-3">
 		<SearchInput bind:value={filters.query} placeholder={translate(lang, 'catalog.search')} />
 
 		<div class="flex items-center gap-2 md:hidden">
@@ -48,6 +46,7 @@
 				class="btn-secondary flex-1"
 				onclick={() => (filtersOpen = !filtersOpen)}
 				aria-expanded={filtersOpen}
+				aria-controls="catalog-filters"
 			>
 				{translate(lang, 'catalog.filters')}
 				{#if activeFilterCount > 0}
@@ -57,19 +56,24 @@
 						{activeFilterCount}
 					</span>
 				{/if}
-				<span class="ml-auto text-[var(--color-muted)]">{filtersOpen ? '▴' : '▾'}</span>
+				<span class="ml-auto text-[var(--color-muted)]" aria-hidden="true"
+					>{filtersOpen ? '▴' : '▾'}</span
+				>
 			</button>
 			{#if activeFilterCount > 0}
-				<button type="button" class="btn-ghost px-3 text-sm" onclick={resetFilters}
+				<button type="button" class="btn-secondary px-3 text-sm" onclick={resetFilters}
 					>{translate(lang, 'catalog.reset')}</button
 				>
 			{/if}
 		</div>
 
-		<div class={`grid grid-cols-1 gap-2 sm:grid-cols-3 ${filtersOpen ? '' : 'hidden md:grid'}`}>
+		<div
+			id="catalog-filters"
+			class={`grid grid-cols-1 gap-3 sm:grid-cols-3 ${filtersOpen ? '' : 'hidden md:grid'}`}
+		>
 			<label class="field-label">
 				{translate(lang, 'catalog.bodyPart')}
-				<select class="field mt-1 w-full" bind:value={filters.bodyPart}>
+				<select class="field mt-1.5 w-full" bind:value={filters.bodyPart}>
 					<option value="all">{translate(lang, 'catalog.all')}</option>
 					{#each bodyParts as part (part)}
 						<option value={part}>{labelBodyPart(part, lang)}</option>
@@ -78,7 +82,7 @@
 			</label>
 			<label class="field-label">
 				{translate(lang, 'catalog.equipment')}
-				<select class="field mt-1 w-full" bind:value={filters.equipment}>
+				<select class="field mt-1.5 w-full" bind:value={filters.equipment}>
 					<option value="all">{translate(lang, 'catalog.all')}</option>
 					{#each equipment as item (item)}
 						<option value={item}>{labelEquipment(item, lang)}</option>
@@ -87,7 +91,7 @@
 			</label>
 			<label class="field-label">
 				{translate(lang, 'catalog.muscle')}
-				<select class="field mt-1 w-full" bind:value={filters.target}>
+				<select class="field mt-1.5 w-full" bind:value={filters.target}>
 					<option value="all">{translate(lang, 'catalog.all')}</option>
 					{#each targets as item (item)}
 						<option value={item}>{labelTarget(item, lang)}</option>
