@@ -1,12 +1,14 @@
+import type { AppLocale } from '$lib/i18n/locale';
+import { translate } from '$lib/i18n/messages';
 import type { PersonalRecord } from './types';
 
-export function formatPersonalRecord(record: PersonalRecord): string {
+export function formatPersonalRecord(record: PersonalRecord, locale: AppLocale = 'ru'): string {
 	const parts: string[] = [];
 	if (record.weightKg != null && !Number.isNaN(record.weightKg)) {
-		parts.push(`${trimNumber(record.weightKg)} кг`);
+		parts.push(`${trimNumber(record.weightKg)} ${translate(locale, 'pr.kg')}`);
 	}
 	if (record.reps != null && !Number.isNaN(record.reps)) {
-		parts.push(`${record.reps} повт.`);
+		parts.push(`${record.reps} ${translate(locale, 'pr.repsShort')}`);
 	}
 	if (parts.length === 0 && record.note.trim()) {
 		return record.note.trim();

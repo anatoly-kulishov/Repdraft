@@ -1,17 +1,5 @@
 declare module 'gifenc' {
-	export function quantize(
-		rgba: Uint8Array | Uint8ClampedArray,
-		maxColors: number,
-		options?: { format?: string }
-	): number[][];
-
-	export function applyPalette(
-		rgba: Uint8Array | Uint8ClampedArray,
-		palette: number[][],
-		format?: string
-	): Uint8Array;
-
-	export function GIFEncoder(options?: { auto?: boolean }): {
+	type GifEncoderInstance = {
 		writeFrame: (
 			index: Uint8Array,
 			width: number,
@@ -21,4 +9,21 @@ declare module 'gifenc' {
 		finish: () => void;
 		bytes: () => Uint8Array;
 	};
+
+	type GifencApi = {
+		quantize: (
+			rgba: Uint8Array | Uint8ClampedArray,
+			maxColors: number,
+			options?: { format?: string }
+		) => number[][];
+		applyPalette: (
+			rgba: Uint8Array | Uint8ClampedArray,
+			palette: number[][],
+			format?: string
+		) => Uint8Array;
+		GIFEncoder: (options?: { auto?: boolean }) => GifEncoderInstance;
+	};
+
+	const gifenc: GifencApi;
+	export default gifenc;
 }

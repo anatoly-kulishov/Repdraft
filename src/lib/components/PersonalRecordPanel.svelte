@@ -1,13 +1,16 @@
 <script lang="ts">
 	import { createEmptyRecord, formatPersonalRecord, isRecordEmpty } from '$lib/domain/records';
 	import type { PersonalRecord } from '$lib/domain/types';
+	import { translate } from '$lib/i18n/messages';
 	import { records } from '$lib/stores/records';
+	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 
 	let { exerciseId }: { exerciseId: string } = $props();
 
 	let form = $state<PersonalRecord>(createEmptyRecord(''));
 	let hasSaved = $state(false);
+	let lang = $derived($resolvedLocale);
 
 	$effect(() => {
 		$records;
@@ -32,15 +35,15 @@
 			updatedAt: new Date().toISOString()
 		};
 		if (isRecordEmpty(next)) {
-			toasts.show('Укажите вес, повторы или заметку', 'info');
+			toasts.show(translate(lang, 'pr.needValue'), 'info');
 			return;
 		}
 		try {
 			await records.save(next);
 			hasSaved = true;
-			toasts.show('Рекорд сохранён', 'success');
+			toasts.show(translate(lang, 'pr.saved'), 'success');
 		} catch (err) {
-			toasts.show(err instanceof Error ? err.message : 'Не удалось сохранить', 'error');
+			toasts.show(err instanceof Error ? err.message : translate(lang, 'pr.saveFail'), 'error');
 		}
 	}
 
@@ -49,35 +52,37 @@
 			form = createEmptyRecord(exerciseId);
 			return;
 		}
-		if (!confirm('Удалить личный рекорд для этого упражнения?')) return;
+		if (!confirm(translate(lang, 'pr.confirmDelete'))) return;
 		try {
 			await records.remove(exerciseId);
 			form = createEmptyRecord(exerciseId);
 			hasSaved = false;
-			toasts.show('Рекорд удалён', 'info');
+			toasts.show(translate(lang, 'pr.deleted'), 'info');
 		} catch (err) {
-			toasts.show(err instanceof Error ? err.message : 'Не удалось удалить', 'error');
+			toasts.show(err instanceof Error ? err.message : translate(lang, 'pr.deleteFail'), 'error');
 		}
 	}
 
-	let preview = $derived(formatPersonalRecord(form));
+	let preview = $derived(formatPersonalRecord(form, lang));
 </script>
 
-<section class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+<section class="panel">
 	<div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-		<h2 class="font-[family-name:var(--font-display)] text-xl">Личный рекорд</h2>
-		<p class="text-xs text-[var(--color-muted)]">По желанию — синхронизируется при входе в аккаунт</p>
+		<h2 class="section-title">{translate(lang, 'pr.title')}</h2>
+		<p class="text-xs text-[var(--color-muted)]">{translate(lang, 'pr.hint')}</p>
 	</div>
 
 	{#if hasSaved && preview}
-		<p class="mb-3 rounded-lg bg-[color-mix(in_srgb,var(--color-accent)_12%,white)] px-3 py-2 text-sm font-semibold text-[var(--color-accent)]">
-			Сейчас: {preview}
+		<p
+			class="mb-3 rounded-lg bg-[color-mix(in_srgb,var(--color-accent)_12%,white)] px-3 py-2 text-sm font-semibold text-[var(--color-accent)]"
+		>
+			{translate(lang, 'pr.now', { value: preview })}
 		</p>
 	{/if}
 
 	<div class="grid gap-3 sm:grid-cols-3">
-		<label class="text-xs font-medium text-[var(--color-muted)]">
-			Вес, кг
+		<label class="field-label">
+			{translate(lang, 'pr.weight')}
 			<input
 				class="field mt-1 w-full"
 				type="number"
@@ -90,8 +95,8 @@
 				}}
 			/>
 		</label>
-		<label class="text-xs font-medium text-[var(--color-muted)]">
-			Повторы
+		<label class="field-label">
+			{translate(lang, 'pr.reps')}
 			<input
 				class="field mt-1 w-full"
 				type="number"
@@ -111,22 +116,22 @@
 				}}
 			/>
 		</label>
-		<label class="text-xs font-medium text-[var(--color-muted)] sm:col-span-1">
-			Заметка
+		<label class="field-label">
+			{translate(lang, 'pr.note')}
 			<input
 				class="field mt-1 w-full"
 				type="text"
 				maxlength="120"
-				placeholder="например: пауза 2 сек"
+				placeholder={translate(lang, 'pr.notePh')}
 				bind:value={form.note}
 			/>
 		</label>
 	</div>
 
 	<div class="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-		<button type="button" class="btn-primary" onclick={onSave}>Сохранить</button>
+		<button type="button" class="btn-primary" onclick={onSave}>{translate(lang, 'pr.save')}</button>
 		<button type="button" class="btn-secondary" onclick={onClear}>
-			{hasSaved ? 'Удалить' : 'Сбросить'}
+			{hasSaved ? translate(lang, 'pr.delete') : translate(lang, 'pr.clear')}
 		</button>
 	</div>
 </section>

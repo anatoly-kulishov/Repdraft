@@ -1,12 +1,16 @@
 <script lang="ts">
+	import CommunityFeed from '$lib/components/CommunityFeed.svelte';
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import { filterExercises, uniqueSorted } from '$lib/domain/filters';
 	import { formatPersonalRecord } from '$lib/domain/records';
 	import type { ExerciseFilters, ExerciseIndexItem } from '$lib/domain/types';
+	import { exerciseName } from '$lib/domain/exerciseName';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import { translate } from '$lib/i18n/messages';
 	import { records } from '$lib/stores/records';
+	import { resolvedLocale } from '$lib/stores/locale';
 	import { onMount } from 'svelte';
 
 	let items = $state<ExerciseIndexItem[]>([]);
@@ -19,12 +23,22 @@
 		target: 'all'
 	});
 
+	let lang = $derived($resolvedLocale);
 	let bodyParts = $derived(uniqueSorted(items, 'body_part'));
 	let equipment = $derived(uniqueSorted(items, 'equipment'));
 	let targets = $derived(uniqueSorted(items, 'target'));
-	let visible = $derived(filterExercises(items, filters));
+	let visible = $derived(filterExercises(items, filters, lang));
 	let recordLabels = $derived(
-		new Map($records.map((r) => [r.exerciseId, formatPersonalRecord(r)]))
+		new Map($records.map((r) => [r.exerciseId, formatPersonalRecord(r, lang)]))
+	);
+	let exerciseNames = $derived(
+		new Map(items.map((item) => [item.id, exerciseName(item, lang)]))
+	);
+	let filtersActive = $derived(
+		Boolean(filters.query.trim()) ||
+			filters.bodyPart !== 'all' ||
+			filters.equipment !== 'all' ||
+			filters.target !== 'all'
 	);
 
 	onMount(() => {
@@ -55,31 +69,39 @@
 </script>
 
 <svelte:head>
-	<title>Каталог — Repdraft</title>
+	<title>{translate(lang, 'catalog.title')} — Repdraft</title>
 </svelte:head>
 
 <section>
 	<div class="mb-3">
-		<h1 class="font-[family-name:var(--font-display)] text-2xl leading-tight text-[var(--color-ink)] md:text-3xl">
-			Каталог упражнений
-		</h1>
-		<p class="mt-1 text-sm text-[var(--color-muted)]">
-			Соберите тренировку из 1300+ упражнений.
-		</p>
+		<h1 class="page-title">{translate(lang, 'catalog.title')}</h1>
+		<p class="page-lead">{translate(lang, 'catalog.lead')}</p>
 	</div>
+
+	{#if !filtersActive}
+		<CommunityFeed {exerciseNames} />
+	{/if}
 
 	<FilterBar bind:filters {bodyParts} {equipment} {targets} />
 
 	{#if loading}
-		<p class="text-sm text-[var(--color-muted)]">Загрузка каталога…</p>
+		<div class="catalog-grid grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+			{#each Array.from({ length: 10 }, (_, i) => i) as i (i)}
+				<div
+					class="aspect-[3/4] animate-pulse rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]"
+				></div>
+			{/each}
+		</div>
 	{:else if error}
-		<EmptyState title="Данные не найдены" description={error} />
+		<EmptyState title={translate(lang, 'catalog.dataMissing')} description={error} />
 	{:else}
-		<p class="mb-3 text-sm text-[var(--color-muted)]">{visible.length} упражнений</p>
+		<p class="mb-3 text-sm text-[var(--color-muted)]">
+			{translate(lang, 'catalog.count', { n: visible.length })}
+		</p>
 		{#if visible.length === 0}
 			<EmptyState
-				title="Ничего не найдено"
-				description="Сбросьте фильтры или измените поисковый запрос."
+				title={translate(lang, 'catalog.emptyTitle')}
+				description={translate(lang, 'catalog.emptyDesc')}
 			/>
 		{:else}
 			<div class="catalog-grid grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
