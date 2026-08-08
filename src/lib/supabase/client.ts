@@ -4,15 +4,25 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 let client: SupabaseClient | null = null;
 
+function publicUrl(): string {
+	return (env.PUBLIC_SUPABASE_URL ?? '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
+}
+
+function publicAnonKey(): string {
+	return (env.PUBLIC_SUPABASE_ANON_KEY ?? '').trim();
+}
+
 export function isSupabaseConfigured(): boolean {
-	return Boolean(env.PUBLIC_SUPABASE_URL && env.PUBLIC_SUPABASE_ANON_KEY);
+	const url = publicUrl();
+	const key = publicAnonKey();
+	return Boolean(url.startsWith('https://') && key.startsWith('eyJ'));
 }
 
 export function getSupabase(): SupabaseClient | null {
 	if (!isSupabaseConfigured()) return null;
 	if (!browser) return null;
 	if (!client) {
-		client = createClient(env.PUBLIC_SUPABASE_URL!, env.PUBLIC_SUPABASE_ANON_KEY!, {
+		client = createClient(publicUrl(), publicAnonKey(), {
 			auth: {
 				persistSession: true,
 				autoRefreshToken: true,
