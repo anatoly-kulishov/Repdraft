@@ -17,6 +17,12 @@ https://gymvisual.com/content/3-terms-and-conditions-of-use
 
 Cloning this repository does **not** grant media rights beyond what Gym visual's terms allow.
 
+## Brand mark (logo)
+
+The Repdraft app icon / wordmark mark (dumbbell on teal) in `src/lib/assets/` and `static/icon.svg`
+is **original artwork for this project**, released under the same MIT License as the application
+source. You may use it with Repdraft forks and deployments without a separate icon license.
+
 ## Dataset (non-media)
 
 Exercise metadata and multilingual instructions are separate from the media and are released

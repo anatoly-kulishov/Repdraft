@@ -1,78 +1,43 @@
 # Repdraft
 
-Каталог упражнений и конструктор тренировок. Данные и медиа в `static/`. Планы и рекорды можно хранить локально или в облаке (**Supabase**), чтобы заходить с телефона и компьютера под одним аккаунтом.
+Каталог упражнений и конструктор тренировок. Данные в `static/`. Планы и рекорды - локально или в **Supabase**.
 
 ## Возможности
 
-- Каталог с поиском и фильтрами
-- Карточка упражнения: GIF, RU-инструкции
-- Конструктор тренировок (подходы / повторы / отдых)
-- Личные рекорды (опционально)
-- Аккаунт + синхронизация планов и рекордов через Supabase
-- Техника сообщества: короткое видео → GIF на карточке упражнения (обмен ссылкой)
+- Каталог, поиск, фильтры
+- Карточка упражнения (GIF, инструкции)
+- Конструктор тренировок
+- Личные рекорды
+- Аккаунт и синхронизация (Supabase)
+- Техника сообщества: видео → GIF
 
-## Запуск локально
+## Запуск
 
 ```bash
-cd ~/WebstormProjects/repdraft
 npm install
-cp .env.example .env   # затем впишите ключи Supabase (или оставьте пустым для только-локального режима)
+cp .env.example .env   # ключи Supabase опциональны
 npm run dev
 ```
 
-Без `.env` приложение работает как раньше — всё в `localStorage` на устройстве.
+Без `.env` всё остаётся в `localStorage`.
 
-## Облако (Supabase) — чтобы открывать с телефона
+## Supabase
 
-### 1. Проект
-
-1. Создайте проект на [supabase.com](https://supabase.com)
-2. **SQL Editor** → вставьте и выполните [`supabase/schema.sql`](./supabase/schema.sql)
-3. **Project Settings → API** → скопируйте `Project URL` и `anon public` key
-4. В корне Repdraft:
-
-```bash
-cp .env.example .env
-```
+Схему БД и миграции держите **вне публичного репозитория** (локально / в приватном хранилище). В `.env` и на хостинге:
 
 ```env
 PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
+PUBLIC_SUPABASE_ANON_KEY=your_anon_or_publishable_key
 ```
 
-5. В Supabase: **Authentication → Providers → Email** — для удобства на старте можно выключить **Confirm email**, чтобы сразу входить с телефона без письма.
-
-6. Перезапустите `npm run dev`, откройте **/auth**, зарегистрируйтесь.
-
-При входе локальные планы/рекорды, которых ещё нет в облаке, подтягиваются наверх. Дальше CRUD идёт в Postgres (RLS: только свои строки).
-
-### Техника сообщества (видео → GIF)
-
-1. В **SQL Editor** выполните ещё [`supabase/technique_clips.sql`](./supabase/technique_clips.sql) — таблица `technique_clips` и bucket `technique-gifs`.
-2. На карточке упражнения войдите в аккаунт, загрузите короткое видео (до ~6 сек / 15 МБ).
-3. Браузер сделает GIF локально, затем можно опубликовать. GIF читают все; публиковать и удалять — только свой аккаунт.
-
-### 2. Деплой (доступ по ссылке с телефона)
-
-Удобный вариант — [Vercel](https://vercel.com):
-
-1. Залейте репозиторий на GitHub
-2. Import в Vercel, Framework: SvelteKit
-3. Environment Variables: те же `PUBLIC_SUPABASE_URL` и `PUBLIC_SUPABASE_ANON_KEY`
-4. Deploy → откройте URL на телефоне, войдите в тот же аккаунт
-
-В Supabase → **Authentication → URL Configuration** добавьте production URL в **Site URL** / **Redirect URLs**.
+На проде задайте те же переменные и добавьте URL сайта в Supabase Auth (Site URL / Redirect URLs).
 
 ## Стек
 
-- SvelteKit + TypeScript + Tailwind CSS 4
-- Supabase Auth + Postgres (опционально)
-- Домен в `src/lib/domain`, репозитории local / supabase
+SvelteKit, TypeScript, Tailwind CSS 4, Supabase (опционально).
+
+Стандарты кода и слои: [AGENTS.md](./AGENTS.md).
 
 ## Лицензия медиа
 
 Медиа упражнений © [Gym visual](https://gymvisual.com/). См. [NOTICE.md](./NOTICE.md).
-
-## Roadmap → Mobile
-
-Веб уже открывается с телефона. Нативный клиент (Expo) позже может использовать тот же Supabase и `packages/core`.

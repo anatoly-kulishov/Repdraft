@@ -4,29 +4,23 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 let client: SupabaseClient | null = null;
 
-/** Public anon JWT for this Supabase project (safe in the browser; RLS still applies). */
-const PROJECT_URL = 'https://eljdfxkcxjbgwvimvtkl.supabase.co';
-const PROJECT_ANON_KEY =
-	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsamRmeGtjeGpiZ3d2aW12dGtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNDkwMzMsImV4cCI6MjEwMDcyNTAzM30.Hd7BK5O3cvPUR3dyFBn0qckTxr0esNzLcQ5D736Thxc';
-
 function publicUrl(): string {
-	const fromEnv = (env.PUBLIC_SUPABASE_URL ?? '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
-	if (fromEnv.startsWith('https://')) return fromEnv;
-	return PROJECT_URL;
+	return (env.PUBLIC_SUPABASE_URL ?? '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
 }
 
 function publicAnonKey(): string {
 	let key = (env.PUBLIC_SUPABASE_ANON_KEY ?? '').trim();
-	// Repair truncated eyJ… paste and reject swapped URL-as-key from bad Vercel env.
+	// Repair truncated eyJ… paste from bad env paste.
 	if (key.startsWith('yJhbGciOi') && !key.startsWith('eyJ')) {
 		key = `e${key}`;
 	}
-	if (key.startsWith('eyJ')) return key;
-	return PROJECT_ANON_KEY;
+	return key;
 }
 
 export function isSupabaseConfigured(): boolean {
-	return Boolean(publicUrl().startsWith('https://') && publicAnonKey().startsWith('eyJ'));
+	const url = publicUrl();
+	const key = publicAnonKey();
+	return url.startsWith('https://') && (key.startsWith('eyJ') || key.startsWith('sb_'));
 }
 
 export function getSupabase(): SupabaseClient | null {

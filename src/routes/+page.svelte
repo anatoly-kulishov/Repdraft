@@ -3,7 +3,7 @@
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
-	import { filterExercises, uniqueSorted } from '$lib/domain/filters';
+	import { filterExercises } from '$lib/domain/filters';
 	import { formatPersonalRecord } from '$lib/domain/records';
 	import type { ExerciseFilters, ExerciseIndexItem } from '$lib/domain/types';
 	import { exerciseName } from '$lib/domain/exerciseName';
@@ -13,9 +13,14 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { onMount } from 'svelte';
 
+	const PAGE_SIZE = 24;
+
+	let { data } = $props();
+
 	let items = $state<ExerciseIndexItem[]>([]);
-	let loading = $state(true);
-	let error = $state<string | null>(null);
+	let indexReady = $state(false);
+	let visibleLimit = $state(PAGE_SIZE);
+	let feedReady = $state(false);
 	let filters = $state<ExerciseFilters>({
 		query: '',
 		bodyPart: 'all',
@@ -24,79 +29,128 @@
 	});
 
 	let lang = $derived($resolvedLocale);
-	let bodyParts = $derived(uniqueSorted(items, 'body_part'));
-	let equipment = $derived(uniqueSorted(items, 'equipment'));
-	let targets = $derived(uniqueSorted(items, 'target'));
-	let visible = $derived(filterExercises(items, filters, lang));
-	let recordLabels = $derived(
-		new Map($records.map((r) => [r.exerciseId, formatPersonalRecord(r, lang)]))
-	);
-	let exerciseNames = $derived(
-		new Map(items.map((item) => [item.id, exerciseName(item, lang)]))
-	);
+	let catalog = $derived(indexReady && items.length > 0 ? items : data.boot);
+	let bodyParts = $derived(data.bodyParts);
+	let equipment = $derived(data.equipment);
+	let targets = $derived(data.targets);
+	let visible = $derived(filterExercises(catalog, filters, lang));
+	let shown = $derived(visible.slice(0, visibleLimit));
 	let filtersActive = $derived(
 		Boolean(filters.query.trim()) ||
 			filters.bodyPart !== 'all' ||
 			filters.equipment !== 'all' ||
 			filters.target !== 'all'
 	);
-
-	onMount(() => {
-		records.refresh();
-	});
+	let totalForCount = $derived(indexReady ? visible.length : data.totalCount);
+	let hasMore = $derived(
+		indexReady ? visibleLimit < visible.length : visibleLimit < data.totalCount && !filtersActive
+	);
+	let recordLabels = $derived(
+		new Map($records.map((r) => [r.exerciseId, formatPersonalRecord(r, lang)]))
+	);
+	let exerciseNames = $derived(
+		new Map(catalog.map((item) => [item.id, exerciseName(item, lang)]))
+	);
+	let preloadImages = $derived(shown.slice(0, 4).map((item) => `/${item.image}`));
+	let error = $derived(data.indexError);
 
 	$effect(() => {
+		filters.query;
+		filters.bodyPart;
+		filters.equipment;
+		filters.target;
+		lang;
+		visibleLimit = PAGE_SIZE;
+	});
+
+	onMount(() => {
+		const w = window as Window & {
+			requestIdleCallback?: (cb: IdleRequestCallback, opts?: IdleRequestOptions) => number;
+			cancelIdleCallback?: (id: number) => void;
+		};
+		let idleIds: number[] = [];
+		let timeoutIds: ReturnType<typeof setTimeout>[] = [];
 		let cancelled = false;
-		loading = true;
-		error = null;
-		loadExerciseIndex()
-			.then((data) => {
-				if (!cancelled) {
-					items = data;
-					loading = false;
-				}
+
+		const scheduleIdle = (fn: () => void, timeout: number) => {
+			if (typeof w.requestIdleCallback === 'function') {
+				idleIds.push(w.requestIdleCallback(fn, { timeout }));
+			} else {
+				timeoutIds.push(setTimeout(fn, Math.min(timeout, 400)));
+			}
+		};
+
+		// Full index for search — after first cards are on screen.
+		void loadExerciseIndex()
+			.then((all) => {
+				if (cancelled) return;
+				items = all;
+				indexReady = true;
 			})
-			.catch((err: Error) => {
-				if (!cancelled) {
-					error = err.message;
-					loading = false;
-				}
+			.catch(() => {
+				/* boot page still works */
 			});
+
+		scheduleIdle(() => records.refresh(), 2000);
+		// Feed: skeleton shows immediately; real GIFs start after load + idle.
+		const revealFeed = () => {
+			feedReady = true;
+		};
+		const onLoad = () => scheduleIdle(revealFeed, 800);
+		if (document.readyState === 'complete') onLoad();
+		else window.addEventListener('load', onLoad, { once: true });
+
 		return () => {
 			cancelled = true;
+			for (const id of idleIds) w.cancelIdleCallback?.(id);
+			for (const id of timeoutIds) clearTimeout(id);
+			window.removeEventListener('load', onLoad);
 		};
 	});
+
+	function loadMore() {
+		if (!indexReady) {
+			// Wait until full index is in memory before paging past boot.
+			void loadExerciseIndex().then((all) => {
+				items = all;
+				indexReady = true;
+				visibleLimit = Math.min(all.length, visibleLimit + PAGE_SIZE);
+			});
+			return;
+		}
+		visibleLimit = Math.min(visible.length, visibleLimit + PAGE_SIZE);
+	}
 </script>
 
 <svelte:head>
 	<title>{translate(lang, 'catalog.title')} — Repdraft</title>
+	{#each preloadImages as href (href)}
+		<link rel="preload" as="image" {href} fetchpriority="high" />
+	{/each}
 </svelte:head>
 
-<section>
-	<div class="mb-3">
-		<h1 class="page-title">{translate(lang, 'catalog.title')}</h1>
+<section aria-labelledby="catalog-heading">
+	<div class="page-header">
+		<h1 id="catalog-heading" class="page-title">{translate(lang, 'catalog.title')}</h1>
 		<p class="page-lead">{translate(lang, 'catalog.lead')}</p>
 	</div>
 
 	{#if !filtersActive}
-		<CommunityFeed {exerciseNames} />
+		<div class="soft-enter">
+			<CommunityFeed {exerciseNames} start={feedReady} />
+		</div>
 	{/if}
 
 	<FilterBar bind:filters {bodyParts} {equipment} {targets} />
 
-	{#if loading}
-		<div class="catalog-grid grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-			{#each Array.from({ length: 10 }, (_, i) => i) as i (i)}
-				<div
-					class="aspect-[3/4] animate-pulse rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]"
-				></div>
-			{/each}
-		</div>
-	{:else if error}
+	{#if error}
 		<EmptyState title={translate(lang, 'catalog.dataMissing')} description={error} />
 	{:else}
-		<p class="mb-3 text-sm text-[var(--color-muted)]">
-			{translate(lang, 'catalog.count', { n: visible.length })}
+		<p class="mb-4 text-sm text-[var(--color-muted)]" aria-live="polite">
+			{translate(lang, 'catalog.countShown', {
+				shown: shown.length,
+				n: indexReady || filtersActive ? visible.length : totalForCount
+			})}
 		</p>
 		{#if visible.length === 0}
 			<EmptyState
@@ -104,11 +158,27 @@
 				description={translate(lang, 'catalog.emptyDesc')}
 			/>
 		{:else}
-			<div class="catalog-grid grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-				{#each visible as exercise (exercise.id)}
-					<ExerciseCard {exercise} recordLabel={recordLabels.get(exercise.id) ?? null} />
+			<div class="catalog-grid soft-enter grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+				{#each shown as exercise, i (exercise.id)}
+					<ExerciseCard
+						{exercise}
+						recordLabel={recordLabels.get(exercise.id) ?? null}
+						priority={i < 4}
+					/>
 				{/each}
 			</div>
+			{#if hasMore}
+				<div class="mt-5 flex justify-center">
+					<button type="button" class="btn-secondary min-w-[12rem]" onclick={loadMore}>
+						{translate(lang, 'catalog.loadMore', {
+							n: Math.min(
+								PAGE_SIZE,
+								(indexReady ? visible.length : data.totalCount) - shown.length
+							)
+						})}
+					</button>
+				</div>
+			{/if}
 		{/if}
 	{/if}
 </section>

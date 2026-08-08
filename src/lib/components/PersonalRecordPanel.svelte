@@ -128,9 +128,9 @@
 		</label>
 	</div>
 
-	<div class="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+	<div class="mt-3 flex flex-wrap items-center gap-2">
 		<button type="button" class="btn-primary" onclick={onSave}>{translate(lang, 'pr.save')}</button>
-		<button type="button" class="btn-secondary" onclick={onClear}>
+		<button type="button" class="btn-link text-sm" onclick={onClear}>
 			{hasSaved ? translate(lang, 'pr.delete') : translate(lang, 'pr.clear')}
 		</button>
 	</div>

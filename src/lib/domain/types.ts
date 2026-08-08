@@ -21,7 +21,8 @@ export type ExerciseIndexItem = {
 	muscle_group: string;
 	secondary_muscles: string[];
 	image: string;
-	gif_url: string;
+	/** Present on full exercise payloads; omitted from the slim catalog index. */
+	gif_url?: string;
 };
 
 export type Exercise = ExerciseIndexItem & {
@@ -31,6 +32,7 @@ export type Exercise = ExerciseIndexItem & {
 	media_id: string;
 	attribution: string;
 	created_at: string;
+	gif_url: string;
 };
 
 export type WorkoutExercise = {
@@ -38,6 +40,8 @@ export type WorkoutExercise = {
 	sets: number;
 	reps: number;
 	restSec: number;
+	/** Same id = one superset / giant set (contiguous block in the list). */
+	groupId?: string | null;
 };
 
 export type WorkoutPlan = {
