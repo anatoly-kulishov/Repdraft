@@ -59,12 +59,12 @@
 </svelte:head>
 
 <section>
-	<div class="mb-2">
-		<h1 class="font-[family-name:var(--font-display)] text-2xl text-[var(--color-ink)] md:text-3xl">
+	<div class="mb-3">
+		<h1 class="font-[family-name:var(--font-display)] text-2xl leading-tight text-[var(--color-ink)] md:text-3xl">
 			Каталог упражнений
 		</h1>
 		<p class="mt-1 text-sm text-[var(--color-muted)]">
-			Соберите тренировку из 1300+ упражнений с анимациями и инструкциями.
+			Соберите тренировку из 1300+ упражнений.
 		</p>
 	</div>
 
@@ -82,7 +82,7 @@
 				description="Сбросьте фильтры или измените поисковый запрос."
 			/>
 		{:else}
-			<div class="catalog-grid grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+			<div class="catalog-grid grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 				{#each visible as exercise (exercise.id)}
 					<ExerciseCard {exercise} recordLabel={recordLabels.get(exercise.id) ?? null} />
 				{/each}

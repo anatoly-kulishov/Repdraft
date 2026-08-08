@@ -79,8 +79,8 @@
 							{plan.exercises.length} упр. · {formatDate(plan.updatedAt)}
 						</p>
 					</div>
-					<div class="flex flex-wrap gap-2">
-						<a class="btn-primary" href={`/builder/${plan.id}`}>Открыть</a>
+					<div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+						<a class="btn-primary col-span-2 sm:col-span-1" href={`/builder/${plan.id}`}>Открыть</a>
 						<button type="button" class="btn-secondary" onclick={() => void onDuplicate(plan.id)}>
 							Дублировать
 						</button>

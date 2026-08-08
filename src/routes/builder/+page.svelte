@@ -47,13 +47,13 @@
 	<title>Конструктор — Repdraft</title>
 </svelte:head>
 
-<section class="pb-24">
-	<div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+<section class="pb-28 md:pb-24">
+	<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 		<div>
 			<h1 class="font-[family-name:var(--font-display)] text-2xl md:text-3xl">Конструктор</h1>
 			<p class="mt-1 text-sm text-[var(--color-muted)]">Соберите план: подходы, повторы и отдых.</p>
 		</div>
-		<button type="button" class="btn-secondary" onclick={newWorkout}>Новая тренировка</button>
+		<button type="button" class="btn-secondary w-full sm:w-auto" onclick={newWorkout}>Новая тренировка</button>
 	</div>
 
 	<label class="mb-4 block text-sm font-medium text-[var(--color-muted)]">
@@ -96,15 +96,20 @@
 		</div>
 	{/if}
 
-	<div
-		class="fixed inset-x-0 bottom-14 z-30 border-t border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-surface)_94%,white)] px-4 py-3 backdrop-blur md:bottom-0"
-	>
-		<div class="mx-auto flex max-w-6xl flex-wrap items-center gap-2">
-			<button type="button" class="btn-primary" onclick={save} disabled={$draft.exercises.length === 0}>
+	<div class="sticky-actions">
+		<div class="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+			<button
+				type="button"
+				class="btn-primary btn-block sm:w-auto"
+				onclick={save}
+				disabled={$draft.exercises.length === 0}
+			>
 				Сохранить
 			</button>
-			<button type="button" class="btn-secondary" onclick={clearDraft}>Очистить черновик</button>
-			<a class="btn-ghost px-3" href="/">К каталогу</a>
+			<div class="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
+				<button type="button" class="btn-secondary" onclick={clearDraft}>Очистить</button>
+				<a class="btn-secondary" href="/">К каталогу</a>
+			</div>
 		</div>
 	</div>
 </section>

@@ -123,8 +123,8 @@
 		</label>
 	</div>
 
-	<div class="mt-3 flex flex-wrap gap-2">
-		<button type="button" class="btn-primary" onclick={onSave}>Сохранить рекорд</button>
+	<div class="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+		<button type="button" class="btn-primary" onclick={onSave}>Сохранить</button>
 		<button type="button" class="btn-secondary" onclick={onClear}>
 			{hasSaved ? 'Удалить' : 'Сбросить'}
 		</button>

@@ -11,6 +11,10 @@
 	--color-border: #c5ced8;
 	--font-display: 'Syne', system-ui, sans-serif;
 	--font-body: 'Manrope', system-ui, sans-serif;
+	--header-h: 3.5rem;
+	--tabbar-h: 4rem;
+	--safe-bottom: env(safe-area-inset-bottom, 0px);
+	--safe-top: env(safe-area-inset-top, 0px);
 }
 
 html,
@@ -28,6 +32,8 @@ body {
 			rgb(18 20 26 / 0.03) 11px,
 			rgb(18 20 26 / 0.03) 12px
 		);
+	-webkit-tap-highlight-color: transparent;
+	text-size-adjust: 100%;
 }
 
 * {
@@ -39,13 +45,23 @@ a {
 	text-decoration: none;
 }
 
+button,
+a,
+input,
+select {
+	touch-action: manipulation;
+}
+
 .field {
 	border: 1px solid var(--color-border);
-	border-radius: 0.6rem;
+	border-radius: 0.65rem;
 	background: var(--color-surface);
-	padding: 0.55rem 0.75rem;
+	padding: 0.7rem 0.85rem;
 	font: inherit;
+	font-size: 16px; /* avoid iOS zoom on focus */
 	color: var(--color-ink);
+	width: 100%;
+	max-width: 100%;
 }
 
 .field:focus {
@@ -54,37 +70,39 @@ a {
 	border-color: var(--color-accent);
 }
 
-.btn-primary {
+.btn-primary,
+.btn-secondary {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 0.35rem;
-	border-radius: 0.65rem;
+	border-radius: 0.7rem;
+	font-weight: 600;
+	padding: 0.75rem 1rem;
+	min-height: 2.75rem;
+	cursor: pointer;
+	transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.btn-primary {
 	background: var(--color-accent);
 	color: white;
-	font-weight: 600;
-	padding: 0.65rem 1rem;
 	border: none;
-	cursor: pointer;
-	transition: background 160ms ease, transform 160ms ease;
 }
 
 .btn-primary:hover {
 	background: var(--color-accent-hover);
 }
 
+.btn-primary:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
 .btn-secondary {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.35rem;
-	border-radius: 0.65rem;
 	background: var(--color-surface);
 	color: var(--color-ink);
-	font-weight: 600;
-	padding: 0.65rem 1rem;
 	border: 1px solid var(--color-border);
-	cursor: pointer;
 }
 
 .btn-secondary:hover {
@@ -96,9 +114,9 @@ a {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 2rem;
-	min-height: 2rem;
-	border-radius: 0.5rem;
+	min-width: 2.5rem;
+	min-height: 2.5rem;
+	border-radius: 0.6rem;
 	border: 1px solid var(--color-border);
 	background: var(--color-surface);
 	color: var(--color-ink);
@@ -108,6 +126,10 @@ a {
 .btn-ghost:disabled {
 	opacity: 0.4;
 	cursor: not-allowed;
+}
+
+.btn-block {
+	width: 100%;
 }
 
 .sr-only {
@@ -151,4 +173,56 @@ a {
 
 .catalog-grid {
 	animation: fadeIn 220ms ease;
+}
+
+.tab-link {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.15rem;
+	min-height: 3rem;
+	padding: 0.25rem 0.2rem;
+	border-radius: 0.6rem;
+	font-size: 0.65rem;
+	font-weight: 500;
+	line-height: 1.1;
+	color: var(--color-muted);
+}
+
+.tab-link[data-active='true'] {
+	color: var(--color-accent);
+	font-weight: 700;
+}
+
+.tab-link svg {
+	width: 1.35rem;
+	height: 1.35rem;
+	stroke: currentColor;
+	fill: none;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.sticky-actions {
+	position: fixed;
+	inset-inline: 0;
+	bottom: calc(var(--tabbar-h) + var(--safe-bottom));
+	z-index: 30;
+	border-top: 1px solid var(--color-border);
+	background: color-mix(in srgb, var(--color-surface) 94%, white);
+	backdrop-filter: blur(10px);
+	padding: 0.75rem 1rem;
+}
+
+@media (min-width: 768px) {
+	.sticky-actions {
+		bottom: 0;
+		padding-bottom: calc(0.75rem + var(--safe-bottom));
+	}
+
+	.field {
+		font-size: inherit;
+	}
 }

@@ -21,12 +21,12 @@
 		void auth.init();
 	});
 
+	function isActive(href: string): boolean {
+		return href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`);
+	}
+
 	function navClass(href: string): string {
-		const active =
-			href === '/'
-				? path === '/'
-				: path === href || path.startsWith(`${href}/`);
-		return active
+		return isActive(href)
 			? 'text-[var(--color-accent)] font-semibold'
 			: 'text-[var(--color-muted)] hover:text-[var(--color-ink)]';
 	}
@@ -34,13 +34,19 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
+	<meta name="theme-color" content="#0f766e" />
 	<title>Repdraft</title>
 </svelte:head>
 
-<div class="flex min-h-screen flex-col pb-16 md:pb-0">
-	<header class="border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-surface)_88%,white)] backdrop-blur">
-		<div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-6">
-			<a href="/" class="font-[family-name:var(--font-display)] text-2xl font-800 tracking-tight text-[var(--color-ink)] md:text-3xl">
+<div class="app-shell flex min-h-dvh flex-col">
+	<header
+		class="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-surface)_90%,white)] pt-[var(--safe-top)] backdrop-blur"
+	>
+		<div class="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 md:h-16 md:px-6">
+			<a
+				href="/"
+				class="font-[family-name:var(--font-display)] text-[1.45rem] font-extrabold tracking-tight text-[var(--color-ink)] md:text-3xl"
+			>
 				Repdraft
 			</a>
 			<nav class="hidden items-center gap-4 text-sm md:flex lg:gap-5">
@@ -59,30 +65,50 @@
 				<a class={navClass('/records')} href="/records">Рекорды</a>
 				<a class={navClass('/auth')} href="/auth">{accountLabel}</a>
 			</nav>
-			<a class={`text-sm md:hidden ${navClass('/auth')}`} href="/auth">{accountLabel}</a>
+			<a
+				class={`inline-flex min-h-10 items-center rounded-lg px-2 text-sm font-semibold md:hidden ${navClass('/auth')}`}
+				href="/auth"
+			>
+				{accountLabel}
+			</a>
 		</div>
 	</header>
 
-	<main class="mx-auto w-full max-w-6xl flex-1 px-4 py-4 md:px-6 md:py-6">
+	<main class="mx-auto w-full max-w-6xl flex-1 px-4 py-4 pb-[calc(var(--tabbar-h)+var(--safe-bottom)+1rem)] md:px-6 md:py-6 md:pb-8">
 		{@render children()}
 	</main>
 
-	<AttributionFooter />
+	<div class="hidden md:block">
+		<AttributionFooter />
+	</div>
 
 	<nav
-		class="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-[var(--color-border)] bg-[var(--color-surface)] px-1 py-2 text-[11px] md:hidden"
+		class="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-surface)_96%,white)] pb-[var(--safe-bottom)] backdrop-blur md:hidden"
+		aria-label="Основная навигация"
 	>
-		<a class={`flex flex-col items-center gap-1 py-1 ${navClass('/')}`} href="/">Каталог</a>
-		<a class={`relative flex flex-col items-center gap-1 py-1 ${navClass('/builder')}`} href="/builder">
-			Черновик
-			{#if draftCount > 0}
-				<span class="absolute right-2 top-0 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-accent)] px-1 text-[10px] font-bold text-white">
-					{draftCount}
-				</span>
-			{/if}
-		</a>
-		<a class={`flex flex-col items-center gap-1 py-1 ${navClass('/workouts')}`} href="/workouts">Планы</a>
-		<a class={`flex flex-col items-center gap-1 py-1 ${navClass('/records')}`} href="/records">Рекорды</a>
+		<div class="mx-auto grid h-[var(--tabbar-h)] max-w-lg grid-cols-4 px-1">
+			<a class="tab-link relative" data-active={isActive('/')} href="/" aria-current={isActive('/') ? 'page' : undefined}>
+				<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+				Каталог
+			</a>
+			<a class="tab-link relative" data-active={isActive('/builder')} href="/builder" aria-current={isActive('/builder') ? 'page' : undefined}>
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+				Черновик
+				{#if draftCount > 0}
+					<span class="absolute right-[18%] top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-accent)] px-1 text-[10px] font-bold text-white">
+						{draftCount}
+					</span>
+				{/if}
+			</a>
+			<a class="tab-link" data-active={isActive('/workouts')} href="/workouts" aria-current={isActive('/workouts') ? 'page' : undefined}>
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+				Планы
+			</a>
+			<a class="tab-link" data-active={isActive('/records')} href="/records" aria-current={isActive('/records') ? 'page' : undefined}>
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17V3M7 8l5-5 5 5"/></svg>
+				Рекорды
+			</a>
+		</div>
 	</nav>
 </div>
 
