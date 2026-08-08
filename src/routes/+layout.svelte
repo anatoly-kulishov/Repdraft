@@ -2,6 +2,7 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import AttributionFooter from '$lib/components/AttributionFooter.svelte';
+	import Logo from '$lib/components/Logo.svelte';
 	import ToastStack from '$lib/components/ToastStack.svelte';
 	import { auth } from '$lib/stores/auth';
 	import { draft } from '$lib/stores/draft';
@@ -43,12 +44,7 @@
 		class="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-surface)_90%,white)] pt-[var(--safe-top)] backdrop-blur"
 	>
 		<div class="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 md:h-16 md:px-6">
-			<a
-				href="/"
-				class="font-[family-name:var(--font-display)] text-[1.45rem] font-extrabold tracking-tight text-[var(--color-ink)] md:text-3xl"
-			>
-				Repdraft
-			</a>
+			<Logo />
 			<nav class="hidden items-center gap-4 text-sm md:flex lg:gap-5">
 				<a class={navClass('/')} href="/">Каталог</a>
 				<a class={`relative ${navClass('/builder')}`} href="/builder">
