@@ -67,3 +67,37 @@ export type PersonalRecord = {
 	note: string;
 	updatedAt: string;
 };
+
+/** One logged working set during a live session. */
+export type LoggedSet = {
+	weightKg: number | null;
+	reps: number | null;
+	completed: boolean;
+};
+
+export type SessionExercise = {
+	exerciseId: string;
+	groupId?: string | null;
+	targetSets: number;
+	targetReps: number;
+	restSec: number;
+	sets: LoggedSet[];
+};
+
+/** In-progress or finished workout run (performance, not prescription). */
+export type WorkoutSession = {
+	id: string;
+	planId: string | null;
+	planName: string;
+	startedAt: string;
+	finishedAt: string | null;
+	exercises: SessionExercise[];
+};
+
+/** Compact “last time” hint for the live logger. */
+export type LastPerformance = {
+	weightKg: number | null;
+	reps: number | null;
+	sets: number;
+	finishedAt: string;
+};
