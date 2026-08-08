@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { TechniqueClip } from '$lib/domain/clips';
-	import { CLIP_LIMITS, videoFileToGif } from '$lib/media/videoToGif';
+	import { CLIP_LIMITS, clipEncodeDurationSec, videoFileToGif } from '$lib/media/videoToGif';
 	import {
 		deleteTechniqueClip,
 		listClipsForExercise,
@@ -368,7 +368,7 @@
 			>
 				<p class="text-sm font-medium">{translate(lang, 'clips.drop')}</p>
 				<p class="mt-1 text-xs text-[var(--color-muted)]">
-					{translate(lang, 'clips.limits', { sec: CLIP_LIMITS.maxDurationSec })}
+					{translate(lang, 'clips.limits', { sec: clipEncodeDurationSec() })}
 				</p>
 				<div class="mt-3 flex flex-wrap justify-center gap-2">
 					<button
