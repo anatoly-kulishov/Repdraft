@@ -5,10 +5,7 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
 	preprocess: vitePreprocess(),
 	kit: {
-		adapter: adapter({
-			// Keep the 16MB catalog out of the JS bundle; ship it as a runtime file.
-			includeFiles: ['data/exercises.full.json']
-		})
+		adapter: adapter()
 	}
 };
 

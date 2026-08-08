@@ -1,0 +1,15 @@
+---
+description: Product roadmap and competitor research for release planning
+alwaysApply: true
+---
+
+# Product roadmap
+
+Идеи и приоритеты релизов - в **`.cursor/product/market-roadmap.md`**.
+
+При планировании фич / выборе следующего `cursor/vX.Y.Z-*`:
+
+1. Читай roadmap (P0 → P1 → P2).
+2. Не предлагай пункты из «Не делать сейчас», пока P0 не закрыт.
+3. После шипа пользовательской фичи - обнови статусы в матрице того файла.
+4. Pitch продукта: RU PWA «план + техника + сессия», не клон Strong/Fitbod.
