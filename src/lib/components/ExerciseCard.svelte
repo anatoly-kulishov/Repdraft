@@ -13,30 +13,31 @@
 
 <a
 	href={`/exercise/${exercise.id}`}
-	class="exercise-card group relative flex flex-col overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] transition duration-200 hover:-translate-y-0.5 hover:border-[var(--color-accent)]"
+	class="exercise-card group relative flex flex-col overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] transition duration-200 active:scale-[0.98] md:hover:-translate-y-0.5 md:hover:border-[var(--color-accent)]"
 >
 	{#if recordLabel}
 		<span
-			class="absolute right-2 top-2 z-10 max-w-[85%] truncate rounded-md bg-[var(--color-accent)] px-1.5 py-0.5 text-[10px] font-bold text-white"
+			class="absolute right-1.5 top-1.5 z-10 max-w-[90%] truncate rounded-md bg-[var(--color-accent)] px-1.5 py-0.5 text-[10px] font-bold text-white"
 			title={recordLabel}
 		>
 			PR {recordLabel}
 		</span>
 	{/if}
-	<div class="flex aspect-square items-center justify-center bg-[var(--color-surface-muted)] p-3">
+	<div class="flex aspect-square items-center justify-center bg-[var(--color-surface-muted)] p-2 sm:p-3">
 		<img
 			src={`/${exercise.image}`}
 			alt={exercise.name}
 			width="180"
 			height="180"
 			loading="lazy"
-			class="h-[180px] w-[180px] max-h-full max-w-full object-contain"
+			decoding="async"
+			class="h-full w-full max-h-[180px] object-contain"
 		/>
 	</div>
-	<div class="flex flex-1 flex-col gap-1 p-3">
-		<h2 class="font-[family-name:var(--font-body)] text-sm font-semibold leading-snug text-[var(--color-ink)]">
+	<div class="flex flex-1 flex-col gap-0.5 p-2.5 sm:p-3">
+		<h2 class="line-clamp-2 text-[13px] font-semibold leading-snug text-[var(--color-ink)] sm:text-sm">
 			{exercise.name}
 		</h2>
-		<p class="text-xs text-[var(--color-muted)]">{labelTarget(exercise.target)}</p>
+		<p class="truncate text-[11px] text-[var(--color-muted)] sm:text-xs">{labelTarget(exercise.target)}</p>
 	</div>
 </a>

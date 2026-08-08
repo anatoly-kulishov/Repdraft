@@ -5,7 +5,7 @@
 </script>
 
 {#if items.length}
-	<div class="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 md:bottom-6">
+	<div class="pointer-events-none fixed inset-x-0 bottom-[calc(var(--tabbar-h)+var(--safe-bottom)+0.75rem)] z-50 flex flex-col items-center gap-2 px-4 md:bottom-6">
 		{#each items as toast (toast.id)}
 			<div
 				class="pointer-events-auto max-w-sm rounded-lg px-4 py-2 text-sm text-white shadow-lg animate-[fadeIn_200ms_ease]"

@@ -76,8 +76,9 @@
 		actionLabel="К каталогу"
 	/>
 {:else}
-	<article class="grid gap-6 lg:grid-cols-[280px_1fr]">
+	<article class="grid gap-5 pb-24 lg:grid-cols-[280px_1fr] lg:gap-6 lg:pb-0">
 		<div>
+			<a href="/" class="mb-3 inline-flex text-sm font-medium text-[var(--color-accent)] md:hidden">← Каталог</a>
 			<div class="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
 				<img
 					src={`/${exercise.gif_url}`}
@@ -93,12 +94,12 @@
 		<div class="flex flex-col gap-4">
 			<div>
 				<p class="text-sm text-[var(--color-muted)]">{labelBodyPart(exercise.body_part)}</p>
-				<h1 class="font-[family-name:var(--font-display)] text-3xl text-[var(--color-ink)]">
+				<h1 class="font-[family-name:var(--font-display)] text-2xl leading-tight text-[var(--color-ink)] sm:text-3xl">
 					{exercise.name}
 				</h1>
 			</div>
 
-			<dl class="grid gap-2 text-sm sm:grid-cols-2">
+			<dl class="grid gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm sm:grid-cols-2">
 				<div>
 					<dt class="text-[var(--color-muted)]">Оборудование</dt>
 					<dd class="font-medium">{labelEquipment(exercise.equipment)}</dd>
@@ -119,7 +120,7 @@
 				</div>
 			</dl>
 
-			<div class="flex flex-wrap gap-2">
+			<div class="hidden flex-wrap gap-2 md:flex">
 				<button type="button" class="btn-primary" onclick={addToDraft}>Добавить в черновик</button>
 				<a class="btn-secondary" href="/builder">Открыть конструктор</a>
 			</div>
@@ -128,7 +129,7 @@
 
 			<section>
 				<h2 class="mb-2 font-[family-name:var(--font-display)] text-xl">Как выполнять</h2>
-				<ol class="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-[var(--color-ink)]">
+				<ol class="list-decimal space-y-2.5 pl-5 text-sm leading-relaxed text-[var(--color-ink)]">
 					{#each exercise.instruction_steps.ru ?? [] as step, i (i)}
 						<li>{step}</li>
 					{/each}
@@ -136,4 +137,11 @@
 			</section>
 		</div>
 	</article>
+
+	<div class="sticky-actions md:hidden">
+		<div class="mx-auto grid max-w-6xl grid-cols-2 gap-2">
+			<button type="button" class="btn-primary" onclick={addToDraft}>В черновик</button>
+			<a class="btn-secondary" href="/builder">Конструктор</a>
+		</div>
+	</div>
 {/if}
