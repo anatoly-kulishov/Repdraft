@@ -17,7 +17,9 @@
 		targets: string[];
 	} = $props();
 
-	let filtersOpen = $state(false);
+	let filtersOpen = $state(
+		filters.bodyPart !== 'all' || filters.equipment !== 'all' || filters.target !== 'all'
+	);
 	let lang = $derived($resolvedLocale);
 
 	let activeFilterCount = $derived(

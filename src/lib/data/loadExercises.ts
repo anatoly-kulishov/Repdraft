@@ -8,7 +8,7 @@ export function loadExerciseIndex(): Promise<ExerciseIndexItem[]> {
 		indexPromise = fetch('/data/exercises.index.json')
 			.then(async (res) => {
 				if (!res.ok) {
-					throw new Error('Не удалось загрузить каталог упражнений.');
+					throw new Error('errors.catalogLoad');
 				}
 				return (await res.json()) as ExerciseIndexItem[];
 			})

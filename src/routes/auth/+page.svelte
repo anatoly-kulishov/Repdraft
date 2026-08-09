@@ -2,7 +2,7 @@
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
-	import { translate } from '$lib/i18n/messages';
+	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
@@ -16,7 +16,7 @@
 
 	async function submit() {
 		if (!$auth.configured) {
-			toasts.show('Supabase ещё не настроен — см. README', 'error');
+			toasts.show(translate(lang, 'auth.notConfigured'), 'error');
 			return;
 		}
 		loading = true;
@@ -24,16 +24,15 @@
 		try {
 			if (mode === 'signup') {
 				await auth.signUp(email.trim(), password);
-				message =
-					'Аккаунт создан. Если включено подтверждение email — проверьте почту, иначе можно сразу войти.';
-				toasts.show('Регистрация выполнена', 'success');
+				message = translate(lang, 'auth.signupOk');
+				toasts.show(translate(lang, 'auth.signupToast'), 'success');
 				mode = 'signin';
 			} else {
 				await auth.signIn(email.trim(), password);
-				toasts.show('Вы вошли — данные синхронизируются', 'success');
+				toasts.show(translate(lang, 'auth.signinToast'), 'success');
 			}
 		} catch (err) {
-			const text = err instanceof Error ? err.message : 'Ошибка входа';
+			const text = translateError(lang, err, 'auth.error');
 			message = text;
 			toasts.show(text, 'error');
 		} finally {
@@ -44,9 +43,9 @@
 	async function logout() {
 		try {
 			await auth.signOut();
-			toasts.show('Вы вышли', 'info');
+			toasts.show(translate(lang, 'auth.signedOut'), 'info');
 		} catch (err) {
-			toasts.show(err instanceof Error ? err.message : 'Ошибка выхода', 'error');
+			toasts.show(translateError(lang, err, 'auth.signOutError'), 'error');
 		}
 	}
 </script>
@@ -72,11 +71,10 @@
 		<div class="panel text-sm">
 			<p class="font-semibold">{translate(lang, 'auth.cloudOffTitle')}</p>
 			<p class="mt-2 text-[var(--color-muted)]">
-				Создайте проект на
-				<a class="underline" href="https://supabase.com" target="_blank" rel="noreferrer">supabase.com</a>,
-				примените схему БД локально, скопируйте
-				<code class="text-[var(--color-ink)]">.env.example</code> в
-				<code class="text-[var(--color-ink)]">.env</code> и укажите URL + anon key. Подробности в README.
+				{translate(lang, 'auth.cloudOffBefore')}
+				<a class="underline" href="https://supabase.com" target="_blank" rel="noreferrer"
+					>supabase.com</a
+				>{translate(lang, 'auth.cloudOffAfter')}
 			</p>
 		</div>
 	{:else if $auth.user}

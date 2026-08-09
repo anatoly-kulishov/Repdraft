@@ -22,9 +22,9 @@ function rowToRecord(row: RecordRow): PersonalRecord {
 
 async function requireUserId(): Promise<string> {
 	const supabase = getSupabase();
-	if (!supabase) throw new Error('Supabase не настроен');
+	if (!supabase) throw new Error('errors.cloudOff');
 	const { data, error } = await supabase.auth.getUser();
-	if (error || !data.user) throw new Error('Нужно войти в аккаунт');
+	if (error || !data.user) throw new Error('errors.needAuth');
 	return data.user.id;
 }
 
@@ -54,7 +54,7 @@ export const supabaseRecordRepository: RecordRepository = {
 
 	async save(record: PersonalRecord) {
 		const supabase = getSupabase();
-		if (!supabase) throw new Error('Supabase не настроен');
+		if (!supabase) throw new Error('errors.cloudOff');
 		const userId = await requireUserId();
 		const { error } = await supabase.from('personal_records').upsert(
 			{
@@ -72,7 +72,7 @@ export const supabaseRecordRepository: RecordRepository = {
 
 	async remove(exerciseId: string) {
 		const supabase = getSupabase();
-		if (!supabase) throw new Error('Supabase не настроен');
+		if (!supabase) throw new Error('errors.cloudOff');
 		const { error } = await supabase
 			.from('personal_records')
 			.delete()

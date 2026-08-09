@@ -1,4 +1,4 @@
-import type { PersonalRecord, WorkoutPlan } from './types';
+import type { PersonalRecord, WorkoutPlan, WorkoutSession } from './types';
 
 export interface WorkoutRepository {
 	list(): Promise<WorkoutPlan[]>;
@@ -14,6 +14,15 @@ export interface RecordRepository {
 	remove(exerciseId: string): Promise<void>;
 }
 
+export interface SessionRepository {
+	list(): Promise<WorkoutSession[]>;
+	get(id: string): Promise<WorkoutSession | null>;
+	save(session: WorkoutSession): Promise<void>;
+	remove(id: string): Promise<void>;
+}
+
 export const PLANS_STORAGE_KEY = 'repdraft:plans';
 export const DRAFT_STORAGE_KEY = 'repdraft:draft';
 export const RECORDS_STORAGE_KEY = 'repdraft:records';
+export const SESSIONS_STORAGE_KEY = 'repdraft:sessions';
+export const ACTIVE_SESSION_KEY = 'repdraft:active-session';

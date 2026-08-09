@@ -5,28 +5,28 @@
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import { filterExercises } from '$lib/domain/filters';
 	import { formatPersonalRecord } from '$lib/domain/records';
-	import type { ExerciseFilters, ExerciseIndexItem } from '$lib/domain/types';
+	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { translate } from '$lib/i18n/messages';
+	import { CATALOG_PAGE_SIZE, catalogUi, emptyCatalogFilters } from '$lib/stores/catalogUi';
 	import { records } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { browser } from '$app/environment';
+	import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
-
-	const PAGE_SIZE = 24;
 
 	let { data } = $props();
 
+	const saved = browser
+		? get(catalogUi)
+		: { filters: emptyCatalogFilters(), visibleLimit: CATALOG_PAGE_SIZE };
 	let items = $state<ExerciseIndexItem[]>([]);
 	let indexReady = $state(false);
-	let visibleLimit = $state(PAGE_SIZE);
+	let visibleLimit = $state(saved.visibleLimit);
 	let feedReady = $state(false);
-	let filters = $state<ExerciseFilters>({
-		query: '',
-		bodyPart: 'all',
-		equipment: 'all',
-		target: 'all'
-	});
+	let filters = $state({ ...saved.filters });
+	let filtersHydrated = $state(false);
 
 	let lang = $derived($resolvedLocale);
 	let catalog = $derived(indexReady && items.length > 0 ? items : data.boot);
@@ -55,12 +55,31 @@
 	let error = $derived(data.indexError);
 
 	$effect(() => {
+		if (!browser) return;
+		catalogUi.setFilters({
+			query: filters.query,
+			bodyPart: filters.bodyPart,
+			equipment: filters.equipment,
+			target: filters.target
+		});
+	});
+
+	$effect(() => {
+		if (!browser) return;
+		catalogUi.setVisibleLimit(visibleLimit);
+	});
+
+	$effect(() => {
 		filters.query;
 		filters.bodyPart;
 		filters.equipment;
 		filters.target;
 		lang;
-		visibleLimit = PAGE_SIZE;
+		if (!filtersHydrated) {
+			filtersHydrated = true;
+			return;
+		}
+		visibleLimit = CATALOG_PAGE_SIZE;
 	});
 
 	onMount(() => {
@@ -114,11 +133,11 @@
 			void loadExerciseIndex().then((all) => {
 				items = all;
 				indexReady = true;
-				visibleLimit = Math.min(all.length, visibleLimit + PAGE_SIZE);
+				visibleLimit = Math.min(all.length, visibleLimit + CATALOG_PAGE_SIZE);
 			});
 			return;
 		}
-		visibleLimit = Math.min(visible.length, visibleLimit + PAGE_SIZE);
+		visibleLimit = Math.min(visible.length, visibleLimit + CATALOG_PAGE_SIZE);
 	}
 </script>
 
@@ -144,7 +163,10 @@
 	<FilterBar bind:filters {bodyParts} {equipment} {targets} />
 
 	{#if error}
-		<EmptyState title={translate(lang, 'catalog.dataMissing')} description={error} />
+		<EmptyState
+			title={translate(lang, 'catalog.dataMissing')}
+			description={error ? translate(lang, error) : ''}
+		/>
 	{:else}
 		<p class="mb-4 text-sm text-[var(--color-muted)]" aria-live="polite">
 			{translate(lang, 'catalog.countShown', {
@@ -158,7 +180,9 @@
 				description={translate(lang, 'catalog.emptyDesc')}
 			/>
 		{:else}
-			<div class="catalog-grid soft-enter grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+			<div
+				class="catalog-grid soft-enter grid min-w-0 grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5"
+			>
 				{#each shown as exercise, i (exercise.id)}
 					<ExerciseCard
 						{exercise}
@@ -172,7 +196,7 @@
 					<button type="button" class="btn-secondary min-w-[12rem]" onclick={loadMore}>
 						{translate(lang, 'catalog.loadMore', {
 							n: Math.min(
-								PAGE_SIZE,
+								CATALOG_PAGE_SIZE,
 								(indexReady ? visible.length : data.totalCount) - shown.length
 							)
 						})}

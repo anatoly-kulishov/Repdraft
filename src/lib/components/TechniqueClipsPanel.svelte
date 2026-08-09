@@ -1,6 +1,18 @@
 <script lang="ts">
-	import type { TechniqueClip } from '$lib/domain/clips';
-	import { CLIP_LIMITS, clipEncodeDurationSec, videoFileToGif } from '$lib/media/videoToGif';
+	import {
+		assertCleanClipTitle,
+		assertValidGifBlob,
+		CLIP_TITLE_MAX,
+		type TechniqueClip
+	} from '$lib/domain/clips';
+	import {
+		CLIP_LIMITS,
+		clipEncodeDurationSec,
+		isGifFile,
+		isVideoFile,
+		readVideoDurationSec,
+		videoFileToGif
+	} from '$lib/media/videoToGif';
 	import {
 		deleteTechniqueClip,
 		listClipsForExercise,
@@ -8,19 +20,26 @@
 		renameTechniqueClip,
 		reportTechniqueClip
 	} from '$lib/storage/techniqueClipsRepository';
+	import ClipCameraCapture from '$lib/components/ClipCameraCapture.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
-	import { translate } from '$lib/i18n/messages';
+	import { withTimeout } from '$lib/domain/withTimeout';
+	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { isSupabaseConfigured } from '$lib/supabase/client';
 	import { page } from '$app/stores';
 	import { replaceState } from '$app/navigation';
+	import { onDestroy, untrack } from 'svelte';
 
 	let { exerciseId }: { exerciseId: string } = $props();
 
+	const CLIPS_LOAD_MS = 15000;
+
 	let clips = $state<TechniqueClip[]>([]);
 	let loading = $state(true);
+	let settled = $state(false);
+	let refreshGen = 0;
 	let busy = $state(false);
 	let progress = $state('');
 	let progressRatio = $state(0);
@@ -34,10 +53,12 @@
 	let galleryInput: HTMLInputElement | undefined = $state();
 	let cameraInput: HTMLInputElement | undefined = $state();
 	let sectionEl: HTMLElement | undefined = $state();
+	let camOpen = $state(false);
 
 	let currentUserId = $derived($auth.user?.id ?? null);
 	let cloudReady = $derived(isSupabaseConfigured());
 	let lang = $derived($resolvedLocale);
+	let canUpload = $derived(cloudReady && Boolean($auth.user));
 	let gifSizeLabel = $derived(
 		gifBlob ? translate(lang, 'clips.kb', { n: (gifBlob.size / 1024).toFixed(0) }) : null
 	);
@@ -45,30 +66,42 @@
 		typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 	);
 
-	async function refresh() {
-		loading = true;
+	async function refresh(id: string) {
+		const gen = ++refreshGen;
+		const blocking = !settled;
+		if (blocking) loading = true;
 		try {
-			clips = await listClipsForExercise(exerciseId);
+			const list = await withTimeout(listClipsForExercise(id), CLIPS_LOAD_MS);
+			if (gen !== refreshGen) return;
+			clips = list;
 		} catch (err) {
+			if (gen !== refreshGen) return;
 			console.error(err);
-			toasts.show(err instanceof Error ? err.message : translate(lang, 'clips.loadFail'), 'error');
+			toasts.show(translateError(lang, err, 'clips.loadFail'), 'error');
 			clips = [];
 		} finally {
+			if (gen !== refreshGen) return;
 			loading = false;
+			settled = true;
 		}
 	}
 
 	$effect(() => {
-		exerciseId;
-		void refresh();
+		const id = exerciseId;
+		untrack(() => {
+			refreshGen += 1;
+			settled = false;
+			loading = true;
+			clips = [];
+			void refresh(id);
+		});
 	});
 
 	$effect(() => {
 		const id = $page.url.searchParams.get('clip');
-		if (!id || loading || clips.length === 0) return;
+		if (!id || !settled || clips.length === 0) return;
 		highlightId = id;
-		const exists = clips.some((c) => c.id === id);
-		if (!exists) return;
+		if (!clips.some((c) => c.id === id)) return;
 		queueMicrotask(() => {
 			sectionEl
 				?.querySelector(`[data-clip-id="${CSS.escape(id)}"]`)
@@ -95,22 +128,47 @@
 	}
 
 	function closeComposer() {
+		camOpen = false;
 		composerOpen = false;
 		clearPreview();
 		title = '';
 	}
 
-	async function processFile(file: File | undefined | null) {
+	function openCamera() {
+		if (!$auth.user) {
+			toasts.show(translate(lang, 'clips.signInToast'), 'info');
+			return;
+		}
+		composerOpen = true;
+		camOpen = true;
+	}
+
+	onDestroy(() => {
+		camOpen = false;
+		clearPreview();
+	});
+
+	async function processFile(
+		file: File | undefined | null,
+		opts?: { knownDurationSec?: number; fromCamera?: boolean }
+	) {
 		if (!file) return;
 		if (!$auth.user) {
 			toasts.show(translate(lang, 'clips.signInToast'), 'info');
 			return;
 		}
-		if (!file.type.startsWith('video/')) {
+
+		const gif = isGifFile(file);
+		const video = isVideoFile(file);
+		if (!gif && !video) {
 			toasts.show(translate(lang, 'clips.needVideo'), 'error');
 			return;
 		}
-		if (file.size > CLIP_LIMITS.maxVideoBytes) {
+		if (gif && file.size > CLIP_LIMITS.maxGifBytes) {
+			toasts.show(translate(lang, 'clips.tooBigGif'), 'error');
+			return;
+		}
+		if (video && file.size > CLIP_LIMITS.maxVideoBytes) {
 			toasts.show(translate(lang, 'clips.tooBig'), 'error');
 			return;
 		}
@@ -124,16 +182,37 @@
 		progressRatio = 0;
 
 		try {
+			if (gif) {
+				await assertValidGifBlob(file, { maxBytes: CLIP_LIMITS.maxGifBytes });
+				gifBlob = file;
+				previewUrl = URL.createObjectURL(file);
+				progress = translate(lang, 'clips.phase.done');
+				progressRatio = 1;
+				return;
+			}
+
+			const maxSec = clipEncodeDurationSec();
+			if (!opts?.fromCamera) {
+				const duration = opts?.knownDurationSec ?? (await readVideoDurationSec(file));
+				if (duration > maxSec + 0.15) {
+					toasts.show(translate(lang, 'clips.trimmed', { sec: maxSec }), 'info');
+				}
+			}
+
 			const blob = await videoFileToGif(file, {
+				maxDurationSec: maxSec,
+				fallbackDurationSec: opts?.knownDurationSec,
 				onProgress: (p) => {
 					progress = translate(lang, `clips.phase.${p.phase}`);
 					progressRatio = p.ratio;
 				}
 			});
+			await assertValidGifBlob(blob, { maxBytes: CLIP_LIMITS.maxGifBytes });
 			gifBlob = blob;
 			previewUrl = URL.createObjectURL(blob);
 		} catch (err) {
-			toasts.show(err instanceof Error ? err.message : translate(lang, 'clips.gifFail'), 'error');
+			toasts.show(translateError(lang, err, 'clips.gifFail'), 'error');
+			clearPreview();
 		} finally {
 			busy = false;
 		}
@@ -147,16 +226,28 @@
 	function onDrop(event: DragEvent) {
 		event.preventDefault();
 		dragOver = false;
+		if (!canUpload || busy) return;
 		void processFile(event.dataTransfer?.files?.[0]);
+	}
+
+	function onCameraCaptured(file: File, durationSec: number) {
+		void processFile(file, { knownDurationSec: durationSec, fromCamera: true });
+	}
+
+	function onCameraUnavailable() {
+		toasts.show(translate(lang, 'clips.camDeny'), 'error');
+		cameraInput?.click();
 	}
 
 	async function publish() {
 		if (!gifBlob) return;
 		busy = true;
 		try {
+			await assertValidGifBlob(gifBlob, { maxBytes: CLIP_LIMITS.maxGifBytes });
+			const cleanTitle = assertCleanClipTitle(title, translate(lang, 'clips.technique'));
 			const clip = await publishTechniqueClip({
 				exerciseId,
-				title,
+				title: cleanTitle,
 				gifBlob
 			});
 			clips = [clip, ...clips];
@@ -171,9 +262,11 @@
 					?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 			});
 		} catch (err) {
-			const msg = err instanceof Error ? err.message : translate(lang, 'clips.gifFail');
+			const msg = err instanceof Error ? err.message : '';
 			if (msg === 'RATE_LIMIT') {
 				toasts.show(translate(lang, 'clips.rateLimit'), 'error');
+			} else if (msg === 'clips.titleProfane' || msg === 'clips.titleRequired') {
+				toasts.show(translate(lang, msg), 'error');
 			} else if (
 				/relation .*technique_clips/i.test(msg) ||
 				/bucket/i.test(msg) ||
@@ -181,7 +274,7 @@
 			) {
 				toasts.show(translate(lang, 'clips.needSql'), 'error');
 			} else {
-				toasts.show(msg, 'error');
+				toasts.show(translateError(lang, err, 'clips.gifFail'), 'error');
 			}
 		} finally {
 			busy = false;
@@ -243,7 +336,7 @@
 			}
 			toasts.show(translate(lang, 'clips.deleted'), 'info');
 		} catch (err) {
-			toasts.show(err instanceof Error ? err.message : translate(lang, 'clips.deleteFail'), 'error');
+			toasts.show(translateError(lang, err, 'clips.deleteFail'), 'error');
 		}
 	}
 
@@ -266,12 +359,12 @@
 			const msg = err instanceof Error ? err.message : '';
 			if (msg === 'ALREADY_REPORTED') {
 				toasts.show(translate(lang, 'clips.alreadyReported'), 'info');
-			} else if (msg === 'NEED_AUTH') {
+			} else if (msg === 'NEED_AUTH' || msg === 'errors.needAuth') {
 				toasts.show(translate(lang, 'clips.signInToast'), 'info');
 			} else if (msg === 'NEED_SQL') {
 				toasts.show(translate(lang, 'clips.needModSql'), 'error');
 			} else {
-				toasts.show(msg || translate(lang, 'clips.reportFail'), 'error');
+				toasts.show(translateError(lang, err, 'clips.reportFail'), 'error');
 			}
 		}
 	}
@@ -280,23 +373,24 @@
 		const next = prompt(translate(lang, 'clips.renamePrompt'), clip.title || '');
 		if (next === null) return;
 		try {
-			const title = await renameTechniqueClip(clip.id, next);
-			clips = clips.map((c) => (c.id === clip.id ? { ...c, title } : c));
-			if (lightbox?.id === clip.id) lightbox = { ...lightbox, title };
+			const cleaned = assertCleanClipTitle(next);
+			const renamed = await renameTechniqueClip(clip.id, cleaned);
+			clips = clips.map((c) => (c.id === clip.id ? { ...c, title: renamed } : c));
+			if (lightbox?.id === clip.id) lightbox = { ...lightbox, title: renamed };
 			toasts.show(translate(lang, 'clips.renamed'), 'success');
 		} catch (err) {
-			toasts.show(err instanceof Error ? err.message : translate(lang, 'clips.renameFail'), 'error');
+			toasts.show(translateError(lang, err, 'clips.renameFail'), 'error');
 		}
 	}
 
 	function formatDate(iso: string): string {
 		try {
-			return new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-US', {
+			return new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-GB', {
 				day: 'numeric',
 				month: 'short'
 			}).format(new Date(iso));
 		} catch {
-			return iso;
+			return iso.slice(0, 10);
 		}
 	}
 
@@ -321,11 +415,29 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<section
-	bind:this={sectionEl}
-	class="panel"
-	aria-labelledby="clips-heading"
->
+<input
+	bind:this={galleryInput}
+	class="sr-only"
+	type="file"
+	accept={CLIP_LIMITS.accept}
+	onchange={onFileChange}
+/>
+<input
+	bind:this={cameraInput}
+	class="sr-only"
+	type="file"
+	accept="video/*"
+	capture="environment"
+	onchange={onFileChange}
+/>
+
+<ClipCameraCapture
+	bind:open={camOpen}
+	onCaptured={onCameraCaptured}
+	onUnavailable={onCameraUnavailable}
+/>
+
+<section bind:this={sectionEl} class="panel" aria-labelledby="clips-heading">
 	<div class="mb-3 flex flex-wrap items-start justify-between gap-3">
 		<div>
 			<h2 id="clips-heading" class="section-title">
@@ -335,7 +447,7 @@
 				{translate(lang, 'clips.lead')}
 			</p>
 		</div>
-		{#if cloudReady && $auth.user && !composerOpen && clips.length > 0}
+		{#if canUpload && !composerOpen && clips.length > 0}
 			<button type="button" class="btn-primary shrink-0 text-sm" onclick={openComposer}>
 				{translate(lang, 'clips.add')}
 			</button>
@@ -343,21 +455,17 @@
 	</div>
 
 	{#if !cloudReady}
-		<p
-			class="panel-dashed mb-4 text-sm text-[var(--color-muted)]"
-		>
+		<p class="panel-dashed mb-4 text-sm text-[var(--color-muted)]">
 			{translate(lang, 'clips.needSql')}
 		</p>
 	{:else if !$auth.user}
-		<p
-			class="panel-dashed mb-4 text-sm text-[var(--color-muted)]"
-		>
-			<a class="font-semibold text-[var(--color-accent)] underline" href="/auth">{translate(lang, 'clips.signInPublish')}</a>{translate(lang, 'clips.signInSuffix')}
+		<p class="panel-dashed mb-4 text-sm text-[var(--color-muted)]">
+			<a class="font-semibold text-[var(--color-accent)] underline" href="/auth"
+				>{translate(lang, 'clips.signInPublish')}</a
+			>{translate(lang, 'clips.signInSuffix')}
 		</p>
 	{:else if composerOpen}
-		<div
-			class="panel-inset mb-4 space-y-3"
-		>
+		<div class="panel-inset mb-4 space-y-3">
 			<div class="flex items-center justify-between gap-2">
 				<p class="text-sm font-semibold">{translate(lang, 'clips.new')}</p>
 				<button type="button" class="btn-secondary" disabled={busy} onclick={closeComposer}>
@@ -373,8 +481,10 @@
 				role="region"
 				aria-label={translate(lang, 'clips.dropZone')}
 				ondragover={(e) => {
-					e.preventDefault();
-					dragOver = true;
+					if (!busy) {
+						e.preventDefault();
+						dragOver = true;
+					}
 				}}
 				ondragleave={() => {
 					dragOver = false;
@@ -394,32 +504,10 @@
 					>
 						{translate(lang, 'clips.gallery')}
 					</button>
-					<button
-						type="button"
-						class="btn-secondary text-sm"
-						disabled={busy}
-						onclick={() => cameraInput?.click()}
-					>
+					<button type="button" class="btn-secondary text-sm" disabled={busy} onclick={openCamera}>
 						{translate(lang, 'clips.camera')}
 					</button>
 				</div>
-				<input
-					bind:this={galleryInput}
-					class="sr-only"
-					type="file"
-					accept={CLIP_LIMITS.accept}
-					disabled={busy}
-					onchange={onFileChange}
-				/>
-				<input
-					bind:this={cameraInput}
-					class="sr-only"
-					type="file"
-					accept="video/*"
-					capture="environment"
-					disabled={busy}
-					onchange={onFileChange}
-				/>
 			</div>
 
 			<label class="field-label">
@@ -427,7 +515,7 @@
 				<input
 					class="field mt-1"
 					type="text"
-					maxlength="80"
+					maxlength={CLIP_TITLE_MAX}
 					placeholder={translate(lang, 'clips.captionPh')}
 					bind:value={title}
 					disabled={busy}
@@ -442,7 +530,9 @@
 							style={`width: ${Math.round(progressRatio * 100)}%`}
 						></div>
 					</div>
-					<p class="text-xs text-[var(--color-muted)]">{progress || translate(lang, 'clips.processing')}</p>
+					<p class="text-xs text-[var(--color-muted)]">
+						{progress || translate(lang, 'clips.processing')}
+					</p>
 				</div>
 			{/if}
 
@@ -455,7 +545,9 @@
 					/>
 					<div class="flex flex-1 flex-col gap-2">
 						{#if gifSizeLabel}
-							<p class="text-xs text-[var(--color-muted)]">{translate(lang, 'clips.size', { size: gifSizeLabel })}</p>
+							<p class="text-xs text-[var(--color-muted)]">
+								{translate(lang, 'clips.size', { size: gifSizeLabel })}
+							</p>
 						{/if}
 						<button type="button" class="btn-primary" disabled={busy} onclick={publish}>
 							{translate(lang, 'clips.publish')}
@@ -469,19 +561,17 @@
 		</div>
 	{/if}
 
-	{#if loading}
+	{#if loading && !settled}
 		<div class="py-6">
-			<Spinner label={translate(lang, 'common.loading')} />
+			<Spinner label={translate(lang, 'clips.loadingFeed')} size="sm" />
 		</div>
 	{:else if clips.length === 0}
-		<div
-			class="panel-dashed py-8 text-center"
-		>
+		<div class="panel-dashed py-8 text-center">
 			<p class="text-sm font-medium">{translate(lang, 'clips.emptyTitle')}</p>
 			<p class="mt-1 text-xs text-[var(--color-muted)]">
 				{translate(lang, 'clips.emptyDesc')}
 			</p>
-			{#if cloudReady && $auth.user && !composerOpen}
+			{#if canUpload && !composerOpen}
 				<button type="button" class="btn-primary mt-4 text-sm" onclick={openComposer}>
 					{translate(lang, 'clips.add')}
 				</button>
@@ -578,9 +668,7 @@
 			if (e.target === e.currentTarget) lightbox = null;
 		}}
 	>
-		<div
-			class="panel max-h-[90vh] w-full max-w-md overflow-auto !rounded-2xl shadow-xl"
-		>
+		<div class="panel max-h-[90vh] w-full max-w-md overflow-auto !rounded-2xl shadow-xl">
 			<img
 				src={lightbox.gifUrl}
 				alt={clipTitle(lightbox)}
