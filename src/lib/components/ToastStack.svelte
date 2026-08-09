@@ -31,17 +31,22 @@
 {/if}
 
 <style>
-	/* Mobile: centered above tab bar / sticky CTA */
+	/* Above tab bar; sticky CTA offset only when that bar is in the tree (see :has). */
 	.toast-stack {
 		left: 50%;
-		bottom: calc(var(--tabbar-h) + var(--safe-bottom) + var(--sticky-actions-h) + 0.75rem);
+		bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 0.75rem);
 		width: min(22rem, calc(100vw - 2rem));
 		transform: translateX(-50%);
 	}
 
-	/* Desktop: bottom-right — clear of content, no “floating middle” look */
-	@media (min-width: 768px) {
-		.toast-stack {
+	:global(body:has(.sticky-actions)) .toast-stack {
+		bottom: calc(var(--tabbar-h) + var(--safe-bottom) + var(--sticky-actions-h) + 0.75rem);
+	}
+
+	/* Desktop chrome (matches .shell-nav-*): bottom-right, sticky/tabbar hidden */
+	@media (min-width: 768px) and (min-height: 560px) {
+		.toast-stack,
+		:global(body:has(.sticky-actions)) .toast-stack {
 			left: auto;
 			right: 1.25rem;
 			bottom: 1.5rem;
