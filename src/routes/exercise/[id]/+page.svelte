@@ -25,9 +25,17 @@
 	});
 	let mediaOpen = $state(false);
 	let mediaCloseBtn: HTMLButtonElement | undefined = $state();
+	let inDraft = $derived(
+		Boolean(exercise && $draft.exercises.some((ex) => ex.exerciseId === exercise.id))
+	);
 
-	function addToDraft() {
+	function toggleDraft() {
 		if (!exercise) return;
+		if (inDraft) {
+			draft.removeFromDraft(exercise.id);
+			toasts.show(translate(lang, 'exercise.removed'), 'info');
+			return;
+		}
 		const result = draft.addToDraft(exercise.id);
 		if (result.added) {
 			toasts.show(translate(lang, 'exercise.added'), 'success');
@@ -145,9 +153,30 @@
 			</dl>
 
 			<div class="actions-inline">
-				<button type="button" class="btn-primary" onclick={addToDraft}
-					>{translate(lang, 'exercise.addDraft')}</button
+				<button
+					type="button"
+					class={inDraft ? 'btn-secondary' : 'btn-primary'}
+					aria-pressed={inDraft}
+					onclick={toggleDraft}
 				>
+					{#if inDraft}
+						<span class="inline-flex items-center gap-1.5">
+							<svg class="h-4 w-4" viewBox="0 0 16 16" aria-hidden="true">
+								<path
+									d="M3.6 8.2 6.5 11l6-6.1"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.75"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								/>
+							</svg>
+							{translate(lang, 'exercise.removeDraft')}
+						</span>
+					{:else}
+						{translate(lang, 'exercise.addDraft')}
+					{/if}
+				</button>
 			</div>
 
 			<section>
@@ -167,9 +196,30 @@
 
 	<div class="sticky-actions">
 		<div class="mx-auto max-w-6xl">
-			<button type="button" class="btn-primary btn-block" onclick={addToDraft}
-				>{translate(lang, 'exercise.toDraft')}</button
+			<button
+				type="button"
+				class="{inDraft ? 'btn-secondary' : 'btn-primary'} btn-block"
+				aria-pressed={inDraft}
+				onclick={toggleDraft}
 			>
+				{#if inDraft}
+					<span class="inline-flex items-center justify-center gap-1.5">
+						<svg class="h-4 w-4" viewBox="0 0 16 16" aria-hidden="true">
+							<path
+								d="M3.6 8.2 6.5 11l6-6.1"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.75"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
+						</svg>
+						{translate(lang, 'exercise.removeDraft')}
+					</span>
+				{:else}
+					{translate(lang, 'exercise.toDraft')}
+				{/if}
+			</button>
 		</div>
 	</div>
 
