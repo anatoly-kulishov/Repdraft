@@ -3,7 +3,7 @@ import type { WorkoutSession } from '$lib/domain/types';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
 import { localRecordRepository } from './localRecordRepository';
-import { localSessionRepository } from './localSessionRepository';
+import { localSessionRepository, clearFinishedSessions } from './localSessionRepository';
 import { localWorkoutRepository } from './localWorkoutRepository';
 import { supabaseRecordRepository } from './supabaseRecordRepository';
 import {
@@ -63,6 +63,30 @@ export async function persistSession(session: WorkoutSession): Promise<void> {
 		await withTimeout(supabaseSessionRepository.save(session), 4000);
 	} catch (err) {
 		markSessionsCloudDown(err);
+	}
+}
+
+export async function deleteSession(id: string): Promise<void> {
+	await localSessionRepository.remove(id);
+	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
+	try {
+		await withTimeout(supabaseSessionRepository.remove(id), 4000);
+	} catch (err) {
+		markSessionsCloudDown(err);
+	}
+}
+
+export async function clearFinishedSessionHistory(): Promise<void> {
+	const finished = (await localSessionRepository.list()).filter((s) => s.finishedAt);
+	clearFinishedSessions();
+	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
+	for (const s of finished) {
+		try {
+			await withTimeout(supabaseSessionRepository.remove(s.id), 4000);
+		} catch (err) {
+			markSessionsCloudDown(err);
+			break;
+		}
 	}
 }
 

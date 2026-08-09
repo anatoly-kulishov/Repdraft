@@ -8,7 +8,7 @@ import {
 	updateLoggedSet
 } from '$lib/domain/session';
 import type { LastPerformance, LoggedSet, WorkoutPlan, WorkoutSession } from '$lib/domain/types';
-import { persistSession } from '$lib/storage/dataAccess';
+import { deleteSession, persistSession, clearFinishedSessionHistory } from '$lib/storage/dataAccess';
 import {
 	localSessionRepository,
 	readActiveSession,
@@ -130,6 +130,14 @@ function createLiveStore() {
 		discard() {
 			persistActive(null, null);
 			store.update((s) => ({ ...s, session: null, restUntil: null }));
+		},
+		async removeFromHistory(id: string) {
+			await deleteSession(id);
+			await refreshHistory();
+		},
+		async clearHistory() {
+			await clearFinishedSessionHistory();
+			await refreshHistory();
 		},
 		lastFor(exerciseId: string): LastPerformance | null {
 			return lastPerformance(get(store).history, exerciseId);

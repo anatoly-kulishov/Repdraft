@@ -5,6 +5,7 @@ import {
 	dissolveSuperset as dissolveSupersetInPlan,
 	formSuperset as formSupersetInPlan,
 	moveExercise as moveExerciseInPlan,
+	moveByArrow as moveByArrowInPlan,
 	moveWithinGroup as moveWithinGroupInPlan,
 	removeExercise as removeExerciseFromPlan,
 	updateExercise as updateExerciseInPlan,
@@ -65,6 +66,9 @@ function createDraftStore() {
 		},
 		moveExercise(fromIndex: number, toIndex: number) {
 			update((plan) => moveExerciseInPlan(plan, fromIndex, toIndex));
+		},
+		moveByArrow(fromIndex: number, direction: -1 | 1) {
+			update((plan) => moveByArrowInPlan(plan, fromIndex, direction));
 		},
 		moveWithinGroup(fromIndex: number, toIndex: number) {
 			update((plan) => moveWithinGroupInPlan(plan, fromIndex, toIndex));
