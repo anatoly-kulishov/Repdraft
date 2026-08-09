@@ -230,3 +230,74 @@ export function isBodyPart(value: string): value is BodyPart {
 		value === 'waist'
 	);
 }
+
+/** Throws if cascade / conflict / AND-filter invariants regress. */
+export function runFiltersSelfCheck(): void {
+	const catalog: ExerciseIndexItem[] = [
+		{
+			id: '1',
+			name: 'Squat',
+			body_part: 'upper legs',
+			equipment: 'band',
+			target: 'quads',
+			muscle_group: 'quads',
+			secondary_muscles: [],
+			image: 'x.jpg'
+		},
+		{
+			id: '2',
+			name: 'Bench',
+			body_part: 'chest',
+			equipment: 'band',
+			target: 'pectorals',
+			muscle_group: 'chest',
+			secondary_muscles: [],
+			image: 'x.jpg'
+		},
+		{
+			id: '3',
+			name: 'Hip thrust',
+			body_part: 'upper legs',
+			equipment: 'barbell',
+			target: 'glutes',
+			muscle_group: 'glutes',
+			secondary_muscles: [],
+			image: 'x.jpg'
+		}
+	];
+
+	const base: ExerciseFilters = {
+		query: '',
+		bodyPart: 'upper legs',
+		equipment: 'all',
+		target: 'all'
+	};
+
+	const targets = availableTargets(catalog, base, 'en');
+	if (targets.includes('pectorals')) throw new Error('pectorals must not appear under upper legs');
+	if (!targets.includes('quads') || !targets.includes('glutes')) {
+		throw new Error(`expected quads/glutes, got ${targets.join(',')}`);
+	}
+
+	const conflictFilters: ExerciseFilters = {
+		query: '',
+		bodyPart: 'upper legs',
+		equipment: 'all',
+		target: 'pectorals'
+	};
+	if (!isFilterConflict(catalog, conflictFilters, 'en')) {
+		throw new Error('legs + pectorals should conflict');
+	}
+	if (isFilterConflict(catalog, { ...base, target: 'quads' }, 'en')) {
+		throw new Error('legs + quads must not conflict');
+	}
+
+	const andHits = filterExercises(
+		catalog,
+		{ query: 'squat', bodyPart: 'upper legs', equipment: 'band', target: 'quads' },
+		'en'
+	);
+	if (andHits.length !== 1 || andHits[0]!.id !== '1') {
+		throw new Error(`AND filter expected squat only, got ${andHits.map((i) => i.id).join(',')}`);
+	}
+}

@@ -318,3 +318,40 @@ export function mergeWorkoutPlans(local: WorkoutPlan[], cloud: WorkoutPlan[]): W
 	}
 	return [...map.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
+
+/** Throws if draft / superset / arrow-move invariants regress. */
+export function runWorkoutSelfCheck(): void {
+	let plan = createEmptyDraft('Check');
+	const a = addExercise(plan, 'ex-a');
+	if (!a.added) throw new Error('first add should succeed');
+	plan = a.plan;
+	const again = addExercise(plan, 'ex-a');
+	if (again.added) throw new Error('duplicate add should be rejected');
+	plan = addExercise(plan, 'ex-b').plan;
+	plan = addExercise(plan, 'ex-c').plan;
+
+	plan = formSuperset(plan, ['ex-a', 'ex-b']);
+	const g = plan.exercises[0]?.groupId;
+	if (!g || plan.exercises[0]?.groupId !== plan.exercises[1]?.groupId) {
+		throw new Error('formSuperset should share groupId');
+	}
+	if (plan.exercises[2]?.groupId) throw new Error('ex-c should stay solo');
+
+	const before = plan.exercises.map((ex) => ex.exerciseId).join(',');
+	plan = moveByArrow(plan, 0, 1);
+	const after = plan.exercises.map((ex) => ex.exerciseId).join(',');
+	if (before === 'ex-a,ex-b,ex-c' && after !== 'ex-b,ex-a,ex-c') {
+		throw new Error(`moveByArrow within group expected ex-b,ex-a,ex-c got ${after}`);
+	}
+
+	plan = dissolveSuperset(plan, g);
+	if (plan.exercises.some((ex) => ex.groupId === g)) {
+		throw new Error('dissolveSuperset should clear groupId');
+	}
+
+	plan = removeExercise(plan, 'ex-b');
+	if (plan.exercises.some((ex) => ex.exerciseId === 'ex-b')) {
+		throw new Error('removeExercise failed');
+	}
+	if (plan.exercises.length !== 2) throw new Error(`expected 2 left, got ${plan.exercises.length}`);
+}
