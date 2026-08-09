@@ -16,6 +16,34 @@
 		<meta name="format-detection" content="telephone=no" />
 		<link rel="manifest" href="/manifest.webmanifest" />
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+		<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+		<style>
+			/* First paint before Svelte hydrate — matches --color-bg / PWA splash. */
+			html,
+			body {
+				margin: 0;
+				min-height: 100%;
+				background: #e8ecf0;
+			}
+			#pwa-boot {
+				position: fixed;
+				inset: 0;
+				z-index: 9999;
+				display: grid;
+				place-items: center;
+				background: #e8ecf0;
+				pointer-events: none;
+				transition: opacity 0.2s ease;
+			}
+			#pwa-boot img {
+				width: 96px;
+				height: 96px;
+				border-radius: 22%;
+			}
+			#pwa-boot.is-done {
+				opacity: 0;
+			}
+		</style>
 		<!-- Apply saved locale before first paint to avoid RU→EN text flash. -->
 		<script>
 			(function () {
@@ -32,6 +60,23 @@
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
+		<div id="pwa-boot" aria-hidden="true">
+			<img src="/icon.svg" alt="" width="96" height="96" />
+		</div>
 		<div style="display: contents">%sveltekit.body%</div>
+		<script>
+			(function () {
+				var boot = document.getElementById('pwa-boot');
+				if (!boot) return;
+				var hide = function () {
+					boot.classList.add('is-done');
+					window.setTimeout(function () {
+						boot.remove();
+					}, 220);
+				};
+				if (document.readyState === 'complete') hide();
+				else window.addEventListener('load', hide, { once: true });
+			})();
+		</script>
 	</body>
 </html>
