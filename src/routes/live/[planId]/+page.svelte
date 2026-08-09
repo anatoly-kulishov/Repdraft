@@ -1,11 +1,12 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
+	import { coerceReps, coerceWeightKg, LIVE_REPS } from '$lib/domain/inputLimits';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { completedSetCount, totalSetCount } from '$lib/domain/session';
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
-	import { translate } from '$lib/i18n/messages';
+	import { translate, translateError } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -69,22 +70,31 @@
 				});
 
 			try {
-				const plan = await resolvePlan(params.planId);
-				if (!plan || plan.exercises.length === 0) {
-					missing = true;
+				const planId = params.planId;
+				const active = get(live).session;
+
+				// Resume first — session already snapshots exercises; plan may be deleted.
+				if (
+					active &&
+					!active.finishedAt &&
+					active.planId === planId &&
+					active.exercises.length > 0
+				) {
 					return;
 				}
 
-				const active = get(live).session;
-				if (active && !active.finishedAt && active.planId === plan.id) {
-					return;
-				}
-				if (active && !active.finishedAt && active.planId !== plan.id) {
+				if (active && !active.finishedAt && active.planId && active.planId !== planId) {
 					if (!confirm(translate(lang, 'live.confirmDiscard'))) {
 						await goto(`/live/${active.planId}`);
 						return;
 					}
 					live.discard();
+				}
+
+				const plan = await resolvePlan(planId);
+				if (!plan || plan.exercises.length === 0) {
+					missing = true;
+					return;
 				}
 
 				await live.startFromPlan(plan);
@@ -114,22 +124,38 @@
 		return `${w} × ${r}`;
 	}
 
-	function parseNum(raw: string): number | null {
-		const t = raw.trim().replace(',', '.');
-		if (!t) return null;
-		const n = Number(t);
-		return Number.isFinite(n) ? n : null;
-	}
-
 	function onWeight(ei: number, si: number, value: string) {
-		live.patchSet(ei, si, { weightKg: parseNum(value) });
+		if (!value.trim()) {
+			live.patchSet(ei, si, { weightKg: null });
+			return;
+		}
+		const n = coerceWeightKg(value);
+		if (n == null) return;
+		live.patchSet(ei, si, { weightKg: n });
 	}
 
 	function onReps(ei: number, si: number, value: string) {
-		live.patchSet(ei, si, { reps: parseNum(value) });
+		if (!value.trim()) {
+			live.patchSet(ei, si, { reps: null });
+			return;
+		}
+		const n = coerceReps(value, LIVE_REPS);
+		if (n == null) return;
+		live.patchSet(ei, si, { reps: n });
 	}
 
 	function onComplete(ei: number, si: number) {
+		const ex = session?.exercises[ei];
+		const set = ex?.sets[si];
+		if (!set) return;
+		if (set.weightKg != null && !coerceWeightKg(String(set.weightKg))) {
+			toasts.show(translate(lang, 'pr.invalidWeight'), 'error');
+			return;
+		}
+		if (set.reps == null || !Number.isInteger(set.reps) || set.reps < LIVE_REPS.min || set.reps > LIVE_REPS.max) {
+			toasts.show(translate(lang, 'live.invalidReps'), 'error');
+			return;
+		}
 		live.patchSet(ei, si, { completed: true });
 	}
 
@@ -140,7 +166,7 @@
 			toasts.show(translate(lang, 'live.saved'), 'success');
 			await goto('/workouts');
 		} catch (err) {
-			toasts.show(err instanceof Error ? err.message : 'Error', 'error');
+			toasts.show(translateError(lang, err, 'live.saveFail'), 'error');
 		}
 	}
 
@@ -160,12 +186,26 @@
 {#if loading}
 	<PageSkeleton rows={4} />
 {:else if missing || !session}
-	<EmptyState
-		title={translate(lang, 'live.noPlan')}
-		description={translate(lang, 'live.emptyPlan')}
-		actionHref="/workouts"
-		actionLabel={translate(lang, 'live.backPlans')}
-	/>
+	<div class="mx-auto max-w-md space-y-3">
+		<EmptyState
+			title={translate(lang, 'live.noPlan')}
+			description={translate(lang, 'live.emptyPlan')}
+			actionHref="/workouts"
+			actionLabel={translate(lang, 'live.backPlans')}
+		/>
+		{#if $live.session && !$live.session.finishedAt}
+			<button
+				type="button"
+				class="btn-danger btn-block"
+				onclick={() => {
+					live.discard();
+					void goto('/workouts');
+				}}
+			>
+				{translate(lang, 'live.discard')}
+			</button>
+		{/if}
+	</div>
 {:else}
 	<section class="pb-mobile-actions lg:pb-0">
 		<div class="page-header">
@@ -229,10 +269,9 @@
 									{translate(lang, 'live.weight')}
 									<input
 										class="mt-0.5 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-sm tabular-nums text-[var(--color-ink)]"
-										type="number"
+										type="text"
 										inputmode="decimal"
-										min="0"
-										step="0.5"
+										autocomplete="off"
 										disabled={set.completed}
 										value={set.weightKg ?? ''}
 										oninput={(e) => onWeight(ei, si, e.currentTarget.value)}
@@ -242,10 +281,9 @@
 									{translate(lang, 'live.reps')}
 									<input
 										class="mt-0.5 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-sm tabular-nums text-[var(--color-ink)]"
-										type="number"
+										type="text"
 										inputmode="numeric"
-										min="0"
-										step="1"
+										autocomplete="off"
 										disabled={set.completed}
 										value={set.reps ?? ''}
 										oninput={(e) => onReps(ei, si, e.currentTarget.value)}

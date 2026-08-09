@@ -19,6 +19,8 @@ export type ConvertOptions = {
 	maxWidth?: number;
 	fps?: number;
 	colors?: number;
+	/** When container metadata has no duration (MediaRecorder WebM). */
+	fallbackDurationSec?: number;
 	onProgress?: (p: ConvertProgress) => void;
 };
 
@@ -77,7 +79,9 @@ function yieldToMain(ms = 0): Promise<void> {
 	});
 }
 
-async function loadVideo(file: File): Promise<{ video: HTMLVideoElement; objectUrl: string }> {
+async function loadVideo(
+	file: File
+): Promise<{ video: HTMLVideoElement; objectUrl: string; duration: number | null }> {
 	const objectUrl = URL.createObjectURL(file);
 	const video = document.createElement('video');
 	video.muted = true;
@@ -89,17 +93,41 @@ async function loadVideo(file: File): Promise<{ video: HTMLVideoElement; objectU
 	video.src = objectUrl;
 
 	await new Promise<void>((resolve, reject) => {
-		video.onloadedmetadata = () => {
-			if (!Number.isFinite(video.duration) || video.duration <= 0) {
-				reject(new Error('Не удалось прочитать длительность видео'));
-				return;
-			}
-			resolve();
-		};
-		video.onerror = () => reject(new Error('Не удалось загрузить видео'));
+		video.onloadedmetadata = () => resolve();
+		video.onerror = () => reject(new Error('errors.videoLoad'));
 	});
 
-	return { video, objectUrl };
+	// MediaRecorder WebM often reports Infinity until we force a seek-to-end.
+	if (!Number.isFinite(video.duration) || video.duration <= 0) {
+		await new Promise<void>((resolve) => {
+			const done = () => {
+				video.removeEventListener('durationchange', onMeta);
+				video.removeEventListener('timeupdate', onMeta);
+				resolve();
+			};
+			const onMeta = () => {
+				if (Number.isFinite(video.duration) && video.duration > 0) done();
+			};
+			video.addEventListener('durationchange', onMeta);
+			video.addEventListener('timeupdate', onMeta);
+			try {
+				video.currentTime = 1e101;
+			} catch {
+				done();
+				return;
+			}
+			setTimeout(done, 1200);
+		});
+		try {
+			video.currentTime = 0;
+		} catch {
+			/* ignore */
+		}
+	}
+
+	const duration =
+		Number.isFinite(video.duration) && video.duration > 0 ? video.duration : null;
+	return { video, objectUrl, duration };
 }
 
 function seek(video: HTMLVideoElement, time: number): Promise<void> {
@@ -109,7 +137,7 @@ function seek(video: HTMLVideoElement, time: number): Promise<void> {
 			resolve();
 		};
 		video.addEventListener('seeked', onSeeked);
-		video.onerror = () => reject(new Error('Ошибка перемотки видео'));
+		video.onerror = () => reject(new Error('errors.videoSeek'));
 		video.currentTime = Math.min(time, Math.max(0, video.duration - 0.05));
 	});
 }
@@ -224,7 +252,7 @@ async function captureByPlayback(
 					video.addEventListener('timeupdate', onTimeUpdate);
 				}
 			},
-			(err) => reject(err instanceof Error ? err : new Error('Не удалось воспроизвести видео'))
+			(err) => reject(err instanceof Error ? err : new Error('errors.videoPlay'))
 		);
 
 		setTimeout(
@@ -350,12 +378,17 @@ export async function videoFileToGif(
 	const colors = options.colors ?? preset.colors;
 	const onProgress = options.onProgress;
 
-	onProgress?.({ phase: 'load', ratio: 0.05, message: 'Читаем видео…' });
+	onProgress?.({ phase: 'load', ratio: 0.05, message: '' });
 	await yieldToMain();
-	const { video, objectUrl } = await loadVideo(file);
+	const { video, objectUrl, duration: probed } = await loadVideo(file);
+	const rawDuration = probed ?? options.fallbackDurationSec ?? null;
+	if (rawDuration == null || rawDuration <= 0) {
+		URL.revokeObjectURL(objectUrl);
+		throw new Error('errors.videoDuration');
+	}
 
 	try {
-		const duration = Math.min(video.duration, maxDurationSec);
+		const duration = Math.min(rawDuration, maxDurationSec);
 		const scale = Math.min(1, maxWidth / (video.videoWidth || maxWidth));
 		const width = Math.max(2, Math.round(((video.videoWidth || maxWidth) * scale) / 2) * 2);
 		const height = Math.max(2, Math.round(((video.videoHeight || maxWidth) * scale) / 2) * 2);
@@ -364,23 +397,25 @@ export async function videoFileToGif(
 		canvas.width = width;
 		canvas.height = height;
 		const ctx = canvas.getContext('2d', { willReadFrequently: true, alpha: false });
-		if (!ctx) throw new Error('Canvas недоступен');
+		if (!ctx) throw new Error('errors.canvas');
 
 		const frameCount = Math.min(preset.maxFrames, Math.max(1, Math.floor(duration * fps)));
 		const delayMs = Math.round(1000 / Math.max(1, frameCount / Math.max(duration, 0.1)));
 
-		onProgress?.({ phase: 'frames', ratio: 0.08, message: `Кадры 0/${frameCount}` });
+		onProgress?.({ phase: 'frames', ratio: 0.08, message: '' });
 		await yieldToMain();
 
 		const onCaptureProgress = (i: number, total: number) => {
 			onProgress?.({
 				phase: 'frames',
 				ratio: 0.08 + 0.42 * (i / total),
-				message: `Кадры ${i}/${total}`
+				message: ''
 			});
 		};
 
-		const frames = preset.playCapture
+		// Seek capture needs a reliable timeline; MediaRecorder blobs often don't.
+		const usePlayback = preset.playCapture || probed == null;
+		const frames = usePlayback
 			? await captureByPlayback(
 					video,
 					ctx,
@@ -393,7 +428,7 @@ export async function videoFileToGif(
 				)
 			: await captureBySeek(video, ctx, width, height, duration, frameCount, onCaptureProgress);
 
-		onProgress?.({ phase: 'encode', ratio: 0.55, message: 'Собираем GIF…' });
+		onProgress?.({ phase: 'encode', ratio: 0.55, message: '' });
 		await yieldToMain();
 
 		const onEncodeProgress = (i: number, total: number) => {
@@ -427,7 +462,7 @@ export async function videoFileToGif(
 			);
 		}
 
-		onProgress?.({ phase: 'done', ratio: 1, message: 'Готово' });
+		onProgress?.({ phase: 'done', ratio: 1, message: '' });
 		return blob;
 	} finally {
 		URL.revokeObjectURL(objectUrl);
@@ -436,10 +471,32 @@ export async function videoFileToGif(
 
 export const CLIP_LIMITS = {
 	maxVideoBytes: 15 * 1024 * 1024,
+	maxGifBytes: 8 * 1024 * 1024,
 	maxDurationSec: DESKTOP.maxDurationSec,
-	accept: 'video/mp4,video/webm,video/quicktime'
+	accept: 'video/mp4,video/webm,video/quicktime,image/gif,.gif'
 } as const;
+
+export function isGifFile(file: File): boolean {
+	return file.type === 'image/gif' || /\.gif$/i.test(file.name);
+}
+
+export function isVideoFile(file: File): boolean {
+	return file.type.startsWith('video/');
+}
 
 export function clipEncodeDurationSec(): number {
 	return presetForDevice().maxDurationSec;
+}
+
+/** Probe duration without keeping the element around. */
+export async function readVideoDurationSec(file: File): Promise<number> {
+	const { video, objectUrl, duration } = await loadVideo(file);
+	try {
+		if (duration == null) throw new Error('errors.videoDuration');
+		return duration;
+	} finally {
+		URL.revokeObjectURL(objectUrl);
+		video.removeAttribute('src');
+		video.load();
+	}
 }
