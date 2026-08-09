@@ -162,6 +162,60 @@ export function filterExercises(
 		.map((row) => row.item);
 }
 
+/** Targets present if body/equipment/query stay, ignoring the muscle facet (AND cascade). */
+export function availableTargets(
+	items: ExerciseIndexItem[],
+	filters: ExerciseFilters,
+	locale: AppLocale = 'ru'
+): string[] {
+	const pool = filterExercises(items, { ...filters, target: 'all' }, locale);
+	return uniqueSorted(pool, 'target');
+}
+
+/** Equipment present if body/query stay (and target if set). */
+export function availableEquipment(
+	items: ExerciseIndexItem[],
+	filters: ExerciseFilters,
+	locale: AppLocale = 'ru'
+): string[] {
+	const pool = filterExercises(items, { ...filters, equipment: 'all' }, locale);
+	return uniqueSorted(pool, 'equipment');
+}
+
+/**
+ * True when body part + muscle (and optionally equipment) AND to empty,
+ * but each of body/muscle alone still has hits — classic hierarchy clash.
+ */
+export function isFilterConflict(
+	items: ExerciseIndexItem[],
+	filters: ExerciseFilters,
+	locale: AppLocale = 'ru'
+): boolean {
+	if (filterExercises(items, filters, locale).length > 0) return false;
+	const facetCount =
+		(filters.bodyPart !== 'all' ? 1 : 0) +
+		(filters.equipment !== 'all' ? 1 : 0) +
+		(filters.target !== 'all' ? 1 : 0);
+	if (facetCount < 2) return false;
+
+	if (filters.bodyPart !== 'all' && filters.target !== 'all') {
+		const bodyOnly = filterExercises(
+			items,
+			{ query: '', bodyPart: filters.bodyPart, equipment: 'all', target: 'all' },
+			locale
+		);
+		const targetOnly = filterExercises(
+			items,
+			{ query: '', bodyPart: 'all', equipment: 'all', target: filters.target },
+			locale
+		);
+		if (bodyOnly.length > 0 && targetOnly.length > 0) return true;
+	}
+
+	// Other multi-facet empties (e.g. equipment ∩ body) — still a “conflict” for UX copy
+	return facetCount >= 2;
+}
+
 export function isBodyPart(value: string): value is BodyPart {
 	return (
 		value === 'back' ||
