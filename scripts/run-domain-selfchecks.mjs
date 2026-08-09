@@ -17,7 +17,8 @@ const checks = [
 	'records',
 	'clips',
 	'insights',
-	'inputLimits'
+	'inputLimits',
+	'authFlow'
 ];
 
 for (const name of checks) {

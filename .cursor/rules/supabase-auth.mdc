@@ -1,0 +1,22 @@
+---
+description: Supabase Auth dashboard checklist for magic link, Google, password reset
+alwaysApply: false
+---
+
+# Supabase Auth ops
+
+При любых изменениях `/auth`, OAuth, magic link, reset password - **сначала сверь dashboard**, не только код.
+
+Код (`auth` store) шлёт `redirectTo` / `emailRedirectTo` на `{origin}/auth` (+ `?next=` / `?recovery=1`).
+
+## Checklist
+
+1. Providers: Email ON; Google ON + credentials.
+2. URL Configuration:
+   - Site URL = production origin
+   - Redirect allow-list includes `/auth` for prod + local (`localhost:5173`, `127.0.0.1:5173`)
+3. Google Cloud OAuth client redirect: `https://<project>.supabase.co/auth/v1/callback`
+4. Email templates must honor redirect / Site URL (confirm, magic link, recovery).
+5. Vercel env: `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_ANON_KEY` only (no service role in client).
+
+Симптомы «забыли dashboard»: `provider is not enabled`, письмо не приходит, после клика по ссылке белый экран / ошибка redirect.
