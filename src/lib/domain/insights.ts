@@ -104,6 +104,18 @@ export function weeklyVolumeSeries(
 }
 
 /**
+ * Prefer volume bars; if every week has 0 kg but some weeks have sessions
+ * (bodyweight / no weight logged), fall back to session-count bars.
+ */
+export type InsightsChartMode = 'volume' | 'frequency';
+
+export function insightsChartMode(series: WeekBucket[]): InsightsChartMode {
+	if (series.some((b) => b.volumeKg > 0)) return 'volume';
+	if (series.some((b) => b.sessionCount > 0)) return 'frequency';
+	return 'volume';
+}
+
+/**
  * Best completed set per exercise (higher weight; tie → more reps).
  * Sorted by weight desc, then most recent.
  */
@@ -199,5 +211,30 @@ export function runInsightsSelfCheck(): void {
 	const empty = currentWeekSummary([], now);
 	if (empty.sessionCount !== 0 || empty.volumeKg !== 0) {
 		throw new Error('currentWeekSummary empty failed');
+	}
+
+	if (insightsChartMode(series) !== 'volume') {
+		throw new Error('insightsChartMode should prefer volume when kg > 0');
+	}
+	const bwOnly: WorkoutSession = {
+		...base,
+		id: 's-bw',
+		finishedAt: '2026-08-04T11:00:00.000Z',
+		exercises: [
+			{
+				exerciseId: 'ex-bw',
+				targetSets: 1,
+				targetReps: 10,
+				restSec: 60,
+				sets: [{ weightKg: null, reps: 10, completed: true }]
+			}
+		]
+	};
+	const freqSeries = weeklyVolumeSeries([bwOnly], 2, now);
+	if (insightsChartMode(freqSeries) !== 'frequency') {
+		throw new Error('insightsChartMode should fall back to frequency when volume is all zero');
+	}
+	if (insightsChartMode([]) !== 'volume') {
+		throw new Error('insightsChartMode empty series defaults to volume');
 	}
 }

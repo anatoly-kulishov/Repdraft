@@ -10,6 +10,11 @@ import { newId } from '$lib/domain/id';
 import { getSupabase } from '$lib/supabase/client';
 
 const BUCKET = 'technique-gifs';
+/**
+ * Object keys are unique (`userId/uuid.gif`) — long immutable CDN/browser cache is safe.
+ * Supabase expects seconds as a string; emitted header becomes `max-age=…`.
+ */
+export const TECHNIQUE_GIF_CACHE_CONTROL = '31536000';
 
 type ClipRow = {
 	id: string;
@@ -141,6 +146,7 @@ export async function publishTechniqueClip(input: {
 
 	const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, input.gifBlob, {
 		contentType: 'image/gif',
+		cacheControl: TECHNIQUE_GIF_CACHE_CONTROL,
 		upsert: false
 	});
 	if (uploadError) throw uploadError;

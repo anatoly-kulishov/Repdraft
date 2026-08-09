@@ -53,11 +53,11 @@
 		return exerciseNames.get(exerciseId) ?? translate(lang, 'feed.exercise');
 	}
 
-	function clipSubtitle(clip: TechniqueClip): string | null {
+	/** Custom clip title only — default «Техника» is noise in the rail. */
+	function clipTitle(clip: TechniqueClip): string | null {
 		const title = clip.title?.trim();
 		if (!title) return null;
-		const generic = translate(lang, 'clips.technique');
-		if (title === generic) return null;
+		if (title === translate(lang, 'clips.technique')) return null;
 		return title;
 	}
 
@@ -101,7 +101,8 @@
 			<div class="feed-rail-wrap">
 				<ul class="feed-rail" aria-label={translate(lang, 'feed.scroll')}>
 					{#each clips as clip (clip.id)}
-						{@const sub = clipSubtitle(clip)}
+						{@const exName = exerciseLabel(clip.exerciseId)}
+						{@const gifName = clipTitle(clip)}
 						<li class="feed-card">
 							<a
 								href={`/exercise/${clip.exerciseId}?clip=${clip.id}`}
@@ -113,7 +114,7 @@
 									{/if}
 									<img
 										src={clip.gifUrl}
-										alt={exerciseLabel(clip.exerciseId)}
+										alt={gifName ? `${gifName} — ${exName}` : exName}
 										class={`relative h-full w-full max-w-full object-cover transition-opacity duration-200 ${loadedIds.has(clip.id) ? 'opacity-100' : 'opacity-0'}`}
 										loading="lazy"
 										decoding="async"
@@ -122,11 +123,13 @@
 									/>
 								</div>
 								<div class="space-y-0.5 p-2">
-									<p class="line-clamp-2 min-h-[2.2em] text-[12px] font-semibold leading-snug text-[var(--color-ink)]">
-										{exerciseLabel(clip.exerciseId)}
+									<p
+										class="line-clamp-2 min-h-[2.2em] text-[12px] font-semibold leading-snug text-[var(--color-ink)]"
+									>
+										{gifName ?? exName}
 									</p>
-									{#if sub}
-										<p class="truncate text-[10px] text-[var(--color-muted)]">{sub}</p>
+									{#if gifName}
+										<p class="truncate text-[10px] text-[var(--color-muted)]">{exName}</p>
 									{/if}
 								</div>
 							</a>
