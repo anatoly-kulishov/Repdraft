@@ -86,7 +86,7 @@
 				{translate(lang, 'workouts.cloud')}
 			{:else}
 				{translate(lang, 'workouts.local')}
-				<a class="font-semibold text-[var(--color-accent)] underline" href="/auth"
+				<a class="font-semibold text-[var(--color-accent)] underline" href="/auth?next=%2Fworkouts"
 					>{translate(lang, 'workouts.signInSync')}</a
 				>{translate(lang, 'workouts.syncSuffix')}
 			{/if}
