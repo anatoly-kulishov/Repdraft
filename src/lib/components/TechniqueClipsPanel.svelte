@@ -20,7 +20,6 @@
 		renameTechniqueClip,
 		reportTechniqueClip
 	} from '$lib/storage/techniqueClipsRepository';
-	import ClipCameraCapture from '$lib/components/ClipCameraCapture.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { withTimeout } from '$lib/domain/withTimeout';
 	import { translate, translateError } from '$lib/i18n/messages';
@@ -53,7 +52,8 @@
 	let galleryInput: HTMLInputElement | undefined = $state();
 	let cameraInput: HTMLInputElement | undefined = $state();
 	let sectionEl: HTMLElement | undefined = $state();
-	let camOpen = $state(false);
+	/** Native `capture` only helps on phones; desktop ignores it → same file picker as gallery. */
+	let showNativeCamera = $state(false);
 
 	let currentUserId = $derived($auth.user?.id ?? null);
 	let cloudReady = $derived(isSupabaseConfigured());
@@ -109,6 +109,17 @@
 		});
 	});
 
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		const mq = window.matchMedia('(pointer: coarse), (max-width: 768px)');
+		const sync = () => {
+			showNativeCamera = mq.matches;
+		};
+		sync();
+		mq.addEventListener('change', sync);
+		return () => mq.removeEventListener('change', sync);
+	});
+
 	function clearPreview() {
 		if (previewUrl) URL.revokeObjectURL(previewUrl);
 		previewUrl = null;
@@ -128,30 +139,26 @@
 	}
 
 	function closeComposer() {
-		camOpen = false;
 		composerOpen = false;
 		clearPreview();
 		title = '';
 	}
 
+	/** System rear camera via `<input capture>` — only offered when `showNativeCamera`. */
 	function openCamera() {
 		if (!$auth.user) {
 			toasts.show(translate(lang, 'clips.signInToast'), 'info');
 			return;
 		}
 		composerOpen = true;
-		camOpen = true;
+		cameraInput?.click();
 	}
 
 	onDestroy(() => {
-		camOpen = false;
 		clearPreview();
 	});
 
-	async function processFile(
-		file: File | undefined | null,
-		opts?: { knownDurationSec?: number; fromCamera?: boolean }
-	) {
+	async function processFile(file: File | undefined | null) {
 		if (!file) return;
 		if (!$auth.user) {
 			toasts.show(translate(lang, 'clips.signInToast'), 'info');
@@ -192,16 +199,13 @@
 			}
 
 			const maxSec = clipEncodeDurationSec();
-			if (!opts?.fromCamera) {
-				const duration = opts?.knownDurationSec ?? (await readVideoDurationSec(file));
-				if (duration > maxSec + 0.15) {
-					toasts.show(translate(lang, 'clips.trimmed', { sec: maxSec }), 'info');
-				}
+			const duration = await readVideoDurationSec(file);
+			if (duration > maxSec + 0.15) {
+				toasts.show(translate(lang, 'clips.trimmed', { sec: maxSec }), 'info');
 			}
 
 			const blob = await videoFileToGif(file, {
 				maxDurationSec: maxSec,
-				fallbackDurationSec: opts?.knownDurationSec,
 				onProgress: (p) => {
 					progress = translate(lang, `clips.phase.${p.phase}`);
 					progressRatio = p.ratio;
@@ -228,15 +232,6 @@
 		dragOver = false;
 		if (!canUpload || busy) return;
 		void processFile(event.dataTransfer?.files?.[0]);
-	}
-
-	function onCameraCaptured(file: File, durationSec: number) {
-		void processFile(file, { knownDurationSec: durationSec, fromCamera: true });
-	}
-
-	function onCameraUnavailable() {
-		toasts.show(translate(lang, 'clips.camDeny'), 'error');
-		cameraInput?.click();
 	}
 
 	async function publish() {
@@ -422,23 +417,19 @@
 	accept={CLIP_LIMITS.accept}
 	onchange={onFileChange}
 />
-<input
-	bind:this={cameraInput}
-	class="sr-only"
-	type="file"
-	accept="video/*"
-	capture="environment"
-	onchange={onFileChange}
-/>
-
-<ClipCameraCapture
-	bind:open={camOpen}
-	onCaptured={onCameraCaptured}
-	onUnavailable={onCameraUnavailable}
-/>
+{#if showNativeCamera}
+	<input
+		bind:this={cameraInput}
+		class="sr-only"
+		type="file"
+		accept="video/*"
+		capture="environment"
+		onchange={onFileChange}
+	/>
+{/if}
 
 <section bind:this={sectionEl} class="panel" aria-labelledby="clips-heading">
-	<div class="mb-3 flex flex-wrap items-start justify-between gap-3">
+	<div class="mb-3 flex flex-wrap items-start justify-between gap-3 md:mb-4">
 		<div>
 			<h2 id="clips-heading" class="section-title">
 				{translate(lang, 'clips.title')}
@@ -455,17 +446,17 @@
 	</div>
 
 	{#if !cloudReady}
-		<p class="panel-dashed mb-4 text-sm text-[var(--color-muted)]">
+		<p class="panel-dashed mb-3 text-sm text-[var(--color-muted)] md:mb-4">
 			{translate(lang, 'clips.needSql')}
 		</p>
 	{:else if !$auth.user}
-		<p class="panel-dashed mb-4 text-sm text-[var(--color-muted)]">
+		<p class="panel-dashed mb-3 text-sm text-[var(--color-muted)] md:mb-4">
 			<a class="font-semibold text-[var(--color-accent)] underline" href="/auth"
 				>{translate(lang, 'clips.signInPublish')}</a
 			>{translate(lang, 'clips.signInSuffix')}
 		</p>
 	{:else if composerOpen}
-		<div class="panel-inset mb-4 space-y-3">
+		<div class="panel-inset mb-3 space-y-3 md:mb-4">
 			<div class="flex items-center justify-between gap-2">
 				<p class="text-sm font-semibold">{translate(lang, 'clips.new')}</p>
 				<button type="button" class="btn-secondary" disabled={busy} onclick={closeComposer}>
@@ -474,7 +465,7 @@
 			</div>
 
 			<div
-				class="relative rounded-xl border-2 border-dashed px-3 py-6 text-center transition-colors"
+				class="relative rounded-xl border-2 border-dashed px-3 py-4 text-center transition-colors md:py-6"
 				class:border-[var(--color-accent)]={dragOver}
 				class:bg-[color-mix(in_srgb,var(--color-accent)_8%,white)]={dragOver}
 				class:border-[var(--color-border)]={!dragOver}
@@ -504,9 +495,11 @@
 					>
 						{translate(lang, 'clips.gallery')}
 					</button>
-					<button type="button" class="btn-secondary text-sm" disabled={busy} onclick={openCamera}>
-						{translate(lang, 'clips.camera')}
-					</button>
+					{#if showNativeCamera}
+						<button type="button" class="btn-secondary text-sm" disabled={busy} onclick={openCamera}>
+							{translate(lang, 'clips.camera')}
+						</button>
+					{/if}
 				</div>
 			</div>
 
@@ -562,21 +555,23 @@
 	{/if}
 
 	{#if loading && !settled}
-		<div class="py-6">
-			<Spinner label={translate(lang, 'clips.loadingFeed')} size="sm" />
+		<div class="flex justify-center py-3 md:py-8">
+			<Spinner label={translate(lang, 'clips.loadingFeed')} size="sm" block={false} />
 		</div>
 	{:else if clips.length === 0}
-		<div class="panel-dashed py-8 text-center">
-			<p class="text-sm font-medium">{translate(lang, 'clips.emptyTitle')}</p>
-			<p class="mt-1 text-xs text-[var(--color-muted)]">
-				{translate(lang, 'clips.emptyDesc')}
-			</p>
-			{#if canUpload && !composerOpen}
-				<button type="button" class="btn-primary mt-4 text-sm" onclick={openComposer}>
-					{translate(lang, 'clips.add')}
-				</button>
-			{/if}
-		</div>
+		{#if !composerOpen}
+			<div class="panel-dashed py-4 text-center md:py-8">
+				<p class="text-sm font-medium">{translate(lang, 'clips.emptyTitle')}</p>
+				<p class="mt-1 text-xs text-[var(--color-muted)]">
+					{translate(lang, 'clips.emptyDesc')}
+				</p>
+				{#if canUpload}
+					<button type="button" class="btn-primary mt-3 text-sm md:mt-4" onclick={openComposer}>
+						{translate(lang, 'clips.add')}
+					</button>
+				{/if}
+			</div>
+		{/if}
 	{:else}
 		<ul class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			{#each clips as clip (clip.id)}
