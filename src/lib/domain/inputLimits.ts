@@ -140,3 +140,23 @@ export function isValidReps(
 	if (value == null) return !required;
 	return Number.isInteger(value) && value >= bounds.min && value <= bounds.max;
 }
+
+/** Throws if weight/reps coerce bounds regress. */
+export function runInputLimitsSelfCheck(): void {
+	if (coerceWeightKg('80') !== 80) throw new Error('coerceWeightKg 80');
+	if (coerceWeightKg('80.56') !== 80.6) throw new Error('coerceWeightKg round');
+	if (coerceWeightKg('501') !== null) throw new Error('coerceWeightKg over max');
+	if (coerceWeightKg('') !== null) throw new Error('coerceWeightKg empty');
+	if (coerceWeightKg('12.') !== 12) throw new Error('coerceWeightKg trailing dot');
+
+	if (coerceReps('8') !== 8) throw new Error('coerceReps 8');
+	if (coerceReps('0', LIVE_REPS) !== 0) throw new Error('live reps allow 0');
+	if (coerceReps('0', REPS) !== 1) throw new Error('PR reps clamp min to 1');
+	if (coerceReps('999', REPS) !== 500) throw new Error('coerceReps clamp max');
+	if (coerceReps('x') !== null) throw new Error('coerceReps junk');
+
+	if (filterWeightInput('600', '100') !== '100') {
+		throw new Error('filterWeightInput should keep previous on overflow');
+	}
+	if (sanitizeNote('  a\nb  ') !== 'a b') throw new Error('sanitizeNote whitespace');
+}

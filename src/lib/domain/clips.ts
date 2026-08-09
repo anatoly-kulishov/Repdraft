@@ -138,3 +138,39 @@ export async function assertValidGifBlob(
 		throw new Error('clips.invalidGif');
 	}
 }
+
+/** Throws if clip title sanitize / profanity invariants regress. */
+export function runClipsSelfCheck(): void {
+	if (!titleLooksProfane('fuck this')) throw new Error('EN profanity should match');
+	if (!titleLooksProfane('это хуйня')) throw new Error('RU profanity should match');
+	if (titleLooksProfane('bench pause')) throw new Error('neutral title must pass');
+
+	if (sanitizeClipTitle('  hello   world  ') !== 'hello world') {
+		throw new Error('sanitizeClipTitle should collapse whitespace');
+	}
+	if (sanitizeClipTitle('hello\nworld') !== 'helloworld') {
+		throw new Error('sanitizeClipTitle should strip control chars');
+	}
+	if (sanitizeClipTitle('   ', 'Technique') !== 'Technique') {
+		throw new Error('empty title should use fallback');
+	}
+
+	try {
+		assertCleanClipTitle('fuck');
+		throw new Error('assertCleanClipTitle should reject profane');
+	} catch (err) {
+		if (!(err instanceof Error) || err.message !== 'clips.titleProfane') {
+			throw err;
+		}
+	}
+
+	const clean = assertCleanClipTitle('  Pause reps  ');
+	if (clean !== 'Pause reps') throw new Error(`unexpected clean title ${clean}`);
+
+	if (sanitizeAuthorLabel('user.name') !== 'user.name') {
+		throw new Error('author should keep dots');
+	}
+	if (sanitizeAuthorLabel('@@@') !== 'athlete') {
+		throw new Error('empty author should fallback to athlete');
+	}
+}

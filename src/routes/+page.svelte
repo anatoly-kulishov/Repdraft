@@ -3,7 +3,7 @@
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
-	import { filterExercises } from '$lib/domain/filters';
+	import { availableEquipment, availableTargets, filterExercises, isFilterConflict } from '$lib/domain/filters';
 	import { formatPersonalRecord } from '$lib/domain/records';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { exerciseName } from '$lib/domain/exerciseName';
@@ -31,8 +31,8 @@
 	let lang = $derived($resolvedLocale);
 	let catalog = $derived(indexReady && items.length > 0 ? items : data.boot);
 	let bodyParts = $derived(data.bodyParts);
-	let equipment = $derived(data.equipment);
-	let targets = $derived(data.targets);
+	let equipmentOptions = $derived(availableEquipment(catalog, filters, lang));
+	let targetOptions = $derived(availableTargets(catalog, filters, lang));
 	let visible = $derived(filterExercises(catalog, filters, lang));
 	let shown = $derived(visible.slice(0, visibleLimit));
 	let filtersActive = $derived(
@@ -41,6 +41,7 @@
 			filters.equipment !== 'all' ||
 			filters.target !== 'all'
 	);
+	let filterConflict = $derived(isFilterConflict(catalog, filters, lang));
 	let totalForCount = $derived(indexReady ? visible.length : data.totalCount);
 	let hasMore = $derived(
 		indexReady ? visibleLimit < visible.length : visibleLimit < data.totalCount && !filtersActive
@@ -80,6 +81,18 @@
 			return;
 		}
 		visibleLimit = CATALOG_PAGE_SIZE;
+	});
+
+	/** Drop facet values that vanished after cascade (e.g. Legs + Chest). */
+	$effect(() => {
+		const nextEq =
+			filters.equipment !== 'all' && !equipmentOptions.includes(filters.equipment)
+				? 'all'
+				: filters.equipment;
+		const nextTarget =
+			filters.target !== 'all' && !targetOptions.includes(filters.target) ? 'all' : filters.target;
+		if (nextEq === filters.equipment && nextTarget === filters.target) return;
+		filters = { ...filters, equipment: nextEq, target: nextTarget };
 	});
 
 	onMount(() => {
@@ -160,7 +173,7 @@
 		</div>
 	{/if}
 
-	<FilterBar bind:filters {bodyParts} {equipment} {targets} />
+	<FilterBar bind:filters {bodyParts} equipment={equipmentOptions} targets={targetOptions} />
 
 	{#if error}
 		<EmptyState
@@ -175,10 +188,63 @@
 			})}
 		</p>
 		{#if visible.length === 0}
-			<EmptyState
-				title={translate(lang, 'catalog.emptyTitle')}
-				description={translate(lang, 'catalog.emptyDesc')}
-			/>
+			{#if filterConflict}
+				<div class="panel-dashed flex flex-col items-start gap-3 py-6 text-left md:py-8">
+					<h2 class="section-title">{translate(lang, 'catalog.conflictTitle')}</h2>
+					<p class="max-w-md text-sm leading-relaxed text-[var(--color-muted)]">
+						{translate(lang, 'catalog.conflictDesc')}
+					</p>
+					<div class="flex flex-wrap gap-2">
+						{#if filters.target !== 'all'}
+							<button
+								type="button"
+								class="btn-secondary text-sm"
+								onclick={() => {
+									filters = { ...filters, target: 'all' };
+								}}
+							>
+								{translate(lang, 'catalog.clearMuscle')}
+							</button>
+						{/if}
+						{#if filters.bodyPart !== 'all'}
+							<button
+								type="button"
+								class="btn-secondary text-sm"
+								onclick={() => {
+									filters = { ...filters, bodyPart: 'all' };
+								}}
+							>
+								{translate(lang, 'catalog.clearBody')}
+							</button>
+						{/if}
+						{#if filters.equipment !== 'all'}
+							<button
+								type="button"
+								class="btn-secondary text-sm"
+								onclick={() => {
+									filters = { ...filters, equipment: 'all' };
+								}}
+							>
+								{translate(lang, 'catalog.clearEquipment')}
+							</button>
+						{/if}
+						<button
+							type="button"
+							class="btn-primary text-sm"
+							onclick={() => {
+								filters = { ...filters, bodyPart: 'all', equipment: 'all', target: 'all' };
+							}}
+						>
+							{translate(lang, 'catalog.reset')}
+						</button>
+					</div>
+				</div>
+			{:else}
+				<EmptyState
+					title={translate(lang, 'catalog.emptyTitle')}
+					description={translate(lang, 'catalog.emptyDesc')}
+				/>
+			{/if}
 		{:else}
 			<div
 				class="catalog-grid soft-enter grid min-w-0 grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5"

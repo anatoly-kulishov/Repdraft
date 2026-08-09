@@ -36,6 +36,32 @@
 		draft.hydrate();
 		live.hydrate();
 		void auth.init();
+
+		/** iOS Safari/PWA: fixed bottom chrome can stick mid-viewport after backgrounding. */
+		const recoverFixedChrome = () => {
+			if (
+				document.body.style.overflow === 'hidden' &&
+				!document.querySelector('[aria-modal="true"]')
+			) {
+				document.body.style.overflow = '';
+			}
+			const y = window.scrollY;
+			window.scrollTo(0, y === 0 ? 1 : y - 1);
+			window.scrollTo(0, y);
+		};
+
+		const onVisible = () => {
+			if (document.visibilityState === 'visible') recoverFixedChrome();
+		};
+		document.addEventListener('visibilitychange', onVisible);
+		window.addEventListener('pageshow', recoverFixedChrome);
+		window.visualViewport?.addEventListener('resize', recoverFixedChrome);
+
+		return () => {
+			document.removeEventListener('visibilitychange', onVisible);
+			window.removeEventListener('pageshow', recoverFixedChrome);
+			window.visualViewport?.removeEventListener('resize', recoverFixedChrome);
+		};
 	});
 
 	function isActive(href: string): boolean {
@@ -56,7 +82,7 @@
 </svelte:head>
 
 <a class="skip-link" href="#main-content">{translate(lang, 'a11y.skip')}</a>
-<div class="app-shell flex min-h-dvh flex-col overflow-x-hidden overflow-x-clip">
+<div class="app-shell flex min-h-dvh flex-col">
 	<header
 		class="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[var(--color-surface)] pt-[var(--safe-top)]"
 	>
@@ -117,71 +143,72 @@
 	<div class="shell-footer-pad">
 		<AttributionFooter />
 	</div>
-
-	<nav
-		class="shell-nav-tabbar fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-border)] bg-[var(--color-surface)] pb-[var(--safe-bottom)]"
-		aria-label={translate(lang, 'nav.main')}
-	>
-		<div class="mx-auto grid h-[var(--tabbar-h)] max-w-lg grid-cols-4 px-1">
-			<a
-				class="tab-link relative"
-				data-active={isActive('/')}
-				href="/"
-				aria-current={isActive('/') ? 'page' : undefined}
-			>
-				<svg viewBox="0 0 24 24" aria-hidden="true"
-					><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect
-						x="14"
-						y="3"
-						width="7"
-						height="7"
-						rx="1.5"
-					/><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect
-						x="14"
-						y="14"
-						width="7"
-						height="7"
-						rx="1.5"
-					/></svg
-				>
-				{translate(lang, 'nav.catalog')}
-			</a>
-			<a
-				class="tab-link relative"
-				data-active={isActive('/builder')}
-				href="/builder"
-				aria-current={isActive('/builder') ? 'page' : undefined}
-			>
-				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-				{translate(lang, 'nav.builder')}
-				{#if draftCount > 0}
-					<span
-						class="absolute right-[18%] top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-accent)] px-1 text-[10px] font-bold text-white"
-					>
-						{draftCount}
-					</span>
-				{/if}
-			</a>
-			<a
-				class="tab-link"
-				data-active={isActive('/workouts')}
-				href="/workouts"
-				aria-current={isActive('/workouts') ? 'page' : undefined}
-			>
-				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" /></svg>
-				{translate(lang, 'nav.workouts')}
-			</a>
-			<a
-				class="tab-link"
-				data-active={isActive('/records')}
-				href="/records"
-				aria-current={isActive('/records') ? 'page' : undefined}
-			>
-				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17V3M7 8l5-5 5 5" /></svg>
-				{translate(lang, 'nav.records')}
-			</a>
-		</div>
-	</nav>
 </div>
+
+<!-- Outside .app-shell: overflow/clip on ancestors makes iOS treat position:fixed like absolute. -->
+<nav
+	class="shell-nav-tabbar fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-border)] bg-[var(--color-surface)] pb-[var(--safe-bottom)]"
+	aria-label={translate(lang, 'nav.main')}
+>
+	<div class="mx-auto grid h-[var(--tabbar-h)] max-w-lg grid-cols-4 px-1">
+		<a
+			class="tab-link relative"
+			data-active={isActive('/')}
+			href="/"
+			aria-current={isActive('/') ? 'page' : undefined}
+		>
+			<svg viewBox="0 0 24 24" aria-hidden="true"
+				><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect
+					x="14"
+					y="3"
+					width="7"
+					height="7"
+					rx="1.5"
+				/><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect
+					x="14"
+					y="14"
+					width="7"
+					height="7"
+					rx="1.5"
+				/></svg
+			>
+			{translate(lang, 'nav.catalog')}
+		</a>
+		<a
+			class="tab-link relative"
+			data-active={isActive('/builder')}
+			href="/builder"
+			aria-current={isActive('/builder') ? 'page' : undefined}
+		>
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+			{translate(lang, 'nav.builder')}
+			{#if draftCount > 0}
+				<span
+					class="absolute right-[18%] top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-accent)] px-1 text-[10px] font-bold text-white"
+				>
+					{draftCount}
+				</span>
+			{/if}
+		</a>
+		<a
+			class="tab-link"
+			data-active={isActive('/workouts')}
+			href="/workouts"
+			aria-current={isActive('/workouts') ? 'page' : undefined}
+		>
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" /></svg>
+			{translate(lang, 'nav.workouts')}
+		</a>
+		<a
+			class="tab-link"
+			data-active={isActive('/records')}
+			href="/records"
+			aria-current={isActive('/records') ? 'page' : undefined}
+		>
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17V3M7 8l5-5 5 5" /></svg>
+			{translate(lang, 'nav.records')}
+		</a>
+	</div>
+</nav>
 
 <ToastStack items={$toasts} />

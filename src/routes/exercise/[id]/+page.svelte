@@ -25,9 +25,17 @@
 	});
 	let mediaOpen = $state(false);
 	let mediaCloseBtn: HTMLButtonElement | undefined = $state();
+	let inDraft = $derived(
+		Boolean(exercise && $draft.exercises.some((ex) => ex.exerciseId === exercise.id))
+	);
 
-	function addToDraft() {
+	function toggleDraft() {
 		if (!exercise) return;
+		if (inDraft) {
+			draft.removeFromDraft(exercise.id);
+			toasts.show(translate(lang, 'exercise.removed'), 'info');
+			return;
+		}
 		const result = draft.addToDraft(exercise.id);
 		if (result.added) {
 			toasts.show(translate(lang, 'exercise.added'), 'success');
@@ -84,7 +92,7 @@
 			>
 			<button
 				type="button"
-				class="panel flex w-full cursor-zoom-in items-center justify-center overflow-hidden !p-4 sm:!p-5 lg:!p-3"
+				class="panel relative flex w-full cursor-zoom-in items-center justify-center overflow-hidden !p-4 sm:!p-5 lg:!p-3"
 				aria-label={translate(lang, 'exercise.openMedia')}
 				onclick={openMedia}
 			>
@@ -97,6 +105,23 @@
 					decoding="async"
 					class="pointer-events-none block h-[180px] w-[180px] max-w-full object-contain"
 				/>
+				<span
+					class="pointer-events-none absolute bottom-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-surface)_88%,transparent)] text-[var(--color-muted)] shadow-sm backdrop-blur-[2px]"
+					aria-hidden="true"
+				>
+					<svg
+						viewBox="0 0 24 24"
+						class="h-4 w-4"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.9"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<circle cx="10.5" cy="10.5" r="5.5" />
+						<path d="M15.5 15.5 20 20" />
+					</svg>
+				</span>
 			</button>
 		</div>
 
@@ -128,9 +153,30 @@
 			</dl>
 
 			<div class="actions-inline">
-				<button type="button" class="btn-primary" onclick={addToDraft}
-					>{translate(lang, 'exercise.addDraft')}</button
+				<button
+					type="button"
+					class={inDraft ? 'btn-secondary' : 'btn-primary'}
+					aria-pressed={inDraft}
+					onclick={toggleDraft}
 				>
+					{#if inDraft}
+						<span class="inline-flex items-center gap-1.5">
+							<svg class="h-4 w-4" viewBox="0 0 16 16" aria-hidden="true">
+								<path
+									d="M3.6 8.2 6.5 11l6-6.1"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.75"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								/>
+							</svg>
+							{translate(lang, 'exercise.removeDraft')}
+						</span>
+					{:else}
+						{translate(lang, 'exercise.addDraft')}
+					{/if}
+				</button>
 			</div>
 
 			<section>
@@ -150,9 +196,30 @@
 
 	<div class="sticky-actions">
 		<div class="mx-auto max-w-6xl">
-			<button type="button" class="btn-primary btn-block" onclick={addToDraft}
-				>{translate(lang, 'exercise.toDraft')}</button
+			<button
+				type="button"
+				class="{inDraft ? 'btn-secondary' : 'btn-primary'} btn-block"
+				aria-pressed={inDraft}
+				onclick={toggleDraft}
 			>
+				{#if inDraft}
+					<span class="inline-flex items-center justify-center gap-1.5">
+						<svg class="h-4 w-4" viewBox="0 0 16 16" aria-hidden="true">
+							<path
+								d="M3.6 8.2 6.5 11l6-6.1"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.75"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
+						</svg>
+						{translate(lang, 'exercise.removeDraft')}
+					</span>
+				{:else}
+					{translate(lang, 'exercise.toDraft')}
+				{/if}
+			</button>
 		</div>
 	</div>
 

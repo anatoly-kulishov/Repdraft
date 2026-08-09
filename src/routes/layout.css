@@ -903,6 +903,15 @@ button:focus-visible {
 	padding: 0.65rem 1rem;
 	max-width: 100%;
 	overflow: hidden;
+	/* Own layer — reduces iOS “fixed stuck mid-scroll” after resume */
+	transform: translateZ(0);
+	-webkit-backface-visibility: hidden;
+}
+
+.shell-nav-tabbar {
+	/* Own layer; keep bottom pinned to the visual viewport */
+	transform: translateZ(0);
+	-webkit-backface-visibility: hidden;
 }
 
 /* Extra room above sticky CTA (footer / tabbar cleared separately) */

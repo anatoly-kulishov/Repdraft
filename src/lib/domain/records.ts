@@ -98,3 +98,65 @@ export function mergePersonalRecords(
 	}
 	return [...map.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
+
+/** Throws if PR sanitize / merge invariants regress. */
+export function runRecordsSelfCheck(): void {
+	const empty = createEmptyRecord('ex-1');
+	if (!isRecordEmpty(empty)) throw new Error('empty record should be empty');
+
+	const needValue = sanitizePersonalRecord(empty);
+	if (needValue.ok || needValue.errorKey !== 'pr.needValue') {
+		throw new Error('empty sanitize should needValue');
+	}
+
+	const badWeight = sanitizePersonalRecord({
+		...empty,
+		weightKg: 9999,
+		reps: 5
+	});
+	if (badWeight.ok || badWeight.errorKey !== 'pr.invalidWeight') {
+		throw new Error('out-of-range weight should fail');
+	}
+
+	const ok = sanitizePersonalRecord({
+		exerciseId: 'ex-1',
+		weightKg: 100.46,
+		reps: 5,
+		note: '  pause  ',
+		updatedAt: '2026-08-01T00:00:00.000Z'
+	});
+	if (!ok.ok) throw new Error(`sanitize should pass: ${ok.errorKey}`);
+	if (ok.record.weightKg !== 100.5) {
+		throw new Error(`weight should round to 0.1, got ${ok.record.weightKg}`);
+	}
+	if (ok.record.note !== 'pause') throw new Error('note should be trimmed');
+
+	const older: PersonalRecord = {
+		exerciseId: 'ex-1',
+		weightKg: 90,
+		reps: 5,
+		note: '',
+		updatedAt: '2026-07-01T00:00:00.000Z'
+	};
+	const newer: PersonalRecord = {
+		exerciseId: 'ex-1',
+		weightKg: 100,
+		reps: 5,
+		note: '',
+		updatedAt: '2026-08-01T00:00:00.000Z'
+	};
+	const localOnly: PersonalRecord = {
+		exerciseId: 'ex-2',
+		weightKg: 40,
+		reps: 8,
+		note: '',
+		updatedAt: '2026-08-02T00:00:00.000Z'
+	};
+	const merged = mergePersonalRecords([older, localOnly], [newer]);
+	if (merged.length !== 2) throw new Error(`merge length ${merged.length}`);
+	const ex1 = merged.find((r) => r.exerciseId === 'ex-1');
+	if (!ex1 || ex1.weightKg !== 100) throw new Error('cloud newer should win for ex-1');
+	if (!merged.some((r) => r.exerciseId === 'ex-2')) {
+		throw new Error('local-only PR must survive empty cloud overlap');
+	}
+}
