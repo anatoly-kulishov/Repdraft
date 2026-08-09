@@ -100,7 +100,7 @@
 			</button>
 		</div>
 
-		<div class="flex min-w-0 flex-col gap-4">
+		<div class="flex min-w-0 flex-col gap-4 md:gap-6">
 			<div>
 				<p class="text-sm text-[var(--color-muted)]">{labelBodyPart(exercise.body_part, lang)}</p>
 				<h1 class="page-title">{title}</h1>
