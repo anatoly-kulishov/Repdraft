@@ -13,7 +13,9 @@
 	}: {
 		filters: ExerciseFilters;
 		bodyParts: string[];
+		/** Cascaded: options compatible with current body/target/query. */
 		equipment: string[];
+		/** Cascaded: options compatible with current body/equipment/query. */
 		targets: string[];
 	} = $props();
 
