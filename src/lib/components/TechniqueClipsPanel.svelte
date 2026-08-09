@@ -472,7 +472,9 @@
 		</p>
 	{:else if !$auth.user}
 		<p class="panel-dashed mb-3 text-sm text-[var(--color-muted)] md:mb-4">
-			<a class="font-semibold text-[var(--color-accent)] underline" href="/auth"
+			<a
+				class="font-semibold text-[var(--color-accent)] underline"
+				href={`/auth?next=${encodeURIComponent(`/exercise/${exerciseId}`)}`}
 				>{translate(lang, 'clips.signInPublish')}</a
 			>{translate(lang, 'clips.signInSuffix')}
 		</p>

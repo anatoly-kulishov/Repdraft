@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/stores';
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -21,6 +22,14 @@
 					? email
 					: translate(lang, 'nav.signIn')
 	);
+	let href = $derived(
+		(() => {
+			const path = $page.url.pathname;
+			if (path === '/auth' || path.startsWith('/auth/')) return '/auth';
+			const next = path + $page.url.search;
+			return `/auth?next=${encodeURIComponent(next)}`;
+		})()
+	);
 
 	function initialsFromEmail(value: string): string {
 		const local = value.split('@')[0] ?? '?';
@@ -35,7 +44,7 @@
 <a
 	class="account-chip"
 	class:is-active={active}
-	href="/auth"
+	{href}
 	aria-label={ariaLabel}
 	title={email ?? ariaLabel}
 >
