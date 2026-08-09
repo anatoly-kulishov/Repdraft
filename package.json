@@ -13,7 +13,8 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"check:insights": "node --experimental-strip-types ./src/lib/domain/insights.selfcheck.ts",
-		"check:filters": "node --experimental-strip-types ./src/lib/domain/filters.selfcheck.ts"
+		"check:filters": "node --experimental-strip-types ./src/lib/domain/filters.selfcheck.ts",
+		"check:workout": "node --experimental-strip-types ./src/lib/domain/workout.selfcheck.ts"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.1",

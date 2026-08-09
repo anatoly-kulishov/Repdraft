@@ -63,3 +63,8 @@ export const localSessionRepository: SessionRepository = {
 		writeSessions(readSessions().filter((s) => s.id !== id));
 	}
 };
+
+/** Wipe finished sessions; keep any unfinished rows if present. */
+export function clearFinishedSessions(): void {
+	writeSessions(readSessions().filter((s) => !s.finishedAt));
+}

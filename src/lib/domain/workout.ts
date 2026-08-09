@@ -146,6 +146,42 @@ export function moveExercise(plan: WorkoutPlan, fromIndex: number, toIndex: numb
 	return withUpdated(plan, exercises);
 }
 
+/**
+ * ↑/↓ semantics:
+ * - inside a superset → reorder within the group
+ * - first↑ / last↓ of a group → move the whole block
+ * - solo next to a group → jump over the block (do not land in the middle)
+ */
+export function moveByArrow(
+	plan: WorkoutPlan,
+	fromIndex: number,
+	direction: -1 | 1
+): WorkoutPlan {
+	const n = plan.exercises.length;
+	const toIndex = fromIndex + direction;
+	if (fromIndex < 0 || fromIndex >= n || toIndex < 0 || toIndex >= n) return plan;
+
+	const bounds = groupBounds(plan.exercises, fromIndex);
+	if (bounds) {
+		if (direction < 0 && fromIndex > bounds.start) {
+			return moveWithinGroup(plan, fromIndex, fromIndex - 1);
+		}
+		if (direction > 0 && fromIndex < bounds.end) {
+			return moveWithinGroup(plan, fromIndex, fromIndex + 1);
+		}
+		const dest = direction < 0 ? bounds.start - 1 : bounds.end + 1;
+		if (dest < 0 || dest >= n) return plan;
+		return moveExercise(plan, fromIndex, dest);
+	}
+
+	const neighborBounds = groupBounds(plan.exercises, toIndex);
+	if (neighborBounds) {
+		const dest = direction < 0 ? neighborBounds.start : neighborBounds.end;
+		return moveExercise(plan, fromIndex, dest);
+	}
+	return moveExercise(plan, fromIndex, toIndex);
+}
+
 /** Reorder within a group only (from/to must be in the same group). */
 export function moveWithinGroup(plan: WorkoutPlan, fromIndex: number, toIndex: number): WorkoutPlan {
 	const bounds = groupBounds(plan.exercises, fromIndex);

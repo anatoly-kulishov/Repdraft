@@ -84,7 +84,7 @@
 			>
 			<button
 				type="button"
-				class="panel flex w-full cursor-zoom-in items-center justify-center overflow-hidden !p-4 sm:!p-5 lg:!p-3"
+				class="panel relative flex w-full cursor-zoom-in items-center justify-center overflow-hidden !p-4 sm:!p-5 lg:!p-3"
 				aria-label={translate(lang, 'exercise.openMedia')}
 				onclick={openMedia}
 			>
@@ -97,6 +97,23 @@
 					decoding="async"
 					class="pointer-events-none block h-[180px] w-[180px] max-w-full object-contain"
 				/>
+				<span
+					class="pointer-events-none absolute bottom-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-surface)_88%,transparent)] text-[var(--color-muted)] shadow-sm backdrop-blur-[2px]"
+					aria-hidden="true"
+				>
+					<svg
+						viewBox="0 0 24 24"
+						class="h-4 w-4"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.9"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<circle cx="10.5" cy="10.5" r="5.5" />
+						<path d="M15.5 15.5 20 20" />
+					</svg>
+				</span>
 			</button>
 		</div>
 

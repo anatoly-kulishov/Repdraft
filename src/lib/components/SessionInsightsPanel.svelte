@@ -12,13 +12,16 @@
 	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { translate } from '$lib/i18n/messages';
+	import { live } from '$lib/stores/live';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { toasts } from '$lib/stores/toasts';
 
 	let { sessions }: { sessions: WorkoutSession[] } = $props();
 
 	let lang = $derived($resolvedLocale);
 	let index = $state<ExerciseIndexItem[]>([]);
 	let indexReady = $state(false);
+	let busyId = $state<string | null>(null);
 
 	$effect(() => {
 		let cancelled = false;
@@ -77,6 +80,34 @@
 	function formatKg(n: number): string {
 		if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
 		return String(Math.round(n));
+	}
+
+	async function onRemoveSession(session: WorkoutSession) {
+		if (!confirm(translate(lang, 'workouts.confirmDeleteSession', { name: session.planName }))) {
+			return;
+		}
+		busyId = session.id;
+		try {
+			await live.removeFromHistory(session.id);
+			toasts.show(translate(lang, 'workouts.sessionDeleted'), 'info');
+		} catch {
+			toasts.show(translate(lang, 'workouts.sessionDeleteFail'), 'error');
+		} finally {
+			busyId = null;
+		}
+	}
+
+	async function onClearHistory() {
+		if (!confirm(translate(lang, 'workouts.confirmClearHistory'))) return;
+		busyId = '__clear__';
+		try {
+			await live.clearHistory();
+			toasts.show(translate(lang, 'workouts.historyCleared'), 'info');
+		} catch {
+			toasts.show(translate(lang, 'workouts.historyClearFail'), 'error');
+		} finally {
+			busyId = null;
+		}
 	}
 </script>
 
@@ -177,11 +208,21 @@
 
 		{#if recent.length > 0}
 			<div class="mt-4">
-				<p class="mb-2 text-sm font-semibold">{translate(lang, 'workouts.historyTitle')}</p>
+				<div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+					<p class="text-sm font-semibold">{translate(lang, 'workouts.historyTitle')}</p>
+					<button
+						type="button"
+						class="btn-link text-xs !text-[var(--color-muted)]"
+						disabled={busyId !== null}
+						onclick={() => void onClearHistory()}
+					>
+						{translate(lang, 'workouts.clearHistory')}
+					</button>
+				</div>
 				<ul class="flex flex-col gap-2">
 					{#each recent as session (session.id)}
 						<li class="panel-inset flex items-center justify-between gap-2 !p-2.5 text-sm">
-							<div class="min-w-0">
+							<div class="min-w-0 flex-1">
 								<p class="truncate font-medium">{session.planName}</p>
 								<p class="text-xs text-[var(--color-muted)]">
 									{formatDate(session.finishedAt!)} ·
@@ -192,6 +233,24 @@
 									· {formatKg(sessionVolumeKg(session))} kg
 								</p>
 							</div>
+							<button
+								type="button"
+								class="btn-ghost is-danger shrink-0"
+								disabled={busyId !== null}
+								aria-label={translate(lang, 'workouts.deleteSession')}
+								title={translate(lang, 'workouts.deleteSession')}
+								onclick={() => void onRemoveSession(session)}
+							>
+								<svg viewBox="0 0 24 24" class="h-[1.1rem] w-[1.1rem]" aria-hidden="true">
+									<path
+										d="M6 6l12 12M18 6L6 18"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="1.8"
+										stroke-linecap="round"
+									/>
+								</svg>
+							</button>
 						</li>
 					{/each}
 				</ul>
