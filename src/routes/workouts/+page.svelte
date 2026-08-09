@@ -1,6 +1,7 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
+	import SessionInsightsPanel from '$lib/components/SessionInsightsPanel.svelte';
 	import { completedSetCount, totalSetCount } from '$lib/domain/session';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
@@ -13,6 +14,7 @@
 
 	let lang = $derived($resolvedLocale);
 	let active = $derived($live.session);
+	let history = $derived($live.history);
 
 	onMount(() => {
 		void plans.refresh();
@@ -121,6 +123,10 @@
 		</div>
 	{/if}
 
+	{#if $live.ready}
+		<SessionInsightsPanel sessions={history} />
+	{/if}
+
 	{#if !$plansReady}
 		<PageSkeleton rows={3} />
 	{:else if $plans.length === 0}
@@ -128,7 +134,7 @@
 			<p class="panel-dashed text-sm text-[var(--color-muted)]">
 				{translate(lang, 'workouts.activeOrphanHint')}
 			</p>
-		{:else}
+		{:else if history.length === 0}
 			<EmptyState
 				title={translate(lang, 'workouts.emptyTitle')}
 				description={translate(lang, 'workouts.emptyDesc')}

@@ -1,7 +1,7 @@
 {
 	"name": "repdraft",
 	"private": true,
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"description": "Каталог упражнений и конструктор тренировок",
 	"type": "module",
 	"scripts": {
@@ -11,7 +11,16 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"build:data": "node scripts/build-exercise-data.mjs",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"check:domain": "node ./scripts/run-domain-selfchecks.mjs",
+		"check:insights": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/insights.selfcheck.ts",
+		"check:filters": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/filters.selfcheck.ts",
+		"check:workout": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/workout.selfcheck.ts",
+		"check:session": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/session.selfcheck.ts",
+		"check:records": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/records.selfcheck.ts",
+		"check:clips": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/clips.selfcheck.ts",
+		"check:input": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/inputLimits.selfcheck.ts",
+		"backfill:gif-cache": "node --env-file=.env scripts/backfill-technique-gif-cache.mjs"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.1",

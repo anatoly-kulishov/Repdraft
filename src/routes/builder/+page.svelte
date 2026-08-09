@@ -159,7 +159,7 @@
 							selected={selectedIds.includes(item.exerciseId)}
 							groupRole={role}
 							onupdate={(patch) => draft.updateExercise(item.exerciseId, patch)}
-							onmove={(from, to) => draft.moveExercise(from, to)}
+							onmove={(from, to) => draft.moveByArrow(from, to > from ? 1 : -1)}
 							onremove={() => {
 								draft.removeFromDraft(item.exerciseId);
 								selectedIds = selectedIds.filter((id) => id !== item.exerciseId);

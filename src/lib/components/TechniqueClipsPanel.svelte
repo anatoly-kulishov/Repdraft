@@ -49,6 +49,10 @@
 	let dragOver = $state(false);
 	let highlightId = $state<string | null>(null);
 	let lightbox = $state<TechniqueClip | null>(null);
+	let lightboxReady = $state(false);
+	let lightboxFailed = $state(false);
+	let lightboxImg: HTMLImageElement | undefined = $state();
+	let thumbReady = $state(new Set<string>());
 	let galleryInput: HTMLInputElement | undefined = $state();
 	let cameraInput: HTMLInputElement | undefined = $state();
 	let sectionEl: HTMLElement | undefined = $state();
@@ -393,6 +397,11 @@
 		return clip.title || translate(lang, 'clips.technique');
 	}
 
+	function markThumbReady(id: string) {
+		if (thumbReady.has(id)) return;
+		thumbReady = new Set(thumbReady).add(id);
+	}
+
 	function onKeydown(event: KeyboardEvent) {
 		if (event.key === 'Escape' && lightbox) lightbox = null;
 	}
@@ -405,6 +414,18 @@
 		return () => {
 			document.body.style.overflow = prev;
 		};
+	});
+
+	/** Reset lightbox media state; honor already-cached GIFs. */
+	$effect(() => {
+		const clip = lightbox;
+		lightboxReady = false;
+		lightboxFailed = false;
+		if (!clip) return;
+		queueMicrotask(() => {
+			const img = lightboxImg;
+			if (img?.complete && img.naturalWidth > 0) lightboxReady = true;
+		});
 	});
 </script>
 
@@ -585,16 +606,26 @@
 				>
 					<button
 						type="button"
-						class="block w-full cursor-zoom-in bg-[var(--color-surface-muted)] p-0"
+						class="relative block w-full cursor-zoom-in overflow-hidden bg-[var(--color-surface-muted)] p-0"
 						onclick={() => (lightbox = clip)}
 						aria-label={translate(lang, 'clips.open', { title: clipTitle(clip) })}
 					>
-						<img
-							src={clip.gifUrl}
-							alt={clipTitle(clip)}
-							class="aspect-square w-full object-contain"
-							loading="lazy"
-						/>
+						<div class="relative aspect-square w-full">
+							{#if !thumbReady.has(clip.id)}
+								<div class="feed-skel absolute inset-0" aria-hidden="true"></div>
+							{/if}
+							<img
+								src={clip.gifUrl}
+								alt={clipTitle(clip)}
+								width="360"
+								height="360"
+								class={`absolute inset-0 m-auto max-h-full max-w-full object-contain transition-opacity duration-200 ${thumbReady.has(clip.id) ? 'opacity-100' : 'opacity-0'}`}
+								loading="lazy"
+								decoding="async"
+								onload={() => markThumbReady(clip.id)}
+								onerror={() => markThumbReady(clip.id)}
+							/>
+						</div>
 					</button>
 					<div class="space-y-2 p-3">
 						<div>
@@ -663,12 +694,43 @@
 			if (e.target === e.currentTarget) lightbox = null;
 		}}
 	>
-		<div class="panel max-h-[90vh] w-full max-w-md overflow-auto !rounded-2xl shadow-xl">
-			<img
-				src={lightbox.gifUrl}
-				alt={clipTitle(lightbox)}
-				class="mx-auto max-h-[60vh] w-full bg-black object-contain"
-			/>
+		<div
+			class="panel w-[min(100%,24rem)] max-h-[90vh] overflow-auto !rounded-2xl !p-0 shadow-xl"
+		>
+			<div class="relative aspect-square w-full overflow-hidden bg-[var(--color-surface-muted)]">
+				{#if !lightboxReady && !lightboxFailed}
+					<div class="feed-skel absolute inset-0" aria-hidden="true"></div>
+					<div class="absolute inset-0 z-[1] flex items-center justify-center">
+						<Spinner size="sm" />
+					</div>
+				{/if}
+				{#if lightboxFailed}
+					<p
+						class="absolute inset-0 z-[1] flex items-center justify-center px-4 text-center text-sm text-[var(--color-muted)]"
+					>
+						{translate(lang, 'clips.mediaFail')}
+					</p>
+				{:else}
+					<img
+						bind:this={lightboxImg}
+						src={lightbox.gifUrl}
+						alt={clipTitle(lightbox)}
+						width="480"
+						height="480"
+						class={`absolute inset-0 h-full w-full object-contain transition-opacity duration-200 ${lightboxReady ? 'opacity-100' : 'opacity-0'}`}
+						decoding="async"
+						fetchpriority="high"
+						onload={() => {
+							lightboxReady = true;
+							lightboxFailed = false;
+						}}
+						onerror={() => {
+							lightboxReady = false;
+							lightboxFailed = true;
+						}}
+					/>
+				{/if}
+			</div>
 			<div class="space-y-3 p-4">
 				<div>
 					<p class="font-semibold">{clipTitle(lightbox)}</p>

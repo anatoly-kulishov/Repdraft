@@ -146,6 +146,42 @@ export function moveExercise(plan: WorkoutPlan, fromIndex: number, toIndex: numb
 	return withUpdated(plan, exercises);
 }
 
+/**
+ * ↑/↓ semantics:
+ * - inside a superset → reorder within the group
+ * - first↑ / last↓ of a group → move the whole block
+ * - solo next to a group → jump over the block (do not land in the middle)
+ */
+export function moveByArrow(
+	plan: WorkoutPlan,
+	fromIndex: number,
+	direction: -1 | 1
+): WorkoutPlan {
+	const n = plan.exercises.length;
+	const toIndex = fromIndex + direction;
+	if (fromIndex < 0 || fromIndex >= n || toIndex < 0 || toIndex >= n) return plan;
+
+	const bounds = groupBounds(plan.exercises, fromIndex);
+	if (bounds) {
+		if (direction < 0 && fromIndex > bounds.start) {
+			return moveWithinGroup(plan, fromIndex, fromIndex - 1);
+		}
+		if (direction > 0 && fromIndex < bounds.end) {
+			return moveWithinGroup(plan, fromIndex, fromIndex + 1);
+		}
+		const dest = direction < 0 ? bounds.start - 1 : bounds.end + 1;
+		if (dest < 0 || dest >= n) return plan;
+		return moveExercise(plan, fromIndex, dest);
+	}
+
+	const neighborBounds = groupBounds(plan.exercises, toIndex);
+	if (neighborBounds) {
+		const dest = direction < 0 ? neighborBounds.start : neighborBounds.end;
+		return moveExercise(plan, fromIndex, dest);
+	}
+	return moveExercise(plan, fromIndex, toIndex);
+}
+
 /** Reorder within a group only (from/to must be in the same group). */
 export function moveWithinGroup(plan: WorkoutPlan, fromIndex: number, toIndex: number): WorkoutPlan {
 	const bounds = groupBounds(plan.exercises, fromIndex);
@@ -281,4 +317,41 @@ export function mergeWorkoutPlans(local: WorkoutPlan[], cloud: WorkoutPlan[]): W
 		}
 	}
 	return [...map.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+/** Throws if draft / superset / arrow-move invariants regress. */
+export function runWorkoutSelfCheck(): void {
+	let plan = createEmptyDraft('Check');
+	const a = addExercise(plan, 'ex-a');
+	if (!a.added) throw new Error('first add should succeed');
+	plan = a.plan;
+	const again = addExercise(plan, 'ex-a');
+	if (again.added) throw new Error('duplicate add should be rejected');
+	plan = addExercise(plan, 'ex-b').plan;
+	plan = addExercise(plan, 'ex-c').plan;
+
+	plan = formSuperset(plan, ['ex-a', 'ex-b']);
+	const g = plan.exercises[0]?.groupId;
+	if (!g || plan.exercises[0]?.groupId !== plan.exercises[1]?.groupId) {
+		throw new Error('formSuperset should share groupId');
+	}
+	if (plan.exercises[2]?.groupId) throw new Error('ex-c should stay solo');
+
+	const before = plan.exercises.map((ex) => ex.exerciseId).join(',');
+	plan = moveByArrow(plan, 0, 1);
+	const after = plan.exercises.map((ex) => ex.exerciseId).join(',');
+	if (before === 'ex-a,ex-b,ex-c' && after !== 'ex-b,ex-a,ex-c') {
+		throw new Error(`moveByArrow within group expected ex-b,ex-a,ex-c got ${after}`);
+	}
+
+	plan = dissolveSuperset(plan, g);
+	if (plan.exercises.some((ex) => ex.groupId === g)) {
+		throw new Error('dissolveSuperset should clear groupId');
+	}
+
+	plan = removeExercise(plan, 'ex-b');
+	if (plan.exercises.some((ex) => ex.exerciseId === 'ex-b')) {
+		throw new Error('removeExercise failed');
+	}
+	if (plan.exercises.length !== 2) throw new Error(`expected 2 left, got ${plan.exercises.length}`);
 }

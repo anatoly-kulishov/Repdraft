@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+	<!-- Maskable: full-bleed teal; glyph in center ~55% safe zone -->
+	<rect width="512" height="512" fill="#0F766E"/>
+	<g transform="translate(256 256) scale(0.55) translate(-256 -256)">
+		<!-- Barbell scaled from 32?512 (×16) -->
+		<rect x="144" y="232" width="224" height="48" rx="24" fill="#F7F9FB"/>
+		<rect x="80" y="160" width="72" height="192" rx="20" fill="#F7F9FB"/>
+		<rect x="56" y="192" width="40" height="128" rx="16" fill="#F7F9FB"/>
+		<rect x="360" y="160" width="72" height="192" rx="20" fill="#F7F9FB"/>
+		<rect x="416" y="192" width="40" height="128" rx="16" fill="#F7F9FB"/>
+	</g>
+</svg>

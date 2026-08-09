@@ -33,9 +33,14 @@
 		loaded = true;
 	}
 
-	function addToBuilder(event: MouseEvent) {
+	function toggleDraft(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
+		if (inDraft) {
+			draft.removeFromDraft(exercise.id);
+			toasts.show(translate(lang, 'exercise.removed'), 'info');
+			return;
+		}
 		const result = draft.addToDraft(exercise.id);
 		if (result.added) {
 			toasts.show(translate(lang, 'exercise.added'), 'success');
@@ -80,8 +85,9 @@
 			type="button"
 			class="exercise-card-add"
 			class:is-in-draft={inDraft}
-			onclick={addToBuilder}
-			aria-label={translate(lang, inDraft ? 'exercise.already' : 'exercise.addDraft')}
+			onclick={toggleDraft}
+			aria-label={translate(lang, inDraft ? 'exercise.removeDraft' : 'exercise.addDraft')}
+			aria-pressed={inDraft}
 		>
 			{#if inDraft}
 				<svg class="exercise-card-add-icon" viewBox="0 0 16 16" aria-hidden="true">
