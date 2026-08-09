@@ -68,7 +68,7 @@
 			{:else}
 				{translate(lang, 'records.local')}
 				{' '}
-				<a class="font-semibold text-[var(--color-accent)] underline" href="/auth"
+				<a class="font-semibold text-[var(--color-accent)] underline" href="/auth?next=%2Frecords"
 					>{translate(lang, 'records.signIn')}</a
 				>{translate(lang, 'records.syncSuffix')}
 			{/if}
