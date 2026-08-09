@@ -1,7 +1,11 @@
 {
 	"name": "repdraft",
 	"private": true,
+<<<<<<< HEAD
 	"version": "0.5.0",
+=======
+	"version": "0.4.2",
+>>>>>>> cursor/v0.4.2-filter-cascade
 	"description": "Каталог упражнений и конструктор тренировок",
 	"type": "module",
 	"scripts": {
@@ -12,7 +16,11 @@
 		"build:data": "node scripts/build-exercise-data.mjs",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+<<<<<<< HEAD
 		"check:insights": "node --experimental-strip-types ./src/lib/domain/insights.selfcheck.ts"
+=======
+		"check:filters": "node --experimental-strip-types ./src/lib/domain/filters.selfcheck.ts"
+>>>>>>> cursor/v0.4.2-filter-cascade
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.1",
