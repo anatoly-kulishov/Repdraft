@@ -16,7 +16,7 @@
 	--font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 	--header-h: 3.5rem;
 	--tabbar-h: 4.25rem;
-	--sticky-actions-h: 4.75rem;
+	--sticky-actions-h: 7rem;
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 	--safe-top: env(safe-area-inset-top, 0px);
 	--page-gap: 1.25rem;
