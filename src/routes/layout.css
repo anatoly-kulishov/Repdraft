@@ -16,7 +16,7 @@
 	--font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 	--header-h: 3.5rem;
 	--tabbar-h: 4.25rem;
-	--sticky-actions-h: 4.75rem;
+	--sticky-actions-h: 7rem;
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 	--safe-top: env(safe-area-inset-top, 0px);
 	--page-gap: 1.25rem;
@@ -34,7 +34,9 @@
 	display: block;
 }
 .shell-main {
-	padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 1.25rem);
+	padding-top: 1rem;
+	/* Footer (+ .shell-footer-pad) clears the tabbar — don't double-count it here. */
+	padding-bottom: 1rem;
 }
 .shell-footer-pad {
 	padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom));
@@ -58,8 +60,9 @@
 	}
 	.shell-main {
 		padding-inline: 1.5rem;
-		padding-block: 1.5rem;
-		padding-bottom: 2rem;
+		padding-top: 1.5rem;
+		/* Room between last panel (e.g. Technique) and attribution footer */
+		padding-bottom: 3rem;
 	}
 	.shell-footer-pad {
 		padding-bottom: 0;
@@ -902,9 +905,9 @@ button:focus-visible {
 	overflow: hidden;
 }
 
-/* Extra room above sticky CTA (main already clears the tabbar) */
+/* Extra room above sticky CTA (footer / tabbar cleared separately) */
 .pb-mobile-actions {
-	padding-bottom: calc(var(--sticky-actions-h) + 1.25rem);
+	padding-bottom: calc(var(--sticky-actions-h) + 0.5rem);
 }
 
 @media (prefers-reduced-motion: reduce) {
