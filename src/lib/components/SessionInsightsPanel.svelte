@@ -1,6 +1,7 @@
 <script lang="ts">
 	import {
 		currentWeekSummary,
+		insightsChartMode,
 		recentFinishedSessions,
 		sessionDerivedPrs,
 		sessionVolumeKg,
@@ -45,7 +46,9 @@
 	let series = $derived(weeklyVolumeSeries(finished, 8));
 	let prs = $derived(sessionDerivedPrs(finished, 5));
 	let recent = $derived(recentFinishedSessions(finished, 8));
+	let chartMode = $derived(insightsChartMode(series));
 	let maxVolume = $derived(Math.max(1, ...series.map((b) => b.volumeKg)));
+	let maxSessions = $derived(Math.max(1, ...series.map((b) => b.sessionCount)));
 
 	function nameFor(id: string): string {
 		const item = index.find((x) => x.id === id);
@@ -148,27 +151,43 @@
 					{finished.length}
 				</p>
 				<p class="text-sm text-[var(--color-muted)]">
-					{translate(lang, 'insights.volumeHint')}
+					{translate(
+						lang,
+						chartMode === 'frequency' ? 'insights.frequencyHint' : 'insights.volumeHint'
+					)}
 				</p>
 			</div>
 		</div>
 
 		<div class="mt-4">
-			<p class="mb-2 text-sm font-semibold">{translate(lang, 'insights.volumeChart')}</p>
+			<p class="mb-2 text-sm font-semibold">
+				{translate(
+					lang,
+					chartMode === 'frequency' ? 'insights.frequencyChart' : 'insights.volumeChart'
+				)}
+			</p>
 			<div
 				class="flex h-32 items-end gap-1.5 sm:gap-2"
 				role="img"
-				aria-label={translate(lang, 'insights.volumeChart')}
+				aria-label={translate(
+					lang,
+					chartMode === 'frequency' ? 'insights.frequencyChart' : 'insights.volumeChart'
+				)}
 			>
 				{#each series as bucket (bucket.weekKey)}
-					{@const barPx =
-						bucket.volumeKg <= 0
-							? 2
-							: Math.max(6, Math.round((bucket.volumeKg / maxVolume) * 88))}
+					{@const value = chartMode === 'frequency' ? bucket.sessionCount : bucket.volumeKg}
+					{@const max = chartMode === 'frequency' ? maxSessions : maxVolume}
+					{@const barPx = value <= 0 ? 2 : Math.max(6, Math.round((value / max) * 88))}
+					{@const topLabel =
+						chartMode === 'frequency'
+							? bucket.sessionCount > 0
+								? String(bucket.sessionCount)
+								: ''
+							: bucket.volumeKg > 0
+								? formatKg(bucket.volumeKg)
+								: ''}
 					<div class="flex min-w-0 flex-1 flex-col items-center gap-1">
-						<span class="h-3 text-[10px] tabular-nums text-[var(--color-muted)]">
-							{bucket.volumeKg > 0 ? formatKg(bucket.volumeKg) : ''}
-						</span>
+						<span class="h-3 text-[10px] tabular-nums text-[var(--color-muted)]">{topLabel}</span>
 						<div class="flex h-[5.5rem] w-full max-w-[2.25rem] flex-col justify-end">
 							<div
 								class="w-full rounded-t-md bg-[var(--color-accent)]"
