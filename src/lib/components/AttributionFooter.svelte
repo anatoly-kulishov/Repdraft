@@ -7,7 +7,7 @@
 </script>
 
 <footer
-	class="mt-auto border-t border-[var(--color-border)] px-4 py-4 text-center text-xs text-[var(--color-muted)] md:px-6"
+	class="mt-auto border-t border-[var(--color-border)] px-4 py-3 text-center text-[11px] leading-snug text-[var(--color-muted)] md:px-6 md:py-4 md:text-xs"
 >
 	{translate(lang, 'attr.media')}
 	<a

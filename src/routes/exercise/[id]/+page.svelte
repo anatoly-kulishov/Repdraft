@@ -23,6 +23,8 @@
 		const map = exercise.instruction_steps ?? {};
 		return map[lang] ?? map.ru ?? map.en ?? [];
 	});
+	let mediaOpen = $state(false);
+	let mediaCloseBtn: HTMLButtonElement | undefined = $state();
 
 	function addToDraft() {
 		if (!exercise) return;
@@ -33,7 +35,35 @@
 			toasts.show(translate(lang, 'exercise.already'), 'info');
 		}
 	}
+
+	function openMedia() {
+		mediaOpen = true;
+	}
+
+	function closeMedia() {
+		mediaOpen = false;
+	}
+
+	function onKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape' && mediaOpen) closeMedia();
+	}
+
+	$effect(() => {
+		if (!mediaOpen) return;
+		queueMicrotask(() => mediaCloseBtn?.focus());
+	});
+
+	$effect(() => {
+		if (typeof document === 'undefined' || !mediaOpen) return;
+		const prev = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+		return () => {
+			document.body.style.overflow = prev;
+		};
+	});
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <svelte:head>
 	<title>{exercise ? `${title} — Repdraft` : `${translate(lang, 'exercise.notFoundTitle')} — Repdraft`}</title>
@@ -47,12 +77,17 @@
 		actionLabel={translate(lang, 'builder.toCatalog')}
 	/>
 {:else}
-	<article class="grid gap-5 pb-mobile-actions lg:grid-cols-[280px_1fr] lg:gap-6 lg:pb-0">
-		<div>
+	<article class="grid min-w-0 gap-5 pb-mobile-actions lg:grid-cols-[280px_1fr] lg:gap-6 lg:pb-0">
+		<div class="min-w-0">
 			<a href="/" class="mb-3 inline-flex text-sm font-medium text-[var(--color-accent)] md:hidden"
 				>{translate(lang, 'exercise.back')}</a
 			>
-			<div class="panel overflow-hidden !p-2">
+			<button
+				type="button"
+				class="panel flex w-full cursor-zoom-in items-center justify-center overflow-hidden !p-4 sm:!p-5 lg:!p-3"
+				aria-label={translate(lang, 'exercise.openMedia')}
+				onclick={openMedia}
+			>
 				<img
 					src={`/${exercise.gif_url}`}
 					alt={title}
@@ -60,13 +95,12 @@
 					height="180"
 					fetchpriority="high"
 					decoding="async"
-					class="mx-auto h-[180px] w-[180px] object-contain"
+					class="pointer-events-none block h-[180px] w-[180px] max-w-full object-contain"
 				/>
-			</div>
-			<p class="mt-2 text-xs text-[var(--color-muted)]">{exercise.attribution}</p>
+			</button>
 		</div>
 
-		<div class="flex flex-col gap-4">
+		<div class="flex min-w-0 flex-col gap-4">
 			<div>
 				<p class="text-sm text-[var(--color-muted)]">{labelBodyPart(exercise.body_part, lang)}</p>
 				<h1 class="page-title">{title}</h1>
@@ -97,7 +131,6 @@
 				<button type="button" class="btn-primary" onclick={addToDraft}
 					>{translate(lang, 'exercise.addDraft')}</button
 				>
-				<a class="btn-secondary" href="/builder">{translate(lang, 'exercise.openBuilder')}</a>
 			</div>
 
 			<section>
@@ -116,11 +149,44 @@
 	</article>
 
 	<div class="sticky-actions">
-		<div class="mx-auto flex max-w-6xl flex-col gap-1">
+		<div class="mx-auto max-w-6xl">
 			<button type="button" class="btn-primary btn-block" onclick={addToDraft}
 				>{translate(lang, 'exercise.toDraft')}</button
 			>
-			<a class="btn-link" href="/builder">{translate(lang, 'exercise.openBuilder')}</a>
 		</div>
 	</div>
+
+	{#if mediaOpen}
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4 pb-[calc(var(--safe-bottom)+1rem)]"
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+			aria-label={title}
+			onclick={(e) => {
+				if (e.target === e.currentTarget) closeMedia();
+			}}
+		>
+			<div class="flex w-full max-w-lg flex-col items-center gap-3">
+				<img
+					src={`/${exercise.gif_url}`}
+					alt={title}
+					width="180"
+					height="180"
+					decoding="async"
+					class="aspect-square w-[min(100%,22rem)] max-h-[min(80vh,28rem)] rounded-[var(--radius-panel)] bg-[var(--color-surface)] object-contain shadow-xl"
+				/>
+				<button
+					type="button"
+					class="btn-secondary"
+					bind:this={mediaCloseBtn}
+					onclick={closeMedia}
+				>
+					{translate(lang, 'exercise.closeMedia')}
+				</button>
+			</div>
+		</div>
+	{/if}
 {/if}

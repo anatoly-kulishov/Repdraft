@@ -1,18 +1,25 @@
 import type { AppLocale } from '$lib/i18n/locale';
 import type { ExerciseIndexItem } from './types';
 
-/** Localized exercise title. */
+/**
+ * Catalog `name_ru` is incomplete machine translation (mixed EN/RU, broken word order).
+ * Show the English source title everywhere; keep `name_ru` for search only.
+ */
 export function exerciseName(
 	item: Pick<ExerciseIndexItem, 'name' | 'name_ru'>,
-	locale: AppLocale = 'ru'
+	_locale: AppLocale = 'ru'
 ): string {
-	if (locale === 'ru') {
-		const ru = item.name_ru?.trim();
-		return ru || item.name;
-	}
-	return item.name;
+	return titleCaseExerciseName(item.name);
 }
 
-export function exerciseNameSortLocale(locale: AppLocale): string {
-	return locale === 'ru' ? 'ru' : 'en';
+export function exerciseNameSortLocale(_locale: AppLocale): string {
+	return 'en';
+}
+
+function titleCaseExerciseName(raw: string): string {
+	return raw
+		.trim()
+		.split(/\s+/)
+		.map((part) => (part ? part[0]!.toUpperCase() + part.slice(1) : part))
+		.join(' ');
 }

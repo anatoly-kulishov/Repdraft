@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { translate } from '$lib/i18n/messages';
+	import { resolvedLocale } from '$lib/stores/locale';
+
 	let {
 		label = null,
 		size = 'md',
@@ -11,7 +14,9 @@
 		block?: boolean;
 	} = $props();
 
+	let lang = $derived($resolvedLocale);
 	let dim = $derived(size === 'sm' ? '1rem' : size === 'lg' ? '2rem' : '1.35rem');
+	let statusLabel = $derived(label ?? translate(lang, 'common.loading'));
 </script>
 
 <div
@@ -24,6 +29,6 @@
 	{#if label}
 		<span class="loader-label">{label}</span>
 	{:else}
-		<span class="sr-only">Loading</span>
+		<span class="sr-only">{statusLabel}</span>
 	{/if}
 </div>

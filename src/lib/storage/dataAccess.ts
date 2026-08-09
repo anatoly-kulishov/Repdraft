@@ -6,7 +6,11 @@ import { localRecordRepository } from './localRecordRepository';
 import { localSessionRepository } from './localSessionRepository';
 import { localWorkoutRepository } from './localWorkoutRepository';
 import { supabaseRecordRepository } from './supabaseRecordRepository';
-import { supabaseSessionRepository } from './supabaseSessionRepository';
+import {
+	isSessionsTableMissing,
+	isSessionsTableUnavailable,
+	supabaseSessionRepository
+} from './supabaseSessionRepository';
 import { supabaseWorkoutRepository } from './supabaseWorkoutRepository';
 
 let cloudMode = false;
@@ -15,7 +19,9 @@ let sessionsCloudOk = true;
 
 export function setCloudMode(enabled: boolean) {
 	cloudMode = enabled && isSupabaseConfigured();
-	sessionsCloudOk = true;
+	// Do not flip sessionsCloudOk back to true — PGRST205 sticks until full reload.
+	if (!cloudMode) return;
+	if (isSessionsTableUnavailable()) sessionsCloudOk = false;
 }
 
 export function isCloudMode(): boolean {
@@ -31,20 +37,32 @@ export function getRecordRepo(): RecordRepository {
 }
 
 export function getSessionRepo(): SessionRepository {
-	if (cloudMode && sessionsCloudOk) return supabaseSessionRepository;
+	if (cloudMode && sessionsCloudOk && !isSessionsTableUnavailable()) {
+		return supabaseSessionRepository;
+	}
 	return localSessionRepository;
+}
+
+function markSessionsCloudDown(err: unknown) {
+	sessionsCloudOk = false;
+	const e = err as { code?: string; message?: string } | null;
+	if (isSessionsTableMissing(e) || e?.message === 'SESSIONS_TABLE_MISSING') {
+		console.warn(
+			'session cloud skipped — create public.workout_sessions in Supabase (local SQL, not in git)'
+		);
+		return;
+	}
+	console.warn('session cloud skipped', err);
 }
 
 /** Always durable on device; also mirrors to cloud when available. */
 export async function persistSession(session: WorkoutSession): Promise<void> {
 	await localSessionRepository.save(session);
-	if (!cloudMode) return;
+	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
 	try {
 		await withTimeout(supabaseSessionRepository.save(session), 4000);
-		sessionsCloudOk = true;
 	} catch (err) {
-		sessionsCloudOk = false;
-		console.warn('session cloud save skipped', err);
+		markSessionsCloudDown(err);
 	}
 }
 
@@ -81,20 +99,24 @@ export async function migrateLocalToCloud(): Promise<void> {
 		console.warn('record migrate skipped', err);
 	}
 
+	if (!sessionsCloudOk || isSessionsTableUnavailable()) return;
+
 	const localSessions = await localSessionRepository.list();
 	void (async () => {
 		try {
 			const cloudSessions = await withTimeout(supabaseSessionRepository.list(), 2500);
+			if (isSessionsTableUnavailable()) {
+				sessionsCloudOk = false;
+				return;
+			}
 			const cloudSessionIds = new Set(cloudSessions.map((s) => s.id));
 			for (const session of localSessions) {
 				if (!cloudSessionIds.has(session.id)) {
 					await supabaseSessionRepository.save(session);
 				}
 			}
-			sessionsCloudOk = true;
 		} catch (err) {
-			sessionsCloudOk = false;
-			console.warn('session migrate skipped (create workout_sessions locally)', err);
+			markSessionsCloudDown(err);
 		}
 	})();
 }

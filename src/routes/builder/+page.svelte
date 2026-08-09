@@ -10,11 +10,11 @@
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let indexReady = $state(false);
-	let savedBanner = $state(false);
 	let selectedIds = $state<string[]>([]);
 	let lang = $derived($resolvedLocale);
 	let selectedCount = $derived(selectedIds.length);
@@ -35,8 +35,10 @@
 	async function save() {
 		try {
 			await plans.saveCurrent();
-			savedBanner = true;
+			draft.resetDraft();
+			selectedIds = [];
 			toasts.show(translate(lang, 'builder.savedToast'), 'success');
+			await goto('/workouts');
 		} catch (err) {
 			toasts.show(err instanceof Error ? err.message : translate(lang, 'builder.saveFail'), 'error');
 		}
@@ -46,7 +48,6 @@
 		if (confirm(translate(lang, 'builder.confirmClear'))) {
 			draft.resetDraft();
 			selectedIds = [];
-			savedBanner = false;
 		}
 	}
 
@@ -56,7 +57,6 @@
 		}
 		draft.resetDraft();
 		selectedIds = [];
-		savedBanner = false;
 	}
 
 	function toggleSelect(exerciseId: string) {
@@ -87,15 +87,17 @@
 	<title>{translate(lang, 'builder.title')} — Repdraft</title>
 </svelte:head>
 
-<section class="pb-mobile-actions md:pb-0">
+<section class:pb-mobile-actions={pageReady && $draft.exercises.length > 0} class="md:pb-0">
 	<div class="page-header flex items-start justify-between gap-3">
 		<div class="min-w-0">
 			<h1 class="page-title">{translate(lang, 'builder.title')}</h1>
 			<p class="page-lead">{translate(lang, 'builder.lead')}</p>
 		</div>
-		<button type="button" class="btn-secondary shrink-0" onclick={newWorkout} disabled={!pageReady}>
-			{translate(lang, 'builder.new')}
-		</button>
+		{#if pageReady && $draft.exercises.length > 0}
+			<button type="button" class="btn-secondary shrink-0" onclick={newWorkout}>
+				{translate(lang, 'builder.new')}
+			</button>
+		{/if}
 	</div>
 
 	{#if !pageReady}
@@ -107,22 +109,22 @@
 			<input
 				class="field mt-1.5 w-full max-w-xl"
 				type="text"
+				placeholder={translate(lang, 'builder.namePh')}
 				value={$draft.name}
 				oninput={(e) => draft.setName((e.currentTarget as HTMLInputElement).value)}
 			/>
 		</label>
 
-		<div class="actions-inline mb-4 items-center">
-			<button type="button" class="btn-primary" onclick={save} disabled={$draft.exercises.length === 0}>
-				{translate(lang, 'builder.save')}
-			</button>
-			<a class="btn-link" href="/">{translate(lang, 'builder.toCatalog')}</a>
-			<button type="button" class="btn-link !text-[var(--color-muted)]" onclick={clearDraft}>
-				{translate(lang, 'builder.clear')}
-			</button>
-		</div>
-
 		{#if $draft.exercises.length > 0}
+			<div class="actions-inline mb-4 items-center">
+				<button type="button" class="btn-primary" onclick={save}>
+					{translate(lang, 'builder.save')}
+				</button>
+				<button type="button" class="btn-link !text-[var(--color-muted)]" onclick={clearDraft}>
+					{translate(lang, 'builder.clear')}
+				</button>
+			</div>
+
 			<div class="mb-4 flex flex-wrap items-center gap-2">
 				<button
 					type="button"
@@ -139,19 +141,10 @@
 			</div>
 		{/if}
 
-		{#if savedBanner}
-			<p class="mb-4 text-sm text-[var(--color-accent)]">
-				{translate(lang, 'builder.saved')}
-				<a class="font-semibold underline" href="/workouts">{translate(lang, 'builder.myWorkouts')}</a>
-			</p>
-		{/if}
-
 		{#if $draft.exercises.length === 0}
 			<EmptyState
 				title={translate(lang, 'builder.emptyTitle')}
 				description={translate(lang, 'builder.emptyDesc')}
-				actionHref="/"
-				actionLabel={translate(lang, 'builder.toCatalog')}
 			/>
 		{:else}
 			<div class="flex flex-col gap-3">
@@ -183,26 +176,22 @@
 					</div>
 				{/each}
 			</div>
-		{/if}
 
-		<div class="sticky-actions">
-			<div class="mx-auto flex max-w-6xl flex-col gap-1">
-				<button
-					type="button"
-					class="btn-primary btn-block"
-					onclick={save}
-					disabled={$draft.exercises.length === 0}
-				>
-					{translate(lang, 'builder.save')}
-				</button>
-				<div class="flex justify-center gap-4">
-					<a class="btn-link" href="/">{translate(lang, 'builder.toCatalog')}</a>
-					<button type="button" class="btn-link !text-[var(--color-muted)]" onclick={clearDraft}>
+			<div class="sticky-actions">
+				<div class="mx-auto flex max-w-6xl flex-col gap-1">
+					<button type="button" class="btn-primary btn-block" onclick={save}>
+						{translate(lang, 'builder.save')}
+					</button>
+					<button
+						type="button"
+						class="btn-link mx-auto !text-[var(--color-muted)]"
+						onclick={clearDraft}
+					>
 						{translate(lang, 'builder.clear')}
 					</button>
 				</div>
 			</div>
-		</div>
+		{/if}
 		</div>
 	{/if}
 </section>

@@ -1,4 +1,11 @@
-import { CLIP_MODERATION, type TechniqueClip } from '$lib/domain/clips';
+import {
+	CLIP_GIF_MAX_BYTES,
+	CLIP_MODERATION,
+	assertCleanClipTitle,
+	assertValidGifBlob,
+	sanitizeAuthorLabel,
+	type TechniqueClip
+} from '$lib/domain/clips';
 import { newId } from '$lib/domain/id';
 import { getSupabase } from '$lib/supabase/client';
 
@@ -46,6 +53,15 @@ function isMissingModerationColumn(error: { message?: string; code?: string } | 
 	return /hidden|report_count|technique_clip_reports/i.test(error.message);
 }
 
+/** Prod feeds require moderation columns — no unfiltered legacy fallback. */
+function throwIfModerationMissing(error: { message?: string; code?: string }): never {
+	if (isMissingModerationColumn(error)) {
+		console.warn('technique_clips.hidden missing — apply moderation SQL; refusing unfiltered feed');
+		throw new Error('clips.needModSql');
+	}
+	throw error;
+}
+
 export async function listClipsForExercise(exerciseId: string): Promise<TechniqueClip[]> {
 	const supabase = getSupabase();
 	if (!supabase) return [];
@@ -62,17 +78,7 @@ export async function listClipsForExercise(exerciseId: string): Promise<Techniqu
 		return (withModeration.data as ClipRow[] | null)?.map(rowToClip) ?? [];
 	}
 
-	// Fallback before moderation SQL is applied.
-	if (!isMissingModerationColumn(withModeration.error)) throw withModeration.error;
-
-	const legacy = await supabase
-		.from('technique_clips')
-		.select('id,exercise_id,user_id,title,author_label,gif_path,created_at')
-		.eq('exercise_id', exerciseId)
-		.order('created_at', { ascending: false })
-		.limit(40);
-	if (legacy.error) throw legacy.error;
-	return (legacy.data as ClipRow[] | null)?.map(rowToClip) ?? [];
+	throwIfModerationMissing(withModeration.error);
 }
 
 export async function listRecentClips(limit = 16): Promise<TechniqueClip[]> {
@@ -90,15 +96,7 @@ export async function listRecentClips(limit = 16): Promise<TechniqueClip[]> {
 		return (withModeration.data as ClipRow[] | null)?.map(rowToClip) ?? [];
 	}
 
-	if (!isMissingModerationColumn(withModeration.error)) throw withModeration.error;
-
-	const legacy = await supabase
-		.from('technique_clips')
-		.select('id,exercise_id,user_id,title,author_label,gif_path,created_at')
-		.order('created_at', { ascending: false })
-		.limit(limit);
-	if (legacy.error) throw legacy.error;
-	return (legacy.data as ClipRow[] | null)?.map(rowToClip) ?? [];
+	throwIfModerationMissing(withModeration.error);
 }
 
 export async function countUserClipsLastDay(userId: string): Promise<number> {
@@ -120,10 +118,12 @@ export async function publishTechniqueClip(input: {
 	gifBlob: Blob;
 }): Promise<TechniqueClip> {
 	const supabase = getSupabase();
-	if (!supabase) throw new Error('Облако не подключено');
+	if (!supabase) throw new Error('errors.cloudOff');
 
 	const { data: userData, error: userError } = await supabase.auth.getUser();
-	if (userError || !userData.user) throw new Error('Нужно войти в аккаунт');
+	if (userError || !userData.user) throw new Error('errors.needAuth');
+
+	await assertValidGifBlob(input.gifBlob, { maxBytes: CLIP_GIF_MAX_BYTES });
 
 	const userId = userData.user.id;
 	const recent = await countUserClipsLastDay(userId);
@@ -132,7 +132,10 @@ export async function publishTechniqueClip(input: {
 	}
 
 	const email = userData.user.email ?? '';
-	const authorLabel = email.includes('@') ? email.split('@')[0]! : 'атлет';
+	const authorLabel = sanitizeAuthorLabel(
+		email.includes('@') ? email.split('@')[0]! : 'athlete'
+	);
+	const title = assertCleanClipTitle(input.title, 'Technique');
 	const clipId = newId();
 	const path = `${userId}/${clipId}.gif`;
 
@@ -148,7 +151,7 @@ export async function publishTechniqueClip(input: {
 			id: clipId,
 			exercise_id: input.exerciseId,
 			user_id: userId,
-			title: input.title.trim() || 'Техника',
+			title,
 			author_label: authorLabel,
 			gif_path: path
 		})
@@ -166,7 +169,7 @@ export async function publishTechniqueClip(input: {
 
 export async function deleteTechniqueClip(clip: TechniqueClip): Promise<void> {
 	const supabase = getSupabase();
-	if (!supabase) throw new Error('Облако не подключено');
+	if (!supabase) throw new Error('errors.cloudOff');
 
 	const { error } = await supabase.from('technique_clips').delete().eq('id', clip.id);
 	if (error) throw error;
@@ -176,12 +179,13 @@ export async function deleteTechniqueClip(clip: TechniqueClip): Promise<void> {
 
 export async function renameTechniqueClip(clipId: string, title: string): Promise<string> {
 	const supabase = getSupabase();
-	if (!supabase) throw new Error('Облако не подключено');
+	if (!supabase) throw new Error('errors.cloudOff');
 
 	const { data: userData, error: userError } = await supabase.auth.getUser();
 	if (userError || !userData.user) throw new Error('NEED_AUTH');
 
-	const nextTitle = title.trim() || 'Техника';
+	const nextTitle = assertCleanClipTitle(title);
+
 	const { data, error } = await supabase
 		.from('technique_clips')
 		.update({ title: nextTitle })
@@ -196,7 +200,7 @@ export async function renameTechniqueClip(clipId: string, title: string): Promis
 
 export async function reportTechniqueClip(clipId: string, reason = ''): Promise<{ hidden: boolean }> {
 	const supabase = getSupabase();
-	if (!supabase) throw new Error('Облако не подключено');
+	if (!supabase) throw new Error('errors.cloudOff');
 
 	const { data: userData, error: userError } = await supabase.auth.getUser();
 	if (userError || !userData.user) throw new Error('NEED_AUTH');
@@ -204,7 +208,7 @@ export async function reportTechniqueClip(clipId: string, reason = ''): Promise<
 	const { error } = await supabase.from('technique_clip_reports').insert({
 		clip_id: clipId,
 		reporter_id: userData.user.id,
-		reason: reason.trim().slice(0, 200)
+		reason: reason.replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 200)
 	});
 
 	if (error) {

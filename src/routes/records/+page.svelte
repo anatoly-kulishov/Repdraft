@@ -3,7 +3,7 @@
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import { formatPersonalRecord } from '$lib/domain/records';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { translate } from '$lib/i18n/messages';
+	import { translate, translateError } from '$lib/i18n/messages';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { auth } from '$lib/stores/auth';
@@ -45,7 +45,7 @@
 			await records.remove(exerciseId);
 			toasts.show(translate(lang, 'records.deleted'), 'info');
 		} catch (err) {
-			toasts.show(err instanceof Error ? err.message : 'Error', 'error');
+			toasts.show(translateError(lang, err, 'records.deleteFail'), 'error');
 		}
 	}
 </script>
@@ -81,8 +81,6 @@
 		<EmptyState
 			title={translate(lang, 'records.emptyTitle')}
 			description={translate(lang, 'records.emptyDesc')}
-			actionHref="/"
-			actionLabel={translate(lang, 'builder.toCatalog')}
 		/>
 	{:else}
 		<ul class="soft-enter flex flex-col gap-2.5">
@@ -112,7 +110,7 @@
 						{/if}
 						<div class="min-w-0">
 							<p class="truncate font-semibold text-[var(--color-ink)]">{title}</p>
-							<p class="text-sm font-semibold text-[var(--color-accent)]">
+							<p class="truncate text-sm font-semibold text-[var(--color-accent)]" title={formatPersonalRecord(record, lang)}>
 								{formatPersonalRecord(record, lang)}
 							</p>
 							<p class="text-xs text-[var(--color-muted)]">{formatDate(record.updatedAt)}</p>
