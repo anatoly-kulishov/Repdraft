@@ -1,5 +1,6 @@
 import type { WorkoutExercise, WorkoutPlan } from './types';
 import { newId } from './id';
+import { REPS, REST_SEC, SETS } from './inputLimits';
 
 export const DEFAULT_SETS = 3;
 export const DEFAULT_REPS = 10;
@@ -38,11 +39,11 @@ function applyRoundRest(members: WorkoutExercise[]): WorkoutExercise[] {
 	}));
 }
 
-export function createEmptyDraft(): WorkoutPlan {
+export function createEmptyDraft(defaultName = ''): WorkoutPlan {
 	const ts = nowIso();
 	return {
 		id: newId(),
-		name: 'Новая тренировка',
+		name: defaultName,
 		createdAt: ts,
 		updatedAt: ts,
 		exercises: []
@@ -83,9 +84,19 @@ export function updateExercise(
 	patch: Partial<Omit<WorkoutExercise, 'exerciseId'>>
 ): WorkoutPlan {
 	const { groupId: _g, ...safePatch } = patch;
+	const clamped: typeof safePatch = { ...safePatch };
+	if (clamped.sets != null) {
+		clamped.sets = Math.min(SETS.max, Math.max(SETS.min, Math.round(clamped.sets)));
+	}
+	if (clamped.reps != null) {
+		clamped.reps = Math.min(REPS.max, Math.max(REPS.min, Math.round(clamped.reps)));
+	}
+	if (clamped.restSec != null) {
+		clamped.restSec = Math.min(REST_SEC.max, Math.max(REST_SEC.min, Math.round(clamped.restSec)));
+	}
 	return withUpdated(
 		plan,
-		plan.exercises.map((ex) => (ex.exerciseId === exerciseId ? { ...ex, ...safePatch } : ex))
+		plan.exercises.map((ex) => (ex.exerciseId === exerciseId ? { ...ex, ...clamped } : ex))
 	);
 }
 
@@ -224,13 +235,13 @@ export function updateGroupRest(plan: WorkoutPlan, groupId: string, restSec: num
 	);
 }
 
-export function duplicatePlan(plan: WorkoutPlan): WorkoutPlan {
+export function duplicatePlan(plan: WorkoutPlan, copySuffix = '(copy)'): WorkoutPlan {
 	const ts = nowIso();
 	const groupMap = new Map<string, string>();
 	return {
 		...plan,
 		id: newId(),
-		name: `${plan.name} (копия)`,
+		name: `${plan.name} ${copySuffix}`.trim(),
 		createdAt: ts,
 		updatedAt: ts,
 		exercises: plan.exercises.map((ex) => {
@@ -245,11 +256,29 @@ export function duplicatePlan(plan: WorkoutPlan): WorkoutPlan {
 	};
 }
 
-export function withSavedName(plan: WorkoutPlan): WorkoutPlan {
-	const name = plan.name.trim() || 'Тренировка без названия';
+export function withSavedName(plan: WorkoutPlan, untitledFallback = 'Untitled workout'): WorkoutPlan {
+	const name =
+		plan.name
+			.replace(/[\u0000-\u001F\u007F]/g, '')
+			.replace(/\s+/g, ' ')
+			.trim()
+			.slice(0, 80) || untitledFallback;
 	return {
 		...plan,
 		name,
 		updatedAt: nowIso()
 	};
+}
+
+/** Union local + cloud without dropping device-only rows (empty cloud must not wipe UI). */
+export function mergeWorkoutPlans(local: WorkoutPlan[], cloud: WorkoutPlan[]): WorkoutPlan[] {
+	const map = new Map<string, WorkoutPlan>();
+	for (const plan of local) map.set(plan.id, plan);
+	for (const plan of cloud) {
+		const prev = map.get(plan.id);
+		if (!prev || plan.updatedAt.localeCompare(prev.updatedAt) >= 0) {
+			map.set(plan.id, plan);
+		}
+	}
+	return [...map.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }

@@ -1,28 +1,57 @@
 import { browser } from '$app/environment';
-import { createEmptyRecord, isRecordEmpty } from '$lib/domain/records';
+import {
+	createEmptyRecord,
+	mergePersonalRecords,
+	sanitizePersonalRecord
+} from '$lib/domain/records';
 import type { PersonalRecord } from '$lib/domain/types';
-import { getRecordRepo } from '$lib/storage/dataAccess';
+import { withTimeout } from '$lib/domain/withTimeout';
+import { isCloudMode } from '$lib/storage/dataAccess';
+import { localRecordRepository } from '$lib/storage/localRecordRepository';
+import { supabaseRecordRepository } from '$lib/storage/supabaseRecordRepository';
 import { get, writable } from 'svelte/store';
+
+const CLOUD_MS = 4000;
 
 function createRecordsStore() {
 	const store = writable<PersonalRecord[]>([]);
 	const ready = writable(false);
+	let inflight: Promise<void> | null = null;
 
-	async function refresh() {
+	async function refresh(opts?: { cloud?: boolean }) {
 		if (!browser) {
 			store.set([]);
 			ready.set(true);
 			return;
 		}
-		try {
-			const list = await getRecordRepo().list();
-			store.set(list);
-		} catch (err) {
-			console.error('records.refresh failed', err);
-			store.set([]);
-		} finally {
-			ready.set(true);
-		}
+		if (inflight) return inflight;
+
+		const wantCloud = opts?.cloud !== false;
+
+		inflight = (async () => {
+			try {
+				const local = await localRecordRepository.list();
+				store.set(local);
+				ready.set(true);
+
+				if (wantCloud && isCloudMode()) {
+					try {
+						const cloud = await withTimeout(supabaseRecordRepository.list(), CLOUD_MS);
+						store.set(mergePersonalRecords(local, cloud));
+					} catch (err) {
+						console.warn('records cloud refresh failed', err);
+					}
+				}
+			} catch (err) {
+				console.error('records.refresh failed', err);
+				store.set([]);
+			} finally {
+				ready.set(true);
+				inflight = null;
+			}
+		})();
+
+		return inflight;
 	}
 
 	return {
@@ -33,17 +62,39 @@ function createRecordsStore() {
 			return get(store).find((r) => r.exerciseId === exerciseId) ?? null;
 		},
 		async save(record: PersonalRecord): Promise<boolean> {
-			if (isRecordEmpty(record)) return false;
-			await getRecordRepo().save({
+			const sanitized = sanitizePersonalRecord({
 				...record,
 				updatedAt: new Date().toISOString()
 			});
-			await refresh();
+			if (!sanitized.ok) return false;
+			const next = sanitized.record;
+			await localRecordRepository.save(next);
+			let cloudOk = !isCloudMode();
+			if (isCloudMode()) {
+				try {
+					await withTimeout(supabaseRecordRepository.save(next), CLOUD_MS);
+					cloudOk = true;
+				} catch (err) {
+					console.warn('records.save cloud failed', err);
+					cloudOk = false;
+				}
+			}
+			await refresh({ cloud: cloudOk && isCloudMode() });
 			return true;
 		},
 		async remove(exerciseId: string) {
-			await getRecordRepo().remove(exerciseId);
-			await refresh();
+			await localRecordRepository.remove(exerciseId);
+			let cloudOk = !isCloudMode();
+			if (isCloudMode()) {
+				try {
+					await withTimeout(supabaseRecordRepository.remove(exerciseId), CLOUD_MS);
+					cloudOk = true;
+				} catch (err) {
+					console.warn('records.remove cloud failed', err);
+					cloudOk = false;
+				}
+			}
+			await refresh({ cloud: cloudOk && isCloudMode() });
 		},
 		empty(exerciseId: string): PersonalRecord {
 			return createEmptyRecord(exerciseId);

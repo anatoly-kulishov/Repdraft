@@ -1,5 +1,13 @@
 import type { AppLocale } from '$lib/i18n/locale';
 import { translate } from '$lib/i18n/messages';
+import {
+	NOTE_MAX,
+	REPS,
+	WEIGHT_KG,
+	isValidReps,
+	isValidWeightKg,
+	sanitizeNote
+} from './inputLimits';
 import type { PersonalRecord } from './types';
 
 export function formatPersonalRecord(record: PersonalRecord, locale: AppLocale = 'ru'): string {
@@ -38,4 +46,55 @@ export function isRecordEmpty(record: PersonalRecord): boolean {
 	const hasReps = record.reps != null && !Number.isNaN(record.reps);
 	const hasNote = record.note.trim().length > 0;
 	return !hasWeight && !hasReps && !hasNote;
+}
+
+export type RecordSanitizeResult =
+	| { ok: true; record: PersonalRecord }
+	| { ok: false; errorKey: string };
+
+/** Normalize + validate before persist. */
+export function sanitizePersonalRecord(input: PersonalRecord): RecordSanitizeResult {
+	const note = sanitizeNote(input.note, NOTE_MAX);
+	const weightKg = input.weightKg;
+	const reps = input.reps;
+
+	if (!isValidWeightKg(weightKg)) {
+		return { ok: false, errorKey: 'pr.invalidWeight' };
+	}
+	if (!isValidReps(reps, REPS)) {
+		return { ok: false, errorKey: 'pr.invalidReps' };
+	}
+
+	const record: PersonalRecord = {
+		exerciseId: input.exerciseId,
+		weightKg:
+			weightKg == null
+				? null
+				: Math.min(WEIGHT_KG.max, Math.max(WEIGHT_KG.min, Math.round(weightKg * 10) / 10)),
+		reps: reps == null ? null : Math.round(reps),
+		note,
+		updatedAt: input.updatedAt || new Date().toISOString()
+	};
+
+	if (isRecordEmpty(record)) {
+		return { ok: false, errorKey: 'pr.needValue' };
+	}
+
+	return { ok: true, record };
+}
+
+/** Union local + cloud without dropping device-only PRs. */
+export function mergePersonalRecords(
+	local: PersonalRecord[],
+	cloud: PersonalRecord[]
+): PersonalRecord[] {
+	const map = new Map<string, PersonalRecord>();
+	for (const record of local) map.set(record.exerciseId, record);
+	for (const record of cloud) {
+		const prev = map.get(record.exerciseId);
+		if (!prev || record.updatedAt.localeCompare(prev.updatedAt) >= 0) {
+			map.set(record.exerciseId, record);
+		}
+	}
+	return [...map.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }

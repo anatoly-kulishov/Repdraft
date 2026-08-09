@@ -27,7 +27,7 @@ self.onmessage = (event: MessageEvent<EncodeRequest>) => {
 		if (!frames.length) {
 			self.postMessage({
 				type: 'error',
-				message: 'Нет кадров для GIF'
+				message: 'errors.gifFrames'
 			});
 			return;
 		}

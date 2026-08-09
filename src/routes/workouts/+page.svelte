@@ -1,17 +1,23 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
-	import { translate } from '$lib/i18n/messages';
+	import { completedSetCount, totalSetCount } from '$lib/domain/session';
+	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
+	import { live } from '$lib/stores/live';
 	import { plans, plansReady } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 
 	let lang = $derived($resolvedLocale);
+	let active = $derived($live.session);
 
 	onMount(() => {
 		void plans.refresh();
+		live.hydrate();
+		void live.refreshHistory();
 	});
 
 	function formatDate(iso: string): string {
@@ -27,10 +33,17 @@
 
 	async function onDuplicate(id: string) {
 		try {
-			const copy = await plans.duplicate(id);
-			if (copy) toasts.show(translate(lang, 'workouts.copied'), 'success');
+			const result = await plans.duplicate(id);
+			if (!result) {
+				toasts.show(translate(lang, 'workouts.copyFail'), 'error');
+				return;
+			}
+			toasts.show(
+				translate(lang, result.synced ? 'workouts.copied' : 'workouts.copiedLocal'),
+				result.synced ? 'success' : 'info'
+			);
 		} catch (err) {
-			toasts.show(err instanceof Error ? err.message : 'Error', 'error');
+			toasts.show(translateError(lang, err, 'workouts.copyFail'), 'error');
 		}
 	}
 
@@ -40,8 +53,17 @@
 			await plans.removePlan(id);
 			toasts.show(translate(lang, 'workouts.deleted'), 'info');
 		} catch (err) {
-			toasts.show(err instanceof Error ? err.message : 'Error', 'error');
+			toasts.show(translateError(lang, err, 'workouts.deleteFail'), 'error');
 		}
+	}
+
+	function onStart(planId: string) {
+		void goto(`/live/${planId}`);
+	}
+
+	function onResume() {
+		if (!active?.planId) return;
+		void goto(`/live/${active.planId}`);
 	}
 </script>
 
@@ -69,19 +91,53 @@
 		</p>
 	</div>
 
+	{#if active && !active.finishedAt}
+		<div class="panel mb-4 flex flex-wrap items-center justify-between gap-3 !p-3">
+			<div class="min-w-0">
+				<p class="text-sm font-semibold text-[var(--color-ink)]">{active.planName}</p>
+				<p class="text-xs text-[var(--color-muted)]">
+					{translate(lang, 'workouts.activeHint')} ·
+					{translate(lang, 'live.progress', {
+						done: completedSetCount(active),
+						total: totalSetCount(active)
+					})}
+				</p>
+			</div>
+			<div class="flex flex-wrap gap-2">
+				<button type="button" class="btn-primary" onclick={onResume}
+					>{translate(lang, 'workouts.resume')}</button
+				>
+				<button
+					type="button"
+					class="btn-ghost is-danger text-sm"
+					onclick={() => {
+						if (!confirm(translate(lang, 'live.confirmDiscard'))) return;
+						live.discard();
+					}}
+				>
+					{translate(lang, 'live.discard')}
+				</button>
+			</div>
+		</div>
+	{/if}
+
 	{#if !$plansReady}
 		<PageSkeleton rows={3} />
 	{:else if $plans.length === 0}
-		<EmptyState
-			title={translate(lang, 'workouts.emptyTitle')}
-			description={translate(lang, 'workouts.emptyDesc')}
-			actionHref="/builder"
-			actionLabel={translate(lang, 'workouts.openBuilder')}
-		/>
+		{#if active && !active.finishedAt}
+			<p class="panel-dashed text-sm text-[var(--color-muted)]">
+				{translate(lang, 'workouts.activeOrphanHint')}
+			</p>
+		{:else}
+			<EmptyState
+				title={translate(lang, 'workouts.emptyTitle')}
+				description={translate(lang, 'workouts.emptyDesc')}
+			/>
+		{/if}
 	{:else}
 		<ul class="soft-enter flex flex-col gap-2.5">
 			{#each $plans as plan (plan.id)}
-				<li class="list-row !gap-3 !py-3.5">
+				<li class="list-row !flex-row !items-center !gap-2 !py-3">
 					<a
 						class="group flex min-w-0 flex-1 items-center gap-2 no-underline"
 						href={`/builder/${plan.id}`}
@@ -98,22 +154,16 @@
 								)}
 							</p>
 						</span>
-						<svg
-							viewBox="0 0 24 24"
-							class="h-5 w-5 shrink-0 text-[var(--color-muted)] transition-colors group-hover:text-[var(--color-accent)]"
-							aria-hidden="true"
-						>
-							<path
-								d="M9 6l6 6-6 6"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.8"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-						</svg>
 					</a>
-					<div class="flex shrink-0 items-center gap-1">
+					<button
+						type="button"
+						class="btn-primary min-h-11 shrink-0 px-4"
+						onclick={() => onStart(plan.id)}
+						disabled={plan.exercises.length === 0}
+					>
+						{translate(lang, 'workouts.start')}
+					</button>
+					<div class="flex shrink-0 items-center">
 						<button
 							type="button"
 							class="btn-ghost"

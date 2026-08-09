@@ -17,7 +17,7 @@ export const load: PageLoad = async ({ fetch }) => {
 			equipment: [] as string[],
 			targets: [] as string[],
 			totalCount: 0,
-			indexError: 'Не удалось загрузить каталог упражнений.'
+			indexError: 'errors.catalogLoad'
 		};
 	}
 

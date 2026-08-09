@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import type { WorkoutExercise } from '$lib/domain/types';
+	import { coerceReps, coerceRestSec, coerceSets, REPS } from '$lib/domain/inputLimits';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -140,16 +141,12 @@
 				{inGroup ? translate(lang, 'builder.rounds') : translate(lang, 'builder.sets')}
 				<input
 					class="field mt-1"
-					type="number"
+					type="text"
 					inputmode="numeric"
-					min="1"
-					max="20"
+					autocomplete="off"
 					value={item.sets}
 					onchange={(e) => {
-						const sets = Math.min(
-							20,
-							Math.max(1, Number((e.currentTarget as HTMLInputElement).value) || 1)
-						);
+						const sets = coerceSets((e.currentTarget as HTMLInputElement).value);
 						if (inGroup && ongroupSets) ongroupSets(sets);
 						else onupdate({ sets });
 					}}
@@ -160,14 +157,13 @@
 			{translate(lang, 'builder.reps')}
 			<input
 				class="field mt-1"
-				type="number"
+				type="text"
 				inputmode="numeric"
-				min="1"
-				max="100"
+				autocomplete="off"
 				value={item.reps}
 				onchange={(e) =>
 					onupdate({
-						reps: Math.min(100, Math.max(1, Number((e.currentTarget as HTMLInputElement).value) || 1))
+						reps: coerceReps((e.currentTarget as HTMLInputElement).value, REPS) ?? REPS.min
 					})}
 			/>
 		</label>
@@ -176,17 +172,12 @@
 				{inGroup ? translate(lang, 'builder.roundRest') : translate(lang, 'builder.rest')}
 				<input
 					class="field mt-1"
-					type="number"
+					type="text"
 					inputmode="numeric"
-					min="0"
-					max="600"
-					step="15"
+					autocomplete="off"
 					value={item.restSec}
 					onchange={(e) => {
-						const restSec = Math.min(
-							600,
-							Math.max(0, Number((e.currentTarget as HTMLInputElement).value) || 0)
-						);
+						const restSec = coerceRestSec((e.currentTarget as HTMLInputElement).value);
 						if (inGroup && ongroupRest) ongroupRest(restSec);
 						else onupdate({ restSec });
 					}}
