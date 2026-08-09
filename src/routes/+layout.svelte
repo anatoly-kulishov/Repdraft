@@ -108,7 +108,7 @@
 
 	<main
 		id="main-content"
-		class="shell-main mx-auto w-full max-w-6xl min-w-0 flex-1 overflow-x-hidden overflow-x-clip px-4 py-4"
+		class="shell-main mx-auto w-full max-w-6xl min-w-0 flex-1 overflow-x-hidden overflow-x-clip px-4"
 		tabindex="-1"
 	>
 		{@render children()}
