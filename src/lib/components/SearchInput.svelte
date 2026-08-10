@@ -1,6 +1,9 @@
 <script lang="ts">
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_INPUT } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { Search, X } from '@lucide/svelte';
 
 	let {
 		value = $bindable(''),
@@ -41,10 +44,13 @@
 </script>
 
 <label class="relative block w-full min-w-0">
+	<span class="search-input-icon" aria-hidden="true">
+		<LucideIcon icon={Search} size={ICON_INPUT} />
+	</span>
 	<span class="sr-only">{placeholder}</span>
 	<input
 		type="search"
-		class="field search-field w-full"
+		class="field search-field w-full search-field-with-icon"
 		class:has-clear={canClear}
 		{placeholder}
 		autocomplete="off"
@@ -61,8 +67,9 @@
 			class="clear-btn"
 			onclick={clear}
 			aria-label={translate(lang, 'a11y.clearSearch')}
+			title={translate(lang, 'a11y.clearSearch')}
 		>
-			×
+			<LucideIcon icon={X} size={ICON_INPUT} />
 		</button>
 	{/if}
 </label>
@@ -76,6 +83,20 @@
 	/* Beat .field { padding: … } so text never sits under the × */
 	.search-field.has-clear {
 		padding-right: 2.85rem;
+	}
+
+	.search-field-with-icon {
+		padding-left: 2.65rem;
+	}
+
+	.search-input-icon {
+		position: absolute;
+		left: 0.85rem;
+		top: 50%;
+		display: flex;
+		transform: translateY(-50%);
+		color: var(--color-muted);
+		pointer-events: none;
 	}
 
 	.clear-btn {

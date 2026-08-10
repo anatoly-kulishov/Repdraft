@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import PasswordField from '$lib/components/PasswordField.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -185,22 +184,40 @@
 		panel = next;
 		message = null;
 	}
+
+	function setAuthMethod(method: 'password' | 'magic') {
+		message = null;
+		if (method === 'magic') {
+			panel = 'magic';
+			return;
+		}
+		if (panel === 'forgot' || panel === 'magic' || panel === 'check-email') {
+			panel = 'signin';
+			return;
+		}
+		panel = panel === 'signup' ? 'signup' : 'signin';
+	}
+
+	function setPasswordMode(mode: 'signin' | 'signup') {
+		message = null;
+		panel = mode;
+	}
+
+	let authMethod = $derived(panel === 'magic' ? ('magic' as const) : ('password' as const));
+	let passwordMode = $derived(
+		panel === 'signup' ? ('signup' as const) : panel === 'forgot' ? ('forgot' as const) : ('signin' as const)
+	);
 </script>
 
 <svelte:head>
 	<title>{translate(lang, 'auth.title')} — Repdraft</title>
 </svelte:head>
 
-<section class="mx-auto max-w-md">
-	<div class="page-header">
+<section class="auth-page content-page content-page--narrow mx-auto">
+	<header class="page-header auth-page__header">
 		<h1 class="page-title">{translate(lang, 'auth.title')}</h1>
-		<p class="page-lead">{translate(lang, 'auth.lead')}</p>
-	</div>
-
-	<div class="panel mb-4">
-		<LanguageSwitcher />
-		<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'lang.hint')}</p>
-	</div>
+		<p class="page-lead auth-page__lead">{translate(lang, 'auth.lead')}</p>
+	</header>
 
 	{#if !$auth.ready}
 		<PageSkeleton rows={2} showField={true} />
@@ -255,8 +272,7 @@
 			<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.signedInAs')}</p>
 			<p class="font-semibold">{$auth.user.email}</p>
 			<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'auth.syncedHint')}</p>
-			<a class="btn-primary mt-4 inline-flex" href={nextPath}>{translate(lang, 'auth.continue')}</a>
-			<button type="button" class="btn-secondary mt-2" onclick={logout}>
+			<button type="button" class="btn-secondary mt-4" onclick={logout}>
 				{translate(lang, 'auth.logout')}
 			</button>
 		</div>
@@ -277,85 +293,95 @@
 			</button>
 		</div>
 	{:else}
-		<div class="panel flex flex-col gap-3">
-			<button
-				type="button"
-				class="btn-secondary inline-flex items-center justify-center gap-2"
-				disabled={loading}
-				onclick={() => void google()}
-			>
-				<svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true">
-					<path
-						fill="#EA4335"
-						d="M12 10.2v3.6h5.1c-.2 1.2-1.5 3.6-5.1 3.6-3.1 0-5.6-2.5-5.6-5.6S8.9 6.2 12 6.2c1.8 0 3 .7 3.7 1.4l2.5-2.4C16.7 3.7 14.5 2.7 12 2.7 6.9 2.7 2.7 6.9 2.7 12S6.9 21.3 12 21.3c5.2 0 8.6-3.6 8.6-8.7 0-.6-.1-1-.1-1.4H12z"
-					/>
-					<path
-						fill="#34A853"
-						d="M3.8 7.4 6.8 9.6C7.7 7.5 9.6 6.2 12 6.2c1.8 0 3 .7 3.7 1.4l2.5-2.4C16.7 3.7 14.5 2.7 12 2.7 8.4 2.7 5.3 4.7 3.8 7.4z"
-					/>
-					<path
-						fill="#4A90E2"
-						d="M12 21.3c2.4 0 4.5-.8 6-2.2l-2.9-2.2c-.8.5-1.8.9-3.1.9-2.4 0-4.4-1.6-5.1-3.8l-3 2.3c1.5 3 4.5 5 8.1 5z"
-					/>
-					<path
-						fill="#FBBC05"
-						d="M6.9 14c-.2-.5-.3-1.1-.3-1.7s.1-1.2.3-1.7L3.8 8.3C3.1 9.4 2.7 10.7 2.7 12s.4 2.6 1.1 3.7l3.1-1.7z"
-					/>
-				</svg>
-				{translate(lang, 'auth.google')}
-			</button>
-
-			<div class="flex items-center gap-2 text-xs text-[var(--color-muted)]">
-				<span class="h-px flex-1 bg-[var(--color-border)]"></span>
-				<span>{translate(lang, 'auth.orEmail')}</span>
-				<span class="h-px flex-1 bg-[var(--color-border)]"></span>
-			</div>
-
-			<div class="flex flex-wrap gap-2 text-sm">
-				<button
-					type="button"
-					class={panel === 'signin' || panel === 'signup' || panel === 'forgot'
-						? 'font-semibold text-[var(--color-accent)]'
-						: 'text-[var(--color-muted)]'}
-					onclick={() => setPanel(panel === 'signup' ? 'signup' : 'signin')}
-				>
-					{translate(lang, 'auth.passwordTab')}
-				</button>
-				<span class="text-[var(--color-border)]">|</span>
-				<button
-					type="button"
-					class={panel === 'magic' ? 'font-semibold text-[var(--color-accent)]' : 'text-[var(--color-muted)]'}
-					onclick={() => setPanel('magic')}
-				>
-					{translate(lang, 'auth.magicTab')}
-				</button>
-			</div>
-
-			{#if panel === 'signin' || panel === 'signup'}
-				<div class="flex gap-2 text-sm">
+		<div class="auth-card panel flex flex-col gap-4">
+			{#if panel !== 'forgot'}
+				<div class="auth-segments" role="tablist" aria-label={translate(lang, 'auth.methodAria')}>
 					<button
 						type="button"
-						class={panel === 'signin'
-							? 'font-semibold text-[var(--color-accent)]'
-							: 'text-[var(--color-muted)]'}
-						onclick={() => setPanel('signin')}
+						class="auth-segment"
+						class:is-active={authMethod === 'password'}
+						role="tab"
+						aria-selected={authMethod === 'password'}
+						onclick={() => setAuthMethod('password')}
+					>
+						{translate(lang, 'auth.passwordTab')}
+					</button>
+					<button
+						type="button"
+						class="auth-segment"
+						class:is-active={authMethod === 'magic'}
+						role="tab"
+						aria-selected={authMethod === 'magic'}
+						onclick={() => setAuthMethod('magic')}
+					>
+						{translate(lang, 'auth.magicTab')}
+					</button>
+				</div>
+			{/if}
+
+			{#if authMethod === 'password' && panel !== 'forgot'}
+				<div class="auth-segments auth-segments--sub" role="tablist" aria-label={translate(lang, 'auth.modeAria')}>
+					<button
+						type="button"
+						class="auth-segment auth-segment--sub"
+						class:is-active={passwordMode === 'signin'}
+						role="tab"
+						aria-selected={passwordMode === 'signin'}
+						onclick={() => setPasswordMode('signin')}
 					>
 						{translate(lang, 'auth.signInTab')}
 					</button>
-					<span class="text-[var(--color-border)]">|</span>
 					<button
 						type="button"
-						class={panel === 'signup'
-							? 'font-semibold text-[var(--color-accent)]'
-							: 'text-[var(--color-muted)]'}
-						onclick={() => setPanel('signup')}
+						class="auth-segment auth-segment--sub"
+						class:is-active={passwordMode === 'signup'}
+						role="tab"
+						aria-selected={passwordMode === 'signup'}
+						onclick={() => setPasswordMode('signup')}
 					>
 						{translate(lang, 'auth.signUpTab')}
 					</button>
 				</div>
+			{/if}
 
+			{#if panel === 'magic'}
 				<form
-					class="flex flex-col gap-3"
+					class="auth-form flex flex-col gap-3"
+					onsubmit={(e) => {
+						e.preventDefault();
+						void submitMagic();
+					}}
+				>
+					<p class="text-sm leading-relaxed text-[var(--color-muted)]">{translate(lang, 'auth.magicLead')}</p>
+					<label class="field-label">
+						{translate(lang, 'auth.email')}
+						<input
+							class="field mt-1 w-full"
+							type="email"
+							required
+							autocomplete="email"
+							inputmode="email"
+							placeholder={translate(lang, 'auth.emailPh')}
+							bind:value={email}
+						/>
+					</label>
+					{#if message}
+						<p class="text-sm text-[var(--color-muted)]">{message}</p>
+					{/if}
+					<button type="submit" class="btn-primary btn-block min-h-11" disabled={loading}>
+						{#if loading}
+							<span class="inline-flex items-center justify-center gap-2">
+								<Spinner size="sm" block={false} />
+								{translate(lang, 'auth.wait')}
+							</span>
+						{:else}
+							{translate(lang, 'auth.submitMagic')}
+						{/if}
+					</button>
+				</form>
+			{:else if passwordMode === 'signin' || passwordMode === 'signup'}
+				<form
+					class="auth-form flex flex-col gap-3"
 					onsubmit={(e) => {
 						e.preventDefault();
 						void submitPassword();
@@ -377,9 +403,9 @@
 						bind:value={password}
 						label={translate(lang, 'auth.password')}
 						placeholder={translate(lang, 'auth.passwordPh')}
-						autocomplete={panel === 'signup' ? 'new-password' : 'current-password'}
+						autocomplete={passwordMode === 'signup' ? 'new-password' : 'current-password'}
 					/>
-					{#if panel === 'signup'}
+					{#if passwordMode === 'signup'}
 						<PasswordField
 							bind:value={passwordConfirm}
 							label={translate(lang, 'auth.passwordConfirm')}
@@ -388,7 +414,7 @@
 						/>
 					{/if}
 
-					{#if panel === 'signin'}
+					{#if passwordMode === 'signin'}
 						<button
 							type="button"
 							class="btn-link self-start text-sm"
@@ -402,63 +428,29 @@
 						<p class="text-sm text-[var(--color-muted)]">{message}</p>
 					{/if}
 
-					<button type="submit" class="btn-primary" disabled={loading}>
+					<button type="submit" class="btn-primary btn-block min-h-11" disabled={loading}>
 						{#if loading}
-							<span class="inline-flex items-center gap-2">
+							<span class="inline-flex items-center justify-center gap-2">
 								<Spinner size="sm" block={false} />
 								{translate(lang, 'auth.wait')}
 							</span>
 						{:else}
-							{panel === 'signup'
+							{passwordMode === 'signup'
 								? translate(lang, 'auth.submitSignUp')
 								: translate(lang, 'auth.submitSignIn')}
 						{/if}
 					</button>
 				</form>
-			{:else if panel === 'magic'}
-				<form
-					class="flex flex-col gap-3"
-					onsubmit={(e) => {
-						e.preventDefault();
-						void submitMagic();
-					}}
-				>
-					<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.magicLead')}</p>
-					<label class="field-label">
-						{translate(lang, 'auth.email')}
-						<input
-							class="field mt-1 w-full"
-							type="email"
-							required
-							autocomplete="email"
-							inputmode="email"
-							placeholder={translate(lang, 'auth.emailPh')}
-							bind:value={email}
-						/>
-					</label>
-					{#if message}
-						<p class="text-sm text-[var(--color-muted)]">{message}</p>
-					{/if}
-					<button type="submit" class="btn-primary" disabled={loading}>
-						{#if loading}
-							<span class="inline-flex items-center gap-2">
-								<Spinner size="sm" block={false} />
-								{translate(lang, 'auth.wait')}
-							</span>
-						{:else}
-							{translate(lang, 'auth.submitMagic')}
-						{/if}
-					</button>
-				</form>
 			{:else if panel === 'forgot'}
 				<form
-					class="flex flex-col gap-3"
+					class="auth-form flex flex-col gap-3"
 					onsubmit={(e) => {
 						e.preventDefault();
 						void submitForgot();
 					}}
 				>
-					<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.forgotLead')}</p>
+					<p class="text-sm font-semibold text-[var(--color-ink)]">{translate(lang, 'auth.forgot')}</p>
+					<p class="text-sm leading-relaxed text-[var(--color-muted)]">{translate(lang, 'auth.forgotLead')}</p>
 					<label class="field-label">
 						{translate(lang, 'auth.email')}
 						<input
@@ -474,9 +466,9 @@
 					{#if message}
 						<p class="text-sm text-[var(--color-muted)]">{message}</p>
 					{/if}
-					<button type="submit" class="btn-primary" disabled={loading}>
+					<button type="submit" class="btn-primary btn-block min-h-11" disabled={loading}>
 						{#if loading}
-							<span class="inline-flex items-center gap-2">
+							<span class="inline-flex items-center justify-center gap-2">
 								<Spinner size="sm" block={false} />
 								{translate(lang, 'auth.wait')}
 							</span>
@@ -484,10 +476,43 @@
 							{translate(lang, 'auth.submitReset')}
 						{/if}
 					</button>
-					<button type="button" class="btn-ghost" onclick={() => setPanel('signin')}>
+					<button type="button" class="btn-secondary btn-block min-h-11" onclick={() => setPanel('signin')}>
 						{translate(lang, 'auth.backToSignIn')}
 					</button>
 				</form>
+			{/if}
+
+			{#if panel !== 'forgot'}
+				<div class="auth-divider" aria-hidden="true">
+					<span>{translate(lang, 'auth.or')}</span>
+				</div>
+
+				<button
+					type="button"
+					class="btn-secondary inline-flex w-full items-center justify-center gap-2 min-h-11"
+					disabled={loading}
+					onclick={() => void google()}
+				>
+					<svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0" aria-hidden="true">
+						<path
+							fill="#EA4335"
+							d="M12 10.2v3.6h5.1c-.2 1.2-1.5 3.6-5.1 3.6-3.1 0-5.6-2.5-5.6-5.6S8.9 6.2 12 6.2c1.8 0 3 .7 3.7 1.4l2.5-2.4C16.7 3.7 14.5 2.7 12 2.7 6.9 2.7 2.7 6.9 2.7 12S6.9 21.3 12 21.3c5.2 0 8.6-3.6 8.6-8.7 0-.6-.1-1-.1-1.4H12z"
+						/>
+						<path
+							fill="#34A853"
+							d="M3.8 7.4 6.8 9.6C7.7 7.5 9.6 6.2 12 6.2c1.8 0 3 .7 3.7 1.4l2.5-2.4C16.7 3.7 14.5 2.7 12 2.7 8.4 2.7 5.3 4.7 3.8 7.4z"
+						/>
+						<path
+							fill="#4A90E2"
+							d="M12 21.3c2.4 0 4.5-.8 6-2.2l-2.9-2.2c-.8.5-1.8.9-3.1.9-2.4 0-4.4-1.6-5.1-3.8l-3 2.3c1.5 3 4.5 5 8.1 5z"
+						/>
+						<path
+							fill="#FBBC05"
+							d="M6.9 14c-.2-.5-.3-1.1-.3-1.7s.1-1.2.3-1.7L3.8 8.3C3.1 9.4 2.7 10.7 2.7 12s.4 2.6 1.1 3.7l3.1-1.7z"
+						/>
+					</svg>
+					{translate(lang, 'auth.google')}
+				</button>
 			{/if}
 		</div>
 	{/if}

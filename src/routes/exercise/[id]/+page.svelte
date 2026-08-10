@@ -8,10 +8,18 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { translate } from '$lib/i18n/messages';
 	import { draft } from '$lib/stores/draft';
+	import { bookmarks } from '$lib/stores/bookmarks';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import PersonalRecordPanel from '$lib/components/PersonalRecordPanel.svelte';
 	import TechniqueClipsPanel from '$lib/components/TechniqueClipsPanel.svelte';
+	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
+	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
+	import { Check, Plus, Search, Bookmark } from '@lucide/svelte';
+	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 
 	let { data } = $props();
 
@@ -28,6 +36,31 @@
 	let inDraft = $derived(
 		Boolean(exercise && $draft.exercises.some((ex) => ex.exerciseId === exercise.id))
 	);
+	let bookmarked = $derived(Boolean(exercise && $bookmarks.includes(exercise.id)));
+	let backHref = $derived.by(() => {
+		const from = $page.url.searchParams.get('from');
+		if (from === 'workouts' || from?.startsWith('/workouts')) {
+			return from.startsWith('/') ? from : '/workouts';
+		}
+		if (from === 'catalog' || from === 'exercises') return '/exercises';
+		return '/exercises';
+	});
+	let backLabel = $derived(
+		backHref.startsWith('/workouts')
+			? translate(lang, 'builder.backWorkouts')
+			: translate(lang, 'catalog.hubTitle')
+	);
+
+	onMount(() => {
+		void bookmarks.refresh();
+	});
+
+	function toggleBookmark() {
+		if (!exercise) return;
+		void bookmarks.toggle(exercise.id).then((saved) => {
+			toasts.show(translate(lang, saved ? 'bookmarks.saved' : 'bookmarks.removed'), 'info');
+		});
+	}
 
 	function toggleDraft() {
 		if (!exercise) return;
@@ -71,6 +104,19 @@
 	});
 </script>
 
+{#snippet exerciseHeaderActions()}
+	<button
+		type="button"
+		class="btn-ghost exercise-detail-bookmark shrink-0"
+		class:is-active={bookmarked}
+		onclick={toggleBookmark}
+		aria-label={translate(lang, bookmarked ? 'bookmarks.remove' : 'bookmarks.add')}
+		aria-pressed={bookmarked}
+	>
+		<LucideIcon icon={Bookmark} size={ICON_BUTTON + 2} fill={bookmarked ? 'currentColor' : 'none'} />
+	</button>
+{/snippet}
+
 <svelte:window onkeydown={onKeydown} />
 
 <svelte:head>
@@ -81,15 +127,18 @@
 	<EmptyState
 		title={translate(lang, 'exercise.notFoundTitle')}
 		description={translate(lang, 'exercise.notFoundDesc')}
-		actionHref="/"
+		actionHref="/exercises"
 		actionLabel={translate(lang, 'builder.toCatalog')}
 	/>
 {:else}
-	<article class="grid min-w-0 gap-5 pb-mobile-actions lg:grid-cols-[280px_1fr] lg:gap-6 lg:pb-0">
+	<article class="content-page content-page--wide grid min-w-0 gap-5 pb-mobile-actions lg:grid-cols-[280px_1fr] lg:gap-6 lg:pb-0">
+		<div class="col-span-full md:hidden">
+			<ScreenHeader {title} {backHref} actions={exerciseHeaderActions} />
+		</div>
+		<div class="subroute-desktop-head col-span-full hidden md:block">
+			<SubrouteBack href={backHref} label={backLabel} />
+		</div>
 		<div class="min-w-0">
-			<a href="/" class="mb-3 inline-flex text-sm font-medium text-[var(--color-accent)] md:hidden"
-				>{translate(lang, 'exercise.back')}</a
-			>
 			<button
 				type="button"
 				class="panel relative flex w-full cursor-zoom-in items-center justify-center overflow-hidden !p-4 sm:!p-5 lg:!p-3"
@@ -109,26 +158,27 @@
 					class="pointer-events-none absolute bottom-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-surface)_88%,transparent)] text-[var(--color-muted)] shadow-sm backdrop-blur-[2px]"
 					aria-hidden="true"
 				>
-					<svg
-						viewBox="0 0 24 24"
-						class="h-4 w-4"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.9"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<circle cx="10.5" cy="10.5" r="5.5" />
-						<path d="M15.5 15.5 20 20" />
-					</svg>
+					<LucideIcon icon={Search} size={ICON_SMALL} />
 				</span>
 			</button>
 		</div>
 
 		<div class="flex min-w-0 flex-col gap-4 md:gap-6">
-			<div>
-				<p class="text-sm text-[var(--color-muted)]">{labelBodyPart(exercise.body_part, lang)}</p>
-				<h1 class="page-title">{title}</h1>
+			<div class="flex items-start justify-between gap-3">
+				<div class="min-w-0">
+					<p class="text-sm text-[var(--color-muted)]">{labelBodyPart(exercise.body_part, lang)}</p>
+					<h1 class="page-title hidden lg:block">{title}</h1>
+				</div>
+				<button
+					type="button"
+					class="btn-ghost exercise-detail-bookmark exercise-detail-bookmark--page shrink-0"
+					class:is-active={bookmarked}
+					onclick={toggleBookmark}
+					aria-label={translate(lang, bookmarked ? 'bookmarks.remove' : 'bookmarks.add')}
+					aria-pressed={bookmarked}
+				>
+					<LucideIcon icon={Bookmark} size={ICON_BUTTON + 2} fill={bookmarked ? 'currentColor' : 'none'} />
+				</button>
 			</div>
 
 			<dl class="panel grid gap-3 !p-3 text-sm sm:grid-cols-2">
@@ -161,20 +211,14 @@
 				>
 					{#if inDraft}
 						<span class="inline-flex items-center gap-1.5">
-							<svg class="h-4 w-4" viewBox="0 0 16 16" aria-hidden="true">
-								<path
-									d="M3.6 8.2 6.5 11l6-6.1"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.75"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-							</svg>
+							<LucideIcon icon={Check} size={ICON_BUTTON} />
 							{translate(lang, 'exercise.removeDraft')}
 						</span>
 					{:else}
-						{translate(lang, 'exercise.addDraft')}
+						<span class="inline-flex items-center gap-1.5">
+							<LucideIcon icon={Plus} size={ICON_BUTTON} />
+							{translate(lang, 'exercise.addDraft')}
+						</span>
 					{/if}
 				</button>
 			</div>
@@ -194,8 +238,8 @@
 		</div>
 	</article>
 
-	<div class="sticky-actions">
-		<div class="mx-auto max-w-6xl">
+	<div class="sticky-actions lg:hidden">
+		<div class="sticky-actions__inner">
 			<button
 				type="button"
 				class="{inDraft ? 'btn-secondary' : 'btn-primary'} btn-block"
@@ -204,20 +248,14 @@
 			>
 				{#if inDraft}
 					<span class="inline-flex items-center justify-center gap-1.5">
-						<svg class="h-4 w-4" viewBox="0 0 16 16" aria-hidden="true">
-							<path
-								d="M3.6 8.2 6.5 11l6-6.1"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.75"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-						</svg>
+						<LucideIcon icon={Check} size={ICON_BUTTON} />
 						{translate(lang, 'exercise.removeDraft')}
 					</span>
 				{:else}
-					{translate(lang, 'exercise.toDraft')}
+					<span class="inline-flex items-center justify-center gap-1.5">
+						<LucideIcon icon={Plus} size={ICON_BUTTON} />
+						{translate(lang, 'exercise.toDraft')}
+					</span>
 				{/if}
 			</button>
 		</div>

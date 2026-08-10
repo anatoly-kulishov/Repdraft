@@ -1,10 +1,13 @@
 <script lang="ts">
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import type { WorkoutExercise } from '$lib/domain/types';
 	import { coerceReps, coerceRestSec, coerceSets, REPS } from '$lib/domain/inputLimits';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { ChevronDown, ChevronUp, Trash2 } from '@lucide/svelte';
 
 	let {
 		item,
@@ -112,8 +115,9 @@
 				disabled={index === 0}
 				onclick={() => onmove(index, index - 1)}
 				aria-label={translate(lang, 'builder.up')}
+				title={translate(lang, 'builder.up')}
 			>
-				↑
+				<LucideIcon icon={ChevronUp} size={ICON_SMALL} />
 			</button>
 			<button
 				type="button"
@@ -121,21 +125,23 @@
 				disabled={index >= total - 1}
 				onclick={() => onmove(index, index + 1)}
 				aria-label={translate(lang, 'builder.down')}
+				title={translate(lang, 'builder.down')}
 			>
-				↓
+				<LucideIcon icon={ChevronDown} size={ICON_SMALL} />
 			</button>
 			<button
 				type="button"
 				class="btn-ghost is-danger"
 				onclick={onremove}
 				aria-label={translate(lang, 'builder.remove')}
+				title={translate(lang, 'builder.remove')}
 			>
-				✕
+				<LucideIcon icon={Trash2} size={ICON_SMALL} />
 			</button>
 		</div>
 	</div>
 
-	<div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+	<div class="workout-ex-fields">
 		{#if showSets}
 			<label class="field-label">
 				{inGroup ? translate(lang, 'builder.rounds') : translate(lang, 'builder.sets')}

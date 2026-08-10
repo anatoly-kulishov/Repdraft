@@ -108,7 +108,7 @@
 								href={`/exercise/${clip.exerciseId}?clip=${clip.id}`}
 								class="group block h-full overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] transition active:scale-[0.98] md:hover:border-[var(--color-accent)]"
 							>
-								<div class="relative aspect-square overflow-hidden bg-[var(--color-surface-muted)]">
+								<div class="relative aspect-square overflow-hidden bg-[var(--hero-card-media-bg)]">
 									{#if !loadedIds.has(clip.id)}
 										<div class="feed-skel absolute inset-0" aria-hidden="true"></div>
 									{/if}

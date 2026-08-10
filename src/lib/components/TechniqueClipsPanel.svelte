@@ -490,7 +490,7 @@
 			<div
 				class="relative rounded-xl border-2 border-dashed px-3 py-4 text-center transition-colors md:py-6"
 				class:border-[var(--color-accent)]={dragOver}
-				class:bg-[color-mix(in_srgb,var(--color-accent)_8%,white)]={dragOver}
+				class:bg-[color-mix(in_srgb,var(--color-accent)_8%,var(--color-surface))]={dragOver}
 				class:border-[var(--color-border)]={!dragOver}
 				role="region"
 				aria-label={translate(lang, 'clips.dropZone')}
