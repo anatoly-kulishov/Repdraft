@@ -146,14 +146,14 @@
 		actionLabel={translate(lang, 'builder.toCatalog')}
 	/>
 {:else}
-	<article class="content-page content-page--wide grid min-w-0 gap-5 pb-mobile-actions lg:grid-cols-[280px_1fr] lg:gap-6 lg:pb-0">
-		<div class="col-span-full md:hidden">
+	<article class="content-page content-page--wide grid w-full min-w-0 max-w-full gap-5 pb-mobile-actions lg:grid-cols-[280px_1fr] lg:gap-6 lg:pb-0">
+		<div class="col-span-full min-w-0 md:hidden">
 			<ScreenHeader {title} {backHref} actions={exerciseHeaderActions} />
 		</div>
-		<div class="subroute-desktop-head col-span-full hidden md:block">
+		<div class="subroute-desktop-head col-span-full hidden min-w-0 md:block">
 			<SubrouteBack href={backHref} label={backLabel} />
 		</div>
-		<div class="min-w-0">
+		<div class="min-w-0 max-w-full">
 			<button
 				type="button"
 				class="panel relative flex w-full cursor-zoom-in items-center justify-center overflow-hidden !p-4 sm:!p-5 lg:!p-3"
@@ -178,8 +178,8 @@
 			</button>
 		</div>
 
-		<div class="flex min-w-0 flex-col gap-4 md:gap-6">
-			<div class="flex items-start justify-between gap-3">
+		<div class="flex min-w-0 max-w-full flex-col gap-4 md:gap-6">
+			<div class="flex min-w-0 items-start justify-between gap-3">
 				<div class="min-w-0">
 					<p class="text-sm text-[var(--color-muted)]">{labelBodyPart(exercise.body_part, lang)}</p>
 					<h1 class="page-title hidden lg:block">{title}</h1>
@@ -196,18 +196,18 @@
 				</button>
 			</div>
 
-			<dl class="panel grid gap-3 !p-3 text-sm sm:grid-cols-2">
-				<div>
+			<dl class="panel grid min-w-0 gap-3 !p-3 text-sm sm:grid-cols-2">
+				<div class="min-w-0">
 					<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.equipment')}</dt>
-					<dd class="font-medium">{labelEquipment(exercise.equipment, lang)}</dd>
+					<dd class="font-medium break-words">{labelEquipment(exercise.equipment, lang)}</dd>
 				</div>
-				<div>
+				<div class="min-w-0">
 					<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.target')}</dt>
-					<dd class="font-medium">{labelTarget(exercise.target, lang)}</dd>
+					<dd class="font-medium break-words">{labelTarget(exercise.target, lang)}</dd>
 				</div>
-				<div class="sm:col-span-2">
+				<div class="min-w-0 sm:col-span-2">
 					<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.secondary')}</dt>
-					<dd class="font-medium">
+					<dd class="font-medium break-words">
 						{#if exercise.secondary_muscles.length}
 							{exercise.secondary_muscles.map((m) => labelTarget(m, lang)).join(', ')}
 						{:else}
@@ -236,11 +236,11 @@
 				{/if}
 			</div>
 
-			<section>
+			<section class="min-w-0 max-w-full">
 				<h2 class="section-title mb-2">{translate(lang, 'exercise.howTo')}</h2>
-				<ol class="list-decimal space-y-2.5 pl-5 text-sm leading-relaxed text-[var(--color-ink)]">
+				<ol class="list-decimal space-y-2.5 pl-5 text-sm leading-relaxed break-words text-[var(--color-ink)]">
 					{#each steps as step, i (i)}
-						<li>{step}</li>
+						<li class="min-w-0">{step}</li>
 					{/each}
 				</ol>
 			</section>

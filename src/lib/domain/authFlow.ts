@@ -78,6 +78,57 @@ export function authErrorMessageKey(err: unknown): string | null {
 	return null;
 }
 
+/** Minimal user shape for display helpers (Supabase User compatible). */
+export type AuthUserLike = {
+	email?: string | null;
+	user_metadata?: Record<string, unknown> | null;
+	app_metadata?: Record<string, unknown> | null;
+	identities?: Array<{ provider?: string | null }> | null;
+};
+
+function metaString(meta: Record<string, unknown> | null | undefined, key: string): string | null {
+	const raw = meta?.[key];
+	if (typeof raw !== 'string') return null;
+	const value = raw.trim();
+	return value || null;
+}
+
+/** Google / OAuth avatar from `user_metadata.avatar_url` (or `picture`). */
+export function userAvatarUrl(user: AuthUserLike | null | undefined): string | null {
+	if (!user) return null;
+	const meta = user.user_metadata;
+	for (const key of ['avatar_url', 'picture'] as const) {
+		const url = metaString(meta, key);
+		if (!url) continue;
+		if (url.startsWith('https://') || url.startsWith('http://')) return url;
+	}
+	return null;
+}
+
+/** Prefer full_name / name from metadata, else email local-part. */
+export function userDisplayName(user: AuthUserLike | null | undefined): string | null {
+	if (!user) return null;
+	const meta = user.user_metadata;
+	for (const key of ['full_name', 'name'] as const) {
+		const name = metaString(meta, key);
+		if (name) return name;
+	}
+	const email = user.email?.trim();
+	if (!email) return null;
+	return email.split('@')[0] || null;
+}
+
+/** Auth provider id: `google`, `email`, … from identities / app_metadata. */
+export function userAuthProvider(user: AuthUserLike | null | undefined): string | null {
+	if (!user) return null;
+	const identity = user.identities?.find((row) => typeof row.provider === 'string' && row.provider.trim());
+	if (identity?.provider) return identity.provider.trim().toLowerCase();
+	const fromApp = metaString(user.app_metadata, 'provider');
+	if (fromApp) return fromApp.toLowerCase();
+	if (user.email?.trim()) return 'email';
+	return null;
+}
+
 export function runAuthFlowSelfCheck(): void {
 	if (safeRedirectPath('/workouts') !== '/workouts') {
 		throw new Error('safeRedirectPath keeps relative path');
@@ -105,5 +156,27 @@ export function runAuthFlowSelfCheck(): void {
 	}
 	if (authErrorMessageKey({ code: 'email_not_confirmed' }) !== 'auth.errors.emailNotConfirmed') {
 		throw new Error('auth error map: confirm');
+	}
+	if (
+		userAvatarUrl({
+			user_metadata: { avatar_url: 'https://lh3.googleusercontent.com/a/x' }
+		}) !== 'https://lh3.googleusercontent.com/a/x'
+	) {
+		throw new Error('userAvatarUrl should read avatar_url');
+	}
+	if (userAvatarUrl({ user_metadata: { avatar_url: 'javascript:alert(1)' } }) !== null) {
+		throw new Error('userAvatarUrl should reject non-http URLs');
+	}
+	if (userDisplayName({ user_metadata: { full_name: 'Ada Lovelace' } }) !== 'Ada Lovelace') {
+		throw new Error('userDisplayName should prefer full_name');
+	}
+	if (userDisplayName({ email: 'ada@example.com', user_metadata: {} }) !== 'ada') {
+		throw new Error('userDisplayName should fall back to email local-part');
+	}
+	if (userAuthProvider({ identities: [{ provider: 'google' }] }) !== 'google') {
+		throw new Error('userAuthProvider should read identities');
+	}
+	if (userAuthProvider({ email: 'a@b.c', identities: [] }) !== 'email') {
+		throw new Error('userAuthProvider should fall back to email');
 	}
 }
