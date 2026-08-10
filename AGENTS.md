@@ -61,7 +61,8 @@ npm run build
 - Ветка: `cursor/vX.Y.Z-short-slug`  
 - patch = фиксы/polish, minor = фича  
 - После merge в `main` - GitHub Release с тем же тегом  
-- Идеи и приоритеты: `.cursor/product/market-roadmap.md`  
+- Идеи и приоритеты: `.cursor/product/market-roadmap.md`
+- **MVP scope / UI/UX (главный):** `.cursor/product/mvp-spec.md`  
 
 ## Что не делать
 

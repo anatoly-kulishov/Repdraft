@@ -1,4 +1,5 @@
 import type { WorkoutSession } from './types';
+import { completedSetCount } from './session';
 
 export type WeekBucket = {
 	/** Monday date `YYYY-MM-DD` (local calendar). */
@@ -166,6 +167,39 @@ export function recentFinishedSessions(
 		.slice()
 		.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''))
 		.slice(0, Math.max(0, limit));
+}
+
+export function historyTotalCompletedSets(sessions: WorkoutSession[]): number {
+	return finishedSessions(sessions).reduce((n, s) => n + completedSetCount(s), 0);
+}
+
+export function historyTotalVolumeKg(sessions: WorkoutSession[]): number {
+	return finishedSessions(sessions).reduce((n, s) => n + sessionVolumeKg(s), 0);
+}
+
+/** Consecutive local calendar days with a finished session, ending today or yesterday. */
+export function trainingStreakDays(
+	sessions: WorkoutSession[],
+	nowIso: string = new Date().toISOString()
+): number {
+	const days = new Set<string>();
+	for (const s of finishedSessions(sessions)) {
+		if (s.finishedAt) days.add(formatYmd(new Date(s.finishedAt)));
+	}
+	if (days.size === 0) return 0;
+	const now = new Date(nowIso);
+	let cursor = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+	const key = (d: Date) => formatYmd(d);
+	if (!days.has(key(cursor))) {
+		cursor.setDate(cursor.getDate() - 1);
+		if (!days.has(key(cursor))) return 0;
+	}
+	let streak = 0;
+	while (days.has(key(cursor))) {
+		streak += 1;
+		cursor.setDate(cursor.getDate() - 1);
+	}
+	return streak;
 }
 
 /** Throws if core aggregations regress. */

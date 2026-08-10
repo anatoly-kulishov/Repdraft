@@ -1,9 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <!-- Original Repdraft mark — MIT with the project -->
-  <rect width="32" height="32" rx="8" fill="#0F766E"/>
-  <rect x="9" y="14.5" width="14" height="3" rx="1.5" fill="#F7F9FB"/>
-  <rect x="5" y="10" width="4.5" height="12" rx="1.25" fill="#F7F9FB"/>
-  <rect x="3.5" y="12" width="2.5" height="8" rx="1" fill="#F7F9FB"/>
-  <rect x="22.5" y="10" width="4.5" height="12" rx="1.25" fill="#F7F9FB"/>
-  <rect x="26" y="12" width="2.5" height="8" rx="1" fill="#F7F9FB"/>
+	<rect width="32" height="32" rx="8" fill="#0B0B0C" />
+	<path d="M9 12.5V26" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
+	<path d="M9 6.75V10.25" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
+	<path
+		d="M9 7h11.25a5.35 5.35 0 0 1 0 10.7H9"
+		stroke="#8B5CF6"
+		stroke-width="2.65"
+		stroke-linecap="round"
+		stroke-linejoin="round"
+	/>
+	<path d="M13.35 17.85 20.85 25.5" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
+	<path d="M11.25 13.35h7.1" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
 </svg>

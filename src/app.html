@@ -6,8 +6,13 @@
 			name="viewport"
 			content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5"
 		/>
-		<meta name="theme-color" content="#0f766e" media="(prefers-color-scheme: light)" />
-		<meta name="theme-color" content="#0f766e" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+			rel="stylesheet"
+		/>
+		<meta name="theme-color" content="#0B0B0C" />
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -15,14 +20,42 @@
 		<meta name="application-name" content="Repdraft" />
 		<meta name="format-detection" content="telephone=no" />
 		<link rel="manifest" href="/manifest.webmanifest" />
+		<!-- Fallback first for older iOS; themed variants where supported. -->
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
-		<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+		<link
+			rel="apple-touch-icon"
+			href="/apple-touch-icon.png"
+			sizes="180x180"
+			media="(prefers-color-scheme: dark)"
+		/>
+		<link
+			rel="apple-touch-icon"
+			href="/apple-touch-icon-light.png"
+			sizes="180x180"
+			media="(prefers-color-scheme: light)"
+		/>
+		<link
+			rel="icon"
+			href="/icon.svg"
+			type="image/svg+xml"
+			media="(prefers-color-scheme: dark)"
+		/>
+		<link
+			rel="icon"
+			href="/icon-light.svg"
+			type="image/svg+xml"
+			media="(prefers-color-scheme: light)"
+		/>
+		<link rel="icon" href="/icon-adaptive.svg" type="image/svg+xml" />
 		<style>
-			/* First paint before Svelte hydrate — matches --color-bg / PWA splash. */
 			html,
 			body {
 				margin: 0;
 				min-height: 100%;
+				background: #0b0b0c;
+			}
+			html[data-theme='light'],
+			html[data-theme='light'] body {
 				background: #e8ecf0;
 			}
 			#pwa-boot {
@@ -31,28 +64,52 @@
 				z-index: 9999;
 				display: grid;
 				place-items: center;
-				background: #e8ecf0;
+				background: #0b0b0c;
 				pointer-events: none;
 				transition: opacity 0.2s ease;
+			}
+			html[data-theme='light'] #pwa-boot {
+				background: #e8ecf0;
 			}
 			#pwa-boot img {
 				width: 96px;
 				height: 96px;
 				border-radius: 22%;
 			}
+			#pwa-boot .pwa-boot-icon--light {
+				display: none;
+			}
+			html[data-theme='light'] #pwa-boot .pwa-boot-icon--dark {
+				display: none;
+			}
+			html[data-theme='light'] #pwa-boot .pwa-boot-icon--light {
+				display: block;
+			}
 			#pwa-boot.is-done {
 				opacity: 0;
 			}
 		</style>
-		<!-- Apply saved locale before first paint to avoid RU→EN text flash. -->
 		<script>
 			(function () {
 				try {
-					var key = 'repdraft.locale';
-					var stored = localStorage.getItem(key);
-					if (stored === 'en' || stored === 'ru') {
-						document.documentElement.lang = stored;
-						document.documentElement.dataset.locale = stored;
+					var themeKey = 'repdraft.theme';
+					var theme = localStorage.getItem(themeKey);
+					if (theme !== 'light' && theme !== 'dark') {
+						theme = window.matchMedia('(prefers-color-scheme: light)').matches
+							? 'light'
+							: 'dark';
+					}
+					var bg = theme === 'light' ? '#e8ecf0' : '#0b0b0c';
+					document.documentElement.setAttribute('data-theme', theme);
+					document.documentElement.style.colorScheme = theme;
+					document.documentElement.style.background = bg;
+					var meta = document.querySelector('meta[name="theme-color"]');
+					if (meta) meta.setAttribute('content', bg);
+					var localeKey = 'repdraft.locale';
+					var storedLocale = localStorage.getItem(localeKey);
+					if (storedLocale === 'en' || storedLocale === 'ru') {
+						document.documentElement.lang = storedLocale;
+						document.documentElement.dataset.locale = storedLocale;
 					}
 				} catch (e) {}
 			})();
@@ -61,7 +118,20 @@
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div id="pwa-boot" aria-hidden="true">
-			<img src="/icon.svg" alt="" width="96" height="96" />
+			<img
+				class="pwa-boot-icon pwa-boot-icon--dark"
+				src="/icon.svg"
+				alt=""
+				width="96"
+				height="96"
+			/>
+			<img
+				class="pwa-boot-icon pwa-boot-icon--light"
+				src="/icon-light.svg"
+				alt=""
+				width="96"
+				height="96"
+			/>
 		</div>
 		<div style="display: contents">%sveltekit.body%</div>
 		<script>

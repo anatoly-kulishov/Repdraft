@@ -1,274 +1,306 @@
 <script lang="ts">
-	import CommunityFeed from '$lib/components/CommunityFeed.svelte';
-	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
-	import EmptyState from '$lib/components/EmptyState.svelte';
-	import FilterBar from '$lib/components/FilterBar.svelte';
-	import { availableEquipment, availableTargets, filterExercises, isFilterConflict } from '$lib/domain/filters';
-	import { formatPersonalRecord } from '$lib/domain/records';
-	import type { ExerciseIndexItem } from '$lib/domain/types';
-	import { exerciseName } from '$lib/domain/exerciseName';
+	import HomePageSkeleton from '$lib/components/HomePageSkeleton.svelte';
+	import HomeRecordsWidget from '$lib/components/HomeRecordsWidget.svelte';
+	import HomeStatsStack from '$lib/components/HomeDesktopAside.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import type { ExerciseIndexItem } from '$lib/domain/types';
+	import {
+		completedExerciseCount,
+		completedSetCount,
+		sessionDurationMs
+	} from '$lib/domain/session';
+	import { planTargetSummary } from '$lib/domain/workout';
+	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
 	import { translate } from '$lib/i18n/messages';
-	import { CATALOG_PAGE_SIZE, catalogUi, emptyCatalogFilters } from '$lib/stores/catalogUi';
+	import { auth } from '$lib/stores/auth';
+	import { live } from '$lib/stores/live';
+	import { plans } from '$lib/stores/plans';
 	import { records } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { browser } from '$app/environment';
-	import { get } from 'svelte/store';
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-
-	let { data } = $props();
-
-	const saved = browser
-		? get(catalogUi)
-		: { filters: emptyCatalogFilters(), visibleLimit: CATALOG_PAGE_SIZE };
-	let items = $state<ExerciseIndexItem[]>([]);
-	let indexReady = $state(false);
-	let visibleLimit = $state(saved.visibleLimit);
-	let feedReady = $state(false);
-	let filters = $state({ ...saved.filters });
-	let filtersHydrated = $state(false);
+	import { ChevronRight, Play, Plus } from '@lucide/svelte';
 
 	let lang = $derived($resolvedLocale);
-	let catalog = $derived(indexReady && items.length > 0 ? items : data.boot);
-	let bodyParts = $derived(data.bodyParts);
-	let equipmentOptions = $derived(availableEquipment(catalog, filters, lang));
-	let targetOptions = $derived(availableTargets(catalog, filters, lang));
-	let visible = $derived(filterExercises(catalog, filters, lang));
-	let shown = $derived(visible.slice(0, visibleLimit));
-	let filtersActive = $derived(
-		Boolean(filters.query.trim()) ||
-			filters.bodyPart !== 'all' ||
-			filters.equipment !== 'all' ||
-			filters.target !== 'all'
-	);
-	let filterConflict = $derived(isFilterConflict(catalog, filters, lang));
-	let totalForCount = $derived(indexReady ? visible.length : data.totalCount);
-	let hasMore = $derived(
-		indexReady ? visibleLimit < visible.length : visibleLimit < data.totalCount && !filtersActive
-	);
-	let recordLabels = $derived(
-		new Map($records.map((r) => [r.exerciseId, formatPersonalRecord(r, lang)]))
-	);
-	let exerciseNames = $derived(
-		new Map(catalog.map((item) => [item.id, exerciseName(item, lang)]))
-	);
-	let preloadImages = $derived(shown.slice(0, 4).map((item) => `/${item.image}`));
-	let error = $derived(data.indexError);
+	let active = $derived($live.session);
+	let recent = $derived($live.history.slice(0, 6));
+	let homePlans = $derived($plans.slice(0, 8));
+	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
+	let indexReady = $state(false);
+	let historyReady = $state(false);
 
-	$effect(() => {
-		if (!browser) return;
-		catalogUi.setFilters({
-			query: filters.query,
-			bodyPart: filters.bodyPart,
-			equipment: filters.equipment,
-			target: filters.target
-		});
+	let hasActive = $derived(Boolean(active && !active.finishedAt));
+	let hasPlans = $derived($plans.length > 0);
+	let hasSessionHistory = $derived(recent.length > 0);
+	let isFirstTimeHome = $derived(!hasPlans && !hasSessionHistory);
+	let pageReady = $derived(
+		$auth.ready &&
+			$auth.dataBootstrap &&
+			$live.ready &&
+			historyReady &&
+			indexReady
+	);
+
+	type HomeMode = 'continue' | 'create' | 'start';
+	let homeMode = $derived.by((): HomeMode => {
+		if (hasActive) return 'continue';
+		if (!hasPlans) return 'create';
+		return 'start';
 	});
 
-	$effect(() => {
-		if (!browser) return;
-		catalogUi.setVisibleLimit(visibleLimit);
+	let createHeroTitle = $derived(
+		isFirstTimeHome ? translate(lang, 'home.welcomeTitle') : translate(lang, 'home.noPlansTitle')
+	);
+	let createHeroLead = $derived(
+		isFirstTimeHome ? translate(lang, 'home.welcomeLead') : translate(lang, 'home.noPlansLead')
+	);
+
+	let greetingText = $derived.by(() => {
+		const period = dayGreetingPeriod();
+		const key = homeGreetingMessageKey(period, Boolean(displayName));
+		return displayName ? translate(lang, key, { name: displayName }) : translate(lang, key);
 	});
 
-	$effect(() => {
-		filters.query;
-		filters.bodyPart;
-		filters.equipment;
-		filters.target;
-		lang;
-		if (!filtersHydrated) {
-			filtersHydrated = true;
-			return;
+	let displayName = $derived.by(() => {
+		const user = $auth.user;
+		if (!user) return null;
+		const meta = user.user_metadata as Record<string, unknown>;
+		if (typeof meta.full_name === 'string' && meta.full_name.trim()) {
+			return meta.full_name.trim();
 		}
-		visibleLimit = CATALOG_PAGE_SIZE;
+		const email = user.email;
+		if (email) return email.split('@')[0] ?? null;
+		return null;
 	});
 
-	/** Drop facet values that vanished after cascade (e.g. Legs + Chest). */
-	$effect(() => {
-		const nextEq =
-			filters.equipment !== 'all' && !equipmentOptions.includes(filters.equipment)
-				? 'all'
-				: filters.equipment;
-		const nextTarget =
-			filters.target !== 'all' && !targetOptions.includes(filters.target) ? 'all' : filters.target;
-		if (nextEq === filters.equipment && nextTarget === filters.target) return;
-		filters = { ...filters, equipment: nextEq, target: nextTarget };
+	/** Always render when auth is ready; mobile create mode hides via CSS (welcome card is enough). */
+	let showGreeting = $derived($auth.ready);
+
+	let progressPct = $derived.by(() => {
+		if (!active || active.exercises.length === 0) return 0;
+		return Math.round((completedExerciseCount(active) / active.exercises.length) * 100);
 	});
 
 	onMount(() => {
-		const w = window as Window & {
-			requestIdleCallback?: (cb: IdleRequestCallback, opts?: IdleRequestOptions) => number;
-			cancelIdleCallback?: (id: number) => void;
-		};
-		let idleIds: number[] = [];
-		let timeoutIds: ReturnType<typeof setTimeout>[] = [];
-		let cancelled = false;
-
-		const scheduleIdle = (fn: () => void, timeout: number) => {
-			if (typeof w.requestIdleCallback === 'function') {
-				idleIds.push(w.requestIdleCallback(fn, { timeout }));
-			} else {
-				timeoutIds.push(setTimeout(fn, Math.min(timeout, 400)));
+		void (async () => {
+			while (!$auth.ready || !$auth.dataBootstrap) {
+				await new Promise((r) => setTimeout(r, 20));
 			}
-		};
-
-		// Full index for search — after first cards are on screen.
-		void loadExerciseIndex()
-			.then((all) => {
-				if (cancelled) return;
-				items = all;
-				indexReady = true;
-			})
-			.catch(() => {
-				/* boot page still works */
-			});
-
-		scheduleIdle(() => records.refresh(), 2000);
-		// Feed: skeleton shows immediately; real GIFs start after load + idle.
-		const revealFeed = () => {
-			feedReady = true;
-		};
-		const onLoad = () => scheduleIdle(revealFeed, 800);
-		if (document.readyState === 'complete') onLoad();
-		else window.addEventListener('load', onLoad, { once: true });
-
-		return () => {
-			cancelled = true;
-			for (const id of idleIds) w.cancelIdleCallback?.(id);
-			for (const id of timeoutIds) clearTimeout(id);
-			window.removeEventListener('load', onLoad);
-		};
+			await Promise.all([
+				loadExerciseIndex()
+					.then((items) => {
+						indexById = new Map(items.map((item) => [item.id, item]));
+					})
+					.finally(() => {
+						indexReady = true;
+					}),
+				live.refreshHistory().finally(() => {
+					historyReady = true;
+				}),
+				records.refresh()
+			]);
+		})();
 	});
 
-	function loadMore() {
-		if (!indexReady) {
-			// Wait until full index is in memory before paging past boot.
-			void loadExerciseIndex().then((all) => {
-				items = all;
-				indexReady = true;
-				visibleLimit = Math.min(all.length, visibleLimit + CATALOG_PAGE_SIZE);
-			});
-			return;
-		}
-		visibleLimit = Math.min(visible.length, visibleLimit + CATALOG_PAGE_SIZE);
+	function whenLabel(iso: string): string {
+		const d = new Date(iso);
+		const now = new Date();
+		const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+		if (diffDays === 0) return translate(lang, 'home.today');
+		if (diffDays === 1) return translate(lang, 'home.yesterday');
+		return translate(lang, 'home.daysAgo', { n: diffDays });
+	}
+
+	function formatDurationMin(ms: number | null): string | null {
+		if (ms == null) return null;
+		const min = Math.round(ms / 60_000);
+		if (min <= 0) return null;
+		return String(min);
+	}
+
+	function onResume() {
+		if (!active) return;
+		void goto(`/live/${active.planId}`);
 	}
 </script>
 
 <svelte:head>
-	<title>{translate(lang, 'catalog.title')} — Repdraft</title>
-	{#each preloadImages as href (href)}
-		<link rel="preload" as="image" {href} fetchpriority="high" />
-	{/each}
+	<title>{translate(lang, 'home.title')} — Repdraft</title>
 </svelte:head>
 
-<section aria-labelledby="catalog-heading">
-	<div class="page-header">
-		<h1 id="catalog-heading" class="page-title">{translate(lang, 'catalog.title')}</h1>
-		<p class="page-lead">{translate(lang, 'catalog.lead')}</p>
-	</div>
-
-	{#if !filtersActive}
-		<div class="soft-enter">
-			<CommunityFeed {exerciseNames} start={feedReady} />
+<section
+	class="home-page content-page"
+	class:home-page--start={pageReady && homeMode === 'start'}
+	class:home-page--create={pageReady && homeMode === 'create'}
+	aria-labelledby="home-heading"
+>
+	<header class="home-header" class:home-header--compact={pageReady && homeMode === 'create'}>
+		<div class="home-header__intro">
+			<h1 id="home-heading" class="page-title home-header__title">{translate(lang, 'home.title')}</h1>
+			{#if showGreeting}
+				<p class="home-lead home-header__greeting">{greetingText}</p>
+			{:else if !$auth.ready}
+				<p class="home-lead home-header__greeting" aria-hidden="true">
+					<span
+						class="home-lead-skeleton inline-block h-[1.35rem] w-[min(100%,14rem)] animate-pulse rounded bg-[var(--color-surface-muted)]"
+					></span>
+				</p>
+			{/if}
+			{#if pageReady && homeMode === 'start'}
+				<p class="home-header__lead">{translate(lang, 'home.startLead')}</p>
+			{/if}
 		</div>
-	{/if}
+		{#if pageReady && homeMode === 'start'}
+			<a class="btn-primary home-header__cta home-header__cta--desktop min-h-11 shrink-0 items-center gap-2 px-5" href="/workouts">
+				<LucideIcon icon={Play} size={ICON_PRIMARY} />
+				{translate(lang, 'home.startWorkout')}
+			</a>
+		{:else if pageReady && homeMode === 'create'}
+			<a class="btn-primary home-header__cta home-header__cta--desktop min-h-11 shrink-0 items-center gap-2 px-5" href="/builder">
+				<LucideIcon icon={Plus} size={ICON_PRIMARY} />
+				{translate(lang, 'workouts.create')}
+			</a>
+		{:else if pageReady && homeMode === 'continue'}
+			<button
+				type="button"
+				class="btn-primary home-header__cta home-header__cta--desktop min-h-11 shrink-0 items-center gap-2 px-5"
+				onclick={onResume}
+			>
+				<LucideIcon icon={Play} size={ICON_PRIMARY} />
+				{translate(lang, 'home.continueWorkout')}
+			</button>
+		{/if}
+	</header>
 
-	<FilterBar bind:filters {bodyParts} equipment={equipmentOptions} targets={targetOptions} />
-
-	{#if error}
-		<EmptyState
-			title={translate(lang, 'catalog.dataMissing')}
-			description={error ? translate(lang, error) : ''}
-		/>
+	{#if !pageReady}
+		<HomePageSkeleton label={translate(lang, 'common.loading')} />
 	{:else}
-		<p class="mb-4 text-sm text-[var(--color-muted)]" aria-live="polite">
-			{translate(lang, 'catalog.countShown', {
-				shown: shown.length,
-				n: indexReady || filtersActive ? visible.length : totalForCount
-			})}
-		</p>
-		{#if visible.length === 0}
-			{#if filterConflict}
-				<div class="panel-dashed flex flex-col items-start gap-3 py-6 text-left md:py-8">
-					<h2 class="section-title">{translate(lang, 'catalog.conflictTitle')}</h2>
-					<p class="max-w-md text-sm leading-relaxed text-[var(--color-muted)]">
-						{translate(lang, 'catalog.conflictDesc')}
-					</p>
-					<div class="flex flex-wrap gap-2">
-						{#if filters.target !== 'all'}
-							<button
-								type="button"
-								class="btn-secondary text-sm"
-								onclick={() => {
-									filters = { ...filters, target: 'all' };
-								}}
-							>
-								{translate(lang, 'catalog.clearMuscle')}
-							</button>
-						{/if}
-						{#if filters.bodyPart !== 'all'}
-							<button
-								type="button"
-								class="btn-secondary text-sm"
-								onclick={() => {
-									filters = { ...filters, bodyPart: 'all' };
-								}}
-							>
-								{translate(lang, 'catalog.clearBody')}
-							</button>
-						{/if}
-						{#if filters.equipment !== 'all'}
-							<button
-								type="button"
-								class="btn-secondary text-sm"
-								onclick={() => {
-									filters = { ...filters, equipment: 'all' };
-								}}
-							>
-								{translate(lang, 'catalog.clearEquipment')}
-							</button>
-						{/if}
+		<div class="home-dashboard">
+			<div class="home-dashboard-top" class:home-dashboard-top--start={homeMode === 'start'}>
+				<div
+					class="home-hero"
+					class:home-hero--continue={homeMode === 'continue'}
+					class:home-hero--compact={homeMode === 'start'}
+				>
+					{#if homeMode === 'continue' && active}
+						<p class="home-hero-kicker">{translate(lang, 'home.workoutInProgress')}</p>
+						<h2 class="home-hero-title">{active.planName}</h2>
+						<p class="home-hero-meta">
+							{translate(lang, 'home.exerciseProgress', {
+								done: completedExerciseCount(active),
+								total: active.exercises.length
+							})}
+						</p>
+						<div
+							class="home-progress"
+							role="progressbar"
+							aria-valuenow={progressPct}
+							aria-valuemin={0}
+							aria-valuemax={100}
+						>
+							<div class="home-progress-fill" style:width="{progressPct}%"></div>
+						</div>
 						<button
 							type="button"
-							class="btn-primary text-sm"
-							onclick={() => {
-								filters = { ...filters, bodyPart: 'all', equipment: 'all', target: 'all' };
-							}}
+							class="btn-primary home-hero-cta btn-block min-h-12 items-center justify-center gap-2 lg:hidden"
+							onclick={onResume}
 						>
-							{translate(lang, 'catalog.reset')}
+							<LucideIcon icon={Play} size={ICON_PRIMARY} />
+							{translate(lang, 'home.continueWorkout')}
 						</button>
-					</div>
+					{:else if homeMode === 'create'}
+						<h2 class="home-hero-title">{createHeroTitle}</h2>
+						<p class="home-hero-meta">{createHeroLead}</p>
+						<a
+							class="btn-primary home-hero-cta btn-block min-h-12 items-center justify-center gap-2 lg:hidden"
+							href="/builder"
+						>
+							<LucideIcon icon={Plus} size={ICON_PRIMARY} />
+							{translate(lang, 'workouts.create')}
+						</a>
+					{:else}
+						<h2 class="home-hero-title">{translate(lang, 'home.readyTitle')}</h2>
+						<p class="home-hero-meta">{translate(lang, 'home.startLead')}</p>
+						<a
+							class="btn-primary home-hero-cta btn-block min-h-12 items-center justify-center gap-2 lg:hidden"
+							href="/workouts"
+						>
+							<LucideIcon icon={Play} size={ICON_PRIMARY} />
+							{translate(lang, 'home.startWorkout')}
+						</a>
+					{/if}
 				</div>
-			{:else}
-				<EmptyState
-					title={translate(lang, 'catalog.emptyTitle')}
-					description={translate(lang, 'catalog.emptyDesc')}
-				/>
-			{/if}
-		{:else}
-			<div
-				class="catalog-grid soft-enter grid min-w-0 grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5"
-			>
-				{#each shown as exercise, i (exercise.id)}
-					<ExerciseCard
-						{exercise}
-						recordLabel={recordLabels.get(exercise.id) ?? null}
-						priority={i < 4}
-					/>
-				{/each}
+
+				<HomeStatsStack />
 			</div>
-			{#if hasMore}
-				<div class="mt-5 flex justify-center">
-					<button type="button" class="btn-secondary min-w-[12rem]" onclick={loadMore}>
-						{translate(lang, 'catalog.loadMore', {
-							n: Math.min(
-								CATALOG_PAGE_SIZE,
-								(indexReady ? visible.length : data.totalCount) - shown.length
-							)
-						})}
-					</button>
+
+			<div class="home-dashboard-mid">
+				{#if hasPlans}
+					<div class="home-section home-dashboard-plans">
+						<div class="home-section-head">
+							<h2 class="section-title">{translate(lang, 'home.plansTitle')}</h2>
+							{#if $plans.length > homePlans.length}
+								<a class="home-section-link" href="/workouts">
+									{translate(lang, 'home.viewAllWorkouts')}
+									<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
+								</a>
+							{/if}
+						</div>
+						<ul class="entity-list">
+							{#each homePlans as plan (plan.id)}
+								{@const muscles = planTargetSummary(plan, indexById, lang)}
+								<li class="entity-row">
+									<a class="entity-row__main" href={`/workouts/${plan.id}`}>
+										<span class="entity-row__title">{plan.name}</span>
+										{#if muscles}
+											<span class="entity-row__meta">{muscles}</span>
+										{/if}
+										<span class="entity-row__meta">
+											{translate(lang, 'workouts.exCount', { n: plan.exercises.length })}
+										</span>
+									</a>
+									<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="entity-row__chevron shrink-0" />
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
+
+				<div class="home-section">
+					{#if recent.length > 0}
+						<h2 class="section-title">{translate(lang, 'home.recentTitle')}</h2>
+						<ul class="entity-list">
+							{#each recent as session (session.id)}
+								<li>
+									<a class="entity-row entity-row--link" href={`/workouts/history/${session.id}`}>
+										<span class="entity-row__main">
+											<span class="entity-row__title">{session.planName}</span>
+											<span class="entity-row__meta">
+												{translate(lang, 'home.recentMeta', {
+													when: whenLabel(session.finishedAt ?? session.startedAt),
+													min: formatDurationMin(sessionDurationMs(session)) ?? '—',
+													sets: completedSetCount(session)
+												})}
+											</span>
+										</span>
+										<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="entity-row__chevron" />
+									</a>
+								</li>
+							{/each}
+						</ul>
+					{:else}
+						<h2 class="section-title">{translate(lang, 'home.recentPlaceholderTitle')}</h2>
+						<div class="panel-dashed home-mid-placeholder">
+							<p class="home-mid-placeholder__text">{translate(lang, 'home.recentPlaceholderHint')}</p>
+							<span class="home-soon-badge">{translate(lang, 'home.placeholderSoon')}</span>
+						</div>
+					{/if}
 				</div>
-			{/if}
-		{/if}
+
+				<HomeRecordsWidget {indexById} />
+			</div>
+		</div>
 	{/if}
 </section>

@@ -109,6 +109,21 @@ export function totalSetCount(session: WorkoutSession): number {
 	return session.exercises.reduce((n, ex) => n + ex.sets.length, 0);
 }
 
+/** Exercise done when every logged set is completed (empty exercise list → 0). */
+export function completedExerciseCount(session: WorkoutSession): number {
+	return session.exercises.filter(
+		(ex) => ex.sets.length > 0 && ex.sets.every((s) => s.completed)
+	).length;
+}
+
+export function sessionDurationMs(session: WorkoutSession): number | null {
+	const end = session.finishedAt ?? null;
+	if (!end) return null;
+	const ms = new Date(end).getTime() - new Date(session.startedAt).getTime();
+	if (!Number.isFinite(ms) || ms < 0) return null;
+	return ms;
+}
+
 /** Throws if live session log / previous-performance invariants regress. */
 export function runSessionSelfCheck(): void {
 	const plan: WorkoutPlan = {
@@ -127,6 +142,9 @@ export function runSessionSelfCheck(): void {
 		throw new Error(`totalSetCount expected 6, got ${totalSetCount(session)}`);
 	}
 	if (completedSetCount(session) !== 0) throw new Error('new session should have 0 completed');
+	if (completedExerciseCount(session) !== 0) {
+		throw new Error('new session should have 0 completed exercises');
+	}
 
 	session = updateLoggedSet(session, 0, 0, { weightKg: 40, reps: 8, completed: true });
 	if (completedSetCount(session) !== 1) {
