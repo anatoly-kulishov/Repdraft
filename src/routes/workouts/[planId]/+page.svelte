@@ -7,7 +7,7 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
-	import { planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
+	import { groupBounds, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -54,6 +54,16 @@
 	function onStart() {
 		if (!plan) return;
 		void goto(`/live/${plan.id}`);
+	}
+
+	function roleFor(index: number): 'solo' | 'first' | 'middle' | 'last' {
+		if (!plan) return 'solo';
+		const bounds = groupBounds(plan.exercises, index);
+		if (!bounds) return 'solo';
+		if (bounds.start === bounds.end) return 'solo';
+		if (index === bounds.start) return 'first';
+		if (index === bounds.end) return 'last';
+		return 'middle';
 	}
 </script>
 
@@ -113,9 +123,22 @@
 		<ul class="workout-preview-list">
 			{#each plan.exercises as item, index (item.exerciseId + '-' + index)}
 				{@const meta = indexById.get(item.exerciseId) ?? null}
-				<li>
+				{@const role = roleFor(index)}
+				<li
+					class="workout-preview-item"
+					class:is-group={role !== 'solo'}
+					class:is-group-first={role === 'first'}
+					class:is-group-middle={role === 'middle'}
+					class:is-group-last={role === 'last'}
+				>
+					{#if role === 'first'}
+						<p class="workout-preview-group-badge">{translate(lang, 'builder.supersetBadge')}</p>
+					{/if}
 					{#if meta}
-						<a class="workout-preview-row" href={`/exercise/${meta.id}?from=${encodeURIComponent(`/workouts/${plan.id}`)}`}>
+						<a
+							class="workout-preview-row"
+							href={`/exercise/${meta.id}?from=${encodeURIComponent(`/workouts/${plan.id}`)}`}
+						>
 							<img
 								class="workout-preview-thumb"
 								src={`/${meta.image}`}
@@ -128,7 +151,15 @@
 							<div class="workout-preview-row-body">
 								<p class="workout-preview-row-title">{exerciseName(meta, lang)}</p>
 								<p class="workout-preview-row-sub tabular-nums">
-									{item.sets} × {item.reps}
+									{#if role === 'solo'}
+										{item.sets} × {item.reps}
+									{:else if role === 'first'}
+										{item.sets}
+										{translate(lang, 'builder.rounds').toLowerCase()} · {item.reps}
+										{translate(lang, 'builder.reps').toLowerCase()}
+									{:else}
+										{item.reps} {translate(lang, 'builder.reps').toLowerCase()}
+									{/if}
 									<span class="workout-preview-row-dot" aria-hidden="true">·</span>
 									{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
 								</p>

@@ -5,6 +5,7 @@
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import AttributionFooter from '$lib/components/AttributionFooter.svelte';
 	import AccountChip from '$lib/components/AccountChip.svelte';
+	import DraftDock from '$lib/components/DraftDock.svelte';
 	import Logo from '$lib/components/Logo.svelte';
 	import ToastStack from '$lib/components/ToastStack.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -98,9 +99,11 @@
 			return (
 				path === '/workouts' ||
 				path.startsWith('/workouts/') ||
-				path.startsWith('/builder') ||
 				path.startsWith('/live/')
 			);
+		}
+		if (href === '/builder') {
+			return path.startsWith('/builder');
 		}
 		if (href === '/settings') return path === '/settings';
 		if (href === '/auth') return path === '/auth' || path.startsWith('/auth/');
@@ -150,7 +153,7 @@
 
 		<main
 			id="main-content"
-			class="shell-main mx-auto w-full min-w-0 flex-1 overflow-x-hidden overflow-x-clip"
+			class="shell-main mx-auto w-full min-w-0 flex-1"
 			class:shell-main--subroute={hideMobileHeader}
 			class:shell-main--flow={hideMobileHeader}
 			tabindex="-1"
@@ -201,3 +204,4 @@
 </nav>
 
 <ToastStack items={$toasts} />
+<DraftDock />

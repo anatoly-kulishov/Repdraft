@@ -2,13 +2,15 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { coerceReps, coerceWeightKg, LIVE_REPS } from '$lib/domain/inputLimits';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { completedSetCount, totalSetCount } from '$lib/domain/session';
+	import { completedSetCount, nextFocusAfterSetComplete, totalSetCount } from '$lib/domain/session';
 	import type { ExerciseIndexItem, WorkoutPlan, WorkoutSession } from '$lib/domain/types';
+	import { groupBounds } from '$lib/domain/workout';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
@@ -27,11 +29,43 @@
 	let session = $derived($live.session);
 	let restUntil = $derived($live.restUntil);
 	let loading = $state(true);
+	let finishing = $state(false);
 	let missing = $state(false);
 	let names = $state(new Map<string, ExerciseIndexItem>());
 	let now = $state(Date.now());
 	let selectedExerciseIndex = $state(0);
 	let tick: ReturnType<typeof setInterval> | null = null;
+
+	function roleFor(index: number): 'solo' | 'first' | 'middle' | 'last' {
+		if (!session) return 'solo';
+		const bounds = groupBounds(session.exercises, index);
+		if (!bounds || bounds.start === bounds.end) return 'solo';
+		if (index === bounds.start) return 'first';
+		if (index === bounds.end) return 'last';
+		return 'middle';
+	}
+
+	let selectedRole = $derived(roleFor(selectedExerciseIndex));
+	let selectedInGroup = $derived(selectedRole !== 'solo');
+	let selectedGroup = $derived.by(() => {
+		if (!session || !selectedInGroup) return null;
+		return groupBounds(session.exercises, selectedExerciseIndex);
+	});
+	let selectedGroupPos = $derived.by(() => {
+		if (!selectedGroup) return null;
+		return {
+			current: selectedExerciseIndex - selectedGroup.start + 1,
+			total: selectedGroup.end - selectedGroup.start + 1
+		};
+	});
+	let nextInSupersetName = $derived.by(() => {
+		if (!session || !selectedGroup) return null;
+		if (selectedExerciseIndex >= selectedGroup.end) return null;
+		const id = session.exercises[selectedExerciseIndex + 1]?.exerciseId;
+		if (!id) return null;
+		const item = names.get(id);
+		return item ? exerciseName(item, lang) : null;
+	});
 
 	let elapsedLabel = $derived.by(() => {
 		if (!session?.startedAt) return '0:00';
@@ -102,6 +136,7 @@
 			try {
 				const planId = params.planId;
 				const active = get(live).session;
+				const plan = await resolvePlan(planId);
 
 				// Resume first — session already snapshots exercises; plan may be deleted.
 				if (
@@ -110,7 +145,8 @@
 					active.planId === planId &&
 					active.exercises.length > 0
 				) {
-					selectedExerciseIndex = pickDefaultExerciseIndex(active);
+					if (plan) live.syncFromPlan(plan);
+					selectedExerciseIndex = pickDefaultExerciseIndex(get(live).session ?? active);
 					return;
 				}
 
@@ -122,7 +158,6 @@
 					live.discard();
 				}
 
-				const plan = await resolvePlan(planId);
 				if (!plan || plan.exercises.length === 0) {
 					missing = true;
 					return;
@@ -215,14 +250,14 @@
 		}
 		live.patchSet(ei, si, { completed: true });
 		const next = get(live).session;
-		const current = next?.exercises[ei];
-		if (current?.sets.every((s) => s.completed) && next && ei < next.exercises.length - 1) {
-			selectedExerciseIndex = ei + 1;
-		}
+		if (!next) return;
+		selectedExerciseIndex = nextFocusAfterSetComplete(next, ei, si);
 	}
 
 	async function onFinish() {
+		if (finishing) return;
 		if (!confirm(translate(lang, 'live.confirmFinish'))) return;
+		finishing = true;
 		try {
 			const done = await live.finish();
 			toasts.show(translate(lang, 'live.saved'), 'success');
@@ -233,6 +268,7 @@
 			}
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'live.saveFail'), 'error');
+			finishing = false;
 		}
 	}
 
@@ -336,14 +372,6 @@
 					})}
 				</p>
 				<p class="live-timer" aria-live="polite">{elapsedLabel}</p>
-				<button
-					type="button"
-					class="btn-danger live-finish-header hidden items-center gap-2 lg:inline-flex"
-					onclick={() => void onFinish()}
-				>
-					<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
-					{translate(lang, 'live.finish')}
-				</button>
 			</div>
 		</header>
 
@@ -366,7 +394,17 @@
 			<nav class="live-nav" aria-label={translate(lang, 'live.title')}>
 				<ul class="live-nav-list">
 					{#each session.exercises as ex, ei (ex.exerciseId + '-nav-' + ei)}
-						<li>
+						{@const role = roleFor(ei)}
+						<li
+							class="live-nav-li"
+							class:is-group={role !== 'solo'}
+							class:is-group-first={role === 'first'}
+							class:is-group-middle={role === 'middle'}
+							class:is-group-last={role === 'last'}
+						>
+							{#if role === 'first'}
+								<p class="live-nav-group-badge">{translate(lang, 'builder.supersetBadge')}</p>
+							{/if}
 							<button
 								type="button"
 								class="live-nav-item"
@@ -375,7 +413,13 @@
 								onclick={() => (selectedExerciseIndex = ei)}
 							>
 								<span class="live-nav-title">{titleFor(ex.exerciseId)}</span>
-								<span class="live-nav-meta">{ex.sets.length} × {ex.targetReps}</span>
+								<span class="live-nav-meta">
+									{#if role === 'solo'}
+										{ex.sets.length} × {ex.targetReps}
+									{:else}
+										{ex.targetReps} {translate(lang, 'builder.reps').toLowerCase()}
+									{/if}
+								</span>
 								{#if exerciseDone(ei)}
 									<span class="live-nav-check" aria-hidden="true">
 										<LucideIcon icon={Check} size={ICON_SMALL} />
@@ -390,7 +434,17 @@
 			<div class="live-panel-wrap">
 				{#each session.exercises as ex, ei (ex.exerciseId + '-' + ei)}
 					{#if ei === selectedExerciseIndex}
-						<div class="live-panel">
+						<div class="live-panel" class:live-panel--superset={selectedInGroup}>
+							{#if selectedInGroup && selectedGroupPos}
+								<p class="live-superset-badge">
+									{translate(lang, 'live.supersetOf', selectedGroupPos)}
+								</p>
+								{#if nextInSupersetName}
+									<p class="live-superset-next">
+										{translate(lang, 'live.nextInSuperset', { name: nextInSupersetName })}
+									</p>
+								{/if}
+							{/if}
 							{#if activeSetProgress}
 								<p class="live-exercise-step">
 									{translate(lang, 'live.setProgress', {
@@ -416,33 +470,19 @@
 								</p>
 							{/if}
 
-							<div
-								class="live-set-head lg:hidden"
-								aria-hidden="true"
-							>
+							<div class="live-set-head" aria-hidden="true">
 								<span>#</span>
 								<span>{translate(lang, 'live.weight')}</span>
 								<span>{translate(lang, 'live.reps')}</span>
-								<span class="text-center">✓</span>
+								<span class="live-set-head-done">✓</span>
 							</div>
 
-							<div
-								class="mb-2 hidden grid-cols-[2rem_1fr_1fr_2.75rem] gap-2 px-0.5 text-[0.6875rem] font-medium uppercase tracking-wide text-[var(--color-muted)] lg:grid"
-							>
-								<span>#</span>
-								<span>{translate(lang, 'live.weight')}</span>
-								<span>{translate(lang, 'live.reps')}</span>
-								<span class="text-center">
-									<LucideIcon icon={Check} size={ICON_SMALL} class="opacity-70" />
-								</span>
-							</div>
-
-							<ul class="mt-3 flex flex-col gap-1.5">
+							<ul class="live-set-list">
 								{#each ex.sets as set, si (si)}
 									<li class="live-set-row" class:is-done={set.completed}>
 										<span class="live-set-index">{si + 1}</span>
 										<input
-											class="field w-full !py-2.5 text-base tabular-nums"
+											class="field live-set-weight tabular-nums"
 											type="text"
 											inputmode="decimal"
 											autocomplete="off"
@@ -452,7 +492,7 @@
 											oninput={(e) => onWeight(ei, si, e.currentTarget.value)}
 										/>
 										<input
-											class="field w-full !py-2.5 text-base tabular-nums"
+											class="field live-set-reps tabular-nums"
 											type="text"
 											inputmode="numeric"
 											autocomplete="off"
@@ -492,48 +532,110 @@
 						</div>
 					{/if}
 				{/each}
+
+				<footer class="live-desktop-actions">
+					{#if canGoNext}
+						<button
+							type="button"
+							class="btn-primary inline-flex min-h-11 items-center gap-2"
+							disabled={finishing}
+							onclick={onNextExercise}
+						>
+							{translate(lang, 'live.nextExercise')}
+							<LucideIcon icon={ChevronRight} size={ICON_PRIMARY} />
+						</button>
+						<button
+							type="button"
+							class="btn-secondary inline-flex min-h-11 items-center gap-2"
+							disabled={finishing}
+							aria-busy={finishing}
+							onclick={() => void onFinish()}
+						>
+							{#if finishing}
+								<Spinner size="sm" block={false} />
+								{translate(lang, 'auth.wait')}
+							{:else}
+								<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
+								{translate(lang, 'live.finish')}
+							{/if}
+						</button>
+					{:else}
+						<button
+							type="button"
+							class="btn-primary inline-flex min-h-11 items-center gap-2"
+							disabled={finishing}
+							aria-busy={finishing}
+							onclick={() => void onFinish()}
+						>
+							{#if finishing}
+								<Spinner size="sm" block={false} />
+								{translate(lang, 'auth.wait')}
+							{:else}
+								<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
+								{translate(lang, 'live.finish')}
+							{/if}
+						</button>
+					{/if}
+					<button
+						type="button"
+						class="btn-ghost is-danger"
+						disabled={finishing}
+						onclick={onDiscard}
+					>
+						{translate(lang, 'live.discard')}
+					</button>
+				</footer>
 			</div>
 		</div>
 
 		<div class="live-sticky-actions sticky-actions lg:hidden">
 			<div class="sticky-actions__inner">
 				{#if canGoNext}
-					<button type="button" class="btn-primary btn-block min-h-12 gap-2" onclick={onNextExercise}>
+					<button type="button" class="btn-primary btn-block min-h-12 gap-2" disabled={finishing} onclick={onNextExercise}>
 						{translate(lang, 'live.nextExercise')}
 						<LucideIcon icon={ChevronRight} size={ICON_PRIMARY} />
 					</button>
 					<button
 						type="button"
 						class="btn-secondary btn-block min-h-11 gap-2"
+						disabled={finishing}
+						aria-busy={finishing}
 						onclick={() => void onFinish()}
 					>
-						<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
-						{translate(lang, 'live.finish')}
+						{#if finishing}
+							<Spinner size="sm" block={false} />
+							{translate(lang, 'auth.wait')}
+						{:else}
+							<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
+							{translate(lang, 'live.finish')}
+						{/if}
 					</button>
 				{:else}
 					<button
 						type="button"
 						class="btn-primary btn-block min-h-12 gap-2"
+						disabled={finishing}
+						aria-busy={finishing}
 						onclick={() => void onFinish()}
 					>
-						<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
-						{translate(lang, 'live.finish')}
+						{#if finishing}
+							<Spinner size="sm" block={false} />
+							{translate(lang, 'auth.wait')}
+						{:else}
+							<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
+							{translate(lang, 'live.finish')}
+						{/if}
 					</button>
 				{/if}
-				<button type="button" class="btn-link mx-auto !text-[var(--color-muted)]" onclick={onDiscard}>
+				<button
+					type="button"
+					class="btn-link mx-auto !text-[var(--color-muted)]"
+					disabled={finishing}
+					onclick={onDiscard}
+				>
 					{translate(lang, 'live.discard')}
 				</button>
 			</div>
 		</div>
-
-		<footer class="live-footer hidden lg:flex">
-			<button type="button" class="btn-danger inline-flex items-center gap-2" onclick={() => void onFinish()}>
-				<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
-				{translate(lang, 'live.finish')}
-			</button>
-			<button type="button" class="btn-ghost is-danger" onclick={onDiscard}>
-				{translate(lang, 'live.discard')}
-			</button>
-		</footer>
 	</section>
 {/if}

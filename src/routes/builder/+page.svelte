@@ -2,6 +2,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import WorkoutExerciseRow from '$lib/components/WorkoutExerciseRow.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
@@ -111,9 +112,15 @@
 			type="button"
 			class="btn-primary inline-flex min-h-11 shrink-0 items-center gap-2 px-5"
 			disabled={!pageReady || saving || $draft.exercises.length === 0}
+			aria-busy={saving}
 			onclick={() => void save()}
 		>
-			{translate(lang, 'builder.save')}
+			{#if saving}
+				<Spinner size="sm" block={false} />
+				{translate(lang, 'auth.wait')}
+			{:else}
+				{translate(lang, 'builder.save')}
+			{/if}
 		</button>
 	</div>
 
@@ -203,8 +210,21 @@
 
 				<div class="sticky-actions lg:hidden">
 					<div class="sticky-actions__inner flex flex-col gap-1">
-						<button type="button" class="btn-primary btn-block" disabled={saving} onclick={() => void save()}>
-							{translate(lang, 'builder.save')}
+						<button
+							type="button"
+							class="btn-primary btn-block"
+							disabled={saving}
+							aria-busy={saving}
+							onclick={() => void save()}
+						>
+							{#if saving}
+								<span class="inline-flex items-center justify-center gap-2">
+									<Spinner size="sm" block={false} />
+									{translate(lang, 'auth.wait')}
+								</span>
+							{:else}
+								{translate(lang, 'builder.save')}
+							{/if}
 						</button>
 					</div>
 				</div>

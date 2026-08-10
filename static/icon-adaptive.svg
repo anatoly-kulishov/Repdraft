@@ -1,18 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
 	<style>
-		.bg {
-			fill: #0b0b0c;
-		}
-		.frame {
-			stroke: transparent;
-		}
+		.bg { fill: #0B0B0C; }
+		.frame { stroke: transparent; }
 		@media (prefers-color-scheme: light) {
-			.bg {
-				fill: #f7f9fb;
-			}
-			.frame {
-				stroke: #b8c4d4;
-			}
+			.bg { fill: #F7F9FB; }
+			.frame { stroke: #B8C4D4; }
 		}
 	</style>
 	<rect class="bg" width="32" height="32" rx="8" />
