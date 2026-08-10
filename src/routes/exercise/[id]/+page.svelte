@@ -15,9 +15,10 @@
 	import TechniqueClipsPanel from '$lib/components/TechniqueClipsPanel.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Check, Plus, Search, Bookmark } from '@lucide/svelte';
+	import { Bookmark, ClipboardList, Plus, Search } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 
@@ -26,6 +27,7 @@
 	let exercise = $derived(data.exercise);
 	let lang = $derived($resolvedLocale);
 	let title = $derived(exercise ? exerciseName(exercise, lang) : '');
+	let draftCount = $derived($draft.exercises.length);
 	let steps = $derived.by(() => {
 		if (!exercise) return [] as string[];
 		const map = exercise.instruction_steps ?? {};
@@ -33,6 +35,7 @@
 	});
 	let mediaOpen = $state(false);
 	let mediaCloseBtn: HTMLButtonElement | undefined = $state();
+	let bookmarkBusy = $state(false);
 	let inDraft = $derived(
 		Boolean(exercise && $draft.exercises.some((ex) => ex.exerciseId === exercise.id))
 	);
@@ -56,10 +59,16 @@
 	});
 
 	function toggleBookmark() {
-		if (!exercise) return;
-		void bookmarks.toggle(exercise.id).then((saved) => {
-			toasts.show(translate(lang, saved ? 'bookmarks.saved' : 'bookmarks.removed'), 'info');
-		});
+		if (!exercise || bookmarkBusy) return;
+		bookmarkBusy = true;
+		void bookmarks
+			.toggle(exercise.id)
+			.then((saved) => {
+				toasts.show(translate(lang, saved ? 'bookmarks.saved' : 'bookmarks.removed'), 'info');
+			})
+			.finally(() => {
+				bookmarkBusy = false;
+			});
 	}
 
 	function toggleDraft() {
@@ -110,10 +119,16 @@
 		class="btn-ghost exercise-detail-bookmark shrink-0"
 		class:is-active={bookmarked}
 		onclick={toggleBookmark}
+		disabled={bookmarkBusy}
+		aria-busy={bookmarkBusy}
 		aria-label={translate(lang, bookmarked ? 'bookmarks.remove' : 'bookmarks.add')}
 		aria-pressed={bookmarked}
 	>
-		<LucideIcon icon={Bookmark} size={ICON_BUTTON + 2} fill={bookmarked ? 'currentColor' : 'none'} />
+		{#if bookmarkBusy}
+			<Spinner size="sm" block={false} />
+		{:else}
+			<LucideIcon icon={Bookmark} size={ICON_BUTTON + 2} fill={bookmarked ? 'currentColor' : 'none'} />
+		{/if}
 	</button>
 {/snippet}
 
@@ -203,24 +218,22 @@
 			</dl>
 
 			<div class="actions-inline">
-				<button
-					type="button"
-					class={inDraft ? 'btn-secondary' : 'btn-primary'}
-					aria-pressed={inDraft}
-					onclick={toggleDraft}
-				>
-					{#if inDraft}
-						<span class="inline-flex items-center gap-1.5">
-							<LucideIcon icon={Check} size={ICON_BUTTON} />
-							{translate(lang, 'exercise.removeDraft')}
-						</span>
-					{:else}
+				{#if inDraft}
+					<a class="btn-primary inline-flex items-center gap-1.5" href="/builder">
+						<LucideIcon icon={ClipboardList} size={ICON_BUTTON} />
+						{translate(lang, 'draft.dock', { n: draftCount })}
+					</a>
+					<button type="button" class="btn-link text-sm" onclick={toggleDraft}>
+						{translate(lang, 'exercise.removeDraft')}
+					</button>
+				{:else}
+					<button type="button" class="btn-primary" onclick={toggleDraft}>
 						<span class="inline-flex items-center gap-1.5">
 							<LucideIcon icon={Plus} size={ICON_BUTTON} />
 							{translate(lang, 'exercise.addDraft')}
 						</span>
-					{/if}
-				</button>
+					</button>
+				{/if}
 			</div>
 
 			<section>
@@ -238,26 +251,28 @@
 		</div>
 	</article>
 
-	<div class="sticky-actions lg:hidden">
-		<div class="sticky-actions__inner">
-			<button
-				type="button"
-				class="{inDraft ? 'btn-secondary' : 'btn-primary'} btn-block"
-				aria-pressed={inDraft}
-				onclick={toggleDraft}
-			>
-				{#if inDraft}
-					<span class="inline-flex items-center justify-center gap-1.5">
-						<LucideIcon icon={Check} size={ICON_BUTTON} />
-						{translate(lang, 'exercise.removeDraft')}
-					</span>
-				{:else}
+	<div class="sticky-actions lg:hidden" class:sticky-actions--stack={inDraft}>
+		<div class="sticky-actions__inner flex flex-col gap-1">
+			{#if inDraft}
+				<a class="btn-primary btn-block inline-flex items-center justify-center gap-1.5" href="/builder">
+					<LucideIcon icon={ClipboardList} size={ICON_BUTTON} />
+					{translate(lang, 'draft.dock', { n: draftCount })}
+				</a>
+				<button
+					type="button"
+					class="btn-link mx-auto !min-h-9 !text-[var(--color-muted)]"
+					onclick={toggleDraft}
+				>
+					{translate(lang, 'exercise.removeDraft')}
+				</button>
+			{:else}
+				<button type="button" class="btn-primary btn-block" onclick={toggleDraft}>
 					<span class="inline-flex items-center justify-center gap-1.5">
 						<LucideIcon icon={Plus} size={ICON_BUTTON} />
 						{translate(lang, 'exercise.toDraft')}
 					</span>
-				{/if}
-			</button>
+				</button>
+			{/if}
 		</div>
 	</div>
 

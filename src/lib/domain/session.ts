@@ -6,6 +6,7 @@ import type {
 	WorkoutPlan,
 	WorkoutSession
 } from './types';
+import { groupBounds } from './workout';
 
 function emptySets(count: number, targetReps: number): LoggedSet[] {
 	const n = Math.max(1, count);
@@ -36,6 +37,81 @@ export function startSessionFromPlan(plan: WorkoutPlan): WorkoutSession {
 			})
 		)
 	};
+}
+
+/**
+ * Refresh prescription fields from the saved plan onto an active session.
+ * Keeps logged sets; restores groupId/rest if the plan was edited after start.
+ */
+export function syncSessionPrescriptionFromPlan(
+	session: WorkoutSession,
+	plan: WorkoutPlan
+): WorkoutSession {
+	const byId = new Map(plan.exercises.map((ex) => [ex.exerciseId, ex]));
+	let changed = false;
+	const exercises = session.exercises.map((ex) => {
+		const p = byId.get(ex.exerciseId);
+		if (!p) return ex;
+		const groupId = p.groupId ?? null;
+		if (
+			ex.groupId === groupId &&
+			ex.restSec === p.restSec &&
+			ex.targetSets === p.sets &&
+			ex.targetReps === p.reps
+		) {
+			return ex;
+		}
+		changed = true;
+		return {
+			...ex,
+			groupId,
+			restSec: p.restSec,
+			targetSets: p.sets,
+			targetReps: p.reps
+		};
+	});
+	return changed ? { ...session, exercises } : session;
+}
+
+/**
+ * After completing set `setIndex` on `exerciseIndex`, pick the next exercise to focus.
+ * Supersets go round-robin (A1 → B1 → A2…); solos advance when all sets are done.
+ */
+export function nextFocusAfterSetComplete(
+	session: WorkoutSession,
+	exerciseIndex: number,
+	setIndex: number
+): number {
+	const bounds = groupBounds(session.exercises, exerciseIndex);
+	if (bounds && bounds.start !== bounds.end) {
+		for (let i = exerciseIndex + 1; i <= bounds.end; i++) {
+			const set = session.exercises[i]?.sets[setIndex];
+			if (set && !set.completed) return i;
+		}
+		for (let s = setIndex + 1; ; s++) {
+			let sawSlot = false;
+			for (let i = bounds.start; i <= bounds.end; i++) {
+				const set = session.exercises[i]?.sets[s];
+				if (!set) continue;
+				sawSlot = true;
+				if (!set.completed) return i;
+			}
+			if (!sawSlot) break;
+		}
+		if (bounds.end + 1 < session.exercises.length) return bounds.end + 1;
+		return exerciseIndex;
+	}
+
+	const ex = session.exercises[exerciseIndex];
+	if (
+		ex &&
+		ex.sets.length > 0 &&
+		ex.sets.every((s) => s.completed) &&
+		exerciseIndex + 1 < session.exercises.length
+	) {
+		return exerciseIndex + 1;
+	}
+	return exerciseIndex;
 }
 
 export function updateLoggedSet(
@@ -165,5 +241,43 @@ export function runSessionSelfCheck(): void {
 	session = addLoggedSet(session, 0);
 	if (session.exercises[0]!.sets.length !== 4) {
 		throw new Error('addLoggedSet should append a set');
+	}
+
+	const groupedPlan: WorkoutPlan = {
+		id: 'p2',
+		name: 'SS',
+		createdAt: '2026-08-01T00:00:00.000Z',
+		updatedAt: '2026-08-01T00:00:00.000Z',
+		exercises: [
+			{ exerciseId: 'ex-a', sets: 2, reps: 10, restSec: 0, groupId: 'g1' },
+			{ exerciseId: 'ex-b', sets: 2, reps: 12, restSec: 90, groupId: 'g1' },
+			{ exerciseId: 'ex-c', sets: 2, reps: 8, restSec: 60 }
+		]
+	};
+	let ss = startSessionFromPlan(groupedPlan);
+	if (ss.exercises[0]?.groupId !== 'g1' || ss.exercises[1]?.groupId !== 'g1') {
+		throw new Error('startSessionFromPlan should keep groupId');
+	}
+	ss = updateLoggedSet(ss, 0, 0, { reps: 10, completed: true });
+	if (nextFocusAfterSetComplete(ss, 0, 0) !== 1) {
+		throw new Error('superset should advance A1 → B1');
+	}
+	ss = updateLoggedSet(ss, 1, 0, { reps: 12, completed: true });
+	if (nextFocusAfterSetComplete(ss, 1, 0) !== 0) {
+		throw new Error('superset should advance B1 → A2');
+	}
+	ss = updateLoggedSet(ss, 0, 1, { reps: 10, completed: true });
+	ss = updateLoggedSet(ss, 1, 1, { reps: 12, completed: true });
+	if (nextFocusAfterSetComplete(ss, 1, 1) !== 2) {
+		throw new Error('finished superset should advance to next solo');
+	}
+
+	const stale = startSessionFromPlan({
+		...groupedPlan,
+		exercises: groupedPlan.exercises.map(({ groupId: _g, ...ex }) => ex)
+	});
+	const synced = syncSessionPrescriptionFromPlan(stale, groupedPlan);
+	if (synced.exercises[0]?.groupId !== 'g1') {
+		throw new Error('syncSessionPrescriptionFromPlan should restore groupId');
 	}
 }

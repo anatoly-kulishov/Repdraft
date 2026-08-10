@@ -17,7 +17,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 async function get(path) {
 	const res = await fetch(`${base}${path}`);
 	const text = await res.text();
-	return { status: res.status, text };
+	return { status: res.status, text, headers: res.headers };
 }
 
 function assert(cond, msg) {
@@ -71,6 +71,7 @@ for (const rel of [
 	'static/icon-maskable-512.png',
 	'static/icon-maskable-512-light.png',
 	'static/apple-touch-icon.png',
+	'static/apple-touch-icon-precomposed.png',
 	'static/apple-touch-icon-light.png',
 	'static/manifest.webmanifest'
 ]) {
@@ -78,14 +79,40 @@ for (const rel of [
 }
 
 const manifest = JSON.parse(await (await fetch(`${base}/manifest.webmanifest`)).text());
-assert(Array.isArray(manifest.icons) && manifest.icons.length >= 4, 'manifest icons incomplete');
+assert(Array.isArray(manifest.icons) && manifest.icons.length >= 3, 'manifest icons incomplete');
 assert(
-	manifest.icons.some((i) => i.media?.includes('prefers-color-scheme: light')),
-	'manifest missing light-scheme icons'
+	manifest.icons.every((i) => i.type === 'image/png'),
+	'manifest icons must be PNG only (iOS skips SVG)'
 );
 assert(
-	manifest.icons.some((i) => i.media?.includes('prefers-color-scheme: dark')),
-	'manifest missing dark-scheme icons'
+	!manifest.icons.some((i) => i.media),
+	'manifest must not use icon media= (Safari icon pick is unreliable)'
+);
+assert(
+	manifest.icons.some((i) => i.purpose === 'any' && i.sizes === '192x192'),
+	'manifest missing 192 any PNG'
+);
+assert(
+	manifest.icons.some((i) => i.purpose === 'any' && i.sizes === '512x512'),
+	'manifest missing 512 any PNG'
+);
+
+const { status: appleStatus, headers: appleHeaders } = await get('/apple-touch-icon.png');
+assert(appleStatus === 200, `GET /apple-touch-icon.png → ${appleStatus}`);
+assert(
+	String(appleHeaders.get('content-type') ?? '').includes('image/png'),
+	'apple-touch-icon must be image/png'
+);
+
+const htmlHome = await get('/');
+assert(htmlHome.status === 200, `GET / → ${htmlHome.status}`);
+assert(
+	htmlHome.text.includes('rel="apple-touch-icon"') && htmlHome.text.includes('/apple-touch-icon.png'),
+	'home HTML must declare apple-touch-icon PNG'
+);
+assert(
+	!/rel="apple-touch-icon"[^>]*media=/.test(htmlHome.text),
+	'apple-touch-icon must not use media= (breaks iOS)'
 );
 
 // ——— Home shell ———

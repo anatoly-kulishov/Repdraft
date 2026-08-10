@@ -104,7 +104,7 @@ export function updateExercise(
 }
 
 export function groupBounds(
-	exercises: WorkoutExercise[],
+	exercises: { groupId?: string | null }[],
 	index: number
 ): { start: number; end: number; groupId: string } | null {
 	const item = exercises[index];

@@ -3,9 +3,10 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SIDEBAR } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
+	import { draft, draftHydrated } from '$lib/stores/draft';
 	import { appTheme } from '$lib/stores/theme';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { Dumbbell, House, Library, Moon, Settings, Sun, UserRound } from '@lucide/svelte';
+	import { ClipboardList, Dumbbell, House, Library, Moon, Settings, Sun, UserRound } from '@lucide/svelte';
 
 	let {
 		path,
@@ -17,6 +18,9 @@
 
 	let lang = $derived($resolvedLocale);
 	let isLight = $derived($appTheme === 'light');
+	let draftCount = $derived($draft.exercises.length);
+	let showDraftNav = $derived($draftHydrated && draftCount > 0);
+	let draftActive = $derived(path.startsWith('/builder'));
 
 	type NavItem = {
 		href: string;
@@ -50,6 +54,19 @@
 				<span>{translate(lang, item.labelKey)}</span>
 			</a>
 		{/each}
+		{#if showDraftNav}
+			<a
+				class="sidebar-link sidebar-link--draft"
+				data-active={draftActive}
+				href="/builder"
+				aria-current={draftActive ? 'page' : undefined}
+			>
+				<span class="sidebar-link-icon" class:is-active={draftActive}>
+					<LucideIcon icon={ClipboardList} size={ICON_SIDEBAR} />
+				</span>
+				<span>{translate(lang, 'draft.dock', { n: draftCount })}</span>
+			</a>
+		{/if}
 	</nav>
 
 	<div class="shell-sidebar-footer">

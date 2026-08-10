@@ -3,7 +3,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import { availableEquipment, availableTargets, filterExercises, isBodyPart, isFilterConflict } from '$lib/domain/filters';
-	import { formatPersonalRecord } from '$lib/domain/records';
+	import { personalRecordChips } from '$lib/domain/records';
 	import type { ExerciseFilters, ExerciseIndexItem } from '$lib/domain/types';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
@@ -91,8 +91,8 @@
 	let totalForCount = $derived(indexReady ? visible.length : totalCount);
 	let hasMore = $derived(indexReady && visibleLimit < visible.length);
 	let bookmarksLoaded = $state(false);
-	let recordLabels = $derived(
-		new Map($records.map((r) => [r.exerciseId, formatPersonalRecord(r, lang)]))
+	let recordChipsById = $derived(
+		new Map($records.map((r) => [r.exerciseId, personalRecordChips(r, lang)]))
 	);
 	let wideViewport = $state(false);
 	let cardVariant = $derived(
@@ -304,7 +304,7 @@
 			{#each shown as exercise, i (exercise.id)}
 				<ExerciseCard
 					{exercise}
-					recordLabel={recordLabels.get(exercise.id) ?? null}
+					recordChips={recordChipsById.get(exercise.id) ?? []}
 					priority={i < 4}
 					variant={cardVariant}
 					{returnAfterAdd}
