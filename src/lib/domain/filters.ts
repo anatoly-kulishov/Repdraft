@@ -1,6 +1,7 @@
 import type { AppLocale } from '$lib/i18n/locale';
 import { exerciseName, exerciseNameSortLocale } from './exerciseName';
 import { BODY_PART_LABELS, EQUIPMENT_LABELS, TARGET_LABELS } from './labels.ru';
+import { SEARCH_SYNONYMS } from './searchSynonyms';
 import type { BodyPart, ExerciseFilters, ExerciseIndexItem } from './types';
 
 export function uniqueSorted(
@@ -22,62 +23,93 @@ export function normalizeSearchText(value: string): string {
 		.trim();
 }
 
-/**
- * Common RU/EN gym aliases → tokens that should also match.
- * Kept small on purpose; extend when users complain.
- */
-const SYNONYMS: Record<string, string[]> = {
-	жим: ['press', 'bench', 'chest', 'push'],
-	присед: ['squat', 'squats'],
-	приседания: ['squat', 'squats'],
-	тяга: ['deadlift', 'row', 'pull', 'rdl'],
-	становая: ['deadlift'],
-	гантел: ['dumbbell', 'dumbbells'],
-	гантели: ['dumbbell', 'dumbbells'],
-	штанга: ['barbell'],
-	штан: ['barbell'],
-	гиря: ['kettlebell'],
-	гир: ['kettlebell'],
-	пресс: ['abs', 'waist', 'crunch', 'core'],
-	скручивания: ['crunch', 'abs'],
-	спина: ['back', 'lats', 'row'],
-	ноги: ['legs', 'quads', 'squat', 'lunge'],
-	плечи: ['shoulders', 'delts', 'press'],
-	бицепс: ['biceps', 'curl'],
-	трицепс: ['triceps', 'extension'],
-	отжимания: ['push up', 'pushup', 'push-up', 'chest'],
-	отжим: ['push up', 'pushup', 'chest'],
-	подтягивания: ['pull up', 'pullup', 'chin', 'lats'],
-	подтяг: ['pull up', 'pullup', 'lats'],
-	выпад: ['lunge'],
-	выпады: ['lunge'],
-	планка: ['plank', 'core'],
-	кардио: ['cardio', 'run', 'bike'],
-	резинка: ['band', 'resistance'],
-	резин: ['band'],
-	блок: ['cable'],
-	кроссовер: ['cable', 'crossover'],
-	смит: ['smith'],
-	ягодиц: ['glutes', 'hip'],
-	икры: ['calves'],
-	грудь: ['chest', 'pectorals', 'bench'],
-	руки: ['arms', 'biceps', 'triceps'],
-	кор: ['core', 'abs', 'waist'],
-	разведен: ['fly', 'flye', 'pec']
-};
+/** Strip common RU plural/case endings so «молотки» hits «молот». */
+export function russianSearchStems(token: string): string[] {
+	const out = new Set<string>([token]);
+	if (token.length < 4 || !/[а-я]/i.test(token)) return [...out];
+
+	// Longer endings first. Min stem length 4 keeps «пресс» from collapsing to noise.
+	const endings = [
+		'ями',
+		'ами',
+		'иями',
+		'ов',
+		'ев',
+		'ей',
+		'ах',
+		'ях',
+		'ом',
+		'ем',
+		'ой',
+		'ую',
+		'юю',
+		'ые',
+		'ие',
+		'ых',
+		'их',
+		'ая',
+		'яя',
+		'ое',
+		'ее',
+		'ый',
+		'ий',
+		'ки',
+		'ка',
+		'ку',
+		'ке',
+		'ы',
+		'и',
+		'а',
+		'я',
+		'у',
+		'ю',
+		'е',
+		'о'
+	];
+
+	for (const end of endings) {
+		if (!token.endsWith(end)) continue;
+		const stem = token.slice(0, -end.length);
+		if (stem.length >= 4) out.add(stem);
+	}
+
+	return [...out];
+}
+
+/** Light EN plural / -ing trim for gym tokens (squats → squat). */
+function englishSearchStems(token: string): string[] {
+	const out = new Set<string>([token]);
+	if (token.length < 4 || !/^[a-z]+$/.test(token)) return [...out];
+	if (token.endsWith('ies') && token.length > 5) out.add(`${token.slice(0, -3)}y`);
+	if (token.endsWith('ses') && token.length > 5) out.add(token.slice(0, -2));
+	if (token.endsWith('s') && !token.endsWith('ss') && token.length > 4) out.add(token.slice(0, -1));
+	if (token.endsWith('ing') && token.length > 6) out.add(token.slice(0, -3));
+	return [...out];
+}
+
+function synonymKeyMatches(stem: string, key: string): boolean {
+	if (stem === key || stem.startsWith(key)) return true;
+	// Allow short suffixes on the key (гантел→гантели), not long ones (молот→молотковые).
+	return key.startsWith(stem) && key.length - stem.length <= 2;
+}
 
 function expandToken(token: string): string[] {
-	const out = new Set<string>([token]);
-	for (const [key, aliases] of Object.entries(SYNONYMS)) {
-		if (token === key || token.startsWith(key) || key.startsWith(token)) {
-			for (const a of aliases) out.add(normalizeSearchText(a));
+	const out = new Set<string>([...russianSearchStems(token), ...englishSearchStems(token)]);
+	for (const stem of [...out]) {
+		for (const [key, aliases] of Object.entries(SEARCH_SYNONYMS)) {
+			if (!synonymKeyMatches(stem, key)) continue;
 			out.add(key);
+			for (const a of aliases) out.add(normalizeSearchText(a));
 		}
-		for (const a of aliases) {
-			const na = normalizeSearchText(a);
-			if (token === na || token.startsWith(na) || na.startsWith(token)) {
+		for (const [key, aliases] of Object.entries(SEARCH_SYNONYMS)) {
+			for (const a of aliases) {
+				const na = normalizeSearchText(a);
+				if (!(stem === na || stem.startsWith(na) || (na.startsWith(stem) && na.length - stem.length <= 2))) {
+					continue;
+				}
 				out.add(key);
 				out.add(na);
+				for (const b of aliases) out.add(normalizeSearchText(b));
 			}
 		}
 	}
@@ -115,11 +147,16 @@ function scoreMatch(item: ExerciseIndexItem, query: string, tokens: string[], lo
 
 	if (!tokens.every((t) => tokenMatches(haystack, t))) return -1;
 
+	const variants = [...new Set(tokens.flatMap((t) => expandToken(t)))];
+	const inTitle = (v: string) =>
+		v.length > 1 && (name.includes(v) || nameEn.includes(v) || nameRu.includes(v));
+
 	let score = 10;
 
 	if (name === query || nameEn === query || nameRu === query) score += 100;
 	else if (name.startsWith(query) || nameEn.startsWith(query) || nameRu.startsWith(query)) score += 70;
 	else if (name.includes(query) || nameEn.includes(query) || nameRu.includes(query)) score += 45;
+	else if (variants.some(inTitle)) score += 40;
 	else if (tokens.every((t) => name.includes(t) || nameEn.includes(t) || nameRu.includes(t))) score += 30;
 	else score += 12;
 
@@ -299,5 +336,86 @@ export function runFiltersSelfCheck(): void {
 	);
 	if (andHits.length !== 1 || andHits[0]!.id !== '1') {
 		throw new Error(`AND filter expected squat only, got ${andHits.map((i) => i.id).join(',')}`);
+	}
+
+	const hammerCatalog: ExerciseIndexItem[] = [
+		{
+			id: 'h1',
+			name: 'Sledge Hammer',
+			body_part: 'waist',
+			equipment: 'hammer',
+			target: 'abs',
+			muscle_group: 'abs',
+			secondary_muscles: [],
+			image: 'x.jpg'
+		},
+		{
+			id: 'h2',
+			name: 'Dumbbell Curl',
+			body_part: 'upper arms',
+			equipment: 'dumbbell',
+			target: 'biceps',
+			muscle_group: 'biceps',
+			secondary_muscles: [],
+			image: 'x.jpg'
+		},
+		{
+			id: 'h3',
+			name: 'Barbell Romanian Deadlift',
+			body_part: 'upper legs',
+			equipment: 'barbell',
+			target: 'hamstrings',
+			muscle_group: 'hamstrings',
+			secondary_muscles: [],
+			image: 'x.jpg'
+		},
+		{
+			id: 'h4',
+			name: 'Assisted Parallel Close Grip Dip',
+			body_part: 'upper arms',
+			equipment: 'assisted',
+			target: 'triceps',
+			muscle_group: 'triceps',
+			secondary_muscles: [],
+			image: 'x.jpg'
+		}
+	];
+
+	if (!russianSearchStems('молотки').includes('молот')) {
+		throw new Error('russianSearchStems should strip ки → молот');
+	}
+	if (!russianSearchStems('молоты').includes('молот')) {
+		throw new Error('russianSearchStems should strip ы → молот');
+	}
+
+	for (const q of ['молот', 'молотки', 'молоты', 'hammer']) {
+		const hits = filterExercises(
+			hammerCatalog,
+			{ query: q, bodyPart: 'all', equipment: 'all', target: 'all' },
+			'ru'
+		);
+		if (hits.length !== 1 || hits[0]!.id !== 'h1') {
+			throw new Error(
+				`query «${q}» should return only Sledge Hammer, got ${hits.map((i) => i.id).join(',')}`
+			);
+		}
+	}
+
+	const cases: Array<{ q: string; id: string }> = [
+		{ q: 'румынская', id: 'h3' },
+		{ q: 'брусья', id: 'h4' },
+		{ q: 'бицуха', id: 'h2' },
+		{ q: 'гантели', id: 'h2' }
+	];
+
+	for (const { q, id } of cases) {
+		const hits = filterExercises(
+			hammerCatalog,
+			{ query: q, bodyPart: 'all', equipment: 'all', target: 'all' },
+			'ru'
+		);
+		if (!hits.some((h) => h.id === id)) {
+			throw new Error(`query «${q}» should include ${id}, got ${hits.map((i) => i.id).join(',')}`);
+		}
 	}
 }
