@@ -13,6 +13,7 @@
 	} from '$lib/domain/session';
 	import { planTargetSummary } from '$lib/domain/workout';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
+	import { userDisplayName } from '$lib/domain/authFlow';
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { live } from '$lib/stores/live';
@@ -73,17 +74,7 @@
 		return displayName ? translate(lang, key, { name: displayName }) : translate(lang, key);
 	});
 
-	let displayName = $derived.by(() => {
-		const user = $auth.user;
-		if (!user) return null;
-		const meta = user.user_metadata as Record<string, unknown>;
-		if (typeof meta.full_name === 'string' && meta.full_name.trim()) {
-			return meta.full_name.trim();
-		}
-		const email = user.email;
-		if (email) return email.split('@')[0] ?? null;
-		return null;
-	});
+	let displayName = $derived(userDisplayName($auth.user));
 
 	/** Guests get the sign-in hero instead of a redundant time-of-day greeting. */
 	let showGreeting = $derived($auth.ready && !isGuest);

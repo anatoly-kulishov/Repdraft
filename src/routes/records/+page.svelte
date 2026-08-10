@@ -2,6 +2,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { formatPersonalRecord, personalRecordChips } from '$lib/domain/records';
@@ -100,52 +101,61 @@
 					: translate(lang, 'records.fallback', { id: record.exerciseId })}
 				{@const full = formatPersonalRecord(record, lang)}
 				{@const chips = personalRecordChips(record, lang)}
-				<li class="list-row !flex-row !items-center !gap-3 !py-3">
-					<a
-						class="flex min-w-0 flex-1 items-center gap-3 no-underline"
-						href={`/exercise/${record.exerciseId}`}
-					>
-						{#if meta}
-							<img
-								src={`/${meta.image}`}
-								alt=""
-								width="48"
-								height="48"
-								class="h-12 w-12 shrink-0 rounded-lg bg-[var(--hero-card-media-bg)] object-contain"
-							/>
-						{:else}
-							<div
-								class="h-12 w-12 shrink-0 animate-pulse rounded-lg bg-[var(--color-surface-muted)]"
-								aria-hidden="true"
-							></div>
-						{/if}
-						<div class="min-w-0">
-							<p class="truncate font-semibold text-[var(--color-ink)]">{title}</p>
-							{#if chips.length > 0}
-								<div class="records-preview__chips mt-0.5" title={full}>
-									{#each chips as chip, i (i)}
-										<span class="records-preview__chip">{chip}</span>
-									{/each}
-								</div>
-							{/if}
-							<p class="mt-0.5 text-xs text-[var(--color-muted)]">{formatDate(record.updatedAt)}</p>
-						</div>
-					</a>
-					<button
-						type="button"
-						class="btn-ghost is-danger shrink-0"
-						aria-label={translate(lang, 'records.delete')}
-						title={translate(lang, 'records.delete')}
+				<li>
+					<SwipeToDelete
+						label={translate(lang, 'records.delete')}
 						disabled={busyId !== null}
-						aria-busy={busyId === record.exerciseId}
-						onclick={() => void onRemove(record.exerciseId, title)}
+						busy={busyId === record.exerciseId}
+						onDelete={() => void onRemove(record.exerciseId, title)}
 					>
-						{#if busyId === record.exerciseId}
-							<Spinner size="sm" block={false} />
-						{:else}
-							<LucideIcon icon={Trash2} size={ICON_SMALL} />
-						{/if}
-					</button>
+						<div class="list-row !flex-row !items-center !gap-3 !py-3">
+							<a
+								class="flex min-w-0 flex-1 items-center gap-3 no-underline"
+								href={`/exercise/${record.exerciseId}`}
+							>
+								{#if meta}
+									<img
+										src={`/${meta.image}`}
+										alt=""
+										width="48"
+										height="48"
+										class="h-12 w-12 shrink-0 rounded-lg bg-[var(--hero-card-media-bg)] object-contain"
+									/>
+								{:else}
+									<div
+										class="h-12 w-12 shrink-0 animate-pulse rounded-lg bg-[var(--color-surface-muted)]"
+										aria-hidden="true"
+									></div>
+								{/if}
+								<div class="min-w-0">
+									<p class="truncate font-semibold text-[var(--color-ink)]">{title}</p>
+									{#if chips.length > 0}
+										<div class="records-preview__chips mt-0.5" title={full}>
+											{#each chips as chip, i (i)}
+												<span class="records-preview__chip">{chip}</span>
+											{/each}
+										</div>
+									{/if}
+									<p class="mt-0.5 text-xs text-[var(--color-muted)]">{formatDate(record.updatedAt)}</p>
+								</div>
+							</a>
+							<button
+								type="button"
+								class="btn-ghost is-danger shrink-0"
+								aria-label={translate(lang, 'records.delete')}
+								title={translate(lang, 'records.delete')}
+								disabled={busyId !== null}
+								aria-busy={busyId === record.exerciseId}
+								onclick={() => void onRemove(record.exerciseId, title)}
+							>
+								{#if busyId === record.exerciseId}
+									<Spinner size="sm" block={false} />
+								{:else}
+									<LucideIcon icon={Trash2} size={ICON_SMALL} />
+								{/if}
+							</button>
+						</div>
+					</SwipeToDelete>
 				</li>
 			{/each}
 		</ul>
