@@ -8,6 +8,7 @@
 		REPS,
 		WEIGHT_KG
 	} from '$lib/domain/inputLimits';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import { createEmptyRecord, formatPersonalRecord, sanitizePersonalRecord } from '$lib/domain/records';
 	import type { PersonalRecord } from '$lib/domain/types';
 	import { translate } from '$lib/i18n/messages';
@@ -22,6 +23,7 @@
 	let weightText = $state('');
 	let repsText = $state('');
 	let noteText = $state('');
+	let busy = $state(false);
 	let lang = $derived($resolvedLocale);
 	/** Avoid re-applying store → inputs when $records refreshes with the same row. */
 	let syncedKey = '';
@@ -84,6 +86,7 @@
 	});
 
 	async function onSave() {
+		if (busy) return;
 		// Filters keep fields in-range; treat incomplete crumbs as empty.
 		let weightKg = weightText.trim() ? coerceWeightKg(weightText) : null;
 		let reps = repsText.trim() ? coerceReps(repsText, REPS) : null;
@@ -108,6 +111,7 @@
 			return;
 		}
 
+		busy = true;
 		try {
 			await records.save(result.record);
 			const saved = result.record;
@@ -121,10 +125,13 @@
 			toasts.show(translate(lang, 'pr.saved'), 'success');
 		} catch (err) {
 			toasts.show(err instanceof Error ? err.message : translate(lang, 'pr.saveFail'), 'error');
+		} finally {
+			busy = false;
 		}
 	}
 
 	async function onClear() {
+		if (busy) return;
 		if (!hasSaved) {
 			form = createEmptyRecord(exerciseId);
 			weightText = '';
@@ -135,6 +142,7 @@
 			return;
 		}
 		if (!confirm(translate(lang, 'pr.confirmDelete'))) return;
+		busy = true;
 		try {
 			await records.remove(exerciseId);
 			form = createEmptyRecord(exerciseId);
@@ -147,6 +155,8 @@
 			toasts.show(translate(lang, 'pr.deleted'), 'info');
 		} catch (err) {
 			toasts.show(err instanceof Error ? err.message : translate(lang, 'pr.deleteFail'), 'error');
+		} finally {
+			busy = false;
 		}
 	}
 
@@ -235,7 +245,7 @@
 			</span>
 			<span class="field-shell mt-1">
 				<textarea
-					class="field"
+					class="field pr-note-field"
 					rows="3"
 					maxlength={NOTE_MAX}
 					placeholder={translate(lang, 'pr.notePh')}
@@ -254,8 +264,17 @@
 	</div>
 
 	<div class="mt-3 flex flex-wrap items-center gap-2">
-		<button type="button" class="btn-primary" onclick={onSave}>{translate(lang, 'pr.save')}</button>
-		<button type="button" class="btn-link text-sm" onclick={onClear}>
+		<button type="button" class="btn-primary" disabled={busy} aria-busy={busy} onclick={() => void onSave()}>
+			{#if busy}
+				<span class="inline-flex items-center gap-2">
+					<Spinner size="sm" block={false} />
+					{translate(lang, 'auth.wait')}
+				</span>
+			{:else}
+				{translate(lang, 'pr.save')}
+			{/if}
+		</button>
+		<button type="button" class="btn-link text-sm" disabled={busy} onclick={() => void onClear()}>
 			{hasSaved ? translate(lang, 'pr.delete') : translate(lang, 'pr.clear')}
 		</button>
 	</div>

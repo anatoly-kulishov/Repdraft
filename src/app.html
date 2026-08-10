@@ -20,20 +20,13 @@
 		<meta name="application-name" content="Repdraft" />
 		<meta name="format-detection" content="telephone=no" />
 		<link rel="manifest" href="/manifest.webmanifest" />
-		<!-- Fallback first for older iOS; themed variants where supported. -->
+		<!--
+			iOS home screen: single opaque PNG, no media=.
+			Safari ignores SVG and often skips apple-touch-icon when media variants are present,
+			then falls back to a lettermark using theme-color (purple square + white R).
+		-->
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
-		<link
-			rel="apple-touch-icon"
-			href="/apple-touch-icon.png"
-			sizes="180x180"
-			media="(prefers-color-scheme: dark)"
-		/>
-		<link
-			rel="apple-touch-icon"
-			href="/apple-touch-icon-light.png"
-			sizes="180x180"
-			media="(prefers-color-scheme: light)"
-		/>
+		<link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png" sizes="180x180" />
 		<link
 			rel="icon"
 			href="/icon.svg"

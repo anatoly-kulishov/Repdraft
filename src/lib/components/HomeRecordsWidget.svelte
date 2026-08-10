@@ -2,7 +2,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { formatPersonalRecord } from '$lib/domain/records';
+	import { formatPersonalRecord, personalRecordChips } from '$lib/domain/records';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { translate } from '$lib/i18n/messages';
 	import { records, recordsReady } from '$lib/stores/records';
@@ -50,6 +50,8 @@
 		<ul class="records-preview panel">
 			{#each preview as record (record.exerciseId)}
 				{@const meta = indexById.get(record.exerciseId)}
+				{@const full = formatPersonalRecord(record, lang)}
+				{@const chips = personalRecordChips(record, lang)}
 				<li>
 					<a class="records-preview__row" href={`/exercise/${record.exerciseId}`}>
 						{#if meta}
@@ -68,7 +70,11 @@
 						{/if}
 						<span class="records-preview__text">
 							<span class="records-preview__name">{titleFor(record.exerciseId)}</span>
-							<span class="records-preview__value">{formatPersonalRecord(record, lang)}</span>
+							<span class="records-preview__chips" title={full}>
+								{#each chips as chip, i (i)}
+									<span class="records-preview__chip">{chip}</span>
+								{/each}
+							</span>
 						</span>
 						<span class="records-preview__chevron" aria-hidden="true">
 							<LucideIcon icon={ChevronRight} size={ICON_SMALL} />

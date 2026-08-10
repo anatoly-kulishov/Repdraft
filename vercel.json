@@ -37,7 +37,7 @@
 			]
 		},
 		{
-			"source": "/icon-(192|512).png",
+			"source": "/icon-(192|512)(-light)?\\.png",
 			"headers": [
 				{
 					"key": "Cache-Control",
@@ -46,7 +46,16 @@
 			]
 		},
 		{
-			"source": "/apple-touch-icon.png",
+			"source": "/icon-maskable-512(-light)?\\.png",
+			"headers": [
+				{
+					"key": "Cache-Control",
+					"value": "public, max-age=86400"
+				}
+			]
+		},
+		{
+			"source": "/apple-touch-icon(-precomposed|-light)?\\.png",
 			"headers": [
 				{
 					"key": "Cache-Control",

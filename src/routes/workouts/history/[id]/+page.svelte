@@ -13,7 +13,8 @@
 	import { toasts } from '$lib/stores/toasts';
 	import { localSessionRepository } from '$lib/storage/localSessionRepository';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_SMALL } from '$lib/components/icons/sizes';
+	import Spinner from '$lib/components/Spinner.svelte';
+	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { Trash2 } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -85,6 +86,24 @@
 	}
 </script>
 
+{#snippet deleteHeaderAction()}
+	<button
+		type="button"
+		class="btn-ghost is-danger"
+		disabled={deleting}
+		aria-busy={deleting}
+		aria-label={translate(lang, 'workouts.deleteSession')}
+		title={translate(lang, 'workouts.deleteSession')}
+		onclick={() => void onDeleteSession()}
+	>
+		{#if deleting}
+			<Spinner size="sm" block={false} />
+		{:else}
+			<LucideIcon icon={Trash2} size={ICON_BUTTON} />
+		{/if}
+	</button>
+{/snippet}
+
 <svelte:head>
 	<title
 		>{session ? session.planName : translate(lang, 'workouts.historyDetail')} — Repdraft</title
@@ -103,42 +122,21 @@
 {:else}
 	<section class="content-page content-page--narrow soft-enter">
 		<div class="md:hidden">
-			<ScreenHeader title={session.planName} backHref="/workouts" />
+			<ScreenHeader
+				title={session.planName}
+				backHref="/workouts"
+				actions={deleteHeaderAction}
+			/>
 		</div>
-		<div class="hidden md:block">
-			<div class="flex flex-wrap items-start justify-between gap-3">
-				<div class="subroute-desktop-head min-w-0">
-					<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />
-					<h1 class="page-title">{session.planName}</h1>
-				</div>
-				<button
-					type="button"
-					class="btn-danger inline-flex min-h-11 shrink-0 items-center gap-2 px-4"
-					disabled={deleting}
-					onclick={() => void onDeleteSession()}
-				>
-					<LucideIcon icon={Trash2} size={ICON_SMALL} />
-					{translate(lang, 'workouts.deleteSession')}
-				</button>
-			</div>
+		<div class="subroute-desktop-head hidden md:block">
+			<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />
+			<h1 class="page-title">{session.planName}</h1>
 		</div>
 		<p class="page-lead mt-1 lg:mt-0">
 			{formatWhen(session.finishedAt ?? session.startedAt)} · {formatDuration(
 				sessionDurationMs(session)
 			)} · {completedSetCount(session)} sets
 		</p>
-
-		<div class="mt-4 flex justify-end lg:hidden">
-			<button
-				type="button"
-				class="btn-danger inline-flex min-h-11 items-center gap-2 px-4"
-				disabled={deleting}
-				onclick={() => void onDeleteSession()}
-			>
-				<LucideIcon icon={Trash2} size={ICON_SMALL} />
-				{translate(lang, 'workouts.deleteSession')}
-			</button>
-		</div>
 
 		<ul class="mt-6 flex flex-col gap-4">
 			{#each session.exercises as ex (ex.exerciseId)}
@@ -155,5 +153,23 @@
 				</li>
 			{/each}
 		</ul>
+
+		<div class="mt-8 hidden md:block">
+			<button
+				type="button"
+				class="btn-ghost is-danger inline-flex min-h-11 items-center gap-2 px-2"
+				disabled={deleting}
+				aria-busy={deleting}
+				onclick={() => void onDeleteSession()}
+			>
+				{#if deleting}
+					<Spinner size="sm" block={false} />
+					{translate(lang, 'auth.wait')}
+				{:else}
+					<LucideIcon icon={Trash2} size={ICON_SMALL} />
+					{translate(lang, 'workouts.deleteSession')}
+				{/if}
+			</button>
+		</div>
 	</section>
 {/if}

@@ -1,9 +1,10 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
-	import { formatPersonalRecord } from '$lib/domain/records';
+	import { formatPersonalRecord, personalRecordChips } from '$lib/domain/records';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
@@ -17,6 +18,7 @@
 
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let indexReady = $state(false);
+	let busyId = $state<string | null>(null);
 	let lang = $derived($resolvedLocale);
 	let pageReady = $derived($recordsReady && ($records.length === 0 || indexReady));
 
@@ -43,12 +45,16 @@
 	}
 
 	async function onRemove(exerciseId: string, name: string) {
+		if (busyId) return;
 		if (!confirm(translate(lang, 'records.confirmDelete', { name }))) return;
+		busyId = exerciseId;
 		try {
 			await records.remove(exerciseId);
 			toasts.show(translate(lang, 'records.deleted'), 'info');
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'records.deleteFail'), 'error');
+		} finally {
+			busyId = null;
 		}
 	}
 </script>
@@ -92,7 +98,9 @@
 				{@const title = meta
 					? exerciseName(meta, lang)
 					: translate(lang, 'records.fallback', { id: record.exerciseId })}
-				<li class="list-row !gap-3 !py-3">
+				{@const full = formatPersonalRecord(record, lang)}
+				{@const chips = personalRecordChips(record, lang)}
+				<li class="list-row !flex-row !items-center !gap-3 !py-3">
 					<a
 						class="flex min-w-0 flex-1 items-center gap-3 no-underline"
 						href={`/exercise/${record.exerciseId}`}
@@ -103,7 +111,7 @@
 								alt=""
 								width="48"
 								height="48"
-								class="h-12 w-12 shrink-0 rounded-lg bg-[var(--color-surface-muted)] object-contain"
+								class="h-12 w-12 shrink-0 rounded-lg bg-[var(--hero-card-media-bg)] object-contain"
 							/>
 						{:else}
 							<div
@@ -113,10 +121,14 @@
 						{/if}
 						<div class="min-w-0">
 							<p class="truncate font-semibold text-[var(--color-ink)]">{title}</p>
-							<p class="truncate text-sm font-semibold text-[var(--color-accent)]" title={formatPersonalRecord(record, lang)}>
-								{formatPersonalRecord(record, lang)}
-							</p>
-							<p class="text-xs text-[var(--color-muted)]">{formatDate(record.updatedAt)}</p>
+							{#if chips.length > 0}
+								<div class="records-preview__chips mt-0.5" title={full}>
+									{#each chips as chip, i (i)}
+										<span class="records-preview__chip">{chip}</span>
+									{/each}
+								</div>
+							{/if}
+							<p class="mt-0.5 text-xs text-[var(--color-muted)]">{formatDate(record.updatedAt)}</p>
 						</div>
 					</a>
 					<button
@@ -124,9 +136,15 @@
 						class="btn-ghost is-danger shrink-0"
 						aria-label={translate(lang, 'records.delete')}
 						title={translate(lang, 'records.delete')}
+						disabled={busyId !== null}
+						aria-busy={busyId === record.exerciseId}
 						onclick={() => void onRemove(record.exerciseId, title)}
 					>
-						<LucideIcon icon={Trash2} size={ICON_SMALL} />
+						{#if busyId === record.exerciseId}
+							<Spinner size="sm" block={false} />
+						{:else}
+							<LucideIcon icon={Trash2} size={ICON_SMALL} />
+						{/if}
 					</button>
 				</li>
 			{/each}
