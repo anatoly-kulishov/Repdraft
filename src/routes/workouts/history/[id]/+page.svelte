@@ -5,6 +5,7 @@
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { exerciseName } from '$lib/domain/exerciseName';
+	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
 	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
 	import { translate, translateError } from '$lib/i18n/messages';
@@ -15,17 +16,18 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Trash2 } from '@lucide/svelte';
+	import { ChevronRight, Trash2 } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 
 	let lang = $derived($resolvedLocale);
 	let session = $state<WorkoutSession | null>(null);
-	let names = $state<Map<string, ExerciseIndexItem>>(new Map());
+	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let missing = $state(false);
 	let loading = $state(true);
 	let deleting = $state(false);
+	let fromPath = $derived($page.url.pathname);
 
 	onMount(() => {
 		void (async () => {
@@ -39,7 +41,7 @@
 			if (!found?.finishedAt) missing = true;
 			else session = found;
 			const index = await loadExerciseIndex();
-			names = new Map(index.map((ex) => [ex.id, ex]));
+			indexById = new Map(index.map((ex) => [ex.id, ex]));
 			loading = false;
 		})();
 	});
@@ -62,11 +64,6 @@
 		const m = Math.floor(totalSec / 60);
 		const s = totalSec % 60;
 		return `${m}:${String(s).padStart(2, '0')}`;
-	}
-
-	function titleFor(exerciseId: string): string {
-		const item = names.get(exerciseId);
-		return item ? exerciseName(item, lang) : exerciseId;
 	}
 
 	async function onDeleteSession() {
@@ -138,18 +135,58 @@
 			)} · {completedSetCount(session)} sets
 		</p>
 
-		<ul class="mt-6 flex flex-col gap-4">
+		<ul class="history-exercise-list">
 			{#each session.exercises as ex (ex.exerciseId)}
-				<li class="panel !p-4">
-					<h2 class="text-base font-semibold text-[var(--color-ink)]">{titleFor(ex.exerciseId)}</h2>
-					<ul class="mt-2 flex flex-col gap-1">
-						{#each ex.sets.filter((s) => s.completed) as set, i (i)}
-							<li class="text-sm tabular-nums text-[var(--color-muted)]">
-								<span class="text-[var(--color-ink)]">{set.weightKg ?? '—'} kg</span>
-								× {set.reps ?? '—'}
-							</li>
-						{/each}
-					</ul>
+				{@const meta = indexById.get(ex.exerciseId) ?? null}
+				{@const done = ex.sets.filter((s) => s.completed)}
+				<li class="history-exercise">
+					{#if meta}
+						<a
+							class="history-exercise__head"
+							href={`/exercise/${meta.id}?from=${encodeURIComponent(fromPath)}`}
+						>
+							<img
+								class="workout-preview-thumb"
+								src={`/${meta.image}`}
+								alt=""
+								width="56"
+								height="56"
+								loading="lazy"
+								decoding="async"
+							/>
+							<div class="workout-preview-row-body">
+								<p class="workout-preview-row-title">{exerciseName(meta, lang)}</p>
+								<p class="workout-preview-row-sub">
+									{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
+								</p>
+							</div>
+							<span class="workout-preview-chevron" aria-hidden="true">
+								<LucideIcon icon={ChevronRight} size={ICON_BUTTON} />
+							</span>
+						</a>
+					{:else}
+						<div class="history-exercise__head is-static">
+							<span class="workout-preview-thumb is-placeholder" aria-hidden="true"></span>
+							<div class="workout-preview-row-body">
+								<p class="workout-preview-row-title">{ex.exerciseId}</p>
+							</div>
+						</div>
+					{/if}
+
+					{#if done.length > 0}
+						<ul class="history-exercise__sets">
+							{#each done as set, i (i)}
+								<li class="history-exercise__set tabular-nums">
+									<span class="history-exercise__set-i">{i + 1}</span>
+									<span class="history-exercise__set-val">
+										{set.weightKg ?? '—'} kg × {set.reps ?? '—'}
+									</span>
+								</li>
+							{/each}
+						</ul>
+					{:else}
+						<p class="history-exercise__empty">{translate(lang, 'workouts.noLoggedSets')}</p>
+					{/if}
 				</li>
 			{/each}
 		</ul>

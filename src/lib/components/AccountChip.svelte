@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
+	import { userAvatarUrl } from '$lib/domain/authFlow';
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -15,6 +16,9 @@
 
 	let lang = $derived($resolvedLocale);
 	let email = $derived($auth.user?.email ?? null);
+	let avatarUrl = $derived(userAvatarUrl($auth.user));
+	let avatarBroken = $state(false);
+	let showPhoto = $derived(Boolean(avatarUrl) && !avatarBroken);
 	let initials = $derived(email ? initialsFromEmail(email) : null);
 	let ariaLabel = $derived(
 		!$auth.ready
@@ -33,6 +37,11 @@
 			return `/auth?next=${encodeURIComponent(next)}`;
 		})()
 	);
+
+	$effect(() => {
+		avatarUrl;
+		avatarBroken = false;
+	});
 
 	function initialsFromEmail(value: string): string {
 		const local = value.split('@')[0] ?? '?';
@@ -53,6 +62,20 @@
 >
 	{#if !$auth.ready}
 		<span class="account-avatar is-skeleton" aria-hidden="true"></span>
+	{:else if showPhoto && avatarUrl}
+		<img
+			class="account-avatar is-photo"
+			src={avatarUrl}
+			alt=""
+			width="30"
+			height="30"
+			referrerpolicy="no-referrer"
+			decoding="async"
+			aria-hidden="true"
+			onerror={() => {
+				avatarBroken = true;
+			}}
+		/>
 	{:else if email && initials}
 		<span class="account-avatar" aria-hidden="true">{initials}</span>
 	{:else}

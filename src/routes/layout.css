@@ -766,14 +766,101 @@ a.entity-row--link:hover,
 	gap: 0.15rem;
 }
 
+.swipe-to-delete {
+	position: relative;
+	overflow: hidden;
+	overflow: clip;
+	border-radius: var(--radius-panel);
+	isolation: isolate;
+}
+
+.swipe-to-delete__rail {
+	position: absolute;
+	inset: 0 0 0 auto;
+	z-index: 0;
+	display: flex;
+	width: 4.75rem;
+	align-items: stretch;
+	justify-content: stretch;
+	background: color-mix(in srgb, var(--color-danger, #ef4444) 88%, #7f1d1d);
+}
+
+.swipe-to-delete__delete {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	justify-content: center;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: #fff;
+	cursor: pointer;
+}
+
+.swipe-to-delete__delete:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.swipe-to-delete__sheet {
+	position: relative;
+	z-index: 1;
+	touch-action: pan-y;
+	background: var(--color-bg);
+	transition: transform 160ms ease;
+}
+
+.swipe-to-delete.is-enabled .swipe-to-delete__sheet {
+	/* Match row surface so the red rail never peeks through anti-aliased edges. */
+	background: var(--color-surface);
+}
+
+.swipe-to-delete.is-dragging .swipe-to-delete__sheet {
+	transition: none;
+}
+
+.swipe-to-delete.is-enabled .entity-row {
+	/* Border/radius live on the swipe host so the red rail clips cleanly. */
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.swipe-to-delete.is-enabled .list-row,
+.swipe-to-delete.is-enabled .panel-inset {
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.swipe-to-delete.is-enabled {
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+	box-shadow: var(--shadow-panel);
+}
+
 @media (max-width: 639px) {
-	.entity-row:has(.entity-row__actions) {
+	.swipe-to-delete.is-enabled .btn-ghost.is-danger {
+		display: none;
+	}
+
+	/* History / records: only trash was in actions — hide the empty slot. */
+	.swipe-to-delete.is-enabled .entity-row:not(:has(.btn-primary)) .entity-row__actions {
+		display: none;
+	}
+}
+
+@media (max-width: 639px) {
+	/* Stack only when Start (or other primary) needs a full-width row.
+	   History rows with a lone delete stay title | trash on one line. */
+	.entity-row:has(.entity-row__actions .btn-primary) {
 		flex-wrap: wrap;
 		align-items: flex-start;
 		padding: 0.85rem 1rem;
 	}
 
-	.entity-row__actions {
+	.entity-row:has(.entity-row__actions .btn-primary) .entity-row__actions {
 		width: 100%;
 		justify-content: stretch;
 		gap: 0.5rem;
@@ -840,9 +927,13 @@ textarea.field {
 	line-height: 1.35;
 }
 
-/* PR note: grow with content up to ~6 lines, then scroll. */
+/* PR note: grow with content up to ~6 lines, then scroll.
+   Keep width capped — field-sizing:content can otherwise inflate page min-width. */
 textarea.pr-note-field {
 	field-sizing: content;
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
 	max-height: 8.75rem;
 }
 
@@ -1552,6 +1643,14 @@ html[data-theme='light'] .exercise-card-bookmark.is-active {
 	border: 1px solid var(--color-border);
 }
 
+.account-avatar.is-photo {
+	display: block;
+	padding: 0;
+	object-fit: cover;
+	background: var(--color-surface-muted);
+	border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+}
+
 .account-chip.is-active .account-avatar.is-guest {
 	border-color: color-mix(in srgb, var(--color-accent) 40%, var(--color-border));
 	color: var(--color-accent);
@@ -1671,11 +1770,12 @@ html[data-theme='light'] .exercise-card-bookmark.is-active {
 .sticky-actions {
 	position: fixed;
 	inset-inline: 0;
-	bottom: var(--mobile-chrome-bottom);
+	/* Flush to viewport; pad into safe-area so content can't peek under the bar. */
+	bottom: 0;
 	z-index: 30;
 	border-top: 1px solid var(--color-border);
 	background: var(--color-surface);
-	padding: 0.65rem 1rem;
+	padding: 0.65rem 1rem calc(0.65rem + var(--safe-bottom));
 	max-width: 100%;
 	overflow: hidden;
 	/* Own layer — reduces iOS “fixed stuck mid-scroll” after resume */
@@ -1689,7 +1789,8 @@ body:has(.sticky-actions--stack) {
 }
 
 .sticky-actions--stack {
-	padding-block: 0.55rem 0.45rem;
+	padding-top: 0.55rem;
+	padding-bottom: calc(0.45rem + var(--safe-bottom));
 }
 
 /* Persistent entry to /builder while the draft has exercises. */
@@ -3203,6 +3304,77 @@ html[data-theme='dark'] .zone-card__media {
 	gap: 0.5rem;
 }
 
+.history-exercise-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	margin: 1.25rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.history-exercise {
+	padding: 0;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-panel);
+	background: var(--color-surface);
+	box-shadow: var(--shadow-panel);
+	overflow: hidden;
+}
+
+.history-exercise__head {
+	display: grid;
+	grid-template-columns: 3.5rem 1fr auto;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.75rem 0.85rem;
+	text-decoration: none;
+	color: inherit;
+}
+
+.history-exercise__head.is-static {
+	grid-template-columns: 3.5rem 1fr;
+}
+
+.history-exercise__head:not(.is-static):hover {
+	background: color-mix(in srgb, var(--color-surface-muted) 40%, var(--color-surface));
+}
+
+.history-exercise__sets {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	margin: 0;
+	padding: 0 0.85rem 0.85rem;
+	list-style: none;
+	border-top: 1px solid color-mix(in srgb, var(--color-border) 75%, transparent);
+	padding-top: 0.65rem;
+}
+
+.history-exercise__set {
+	display: flex;
+	align-items: baseline;
+	gap: 0.65rem;
+	font-size: 0.875rem;
+	color: var(--color-ink);
+}
+
+.history-exercise__set-i {
+	flex-shrink: 0;
+	width: 1.25rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--color-muted);
+}
+
+.history-exercise__empty {
+	margin: 0;
+	padding: 0.55rem 0.85rem 0.85rem;
+	border-top: 1px solid color-mix(in srgb, var(--color-border) 75%, transparent);
+	font-size: 0.8125rem;
+	color: var(--color-muted);
+}
+
 .workout-preview-item.is-group {
 	display: flex;
 	flex-direction: column;
@@ -3416,7 +3588,17 @@ html[data-theme='dark'] .zone-card__media {
 }
 
 .live-set-row.is-done {
-	opacity: 0.72;
+	background: color-mix(in srgb, var(--color-accent-muted) 28%, var(--color-surface-muted));
+}
+
+.live-set-done-btn--done {
+	color: var(--color-accent);
+	border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+	background: color-mix(in srgb, var(--color-accent-muted) 55%, var(--color-surface));
+}
+
+.live-set-done-btn--done:hover {
+	color: var(--color-accent);
 }
 
 .live-set-index {
@@ -4493,6 +4675,42 @@ html[data-theme='dark'] .zone-card__media {
 
 .auth-page__header {
 	margin-bottom: 0.75rem;
+}
+
+.auth-prefs {
+	margin-bottom: 0.85rem;
+}
+
+.auth-profile {
+	display: flex;
+	align-items: center;
+	gap: 0.85rem;
+}
+
+.auth-profile__avatar {
+	width: 3rem;
+	height: 3rem;
+}
+
+.auth-profile__meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4rem 0.55rem;
+	margin-bottom: 0.15rem;
+}
+
+.auth-provider-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.15rem 0.5rem;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, var(--color-border) 85%, var(--color-accent));
+	background: color-mix(in srgb, var(--color-accent-muted) 45%, var(--color-surface));
+	font-size: 0.6875rem;
+	font-weight: 650;
+	letter-spacing: 0.02em;
+	color: var(--color-accent);
 }
 
 .auth-page__lead {
