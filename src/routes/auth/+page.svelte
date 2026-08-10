@@ -1,20 +1,24 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
-	import PasswordField from '$lib/components/PasswordField.svelte';
-	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import Spinner from '$lib/components/Spinner.svelte';
-	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import {
 		authErrorMessageKey,
 		passwordsMatch,
-		safeRedirectPath
+		safeRedirectPath,
+		userAvatarUrl,
+		userAuthProvider,
+		userDisplayName
 	} from '$lib/domain/authFlow';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
+	import PasswordField from '$lib/components/PasswordField.svelte';
+	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
+	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 
 	type Panel = 'signin' | 'signup' | 'magic' | 'forgot' | 'check-email';
 
@@ -30,6 +34,18 @@
 	let lang = $derived($resolvedLocale);
 	let nextPath = $derived(safeRedirectPath($page.url.searchParams.get('next')));
 	let recoveryMode = $derived($auth.passwordRecovery);
+	let profileName = $derived(userDisplayName($auth.user));
+	let profileAvatar = $derived(userAvatarUrl($auth.user));
+	let profileProvider = $derived(userAuthProvider($auth.user));
+	let profileProviderLabel = $derived.by(() => {
+		const id = profileProvider;
+		if (!id) return null;
+		if (id === 'google') return translate(lang, 'auth.provider.google');
+		if (id === 'email') return translate(lang, 'auth.provider.email');
+		return translate(lang, 'auth.provider.other', {
+			name: id.charAt(0).toUpperCase() + id.slice(1)
+		});
+	});
 	let backLabel = $derived(
 		nextPath === '/' ? translate(lang, 'nav.tabHome') : translate(lang, 'a11y.back')
 	);
@@ -234,6 +250,11 @@
 		<p class="page-lead auth-page__lead">{translate(lang, 'auth.lead')}</p>
 	</header>
 
+	<div class="panel auth-prefs">
+		<LanguageSwitcher />
+		<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'lang.hint')}</p>
+	</div>
+
 	{#if !$auth.ready}
 		<PageSkeleton rows={2} showField={true} />
 	{:else if !$auth.configured}
@@ -284,9 +305,34 @@
 		</form>
 	{:else if $auth.user}
 		<div class="panel">
-			<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.signedInAs')}</p>
-			<p class="font-semibold">{$auth.user.email}</p>
-			<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'auth.syncedHint')}</p>
+			<div class="auth-profile">
+				{#if profileAvatar}
+					<img
+						class="account-avatar is-photo auth-profile__avatar"
+						src={profileAvatar}
+						alt=""
+						width="48"
+						height="48"
+						referrerpolicy="no-referrer"
+						decoding="async"
+					/>
+				{/if}
+				<div class="auth-profile__text min-w-0">
+					<div class="auth-profile__meta">
+						<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.signedInAs')}</p>
+						{#if profileProviderLabel}
+							<span class="auth-provider-badge">{profileProviderLabel}</span>
+						{/if}
+					</div>
+					{#if profileName}
+						<p class="font-semibold truncate">{profileName}</p>
+					{/if}
+					{#if $auth.user.email}
+						<p class="text-sm text-[var(--color-muted)] truncate">{$auth.user.email}</p>
+					{/if}
+				</div>
+			</div>
+			<p class="mt-3 text-xs text-[var(--color-muted)]">{translate(lang, 'auth.syncedHint')}</p>
 			<button type="button" class="btn-secondary mt-4" disabled={loading} aria-busy={loading} onclick={logout}>
 				{#if loading}
 					<span class="inline-flex items-center gap-2">

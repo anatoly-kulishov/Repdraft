@@ -3,6 +3,7 @@
 	import WorkoutsPageSkeleton from '$lib/components/WorkoutsPageSkeleton.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { Copy, Play, Plus, Trash2 } from '@lucide/svelte';
@@ -205,59 +206,68 @@
 		<ul class="entity-list">
 			{#each filteredPlans as plan (plan.id)}
 				{@const muscles = planTargetSummary(plan, indexById, lang)}
-				<li class="entity-row">
-					<a class="entity-row__main" href={`/workouts/${plan.id}`}>
-						<span class="entity-row__title">{plan.name}</span>
-						{#if muscles}
-							<span class="entity-row__meta">{muscles}</span>
-						{:else}
-							<span class="entity-row__meta" aria-hidden="true">&nbsp;</span>
-						{/if}
-						<span class="entity-row__meta">
-							{translate(lang, 'workouts.exCount', { n: plan.exercises.length })}
-						</span>
-					</a>
-					<div class="entity-row__actions">
-						<button
-							type="button"
-							class="btn-primary inline-flex min-h-11 shrink-0 items-center gap-2 px-4"
-							onclick={() => onStart(plan.id)}
-							disabled={plan.exercises.length === 0 || planBusyId !== null}
-						>
-							<LucideIcon icon={Play} size={ICON_BUTTON} />
-							{translate(lang, 'workouts.start')}
-						</button>
-						<button
-							type="button"
-							class="btn-ghost"
-							aria-label={translate(lang, 'workouts.duplicate')}
-							title={translate(lang, 'workouts.duplicate')}
-							disabled={planBusyId !== null}
-							aria-busy={planBusyId === plan.id && planBusyOp === 'copy'}
-							onclick={() => void onDuplicate(plan.id)}
-						>
-							{#if planBusyId === plan.id && planBusyOp === 'copy'}
-								<Spinner size="sm" block={false} />
-							{:else}
-								<LucideIcon icon={Copy} size={ICON_SMALL} />
-							{/if}
-						</button>
-						<button
-							type="button"
-							class="btn-ghost is-danger"
-							aria-label={translate(lang, 'workouts.delete')}
-							title={translate(lang, 'workouts.delete')}
-							disabled={planBusyId !== null}
-							aria-busy={planBusyId === plan.id && planBusyOp === 'delete'}
-							onclick={() => void onRemove(plan.id, plan.name)}
-						>
-							{#if planBusyId === plan.id && planBusyOp === 'delete'}
-								<Spinner size="sm" block={false} />
-							{:else}
-								<LucideIcon icon={Trash2} size={ICON_SMALL} />
-							{/if}
-						</button>
-					</div>
+				<li>
+					<SwipeToDelete
+						label={translate(lang, 'workouts.delete')}
+						disabled={planBusyId !== null}
+						busy={planBusyId === plan.id && planBusyOp === 'delete'}
+						onDelete={() => void onRemove(plan.id, plan.name)}
+					>
+						<div class="entity-row">
+							<a class="entity-row__main" href={`/workouts/${plan.id}`}>
+								<span class="entity-row__title">{plan.name}</span>
+								{#if muscles}
+									<span class="entity-row__meta">{muscles}</span>
+								{:else}
+									<span class="entity-row__meta" aria-hidden="true">&nbsp;</span>
+								{/if}
+								<span class="entity-row__meta">
+									{translate(lang, 'workouts.exCount', { n: plan.exercises.length })}
+								</span>
+							</a>
+							<div class="entity-row__actions">
+								<button
+									type="button"
+									class="btn-primary inline-flex min-h-11 shrink-0 items-center gap-2 px-4"
+									onclick={() => onStart(plan.id)}
+									disabled={plan.exercises.length === 0 || planBusyId !== null}
+								>
+									<LucideIcon icon={Play} size={ICON_BUTTON} />
+									{translate(lang, 'workouts.start')}
+								</button>
+								<button
+									type="button"
+									class="btn-ghost"
+									aria-label={translate(lang, 'workouts.duplicate')}
+									title={translate(lang, 'workouts.duplicate')}
+									disabled={planBusyId !== null}
+									aria-busy={planBusyId === plan.id && planBusyOp === 'copy'}
+									onclick={() => void onDuplicate(plan.id)}
+								>
+									{#if planBusyId === plan.id && planBusyOp === 'copy'}
+										<Spinner size="sm" block={false} />
+									{:else}
+										<LucideIcon icon={Copy} size={ICON_SMALL} />
+									{/if}
+								</button>
+								<button
+									type="button"
+									class="btn-ghost is-danger"
+									aria-label={translate(lang, 'workouts.delete')}
+									title={translate(lang, 'workouts.delete')}
+									disabled={planBusyId !== null}
+									aria-busy={planBusyId === plan.id && planBusyOp === 'delete'}
+									onclick={() => void onRemove(plan.id, plan.name)}
+								>
+									{#if planBusyId === plan.id && planBusyOp === 'delete'}
+										<Spinner size="sm" block={false} />
+									{:else}
+										<LucideIcon icon={Trash2} size={ICON_SMALL} />
+									{/if}
+								</button>
+							</div>
+						</div>
+					</SwipeToDelete>
 				</li>
 			{/each}
 		</ul>
@@ -279,34 +289,43 @@
 			</div>
 			<ul class="entity-list">
 				{#each history as session (session.id)}
-					<li class="entity-row">
-						<a class="entity-row__main" href={`/workouts/history/${session.id}`}>
-							<span class="entity-row__title">{session.planName}</span>
-							<span class="entity-row__meta">
-								{translate(lang, 'home.recentMeta', {
-									when: whenLabel(session.finishedAt ?? session.startedAt),
-									min: durationMin(session) ?? '—',
-									sets: completedSetCount(session)
-								})}
-							</span>
-						</a>
-						<div class="entity-row__actions">
-							<button
-								type="button"
-								class="btn-ghost is-danger"
-								disabled={historyBusyId !== null}
-								aria-busy={historyBusyId === session.id}
-								aria-label={translate(lang, 'workouts.deleteSession')}
-								title={translate(lang, 'workouts.deleteSession')}
-								onclick={() => void onRemoveSession(session)}
-							>
-								{#if historyBusyId === session.id}
-									<Spinner size="sm" block={false} />
-								{:else}
-									<LucideIcon icon={Trash2} size={ICON_SMALL} />
-								{/if}
-							</button>
-						</div>
+					<li>
+						<SwipeToDelete
+							label={translate(lang, 'workouts.deleteSession')}
+							disabled={historyBusyId !== null}
+							busy={historyBusyId === session.id}
+							onDelete={() => void onRemoveSession(session)}
+						>
+							<div class="entity-row">
+								<a class="entity-row__main" href={`/workouts/history/${session.id}`}>
+									<span class="entity-row__title">{session.planName}</span>
+									<span class="entity-row__meta">
+										{translate(lang, 'home.recentMeta', {
+											when: whenLabel(session.finishedAt ?? session.startedAt),
+											min: durationMin(session) ?? '—',
+											sets: completedSetCount(session)
+										})}
+									</span>
+								</a>
+								<div class="entity-row__actions">
+									<button
+										type="button"
+										class="btn-ghost is-danger"
+										disabled={historyBusyId !== null}
+										aria-busy={historyBusyId === session.id}
+										aria-label={translate(lang, 'workouts.deleteSession')}
+										title={translate(lang, 'workouts.deleteSession')}
+										onclick={() => void onRemoveSession(session)}
+									>
+										{#if historyBusyId === session.id}
+											<Spinner size="sm" block={false} />
+										{:else}
+											<LucideIcon icon={Trash2} size={ICON_SMALL} />
+										{/if}
+									</button>
+								</div>
+							</div>
+						</SwipeToDelete>
 					</li>
 				{/each}
 			</ul>

@@ -14,6 +14,7 @@
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
@@ -252,33 +253,42 @@
 				</div>
 				<ul class="flex flex-col gap-2">
 					{#each recent as session (session.id)}
-						<li class="panel-inset flex items-center justify-between gap-2 !p-2.5 text-sm">
-							<div class="min-w-0 flex-1">
-								<p class="truncate font-medium">{session.planName}</p>
-								<p class="text-xs text-[var(--color-muted)]">
-									{formatDate(session.finishedAt!)} ·
-									{translate(lang, 'live.progress', {
-										done: completedSetCount(session),
-										total: totalSetCount(session)
-									})}
-									· {formatKg(sessionVolumeKg(session))} kg
-								</p>
-							</div>
-							<button
-								type="button"
-								class="btn-ghost is-danger shrink-0"
+						<li>
+							<SwipeToDelete
+								label={translate(lang, 'workouts.deleteSession')}
 								disabled={busyId !== null}
-								aria-busy={busyId === session.id}
-								aria-label={translate(lang, 'workouts.deleteSession')}
-								title={translate(lang, 'workouts.deleteSession')}
-								onclick={() => void onRemoveSession(session)}
+								busy={busyId === session.id}
+								onDelete={() => void onRemoveSession(session)}
 							>
-								{#if busyId === session.id}
-									<Spinner size="sm" block={false} />
-								{:else}
-									<LucideIcon icon={Trash2} size={ICON_SMALL} />
-								{/if}
-							</button>
+								<div class="panel-inset flex items-center justify-between gap-2 !p-2.5 text-sm">
+									<div class="min-w-0 flex-1">
+										<p class="truncate font-medium">{session.planName}</p>
+										<p class="text-xs text-[var(--color-muted)]">
+											{formatDate(session.finishedAt!)} ·
+											{translate(lang, 'live.progress', {
+												done: completedSetCount(session),
+												total: totalSetCount(session)
+											})}
+											· {formatKg(sessionVolumeKg(session))} kg
+										</p>
+									</div>
+									<button
+										type="button"
+										class="btn-ghost is-danger shrink-0"
+										disabled={busyId !== null}
+										aria-busy={busyId === session.id}
+										aria-label={translate(lang, 'workouts.deleteSession')}
+										title={translate(lang, 'workouts.deleteSession')}
+										onclick={() => void onRemoveSession(session)}
+									>
+										{#if busyId === session.id}
+											<Spinner size="sm" block={false} />
+										{:else}
+											<LucideIcon icon={Trash2} size={ICON_SMALL} />
+										{/if}
+									</button>
+								</div>
+							</SwipeToDelete>
 						</li>
 					{/each}
 				</ul>

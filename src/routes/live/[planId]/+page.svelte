@@ -254,6 +254,10 @@
 		selectedExerciseIndex = nextFocusAfterSetComplete(next, ei, si);
 	}
 
+	function onUncomplete(ei: number, si: number) {
+		live.patchSet(ei, si, { completed: false });
+	}
+
 	async function onFinish() {
 		if (finishing) return;
 		if (!confirm(translate(lang, 'live.confirmFinish'))) return;
@@ -486,7 +490,6 @@
 											type="text"
 											inputmode="decimal"
 											autocomplete="off"
-											disabled={set.completed}
 											aria-label={`${translate(lang, 'live.weight')} ${si + 1}`}
 											value={set.weightKg ?? ''}
 											oninput={(e) => onWeight(ei, si, e.currentTarget.value)}
@@ -496,15 +499,21 @@
 											type="text"
 											inputmode="numeric"
 											autocomplete="off"
-											disabled={set.completed}
 											aria-label={`${translate(lang, 'live.reps')} ${si + 1}`}
 											value={set.reps ?? ''}
 											oninput={(e) => onReps(ei, si, e.currentTarget.value)}
 										/>
 										{#if set.completed}
-											<span class="live-set-done" aria-label={translate(lang, 'live.done')}>
+											<button
+												type="button"
+												class="btn-ghost live-set-done-btn live-set-done-btn--done"
+												aria-label={translate(lang, 'live.undoDone')}
+												title={translate(lang, 'live.undoDone')}
+												onclick={() => onUncomplete(ei, si)}
+											>
 												<LucideIcon icon={Check} size={ICON_BUTTON} />
-											</span>
+												<span class="sr-only">{translate(lang, 'live.undoDone')}</span>
+											</button>
 										{:else}
 											<button
 												type="button"
