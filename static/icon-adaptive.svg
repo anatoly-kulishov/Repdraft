@@ -1,13 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
 	<style>
-		.bg { fill: #0B0B0C; }
-		.frame { stroke: transparent; stroke-width: 0.75; }
+		.bg {
+			fill: #0b0b0c;
+		}
+		.frame {
+			stroke: transparent;
+		}
 		@media (prefers-color-scheme: light) {
-			.bg { fill: #F7F9FB; }
-			.frame { stroke: #B8C4D4; }
+			.bg {
+				fill: #f7f9fb;
+			}
+			.frame {
+				stroke: #b8c4d4;
+			}
 		}
 	</style>
-	<rect class="bg frame" width="32" height="32" rx="8" />
+	<rect class="bg" width="32" height="32" rx="8" />
+	<rect class="frame" x="0.5" y="0.5" width="31" height="31" rx="7.5" stroke-width="1" />
 	<path d="M9 12.5V26" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
 	<path d="M9 6.75V10.25" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
 	<path

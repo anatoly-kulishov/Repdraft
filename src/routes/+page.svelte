@@ -21,7 +21,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { ChevronRight, Play, Plus } from '@lucide/svelte';
+	import { ChevronRight, LogIn, Play, Plus } from '@lucide/svelte';
 
 	let lang = $derived($resolvedLocale);
 	let active = $derived($live.session);
@@ -35,6 +35,8 @@
 	let hasPlans = $derived($plans.length > 0);
 	let hasSessionHistory = $derived(recent.length > 0);
 	let isFirstTimeHome = $derived(!hasPlans && !hasSessionHistory);
+	let isGuest = $derived($auth.ready && $auth.configured && !$auth.user);
+	let authHref = '/auth?next=%2F';
 	let pageReady = $derived(
 		$auth.ready &&
 			$auth.dataBootstrap &&
@@ -51,10 +53,18 @@
 	});
 
 	let createHeroTitle = $derived(
-		isFirstTimeHome ? translate(lang, 'home.welcomeTitle') : translate(lang, 'home.noPlansTitle')
+		isGuest
+			? translate(lang, 'home.guestTitle')
+			: isFirstTimeHome
+				? translate(lang, 'home.welcomeTitle')
+				: translate(lang, 'home.noPlansTitle')
 	);
 	let createHeroLead = $derived(
-		isFirstTimeHome ? translate(lang, 'home.welcomeLead') : translate(lang, 'home.noPlansLead')
+		isGuest
+			? translate(lang, 'home.guestLead')
+			: isFirstTimeHome
+				? translate(lang, 'home.welcomeLead')
+				: translate(lang, 'home.noPlansLead')
 	);
 
 	let greetingText = $derived.by(() => {
@@ -75,8 +85,8 @@
 		return null;
 	});
 
-	/** Always render when auth is ready; mobile create mode hides via CSS (welcome card is enough). */
-	let showGreeting = $derived($auth.ready);
+	/** Guests get the sign-in hero instead of a redundant time-of-day greeting. */
+	let showGreeting = $derived($auth.ready && !isGuest);
 
 	let progressPct = $derived.by(() => {
 		if (!active || active.exercises.length === 0) return 0;
@@ -134,8 +144,10 @@
 	class="home-page content-page"
 	class:home-page--start={pageReady && homeMode === 'start'}
 	class:home-page--create={pageReady && homeMode === 'create'}
+	class:home-page--guest={pageReady && isGuest}
 	aria-labelledby="home-heading"
 >
+	{#if !(pageReady && isGuest && homeMode === 'create')}
 	<header class="home-header" class:home-header--compact={pageReady && homeMode === 'create'}>
 		<div class="home-header__intro">
 			<h1 id="home-heading" class="page-title home-header__title">{translate(lang, 'home.title')}</h1>
@@ -173,6 +185,9 @@
 			</button>
 		{/if}
 	</header>
+	{:else}
+		<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
+	{/if}
 
 	{#if !pageReady}
 		<HomePageSkeleton label={translate(lang, 'common.loading')} />
@@ -213,13 +228,32 @@
 					{:else if homeMode === 'create'}
 						<h2 class="home-hero-title">{createHeroTitle}</h2>
 						<p class="home-hero-meta">{createHeroLead}</p>
-						<a
-							class="btn-primary home-hero-cta btn-block min-h-12 items-center justify-center gap-2 lg:hidden"
-							href="/builder"
-						>
-							<LucideIcon icon={Plus} size={ICON_PRIMARY} />
-							{translate(lang, 'workouts.create')}
-						</a>
+						{#if isGuest}
+							<div class="home-hero-actions">
+								<a
+									class="btn-primary home-hero-cta min-h-12 items-center justify-center gap-2"
+									href={authHref}
+								>
+									<LucideIcon icon={LogIn} size={ICON_PRIMARY} />
+									{translate(lang, 'nav.signIn')}
+								</a>
+								<a
+									class="btn-secondary home-hero-cta-secondary min-h-11 items-center justify-center gap-2"
+									href="/builder"
+								>
+									<LucideIcon icon={Plus} size={ICON_PRIMARY} />
+									{translate(lang, 'home.guestCreateLocal')}
+								</a>
+							</div>
+						{:else}
+							<a
+								class="btn-primary home-hero-cta btn-block min-h-12 items-center justify-center gap-2 lg:hidden"
+								href="/builder"
+							>
+								<LucideIcon icon={Plus} size={ICON_PRIMARY} />
+								{translate(lang, 'workouts.create')}
+							</a>
+						{/if}
 					{:else}
 						<h2 class="home-hero-title">{translate(lang, 'home.readyTitle')}</h2>
 						<p class="home-hero-meta">{translate(lang, 'home.startLead')}</p>
@@ -233,7 +267,9 @@
 					{/if}
 				</div>
 
-				<HomeStatsStack />
+				{#if homeMode !== 'create'}
+					<HomeStatsStack />
+				{/if}
 			</div>
 
 			<div class="home-dashboard-mid">
@@ -268,8 +304,8 @@
 					</div>
 				{/if}
 
-				<div class="home-section">
-					{#if recent.length > 0}
+				{#if recent.length > 0}
+					<div class="home-section">
 						<h2 class="section-title">{translate(lang, 'home.recentTitle')}</h2>
 						<ul class="entity-list">
 							{#each recent as session (session.id)}
@@ -290,16 +326,33 @@
 								</li>
 							{/each}
 						</ul>
-					{:else}
+					</div>
+				{:else if !isGuest}
+					<div class="home-section">
 						<h2 class="section-title">{translate(lang, 'home.recentPlaceholderTitle')}</h2>
 						<div class="panel-dashed home-mid-placeholder">
 							<p class="home-mid-placeholder__text">{translate(lang, 'home.recentPlaceholderHint')}</p>
 							<span class="home-soon-badge">{translate(lang, 'home.placeholderSoon')}</span>
 						</div>
-					{/if}
-				</div>
+					</div>
+				{/if}
 
-				<HomeRecordsWidget {indexById} />
+				{#if !isGuest || hasSessionHistory || $records.length > 0}
+					<HomeRecordsWidget {indexById} />
+				{:else}
+					<div class="home-section home-guest-next">
+						<a class="home-guest-next__card panel" href="/exercises">
+							<span class="home-guest-next__title">{translate(lang, 'nav.exercises')}</span>
+							<span class="home-guest-next__hint">{translate(lang, 'home.guestBrowseHint')}</span>
+							<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="home-guest-next__chevron" />
+						</a>
+						<a class="home-guest-next__card panel" href="/builder">
+							<span class="home-guest-next__title">{translate(lang, 'workouts.create')}</span>
+							<span class="home-guest-next__hint">{translate(lang, 'home.guestCreateHint')}</span>
+							<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="home-guest-next__chevron" />
+						</a>
+					</div>
+				{/if}
 			</div>
 		</div>
 	{/if}
