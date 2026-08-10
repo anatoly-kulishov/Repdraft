@@ -1,6 +1,9 @@
 <script lang="ts">
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_INPUT } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { Eye, EyeOff } from '@lucide/svelte';
 
 	let {
 		value = $bindable(''),
@@ -45,27 +48,9 @@
 			aria-label={translate(lang, visible ? 'auth.hidePassword' : 'auth.showPassword')}
 		>
 			{#if visible}
-				<!-- eye-off -->
-				<svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" aria-hidden="true">
-					<path
-						d="M3 3l18 18M10.5 10.7a2.5 2.5 0 0 0 3.3 3.3M9.9 5.6A10 10 0 0 1 12 5.3c5 0 8.5 4.2 9.7 6-.5.8-1.4 2-2.8 3.1M6.1 6.7C4.4 7.9 3.3 9.4 2.3 11.3c1.2 1.8 4.7 6 9.7 6 1.1 0 2.1-.2 3-.5"
-						stroke="currentColor"
-						stroke-width="1.75"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-				</svg>
+				<LucideIcon icon={EyeOff} size={ICON_INPUT} />
 			{:else}
-				<!-- eye -->
-				<svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" aria-hidden="true">
-					<path
-						d="M2.3 12c1.2-1.8 4.7-6 9.7-6s8.5 4.2 9.7 6c-1.2 1.8-4.7 6-9.7 6s-8.5-4.2-9.7-6Z"
-						stroke="currentColor"
-						stroke-width="1.75"
-						stroke-linejoin="round"
-					/>
-					<circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.75" />
-				</svg>
+				<LucideIcon icon={Eye} size={ICON_INPUT} />
 			{/if}
 		</button>
 	</div>

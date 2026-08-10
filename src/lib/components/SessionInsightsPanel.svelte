@@ -12,10 +12,13 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import { Trash2 } from '@lucide/svelte';
 
 	let { sessions }: { sessions: WorkoutSession[] } = $props();
 
@@ -260,15 +263,7 @@
 								title={translate(lang, 'workouts.deleteSession')}
 								onclick={() => void onRemoveSession(session)}
 							>
-								<svg viewBox="0 0 24 24" class="h-[1.1rem] w-[1.1rem]" aria-hidden="true">
-									<path
-										d="M6 6l12 12M18 6L6 18"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="1.8"
-										stroke-linecap="round"
-									/>
-								</svg>
+								<LucideIcon icon={Trash2} size={ICON_SMALL} />
 							</button>
 						</li>
 					{/each}

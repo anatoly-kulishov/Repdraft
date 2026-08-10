@@ -1,7 +1,10 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
+	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import WorkoutExerciseRow from '$lib/components/WorkoutExerciseRow.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { groupBounds } from '$lib/domain/workout';
@@ -12,10 +15,12 @@
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { Plus, ArrowLeft } from '@lucide/svelte';
 
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let indexReady = $state(false);
 	let selectedIds = $state<string[]>([]);
+	let saving = $state(false);
 	let lang = $derived($resolvedLocale);
 	let selectedCount = $derived(selectedIds.length);
 	let pageReady = $derived(
@@ -33,6 +38,8 @@
 	});
 
 	async function save() {
+		if (saving) return;
+		saving = true;
 		try {
 			await plans.saveCurrent();
 			draft.resetDraft();
@@ -41,6 +48,8 @@
 			await goto('/workouts');
 		} catch (err) {
 			toasts.show(err instanceof Error ? err.message : translate(lang, 'builder.saveFail'), 'error');
+		} finally {
+			saving = false;
 		}
 	}
 
@@ -49,14 +58,6 @@
 			draft.resetDraft();
 			selectedIds = [];
 		}
-	}
-
-	function newWorkout() {
-		if ($draft.exercises.length > 0 && !confirm(translate(lang, 'builder.confirmNew'))) {
-			return;
-		}
-		draft.resetDraft();
-		selectedIds = [];
 	}
 
 	function toggleSelect(exerciseId: string) {
@@ -84,114 +85,130 @@
 </script>
 
 <svelte:head>
-	<title>{translate(lang, 'builder.title')} — Repdraft</title>
+	<title>{translate(lang, 'builder.createTitle')} — Repdraft</title>
 </svelte:head>
 
-<section class:pb-mobile-actions={pageReady && $draft.exercises.length > 0} class="md:pb-0">
-	<div class="page-header flex items-start justify-between gap-3">
+<section
+	class="builder-page content-page md:pb-0"
+	class:pb-mobile-actions={pageReady && $draft.exercises.length > 0}
+>
+	<div class="lg:hidden">
+		<ScreenHeader title={translate(lang, 'builder.createTitle')} backHref="/workouts" />
+	</div>
+
+	<div class="builder-toolbar mb-5 hidden flex-wrap items-center justify-between gap-3 lg:flex">
 		<div class="min-w-0">
-			<h1 class="page-title">{translate(lang, 'builder.title')}</h1>
-			<p class="page-lead">{translate(lang, 'builder.lead')}</p>
+			<a
+				class="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-muted)] no-underline hover:text-[var(--color-ink)]"
+				href="/workouts"
+			>
+				<LucideIcon icon={ArrowLeft} size={ICON_BUTTON} />
+				{translate(lang, 'builder.backWorkouts')}
+			</a>
+			<h1 class="page-title mt-1">{translate(lang, 'builder.createTitle')}</h1>
 		</div>
-		{#if pageReady && $draft.exercises.length > 0}
-			<button type="button" class="btn-secondary shrink-0" onclick={newWorkout}>
-				{translate(lang, 'builder.new')}
-			</button>
-		{/if}
+		<button
+			type="button"
+			class="btn-primary inline-flex min-h-11 shrink-0 items-center gap-2 px-5"
+			disabled={!pageReady || saving || $draft.exercises.length === 0}
+			onclick={() => void save()}
+		>
+			{translate(lang, 'builder.save')}
+		</button>
 	</div>
 
 	{#if !pageReady}
 		<PageSkeleton rows={3} showField={true} />
 	{:else}
 		<div class="soft-enter">
-		<label class="field-label mb-4 block">
-			{translate(lang, 'builder.name')}
-			<input
-				class="field mt-1.5 w-full max-w-xl"
-				type="text"
-				placeholder={translate(lang, 'builder.namePh')}
-				value={$draft.name}
-				oninput={(e) => draft.setName((e.currentTarget as HTMLInputElement).value)}
-			/>
-		</label>
+			<label class="field-label mb-4 block max-w-xl">
+				{translate(lang, 'builder.name')}
+				<input
+					class="field mt-1.5 w-full"
+					type="text"
+					placeholder={translate(lang, 'builder.namePh')}
+					value={$draft.name}
+					oninput={(e) => draft.setName((e.currentTarget as HTMLInputElement).value)}
+				/>
+			</label>
 
-		{#if $draft.exercises.length > 0}
-			<div class="actions-inline mb-4 items-center">
-				<button type="button" class="btn-primary" onclick={save}>
-					{translate(lang, 'builder.save')}
-				</button>
-				<button type="button" class="btn-link !text-[var(--color-muted)]" onclick={clearDraft}>
-					{translate(lang, 'builder.clear')}
-				</button>
-			</div>
+			{#if $draft.exercises.length === 0}
+				<EmptyState
+					title={translate(lang, 'builder.emptyTitle')}
+					description={translate(lang, 'builder.emptyDesc')}
+					actionHref="/builder/pick"
+					actionLabel={translate(lang, 'builder.addExercise')}
+				/>
+			{:else}
+				<p class="section-title mb-2">{translate(lang, 'builder.exercisesSection')}</p>
 
-			<div class="mb-4 flex flex-wrap items-center gap-2">
-				<button
-					type="button"
-					class="btn-secondary"
-					disabled={selectedCount < 2}
-					onclick={makeSuperset}
-				>
-					{translate(lang, 'builder.superset')}
-					{#if selectedCount > 0}
-						· {selectedCount}
-					{/if}
-				</button>
-				<p class="text-xs text-[var(--color-muted)]">{translate(lang, 'builder.selectHint')}</p>
-			</div>
-		{/if}
-
-		{#if $draft.exercises.length === 0}
-			<EmptyState
-				title={translate(lang, 'builder.emptyTitle')}
-				description={translate(lang, 'builder.emptyDesc')}
-			/>
-		{:else}
-			<div class="flex flex-col gap-3">
-				{#each $draft.exercises as item, index (item.exerciseId)}
-					{@const role = roleFor(index)}
-					<div class={role === 'first' || role === 'middle' ? 'mb-[-0.75rem]' : ''}>
-						<WorkoutExerciseRow
-							{item}
-							{index}
-							total={$draft.exercises.length}
-							meta={indexById.get(item.exerciseId) ?? null}
-							selected={selectedIds.includes(item.exerciseId)}
-							groupRole={role}
-							onupdate={(patch) => draft.updateExercise(item.exerciseId, patch)}
-							onmove={(from, to) => draft.moveByArrow(from, to > from ? 1 : -1)}
-							onremove={() => {
-								draft.removeFromDraft(item.exerciseId);
-								selectedIds = selectedIds.filter((id) => id !== item.exerciseId);
-							}}
-							ontoggleSelect={() => toggleSelect(item.exerciseId)}
-							ondissolve={item.groupId ? () => draft.dissolveSuperset(item.groupId!) : undefined}
-							ongroupSets={item.groupId
-								? (sets) => draft.updateGroupSets(item.groupId!, sets)
-								: undefined}
-							ongroupRest={item.groupId
-								? (rest) => draft.updateGroupRest(item.groupId!, rest)
-								: undefined}
-						/>
-					</div>
-				{/each}
-			</div>
-
-			<div class="sticky-actions">
-				<div class="mx-auto flex max-w-6xl flex-col gap-1">
-					<button type="button" class="btn-primary btn-block" onclick={save}>
-						{translate(lang, 'builder.save')}
-					</button>
+				<div class="mb-4 flex flex-wrap items-center gap-2">
 					<button
 						type="button"
-						class="btn-link mx-auto !text-[var(--color-muted)]"
-						onclick={clearDraft}
+						class="btn-secondary"
+						disabled={selectedCount < 2}
+						onclick={makeSuperset}
 					>
-						{translate(lang, 'builder.clear')}
+						{translate(lang, 'builder.superset')}
+						{#if selectedCount > 0}
+							· {selectedCount}
+						{/if}
 					</button>
+					<p class="text-xs text-[var(--color-muted)]">{translate(lang, 'builder.selectHint')}</p>
 				</div>
-			</div>
-		{/if}
+
+				<div class="flex flex-col gap-3">
+					{#each $draft.exercises as item, index (item.exerciseId)}
+						{@const role = roleFor(index)}
+						{@const meta = indexById.get(item.exerciseId) ?? null}
+						<div class={role === 'first' || role === 'middle' ? 'mb-[-0.75rem]' : ''}>
+							<WorkoutExerciseRow
+								{item}
+								{index}
+								total={$draft.exercises.length}
+								{meta}
+								selected={selectedIds.includes(item.exerciseId)}
+								groupRole={role}
+								onupdate={(patch) => draft.updateExercise(item.exerciseId, patch)}
+								onmove={(from, to) => draft.moveByArrow(from, to > from ? 1 : -1)}
+								onremove={() => {
+									draft.removeFromDraft(item.exerciseId);
+									selectedIds = selectedIds.filter((id) => id !== item.exerciseId);
+								}}
+								ontoggleSelect={() => toggleSelect(item.exerciseId)}
+								ondissolve={item.groupId ? () => draft.dissolveSuperset(item.groupId!) : undefined}
+								ongroupSets={item.groupId
+									? (sets) => draft.updateGroupSets(item.groupId!, sets)
+									: undefined}
+								ongroupRest={item.groupId
+									? (rest) => draft.updateGroupRest(item.groupId!, rest)
+									: undefined}
+							/>
+						</div>
+					{/each}
+				</div>
+
+				<a class="btn-secondary mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2" href="/builder/pick">
+					<LucideIcon icon={Plus} size={ICON_BUTTON} />
+					{translate(lang, 'builder.addExercise')}
+				</a>
+
+				<button
+					type="button"
+					class="btn-link mx-auto mt-3 block !text-[var(--color-muted)]"
+					onclick={clearDraft}
+				>
+					{translate(lang, 'builder.clear')}
+				</button>
+
+				<div class="sticky-actions lg:hidden">
+					<div class="sticky-actions__inner flex flex-col gap-1">
+						<button type="button" class="btn-primary btn-block" disabled={saving} onclick={() => void save()}>
+							{translate(lang, 'builder.save')}
+						</button>
+					</div>
+				</div>
+			{/if}
 		</div>
 	{/if}
 </section>

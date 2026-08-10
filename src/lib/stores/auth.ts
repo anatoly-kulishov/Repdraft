@@ -9,6 +9,8 @@ import { records } from './records';
 type AuthState = {
 	configured: boolean;
 	ready: boolean;
+	/** False while initial plans/records refresh (incl. cloud) is in flight. */
+	dataBootstrap: boolean;
 	session: Session | null;
 	user: User | null;
 	/** True after clicking a password-recovery email link. */
@@ -31,10 +33,27 @@ function createAuthStore() {
 	const { subscribe, set, update } = writable<AuthState>({
 		configured: false,
 		ready: false,
+		dataBootstrap: !browser,
 		session: null,
 		user: null,
 		passwordRecovery: false
 	});
+
+	async function runDataBootstrap(loggedIn: boolean) {
+		update((s) => ({ ...s, dataBootstrap: false }));
+		try {
+			await Promise.all([plans.refresh({ cloud: false }), records.refresh({ cloud: false })]);
+			await Promise.all([plans.refresh(), records.refresh()]);
+			if (loggedIn) {
+				await migrateLocalToCloud();
+				await Promise.all([plans.refresh(), records.refresh()]);
+			}
+		} catch (err) {
+			console.error('data bootstrap failed', err);
+		} finally {
+			update((s) => ({ ...s, dataBootstrap: true }));
+		}
+	}
 
 	/** Skip duplicate INITIAL_SESSION from getSession + onAuthStateChange. */
 	let lastUserId: string | null | undefined = undefined;
@@ -63,26 +82,13 @@ function createAuthStore() {
 		set({
 			configured: isSupabaseConfigured(),
 			ready: true,
+			dataBootstrap: false,
 			session,
 			user: session?.user ?? null,
 			passwordRecovery
 		});
 
-		// Local first — cloud lists must not race page-critical fetches (technique clips).
-		void Promise.all([plans.refresh({ cloud: false }), records.refresh({ cloud: false })]);
-
-		const schedule =
-			typeof requestIdleCallback === 'function'
-				? (fn: () => void) => requestIdleCallback(fn, { timeout: 2500 })
-				: (fn: () => void) => setTimeout(fn, 1200);
-
-		schedule(() => {
-			void Promise.all([plans.refresh(), records.refresh()]);
-			if (!loggedIn) return;
-			void migrateLocalToCloud()
-				.then(() => Promise.all([plans.refresh(), records.refresh()]))
-				.catch((err) => console.error('migrateLocalToCloud failed', err));
-		});
+		void runDataBootstrap(loggedIn);
 	}
 
 	async function init() {
@@ -90,6 +96,7 @@ function createAuthStore() {
 			set({
 				configured: false,
 				ready: true,
+				dataBootstrap: true,
 				session: null,
 				user: null,
 				passwordRecovery: false
@@ -103,13 +110,14 @@ function createAuthStore() {
 			set({
 				configured: false,
 				ready: true,
+				dataBootstrap: false,
 				session: null,
 				user: null,
 				passwordRecovery: false
 			});
 			lastUserId = null;
 			passwordRecovery = false;
-			await Promise.all([plans.refresh(), records.refresh()]);
+			await runDataBootstrap(false);
 			return;
 		}
 
@@ -118,6 +126,7 @@ function createAuthStore() {
 			set({
 				configured: true,
 				ready: true,
+				dataBootstrap: true,
 				session: null,
 				user: null,
 				passwordRecovery: false
