@@ -1,6 +1,8 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { formatPersonalRecord } from '$lib/domain/records';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { translate, translateError } from '$lib/i18n/messages';
@@ -10,6 +12,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { records, recordsReady } from '$lib/stores/records';
 	import { toasts } from '$lib/stores/toasts';
+	import { Trash2 } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
@@ -54,7 +57,7 @@
 	<title>{translate(lang, 'records.title')} — Repdraft</title>
 </svelte:head>
 
-<section>
+<section class="content-page content-page--narrow">
 	<div class="page-header">
 		<h1 class="page-title">{translate(lang, 'records.title')}</h1>
 		<p class="page-lead">
@@ -120,17 +123,10 @@
 						type="button"
 						class="btn-ghost is-danger shrink-0"
 						aria-label={translate(lang, 'records.delete')}
+						title={translate(lang, 'records.delete')}
 						onclick={() => void onRemove(record.exerciseId, title)}
 					>
-						<svg viewBox="0 0 24 24" class="h-[1.15rem] w-[1.15rem]" aria-hidden="true">
-							<path
-								d="M6 6l12 12M18 6L6 18"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.8"
-								stroke-linecap="round"
-							/>
-						</svg>
+						<LucideIcon icon={Trash2} size={ICON_SMALL} />
 					</button>
 				</li>
 			{/each}

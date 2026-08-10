@@ -1,12 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-	<!-- Maskable: full-bleed teal; glyph in center ~55% safe zone -->
-	<rect width="512" height="512" fill="#0F766E"/>
-	<g transform="translate(256 256) scale(0.55) translate(-256 -256)">
-		<!-- Barbell scaled from 32?512 (×16) -->
-		<rect x="144" y="232" width="224" height="48" rx="24" fill="#F7F9FB"/>
-		<rect x="80" y="160" width="72" height="192" rx="20" fill="#F7F9FB"/>
-		<rect x="56" y="192" width="40" height="128" rx="16" fill="#F7F9FB"/>
-		<rect x="360" y="160" width="72" height="192" rx="20" fill="#F7F9FB"/>
-		<rect x="416" y="192" width="40" height="128" rx="16" fill="#F7F9FB"/>
+	<rect width="512" height="512" fill="#0B0B0C" />
+	<g transform="translate(256 256) scale(9.6) translate(-16 -16)">
+		
+	<path d="M9 12.5V26" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
+	<path d="M9 6.75V10.25" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
+	<path
+		d="M9 7h11.25a5.35 5.35 0 0 1 0 10.7H9"
+		stroke="#8B5CF6"
+		stroke-width="2.65"
+		stroke-linecap="round"
+		stroke-linejoin="round"
+	/>
+	<path d="M13.35 17.85 20.85 25.5" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
+	<path d="M11.25 13.35h7.1" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
+
 	</g>
 </svg>

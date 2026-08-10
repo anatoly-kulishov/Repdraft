@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img">
+  <title>REPdraft mark</title>
+  <desc>Minimal geometric R mark for REPdraft</desc>
+  <path d="M12 36V12h13.5a8.5 8.5 0 0 1 0 17H12"
+        fill="none" stroke="#F5F5F5" stroke-width="4"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 29l11 7"
+        fill="none" stroke="#F5F5F5" stroke-width="4"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="12" cy="12" r="2.5" fill="#A78BFA"/>
+</svg>

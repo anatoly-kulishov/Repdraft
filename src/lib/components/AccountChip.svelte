@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { UserRound } from '@lucide/svelte';
 
 	let {
 		active = false
@@ -54,12 +57,7 @@
 		<span class="account-avatar" aria-hidden="true">{initials}</span>
 	{:else}
 		<span class="account-avatar is-guest" aria-hidden="true">
-			<svg viewBox="0 0 24 24" class="h-4 w-4">
-				<path
-					d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z"
-					fill="currentColor"
-				/>
-			</svg>
+			<LucideIcon icon={UserRound} size={ICON_SMALL} />
 		</span>
 	{/if}
 </a>

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" role="img" aria-label="Repdraft">
+	<path
+		d="M9 12.5V26"
+		stroke="#8B5CF6"
+		stroke-width="2.65"
+		stroke-linecap="round"
+	/>
+	<path
+		d="M9 6.75V10.25"
+		stroke="#8B5CF6"
+		stroke-width="2.65"
+		stroke-linecap="round"
+	/>
+	<path
+		d="M9 7h11.25a5.35 5.35 0 0 1 0 10.7H9"
+		stroke="#8B5CF6"
+		stroke-width="2.65"
+		stroke-linecap="round"
+		stroke-linejoin="round"
+	/>
+	<path
+		d="M13.35 17.85 20.85 25.5"
+		stroke="#8B5CF6"
+		stroke-width="2.65"
+		stroke-linecap="round"
+	/>
+	<path
+		d="M11.25 13.35h7.1"
+		stroke="#8B5CF6"
+		stroke-width="2.65"
+		stroke-linecap="round"
+	/>
+</svg>

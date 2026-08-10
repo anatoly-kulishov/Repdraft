@@ -26,3 +26,10 @@ export const DRAFT_STORAGE_KEY = 'repdraft:draft';
 export const RECORDS_STORAGE_KEY = 'repdraft:records';
 export const SESSIONS_STORAGE_KEY = 'repdraft:sessions';
 export const ACTIVE_SESSION_KEY = 'repdraft:active-session';
+export const BOOKMARKS_STORAGE_KEY = 'repdraft:bookmarks';
+
+export interface BookmarkRepository {
+	list(): Promise<string[]>;
+	add(exerciseId: string): Promise<void>;
+	remove(exerciseId: string): Promise<void>;
+}

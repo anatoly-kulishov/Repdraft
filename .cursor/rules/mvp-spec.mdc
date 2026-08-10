@@ -1,0 +1,28 @@
+---
+description: MVP product and UI/UX specification — primary source for feature scope
+alwaysApply: true
+---
+
+# MVP specification
+
+**Source of truth:** [`.cursor/product/mvp-spec.md`](.cursor/product/mvp-spec.md)
+
+## Before coding
+
+Run **AUDIT CURRENT PROJECT** (checklist in `mvp-spec.md` § Agent workflow):
+
+1. Architecture, routes, components, data model, exercise DB, workout logic
+2. Compare with the spec
+3. List satisfies / gaps
+4. Implement only gaps that unblock P0 — do not redesign from scratch
+
+## Non‑negotiables
+
+- **Flow:** Create → Train → Log → Finish → History (no analytics/social/AI in MVP)
+- **Nav:** Home, Workouts, Exercises (+ Settings/Profile low emphasis)
+- **Visual:** Dark minimal premium (`#0B0B0C`, `#8B5CF6`), Lucide only, productivity not gym brochure
+- **One primary CTA per screen**
+- **Active Workout** gets the most UX attention
+- Reuse working code; no rewrite for UI’s sake
+
+Release priorities for *new* features: still see `.cursor/product/market-roadmap.md` for semver; **scope** decisions follow `mvp-spec.md` first.

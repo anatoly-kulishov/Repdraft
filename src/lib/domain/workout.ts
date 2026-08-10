@@ -1,4 +1,7 @@
 import type { WorkoutExercise, WorkoutPlan } from './types';
+import type { ExerciseIndexItem } from './types';
+import { labelTarget } from './labels.ru';
+import type { AppLocale } from '$lib/i18n/locale';
 import { newId } from './id';
 import { REPS, REST_SEC, SETS } from './inputLimits';
 
@@ -304,6 +307,31 @@ export function withSavedName(plan: WorkoutPlan, untitledFallback = 'Untitled wo
 		name,
 		updatedAt: nowIso()
 	};
+}
+
+/** Unique target muscle labels for plan cards (order preserved, capped). */
+export function planTargetSummary(
+	plan: WorkoutPlan,
+	indexById: Map<string, ExerciseIndexItem>,
+	locale: AppLocale = 'ru',
+	maxLabels = 4
+): string {
+	const seen = new Set<string>();
+	const parts: string[] = [];
+	for (const ex of plan.exercises) {
+		const meta = indexById.get(ex.exerciseId);
+		if (!meta?.target) continue;
+		const label = labelTarget(meta.target, locale);
+		if (seen.has(label)) continue;
+		seen.add(label);
+		parts.push(label);
+		if (parts.length >= maxLabels) break;
+	}
+	return parts.join(' · ');
+}
+
+export function planPrescribedSetCount(plan: WorkoutPlan): number {
+	return plan.exercises.reduce((total, ex) => total + Math.max(0, ex.sets), 0);
 }
 
 /** Union local + cloud without dropping device-only rows (empty cloud must not wipe UI). */
