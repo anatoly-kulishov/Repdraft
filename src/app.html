@@ -74,7 +74,8 @@
 			#pwa-boot img {
 				width: 96px;
 				height: 96px;
-				border-radius: 22%;
+				/* Corners live in the SVG (rx) — extra CSS radius double-clips and looks uneven. */
+				display: block;
 			}
 			#pwa-boot .pwa-boot-icon--light {
 				display: none;

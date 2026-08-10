@@ -3,7 +3,9 @@
 	import { page } from '$app/stores';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import PasswordField from '$lib/components/PasswordField.svelte';
+	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import {
 		authErrorMessageKey,
 		passwordsMatch,
@@ -28,6 +30,9 @@
 	let lang = $derived($resolvedLocale);
 	let nextPath = $derived(safeRedirectPath($page.url.searchParams.get('next')));
 	let recoveryMode = $derived($auth.passwordRecovery);
+	let backLabel = $derived(
+		nextPath === '/' ? translate(lang, 'nav.tabHome') : translate(lang, 'a11y.back')
+	);
 
 	$effect(() => {
 		if (!$auth.ready || !$auth.user || recoveryMode || redirected) return;
@@ -214,8 +219,14 @@
 </svelte:head>
 
 <section class="auth-page content-page content-page--narrow mx-auto">
+	<div class="md:hidden">
+		<ScreenHeader title={translate(lang, 'auth.title')} backHref={nextPath} />
+	</div>
 	<header class="page-header auth-page__header">
-		<h1 class="page-title">{translate(lang, 'auth.title')}</h1>
+		<div class="subroute-desktop-head hidden md:block">
+			<SubrouteBack href={nextPath} label={backLabel} />
+		</div>
+		<h1 class="page-title hidden md:block">{translate(lang, 'auth.title')}</h1>
 		<p class="page-lead auth-page__lead">{translate(lang, 'auth.lead')}</p>
 	</header>
 
