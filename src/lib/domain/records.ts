@@ -11,20 +11,24 @@ import {
 import type { PersonalRecord } from './types';
 
 export function formatPersonalRecord(record: PersonalRecord, locale: AppLocale = 'ru'): string {
-	const parts: string[] = [];
+	const chips = personalRecordChips(record, locale);
+	return chips.join(' · ');
+}
+
+/** Separate chips for list UI: weight×reps and optional note. */
+export function personalRecordChips(record: PersonalRecord, locale: AppLocale = 'ru'): string[] {
+	const chips: string[] = [];
+	const lift: string[] = [];
 	if (record.weightKg != null && !Number.isNaN(record.weightKg)) {
-		parts.push(`${trimNumber(record.weightKg)} ${translate(locale, 'pr.kg')}`);
+		lift.push(`${trimNumber(record.weightKg)} ${translate(locale, 'pr.kg')}`);
 	}
 	if (record.reps != null && !Number.isNaN(record.reps)) {
-		parts.push(`${record.reps} ${translate(locale, 'pr.repsShort')}`);
+		lift.push(`${record.reps} ${translate(locale, 'pr.repsShort')}`);
 	}
-	if (parts.length === 0 && record.note.trim()) {
-		return record.note.trim();
-	}
-	if (parts.length === 0) return '';
-	const base = parts.join(' × ');
+	if (lift.length > 0) chips.push(lift.join(' × '));
 	const note = record.note.trim();
-	return note ? `${base} · ${note}` : base;
+	if (note) chips.push(note);
+	return chips;
 }
 
 function trimNumber(value: number): string {

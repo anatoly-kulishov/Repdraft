@@ -5,6 +5,7 @@ import {
 	lastPerformance,
 	restSecAfterSet,
 	startSessionFromPlan,
+	syncSessionPrescriptionFromPlan,
 	updateLoggedSet
 } from '$lib/domain/session';
 import type { LastPerformance, LoggedSet, WorkoutPlan, WorkoutSession } from '$lib/domain/types';
@@ -84,6 +85,17 @@ function createLiveStore() {
 			const session = startSessionFromPlan(plan);
 			persistActive(session, null);
 			store.update((s) => ({ ...s, session, restUntil: null }));
+			return session;
+		},
+		/** Merge plan prescription (groupId/rest/targets) into the active session. */
+		syncFromPlan(plan: WorkoutPlan): WorkoutSession | null {
+			const current = get(store).session;
+			if (!current || current.finishedAt) return current;
+			const session = syncSessionPrescriptionFromPlan(current, plan);
+			if (session === current) return current;
+			const restUntil = get(store).restUntil;
+			persistActive(session, restUntil);
+			store.update((s) => ({ ...s, session }));
 			return session;
 		},
 		patchSet(

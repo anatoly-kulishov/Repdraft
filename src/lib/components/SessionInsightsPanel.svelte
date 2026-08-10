@@ -13,6 +13,7 @@
 	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
@@ -236,9 +237,17 @@
 						type="button"
 						class="btn-link text-xs !text-[var(--color-muted)]"
 						disabled={busyId !== null}
+						aria-busy={busyId === '__clear__'}
 						onclick={() => void onClearHistory()}
 					>
-						{translate(lang, 'workouts.clearHistory')}
+						{#if busyId === '__clear__'}
+							<span class="inline-flex items-center gap-1.5">
+								<Spinner size="sm" block={false} />
+								{translate(lang, 'auth.wait')}
+							</span>
+						{:else}
+							{translate(lang, 'workouts.clearHistory')}
+						{/if}
 					</button>
 				</div>
 				<ul class="flex flex-col gap-2">
@@ -259,11 +268,16 @@
 								type="button"
 								class="btn-ghost is-danger shrink-0"
 								disabled={busyId !== null}
+								aria-busy={busyId === session.id}
 								aria-label={translate(lang, 'workouts.deleteSession')}
 								title={translate(lang, 'workouts.deleteSession')}
 								onclick={() => void onRemoveSession(session)}
 							>
-								<LucideIcon icon={Trash2} size={ICON_SMALL} />
+								{#if busyId === session.id}
+									<Spinner size="sm" block={false} />
+								{:else}
+									<LucideIcon icon={Trash2} size={ICON_SMALL} />
+								{/if}
 							</button>
 						</li>
 					{/each}

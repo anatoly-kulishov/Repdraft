@@ -177,11 +177,15 @@
 	}
 
 	async function logout() {
+		if (loading) return;
+		loading = true;
 		try {
 			await auth.signOut();
 			toasts.show(translate(lang, 'auth.signedOut'), 'info');
 		} catch (err) {
 			toasts.show(mapErr(err) || translateError(lang, err, 'auth.signOutError'), 'error');
+		} finally {
+			loading = false;
 		}
 	}
 
@@ -283,8 +287,15 @@
 			<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.signedInAs')}</p>
 			<p class="font-semibold">{$auth.user.email}</p>
 			<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'auth.syncedHint')}</p>
-			<button type="button" class="btn-secondary mt-4" onclick={logout}>
-				{translate(lang, 'auth.logout')}
+			<button type="button" class="btn-secondary mt-4" disabled={loading} aria-busy={loading} onclick={logout}>
+				{#if loading}
+					<span class="inline-flex items-center gap-2">
+						<Spinner size="sm" block={false} />
+						{translate(lang, 'auth.wait')}
+					</span>
+				{:else}
+					{translate(lang, 'auth.logout')}
+				{/if}
 			</button>
 		</div>
 	{:else if panel === 'check-email'}

@@ -8,19 +8,20 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { Bookmark, Check, ChevronRight, Plus } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 
 	let {
 		exercise,
-		recordLabel = null,
+		recordChips = [],
 		priority = false,
 		variant = 'grid',
 		returnAfterAdd = null as string | null
 	}: {
 		exercise: ExerciseIndexItem;
-		recordLabel?: string | null;
+		recordChips?: string[];
 		/** First-screen images: eager + high fetch priority. */
 		priority?: boolean;
 		variant?: 'grid' | 'list';
@@ -32,7 +33,9 @@
 	let title = $derived(exerciseName(exercise, lang));
 	let inDraft = $derived($draft.exercises.some((ex) => ex.exerciseId === exercise.id));
 	let bookmarked = $derived($bookmarks.includes(exercise.id));
+	let recordTitle = $derived(recordChips.length ? recordChips.join(' · ') : '');
 	let loaded = $state(false);
+	let bookmarkBusy = $state(false);
 	let imgEl = $state<HTMLImageElement | null>(null);
 
 	$effect(() => {
@@ -64,9 +67,16 @@
 	function toggleBookmark(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
-		void bookmarks.toggle(exercise.id).then((saved) => {
-			toasts.show(translate(lang, saved ? 'bookmarks.saved' : 'bookmarks.removed'), 'info');
-		});
+		if (bookmarkBusy) return;
+		bookmarkBusy = true;
+		void bookmarks
+			.toggle(exercise.id)
+			.then((saved) => {
+				toasts.show(translate(lang, saved ? 'bookmarks.saved' : 'bookmarks.removed'), 'info');
+			})
+			.finally(() => {
+				bookmarkBusy = false;
+			});
 	}
 </script>
 
@@ -77,15 +87,21 @@
 			class="exercise-card-bookmark exercise-card-bookmark--inline"
 			class:is-active={bookmarked}
 			onclick={toggleBookmark}
+			disabled={bookmarkBusy}
+			aria-busy={bookmarkBusy}
 			aria-label={translate(lang, bookmarked ? 'bookmarks.remove' : 'bookmarks.add')}
 			aria-pressed={bookmarked}
 		>
-			<LucideIcon
-				icon={Bookmark}
-				size={ICON_SMALL}
-				class="exercise-card-bookmark-icon"
-				fill={bookmarked ? 'currentColor' : 'none'}
-			/>
+			{#if bookmarkBusy}
+				<Spinner size="sm" block={false} />
+			{:else}
+				<LucideIcon
+					icon={Bookmark}
+					size={ICON_SMALL}
+					class="exercise-card-bookmark-icon"
+					fill={bookmarked ? 'currentColor' : 'none'}
+				/>
+			{/if}
 		</button>
 		<button
 			type="button"
@@ -116,15 +132,6 @@
 	class="exercise-card relative flex min-w-0 max-w-full flex-col overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)]"
 	class:exercise-card--list={variant === 'list'}
 >
-	{#if recordLabel && variant !== 'list'}
-		<span
-			class="absolute right-1.5 top-1.5 z-10 max-w-[70%] truncate rounded bg-[var(--color-accent)] px-1.5 py-0.5 text-[10px] font-bold text-white"
-			title={recordLabel}
-		>
-			{recordLabel}
-		</span>
-	{/if}
-
 	{#if variant === 'list'}
 		<a
 			href={`/exercise/${exercise.id}`}
@@ -152,14 +159,16 @@
 				<span class="exercise-card-list-title line-clamp-2 font-semibold leading-snug text-[var(--color-ink)]">
 					{title}
 				</span>
-				<span class="exercise-card-list-meta">
-					<span class="exercise-card-list-target truncate">
-						{labelTarget(exercise.target, lang)}
-					</span>
-					{#if recordLabel}
-						<span class="exercise-card-record-chip" title={recordLabel}>{recordLabel}</span>
-					{/if}
+				<span class="exercise-card-list-target truncate">
+					{labelTarget(exercise.target, lang)}
 				</span>
+				{#if recordChips.length > 0}
+					<span class="exercise-card-chip-row" title={recordTitle}>
+						{#each recordChips as chip (chip)}
+							<span class="exercise-card-record-chip">{chip}</span>
+						{/each}
+					</span>
+				{/if}
 			</span>
 		</a>
 		{@render listActions()}
@@ -191,15 +200,21 @@
 				class="exercise-card-bookmark"
 				class:is-active={bookmarked}
 				onclick={toggleBookmark}
+				disabled={bookmarkBusy}
+				aria-busy={bookmarkBusy}
 				aria-label={translate(lang, bookmarked ? 'bookmarks.remove' : 'bookmarks.add')}
 				aria-pressed={bookmarked}
 			>
-				<LucideIcon
-				icon={Bookmark}
-				size={ICON_SMALL}
-				class="exercise-card-bookmark-icon"
-				fill={bookmarked ? 'currentColor' : 'none'}
-			/>
+				{#if bookmarkBusy}
+					<Spinner size="sm" block={false} />
+				{:else}
+					<LucideIcon
+						icon={Bookmark}
+						size={ICON_SMALL}
+						class="exercise-card-bookmark-icon"
+						fill={bookmarked ? 'currentColor' : 'none'}
+					/>
+				{/if}
 			</button>
 			<button
 				type="button"
@@ -227,6 +242,13 @@
 			<p class="truncate text-[11px] text-[var(--color-muted)]">
 				{labelTarget(exercise.target, lang)}
 			</p>
+			{#if recordChips.length > 0}
+				<span class="exercise-card-chip-row exercise-card-chip-row--grid" title={recordTitle}>
+					{#each recordChips as chip (chip)}
+						<span class="exercise-card-record-chip">{chip}</span>
+					{/each}
+				</span>
+			{/if}
 		</a>
 	{/if}
 </article>
