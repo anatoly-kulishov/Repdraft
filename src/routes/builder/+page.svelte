@@ -8,7 +8,7 @@
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
-	import { groupBounds } from '$lib/domain/workout';
+	import { groupMemberRole } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
 	import { draft, draftHydrated } from '$lib/stores/draft';
 	import { plans } from '$lib/stores/plans';
@@ -73,15 +73,6 @@
 		if (selectedIds.length < 2) return;
 		draft.formSuperset(selectedIds);
 		selectedIds = [];
-	}
-
-	function roleFor(index: number): 'solo' | 'first' | 'middle' | 'last' {
-		const bounds = groupBounds($draft.exercises, index);
-		if (!bounds) return 'solo';
-		if (bounds.start === bounds.end) return 'solo';
-		if (index === bounds.start) return 'first';
-		if (index === bounds.end) return 'last';
-		return 'middle';
 	}
 </script>
 
@@ -166,7 +157,7 @@
 
 				<div class="flex flex-col gap-3">
 					{#each $draft.exercises as item, index (item.exerciseId)}
-						{@const role = roleFor(index)}
+						{@const role = groupMemberRole($draft.exercises, index)}
 						{@const meta = indexById.get(item.exerciseId) ?? null}
 						<div class={role === 'first' || role === 'middle' ? 'mb-[-0.75rem]' : ''}>
 							<WorkoutExerciseRow

@@ -1,16 +1,18 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import SegmentControl from '$lib/components/SegmentControl.svelte';
 	import WorkoutsPageSkeleton from '$lib/components/WorkoutsPageSkeleton.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, Play, Plus, Trash2 } from '@lucide/svelte';
+	import { Copy, ClipboardList, Clock, Play, Plus, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
 	import { planTargetSummary } from '$lib/domain/workout';
+	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { live } from '$lib/stores/live';
@@ -18,9 +20,17 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 
+	type WorkoutsTab = 'plans' | 'history';
+
+	function parseWorkoutsTab(value: string | null): WorkoutsTab {
+		return value === 'history' ? 'history' : 'plans';
+	}
+
 	let lang = $derived($resolvedLocale);
+	let activeTab = $derived(parseWorkoutsTab($page.url.searchParams.get('tab')));
 	let searchQuery = $state('');
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let indexReady = $state(false);
@@ -36,10 +46,15 @@
 		return $plans.filter((p) => p.name.toLowerCase().includes(q));
 	});
 
-	let history = $derived($live.history.slice(0, 12));
+	let history = $derived($live.history);
 	let historyBusyId = $state<string | null>(null);
 	let planBusyId = $state<string | null>(null);
 	let planBusyOp = $state<'copy' | 'delete' | null>(null);
+
+	const tabOptions = $derived([
+		{ id: 'plans', label: translate(lang, 'workouts.tabPlans') },
+		{ id: 'history', label: translate(lang, 'workouts.tabHistory') }
+	]);
 
 	onMount(() => {
 		void loadExerciseIndex()
@@ -54,36 +69,12 @@
 		});
 	});
 
-	function formatDate(iso: string): string {
-		try {
-			return new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-US', {
-				day: 'numeric',
-				month: 'short'
-			}).format(new Date(iso));
-		} catch {
-			return iso;
-		}
-	}
-
-	function whenLabel(iso: string): string {
-		const d = new Date(iso);
-		const now = new Date();
-		const dayMs = 86_400_000;
-		const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-		const startThat = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-		const diffDays = Math.round((startToday - startThat) / dayMs);
-		if (diffDays === 0) return translate(lang, 'home.today');
-		if (diffDays === 1) return translate(lang, 'home.yesterday');
-		if (diffDays > 1 && diffDays < 8) {
-			return translate(lang, 'home.daysAgo', { n: diffDays });
-		}
-		return formatDate(iso);
-	}
-
-	function durationMin(session: (typeof history)[number]): number | null {
-		const ms = sessionDurationMs(session);
-		if (ms == null) return null;
-		return Math.max(1, Math.round(ms / 60_000));
+	function setTab(tab: WorkoutsTab) {
+		const url = new URL($page.url);
+		if (tab === 'plans') url.searchParams.delete('tab');
+		else url.searchParams.set('tab', tab);
+		const next = `${url.pathname}${url.search}${url.hash}`;
+		void goto(next, { replaceState: true, keepFocus: true, noScroll: true });
 	}
 
 	async function onDuplicate(id: string) {
@@ -184,6 +175,7 @@
 		<a
 			class="btn-primary workouts-page__create min-h-11 shrink-0"
 			href="/builder"
+			class:workouts-page__create--hidden={activeTab === 'history'}
 		>
 			{translate(lang, 'workouts.newWorkout')}
 		</a>
@@ -191,93 +183,114 @@
 
 	{#if !pageReady}
 		<WorkoutsPageSkeleton label={translate(lang, 'common.loading')} />
-	{:else if $plans.length === 0}
-		<EmptyState
-			title={translate(lang, 'workouts.emptyTitle')}
-			description={translate(lang, 'workouts.emptyDesc')}
-		/>
 	{:else}
-		<div class="workouts-page__search">
-			<SearchInput bind:value={searchQuery} placeholder={translate(lang, 'workouts.searchPh')} />
+		<div class="workouts-page__tabs">
+			<SegmentControl
+				options={tabOptions}
+				value={activeTab}
+				ariaLabel={translate(lang, 'workouts.tabsAria')}
+				onchange={(id) => setTab(parseWorkoutsTab(id))}
+			/>
 		</div>
-		{#if filteredPlans.length === 0}
-		<p class="panel-dashed text-sm text-[var(--color-muted)]">{translate(lang, 'catalog.emptyTitle')}</p>
-		{:else}
-		<ul class="entity-list">
-			{#each filteredPlans as plan (plan.id)}
-				{@const muscles = planTargetSummary(plan, indexById, lang)}
-				<li>
-					<SwipeToDelete
-						label={translate(lang, 'workouts.delete')}
-						disabled={planBusyId !== null}
-						busy={planBusyId === plan.id && planBusyOp === 'delete'}
-						onDelete={() => void onRemove(plan.id, plan.name)}
-					>
-						<div class="entity-row">
-							<a class="entity-row__main" href={`/workouts/${plan.id}`}>
-								<span class="entity-row__title">{plan.name}</span>
-								{#if muscles}
-									<span class="entity-row__meta">{muscles}</span>
-								{:else}
-									<span class="entity-row__meta" aria-hidden="true">&nbsp;</span>
-								{/if}
-								<span class="entity-row__meta">
-									{translate(lang, 'workouts.exCount', { n: plan.exercises.length })}
-								</span>
-							</a>
-							<div class="entity-row__actions">
-								<button
-									type="button"
-									class="btn-primary inline-flex min-h-11 shrink-0 items-center gap-2 px-4"
-									onclick={() => onStart(plan.id)}
-									disabled={plan.exercises.length === 0 || planBusyId !== null}
-								>
-									<LucideIcon icon={Play} size={ICON_BUTTON} />
-									{translate(lang, 'workouts.start')}
-								</button>
-								<button
-									type="button"
-									class="btn-ghost"
-									aria-label={translate(lang, 'workouts.duplicate')}
-									title={translate(lang, 'workouts.duplicate')}
-									disabled={planBusyId !== null}
-									aria-busy={planBusyId === plan.id && planBusyOp === 'copy'}
-									onclick={() => void onDuplicate(plan.id)}
-								>
-									{#if planBusyId === plan.id && planBusyOp === 'copy'}
-										<Spinner size="sm" block={false} />
-									{:else}
-										<LucideIcon icon={Copy} size={ICON_SMALL} />
-									{/if}
-								</button>
-								<button
-									type="button"
-									class="btn-ghost is-danger"
-									aria-label={translate(lang, 'workouts.delete')}
-									title={translate(lang, 'workouts.delete')}
-									disabled={planBusyId !== null}
-									aria-busy={planBusyId === plan.id && planBusyOp === 'delete'}
-									onclick={() => void onRemove(plan.id, plan.name)}
-								>
-									{#if planBusyId === plan.id && planBusyOp === 'delete'}
-										<Spinner size="sm" block={false} />
-									{:else}
-										<LucideIcon icon={Trash2} size={ICON_SMALL} />
-									{/if}
-								</button>
-							</div>
-						</div>
-					</SwipeToDelete>
-				</li>
-			{/each}
-		</ul>
-		{/if}
-	{/if}
 
-	{#if pageReady && history.length > 0}
-		<div class="mt-8">
-			<div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-				<h2 class="section-title">{translate(lang, 'workouts.historyTitle')}</h2>
+		{#if activeTab === 'plans'}
+			{#if $plans.length === 0}
+				<EmptyState
+					centered
+					icon={ClipboardList}
+					title={translate(lang, 'workouts.emptyTitle')}
+					description={translate(lang, 'workouts.emptyDesc')}
+					actionHref="/builder"
+					actionLabel={translate(lang, 'workouts.create')}
+				/>
+			{:else}
+				<div class="workouts-page__search">
+					<SearchInput bind:value={searchQuery} placeholder={translate(lang, 'workouts.searchPh')} />
+				</div>
+				{#if filteredPlans.length === 0}
+					<p class="panel-dashed text-sm text-[var(--color-muted)]">
+						{translate(lang, 'catalog.emptyTitle')}
+					</p>
+				{:else}
+					<ul class="entity-list">
+						{#each filteredPlans as plan (plan.id)}
+							{@const muscles = planTargetSummary(plan, indexById, lang)}
+							<li>
+								<SwipeToDelete
+									label={translate(lang, 'workouts.delete')}
+									disabled={planBusyId !== null}
+									busy={planBusyId === plan.id && planBusyOp === 'delete'}
+									onDelete={() => void onRemove(plan.id, plan.name)}
+								>
+									<div class="entity-row">
+										<a class="entity-row__main" href={`/workouts/${plan.id}`}>
+											<span class="entity-row__title">{plan.name}</span>
+											{#if muscles}
+												<span class="entity-row__meta">{muscles}</span>
+											{:else}
+												<span class="entity-row__meta" aria-hidden="true">&nbsp;</span>
+											{/if}
+											<span class="entity-row__meta">
+												{translate(lang, 'workouts.exCount', { n: plan.exercises.length })}
+											</span>
+										</a>
+										<div class="entity-row__actions">
+											<button
+												type="button"
+												class="btn-primary inline-flex min-h-11 shrink-0 items-center gap-2 px-4"
+												onclick={() => onStart(plan.id)}
+												disabled={plan.exercises.length === 0 || planBusyId !== null}
+											>
+												<LucideIcon icon={Play} size={ICON_BUTTON} />
+												{translate(lang, 'workouts.start')}
+											</button>
+											<button
+												type="button"
+												class="btn-ghost"
+												aria-label={translate(lang, 'workouts.duplicate')}
+												title={translate(lang, 'workouts.duplicate')}
+												disabled={planBusyId !== null}
+												aria-busy={planBusyId === plan.id && planBusyOp === 'copy'}
+												onclick={() => void onDuplicate(plan.id)}
+											>
+												{#if planBusyId === plan.id && planBusyOp === 'copy'}
+													<Spinner size="sm" block={false} />
+												{:else}
+													<LucideIcon icon={Copy} size={ICON_SMALL} />
+												{/if}
+											</button>
+											<button
+												type="button"
+												class="btn-ghost is-danger"
+												aria-label={translate(lang, 'workouts.delete')}
+												title={translate(lang, 'workouts.delete')}
+												disabled={planBusyId !== null}
+												aria-busy={planBusyId === plan.id && planBusyOp === 'delete'}
+												onclick={() => void onRemove(plan.id, plan.name)}
+											>
+												{#if planBusyId === plan.id && planBusyOp === 'delete'}
+													<Spinner size="sm" block={false} />
+												{:else}
+													<LucideIcon icon={Trash2} size={ICON_SMALL} />
+												{/if}
+											</button>
+										</div>
+									</div>
+								</SwipeToDelete>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			{/if}
+		{:else if history.length === 0}
+			<EmptyState
+				centered
+				icon={Clock}
+				title={translate(lang, 'workouts.historyEmptyTitle')}
+				description={translate(lang, 'workouts.historyEmptyDesc')}
+			/>
+		{:else}
+			<div class="mb-3 flex flex-wrap items-center justify-end gap-2">
 				<button
 					type="button"
 					class="btn-link text-sm !text-[var(--color-muted)]"
@@ -301,8 +314,8 @@
 									<span class="entity-row__title">{session.planName}</span>
 									<span class="entity-row__meta">
 										{translate(lang, 'home.recentMeta', {
-											when: whenLabel(session.finishedAt ?? session.startedAt),
-											min: durationMin(session) ?? '—',
+											when: formatRelativeDay(session.finishedAt ?? session.startedAt, lang),
+											min: formatDurationMinutes(sessionDurationMs(session)) ?? '—',
 											sets: completedSetCount(session)
 										})}
 									</span>
@@ -329,11 +342,12 @@
 					</li>
 				{/each}
 			</ul>
-		</div>
+		{/if}
 	{/if}
 
 	<a
 		class="workouts-fab"
+		class:workouts-fab--hidden={activeTab === 'history'}
 		href="/builder"
 		aria-label={translate(lang, 'workouts.newWorkout')}
 		title={translate(lang, 'workouts.newWorkout')}

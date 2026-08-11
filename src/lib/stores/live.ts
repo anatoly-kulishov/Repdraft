@@ -153,6 +153,13 @@ function createLiveStore() {
 		},
 		lastFor(exerciseId: string): LastPerformance | null {
 			return lastPerformance(get(store).history, exerciseId);
+		},
+		async getFinishedSession(id: string): Promise<WorkoutSession | null> {
+			const fromHistory = get(store).history.find((s) => s.id === id);
+			if (fromHistory?.finishedAt) return fromHistory;
+			const local = await localSessionRepository.get(id);
+			if (local?.finishedAt) return local;
+			return null;
 		}
 	};
 }

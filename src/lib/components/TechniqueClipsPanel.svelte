@@ -21,6 +21,8 @@
 		reportTechniqueClip
 	} from '$lib/storage/techniqueClipsRepository';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import ClipGallery from '$lib/components/clips/ClipGallery.svelte';
+	import ClipLightbox from '$lib/components/clips/ClipLightbox.svelte';
 	import { withTimeout } from '$lib/domain/withTimeout';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
@@ -51,7 +53,6 @@
 	let lightbox = $state<TechniqueClip | null>(null);
 	let lightboxReady = $state(false);
 	let lightboxFailed = $state(false);
-	let lightboxImg: HTMLImageElement | undefined = $state();
 	let thumbReady = $state(new Set<string>());
 	let galleryInput: HTMLInputElement | undefined = $state();
 	let cameraInput: HTMLInputElement | undefined = $state();
@@ -382,17 +383,6 @@
 		}
 	}
 
-	function formatDate(iso: string): string {
-		try {
-			return new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-GB', {
-				day: 'numeric',
-				month: 'short'
-			}).format(new Date(iso));
-		} catch {
-			return iso.slice(0, 10);
-		}
-	}
-
 	function clipTitle(clip: TechniqueClip): string {
 		return clip.title || translate(lang, 'clips.technique');
 	}
@@ -407,6 +397,12 @@
 	}
 
 	$effect(() => {
+		lightbox;
+		lightboxReady = false;
+		lightboxFailed = false;
+	});
+
+	$effect(() => {
 		if (typeof document === 'undefined') return;
 		if (!lightbox) return;
 		const prev = document.body.style.overflow;
@@ -414,18 +410,6 @@
 		return () => {
 			document.body.style.overflow = prev;
 		};
-	});
-
-	/** Reset lightbox media state; honor already-cached GIFs. */
-	$effect(() => {
-		const clip = lightbox;
-		lightboxReady = false;
-		lightboxFailed = false;
-		if (!clip) return;
-		queueMicrotask(() => {
-			const img = lightboxImg;
-			if (img?.complete && img.naturalWidth > 0) lightboxReady = true;
-		});
 	});
 </script>
 
@@ -596,180 +580,37 @@
 			</div>
 		{/if}
 	{:else}
-		<ul class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-			{#each clips as clip (clip.id)}
-				<li
-					data-clip-id={clip.id}
-					class="overflow-hidden rounded-[var(--radius-panel)] border bg-[var(--color-surface)] transition-[box-shadow,border-color]"
-					class:border-[var(--color-accent)]={highlightId === clip.id}
-					class:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-accent)_28%,transparent)]={highlightId ===
-						clip.id}
-					class:border-[var(--color-border)]={highlightId !== clip.id}
-				>
-					<button
-						type="button"
-						class="relative block w-full cursor-zoom-in overflow-hidden bg-[var(--color-surface-muted)] p-0"
-						onclick={() => (lightbox = clip)}
-						aria-label={translate(lang, 'clips.open', { title: clipTitle(clip) })}
-					>
-						<div class="relative aspect-square w-full">
-							{#if !thumbReady.has(clip.id)}
-								<div class="feed-skel absolute inset-0" aria-hidden="true"></div>
-							{/if}
-							<img
-								src={clip.gifUrl}
-								alt={clipTitle(clip)}
-								width="360"
-								height="360"
-								class={`absolute inset-0 m-auto max-h-full max-w-full object-contain transition-opacity duration-200 ${thumbReady.has(clip.id) ? 'opacity-100' : 'opacity-0'}`}
-								loading="lazy"
-								decoding="async"
-								onload={() => markThumbReady(clip.id)}
-								onerror={() => markThumbReady(clip.id)}
-							/>
-						</div>
-					</button>
-					<div class="space-y-2 p-3">
-						<div>
-							<p class="font-semibold leading-snug">{clipTitle(clip)}</p>
-							<p class="text-xs text-[var(--color-muted)]">
-								{clip.authorLabel} · {formatDate(clip.createdAt)}
-							</p>
-						</div>
-						<div class="grid grid-cols-2 gap-2">
-							<button
-								type="button"
-								class="btn-secondary text-sm"
-								onclick={() => void shareClip(clip)}
-							>
-								{canShareNative ? translate(lang, 'clips.share') : translate(lang, 'clips.link')}
-							</button>
-							<button
-								type="button"
-								class="btn-secondary text-sm"
-								onclick={() => void copyGifUrl(clip)}
-							>
-								{translate(lang, 'clips.copyGif')}
-							</button>
-							{#if currentUserId === clip.userId}
-								<button
-									type="button"
-									class="btn-secondary text-sm"
-									onclick={() => void renameClip(clip)}
-								>
-									{translate(lang, 'clips.rename')}
-								</button>
-								<button
-									type="button"
-									class="btn-danger text-sm"
-									onclick={() => void removeClip(clip)}
-								>
-									{translate(lang, 'clips.delete')}
-								</button>
-							{:else if currentUserId}
-								<button
-									type="button"
-									class="btn-secondary col-span-2 text-sm text-[var(--color-muted)]"
-									onclick={() => void reportClip(clip)}
-								>
-									{translate(lang, 'clips.report')}
-								</button>
-							{/if}
-						</div>
-					</div>
-				</li>
-			{/each}
-		</ul>
+		<ClipGallery
+			{clips}
+			{lang}
+			{highlightId}
+			{currentUserId}
+			{canShareNative}
+			{thumbReady}
+			titleFor={clipTitle}
+			onOpen={(clip) => (lightbox = clip)}
+			onThumbReady={markThumbReady}
+			onShare={shareClip}
+			onCopyGif={copyGifUrl}
+			onRename={renameClip}
+			onRemove={removeClip}
+			onReport={reportClip}
+		/>
 	{/if}
 </section>
 
 {#if lightbox}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
-		class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 pb-[calc(var(--safe-bottom)+1rem)] backdrop-blur-[2px]"
-		role="dialog"
-		aria-modal="true"
-		tabindex="-1"
-		aria-label={clipTitle(lightbox)}
-		onclick={(e) => {
-			if (e.target === e.currentTarget) lightbox = null;
-		}}
-	>
-		<div
-			class="panel w-[min(100%,24rem)] max-h-[90vh] overflow-auto !rounded-2xl !p-0 shadow-xl"
-		>
-			<div class="relative aspect-square w-full overflow-hidden bg-[var(--color-surface-muted)]">
-				{#if !lightboxReady && !lightboxFailed}
-					<div class="feed-skel absolute inset-0" aria-hidden="true"></div>
-					<div class="absolute inset-0 z-[1] flex items-center justify-center">
-						<Spinner size="sm" />
-					</div>
-				{/if}
-				{#if lightboxFailed}
-					<p
-						class="absolute inset-0 z-[1] flex items-center justify-center px-4 text-center text-sm text-[var(--color-muted)]"
-					>
-						{translate(lang, 'clips.mediaFail')}
-					</p>
-				{:else}
-					<img
-						bind:this={lightboxImg}
-						src={lightbox.gifUrl}
-						alt={clipTitle(lightbox)}
-						width="480"
-						height="480"
-						class={`absolute inset-0 h-full w-full object-contain transition-opacity duration-200 ${lightboxReady ? 'opacity-100' : 'opacity-0'}`}
-						decoding="async"
-						fetchpriority="high"
-						onload={() => {
-							lightboxReady = true;
-							lightboxFailed = false;
-						}}
-						onerror={() => {
-							lightboxReady = false;
-							lightboxFailed = true;
-						}}
-					/>
-				{/if}
-			</div>
-			<div class="space-y-3 p-4">
-				<div>
-					<p class="font-semibold">{clipTitle(lightbox)}</p>
-					<p class="text-xs text-[var(--color-muted)]">
-						{lightbox.authorLabel} · {formatDate(lightbox.createdAt)}
-					</p>
-				</div>
-				<div class="grid grid-cols-2 gap-2">
-					<button
-						type="button"
-						class="btn-primary text-sm"
-						onclick={() => void shareClip(lightbox!)}
-					>
-						{canShareNative ? translate(lang, 'clips.share') : translate(lang, 'clips.link')}
-					</button>
-					<button type="button" class="btn-secondary text-sm" onclick={() => (lightbox = null)}>
-						{translate(lang, 'clips.close')}
-					</button>
-					{#if currentUserId && currentUserId === lightbox.userId}
-						<button
-							type="button"
-							class="btn-secondary col-span-2 text-sm"
-							onclick={() => void renameClip(lightbox!)}
-						>
-							{translate(lang, 'clips.rename')}
-						</button>
-					{:else if currentUserId && currentUserId !== lightbox.userId}
-						<button
-							type="button"
-							class="btn-secondary col-span-2 text-sm text-[var(--color-muted)]"
-							onclick={() => void reportClip(lightbox!)}
-						>
-							{translate(lang, 'clips.report')}
-						</button>
-					{/if}
-				</div>
-			</div>
-		</div>
-	</div>
+	<ClipLightbox
+		clip={lightbox}
+		{lang}
+		{currentUserId}
+		{canShareNative}
+		title={clipTitle(lightbox)}
+		bind:ready={lightboxReady}
+		bind:failed={lightboxFailed}
+		onClose={() => (lightbox = null)}
+		onShare={() => void shareClip(lightbox!)}
+		onRename={() => void renameClip(lightbox!)}
+		onReport={() => void reportClip(lightbox!)}
+	/>
 {/if}

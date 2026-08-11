@@ -37,15 +37,19 @@
 			</div>
 		</div>
 
-		<CatalogExerciseList
-			bodyParts={data.bodyParts}
-			equipment={data.equipment}
-			targets={data.targets}
-			totalCount={data.totalCount}
-			indexError={data.indexError}
-			{presetBodyPart}
-			initialQuery={data.initialQuery}
-			gridOnDesktop
-		/>
+		{#key `${data.bodyPart}|${data.initialEquipment}|${data.initialTarget}|${data.initialQuery}`}
+			<CatalogExerciseList
+				bodyParts={data.bodyParts}
+				equipment={data.equipment}
+				targets={data.targets}
+				totalCount={data.totalCount}
+				indexError={data.indexError}
+				{presetBodyPart}
+				initialQuery={data.initialQuery}
+				initialEquipment={data.initialEquipment}
+				initialTarget={data.initialTarget}
+				gridOnDesktop
+			/>
+		{/key}
 	</section>
 </div>

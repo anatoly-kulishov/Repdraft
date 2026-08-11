@@ -184,21 +184,21 @@
 		</a>
 		<a
 			class="tab-link"
-			data-active={isActive('/workouts')}
-			href="/workouts"
-			aria-current={isActive('/workouts') ? 'page' : undefined}
-		>
-			<LucideIcon icon={Dumbbell} size={ICON_SIDEBAR} />
-			{translate(lang, 'nav.workouts')}
-		</a>
-		<a
-			class="tab-link"
 			data-active={isActive('/exercises')}
 			href="/exercises"
 			aria-current={isActive('/exercises') ? 'page' : undefined}
 		>
 			<LucideIcon icon={Library} size={ICON_SIDEBAR} />
 			{translate(lang, 'nav.exercises')}
+		</a>
+		<a
+			class="tab-link"
+			data-active={isActive('/workouts')}
+			href="/workouts"
+			aria-current={isActive('/workouts') ? 'page' : undefined}
+		>
+			<LucideIcon icon={Dumbbell} size={ICON_SIDEBAR} />
+			{translate(lang, 'nav.workouts')}
 		</a>
 	</div>
 </nav>
