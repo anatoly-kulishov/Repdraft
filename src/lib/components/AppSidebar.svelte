@@ -30,8 +30,8 @@
 
 	const mainNav: NavItem[] = [
 		{ href: '/', labelKey: 'nav.tabHome', icon: House },
-		{ href: '/workouts', labelKey: 'nav.workouts', icon: Dumbbell },
-		{ href: '/exercises', labelKey: 'nav.exercises', icon: Library }
+		{ href: '/exercises', labelKey: 'nav.exercises', icon: Library },
+		{ href: '/workouts', labelKey: 'nav.workouts', icon: Dumbbell }
 	];
 </script>
 
