@@ -16,7 +16,6 @@ const checks = [
 	'session',
 	'records',
 	'clips',
-	'insights',
 	'inputLimits',
 	'authFlow'
 ];

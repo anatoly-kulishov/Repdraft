@@ -1,27 +1,29 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import LiveExerciseNav from '$lib/components/live/LiveExerciseNav.svelte';
+	import LiveSessionActions from '$lib/components/live/LiveSessionActions.svelte';
+	import LiveSetPanel from '$lib/components/live/LiveSetPanel.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import Spinner from '$lib/components/Spinner.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_BUTTON, ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
+	import { ICON_SMALL } from '$lib/components/icons/sizes';
+	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { coerceReps, coerceWeightKg, LIVE_REPS } from '$lib/domain/inputLimits';
-	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { completedSetCount, nextFocusAfterSetComplete, totalSetCount } from '$lib/domain/session';
-	import type { ExerciseIndexItem, WorkoutPlan, WorkoutSession } from '$lib/domain/types';
-	import { groupBounds } from '$lib/domain/workout';
-	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import type { ExerciseIndexItem } from '$lib/domain/types';
+	import { groupBounds, groupMemberRole } from '$lib/domain/workout';
+	import { formatElapsedClock, formatRestSec } from '$lib/i18n/format';
+	import { pickDefaultExerciseIndex } from '$lib/live/sessionUi';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
-	import { localWorkoutRepository } from '$lib/storage/localWorkoutRepository';
 	import { goto } from '$app/navigation';
 	import { get } from 'svelte/store';
 	import { onDestroy, onMount } from 'svelte';
-	import { Check, CircleCheck, Plus, ArrowLeft, Timer, ChevronRight } from '@lucide/svelte';
+	import { ArrowLeft, Timer } from '@lucide/svelte';
 
 	let { params } = $props();
 
@@ -36,16 +38,9 @@
 	let selectedExerciseIndex = $state(0);
 	let tick: ReturnType<typeof setInterval> | null = null;
 
-	function roleFor(index: number): 'solo' | 'first' | 'middle' | 'last' {
-		if (!session) return 'solo';
-		const bounds = groupBounds(session.exercises, index);
-		if (!bounds || bounds.start === bounds.end) return 'solo';
-		if (index === bounds.start) return 'first';
-		if (index === bounds.end) return 'last';
-		return 'middle';
-	}
-
-	let selectedRole = $derived(roleFor(selectedExerciseIndex));
+	let selectedRole = $derived(
+		session ? groupMemberRole(session.exercises, selectedExerciseIndex) : 'solo'
+	);
 	let selectedInGroup = $derived(selectedRole !== 'solo');
 	let selectedGroup = $derived.by(() => {
 		if (!session || !selectedInGroup) return null;
@@ -67,63 +62,31 @@
 		return item ? exerciseName(item, lang) : null;
 	});
 
-	let elapsedLabel = $derived.by(() => {
-		if (!session?.startedAt) return '0:00';
-		const ms = now - new Date(session.startedAt).getTime();
-		const totalSec = Math.max(0, Math.floor(ms / 1000));
-		const h = Math.floor(totalSec / 3600);
-		const m = Math.floor((totalSec % 3600) / 60);
-		const s = totalSec % 60;
-		if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-		return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-	});
-
-	function pickDefaultExerciseIndex(sess: WorkoutSession): number {
-		const idx = sess.exercises.findIndex(
-			(ex) => ex.sets.length > 0 && !ex.sets.every((s) => s.completed)
-		);
-		return idx >= 0 ? idx : 0;
-	}
-
-	function exerciseDone(ei: number): boolean {
-		const ex = session?.exercises[ei];
-		if (!ex || ex.sets.length === 0) return false;
-		return ex.sets.every((s) => s.completed);
-	}
-
+	let elapsedLabel = $derived(
+		session?.startedAt ? formatElapsedClock(now - new Date(session.startedAt).getTime()) : '0:00'
+	);
 	let restLeft = $derived(
 		restUntil != null ? Math.max(0, Math.ceil((restUntil - now) / 1000)) : 0
 	);
-
-	/** Prefer memory → localStorage; cloud only as last resort with a short timeout. */
-	async function resolvePlan(id: string): Promise<WorkoutPlan | null> {
-		const cached = get(plans).find((p) => p.id === id);
-		if (cached) return cached;
-
-		const local = await localWorkoutRepository.get(id);
-		if (local) return local;
-
-		try {
-			return await Promise.race([
-				plans.getPlan(id),
-				new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500))
-			]);
-		} catch {
-			return null;
-		}
-	}
+	let canGoNext = $derived(
+		session != null && selectedExerciseIndex < session.exercises.length - 1
+	);
+	let activeSetProgress = $derived.by(() => {
+		const ex = session?.exercises[selectedExerciseIndex];
+		if (!ex || ex.sets.length === 0) return null;
+		const openIdx = ex.sets.findIndex((s) => !s.completed);
+		if (openIdx < 0) return { current: ex.sets.length, total: ex.sets.length, allDone: true };
+		return { current: openIdx + 1, total: ex.sets.length, allDone: false };
+	});
 
 	onMount(() => {
 		tick = setInterval(() => {
 			now = Date.now();
-			if (restUntil != null && restUntil <= Date.now()) {
-				live.skipRest();
-			}
+			if (restUntil != null && restUntil <= Date.now()) live.skipRest();
 		}, 250);
 
 		void (async () => {
 			live.hydrate();
-			// History + names in background — don't block starting the session.
 			void live.refreshHistory();
 			void loadExerciseIndex()
 				.then((index) => {
@@ -136,9 +99,8 @@
 			try {
 				const planId = params.planId;
 				const active = get(live).session;
-				const plan = await resolvePlan(planId);
+				const plan = await plans.getPlan(planId);
 
-				// Resume first — session already snapshots exercises; plan may be deleted.
 				if (
 					active &&
 					!active.finishedAt &&
@@ -189,33 +151,6 @@
 		});
 	});
 
-	function titleFor(id: string): string {
-		const item = names.get(id);
-		return item ? exerciseName(item, lang) : translate(lang, 'records.fallback', { id });
-	}
-
-	function metaFor(id: string): string | null {
-		const item = names.get(id);
-		if (!item) return null;
-		const target = labelTarget(item.target, lang);
-		const equipment = labelEquipment(item.equipment, lang);
-		return `${target} · ${equipment}`;
-	}
-
-	function formatRestSec(totalSec: number): string {
-		const m = Math.floor(totalSec / 60);
-		const s = totalSec % 60;
-		return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-	}
-
-	function formatLast(exerciseId: string): string | null {
-		const last = live.lastFor(exerciseId);
-		if (!last) return null;
-		const w = last.weightKg != null ? `${last.weightKg}` : '—';
-		const r = last.reps != null ? `${last.reps}` : '—';
-		return `${w} × ${r}`;
-	}
-
 	function onWeight(ei: number, si: number, value: string) {
 		if (!value.trim()) {
 			live.patchSet(ei, si, { weightKg: null });
@@ -254,10 +189,6 @@
 		selectedExerciseIndex = nextFocusAfterSetComplete(next, ei, si);
 	}
 
-	function onUncomplete(ei: number, si: number) {
-		live.patchSet(ei, si, { completed: false });
-	}
-
 	async function onFinish() {
 		if (finishing) return;
 		if (!confirm(translate(lang, 'live.confirmFinish'))) return;
@@ -281,24 +212,6 @@
 		live.discard();
 		void goto('/workouts');
 	}
-
-	function onNextExercise() {
-		if (!session) return;
-		if (selectedExerciseIndex >= session.exercises.length - 1) return;
-		selectedExerciseIndex += 1;
-	}
-
-	let canGoNext = $derived(
-		session != null && selectedExerciseIndex < session.exercises.length - 1
-	);
-
-	let activeSetProgress = $derived.by(() => {
-		const ex = session?.exercises[selectedExerciseIndex];
-		if (!ex || ex.sets.length === 0) return null;
-		const openIdx = ex.sets.findIndex((s) => !s.completed);
-		if (openIdx < 0) return { current: ex.sets.length, total: ex.sets.length, allDone: true };
-		return { current: openIdx + 1, total: ex.sets.length, allDone: false };
-	});
 </script>
 
 {#snippet liveHeaderActions()}
@@ -306,9 +219,7 @@
 {/snippet}
 
 <svelte:head>
-	<title
-		>{session ? session.planName : translate(lang, 'live.title')} — Repdraft</title
-	>
+	<title>{session ? session.planName : translate(lang, 'live.title')} — Repdraft</title>
 </svelte:head>
 
 {#if loading}
@@ -395,256 +306,55 @@
 		{/if}
 
 		<div class="live-workspace">
-			<nav class="live-nav" aria-label={translate(lang, 'live.title')}>
-				<ul class="live-nav-list">
-					{#each session.exercises as ex, ei (ex.exerciseId + '-nav-' + ei)}
-						{@const role = roleFor(ei)}
-						<li
-							class="live-nav-li"
-							class:is-group={role !== 'solo'}
-							class:is-group-first={role === 'first'}
-							class:is-group-middle={role === 'middle'}
-							class:is-group-last={role === 'last'}
-						>
-							{#if role === 'first'}
-								<p class="live-nav-group-badge">{translate(lang, 'builder.supersetBadge')}</p>
-							{/if}
-							<button
-								type="button"
-								class="live-nav-item"
-								data-active={ei === selectedExerciseIndex}
-								data-done={exerciseDone(ei)}
-								onclick={() => (selectedExerciseIndex = ei)}
-							>
-								<span class="live-nav-title">{titleFor(ex.exerciseId)}</span>
-								<span class="live-nav-meta">
-									{#if role === 'solo'}
-										{ex.sets.length} × {ex.targetReps}
-									{:else}
-										{ex.targetReps} {translate(lang, 'builder.reps').toLowerCase()}
-									{/if}
-								</span>
-								{#if exerciseDone(ei)}
-									<span class="live-nav-check" aria-hidden="true">
-										<LucideIcon icon={Check} size={ICON_SMALL} />
-									</span>
-								{/if}
-							</button>
-						</li>
-					{/each}
-				</ul>
-			</nav>
+			<LiveExerciseNav
+				{session}
+				{selectedExerciseIndex}
+				{names}
+				{lang}
+				onSelect={(i) => (selectedExerciseIndex = i)}
+			/>
 
 			<div class="live-panel-wrap">
 				{#each session.exercises as ex, ei (ex.exerciseId + '-' + ei)}
 					{#if ei === selectedExerciseIndex}
-						<div class="live-panel" class:live-panel--superset={selectedInGroup}>
-							{#if selectedInGroup && selectedGroupPos}
-								<p class="live-superset-badge">
-									{translate(lang, 'live.supersetOf', selectedGroupPos)}
-								</p>
-								{#if nextInSupersetName}
-									<p class="live-superset-next">
-										{translate(lang, 'live.nextInSuperset', { name: nextInSupersetName })}
-									</p>
-								{/if}
-							{/if}
-							{#if activeSetProgress}
-								<p class="live-exercise-step">
-									{translate(lang, 'live.setProgress', {
-										current: activeSetProgress.current,
-										total: activeSetProgress.total
-									})}
-								</p>
-							{/if}
-							<p class="live-exercise-step hidden lg:block">
-								{translate(lang, 'live.progress', {
-									done: ei + 1,
-									total: session.exercises.length
-								})}
-							</p>
-							<h2 class="live-panel-title">{titleFor(ex.exerciseId)}</h2>
-							{#if metaFor(ex.exerciseId)}
-								<p class="live-panel-meta">{metaFor(ex.exerciseId)}</p>
-							{/if}
-							{#if formatLast(ex.exerciseId)}
-								<p class="live-last">
-									{translate(lang, 'live.last')}:
-									<span class="font-medium text-[var(--color-ink)]">{formatLast(ex.exerciseId)}</span>
-								</p>
-							{/if}
-
-							<div class="live-set-head" aria-hidden="true">
-								<span>#</span>
-								<span>{translate(lang, 'live.weight')}</span>
-								<span>{translate(lang, 'live.reps')}</span>
-								<span class="live-set-head-done">✓</span>
-							</div>
-
-							<ul class="live-set-list">
-								{#each ex.sets as set, si (si)}
-									<li class="live-set-row" class:is-done={set.completed}>
-										<span class="live-set-index">{si + 1}</span>
-										<input
-											class="field live-set-weight tabular-nums"
-											type="text"
-											inputmode="decimal"
-											autocomplete="off"
-											aria-label={`${translate(lang, 'live.weight')} ${si + 1}`}
-											value={set.weightKg ?? ''}
-											oninput={(e) => onWeight(ei, si, e.currentTarget.value)}
-										/>
-										<input
-											class="field live-set-reps tabular-nums"
-											type="text"
-											inputmode="numeric"
-											autocomplete="off"
-											aria-label={`${translate(lang, 'live.reps')} ${si + 1}`}
-											value={set.reps ?? ''}
-											oninput={(e) => onReps(ei, si, e.currentTarget.value)}
-										/>
-										{#if set.completed}
-											<button
-												type="button"
-												class="btn-ghost live-set-done-btn live-set-done-btn--done"
-												aria-label={translate(lang, 'live.undoDone')}
-												title={translate(lang, 'live.undoDone')}
-												onclick={() => onUncomplete(ei, si)}
-											>
-												<LucideIcon icon={Check} size={ICON_BUTTON} />
-												<span class="sr-only">{translate(lang, 'live.undoDone')}</span>
-											</button>
-										{:else}
-											<button
-												type="button"
-												class="btn-primary live-set-done-btn"
-												aria-label={translate(lang, 'live.done')}
-												title={translate(lang, 'live.done')}
-												onclick={() => onComplete(ei, si)}
-											>
-												<LucideIcon icon={Check} size={ICON_BUTTON} />
-												<span class="sr-only">{translate(lang, 'live.done')}</span>
-											</button>
-										{/if}
-									</li>
-								{/each}
-							</ul>
-
-							<button
-								type="button"
-								class="btn-ghost mt-3 inline-flex min-h-11 items-center gap-1.5 text-sm"
-								onclick={() => live.addSet(ei)}
-							>
-								<LucideIcon icon={Plus} size={ICON_SMALL} />
-								{translate(lang, 'live.addSet')}
-							</button>
-						</div>
+						<LiveSetPanel
+							{session}
+							exerciseIndex={ei}
+							exercise={ex}
+							{names}
+							{lang}
+							{selectedInGroup}
+							{selectedGroupPos}
+							{nextInSupersetName}
+							{activeSetProgress}
+							onWeight={(si, v) => onWeight(ei, si, v)}
+							onReps={(si, v) => onReps(ei, si, v)}
+							onComplete={(si) => onComplete(ei, si)}
+							onUncomplete={(si) => live.patchSet(ei, si, { completed: false })}
+						/>
 					{/if}
 				{/each}
 
-				<footer class="live-desktop-actions">
-					{#if canGoNext}
-						<button
-							type="button"
-							class="btn-primary inline-flex min-h-11 items-center gap-2"
-							disabled={finishing}
-							onclick={onNextExercise}
-						>
-							{translate(lang, 'live.nextExercise')}
-							<LucideIcon icon={ChevronRight} size={ICON_PRIMARY} />
-						</button>
-						<button
-							type="button"
-							class="btn-secondary inline-flex min-h-11 items-center gap-2"
-							disabled={finishing}
-							aria-busy={finishing}
-							onclick={() => void onFinish()}
-						>
-							{#if finishing}
-								<Spinner size="sm" block={false} />
-								{translate(lang, 'auth.wait')}
-							{:else}
-								<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
-								{translate(lang, 'live.finish')}
-							{/if}
-						</button>
-					{:else}
-						<button
-							type="button"
-							class="btn-primary inline-flex min-h-11 items-center gap-2"
-							disabled={finishing}
-							aria-busy={finishing}
-							onclick={() => void onFinish()}
-						>
-							{#if finishing}
-								<Spinner size="sm" block={false} />
-								{translate(lang, 'auth.wait')}
-							{:else}
-								<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
-								{translate(lang, 'live.finish')}
-							{/if}
-						</button>
-					{/if}
-					<button
-						type="button"
-						class="btn-ghost is-danger"
-						disabled={finishing}
-						onclick={onDiscard}
-					>
-						{translate(lang, 'live.discard')}
-					</button>
-				</footer>
+				<LiveSessionActions
+					{lang}
+					{finishing}
+					{canGoNext}
+					layout="desktop"
+					onNext={() => (selectedExerciseIndex += 1)}
+					onFinish={() => void onFinish()}
+					onDiscard={onDiscard}
+				/>
 			</div>
 		</div>
 
-		<div class="live-sticky-actions sticky-actions lg:hidden">
-			<div class="sticky-actions__inner">
-				{#if canGoNext}
-					<button type="button" class="btn-primary btn-block min-h-12 gap-2" disabled={finishing} onclick={onNextExercise}>
-						{translate(lang, 'live.nextExercise')}
-						<LucideIcon icon={ChevronRight} size={ICON_PRIMARY} />
-					</button>
-					<button
-						type="button"
-						class="btn-secondary btn-block min-h-11 gap-2"
-						disabled={finishing}
-						aria-busy={finishing}
-						onclick={() => void onFinish()}
-					>
-						{#if finishing}
-							<Spinner size="sm" block={false} />
-							{translate(lang, 'auth.wait')}
-						{:else}
-							<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
-							{translate(lang, 'live.finish')}
-						{/if}
-					</button>
-				{:else}
-					<button
-						type="button"
-						class="btn-primary btn-block min-h-12 gap-2"
-						disabled={finishing}
-						aria-busy={finishing}
-						onclick={() => void onFinish()}
-					>
-						{#if finishing}
-							<Spinner size="sm" block={false} />
-							{translate(lang, 'auth.wait')}
-						{:else}
-							<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
-							{translate(lang, 'live.finish')}
-						{/if}
-					</button>
-				{/if}
-				<button
-					type="button"
-					class="btn-link mx-auto !text-[var(--color-muted)]"
-					disabled={finishing}
-					onclick={onDiscard}
-				>
-					{translate(lang, 'live.discard')}
-				</button>
-			</div>
-		</div>
+		<LiveSessionActions
+			{lang}
+			{finishing}
+			{canGoNext}
+			layout="mobile"
+			onNext={() => (selectedExerciseIndex += 1)}
+			onFinish={() => void onFinish()}
+			onDiscard={onDiscard}
+		/>
 	</section>
 {/if}

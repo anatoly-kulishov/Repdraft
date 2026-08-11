@@ -117,6 +117,19 @@ export function groupBounds(
 	return { start, end, groupId };
 }
 
+export type GroupMemberRole = 'solo' | 'first' | 'middle' | 'last';
+
+export function groupMemberRole(
+	exercises: { groupId?: string | null }[],
+	index: number
+): GroupMemberRole {
+	const bounds = groupBounds(exercises, index);
+	if (!bounds || bounds.start === bounds.end) return 'solo';
+	if (index === bounds.start) return 'first';
+	if (index === bounds.end) return 'last';
+	return 'middle';
+}
+
 /**
  * Move a single exercise, or the whole contiguous group when the item is grouped.
  * Destination is clamped so a group stays intact.

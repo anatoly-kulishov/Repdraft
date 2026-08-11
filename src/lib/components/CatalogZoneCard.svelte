@@ -19,12 +19,6 @@
 </script>
 
 <a {href} class="zone-card">
-	<div class="zone-card__body">
-		<h2 class="zone-card__title">{label}</h2>
-		{#if count > 0}
-			<p class="zone-card__meta">{translate(lang, 'catalog.zoneCount', { n: count })}</p>
-		{/if}
-	</div>
 	{#if coverImage}
 		<div class="zone-card__media-wrap" aria-hidden="true">
 			<img
@@ -33,9 +27,16 @@
 				alt=""
 				width="180"
 				height="180"
+				sizes="(max-width: 767px) 100px, (min-width: 1280px) 116px, 108px"
 				loading="lazy"
 				decoding="async"
 			/>
 		</div>
 	{/if}
+	<div class="zone-card__body">
+		<h2 class="zone-card__title">{label}</h2>
+		{#if count > 0}
+			<p class="zone-card__meta">{translate(lang, 'catalog.zoneCount', { n: count })}</p>
+		{/if}
+	</div>
 </a>

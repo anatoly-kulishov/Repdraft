@@ -7,7 +7,7 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
-	import { groupBounds, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
+	import { groupMemberRole, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -54,16 +54,6 @@
 	function onStart() {
 		if (!plan) return;
 		void goto(`/live/${plan.id}`);
-	}
-
-	function roleFor(index: number): 'solo' | 'first' | 'middle' | 'last' {
-		if (!plan) return 'solo';
-		const bounds = groupBounds(plan.exercises, index);
-		if (!bounds) return 'solo';
-		if (bounds.start === bounds.end) return 'solo';
-		if (index === bounds.start) return 'first';
-		if (index === bounds.end) return 'last';
-		return 'middle';
 	}
 </script>
 
@@ -123,7 +113,7 @@
 		<ul class="workout-preview-list">
 			{#each plan.exercises as item, index (item.exerciseId + '-' + index)}
 				{@const meta = indexById.get(item.exerciseId) ?? null}
-				{@const role = roleFor(index)}
+				{@const role = groupMemberRole(plan.exercises, index)}
 				<li
 					class="workout-preview-item"
 					class:is-group={role !== 'solo'}

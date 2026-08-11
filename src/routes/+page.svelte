@@ -14,6 +14,7 @@
 	import { planTargetSummary } from '$lib/domain/workout';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
 	import { userDisplayName } from '$lib/domain/authFlow';
+	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { live } from '$lib/stores/live';
@@ -104,22 +105,6 @@
 			]);
 		})();
 	});
-
-	function whenLabel(iso: string): string {
-		const d = new Date(iso);
-		const now = new Date();
-		const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-		if (diffDays === 0) return translate(lang, 'home.today');
-		if (diffDays === 1) return translate(lang, 'home.yesterday');
-		return translate(lang, 'home.daysAgo', { n: diffDays });
-	}
-
-	function formatDurationMin(ms: number | null): string | null {
-		if (ms == null) return null;
-		const min = Math.round(ms / 60_000);
-		if (min <= 0) return null;
-		return String(min);
-	}
 
 	function onResume() {
 		if (!active) return;
@@ -306,8 +291,8 @@
 											<span class="entity-row__title">{session.planName}</span>
 											<span class="entity-row__meta">
 												{translate(lang, 'home.recentMeta', {
-													when: whenLabel(session.finishedAt ?? session.startedAt),
-													min: formatDurationMin(sessionDurationMs(session)) ?? '—',
+													when: formatRelativeDay(session.finishedAt ?? session.startedAt, lang),
+													min: formatDurationMinutes(sessionDurationMs(session)) ?? '—',
 													sets: completedSetCount(session)
 												})}
 											</span>

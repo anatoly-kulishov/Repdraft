@@ -5,13 +5,11 @@ import {
 	sanitizePersonalRecord
 } from '$lib/domain/records';
 import type { PersonalRecord } from '$lib/domain/types';
-import { withTimeout } from '$lib/domain/withTimeout';
-import { isCloudMode } from '$lib/storage/dataAccess';
 import { localRecordRepository } from '$lib/storage/localRecordRepository';
 import { supabaseRecordRepository } from '$lib/storage/supabaseRecordRepository';
+import { mirrorCloudWrite, refreshLocalCloudList } from '$lib/stores/cloudLocal';
+import { isCloudMode } from '$lib/storage/dataAccess';
 import { get, writable } from 'svelte/store';
-
-const CLOUD_MS = 4000;
 
 function createRecordsStore() {
 	const store = writable<PersonalRecord[]>([]);
@@ -30,18 +28,18 @@ function createRecordsStore() {
 
 		inflight = (async () => {
 			try {
-				const local = await localRecordRepository.list();
-				store.set(local);
-				ready.set(true);
-
-				if (wantCloud && isCloudMode()) {
-					try {
-						const cloud = await withTimeout(supabaseRecordRepository.list(), CLOUD_MS);
-						store.set(mergePersonalRecords(local, cloud));
-					} catch (err) {
-						console.warn('records cloud refresh failed', err);
+				const merged = await refreshLocalCloudList({
+					localList: () => localRecordRepository.list(),
+					cloudList: () => supabaseRecordRepository.list(),
+					merge: mergePersonalRecords,
+					wantCloud,
+					label: 'records',
+					onLocal: (local) => {
+						store.set(local);
+						ready.set(true);
 					}
-				}
+				});
+				store.set(merged);
 			} catch (err) {
 				console.error('records.refresh failed', err);
 				store.set([]);
@@ -68,32 +66,20 @@ function createRecordsStore() {
 			});
 			if (!sanitized.ok) return false;
 			const next = sanitized.record;
-			await localRecordRepository.save(next);
-			let cloudOk = !isCloudMode();
-			if (isCloudMode()) {
-				try {
-					await withTimeout(supabaseRecordRepository.save(next), CLOUD_MS);
-					cloudOk = true;
-				} catch (err) {
-					console.warn('records.save cloud failed', err);
-					cloudOk = false;
-				}
-			}
+			const cloudOk = await mirrorCloudWrite({
+				localWrite: () => localRecordRepository.save(next),
+				cloudWrite: () => supabaseRecordRepository.save(next),
+				label: 'records.save'
+			});
 			await refresh({ cloud: cloudOk && isCloudMode() });
 			return true;
 		},
 		async remove(exerciseId: string) {
-			await localRecordRepository.remove(exerciseId);
-			let cloudOk = !isCloudMode();
-			if (isCloudMode()) {
-				try {
-					await withTimeout(supabaseRecordRepository.remove(exerciseId), CLOUD_MS);
-					cloudOk = true;
-				} catch (err) {
-					console.warn('records.remove cloud failed', err);
-					cloudOk = false;
-				}
-			}
+			const cloudOk = await mirrorCloudWrite({
+				localWrite: () => localRecordRepository.remove(exerciseId),
+				cloudWrite: () => supabaseRecordRepository.remove(exerciseId),
+				label: 'records.remove'
+			});
 			await refresh({ cloud: cloudOk && isCloudMode() });
 		},
 		empty(exerciseId: string): PersonalRecord {

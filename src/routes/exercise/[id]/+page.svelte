@@ -1,6 +1,11 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import {
+		catalogEquipmentPath,
+		catalogTargetPath,
+		catalogZonePath
+	} from '$lib/domain/catalogLinks';
+	import {
 		labelBodyPart,
 		labelEquipment,
 		labelTarget
@@ -181,7 +186,14 @@
 		<div class="flex min-w-0 max-w-full flex-col gap-4 md:gap-6">
 			<div class="flex min-w-0 items-start justify-between gap-3">
 				<div class="min-w-0">
-					<p class="text-sm text-[var(--color-muted)]">{labelBodyPart(exercise.body_part, lang)}</p>
+					<p class="text-sm">
+						<a
+							class="exercise-facet-link exercise-facet-link--muted"
+							href={catalogZonePath(exercise.body_part)}
+						>
+							{labelBodyPart(exercise.body_part, lang)}
+						</a>
+					</p>
 					<h1 class="page-title hidden lg:block">{title}</h1>
 				</div>
 				<button
@@ -199,17 +211,36 @@
 			<dl class="panel grid min-w-0 gap-3 !p-3 text-sm sm:grid-cols-2">
 				<div class="min-w-0">
 					<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.equipment')}</dt>
-					<dd class="font-medium break-words">{labelEquipment(exercise.equipment, lang)}</dd>
+					<dd class="font-medium break-words">
+						<a
+							class="exercise-facet-link"
+							href={catalogEquipmentPath(exercise.body_part, exercise.equipment)}
+						>
+							{labelEquipment(exercise.equipment, lang)}
+						</a>
+					</dd>
 				</div>
 				<div class="min-w-0">
 					<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.target')}</dt>
-					<dd class="font-medium break-words">{labelTarget(exercise.target, lang)}</dd>
+					<dd class="font-medium break-words">
+						<a
+							class="exercise-facet-link"
+							href={catalogTargetPath(exercise.target, exercise.body_part)}
+						>
+							{labelTarget(exercise.target, lang)}
+						</a>
+					</dd>
 				</div>
 				<div class="min-w-0 sm:col-span-2">
 					<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.secondary')}</dt>
 					<dd class="font-medium break-words">
 						{#if exercise.secondary_muscles.length}
-							{exercise.secondary_muscles.map((m) => labelTarget(m, lang)).join(', ')}
+							{#each exercise.secondary_muscles as muscle, i (muscle)}
+								{#if i > 0}<span class="text-[var(--color-muted)]">, </span>{/if}
+								<a class="exercise-facet-link" href={catalogTargetPath(muscle)}>
+									{labelTarget(muscle, lang)}
+								</a>
+							{/each}
 						{:else}
 							{translate(lang, 'exercise.dash')}
 						{/if}

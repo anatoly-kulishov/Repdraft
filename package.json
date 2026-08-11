@@ -1,7 +1,7 @@
 {
 	"name": "repdraft",
 	"private": true,
-	"version": "0.7.3",
+	"version": "0.7.4",
 	"description": "Каталог упражнений и конструктор тренировок",
 	"type": "module",
 	"scripts": {
@@ -13,7 +13,6 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"check:domain": "node ./scripts/run-domain-selfchecks.mjs",
-		"check:insights": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/insights.selfcheck.ts",
 		"check:filters": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/filters.selfcheck.ts",
 		"check:workout": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/workout.selfcheck.ts",
 		"check:session": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/session.selfcheck.ts",

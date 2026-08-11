@@ -139,7 +139,7 @@
 			aria-label={title}
 		>
 			<div
-				class="exercise-card-media relative aspect-square min-w-0 overflow-hidden bg-[var(--hero-card-media-bg)]"
+				class="exercise-card-media relative shrink-0 overflow-hidden bg-[var(--hero-card-media-bg)]"
 			>
 				<img
 					bind:this={imgEl}
@@ -147,7 +147,7 @@
 					alt=""
 					width="180"
 					height="180"
-					sizes="76px"
+					sizes="(max-width: 767px) 84px, 76px"
 					loading={priority ? 'eager' : 'lazy'}
 					fetchpriority={priority ? 'high' : 'auto'}
 					decoding="async"
@@ -159,16 +159,17 @@
 				<span class="exercise-card-list-title line-clamp-2 font-semibold leading-snug text-[var(--color-ink)]">
 					{title}
 				</span>
-				<span class="exercise-card-list-target truncate">
-					{labelTarget(exercise.target, lang)}
+				<span
+					class="exercise-card-list-subline truncate"
+					title={recordChips.length ? `${labelTarget(exercise.target, lang)} · ${recordTitle}` : labelTarget(exercise.target, lang)}
+				>
+					<span class="exercise-card-list-target">{labelTarget(exercise.target, lang)}</span>
+					{#if recordChips.length > 0}
+						<span class="exercise-card-list-records" aria-label={recordTitle}>
+							· {recordChips.join(' · ')}
+						</span>
+					{/if}
 				</span>
-				{#if recordChips.length > 0}
-					<span class="exercise-card-chip-row" title={recordTitle}>
-						{#each recordChips as chip (chip)}
-							<span class="exercise-card-record-chip">{chip}</span>
-						{/each}
-					</span>
-				{/if}
 			</span>
 		</a>
 		{@render listActions()}

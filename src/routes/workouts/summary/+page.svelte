@@ -11,9 +11,10 @@
 		sessionDurationMs
 	} from '$lib/domain/session';
 	import type { WorkoutSession } from '$lib/domain/types';
+	import { formatDurationMs } from '$lib/i18n/format';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { localSessionRepository } from '$lib/storage/localSessionRepository';
+	import { live } from '$lib/stores/live';
 	import { CircleCheck } from '@lucide/svelte';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
@@ -31,22 +32,13 @@
 				loading = false;
 				return;
 			}
-			const found = await localSessionRepository.get(id);
-			if (!found?.finishedAt) missing = true;
+			const found = await live.getFinishedSession(id);
+			if (!found) missing = true;
 			else session = found;
 			loading = false;
 		})();
 	});
 
-	function formatDuration(ms: number | null): string {
-		if (ms == null) return '—';
-		const totalSec = Math.max(0, Math.floor(ms / 1000));
-		const h = Math.floor(totalSec / 3600);
-		const m = Math.floor((totalSec % 3600) / 60);
-		const s = totalSec % 60;
-		if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-		return `${m}:${String(s).padStart(2, '0')}`;
-	}
 </script>
 
 <svelte:head>
@@ -79,7 +71,7 @@
 		<dl class="summary-stats mt-8 grid grid-cols-3 gap-3">
 			<div class="stat-card">
 				<dt class="stat-card-label">{translate(lang, 'summary.duration')}</dt>
-				<dd class="stat-card-value">{formatDuration(sessionDurationMs(session))}</dd>
+				<dd class="stat-card-value">{formatDurationMs(sessionDurationMs(session), { extended: true })}</dd>
 			</div>
 			<div class="stat-card">
 				<dt class="stat-card-label">{translate(lang, 'summary.exercises')}</dt>
