@@ -557,6 +557,36 @@ select {
 	padding: 1rem 1.25rem;
 }
 
+.empty-state--centered {
+	border-style: solid;
+	border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
+	padding: 2.5rem 1.25rem;
+}
+
+.empty-state__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 4.25rem;
+	height: 4.25rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-muted));
+	color: var(--color-accent);
+}
+
+.empty-state--centered .empty-state__title {
+	max-width: 18rem;
+}
+
+.empty-state--centered .empty-state__desc {
+	max-width: 22rem;
+}
+
+.empty-state__action {
+	min-width: min(100%, 16rem);
+	justify-content: center;
+}
+
 .list-row {
 	display: flex;
 	flex-direction: column;
@@ -1406,6 +1436,19 @@ html[data-theme='light'] .exercise-card-bookmark.is-active {
 	line-height: 1.3;
 }
 
+.exercise-card-list-subline {
+	display: block;
+	min-width: 0;
+	font-size: 0.8125rem;
+	line-height: 1.3;
+	color: var(--color-muted);
+}
+
+.exercise-card-list-records {
+	color: var(--color-accent);
+	font-weight: 650;
+}
+
 .exercise-card-add--inline {
 	position: static;
 	width: 2.75rem;
@@ -1436,6 +1479,25 @@ html[data-theme='light'] .exercise-card-bookmark.is-active {
 
 .exercise-detail-bookmark.is-active :global(svg) {
 	stroke: currentColor;
+}
+
+.exercise-facet-link {
+	font-weight: 600;
+	color: var(--color-accent);
+	text-decoration: none;
+}
+
+.exercise-facet-link:hover {
+	text-decoration: underline;
+}
+
+.exercise-facet-link--muted {
+	color: var(--color-muted);
+	font-weight: 500;
+}
+
+.exercise-facet-link--muted:hover {
+	color: var(--color-accent);
 }
 
 /* Mobile: bookmark in ScreenHeader. Tablet/desktop: inline by title (header hidden ≥768px). */
@@ -1923,6 +1985,7 @@ body:has(.sticky-actions) .draft-dock {
 	border-bottom-color: var(--color-border);
 }
 
+/* List row: [media start] · content · [actions end] — zone-card, exercise-card--list, records-preview, workout-preview */
 .hero-card,
 .zone-card {
 	position: relative;
@@ -1979,8 +2042,8 @@ body:has(.sticky-actions) .draft-dock {
 	overflow: hidden;
 	isolation: isolate;
 	position: relative;
-	border-left: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
-	border-radius: 0 var(--radius-panel) var(--radius-panel) 0;
+	border-right: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+	border-radius: var(--radius-panel) 0 0 var(--radius-panel);
 	background: color-mix(in srgb, var(--hero-card-media-bg) 88%, var(--color-surface));
 	padding: 0.25rem;
 }
@@ -3934,6 +3997,66 @@ html[data-theme='dark'] .zone-card__media {
 	gap: 0.75rem 1rem;
 }
 
+.workouts-page__tabs {
+	margin-bottom: 1rem;
+}
+
+.segment-control {
+	display: grid;
+	grid-template-columns: repeat(var(--segment-count, 2), minmax(0, 1fr));
+	gap: 0.15rem;
+	padding: 0.2rem;
+	border-radius: 10px;
+	background: var(--color-surface-muted);
+	border: none;
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border) 70%, transparent);
+}
+
+.segment-control__tab {
+	position: relative;
+	min-height: 2.35rem;
+	padding: 0.4rem 0.65rem;
+	border: none;
+	border-radius: 8px;
+	background: transparent;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	line-height: 1.2;
+	letter-spacing: -0.01em;
+	color: var(--color-muted);
+	cursor: pointer;
+	transition:
+		background 160ms ease,
+		color 160ms ease,
+		box-shadow 160ms ease,
+		font-weight 160ms ease;
+}
+
+.segment-control__tab:hover:not(.is-active) {
+	color: var(--color-ink);
+}
+
+.segment-control__tab:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+	outline-offset: 2px;
+}
+
+.segment-control__tab.is-active {
+	background: var(--color-surface-elevated);
+	color: var(--color-ink);
+	font-weight: 600;
+	box-shadow:
+		0 1px 2px rgb(18 20 26 / 0.08),
+		0 0 0 1px color-mix(in srgb, var(--color-border) 55%, transparent);
+}
+
+html[data-theme='dark'] .segment-control__tab.is-active {
+	background: var(--color-surface);
+	box-shadow:
+		0 1px 2px rgb(0 0 0 / 0.35),
+		0 0 0 1px color-mix(in srgb, var(--color-border) 80%, transparent);
+}
+
 .workouts-page__create {
 	display: none;
 	padding-inline: 1rem;
@@ -3971,6 +4094,11 @@ html[data-theme='dark'] .zone-card__media {
 
 .workouts-fab:active {
 	transform: scale(0.96);
+}
+
+.workouts-page__create--hidden,
+.workouts-fab--hidden {
+	display: none !important;
 }
 
 @media (max-width: 767px) {
@@ -4210,9 +4338,15 @@ html[data-theme='dark'] .zone-card__media {
 	align-items: stretch;
 	justify-content: stretch;
 	padding: 0;
+	flex: 0 0 auto;
+	width: auto;
+	min-width: 0;
+	max-width: none;
+	height: auto;
+	aspect-ratio: 1;
 	/* Gym Visual plates are white — dark letterboxing looked like a gap. */
 	background: #fff;
-	border-left-color: color-mix(in srgb, var(--color-border) 70%, transparent);
+	border-right: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
 }
 
 .catalog-hub-grid .zone-card__media {
@@ -4227,7 +4361,7 @@ html[data-theme='dark'] .zone-card__media {
 	mix-blend-mode: normal;
 }
 
-@media (max-width: 639px) {
+@media (max-width: 767px) {
 	.catalog-hub-grid {
 		display: flex;
 		flex-direction: column;
@@ -4244,7 +4378,8 @@ html[data-theme='dark'] .zone-card__media {
 		border-radius: 0;
 		box-shadow: none;
 		border-bottom: 1px solid var(--color-border);
-		min-height: 4.75rem;
+		min-height: 6.25rem;
+		align-items: stretch;
 	}
 
 	.catalog-hub-grid .zone-card:last-child {
@@ -4257,20 +4392,74 @@ html[data-theme='dark'] .zone-card__media {
 	}
 
 	.catalog-hub-grid .zone-card__media-wrap {
-		flex: 0 0 5rem;
-		flex-basis: 5rem;
-		width: 5rem;
-		min-width: 5rem;
-		max-width: 5rem;
+		flex: 0 0 6.25rem;
+		width: 6.25rem;
+		min-width: 6.25rem;
+		max-width: 6.25rem;
+		height: auto;
+		align-self: stretch;
+		aspect-ratio: auto;
 		border-radius: 0;
-		border-left-color: color-mix(in srgb, var(--color-border) 85%, transparent);
+		border-right-color: color-mix(in srgb, var(--color-border) 85%, transparent);
+	}
+
+	.catalog-hub-grid .zone-card__body {
+		display: flex;
+		flex: 1 1 auto;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		min-height: 0;
+		padding: 0.6rem 0.9rem 0.6rem 0.75rem;
+	}
+
+	.catalog-hub-grid .zone-card__title {
+		flex: 1 1 auto;
+		min-width: 0;
+		font-size: 1rem;
+		font-weight: 650;
+		line-height: 1.25;
+		letter-spacing: -0.015em;
+	}
+
+	.catalog-hub-grid .zone-card__meta {
+		flex: 0 0 auto;
+		font-size: 0.8125rem;
+		line-height: 1.3;
+		color: var(--color-muted);
+		text-align: right;
+		white-space: nowrap;
 	}
 }
 
-@media (min-width: 640px) {
+@media (min-width: 768px) {
 	.catalog-hub-grid {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 0.5rem;
+		gap: 0.65rem;
+	}
+
+	.catalog-hub-grid .zone-card {
+		min-height: 5.75rem;
+	}
+
+	.catalog-hub-grid .zone-card__media-wrap {
+		flex: 0 0 5.75rem;
+		width: 5.75rem;
+		min-width: 5.75rem;
+		max-width: 5.75rem;
+		aspect-ratio: auto;
+		height: auto;
+		align-self: stretch;
+		border-radius: var(--radius-panel) 0 0 var(--radius-panel);
+	}
+
+	.catalog-hub-grid .zone-card__body {
+		padding: 0.75rem 0.9rem;
+	}
+
+	.catalog-hub-grid .zone-card__title {
+		font-size: 1rem;
 	}
 }
 
@@ -4299,13 +4488,8 @@ html[data-theme='dark'] .zone-card__media {
 }
 
 @media (min-width: 768px) {
-	.catalog-hub-grid {
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 0.55rem;
-	}
-
 	.catalog-hub-grid .zone-card__media-wrap {
-		border-radius: 0 var(--radius-panel) var(--radius-panel) 0;
+		border-radius: var(--radius-panel) 0 0 var(--radius-panel);
 	}
 
 	.catalog-subroute-header {
@@ -4354,33 +4538,37 @@ html[data-theme='dark'] .zone-card__media {
 
 @media (min-width: 1024px) {
 	.catalog-hub-grid {
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 0.65rem;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.75rem;
 	}
 
 	.catalog-hub-grid .zone-card {
-		min-height: 5.25rem;
+		min-height: 6.75rem;
 	}
 
 	.catalog-hub-grid .zone-card__body {
-		min-height: 5rem;
-		padding: 0.75rem 0.85rem;
-		gap: 0.2rem;
+		min-height: 6.5rem;
+		padding: 0.9rem 1.05rem;
+		gap: 0.25rem;
 	}
 
 	.catalog-hub-grid .zone-card__title {
-	font-size: 1.0625rem;
-	overflow-wrap: normal;
-	word-break: normal;
-	white-space: nowrap;
-}
+		font-size: 1.125rem;
+		overflow-wrap: normal;
+		word-break: normal;
+		white-space: nowrap;
+	}
+
+	.catalog-hub-grid .zone-card__meta {
+		font-size: 0.875rem;
+	}
 
 	.catalog-hub-grid .zone-card__media-wrap {
-		flex: 0 0 5.25rem;
-		flex-basis: 5.25rem;
-		width: 5.25rem;
-		min-width: 5.25rem;
-		max-width: 5.25rem;
+		flex: 0 0 6.75rem;
+		flex-basis: 6.75rem;
+		width: 6.75rem;
+		min-width: 6.75rem;
+		max-width: 6.75rem;
 		height: auto;
 		min-height: 0;
 	}
@@ -4388,25 +4576,27 @@ html[data-theme='dark'] .zone-card__media {
 
 @media (min-width: 1280px) {
 	.catalog-hub-grid {
-		/* 5 cols: keep art modest so «Предплечья» stays on one line. */
-		grid-template-columns: repeat(5, minmax(0, 1fr));
-		gap: 0.55rem;
+		gap: 0.85rem;
+	}
+
+	.catalog-hub-grid .zone-card {
+		min-height: 7.25rem;
 	}
 
 	.catalog-hub-grid .zone-card__body {
-		padding: 0.65rem 0.7rem;
+		padding: 1rem 1.15rem;
 	}
 
 	.catalog-hub-grid .zone-card__title {
-		font-size: 0.9375rem;
+		font-size: 1.1875rem;
 	}
 
 	.catalog-hub-grid .zone-card__media-wrap {
-		flex: 0 0 4.25rem;
-		flex-basis: 4.25rem;
-		width: 4.25rem;
-		min-width: 4.25rem;
-		max-width: 4.25rem;
+		flex: 0 0 7.25rem;
+		flex-basis: 7.25rem;
+		width: 7.25rem;
+		min-width: 7.25rem;
+		max-width: 7.25rem;
 	}
 }
 
@@ -4493,6 +4683,12 @@ html[data-theme='dark'] .zone-card__media {
 }
 
 .catalog-exercise-list .exercise-card--list {
+	display: flex;
+	flex-direction: row;
+	align-items: stretch;
+	min-height: 5.25rem;
+	min-width: 0;
+	padding: 0;
 	border: none;
 	border-radius: 0;
 	box-shadow: none;
@@ -4503,8 +4699,113 @@ html[data-theme='dark'] .zone-card__media {
 	border-top: 1px solid var(--color-border);
 }
 
+.catalog-exercise-list .exercise-card-list-main {
+	display: flex;
+	flex: 1 1 0;
+	flex-direction: row;
+	align-items: stretch;
+	min-width: 0;
+	column-gap: 0;
+	overflow: hidden;
+}
+
+.catalog-exercise-list .exercise-card--list .exercise-card-media {
+	flex: 0 0 5.25rem;
+	width: 5.25rem;
+	min-width: 5.25rem;
+	max-width: 5.25rem;
+	height: auto;
+	align-self: stretch;
+	aspect-ratio: auto;
+	border-radius: 0;
+	background: #fff;
+	border-right: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+}
+
+.catalog-exercise-list .exercise-card--list .exercise-card-img {
+	object-fit: contain;
+	object-position: center;
+}
+
+.catalog-exercise-list .exercise-card--list .exercise-card-body {
+	flex: 1 1 0;
+	min-width: 0;
+	justify-content: center;
+	padding: 0.65rem 0.5rem 0.65rem 0.75rem;
+	gap: 0.2rem;
+	overflow: hidden;
+}
+
+.catalog-exercise-list .exercise-card--list .exercise-card-list-title {
+	font-size: 0.9375rem;
+	line-height: 1.28;
+	letter-spacing: -0.015em;
+}
+
+.catalog-exercise-list .exercise-card--list .exercise-card-list-subline {
+	display: block;
+	min-width: 0;
+	font-size: 0.8125rem;
+	line-height: 1.3;
+	color: var(--color-muted);
+}
+
+.catalog-exercise-list .exercise-card-list-records {
+	color: var(--color-accent);
+	font-weight: 650;
+}
+
+.catalog-exercise-list .exercise-card-actions--list {
+	flex: 0 0 auto;
+	align-self: center;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	gap: 0.125rem;
+	padding: 0 0.4rem 0 0.15rem;
+	border-left: none;
+}
+
+.catalog-exercise-list .exercise-card--list .exercise-card-add--inline,
+.catalog-exercise-list .exercise-card--list .exercise-card-bookmark--inline {
+	width: 2rem;
+	height: 2rem;
+	min-width: 2rem;
+	min-height: 2rem;
+	border-radius: 0.45rem;
+}
+
+.catalog-exercise-list .exercise-card-bookmark--inline {
+	background: transparent;
+	color: var(--color-muted);
+	box-shadow: none;
+}
+
+.catalog-exercise-list .exercise-card-bookmark--inline.is-active {
+	background: var(--color-accent-muted);
+	color: var(--color-accent);
+	box-shadow: none;
+}
+
+.catalog-exercise-list .exercise-card-add--inline {
+	background: var(--color-surface-muted);
+}
+
+.catalog-exercise-list .exercise-card-add--inline.is-in-draft {
+	background: var(--color-accent);
+	color: #fff;
+}
+
+.catalog-exercise-list .exercise-card-chevron {
+	display: none;
+}
+
 .catalog-exercise-list .exercise-card--list:active {
-	background: color-mix(in srgb, var(--color-surface-muted) 45%, transparent);
+	background: color-mix(in srgb, var(--color-surface-muted) 40%, var(--color-surface));
+}
+
+.catalog-exercise-list .exercise-card-list-main:active {
+	background: transparent;
 }
 
 .catalog-grid {
@@ -4641,36 +4942,6 @@ html[data-theme='dark'] .zone-card__media {
 	flex: 1 1 0;
 	min-width: 0;
 	max-width: 100%;
-}
-
-@media (max-width: 767px) {
-	.exercise-card--list {
-		min-height: 5rem;
-		padding: 0.5rem 0.45rem 0.5rem 0.45rem;
-	}
-
-	.exercise-card-list-main {
-		/* Source art is 180×180; 4.75rem ≈ 152px @2x — still sharp. */
-		grid-template-columns: 4.75rem minmax(0, 1fr);
-		column-gap: 0.65rem;
-		align-items: center;
-	}
-
-	.exercise-card--list .exercise-card-media {
-		width: 4.75rem;
-		height: 4.75rem;
-	}
-
-	.exercise-card--list .exercise-card-body {
-		align-self: stretch;
-		gap: 0.15rem;
-	}
-
-	.exercise-card--list .exercise-card-list-title {
-		font-size: 0.9375rem;
-		line-height: 1.25;
-		letter-spacing: -0.015em;
-	}
 }
 
 .auth-page__header {

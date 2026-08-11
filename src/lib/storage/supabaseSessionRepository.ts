@@ -1,6 +1,7 @@
 import type { SessionRepository } from '$lib/domain/repository';
 import type { SessionExercise, WorkoutSession } from '$lib/domain/types';
 import { getSupabase } from '$lib/supabase/client';
+import { requireUserId } from './supabaseAuth';
 
 type SessionRow = {
 	id: string;
@@ -38,14 +39,6 @@ export function isSessionsTableUnavailable(): boolean {
 
 function markTableMissing() {
 	tableMissing = true;
-}
-
-async function requireUserId(): Promise<string> {
-	const supabase = getSupabase();
-	if (!supabase) throw new Error('errors.cloudOff');
-	const { data, error } = await supabase.auth.getUser();
-	if (error || !data.user) throw new Error('errors.needAuth');
-	return data.user.id;
 }
 
 /**

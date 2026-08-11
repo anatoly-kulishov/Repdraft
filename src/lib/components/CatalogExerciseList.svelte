@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CatalogExerciseListSkeleton from '$lib/components/CatalogExerciseListSkeleton.svelte';
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
@@ -14,7 +15,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { browser } from '$app/environment';
 	import { get } from 'svelte/store';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 
 	let {
 		bodyParts,
@@ -24,6 +25,8 @@
 		indexError,
 		presetBodyPart = 'all',
 		initialQuery = '',
+		initialEquipment = '',
+		initialTarget = '',
 		listOnMobile = true,
 		gridOnDesktop = false,
 		returnAfterAdd = null as string | null,
@@ -36,6 +39,8 @@
 		indexError: string | null;
 		presetBodyPart?: string;
 		initialQuery?: string;
+		initialEquipment?: string;
+		initialTarget?: string;
 		listOnMobile?: boolean;
 		/** List on phone, grid from 768px (catalog all/zone). Picker keeps false. */
 		gridOnDesktop?: boolean;
@@ -56,9 +61,23 @@
 	function buildInitialFilters(): ExerciseFilters {
 		const bodyPart =
 			presetBodyPart !== 'all' && isBodyPart(presetBodyPart) ? presetBodyPart : saved.filters.bodyPart;
+		const equipment =
+			initialEquipment !== ''
+				? initialEquipment
+				: presetBodyPart !== 'all'
+					? 'all'
+					: saved.filters.equipment;
+		const target =
+			initialTarget !== ''
+				? initialTarget
+				: presetBodyPart !== 'all'
+					? 'all'
+					: saved.filters.target;
 		return {
 			...saved.filters,
 			bodyPart,
+			equipment,
+			target,
 			query: initialQueryForPreset()
 		};
 	}
@@ -72,7 +91,7 @@
 	let zoneLocked = $derived(presetBodyPart !== 'all' && isBodyPart(presetBodyPart));
 
 	let lang = $derived($resolvedLocale);
-	let catalog = $derived(indexReady && items.length > 0 ? items : []);
+	let catalog = $derived(indexReady ? items : []);
 	let equipmentOptions = $derived(availableEquipment(catalog, filters, lang));
 	let targetOptions = $derived(availableTargets(catalog, filters, lang));
 	let bookmarkSet = $derived(new Set($bookmarks));
@@ -142,13 +161,49 @@
 		visibleLimit = CATALOG_PAGE_SIZE;
 	});
 
+	/** Client navigations: apply URL facets without re-reading `filters` (avoids effect loop). */
 	$effect(() => {
+		const eq = initialEquipment;
+		const tg = initialTarget;
+		const q = initialQuery.trim();
+		const zone = presetBodyPart;
+		if (eq === '' && tg === '' && !q) return;
+
+		untrack(() => {
+			const patch: Partial<ExerciseFilters> = {};
+			if (zone !== 'all' && isBodyPart(zone)) patch.bodyPart = zone;
+			if (eq !== '') patch.equipment = eq;
+			if (tg !== '') patch.target = tg;
+			if (q) patch.query = q;
+
+			const current = filters;
+			const changed = (Object.keys(patch) as (keyof ExerciseFilters)[]).some(
+				(key) => current[key] !== patch[key]
+			);
+			if (changed) filters = { ...current, ...patch };
+		});
+	});
+
+	$effect(() => {
+		if (!indexReady || catalog.length === 0) return;
+		const pool = filterExercises(
+			catalog,
+			{
+				...filters,
+				bodyPart: zoneLocked && isBodyPart(presetBodyPart) ? presetBodyPart : filters.bodyPart,
+				equipment: 'all',
+				target: 'all'
+			},
+			lang
+		);
+		const validEquipment = new Set(pool.map((item) => item.equipment));
+		const validTargets = new Set(pool.map((item) => item.target));
 		const nextEq =
-			filters.equipment !== 'all' && !equipmentOptions.includes(filters.equipment)
+			filters.equipment !== 'all' && !validEquipment.has(filters.equipment)
 				? 'all'
 				: filters.equipment;
 		const nextTarget =
-			filters.target !== 'all' && !targetOptions.includes(filters.target) ? 'all' : filters.target;
+			filters.target !== 'all' && !validTargets.has(filters.target) ? 'all' : filters.target;
 		if (nextEq === filters.equipment && nextTarget === filters.target) return;
 		filters = { ...filters, equipment: nextEq, target: nextTarget };
 	});
@@ -173,7 +228,8 @@
 				indexReady = true;
 			})
 			.catch(() => {
-				/* empty list + error state */
+				items = [];
+				indexReady = true;
 			});
 		void records.refresh();
 		return () => stopViewportSync?.();
@@ -225,7 +281,7 @@
 		description={indexError ? translate(lang, indexError) : ''}
 	/>
 {:else if !indexReady || (savedOnly && !bookmarksLoaded)}
-	<p class="mb-4 text-sm text-[var(--color-muted)]">{translate(lang, 'catalog.loading')}</p>
+	<CatalogExerciseListSkeleton label={translate(lang, 'catalog.loading')} />
 {:else}
 	<p class="catalog-list-count mb-3 text-sm text-[var(--color-muted)]" aria-live="polite">
 		{translate(lang, 'catalog.countShown', {

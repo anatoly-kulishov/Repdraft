@@ -108,6 +108,9 @@
 				{translate(lang, 'catalog.equipment')}
 				<select class="field mt-1 w-full" bind:value={filters.equipment}>
 					<option value="all">{translate(lang, 'catalog.all')}</option>
+					{#if filters.equipment !== 'all' && !equipment.includes(filters.equipment)}
+						<option value={filters.equipment}>{labelEquipment(filters.equipment, lang)}</option>
+					{/if}
 					{#each equipment as item (item)}
 						<option value={item}>{labelEquipment(item, lang)}</option>
 					{/each}
@@ -117,6 +120,9 @@
 				{translate(lang, 'catalog.muscle')}
 				<select class="field mt-1 w-full" bind:value={filters.target}>
 					<option value="all">{translate(lang, 'catalog.all')}</option>
+					{#if filters.target !== 'all' && !targets.includes(filters.target)}
+						<option value={filters.target}>{labelTarget(filters.target, lang)}</option>
+					{/if}
 					{#each targets as item (item)}
 						<option value={item}>{labelTarget(item, lang)}</option>
 					{/each}

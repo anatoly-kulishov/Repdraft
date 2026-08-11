@@ -6,6 +6,7 @@ import { translate } from '$lib/i18n/messages';
 import { getWorkoutRepo, isCloudMode } from '$lib/storage/dataAccess';
 import { localWorkoutRepository } from '$lib/storage/localWorkoutRepository';
 import { supabaseWorkoutRepository } from '$lib/storage/supabaseWorkoutRepository';
+import { mirrorCloudWrite, refreshLocalCloudList } from '$lib/stores/cloudLocal';
 import { writable, get } from 'svelte/store';
 import { draft } from './draft';
 import { resolvedLocale } from './locale';
@@ -29,20 +30,18 @@ function createPlansStore() {
 
 		inflight = (async () => {
 			try {
-				const local = await localWorkoutRepository.list();
-				// Always paint local first so a just-saved plan is visible on /workouts.
-				store.set(local);
-				ready.set(true);
-
-				if (wantCloud && isCloudMode()) {
-					try {
-						const cloud = await withTimeout(supabaseWorkoutRepository.list(), CLOUD_MS);
-						store.set(mergeWorkoutPlans(local, cloud));
-					} catch (err) {
-						console.warn('plans cloud refresh failed', err);
-						// Keep local — never wipe a successful on-device save.
+				const merged = await refreshLocalCloudList({
+					localList: () => localWorkoutRepository.list(),
+					cloudList: () => supabaseWorkoutRepository.list(),
+					merge: mergeWorkoutPlans,
+					wantCloud,
+					label: 'plans',
+					onLocal: (local) => {
+						store.set(local);
+						ready.set(true);
 					}
-				}
+				});
+				store.set(merged);
 			} catch (err) {
 				console.error('plans.refresh failed', err);
 				store.set([]);
@@ -62,34 +61,20 @@ function createPlansStore() {
 		async saveCurrent(): Promise<WorkoutPlan> {
 			const lang = get(resolvedLocale);
 			const current = withSavedName(get(draft), translate(lang, 'builder.untitled'));
-			// Local-first: flaky cloud must not block a durable save on device.
-			await localWorkoutRepository.save(current);
-			let cloudOk = !isCloudMode();
-			if (isCloudMode()) {
-				try {
-					await withTimeout(supabaseWorkoutRepository.save(current), CLOUD_MS);
-					cloudOk = true;
-				} catch (err) {
-					console.warn('plans.saveCurrent cloud failed', err);
-					cloudOk = false;
-				}
-			}
-			// If cloud failed, skip cloud list (it may be empty/stale and used to wipe the UI).
+			const cloudOk = await mirrorCloudWrite({
+				localWrite: () => localWorkoutRepository.save(current),
+				cloudWrite: () => supabaseWorkoutRepository.save(current),
+				label: 'plans.saveCurrent'
+			});
 			await refresh({ cloud: cloudOk && isCloudMode() });
 			return current;
 		},
 		async removePlan(id: string) {
-			await localWorkoutRepository.remove(id);
-			let cloudOk = !isCloudMode();
-			if (isCloudMode()) {
-				try {
-					await withTimeout(supabaseWorkoutRepository.remove(id), CLOUD_MS);
-					cloudOk = true;
-				} catch (err) {
-					console.warn('plans.removePlan cloud failed', err);
-					cloudOk = false;
-				}
-			}
+			const cloudOk = await mirrorCloudWrite({
+				localWrite: () => localWorkoutRepository.remove(id),
+				cloudWrite: () => supabaseWorkoutRepository.remove(id),
+				label: 'plans.removePlan'
+			});
 			await refresh({ cloud: cloudOk && isCloudMode() });
 		},
 		async duplicate(id: string): Promise<{ plan: WorkoutPlan; synced: boolean } | null> {
@@ -99,20 +84,13 @@ function createPlansStore() {
 				(await getWorkoutRepo().get(id));
 			if (!plan) return null;
 			const copy = duplicatePlan(plan, translate(get(resolvedLocale), 'workouts.copySuffix'));
-			// Always durable locally first - cloud can fail on LAN / flaky network.
-			await localWorkoutRepository.save(copy);
-			let synced = !isCloudMode();
-			if (isCloudMode()) {
-				try {
-					await withTimeout(supabaseWorkoutRepository.save(copy), CLOUD_MS);
-					synced = true;
-				} catch (err) {
-					console.warn('plans.duplicate cloud failed', err);
-					synced = false;
-				}
-			}
+			const synced = await mirrorCloudWrite({
+				localWrite: () => localWorkoutRepository.save(copy),
+				cloudWrite: () => supabaseWorkoutRepository.save(copy),
+				label: 'plans.duplicate'
+			});
 			await refresh({ cloud: synced && isCloudMode() });
-			return { plan: copy, synced };
+			return { plan: copy, synced: synced || !isCloudMode() };
 		},
 		async getPlan(id: string): Promise<WorkoutPlan | null> {
 			const cached = get(store).find((p) => p.id === id);

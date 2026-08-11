@@ -8,11 +8,11 @@
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
 	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
+	import { formatDurationMs, formatLongDate } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { live } from '$lib/stores/live';
 	import { toasts } from '$lib/stores/toasts';
-	import { localSessionRepository } from '$lib/storage/localSessionRepository';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
@@ -37,34 +37,14 @@
 				loading = false;
 				return;
 			}
-			const found = await localSessionRepository.get(id);
-			if (!found?.finishedAt) missing = true;
+			const found = await live.getFinishedSession(id);
+			if (!found) missing = true;
 			else session = found;
 			const index = await loadExerciseIndex();
 			indexById = new Map(index.map((ex) => [ex.id, ex]));
 			loading = false;
 		})();
 	});
-
-	function formatWhen(iso: string): string {
-		try {
-			return new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-US', {
-				day: 'numeric',
-				month: 'short',
-				year: 'numeric'
-			}).format(new Date(iso));
-		} catch {
-			return iso;
-		}
-	}
-
-	function formatDuration(ms: number | null): string {
-		if (ms == null) return '—';
-		const totalSec = Math.max(0, Math.floor(ms / 1000));
-		const m = Math.floor(totalSec / 60);
-		const s = totalSec % 60;
-		return `${m}:${String(s).padStart(2, '0')}`;
-	}
 
 	async function onDeleteSession() {
 		if (!session) return;
@@ -130,7 +110,7 @@
 			<h1 class="page-title">{session.planName}</h1>
 		</div>
 		<p class="page-lead mt-1 lg:mt-0">
-			{formatWhen(session.finishedAt ?? session.startedAt)} · {formatDuration(
+			{formatLongDate(session.finishedAt ?? session.startedAt, lang)} · {formatDurationMs(
 				sessionDurationMs(session)
 			)} · {completedSetCount(session)} sets
 		</p>

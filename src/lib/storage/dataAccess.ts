@@ -1,4 +1,4 @@
-import type { RecordRepository, SessionRepository, WorkoutRepository } from '$lib/domain/repository';
+import type { WorkoutRepository } from '$lib/domain/repository';
 import type { WorkoutSession } from '$lib/domain/types';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
@@ -30,17 +30,6 @@ export function isCloudMode(): boolean {
 
 export function getWorkoutRepo(): WorkoutRepository {
 	return cloudMode ? supabaseWorkoutRepository : localWorkoutRepository;
-}
-
-export function getRecordRepo(): RecordRepository {
-	return cloudMode ? supabaseRecordRepository : localRecordRepository;
-}
-
-export function getSessionRepo(): SessionRepository {
-	if (cloudMode && sessionsCloudOk && !isSessionsTableUnavailable()) {
-		return supabaseSessionRepository;
-	}
-	return localSessionRepository;
 }
 
 function markSessionsCloudDown(err: unknown) {
