@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { labelBodyPart } from '$lib/domain/labels.ru';
+	import { labelCatalogZone } from '$lib/domain/catalogLinks';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 
@@ -14,7 +14,7 @@
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
-	let label = $derived(labelBodyPart(bodyPart, lang));
+	let label = $derived(labelCatalogZone(bodyPart, lang));
 	let href = $derived(`/catalog/${encodeURIComponent(bodyPart)}`);
 </script>
 

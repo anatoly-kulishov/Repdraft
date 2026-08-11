@@ -3,7 +3,8 @@
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
-	import { availableEquipment, availableTargets, filterExercises, isBodyPart, isFilterConflict } from '$lib/domain/filters';
+	import { availableEquipment, availableTargets, filterExercises, isFilterConflict } from '$lib/domain/filters';
+	import { catalogZoneBodyParts, isCatalogZone } from '$lib/domain/catalogLinks';
 	import { personalRecordChips } from '$lib/domain/records';
 	import type { ExerciseFilters, ExerciseIndexItem } from '$lib/domain/types';
 	import { exerciseName } from '$lib/domain/exerciseName';
@@ -30,7 +31,8 @@
 		listOnMobile = true,
 		gridOnDesktop = false,
 		returnAfterAdd = null as string | null,
-		savedOnly = false
+		savedOnly = false,
+		hideTargetFilter = false
 	}: {
 		bodyParts: string[];
 		equipment: string[];
@@ -46,6 +48,8 @@
 		gridOnDesktop?: boolean;
 		returnAfterAdd?: string | null;
 		savedOnly?: boolean;
+		/** Zone chips replace the muscle facet in FilterBar. */
+		hideTargetFilter?: boolean;
 	} = $props();
 
 	const saved = browser
@@ -59,8 +63,10 @@
 	}
 
 	function buildInitialFilters(): ExerciseFilters {
-		const bodyPart =
-			presetBodyPart !== 'all' && isBodyPart(presetBodyPart) ? presetBodyPart : saved.filters.bodyPart;
+		const bodyPart: ExerciseFilters['bodyPart'] =
+			presetBodyPart !== 'all' && isCatalogZone(presetBodyPart)
+				? (presetBodyPart as ExerciseFilters['bodyPart'])
+				: saved.filters.bodyPart;
 		const equipment =
 			initialEquipment !== ''
 				? initialEquipment
@@ -88,14 +94,28 @@
 	let filters = $state<ExerciseFilters>(buildInitialFilters());
 	let filtersHydrated = $state(false);
 
-	let zoneLocked = $derived(presetBodyPart !== 'all' && isBodyPart(presetBodyPart));
+	let zoneLocked = $derived(presetBodyPart !== 'all' && isCatalogZone(presetBodyPart));
+	let zoneBodyParts = $derived(
+		zoneLocked ? catalogZoneBodyParts(presetBodyPart) : []
+	);
 
 	let lang = $derived($resolvedLocale);
 	let catalog = $derived(indexReady ? items : []);
 	let equipmentOptions = $derived(availableEquipment(catalog, filters, lang));
 	let targetOptions = $derived(availableTargets(catalog, filters, lang));
 	let bookmarkSet = $derived(new Set($bookmarks));
-	let filtered = $derived(filterExercises(catalog, filters, lang));
+	let filtered = $derived.by(() => {
+		const queryFilters =
+			zoneLocked && zoneBodyParts.length > 1
+				? { ...filters, bodyPart: 'all' as ExerciseFilters['bodyPart'] }
+				: filters;
+		const base = filterExercises(catalog, queryFilters, lang);
+		if (zoneLocked && zoneBodyParts.length > 1) {
+			const allowed = new Set(zoneBodyParts);
+			return base.filter((item) => allowed.has(item.body_part));
+		}
+		return base;
+	});
 	let visible = $derived(
 		savedOnly ? filtered.filter((ex) => bookmarkSet.has(ex.id)) : filtered
 	);
@@ -128,9 +148,9 @@
 	);
 
 	$effect(() => {
-		if (!zoneLocked || !isBodyPart(presetBodyPart)) return;
+		if (!zoneLocked || !isCatalogZone(presetBodyPart)) return;
 		if (filters.bodyPart === presetBodyPart) return;
-		filters = { ...filters, bodyPart: presetBodyPart };
+		filters = { ...filters, bodyPart: presetBodyPart as ExerciseFilters['bodyPart'] };
 	});
 
 	$effect(() => {
@@ -171,7 +191,9 @@
 
 		untrack(() => {
 			const patch: Partial<ExerciseFilters> = {};
-			if (zone !== 'all' && isBodyPart(zone)) patch.bodyPart = zone;
+			if (zone !== 'all' && isCatalogZone(zone)) {
+				patch.bodyPart = zone as ExerciseFilters['bodyPart'];
+			}
 			if (eq !== '') patch.equipment = eq;
 			if (tg !== '') patch.target = tg;
 			if (q) patch.query = q;
@@ -190,14 +212,21 @@
 			catalog,
 			{
 				...filters,
-				bodyPart: zoneLocked && isBodyPart(presetBodyPart) ? presetBodyPart : filters.bodyPart,
+				bodyPart:
+					zoneLocked && isCatalogZone(presetBodyPart)
+						? (presetBodyPart as ExerciseFilters['bodyPart'])
+						: filters.bodyPart,
 				equipment: 'all',
 				target: 'all'
 			},
 			lang
 		);
-		const validEquipment = new Set(pool.map((item) => item.equipment));
-		const validTargets = new Set(pool.map((item) => item.target));
+		const zoneItems =
+			zoneLocked && zoneBodyParts.length > 1
+				? pool.filter((item) => zoneBodyParts.includes(item.body_part))
+				: pool;
+		const validEquipment = new Set(zoneItems.map((item) => item.equipment));
+		const validTargets = new Set(zoneItems.map((item) => item.target));
 		const nextEq =
 			filters.equipment !== 'all' && !validEquipment.has(filters.equipment)
 				? 'all'
@@ -271,7 +300,7 @@
 
 <div class="catalog-list-layout">
 	<div class="catalog-list-layout__filters">
-		<FilterBar bind:filters {bodyParts} equipment={equipmentOptions} targets={targetOptions} lockBodyPart={zoneLocked} />
+		<FilterBar bind:filters {bodyParts} equipment={equipmentOptions} targets={targetOptions} lockBodyPart={zoneLocked} {hideTargetFilter} />
 	</div>
 
 	<div class="catalog-list-layout__main">

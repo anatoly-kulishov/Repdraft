@@ -199,7 +199,7 @@
 			if (done?.id) {
 				await goto(`/workouts/summary?id=${encodeURIComponent(done.id)}`);
 			} else {
-				await goto('/workouts');
+				await goto('/workouts?tab=history');
 			}
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'live.saveFail'), 'error');

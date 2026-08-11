@@ -1,9 +1,10 @@
 <script lang="ts">
 	import CatalogExerciseList from '$lib/components/CatalogExerciseList.svelte';
+	import CatalogTargetChips from '$lib/components/CatalogTargetChips.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import { labelBodyPart } from '$lib/domain/labels.ru';
+	import { labelCatalogZone } from '$lib/domain/catalogLinks';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { ArrowLeft } from '@lucide/svelte';
@@ -14,9 +15,10 @@
 	let title = $derived(
 		data.bodyPart === 'all'
 			? translate(lang, 'catalog.allExercises')
-			: labelBodyPart(data.bodyPart, lang)
+			: labelCatalogZone(data.bodyPart, lang)
 	);
 	let presetBodyPart = $derived(data.bodyPart === 'all' ? 'all' : data.bodyPart);
+	let showTargetChips = $derived(data.bodyPart !== 'all' && data.targetChips.length >= 2);
 </script>
 
 <svelte:head>
@@ -37,6 +39,17 @@
 			</div>
 		</div>
 
+		{#if showTargetChips}
+			<CatalogTargetChips
+				bodyPart={data.bodyPart}
+				chips={data.targetChips}
+				zoneCount={data.zoneCount}
+				activeTarget={data.initialTarget}
+				equipment={data.initialEquipment}
+				query={data.initialQuery}
+			/>
+		{/if}
+
 		{#key `${data.bodyPart}|${data.initialEquipment}|${data.initialTarget}|${data.initialQuery}`}
 			<CatalogExerciseList
 				bodyParts={data.bodyParts}
@@ -48,6 +61,7 @@
 				initialQuery={data.initialQuery}
 				initialEquipment={data.initialEquipment}
 				initialTarget={data.initialTarget}
+				hideTargetFilter={showTargetChips}
 				gridOnDesktop
 			/>
 		{/key}

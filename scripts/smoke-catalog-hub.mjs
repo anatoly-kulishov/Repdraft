@@ -55,7 +55,8 @@ assert(
 	'catalog zone must not reset query from empty initialQuery on every keystroke'
 );
 assert(
-	catalogListSrc.includes('filters = { ...filters, bodyPart: presetBodyPart }'),
+	catalogListSrc.includes('bodyPart: presetBodyPart as ExerciseFilters') ||
+		catalogListSrc.includes('bodyPart: presetBodyPart'),
 	'catalog zone must still lock bodyPart for the route'
 );
 
@@ -130,7 +131,7 @@ assert(
 {
 	const { status, text } = await get('/exercises');
 	assert(status === 200, `GET /exercises → ${status}`);
-	assertIncludes(
+		assertIncludes(
 		text,
 		[
 			'catalog-hub',
@@ -139,10 +140,12 @@ assert(
 			'href="/catalog/all"',
 			'href="/exercises/saved"',
 			'href="/records"',
-			'zone-card'
+			'zone-card',
+			'href="/catalog/legs"'
 		],
 		'catalog hub'
 	);
+	assert(!text.includes('href="/catalog/lower%20legs"'), 'hub must merge lower legs into legs');
 }
 
 // ——— Zone list: ScreenHeader + desktop crumb + filters ———
@@ -160,6 +163,34 @@ assert(
 		],
 		'catalog zone'
 	);
+}
+
+// ——— Zone target chips (multi-target body part) ———
+{
+	const { status, text } = await get('/catalog/upper%20legs');
+	assert(status === 200, `GET /catalog/upper legs → ${status}`);
+	assertIncludes(
+		text,
+		['catalog-target-chips', 'catalog-target-chip', 'target=glutes', 'target=quads'],
+		'upper legs target chips'
+	);
+}
+
+{
+	const { status, text } = await get('/catalog/legs');
+	assert(status === 200, `GET /catalog/legs → ${status}`);
+	assertIncludes(
+		text,
+		['catalog-target-chips', 'target=calves', 'target=glutes'],
+		'merged legs target chips'
+	);
+}
+
+// ——— Articles hub ———
+{
+	const { status, text } = await get('/articles');
+	assert(status === 200, `GET /articles → ${status}`);
+	assertIncludes(text, ['articles-hub', 'article-card', 'warmup-before-press'], 'articles hub');
 }
 
 // ——— Saved bookmarks subroute ———
