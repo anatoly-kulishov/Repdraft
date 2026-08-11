@@ -38,25 +38,3 @@
 		returnAfterAdd="/builder"
 	/>
 </div>
-
-<style>
-	@media (min-width: 1024px) {
-		:global(.builder-pick-page .catalog-exercise-list) {
-			display: flex;
-			flex-direction: column;
-			gap: 0.5rem;
-		}
-
-		:global(.builder-pick-page .exercise-card--list) {
-			flex-direction: row;
-			align-items: center;
-		}
-
-		:global(.builder-pick-page .exercise-card--list .exercise-card-media) {
-			width: 3.25rem;
-			height: 3.25rem;
-			flex-shrink: 0;
-			aspect-ratio: 1;
-		}
-	}
-</style>

@@ -83,6 +83,6 @@
 			</div>
 		</dl>
 
-		<a class="btn-primary btn-block mt-8 min-h-12" href="/">{translate(lang, 'summary.done')}</a>
+		<a class="btn-primary btn-block mt-8 min-h-12" href="/workouts?tab=history">{translate(lang, 'summary.done')}</a>
 	</section>
 {/if}

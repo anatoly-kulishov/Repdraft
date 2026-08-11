@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CatalogZoneCard from '$lib/components/CatalogZoneCard.svelte';
+	import ArticleTeaserList from '$lib/components/ArticleTeaserList.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
@@ -74,7 +75,7 @@
 		/>
 	{:else}
 		<div class="catalog-hub-grid">
-			{#each data.bodyParts as bodyPart (bodyPart)}
+			{#each data.hubZones as bodyPart (bodyPart)}
 				<CatalogZoneCard
 					{bodyPart}
 					count={data.zoneCounts[bodyPart] ?? 0}
@@ -82,5 +83,11 @@
 				/>
 			{/each}
 		</div>
+
+		<ArticleTeaserList
+			articles={data.articles}
+			title={translate(lang, 'articles.teaserTitle')}
+			limit={3}
+		/>
 	{/if}
 </section>

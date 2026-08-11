@@ -172,7 +172,7 @@
 					height="180"
 					fetchpriority="high"
 					decoding="async"
-					class="pointer-events-none block h-[180px] w-[180px] max-w-full object-contain"
+					class="pointer-events-none block h-[180px] w-[180px] max-w-full object-contain max-md:h-[220px] max-md:w-[min(100%,220px)]"
 				/>
 				<span
 					class="pointer-events-none absolute bottom-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-surface)_88%,transparent)] text-[var(--color-muted)] shadow-sm backdrop-blur-[2px]"
@@ -277,6 +277,22 @@
 			</section>
 
 			<PersonalRecordPanel exerciseId={exercise.id} />
+
+			{#if data.relatedArticles.length > 0}
+				<section class="exercise-related-articles">
+					<h2 class="section-title mb-2">{translate(lang, 'articles.relatedTitle')}</h2>
+					<ul class="exercise-related-articles__list">
+						{#each data.relatedArticles as article (article.slug)}
+							<li>
+								<a class="exercise-related-articles__link" href={`/articles/${article.slug}`}>
+									<span class="exercise-related-articles__title">{article.title}</span>
+									<span class="exercise-related-articles__excerpt">{article.excerpt}</span>
+								</a>
+							</li>
+						{/each}
+					</ul>
+				</section>
+			{/if}
 
 			<TechniqueClipsPanel exerciseId={exercise.id} />
 		</div>

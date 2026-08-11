@@ -1,15 +1,15 @@
 import { error } from '@sveltejs/kit';
-import { isBodyPart } from '$lib/domain/filters';
-import { loadCatalogIndex } from '$lib/data/loadCatalogPage';
+import { isCatalogZone } from '$lib/domain/catalogLinks';
+import { loadCatalogZone } from '$lib/data/loadCatalogPage';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ params, fetch, url }) => {
 	const bodyPart = decodeURIComponent(params.bodyPart);
-	if (bodyPart !== 'all' && !isBodyPart(bodyPart)) {
+	if (bodyPart !== 'all' && !isCatalogZone(bodyPart)) {
 		error(404, 'Not found');
 	}
 
-	const meta = await loadCatalogIndex(fetch);
+	const meta = await loadCatalogZone(fetch, bodyPart);
 	return {
 		bodyPart,
 		initialQuery: url.searchParams.get('q') ?? '',
