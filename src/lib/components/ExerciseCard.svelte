@@ -160,13 +160,20 @@
 					{title}
 				</span>
 				<span
-					class="exercise-card-list-subline truncate"
+					class="exercise-card-list-subline"
 					title={recordChips.length ? `${labelTarget(exercise.target, lang)} · ${recordTitle}` : labelTarget(exercise.target, lang)}
 				>
 					<span class="exercise-card-list-target">{labelTarget(exercise.target, lang)}</span>
 					{#if recordChips.length > 0}
 						<span class="exercise-card-list-records" aria-label={recordTitle}>
-							· {recordChips.join(' · ')}
+							{#each recordChips as chip, i (chip)}
+								<span
+									class="exercise-card-list-record"
+									class:is-note={i > 0 || recordChips.length === 1}
+								>
+									· {chip}
+								</span>
+							{/each}
 						</span>
 					{/if}
 				</span>

@@ -8,7 +8,7 @@
 	import { records, recordsReady } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { goto } from '$app/navigation';
-	import { Bookmark, List, Trophy } from '@lucide/svelte';
+	import { BookOpen, Bookmark, List, Trophy } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let { data } = $props();
@@ -49,21 +49,27 @@
 			<SearchInput bind:value={searchQuery} placeholder={translate(lang, 'catalog.search')} />
 		</form>
 		<nav class="catalog-hub-toolbar__nav" aria-label={translate(lang, 'catalog.hubNavAria')}>
-			<a class="catalog-hub-nav-link catalog-hub-nav-link--primary" href="/catalog/all">
-				<LucideIcon icon={List} size={ICON_BUTTON} />
-				<span>{translate(lang, 'catalog.browseAll')}</span>
-			</a>
-			<a class="catalog-hub-nav-link" href="/exercises/saved">
-				<LucideIcon icon={Bookmark} size={ICON_BUTTON} />
-				<span>{translate(lang, 'bookmarks.title')}</span>
-			</a>
-			<a class="catalog-hub-nav-link" href="/records">
-				<LucideIcon icon={Trophy} size={ICON_BUTTON} />
-				<span>{translate(lang, 'records.title')}</span>
-				{#if $recordsReady && recordCount > 0}
-					<span class="catalog-hub-nav-count">{recordCount}</span>
-				{/if}
-			</a>
+			<div class="catalog-hub-toolbar__shortcuts">
+				<a class="catalog-hub-nav-link catalog-hub-nav-link--primary" href="/catalog/all">
+					<LucideIcon icon={List} size={ICON_BUTTON} />
+					<span class="catalog-hub-nav-link__label">{translate(lang, 'catalog.browseAll')}</span>
+				</a>
+				<a class="catalog-hub-nav-link catalog-hub-nav-link--shortcut" href="/exercises/saved">
+					<LucideIcon icon={Bookmark} size={ICON_BUTTON} />
+					<span class="catalog-hub-nav-link__label">{translate(lang, 'bookmarks.title')}</span>
+				</a>
+				<a class="catalog-hub-nav-link catalog-hub-nav-link--shortcut" href="/articles">
+					<LucideIcon icon={BookOpen} size={ICON_BUTTON} />
+					<span class="catalog-hub-nav-link__label">{translate(lang, 'articles.title')}</span>
+				</a>
+				<a class="catalog-hub-nav-link catalog-hub-nav-link--shortcut" href="/records">
+					<LucideIcon icon={Trophy} size={ICON_BUTTON} />
+					<span class="catalog-hub-nav-link__label">{translate(lang, 'records.title')}</span>
+					{#if $recordsReady && recordCount > 0}
+						<span class="catalog-hub-nav-count">{recordCount}</span>
+					{/if}
+				</a>
+			</div>
 		</nav>
 	</div>
 
@@ -74,7 +80,7 @@
 		/>
 	{:else}
 		<div class="catalog-hub-grid">
-			{#each data.bodyParts as bodyPart (bodyPart)}
+			{#each data.hubZones as bodyPart (bodyPart)}
 				<CatalogZoneCard
 					{bodyPart}
 					count={data.zoneCounts[bodyPart] ?? 0}

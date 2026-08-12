@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ArticleTeaserList from '$lib/components/ArticleTeaserList.svelte';
 	import HomePageSkeleton from '$lib/components/HomePageSkeleton.svelte';
 	import HomeRecordsWidget from '$lib/components/HomeRecordsWidget.svelte';
 	import HomeStatsStack from '$lib/components/HomeDesktopAside.svelte';
@@ -24,6 +25,8 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { ChevronRight, LogIn, Play, Plus } from '@lucide/svelte';
+
+	let { data } = $props();
 
 	let lang = $derived($resolvedLocale);
 	let active = $derived($live.session);
@@ -249,6 +252,14 @@
 			</div>
 
 			<div class="home-dashboard-mid">
+				{#if isFirstTimeHome && data.articles.length > 0}
+					<ArticleTeaserList
+						articles={data.articles}
+						title={translate(lang, 'articles.homeTeaserTitle')}
+						limit={3}
+					/>
+				{/if}
+
 				{#if hasPlans}
 					<div class="home-section home-dashboard-plans">
 						<div class="home-section-head">

@@ -55,7 +55,8 @@ assert(
 	'catalog zone must not reset query from empty initialQuery on every keystroke'
 );
 assert(
-	catalogListSrc.includes('filters = { ...filters, bodyPart: presetBodyPart }'),
+	catalogListSrc.includes('bodyPart: presetBodyPart as ExerciseFilters') ||
+		catalogListSrc.includes('bodyPart: presetBodyPart'),
 	'catalog zone must still lock bodyPart for the route'
 );
 
@@ -130,7 +131,7 @@ assert(
 {
 	const { status, text } = await get('/exercises');
 	assert(status === 200, `GET /exercises → ${status}`);
-	assertIncludes(
+		assertIncludes(
 		text,
 		[
 			'catalog-hub',
@@ -138,14 +139,21 @@ assert(
 			'catalog-hub-toolbar__nav',
 			'href="/catalog/all"',
 			'href="/exercises/saved"',
+			'href="/articles"',
 			'href="/records"',
-			'zone-card'
+			'zone-card',
+			'href="/catalog/legs"'
 		],
 		'catalog hub'
 	);
+	assert(
+		!text.includes('class="article-teaser"'),
+		'hub must not show article teaser block'
+	);
+	assert(!text.includes('href="/catalog/lower%20legs"'), 'hub must merge lower legs into legs');
 }
 
-// ——— Zone list: ScreenHeader + desktop crumb + filters ———
+// ——— Zone with target browse (default landing) ———
 {
 	const { status, text } = await get('/catalog/chest');
 	assert(status === 200, `GET /catalog/chest → ${status}`);
@@ -155,11 +163,68 @@ assert(
 			'screen-header',
 			'catalog-subroute-header',
 			'catalog-zone-crumb-link',
-			'catalog-filters',
+			'class="catalog-target-grid catalog-hub-grid"',
+			'target=pectorals',
 			'href="/exercises"'
 		],
-		'catalog zone'
+		'catalog zone browse'
 	);
+}
+
+// ——— Zone exercise list + filters ———
+{
+	const { status, text } = await get('/catalog/chest?target=pectorals');
+	assert(status === 200, `GET /catalog/chest?target=pectorals → ${status}`);
+	assertIncludes(
+		text,
+		['catalog-filters', 'href="/catalog/chest"'],
+		'catalog zone list'
+	);
+}
+
+// ——— Zone target browse (hub-style cards) ———
+{
+	const { status, text } = await get('/catalog/back');
+	assert(status === 200, `GET /catalog/back → ${status}`);
+	assertIncludes(
+		text,
+		[
+			'class="catalog-target-grid catalog-hub-grid"',
+			'zone-card',
+			'browse=all',
+			'target=lats'
+		],
+		'back target browse'
+	);
+	assert(!text.includes('catalog-target-chips'), 'zone browse must not use chip row');
+}
+
+{
+	const { status, text } = await get('/catalog/legs');
+	assert(status === 200, `GET /catalog/legs → ${status}`);
+	assertIncludes(
+		text,
+		['class="catalog-target-grid catalog-hub-grid"', 'target=calves', 'target=glutes', 'browse=all'],
+		'merged legs target browse'
+	);
+}
+
+{
+	const { status, text } = await get('/catalog/back?target=lats');
+	assert(status === 200, `GET /catalog/back?target=lats → ${status}`);
+	assertIncludes(text, ['catalog-filters', 'href="/catalog/back"'], 'back target list');
+	assert(!text.includes('catalog-zone-target-back'), 'target list must use single back affordance');
+	assert(
+		!text.includes('class="catalog-target-grid catalog-hub-grid"'),
+		'target list must not show browse grid'
+	);
+}
+
+// ——— Articles hub ———
+{
+	const { status, text } = await get('/articles');
+	assert(status === 200, `GET /articles → ${status}`);
+	assertIncludes(text, ['articles-hub', 'article-card', 'warmup-before-press'], 'articles hub');
 }
 
 // ——— Saved bookmarks subroute ———

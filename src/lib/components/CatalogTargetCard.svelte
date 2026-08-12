@@ -1,21 +1,20 @@
 <script lang="ts">
-	import { labelCatalogZone } from '$lib/domain/catalogLinks';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 
 	let {
-		bodyPart,
+		label,
+		href,
 		count = 0,
 		coverImage = null as string | null
 	}: {
-		bodyPart: string;
+		label: string;
+		href: string;
 		count?: number;
 		coverImage?: string | null;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
-	let label = $derived(labelCatalogZone(bodyPart, lang));
-	let href = $derived(`/catalog/${encodeURIComponent(bodyPart)}`);
 </script>
 
 <a {href} class="zone-card">

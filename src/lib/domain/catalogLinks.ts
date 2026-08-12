@@ -1,17 +1,38 @@
 import { isBodyPart } from './filters';
+import { labelBodyPart } from './labels.ru';
+import type { AppLocale } from '$lib/i18n/locale';
 import type { BodyPart } from './types';
 
+/** Hub + catalog slug that spans multiple dataset body_part values. */
+export const VIRTUAL_CATALOG_ZONES: Record<string, readonly BodyPart[]> = {
+	legs: ['upper legs', 'lower legs']
+};
+
+export type CatalogZoneSlug = BodyPart | keyof typeof VIRTUAL_CATALOG_ZONES;
+
+const HUB_ZONE_ORDER: CatalogZoneSlug[] = [
+	'back',
+	'chest',
+	'legs',
+	'shoulders',
+	'upper arms',
+	'waist',
+	'lower arms',
+	'cardio',
+	'neck'
+];
+
 /** Primary catalog zone for a target muscle (by exercise count in index). */
-const TARGET_PRIMARY_ZONE: Record<string, BodyPart> = {
+const TARGET_PRIMARY_ZONE: Record<string, CatalogZoneSlug> = {
 	abs: 'waist',
-	quads: 'upper legs',
+	quads: 'legs',
 	lats: 'back',
-	calves: 'lower legs',
+	calves: 'legs',
 	pectorals: 'chest',
-	glutes: 'upper legs',
-	hamstrings: 'upper legs',
-	adductors: 'upper legs',
-	abductors: 'upper legs',
+	glutes: 'legs',
+	hamstrings: 'legs',
+	adductors: 'legs',
+	abductors: 'legs',
 	triceps: 'upper arms',
 	'cardiovascular system': 'cardio',
 	spine: 'back',
@@ -24,15 +45,41 @@ const TARGET_PRIMARY_ZONE: Record<string, BodyPart> = {
 	'levator scapulae': 'neck'
 };
 
+export function isCatalogZone(value: string): value is CatalogZoneSlug {
+	return isBodyPart(value) || value in VIRTUAL_CATALOG_ZONES;
+}
+
+export function catalogZoneBodyParts(slug: string): string[] {
+	if (slug in VIRTUAL_CATALOG_ZONES) return [...VIRTUAL_CATALOG_ZONES[slug]];
+	if (isBodyPart(slug)) return [slug];
+	return [];
+}
+
+export function labelCatalogZone(slug: string, locale: AppLocale = 'ru'): string {
+	if (slug === 'legs') return locale === 'ru' ? 'Ноги' : 'Legs';
+	return labelBodyPart(slug, locale);
+}
+
+/** Hub cards: merge upper/lower legs into one «Ноги» entry. */
+export function hubCatalogZones(bodyParts: string[]): CatalogZoneSlug[] {
+	const set = new Set(bodyParts);
+	const hasLegs = set.has('upper legs') || set.has('lower legs');
+	return HUB_ZONE_ORDER.filter((zone) => {
+		if (zone === 'legs') return hasLegs;
+		return set.has(zone);
+	});
+}
+
 export function catalogZonePath(
 	bodyPart: string,
-	params?: { equipment?: string; target?: string; q?: string }
+	params?: { equipment?: string; target?: string; q?: string; browse?: string }
 ): string {
 	const slug = encodeURIComponent(bodyPart);
 	const search = new URLSearchParams();
 	if (params?.q?.trim()) search.set('q', params.q.trim());
 	if (params?.equipment) search.set('equipment', params.equipment);
 	if (params?.target) search.set('target', params.target);
+	if (params?.browse) search.set('browse', params.browse);
 	const qs = search.toString();
 	return qs ? `/catalog/${slug}?${qs}` : `/catalog/${slug}`;
 }
@@ -43,6 +90,8 @@ export function catalogEquipmentPath(bodyPart: string, equipment: string): strin
 
 export function catalogTargetPath(target: string, bodyPartHint?: string): string {
 	const zone =
-		bodyPartHint && isBodyPart(bodyPartHint) ? bodyPartHint : TARGET_PRIMARY_ZONE[target];
+		bodyPartHint && isCatalogZone(bodyPartHint)
+			? bodyPartHint
+			: (TARGET_PRIMARY_ZONE[target] ?? null);
 	return zone ? catalogZonePath(zone, { target }) : catalogZonePath('all', { target });
 }
