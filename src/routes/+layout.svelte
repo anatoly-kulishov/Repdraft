@@ -32,9 +32,11 @@
 		if (pathname.startsWith('/live/')) return true;
 		if (pathname.startsWith('/builder')) return true;
 		if (pathname.startsWith('/exercise/')) return true;
+		if (pathname.startsWith('/articles')) return true;
 		if (pathname.startsWith('/auth')) return true;
 		if (pathname === '/settings') return true;
 		if (pathname === '/exercises/saved') return true;
+		if (pathname === '/records') return true;
 		if (pathname === '/workouts/summary') return true;
 		if (pathname.startsWith('/workouts/history/')) return true;
 		if (/^\/workouts\/[^/]+$/.test(pathname)) return true;
@@ -92,7 +94,9 @@
 				path === '/exercises' ||
 				path.startsWith('/exercises/') ||
 				path.startsWith('/catalog/') ||
-				path.startsWith('/exercise/')
+				path.startsWith('/exercise/') ||
+				path.startsWith('/articles') ||
+				path === '/records'
 			);
 		}
 		if (href === '/workouts') {

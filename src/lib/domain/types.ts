@@ -54,7 +54,7 @@ export type WorkoutPlan = {
 
 export type ExerciseFilters = {
 	query: string;
-	bodyPart: BodyPart | 'all';
+	bodyPart: BodyPart | 'all' | 'legs';
 	equipment: string | 'all';
 	target: string | 'all';
 };

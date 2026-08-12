@@ -177,7 +177,11 @@ export function filterExercises(
 	const filtered = items.filter((item) => {
 		if (filters.bodyPart !== 'all' && item.body_part !== filters.bodyPart) return false;
 		if (filters.equipment !== 'all' && item.equipment !== filters.equipment) return false;
-		if (filters.target !== 'all' && item.target !== filters.target) return false;
+		if (filters.target !== 'all') {
+			const primary = item.target === filters.target;
+			const secondary = item.secondary_muscles?.includes(filters.target) ?? false;
+			if (!primary && !secondary) return false;
+		}
 		if (!query) return true;
 		return scoreMatch(item, query, tokens, locale) >= 0;
 	});
@@ -217,6 +221,29 @@ export function availableEquipment(
 ): string[] {
 	const pool = filterExercises(items, { ...filters, equipment: 'all' }, locale);
 	return uniqueSorted(pool, 'equipment');
+}
+
+export type TargetChip = { target: string; count: number };
+
+/** Target muscles within a body-part zone, sorted by count desc then slug. */
+export function targetCountsForBodyPart(
+	items: ExerciseIndexItem[],
+	bodyPart: string
+): TargetChip[] {
+	return targetCountsForZone(items, [bodyPart]);
+}
+
+/** Target muscles across one or more body parts (virtual zones). */
+export function targetCountsForZone(items: ExerciseIndexItem[], bodyParts: string[]): TargetChip[] {
+	const allowed = new Set(bodyParts);
+	const counts = new Map<string, number>();
+	for (const item of items) {
+		if (!allowed.has(item.body_part)) continue;
+		counts.set(item.target, (counts.get(item.target) ?? 0) + 1);
+	}
+	return [...counts.entries()]
+		.map(([target, count]) => ({ target, count }))
+		.sort((a, b) => b.count - a.count || a.target.localeCompare(b.target, 'en'));
 }
 
 /**
@@ -300,6 +327,16 @@ export function runFiltersSelfCheck(): void {
 			muscle_group: 'glutes',
 			secondary_muscles: [],
 			image: 'x.jpg'
+		},
+		{
+			id: '4',
+			name: 'Calf raise',
+			body_part: 'lower legs',
+			equipment: 'body weight',
+			target: 'calves',
+			muscle_group: 'calves',
+			secondary_muscles: [],
+			image: 'x.jpg'
 		}
 	];
 
@@ -314,6 +351,16 @@ export function runFiltersSelfCheck(): void {
 	if (targets.includes('pectorals')) throw new Error('pectorals must not appear under upper legs');
 	if (!targets.includes('quads') || !targets.includes('glutes')) {
 		throw new Error(`expected quads/glutes, got ${targets.join(',')}`);
+	}
+
+	const upperLegChips = targetCountsForZone(catalog, ['upper legs']);
+	if (upperLegChips.length < 2) throw new Error('upper legs needs 2+ target chips');
+	if (!upperLegChips.some((c) => c.target === 'glutes' && c.count >= 1)) {
+		throw new Error('upper legs chips must include glutes');
+	}
+	const legsChips = targetCountsForZone(catalog, ['upper legs', 'lower legs']);
+	if (!legsChips.some((c) => c.target === 'calves')) {
+		throw new Error('legs zone chips must include calves');
 	}
 
 	const conflictFilters: ExerciseFilters = {
