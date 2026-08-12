@@ -30,7 +30,7 @@
 	</div>
 
 	<div class="article-page__hero panel" data-tone={tone}>
-		<h1 class="page-title article-page__title">{article.title}</h1>
+		<h1 class="page-title article-page__title hidden md:block">{article.title}</h1>
 		<p class="article-page__excerpt">{article.excerpt}</p>
 	</div>
 

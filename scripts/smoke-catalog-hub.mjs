@@ -139,16 +139,21 @@ assert(
 			'catalog-hub-toolbar__nav',
 			'href="/catalog/all"',
 			'href="/exercises/saved"',
+			'href="/articles"',
 			'href="/records"',
 			'zone-card',
 			'href="/catalog/legs"'
 		],
 		'catalog hub'
 	);
+	assert(
+		!text.includes('class="article-teaser"'),
+		'hub must not show article teaser block'
+	);
 	assert(!text.includes('href="/catalog/lower%20legs"'), 'hub must merge lower legs into legs');
 }
 
-// ——— Zone list: ScreenHeader + desktop crumb + filters ———
+// ——— Zone with target browse (default landing) ———
 {
 	const { status, text } = await get('/catalog/chest');
 	assert(status === 200, `GET /catalog/chest → ${status}`);
@@ -158,22 +163,40 @@ assert(
 			'screen-header',
 			'catalog-subroute-header',
 			'catalog-zone-crumb-link',
-			'catalog-filters',
+			'class="catalog-target-grid catalog-hub-grid"',
+			'target=pectorals',
 			'href="/exercises"'
 		],
-		'catalog zone'
+		'catalog zone browse'
 	);
 }
 
-// ——— Zone target chips (multi-target body part) ———
+// ——— Zone exercise list + filters ———
 {
-	const { status, text } = await get('/catalog/upper%20legs');
-	assert(status === 200, `GET /catalog/upper legs → ${status}`);
+	const { status, text } = await get('/catalog/chest?target=pectorals');
+	assert(status === 200, `GET /catalog/chest?target=pectorals → ${status}`);
 	assertIncludes(
 		text,
-		['catalog-target-chips', 'catalog-target-chip', 'target=glutes', 'target=quads'],
-		'upper legs target chips'
+		['catalog-filters', 'href="/catalog/chest"'],
+		'catalog zone list'
 	);
+}
+
+// ——— Zone target browse (hub-style cards) ———
+{
+	const { status, text } = await get('/catalog/back');
+	assert(status === 200, `GET /catalog/back → ${status}`);
+	assertIncludes(
+		text,
+		[
+			'class="catalog-target-grid catalog-hub-grid"',
+			'zone-card',
+			'browse=all',
+			'target=lats'
+		],
+		'back target browse'
+	);
+	assert(!text.includes('catalog-target-chips'), 'zone browse must not use chip row');
 }
 
 {
@@ -181,8 +204,19 @@ assert(
 	assert(status === 200, `GET /catalog/legs → ${status}`);
 	assertIncludes(
 		text,
-		['catalog-target-chips', 'target=calves', 'target=glutes'],
-		'merged legs target chips'
+		['class="catalog-target-grid catalog-hub-grid"', 'target=calves', 'target=glutes', 'browse=all'],
+		'merged legs target browse'
+	);
+}
+
+{
+	const { status, text } = await get('/catalog/back?target=lats');
+	assert(status === 200, `GET /catalog/back?target=lats → ${status}`);
+	assertIncludes(text, ['catalog-filters', 'href="/catalog/back"'], 'back target list');
+	assert(!text.includes('catalog-zone-target-back'), 'target list must use single back affordance');
+	assert(
+		!text.includes('class="catalog-target-grid catalog-hub-grid"'),
+		'target list must not show browse grid'
 	);
 }
 

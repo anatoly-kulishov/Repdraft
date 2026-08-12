@@ -20,6 +20,32 @@ export type CatalogHubPayload = CatalogIndexPayload & {
 	zoneCovers: Record<string, string>;
 };
 
+function pickCoverImage(list: ExerciseIndexItem[]): string {
+	if (!list.length) return '';
+	const sorted = [...list].sort((a, b) => a.id.localeCompare(b.id));
+	const pick = sorted[Math.floor(sorted.length / 2)] ?? sorted[0];
+	return pick?.image ?? '';
+}
+
+function targetCoversForZone(
+	exercises: ExerciseIndexItem[],
+	bodyParts: string[]
+): Record<string, string> {
+	const inZone = exercises.filter((ex) => bodyParts.includes(ex.body_part));
+	const byTarget = new Map<string, ExerciseIndexItem[]>();
+	for (const ex of inZone) {
+		const bucket = byTarget.get(ex.target) ?? [];
+		bucket.push(ex);
+		byTarget.set(ex.target, bucket);
+	}
+	const covers: Record<string, string> = {};
+	for (const [target, list] of byTarget) {
+		const image = pickCoverImage(list);
+		if (image) covers[target] = image;
+	}
+	return covers;
+}
+
 function catalogHubMeta(exercises: ExerciseIndexItem[]) {
 	const rawCounts: Record<string, number> = {};
 	const byPart = new Map<string, ExerciseIndexItem[]>();
@@ -31,9 +57,8 @@ function catalogHubMeta(exercises: ExerciseIndexItem[]) {
 	}
 	const rawCovers: Record<string, string> = {};
 	for (const [part, list] of byPart) {
-		list.sort((a, b) => a.id.localeCompare(b.id));
-		const pick = list[Math.floor(list.length / 2)] ?? list[0];
-		if (pick) rawCovers[part] = pick.image;
+		const image = pickCoverImage(list);
+		if (image) rawCovers[part] = image;
 	}
 
 	const bodyParts = uniqueSorted(exercises, 'body_part');
@@ -70,6 +95,8 @@ const EMPTY_INDEX: CatalogIndexPayload = {
 export type CatalogZonePayload = CatalogIndexPayload & {
 	targetChips: TargetChip[];
 	zoneCount: number;
+	targetCovers: Record<string, string>;
+	zoneCover: string;
 };
 
 export async function loadCatalogZone(
@@ -77,19 +104,34 @@ export async function loadCatalogZone(
 	bodyPart: string
 ): Promise<CatalogZonePayload> {
 	const res = await fetchFn('/data/exercises.index.json');
-	if (!res.ok) return { ...EMPTY_INDEX, targetChips: [], zoneCount: 0 };
+	if (!res.ok) {
+		return { ...EMPTY_INDEX, targetChips: [], zoneCount: 0, targetCovers: {}, zoneCover: '' };
+	}
 	const exercises = (await res.json()) as ExerciseIndexItem[];
 	const meta = catalogIndexMeta(exercises);
 	const parts = catalogZoneBodyParts(bodyPart);
 	if (bodyPart !== 'all' && parts.length === 0) {
-		return { ...meta, targetChips: [], zoneCount: 0 };
+		return { ...meta, targetChips: [], zoneCount: 0, targetCovers: {}, zoneCover: '' };
 	}
 	if (bodyPart === 'all') {
-		return { ...meta, targetChips: [], zoneCount: meta.totalCount };
+		return {
+			...meta,
+			targetChips: [],
+			zoneCount: meta.totalCount,
+			targetCovers: {},
+			zoneCover: ''
+		};
 	}
+	const inZone = exercises.filter((ex) => parts.includes(ex.body_part));
 	const targetChips = targetCountsForZone(exercises, parts);
-	const zoneCount = exercises.filter((ex) => parts.includes(ex.body_part)).length;
-	return { ...meta, targetChips, zoneCount };
+	const zoneCount = inZone.length;
+	return {
+		...meta,
+		targetChips,
+		zoneCount,
+		targetCovers: targetCoversForZone(exercises, parts),
+		zoneCover: pickCoverImage(inZone)
+	};
 }
 
 export async function loadCatalogIndex(fetchFn: typeof fetch): Promise<CatalogIndexPayload> {
