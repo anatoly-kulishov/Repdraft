@@ -18,7 +18,7 @@
 </svelte:head>
 
 <div class="content-page catalog-saved-page">
-	<ScreenHeader class="lg:hidden" {title} backHref="/exercises" />
+	<ScreenHeader class="md:hidden" {title} backHref="/exercises" />
 
 	<div class="catalog-subroute-header">
 		<a class="catalog-zone-crumb-link" href="/exercises">

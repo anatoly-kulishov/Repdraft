@@ -15,6 +15,7 @@ export const load: PageLoad = async ({ params, fetch, url }) => {
 		initialQuery: url.searchParams.get('q') ?? '',
 		initialEquipment: url.searchParams.get('equipment') ?? '',
 		initialTarget: url.searchParams.get('target') ?? '',
+		initialBrowse: url.searchParams.get('browse') ?? '',
 		...meta
 	};
 };

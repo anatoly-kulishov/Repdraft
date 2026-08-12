@@ -72,13 +72,14 @@ export function hubCatalogZones(bodyParts: string[]): CatalogZoneSlug[] {
 
 export function catalogZonePath(
 	bodyPart: string,
-	params?: { equipment?: string; target?: string; q?: string }
+	params?: { equipment?: string; target?: string; q?: string; browse?: string }
 ): string {
 	const slug = encodeURIComponent(bodyPart);
 	const search = new URLSearchParams();
 	if (params?.q?.trim()) search.set('q', params.q.trim());
 	if (params?.equipment) search.set('equipment', params.equipment);
 	if (params?.target) search.set('target', params.target);
+	if (params?.browse) search.set('browse', params.browse);
 	const qs = search.toString();
 	return qs ? `/catalog/${slug}?${qs}` : `/catalog/${slug}`;
 }
