@@ -18,7 +18,8 @@
 		recordChips = [],
 		priority = false,
 		variant = 'grid',
-		returnAfterAdd = null as string | null
+		returnAfterAdd = null as string | null,
+		detailFrom = null as string | null
 	}: {
 		exercise: ExerciseIndexItem;
 		recordChips?: string[];
@@ -27,6 +28,8 @@
 		variant?: 'grid' | 'list';
 		/** After add-to-draft, navigate here (picker flow). */
 		returnAfterAdd?: string | null;
+		/** Catalog return path for exercise detail back link. */
+		detailFrom?: string | null;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
@@ -45,6 +48,12 @@
 
 	function onImgLoad() {
 		loaded = true;
+	}
+
+	function exerciseHref(id: string): string {
+		const base = `/exercise/${id}`;
+		if (!detailFrom) return base;
+		return `${base}?from=${encodeURIComponent(detailFrom)}`;
 	}
 
 	function toggleDraft(event: MouseEvent) {
@@ -118,7 +127,7 @@
 			{/if}
 		</button>
 		<a
-			href={`/exercise/${exercise.id}`}
+			href={exerciseHref(exercise.id)}
 			class="exercise-card-chevron"
 			tabindex="-1"
 			aria-hidden="true"
@@ -134,7 +143,7 @@
 >
 	{#if variant === 'list'}
 		<a
-			href={`/exercise/${exercise.id}`}
+			href={exerciseHref(exercise.id)}
 			class="exercise-card-list-main"
 			aria-label={title}
 		>
@@ -145,9 +154,9 @@
 					bind:this={imgEl}
 					src={`/${exercise.image}`}
 					alt=""
-					width="180"
-					height="180"
-					sizes="(max-width: 767px) 84px, 76px"
+					width="120"
+					height="120"
+					sizes="120px"
 					loading={priority ? 'eager' : 'lazy'}
 					fetchpriority={priority ? 'high' : 'auto'}
 					decoding="async"
@@ -182,24 +191,24 @@
 		{@render listActions()}
 	{:else}
 		<div
-			class="exercise-card-media relative aspect-square min-w-0 overflow-hidden bg-[var(--hero-card-media-bg)]"
+			class="exercise-card-media exercise-card-media--grid relative aspect-square min-w-0 overflow-hidden bg-[var(--hero-card-media-bg)]"
 		>
 			<a
-				href={`/exercise/${exercise.id}`}
-				class="absolute inset-0 block active:bg-[var(--color-surface-muted)]"
+				href={exerciseHref(exercise.id)}
+				class="exercise-card-media-link absolute inset-0 flex items-center justify-center active:bg-[var(--color-surface-muted)]"
 				aria-label={title}
 			>
 				<img
 					bind:this={imgEl}
 					src={`/${exercise.image}`}
 					alt=""
-					width="180"
-					height="180"
-					sizes="72px"
+					width="120"
+					height="120"
+					sizes="(min-width: 768px) 14vw, 45vw"
 					loading={priority ? 'eager' : 'lazy'}
 					fetchpriority={priority ? 'high' : 'auto'}
 					decoding="async"
-					class={`exercise-card-img block h-full w-full object-cover ${loaded ? 'is-loaded' : ''}`}
+					class={`exercise-card-img block h-full w-full object-contain ${loaded ? 'is-loaded' : ''}`}
 					onload={onImgLoad}
 				/>
 			</a>
@@ -241,7 +250,7 @@
 		</div>
 
 		<a
-			href={`/exercise/${exercise.id}`}
+			href={exerciseHref(exercise.id)}
 			class="exercise-card-body flex min-w-0 flex-1 flex-col gap-0.5 p-2.5 active:bg-[var(--color-surface-muted)]"
 		>
 			<h2 class="line-clamp-2 min-h-[2.1em] text-[13px] font-semibold leading-snug text-[var(--color-ink)]">

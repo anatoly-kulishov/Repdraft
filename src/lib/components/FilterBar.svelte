@@ -60,7 +60,18 @@
 
 <div class="catalog-filters-shell">
 	<div class="catalog-filters panel" class:catalog-filters--zone={lockBodyPart}>
-		<SearchInput bind:value={filters.query} placeholder={translate(lang, 'catalog.search')} />
+		<div class="catalog-filters-search-row">
+			<SearchInput bind:value={filters.query} debounceMs={320} placeholder={translate(lang, 'catalog.search')} />
+			{#if activeFilterCount > 0}
+				<button
+					type="button"
+					class="btn-link catalog-filters-reset-desktop hidden md:inline-flex"
+					onclick={resetFilters}
+				>
+					{translate(lang, 'catalog.reset')}
+				</button>
+			{/if}
+		</div>
 
 		<div class="catalog-filters-toolbar">
 			<button
@@ -132,13 +143,6 @@
 						{/each}
 					</select>
 				</label>
-			{/if}
-			{#if activeFilterCount > 0}
-				<div class="catalog-filters-reset hidden md:flex">
-					<button type="button" class="btn-link text-sm" onclick={resetFilters}>
-						{translate(lang, 'catalog.reset')}
-					</button>
-				</div>
 			{/if}
 		</div>
 	</div>

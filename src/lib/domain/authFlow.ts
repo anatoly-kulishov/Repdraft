@@ -1,3 +1,6 @@
+/** Google OAuth sign-in — disabled while unavailable in RU; re-enable in UI when allowed. */
+export const googleOAuthEnabled = false;
+
 /** Same-origin path for post-login redirect (blocks open redirects). */
 export function safeRedirectPath(raw: string | null | undefined, fallback = '/workouts'): string {
 	if (!raw) return fallback;
@@ -118,6 +121,13 @@ export function userDisplayName(user: AuthUserLike | null | undefined): string |
 	return email.split('@')[0] || null;
 }
 
+/** First token of display name — for home greeting ("Добрый день, Anatoly"). */
+export function userFirstName(user: AuthUserLike | null | undefined): string | null {
+	const name = userDisplayName(user);
+	if (!name) return null;
+	return name.trim().split(/\s+/)[0] || null;
+}
+
 /** Auth provider id: `google`, `email`, … from identities / app_metadata. */
 export function userAuthProvider(user: AuthUserLike | null | undefined): string | null {
 	if (!user) return null;
@@ -172,6 +182,9 @@ export function runAuthFlowSelfCheck(): void {
 	}
 	if (userDisplayName({ email: 'ada@example.com', user_metadata: {} }) !== 'ada') {
 		throw new Error('userDisplayName should fall back to email local-part');
+	}
+	if (userFirstName({ user_metadata: { full_name: 'Anatoly Kulishov' } }) !== 'Anatoly') {
+		throw new Error('userFirstName should use first token');
 	}
 	if (userAuthProvider({ identities: [{ provider: 'google' }] }) !== 'google') {
 		throw new Error('userAuthProvider should read identities');

@@ -1,19 +1,44 @@
 import type { AppLocale } from '$lib/i18n/locale';
 import type { ExerciseIndexItem } from './types';
+import ruOverrides from '$lib/data/exerciseNamesRuOverrides.json' with { type: 'json' };
+
+const RU_OVERRIDES = ruOverrides as Record<string, string>;
 
 /**
- * Catalog `name_ru` is incomplete machine translation (mixed EN/RU, broken word order).
- * Show the English source title everywhere; keep `name_ru` for search only.
+ * Catalog `name_ru` is partly machine-translated (mixed EN/RU, awkward order).
+ * Prefer curated overrides, then displayable `name_ru`, else English title.
  */
 export function exerciseName(
-	item: Pick<ExerciseIndexItem, 'name' | 'name_ru'>,
-	_locale: AppLocale = 'ru'
+	item: Pick<ExerciseIndexItem, 'id' | 'name' | 'name_ru'> | Pick<ExerciseIndexItem, 'name' | 'name_ru'>,
+	locale: AppLocale = 'ru'
 ): string {
-	return titleCaseExerciseName(item.name);
+	const english = titleCaseExerciseName(item.name);
+	if (locale !== 'ru') return english;
+
+	const id = 'id' in item ? item.id : undefined;
+	if (id) {
+		const override = RU_OVERRIDES[id];
+		if (override) return override;
+	}
+
+	const ru = item.name_ru?.trim();
+	if (ru && isDisplayableRuName(ru)) return ru;
+
+	return english;
 }
 
-export function exerciseNameSortLocale(_locale: AppLocale): string {
-	return 'en';
+export function exerciseNameSortLocale(locale: AppLocale): string {
+	return locale === 'ru' ? 'ru' : 'en';
+}
+
+/** Reject mixed EN/RU and leftover tokens like `pov`. */
+export function isDisplayableRuName(ru: string): boolean {
+	const value = ru.trim();
+	if (!value) return false;
+	if (!/[а-яё]/i.test(value)) return false;
+	if (/[A-Za-z]{4,}/.test(value)) return false;
+	if (/\bpov\b/i.test(value)) return false;
+	return true;
 }
 
 function titleCaseExerciseName(raw: string): string {

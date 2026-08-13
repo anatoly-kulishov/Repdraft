@@ -3,7 +3,7 @@
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
-	import { availableEquipment, availableTargets, filterExercises, isFilterConflict } from '$lib/domain/filters';
+	import { filterCatalogWithFacets, filterExercises, isFilterConflict } from '$lib/domain/filters';
 	import { catalogZoneBodyParts, isCatalogZone } from '$lib/domain/catalogLinks';
 	import { personalRecordChips } from '$lib/domain/records';
 	import type { ExerciseFilters, ExerciseIndexItem } from '$lib/domain/types';
@@ -15,6 +15,7 @@
 	import { records } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { browser } from '$app/environment';
+	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
 	import { onMount, untrack } from 'svelte';
 
@@ -56,36 +57,33 @@
 		? get(catalogUi)
 		: { filters: emptyCatalogFilters(), visibleLimit: CATALOG_PAGE_SIZE };
 
-	function initialQueryForPreset(): string {
-		if (initialQuery.trim()) return initialQuery;
-		if (presetBodyPart !== 'all') return '';
-		return saved.filters.query;
-	}
-
 	function buildInitialFilters(): ExerciseFilters {
-		const bodyPart: ExerciseFilters['bodyPart'] =
-			presetBodyPart !== 'all' && isCatalogZone(presetBodyPart)
-				? (presetBodyPart as ExerciseFilters['bodyPart'])
-				: saved.filters.bodyPart;
-		const equipment =
-			initialEquipment !== ''
-				? initialEquipment
-				: presetBodyPart !== 'all'
-					? 'all'
-					: saved.filters.equipment;
-		const target =
-			initialTarget !== ''
-				? initialTarget
-				: presetBodyPart !== 'all'
-					? 'all'
-					: saved.filters.target;
-		return {
-			...saved.filters,
-			bodyPart,
-			equipment,
-			target,
-			query: initialQueryForPreset()
-		};
+		const urlHasQuery = Boolean(initialQuery.trim());
+		const urlHasEquipment = initialEquipment !== '';
+		const urlHasTarget = initialTarget !== '';
+		/** Hub search / deep-link: URL is source of truth — don't resurrect stale facets. */
+		const urlDriven = urlHasQuery || urlHasEquipment || urlHasTarget;
+
+		if (presetBodyPart !== 'all' && isCatalogZone(presetBodyPart)) {
+			return {
+				query: urlHasQuery ? initialQuery : '',
+				bodyPart: presetBodyPart as ExerciseFilters['bodyPart'],
+				equipment: urlHasEquipment ? initialEquipment : 'all',
+				target: urlHasTarget ? initialTarget : 'all'
+			};
+		}
+
+		if (urlDriven) {
+			return {
+				query: urlHasQuery ? initialQuery : '',
+				bodyPart: 'all',
+				equipment: urlHasEquipment ? initialEquipment : 'all',
+				target: urlHasTarget ? initialTarget : 'all'
+			};
+		}
+
+		/* Soft remount (exercise ↔ catalog): keep session facets. */
+		return { ...saved.filters };
 	}
 
 	let items = $state<ExerciseIndexItem[]>([]);
@@ -100,22 +98,28 @@
 	);
 
 	let lang = $derived($resolvedLocale);
+	let detailFrom = $derived(`${$page.url.pathname}${$page.url.search}`);
 	let catalog = $derived(indexReady ? items : []);
-	let equipmentOptions = $derived(availableEquipment(catalog, filters, lang));
-	let targetOptions = $derived(availableTargets(catalog, filters, lang));
-	let bookmarkSet = $derived(new Set($bookmarks));
-	let filtered = $derived.by(() => {
+	let catalogFiltered = $derived.by(() => {
 		const queryFilters =
 			zoneLocked && zoneBodyParts.length > 1
 				? { ...filters, bodyPart: 'all' as ExerciseFilters['bodyPart'] }
 				: filters;
-		const base = filterExercises(catalog, queryFilters, lang);
+		const { items: base, equipment, targets } = filterCatalogWithFacets(catalog, queryFilters, lang);
 		if (zoneLocked && zoneBodyParts.length > 1) {
 			const allowed = new Set(zoneBodyParts);
-			return base.filter((item) => allowed.has(item.body_part));
+			return {
+				items: base.filter((item) => allowed.has(item.body_part)),
+				equipment,
+				targets
+			};
 		}
-		return base;
+		return { items: base, equipment, targets };
 	});
+	let equipmentOptions = $derived(catalogFiltered.equipment);
+	let targetOptions = $derived(catalogFiltered.targets);
+	let filtered = $derived(catalogFiltered.items);
+	let bookmarkSet = $derived(new Set($bookmarks));
 	let visible = $derived(
 		savedOnly ? filtered.filter((ex) => bookmarkSet.has(ex.id)) : filtered
 	);
@@ -143,7 +147,7 @@
 	);
 	let listClass = $derived(
 		cardVariant === 'grid'
-			? 'catalog-grid grid min-w-0 grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5'
+			? 'catalog-grid grid min-w-0 grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7'
 			: 'catalog-exercise-list'
 	);
 
@@ -181,28 +185,31 @@
 		visibleLimit = CATALOG_PAGE_SIZE;
 	});
 
-	/** Client navigations: apply URL facets without re-reading `filters` (avoids effect loop). */
+	/** Client navigations: URL facets win; missing facet params clear stale session values. */
 	$effect(() => {
 		const eq = initialEquipment;
 		const tg = initialTarget;
 		const q = initialQuery.trim();
 		const zone = presetBodyPart;
-		if (eq === '' && tg === '' && !q) return;
+		const urlDriven = eq !== '' || tg !== '' || Boolean(q);
+		if (!urlDriven) return;
 
 		untrack(() => {
-			const patch: Partial<ExerciseFilters> = {};
-			if (zone !== 'all' && isCatalogZone(zone)) {
-				patch.bodyPart = zone as ExerciseFilters['bodyPart'];
-			}
-			if (eq !== '') patch.equipment = eq;
-			if (tg !== '') patch.target = tg;
-			if (q) patch.query = q;
+			const patch: ExerciseFilters = {
+				query: q,
+				bodyPart:
+					zone !== 'all' && isCatalogZone(zone)
+						? (zone as ExerciseFilters['bodyPart'])
+						: 'all',
+				equipment: eq !== '' ? eq : 'all',
+				target: tg !== '' ? tg : 'all'
+			};
 
 			const current = filters;
 			const changed = (Object.keys(patch) as (keyof ExerciseFilters)[]).some(
 				(key) => current[key] !== patch[key]
 			);
-			if (changed) filters = { ...current, ...patch };
+			if (changed) filters = patch;
 		});
 	});
 
@@ -234,7 +241,9 @@
 		const nextTarget =
 			filters.target !== 'all' && !validTargets.has(filters.target) ? 'all' : filters.target;
 		if (nextEq === filters.equipment && nextTarget === filters.target) return;
-		filters = { ...filters, equipment: nextEq, target: nextTarget };
+		untrack(() => {
+			filters = { ...filters, equipment: nextEq, target: nextTarget };
+		});
 	});
 
 	onMount(() => {
@@ -393,6 +402,7 @@
 					priority={i < 4}
 					variant={cardVariant}
 					{returnAfterAdd}
+					{detailFrom}
 				/>
 			{/each}
 		</div>

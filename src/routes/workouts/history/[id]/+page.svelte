@@ -97,7 +97,7 @@
 		actionLabel={translate(lang, 'nav.workouts')}
 	/>
 {:else}
-	<section class="content-page content-page--narrow soft-enter">
+	<section class="content-page content-page--narrow soft-enter history-detail">
 		<div class="md:hidden">
 			<ScreenHeader
 				title={session.planName}
@@ -107,12 +107,29 @@
 		</div>
 		<div class="subroute-desktop-head hidden md:block">
 			<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />
-			<h1 class="page-title">{session.planName}</h1>
+			<div class="history-detail__title-row">
+				<h1 class="page-title">{session.planName}</h1>
+				<button
+					type="button"
+					class="btn-ghost is-danger history-detail__delete inline-flex min-h-11 shrink-0 items-center gap-2 px-2"
+					disabled={deleting}
+					aria-busy={deleting}
+					onclick={() => void onDeleteSession()}
+				>
+					{#if deleting}
+						<Spinner size="sm" block={false} />
+						{translate(lang, 'auth.wait')}
+					{:else}
+						<LucideIcon icon={Trash2} size={ICON_SMALL} />
+						{translate(lang, 'workouts.deleteSession')}
+					{/if}
+				</button>
+			</div>
 		</div>
 		<p class="page-lead mt-1 lg:mt-0">
 			{formatLongDate(session.finishedAt ?? session.startedAt, lang)} · {formatDurationMs(
 				sessionDurationMs(session)
-			)} · {completedSetCount(session)} sets
+			)} · {translate(lang, 'workouts.historySets', { n: completedSetCount(session) })}
 		</p>
 
 		<ul class="history-exercise-list">
@@ -126,11 +143,11 @@
 							href={`/exercise/${meta.id}?from=${encodeURIComponent(fromPath)}`}
 						>
 							<img
-								class="workout-preview-thumb"
+								class="workout-preview-thumb history-exercise__thumb"
 								src={`/${meta.image}`}
 								alt=""
-								width="56"
-								height="56"
+								width="180"
+								height="180"
 								loading="lazy"
 								decoding="async"
 							/>
@@ -146,7 +163,10 @@
 						</a>
 					{:else}
 						<div class="history-exercise__head is-static">
-							<span class="workout-preview-thumb is-placeholder" aria-hidden="true"></span>
+							<span
+								class="workout-preview-thumb history-exercise__thumb is-placeholder"
+								aria-hidden="true"
+							></span>
 							<div class="workout-preview-row-body">
 								<p class="workout-preview-row-title">{ex.exerciseId}</p>
 							</div>
@@ -154,13 +174,15 @@
 					{/if}
 
 					{#if done.length > 0}
-						<ul class="history-exercise__sets">
+						<ul
+							class="history-exercise__sets"
+							class:history-exercise__sets--grid={done.length >= 3}
+						>
 							{#each done as set, i (i)}
 								<li class="history-exercise__set tabular-nums">
 									<span class="history-exercise__set-i">{i + 1}</span>
-									<span class="history-exercise__set-val">
-										{set.weightKg ?? '—'} kg × {set.reps ?? '—'}
-									</span>
+									<span class="history-exercise__set-weight">{set.weightKg ?? '—'} kg</span>
+									<span class="history-exercise__set-reps">× {set.reps ?? '—'}</span>
 								</li>
 							{/each}
 						</ul>
@@ -170,23 +192,5 @@
 				</li>
 			{/each}
 		</ul>
-
-		<div class="mt-8 hidden md:block">
-			<button
-				type="button"
-				class="btn-ghost is-danger inline-flex min-h-11 items-center gap-2 px-2"
-				disabled={deleting}
-				aria-busy={deleting}
-				onclick={() => void onDeleteSession()}
-			>
-				{#if deleting}
-					<Spinner size="sm" block={false} />
-					{translate(lang, 'auth.wait')}
-				{:else}
-					<LucideIcon icon={Trash2} size={ICON_SMALL} />
-					{translate(lang, 'workouts.deleteSession')}
-				{/if}
-			</button>
-		</div>
 	</section>
 {/if}

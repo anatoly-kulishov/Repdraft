@@ -8,10 +8,13 @@
 	let {
 		value = $bindable(''),
 		placeholder = '',
+		debounceMs = 180,
 		onchange
 	}: {
 		value?: string;
 		placeholder?: string;
+		/** Typing delay before parent filter runs (catalog list is heavy). */
+		debounceMs?: number;
 		onchange?: (value: string) => void;
 	} = $props();
 
@@ -33,7 +36,7 @@
 		const next = (event.currentTarget as HTMLInputElement).value;
 		local = next;
 		clearTimeout(timer);
-		timer = setTimeout(() => commit(next), 150);
+		timer = setTimeout(() => commit(next), debounceMs);
 	}
 
 	function clear() {

@@ -35,7 +35,6 @@ async function assertFile(rel) {
 
 // ——— Source components from today's redesign ———
 for (const rel of [
-	'src/lib/components/HomeRecordsWidget.svelte',
 	'src/lib/components/SubrouteBack.svelte',
 	'src/lib/components/ScreenHeader.svelte',
 	'src/lib/components/CatalogZoneCard.svelte'
@@ -44,7 +43,9 @@ for (const rel of [
 }
 
 const homeSrc = await readFile(join(root, 'src/routes/+page.svelte'), 'utf8');
-assert(homeSrc.includes('HomeRecordsWidget'), 'home page must mount HomeRecordsWidget');
+assert(homeSrc.includes('HomeRecordsWidget'), 'home page must mount light HomeRecordsWidget teaser');
+assert(!homeSrc.includes('HomeStatsStack'), 'home page must not mount analytics placeholder stats');
+assert(homeSrc.includes('home-dashboard-aside'), 'home mid layout must stack recent+records in aside');
 
 const catalogListSrc = await readFile(
 	join(root, 'src/lib/components/CatalogExerciseList.svelte'),
@@ -53,6 +54,10 @@ const catalogListSrc = await readFile(
 assert(
 	!catalogListSrc.includes('filters = { ...filters, bodyPart: presetBodyPart, query }'),
 	'catalog zone must not reset query from empty initialQuery on every keystroke'
+);
+assert(
+	catalogListSrc.includes('detailFrom'),
+	'catalog list must pass detailFrom for zone-aware exercise back links'
 );
 assert(
 	catalogListSrc.includes('bodyPart: presetBodyPart as ExerciseFilters') ||
@@ -136,7 +141,7 @@ assert(
 		[
 			'catalog-hub',
 			'catalog-hub-grid',
-			'catalog-hub-toolbar__nav',
+			'catalog-hub-chips',
 			'href="/catalog/all"',
 			'href="/exercises/saved"',
 			'href="/articles"',
@@ -269,11 +274,20 @@ const id = chest.id;
 	assert(text.includes(`href="${from}"`), 'exercise detail from-workouts back href missing');
 }
 
-// ——— Settings: mobile header + desktop back ———
+// ——— Settings: legacy URL redirects to profile ———
 {
-	const { status, text } = await get('/settings');
-	assert(status === 200, `GET /settings → ${status}`);
-	assertIncludes(text, ['screen-header', 'subroute-back', 'href="/"'], 'settings');
+	const settingsLoad = await readFile(join(root, 'src/routes/settings/+page.ts'), 'utf8');
+	assert(
+		settingsLoad.includes("redirect(308, '/auth')") || settingsLoad.includes('redirect(308, "/auth")'),
+		'settings route must redirect to /auth'
+	);
+	const res = await fetch(`${base}/settings`, { redirect: 'manual' });
+	assert(
+		res.status === 308 || res.status === 307,
+		`GET /settings → ${res.status} (expected redirect)`
+	);
+	const location = res.headers.get('location') ?? '';
+	assert(location.endsWith('/auth'), `GET /settings location → ${location}`);
 }
 
 // ——— Workout plan preview source has desktop back (plan id is dynamic) ———

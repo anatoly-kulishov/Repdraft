@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import {
 		authErrorMessageKey,
+		googleOAuthEnabled,
 		passwordsMatch,
 		safeRedirectPath,
 		userAvatarUrl,
@@ -11,6 +12,7 @@
 	} from '$lib/domain/authFlow';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
+	import { greetingName } from '$lib/stores/greetingName';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
@@ -19,6 +21,8 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
+	import { GREETING_NAME_MAX } from '$lib/domain/greetingName';
+	import { get } from 'svelte/store';
 
 	type Panel = 'signin' | 'signup' | 'magic' | 'forgot' | 'check-email';
 
@@ -30,6 +34,8 @@
 	let message = $state<string | null>(null);
 	let checkEmailKind = $state<'signup' | 'magic' | 'reset'>('signup');
 	let redirected = $state(false);
+	let greetingNameInput = $state('');
+	let greetingNameSaving = $state(false);
 
 	let lang = $derived($resolvedLocale);
 	let nextPath = $derived(safeRedirectPath($page.url.searchParams.get('next')));
@@ -232,13 +238,36 @@
 	let passwordMode = $derived(
 		panel === 'signup' ? ('signup' as const) : panel === 'forgot' ? ('forgot' as const) : ('signin' as const)
 	);
+	let accountMode = $derived(
+		$auth.ready && $auth.configured && Boolean($auth.user) && !recoveryMode
+	);
+
+	$effect(() => {
+		if (accountMode) greetingNameInput = get(greetingName);
+	});
+
+	async function saveGreetingName() {
+		if (greetingNameSaving || !$auth.user) return;
+		greetingNameSaving = true;
+		try {
+			await greetingName.save(greetingNameInput, $auth.user.id);
+			toasts.show(translate(lang, 'auth.greetingNameSaved'), 'success');
+		} catch (err) {
+			toasts.show(translateError(lang, err, 'auth.greetingNameSaveFail'), 'error');
+		} finally {
+			greetingNameSaving = false;
+		}
+	}
 </script>
 
 <svelte:head>
 	<title>{translate(lang, 'auth.title')} — Repdraft</title>
 </svelte:head>
 
-<section class="auth-page content-page content-page--narrow mx-auto">
+<section
+	class="auth-page content-page"
+	class:auth-page--account={accountMode}
+>
 	<div class="md:hidden">
 		<ScreenHeader title={translate(lang, 'auth.title')} backHref={nextPath} />
 	</div>
@@ -246,14 +275,16 @@
 		<div class="subroute-desktop-head hidden md:block">
 			<SubrouteBack href={nextPath} label={backLabel} />
 		</div>
-		<h1 class="page-title hidden md:block">{translate(lang, 'auth.title')}</h1>
+		<div class="auth-page__heading">
+			<h1 class="page-title hidden md:block">{translate(lang, 'auth.title')}</h1>
+			{#if !accountMode}
+				<div class="auth-page__toolbar">
+					<LanguageSwitcher compact />
+				</div>
+			{/if}
+		</div>
 		<p class="page-lead auth-page__lead">{translate(lang, 'auth.lead')}</p>
 	</header>
-
-	<div class="panel auth-prefs">
-		<LanguageSwitcher />
-		<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'lang.hint')}</p>
-	</div>
 
 	{#if !$auth.ready}
 		<PageSkeleton rows={2} showField={true} />
@@ -304,45 +335,95 @@
 			</button>
 		</form>
 	{:else if $auth.user}
-		<div class="panel">
-			<div class="auth-profile">
-				{#if profileAvatar}
-					<img
-						class="account-avatar is-photo auth-profile__avatar"
-						src={profileAvatar}
-						alt=""
-						width="48"
-						height="48"
-						referrerpolicy="no-referrer"
-						decoding="async"
-					/>
-				{/if}
-				<div class="auth-profile__text min-w-0">
-					<div class="auth-profile__meta">
-						<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.signedInAs')}</p>
-						{#if profileProviderLabel}
-							<span class="auth-provider-badge">{profileProviderLabel}</span>
+		<div class="auth-account panel">
+			<div class="auth-account__identity">
+				<div class="auth-profile">
+					{#if profileAvatar}
+						<img
+							class="account-avatar is-photo auth-profile__avatar"
+							src={profileAvatar}
+							alt=""
+							width="64"
+							height="64"
+							referrerpolicy="no-referrer"
+							decoding="async"
+						/>
+					{/if}
+					<div class="auth-profile__text min-w-0">
+						<div class="auth-profile__meta">
+							<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.signedInAs')}</p>
+							{#if profileProviderLabel}
+								<span class="auth-provider-badge">{profileProviderLabel}</span>
+							{/if}
+						</div>
+						{#if profileName}
+							<p class="auth-profile__name truncate">{profileName}</p>
+						{/if}
+						{#if $auth.user.email}
+							<p class="text-sm text-[var(--color-muted)] truncate">{$auth.user.email}</p>
 						{/if}
 					</div>
-					{#if profileName}
-						<p class="font-semibold truncate">{profileName}</p>
-					{/if}
-					{#if $auth.user.email}
-						<p class="text-sm text-[var(--color-muted)] truncate">{$auth.user.email}</p>
-					{/if}
 				</div>
+				<p class="auth-account__sync-hint">{translate(lang, 'auth.syncedHint')}</p>
 			</div>
-			<p class="mt-3 text-xs text-[var(--color-muted)]">{translate(lang, 'auth.syncedHint')}</p>
-			<button type="button" class="btn-secondary mt-4" disabled={loading} aria-busy={loading} onclick={logout}>
-				{#if loading}
-					<span class="inline-flex items-center gap-2">
-						<Spinner size="sm" block={false} />
-						{translate(lang, 'auth.wait')}
-					</span>
-				{:else}
-					{translate(lang, 'auth.logout')}
-				{/if}
-			</button>
+
+			<form
+				class="auth-account__section"
+				onsubmit={(e) => {
+					e.preventDefault();
+					void saveGreetingName();
+				}}
+			>
+				<label class="field-label" for="auth-greeting-name">
+					{translate(lang, 'auth.greetingNameLabel')}
+					<input
+						id="auth-greeting-name"
+						class="field mt-1 w-full"
+						type="text"
+						autocomplete="nickname"
+						maxlength={GREETING_NAME_MAX}
+						placeholder={translate(lang, 'auth.greetingNamePh')}
+						bind:value={greetingNameInput}
+					/>
+				</label>
+				<p class="mt-1 text-xs text-[var(--color-muted)]">
+					{translate(lang, 'auth.greetingNameHint')}
+				</p>
+				<button type="submit" class="btn-secondary auth-account__save min-h-11" disabled={greetingNameSaving}>
+					{#if greetingNameSaving}
+						<span class="inline-flex items-center gap-2">
+							<Spinner size="sm" block={false} />
+							{translate(lang, 'auth.wait')}
+						</span>
+					{:else}
+						{translate(lang, 'auth.greetingNameSave')}
+					{/if}
+				</button>
+			</form>
+
+			<div class="auth-account__section">
+				<LanguageSwitcher />
+				<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'lang.hint')}</p>
+			</div>
+
+			<div class="auth-account__actions">
+				<button
+					type="button"
+					class="btn-secondary auth-account__logout min-h-11"
+					disabled={loading}
+					aria-busy={loading}
+					onclick={logout}
+				>
+					{#if loading}
+						<span class="inline-flex items-center gap-2">
+							<Spinner size="sm" block={false} />
+							{translate(lang, 'auth.wait')}
+						</span>
+					{:else}
+						{translate(lang, 'auth.logout')}
+					{/if}
+				</button>
+			</div>
 		</div>
 	{:else if panel === 'check-email'}
 		<div class="panel flex flex-col gap-3">
@@ -550,7 +631,7 @@
 				</form>
 			{/if}
 
-			{#if panel !== 'forgot'}
+			{#if googleOAuthEnabled && panel !== 'forgot'}
 				<div class="auth-divider" aria-hidden="true">
 					<span>{translate(lang, 'auth.or')}</span>
 				</div>
