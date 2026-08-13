@@ -31,22 +31,22 @@
 </script>
 
 <div class="home-section home-section--records">
-	<div class="home-section-head">
-		<h2 class="section-title">{translate(lang, 'home.recordsTitle')}</h2>
-		{#if ready && hasRecords}
-			<a class="home-section-link" href="/records">
-				{translate(lang, 'home.recordsAll')}
-				<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
-			</a>
-		{/if}
-	</div>
-
 	{#if !ready}
+		<div class="home-section-head">
+			<h2 class="section-title">{translate(lang, 'home.recordsTitle')}</h2>
+		</div>
 		<div class="panel records-preview" aria-busy="true">
 			<div class="records-preview__skeleton animate-pulse" aria-hidden="true"></div>
 			<div class="records-preview__skeleton animate-pulse" aria-hidden="true"></div>
 		</div>
 	{:else if hasRecords}
+		<div class="home-section-head">
+			<h2 class="section-title">{translate(lang, 'home.recordsTitle')}</h2>
+			<a class="home-section-link" href="/records">
+				{translate(lang, 'home.recordsAll')}
+				<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
+			</a>
+		</div>
 		<ul class="records-preview panel">
 			{#each preview as record (record.exerciseId)}
 				{@const meta = indexById.get(record.exerciseId)}
@@ -59,8 +59,8 @@
 								class="records-preview__thumb"
 								src={`/${meta.image}`}
 								alt=""
-								width="120"
-								height="120"
+								width="80"
+								height="80"
 								loading="lazy"
 								decoding="async"
 							/>
@@ -84,12 +84,17 @@
 			{/each}
 		</ul>
 	{:else}
-		<p class="text-sm leading-relaxed text-[var(--color-muted)]">
-			{translate(lang, 'home.recordsHint')}
-			<a class="home-section-link ml-1 inline-flex" href="/exercises">
-				{translate(lang, 'home.recordsBrowse')}
-				<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
-			</a>
-		</p>
+		<div class="home-section-head">
+			<h2 class="section-title">{translate(lang, 'home.recordsTitle')}</h2>
+		</div>
+		<div class="panel home-aside-card home-aside-card--compact">
+			<p class="home-aside-card__hint">
+				{translate(lang, 'home.recordsHint')}
+				<a class="home-section-link ml-1 inline-flex" href="/exercises">
+					{translate(lang, 'home.recordsBrowse')}
+					<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
+				</a>
+			</p>
+		</div>
 	{/if}
 </div>

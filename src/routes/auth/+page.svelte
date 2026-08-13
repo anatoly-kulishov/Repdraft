@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import {
 		authErrorMessageKey,
+		googleOAuthEnabled,
 		passwordsMatch,
 		safeRedirectPath,
 		userAvatarUrl,
@@ -11,6 +12,7 @@
 	} from '$lib/domain/authFlow';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
+	import { greetingName } from '$lib/stores/greetingName';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
@@ -19,6 +21,8 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
+	import { GREETING_NAME_MAX } from '$lib/domain/greetingName';
+	import { get } from 'svelte/store';
 
 	type Panel = 'signin' | 'signup' | 'magic' | 'forgot' | 'check-email';
 
@@ -30,6 +34,8 @@
 	let message = $state<string | null>(null);
 	let checkEmailKind = $state<'signup' | 'magic' | 'reset'>('signup');
 	let redirected = $state(false);
+	let greetingNameInput = $state('');
+	let greetingNameSaving = $state(false);
 
 	let lang = $derived($resolvedLocale);
 	let nextPath = $derived(safeRedirectPath($page.url.searchParams.get('next')));
@@ -235,6 +241,23 @@
 	let accountMode = $derived(
 		$auth.ready && $auth.configured && Boolean($auth.user) && !recoveryMode
 	);
+
+	$effect(() => {
+		if (accountMode) greetingNameInput = get(greetingName);
+	});
+
+	async function saveGreetingName() {
+		if (greetingNameSaving || !$auth.user) return;
+		greetingNameSaving = true;
+		try {
+			await greetingName.save(greetingNameInput, $auth.user.id);
+			toasts.show(translate(lang, 'auth.greetingNameSaved'), 'success');
+		} catch (err) {
+			toasts.show(translateError(lang, err, 'auth.greetingNameSaveFail'), 'error');
+		} finally {
+			greetingNameSaving = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -243,9 +266,7 @@
 
 <section
 	class="auth-page content-page"
-	class:content-page--narrow={!accountMode}
 	class:auth-page--account={accountMode}
-	class:mx-auto={!accountMode}
 >
 	<div class="md:hidden">
 		<ScreenHeader title={translate(lang, 'auth.title')} backHref={nextPath} />
@@ -314,8 +335,8 @@
 			</button>
 		</form>
 	{:else if $auth.user}
-		<div class="auth-account">
-			<div class="panel auth-account__profile">
+		<div class="auth-account panel">
+			<div class="auth-account__identity">
 				<div class="auth-profile">
 					{#if profileAvatar}
 						<img
@@ -343,10 +364,52 @@
 						{/if}
 					</div>
 				</div>
-				<p class="mt-3 text-xs text-[var(--color-muted)]">{translate(lang, 'auth.syncedHint')}</p>
+				<p class="auth-account__sync-hint">{translate(lang, 'auth.syncedHint')}</p>
+			</div>
+
+			<form
+				class="auth-account__section"
+				onsubmit={(e) => {
+					e.preventDefault();
+					void saveGreetingName();
+				}}
+			>
+				<label class="field-label" for="auth-greeting-name">
+					{translate(lang, 'auth.greetingNameLabel')}
+					<input
+						id="auth-greeting-name"
+						class="field mt-1 w-full"
+						type="text"
+						autocomplete="nickname"
+						maxlength={GREETING_NAME_MAX}
+						placeholder={translate(lang, 'auth.greetingNamePh')}
+						bind:value={greetingNameInput}
+					/>
+				</label>
+				<p class="mt-1 text-xs text-[var(--color-muted)]">
+					{translate(lang, 'auth.greetingNameHint')}
+				</p>
+				<button type="submit" class="btn-secondary auth-account__save min-h-11" disabled={greetingNameSaving}>
+					{#if greetingNameSaving}
+						<span class="inline-flex items-center gap-2">
+							<Spinner size="sm" block={false} />
+							{translate(lang, 'auth.wait')}
+						</span>
+					{:else}
+						{translate(lang, 'auth.greetingNameSave')}
+					{/if}
+				</button>
+			</form>
+
+			<div class="auth-account__section">
+				<LanguageSwitcher />
+				<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'lang.hint')}</p>
+			</div>
+
+			<div class="auth-account__actions">
 				<button
 					type="button"
-					class="btn-secondary mt-4"
+					class="btn-secondary auth-account__logout min-h-11"
 					disabled={loading}
 					aria-busy={loading}
 					onclick={logout}
@@ -360,10 +423,6 @@
 						{translate(lang, 'auth.logout')}
 					{/if}
 				</button>
-			</div>
-			<div class="panel auth-prefs auth-account__prefs">
-				<LanguageSwitcher />
-				<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'lang.hint')}</p>
 			</div>
 		</div>
 	{:else if panel === 'check-email'}
@@ -572,7 +631,7 @@
 				</form>
 			{/if}
 
-			{#if panel !== 'forgot'}
+			{#if googleOAuthEnabled && panel !== 'forgot'}
 				<div class="auth-divider" aria-hidden="true">
 					<span>{translate(lang, 'auth.or')}</span>
 				</div>

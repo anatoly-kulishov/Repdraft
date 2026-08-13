@@ -18,6 +18,8 @@ const checks = [
 	'clips',
 	'inputLimits',
 	'authFlow',
+	'greetingName',
+	'localCacheUser',
 	'articles'
 ];
 

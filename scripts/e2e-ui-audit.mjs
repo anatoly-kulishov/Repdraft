@@ -87,9 +87,12 @@ async function auditViewport(page, viewport) {
 
 		if (isMobile) {
 			const tabbar = await visible(page, '.shell-nav-tabbar');
-			const sidebar = await visible(page, '.shell-sidebar');
+			const sidebarHidden = await page
+				.locator('.shell-sidebar')
+				.evaluate((el) => getComputedStyle(el).display === 'none')
+				.catch(() => true);
 			tabbar ? pass(viewport, 'home.tabbar') : fail(viewport, 'home.tabbar', 'tabbar hidden');
-			!sidebar
+			sidebarHidden
 				? pass(viewport, 'home.no-sidebar')
 				: fail(viewport, 'home.no-sidebar', 'sidebar visible on mobile');
 		} else {
@@ -128,30 +131,31 @@ async function auditViewport(page, viewport) {
 		hub ? pass(viewport, 'catalog.hub') : fail(viewport, 'catalog.hub', 'missing');
 
 		for (const href of ['/catalog/all', '/exercises/saved', '/records']) {
-			const link = page.locator(`.catalog-hub-toolbar__nav a[href="${href}"]`);
+			const link = page.locator(`.catalog-hub-chips a[href="${href}"]`);
 			(await link.count()) > 0 && (await link.first().isVisible())
 				? pass(viewport, `catalog.nav${href}`)
 				: fail(viewport, `catalog.nav${href}`, 'missing/hidden');
 		}
 
-		const nav = page.locator('.catalog-hub-toolbar__nav');
+		const nav = page.locator('.catalog-hub-chips');
 		if ((await nav.count()) > 0) {
-			const info = await boxOverflows(page, '.catalog-hub-toolbar__nav');
-			!info.overflowX && !info.offscreenRight
+			const info = await boxOverflows(page, '.catalog-hub-chips');
+			// Horizontal scroll on mobile chip row is intentional.
+			!info.offscreenRight && !info.offscreenLeft
 				? pass(viewport, 'catalog.nav-fit', JSON.stringify(info))
 				: fail(viewport, 'catalog.nav-fit', JSON.stringify(info));
 		}
 
 		if (isMobile) {
-			const primary = page.locator('.catalog-hub-nav-link--primary');
+			const primary = page.locator('.catalog-hub-chip--primary');
 			const box = await primary.boundingBox();
-			const navBox = await nav.boundingBox();
-			if (box && navBox) {
-				// Primary should span roughly full nav width on mobile
-				box.width >= navBox.width * 0.9
-					? pass(viewport, 'catalog.nav-primary-full', `w=${Math.round(box.width)}`)
-					: fail(viewport, 'catalog.nav-primary-full', `primary too narrow: ${Math.round(box.width)} / ${Math.round(navBox.width)}`);
-			}
+			box && box.width >= 44 && box.height >= 44
+				? pass(viewport, 'catalog.nav-primary-tap', `w=${Math.round(box.width)} h=${Math.round(box.height)}`)
+				: fail(
+						viewport,
+						'catalog.nav-primary-tap',
+						`tap target too small: ${box ? `${Math.round(box.width)}×${Math.round(box.height)}` : 'n/a'}`
+					);
 		}
 
 		const zone = page.locator('.zone-card').first();
@@ -164,7 +168,7 @@ async function auditViewport(page, viewport) {
 
 	// ——— Zone list + search (no wipe bug) ———
 	{
-		await goto(page, '/catalog/chest');
+		await goto(page, '/catalog/chest?target=pectorals');
 		const title = page.locator('.screen-header-title, .catalog-zone-title').first();
 		(await title.count()) > 0
 			? pass(viewport, 'zone.header')
@@ -452,14 +456,20 @@ async function auditViewport(page, viewport) {
 			fail(viewport, 'flow.preview', `plan "${stamp}" not in list`);
 			return;
 		}
-		await planRow.click();
-		await waitApp(page);
+		const previewHref = await planRow.getAttribute('href');
+		if (!previewHref) {
+			fail(viewport, 'flow.preview', `plan "${stamp}" link missing`);
+			return;
+		}
+		await goto(page, previewHref);
+		await page.waitForSelector('.workout-preview-list', { timeout: 10_000 }).catch(() => null);
 		await page.waitForTimeout(400);
 		pass(viewport, 'flow.preview', page.url());
 
 		const startBtn = isMobile
-			? page.locator('.sticky-actions button.btn-primary')
+			? page.locator('.workout-preview .sticky-actions button.btn-primary')
 			: page.locator('.workout-preview-actions-desktop button.btn-primary');
+		await startBtn.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => null);
 		if ((await startBtn.count()) === 0) {
 			fail(viewport, 'flow.start', 'start button missing');
 			return;
