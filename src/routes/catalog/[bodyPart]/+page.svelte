@@ -47,7 +47,7 @@
 	<title>{showExerciseList && data.initialTarget ? `${exerciseTitle} — ${title}` : headerTitle} — Repdraft</title>
 </svelte:head>
 
-<div class="content-page content-page--wide">
+<div class="content-page content-page--catalog">
 	<ScreenHeader class="md:hidden" title={headerTitle} {backHref} />
 
 	<section class="catalog-zone-shell">

@@ -1,8 +1,12 @@
 import { browser } from '$app/environment';
 import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
 import { migrateLocalToCloud, setCloudMode } from '$lib/storage/dataAccess';
+import { syncLocalCacheUser } from '$lib/storage/localUserCache';
 import type { Provider, Session, User } from '@supabase/supabase-js';
 import { writable } from 'svelte/store';
+import { draft } from './draft';
+import { greetingName } from './greetingName';
+import { live } from './live';
 import { plans } from './plans';
 import { records } from './records';
 
@@ -39,9 +43,13 @@ function createAuthStore() {
 		passwordRecovery: false
 	});
 
-	async function runDataBootstrap(loggedIn: boolean) {
+	async function runDataBootstrap(loggedIn: boolean, cacheCleared = false) {
 		update((s) => ({ ...s, dataBootstrap: false }));
 		try {
+			if (cacheCleared) {
+				draft.resetDraft();
+				live.hydrate();
+			}
 			await Promise.all([plans.refresh({ cloud: false }), records.refresh({ cloud: false })]);
 			await Promise.all([plans.refresh(), records.refresh()]);
 			if (loggedIn) {
@@ -78,6 +86,8 @@ function createAuthStore() {
 		}
 		lastUserId = userId;
 
+		const { cleared: cacheCleared } = browser ? syncLocalCacheUser(userId) : { cleared: false };
+
 		setCloudMode(loggedIn);
 		set({
 			configured: isSupabaseConfigured(),
@@ -88,7 +98,9 @@ function createAuthStore() {
 			passwordRecovery
 		});
 
-		void runDataBootstrap(loggedIn);
+		greetingName.bindUser(session?.user ?? null);
+
+		void runDataBootstrap(loggedIn, cacheCleared);
 	}
 
 	async function init() {

@@ -1,11 +1,22 @@
 import type { AppLocale } from '$lib/i18n/locale';
 
+export type ArticleCoverIcon =
+	| 'book-open'
+	| 'timer'
+	| 'dumbbell'
+	| 'play'
+	| 'clipboard-list'
+	| 'library'
+	| 'flame';
+
 export type Article = {
 	slug: string;
 	title: string;
 	excerpt: string;
 	/** CSS gradient token, e.g. `purple`, `teal`. */
 	coverTone?: 'purple' | 'teal' | 'amber' | 'rose';
+	/** Lucide cover when `exerciseIds` is empty. */
+	coverIcon?: ArticleCoverIcon;
 	bodyMd: string;
 	tags: string[];
 	exerciseIds: string[];
@@ -76,6 +87,24 @@ export function articlesForExercise(articles: Article[], exerciseId: string): Ar
 	return articles.filter((a) => a.exerciseIds.includes(exerciseId));
 }
 
+export function articleCoverExerciseId(article: Article): string | null {
+	return article.exerciseIds[0] ?? null;
+}
+
+const SLUG_COVER_ICONS: Partial<Record<string, ArticleCoverIcon>> = {
+	'warmup-before-press': 'flame',
+	'read-workout-plan': 'book-open',
+	'rest-between-sets': 'timer',
+	'technique-clips': 'library',
+	'legs-split': 'dumbbell',
+	'first-session': 'play'
+};
+
+export function resolveArticleCoverIcon(article: Article): ArticleCoverIcon {
+	if (article.coverIcon) return article.coverIcon;
+	return SLUG_COVER_ICONS[article.slug] ?? 'book-open';
+}
+
 export function filterArticles(
 	articles: Article[],
 	query: string,
@@ -109,4 +138,8 @@ export function runArticlesSelfCheck(): void {
 		}
 	];
 	if (articlesForExercise(articles, '1').length !== 1) throw new Error('articlesForExercise failed');
+	if (resolveArticleCoverIcon(articles[0]) !== 'book-open') {
+		throw new Error('resolveArticleCoverIcon failed');
+	}
+	if (articleCoverExerciseId(articles[0]) !== '1') throw new Error('articleCoverExerciseId failed');
 }

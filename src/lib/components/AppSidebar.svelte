@@ -6,7 +6,7 @@
 	import { draft, draftHydrated } from '$lib/stores/draft';
 	import { appTheme } from '$lib/stores/theme';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ClipboardList, Dumbbell, House, Library, Moon, Settings, Sun, UserRound } from '@lucide/svelte';
+	import { ClipboardList, Dumbbell, House, Library, Moon, Sun, UserRound } from '@lucide/svelte';
 
 	let {
 		path,
@@ -86,17 +86,6 @@
 			</span>
 			<span>{translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}</span>
 		</button>
-		<a
-			class="sidebar-link"
-			data-active={isActive('/settings')}
-			href="/settings"
-			aria-current={isActive('/settings') ? 'page' : undefined}
-		>
-			<span class="sidebar-link-icon" class:is-active={isActive('/settings')}>
-				<LucideIcon icon={Settings} size={ICON_SIDEBAR} />
-			</span>
-			<span>{translate(lang, 'nav.settings')}</span>
-		</a>
 		<a
 			class="sidebar-link"
 			data-active={isActive('/auth')}

@@ -27,7 +27,7 @@
 				alt=""
 				width="180"
 				height="180"
-				sizes="(max-width: 767px) 100px, (min-width: 1280px) 116px, 108px"
+				sizes="(max-width: 767px) 120px, (min-width: 1280px) 116px, 108px"
 				loading="lazy"
 				decoding="async"
 			/>

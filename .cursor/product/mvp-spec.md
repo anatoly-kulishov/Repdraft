@@ -23,32 +23,33 @@
 
 ## Implementation audit (living)
 
-Last reviewed: 2026-08-10 (branch v0.7.x)
+Last reviewed: 2026-08-13 (branch v0.8.2 UX polish)
 
 ### Satisfies P0 (foundation)
 
 | Area | Status |
 |------|--------|
-| Dark tokens, purple accent, Inter | Yes — `layout.css` |
-| Desktop sidebar + mobile tabbar (Home / Workouts / Exercises) | Yes — `AppSidebar`, `+layout.svelte` |
+| Dark tokens, purple accent, Inter | Yes — `layout.css` (surface `#151517`, border `#262629`, muted `#8E8E93`) |
+| Desktop sidebar + mobile tabbar (Home / Workouts / Exercises) | Yes — tabbar on `/catalog/*` browse; focused on live/builder/detail |
 | Lucide icon system | Yes — `@lucide/svelte`, `LucideIcon` |
 | Brand mark (no dumbbell cliché) | Yes — `src/lib/assets/brand/` |
 | Plans CRUD, builder, picker | Yes — `/builder`, `/builder/pick` |
 | Live session, autosave active workout | Yes — `live` store + `localSessionRepository` |
-| Finish → summary → history | Yes — `/workouts/summary`, history list + detail |
+| Finish → summary → history | Yes — sticky Done on summary mobile; history list + detail |
 | Workout preview before live | Yes — `/workouts/[planId]` → Start → `/live/[planId]` |
 | Saved exercises (bookmarks) | Yes — localStorage, `/exercises/saved`, cards + detail |
-| Exercise catalog (existing DB + media) | Yes — unchanged data layer |
+| Exercise catalog (existing DB + media) | Yes — fuzzy search, RU overrides, desktop filters\|results |
+| One primary CTA per screen | Yes — Home hero, Workouts New, Live Next/Finish, demoted row Starts |
+| Active Workout UX | Yes — sticky Next/Finish hierarchy, rest ring, set-done secondary |
 
 ### Gaps / polish (priority)
 
 | Item | Spec § | Notes |
 |------|--------|--------|
-| Home polish | 14–15 | Largely done; verify copy on device |
-| Active Workout UX | 26–30 | Mobile `1/N` + Next; rest timer optional P1 |
-| Workouts list presentation | 15–16 | Search + cards; optional WorkoutCard refactor |
+| Home polish | 14–15 | Hero-only focus; records on `/records` |
 | Exercise detail history tab | 22 | P1 — session history on detail |
 | Shared WorkoutCard component | 9 | Optional refactor |
+| Rest timer sound/haptics | 26–30 | P1 optional |
 
 ### Explicitly out of MVP
 
