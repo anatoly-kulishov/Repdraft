@@ -212,7 +212,7 @@
 						{translate(lang, 'catalog.emptyTitle')}
 					</p>
 				{:else}
-					<ul class="entity-list">
+					<ul class="entity-list entity-list--cards">
 						{#each filteredPlans as plan (plan.id)}
 							{@const muscles = planTargetSummary(plan, indexById, lang)}
 							<li>
@@ -237,7 +237,7 @@
 										<div class="entity-row__actions">
 											<button
 												type="button"
-												class="btn-primary inline-flex min-h-11 shrink-0 items-center gap-2 px-4"
+												class="btn-secondary inline-flex min-h-11 shrink-0 items-center gap-2 px-4"
 												onclick={() => onStart(plan.id)}
 												disabled={plan.exercises.length === 0 || planBusyId !== null}
 											>
@@ -300,7 +300,7 @@
 					{translate(lang, 'workouts.clearHistory')}
 				</button>
 			</div>
-			<ul class="entity-list">
+			<ul class="entity-list entity-list--cards">
 				{#each history as session (session.id)}
 					<li>
 						<SwipeToDelete

@@ -59,8 +59,8 @@
 								class="records-preview__thumb"
 								src={`/${meta.image}`}
 								alt=""
-								width="40"
-								height="40"
+								width="120"
+								height="120"
 								loading="lazy"
 								decoding="async"
 							/>
@@ -84,12 +84,12 @@
 			{/each}
 		</ul>
 	{:else}
-		<div class="panel-dashed home-mid-placeholder">
-			<p class="home-mid-placeholder__text">{translate(lang, 'home.recordsHint')}</p>
-			<a class="home-section-link mt-2" href="/exercises">
+		<p class="text-sm leading-relaxed text-[var(--color-muted)]">
+			{translate(lang, 'home.recordsHint')}
+			<a class="home-section-link ml-1 inline-flex" href="/exercises">
 				{translate(lang, 'home.recordsBrowse')}
 				<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
 			</a>
-		</div>
+		</p>
 	{/if}
 </div>

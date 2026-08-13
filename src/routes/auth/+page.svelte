@@ -232,13 +232,21 @@
 	let passwordMode = $derived(
 		panel === 'signup' ? ('signup' as const) : panel === 'forgot' ? ('forgot' as const) : ('signin' as const)
 	);
+	let accountMode = $derived(
+		$auth.ready && $auth.configured && Boolean($auth.user) && !recoveryMode
+	);
 </script>
 
 <svelte:head>
 	<title>{translate(lang, 'auth.title')} — Repdraft</title>
 </svelte:head>
 
-<section class="auth-page content-page content-page--narrow mx-auto">
+<section
+	class="auth-page content-page"
+	class:content-page--narrow={!accountMode}
+	class:auth-page--account={accountMode}
+	class:mx-auto={!accountMode}
+>
 	<div class="md:hidden">
 		<ScreenHeader title={translate(lang, 'auth.title')} backHref={nextPath} />
 	</div>
@@ -246,14 +254,16 @@
 		<div class="subroute-desktop-head hidden md:block">
 			<SubrouteBack href={nextPath} label={backLabel} />
 		</div>
-		<h1 class="page-title hidden md:block">{translate(lang, 'auth.title')}</h1>
+		<div class="auth-page__heading">
+			<h1 class="page-title hidden md:block">{translate(lang, 'auth.title')}</h1>
+			{#if !accountMode}
+				<div class="auth-page__toolbar">
+					<LanguageSwitcher compact />
+				</div>
+			{/if}
+		</div>
 		<p class="page-lead auth-page__lead">{translate(lang, 'auth.lead')}</p>
 	</header>
-
-	<div class="panel auth-prefs">
-		<LanguageSwitcher />
-		<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'lang.hint')}</p>
-	</div>
 
 	{#if !$auth.ready}
 		<PageSkeleton rows={2} showField={true} />
@@ -304,45 +314,57 @@
 			</button>
 		</form>
 	{:else if $auth.user}
-		<div class="panel">
-			<div class="auth-profile">
-				{#if profileAvatar}
-					<img
-						class="account-avatar is-photo auth-profile__avatar"
-						src={profileAvatar}
-						alt=""
-						width="48"
-						height="48"
-						referrerpolicy="no-referrer"
-						decoding="async"
-					/>
-				{/if}
-				<div class="auth-profile__text min-w-0">
-					<div class="auth-profile__meta">
-						<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.signedInAs')}</p>
-						{#if profileProviderLabel}
-							<span class="auth-provider-badge">{profileProviderLabel}</span>
+		<div class="auth-account">
+			<div class="panel auth-account__profile">
+				<div class="auth-profile">
+					{#if profileAvatar}
+						<img
+							class="account-avatar is-photo auth-profile__avatar"
+							src={profileAvatar}
+							alt=""
+							width="64"
+							height="64"
+							referrerpolicy="no-referrer"
+							decoding="async"
+						/>
+					{/if}
+					<div class="auth-profile__text min-w-0">
+						<div class="auth-profile__meta">
+							<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.signedInAs')}</p>
+							{#if profileProviderLabel}
+								<span class="auth-provider-badge">{profileProviderLabel}</span>
+							{/if}
+						</div>
+						{#if profileName}
+							<p class="auth-profile__name truncate">{profileName}</p>
+						{/if}
+						{#if $auth.user.email}
+							<p class="text-sm text-[var(--color-muted)] truncate">{$auth.user.email}</p>
 						{/if}
 					</div>
-					{#if profileName}
-						<p class="font-semibold truncate">{profileName}</p>
-					{/if}
-					{#if $auth.user.email}
-						<p class="text-sm text-[var(--color-muted)] truncate">{$auth.user.email}</p>
-					{/if}
 				</div>
+				<p class="mt-3 text-xs text-[var(--color-muted)]">{translate(lang, 'auth.syncedHint')}</p>
+				<button
+					type="button"
+					class="btn-secondary mt-4"
+					disabled={loading}
+					aria-busy={loading}
+					onclick={logout}
+				>
+					{#if loading}
+						<span class="inline-flex items-center gap-2">
+							<Spinner size="sm" block={false} />
+							{translate(lang, 'auth.wait')}
+						</span>
+					{:else}
+						{translate(lang, 'auth.logout')}
+					{/if}
+				</button>
 			</div>
-			<p class="mt-3 text-xs text-[var(--color-muted)]">{translate(lang, 'auth.syncedHint')}</p>
-			<button type="button" class="btn-secondary mt-4" disabled={loading} aria-busy={loading} onclick={logout}>
-				{#if loading}
-					<span class="inline-flex items-center gap-2">
-						<Spinner size="sm" block={false} />
-						{translate(lang, 'auth.wait')}
-					</span>
-				{:else}
-					{translate(lang, 'auth.logout')}
-				{/if}
-			</button>
+			<div class="panel auth-prefs auth-account__prefs">
+				<LanguageSwitcher />
+				<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'lang.hint')}</p>
+			</div>
 		</div>
 	{:else if panel === 'check-email'}
 		<div class="panel flex flex-col gap-3">

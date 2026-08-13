@@ -118,22 +118,22 @@
 						busy={busyId === record.exerciseId}
 						onDelete={() => void onRemove(record.exerciseId, recordTitle)}
 					>
-						<div class="list-row !flex-row !items-center !gap-3 !py-3">
+						<div class="list-row !flex-row !items-start !gap-3 !py-3">
 							<a
-								class="flex min-w-0 flex-1 items-center gap-3 no-underline"
+								class="flex min-w-0 flex-1 items-start gap-3 no-underline"
 								href={`/exercise/${record.exerciseId}`}
 							>
 								{#if meta}
 									<img
 										src={`/${meta.image}`}
 										alt=""
-										width="48"
-										height="48"
-										class="h-12 w-12 shrink-0 rounded-lg bg-[var(--hero-card-media-bg)] object-contain"
+										width="120"
+										height="120"
+										class="records-preview__thumb shrink-0"
 									/>
 								{:else}
 									<div
-										class="h-12 w-12 shrink-0 animate-pulse rounded-lg bg-[var(--color-surface-muted)]"
+										class="records-preview__thumb records-preview__thumb--empty shrink-0 animate-pulse"
 										aria-hidden="true"
 									></div>
 								{/if}

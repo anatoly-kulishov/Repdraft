@@ -9,7 +9,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX_PATH = ROOT / "static/data/exercises.index.json"
-FULL_PATH = ROOT / "static/data/exercises.json"
+FULL_PATH = ROOT / "data/exercises.full.json"
+OVERRIDES_PATH = ROOT / "static/data/exercise-names.ru.overrides.json"
 
 # Leading equipment → natural Russian adjunct (usually at the end).
 EQUIPMENT_PREFIX: list[tuple[str, str]] = [
@@ -153,7 +154,24 @@ PHRASES: list[tuple[str, str]] = [
 	("flat bench", "на горизонтальной скамье"),
 	("sissy squat", "сисси-присед"),
 	("hack squat", "гакк-присед"),
+	("bulgarian split squat", "болгарский сплит-присед"),
+	("single leg split squat", "болгарский сплит-присед"),
+	("split squats", "сплит-приседания"),
 	("split squat", "сплит-присед"),
+	("suspended split squat", "сплит-присед в подвеске"),
+	("side split squat", "боковой сплит-присед"),
+	("step-up split squat", "зашагивание в сплит-присед"),
+	("step-up lunge", "зашагивание с выпадом"),
+	("lunge with jump", "прыжковые выпады"),
+	("lunge with twist", "выпад с поворотом"),
+	("walking high knees lunge", "выпады с высоким подниманием колен"),
+	("contralateral forward lunge", "контралатеральный выпад вперёд"),
+	("lunge pass through", "сквозной выпад"),
+	("stretch lunge", "растяжка в выпаде"),
+	("lunge with swing", "выпад с махами"),
+	("sprint lunge", "спринтовый выпад"),
+	("rear lunge", "выпад назад"),
+	("v. 2", "вариант 2"),
 	("goblet squat", "гоблет-присед"),
 	("front squat", "фронтальный присед"),
 	("back squat", "присед со штангой на спине"),
@@ -212,6 +230,17 @@ PHRASES: list[tuple[str, str]] = [
 	("diamond", "алмазные"),
 	("pectoralis major", "большой грудной"),
 	("pectoralis minor", "малой грудной"),
+	("full squat", "присед"),
+	("side pov", "вид сбоку"),
+	("back pov", "вид сзади"),
+	("front pov", "вид спереди"),
+	("pallof press", "жим Паллофа"),
+	("pallof", "Паллофа"),
+	("inverse leg curl", "обратное сгибание ног"),
+	("deep push up", "глубокие отжимания"),
+	("deep push-up", "глубокие отжимания"),
+	("hip thrust", "ягодичный мост"),
+	("hip thrusts", "ягодичный мост"),
 ]
 
 WORDS: dict[str, str] = {
@@ -254,7 +283,11 @@ WORDS: dict[str, str] = {
 	"climb": "подъём",
 	"walk": "ходьба",
 	"run": "бег",
-	"sprint": "спринт",
+	"sprint": "спринтовый",
+	"contralateral": "контралатеральный",
+	"through": "сквозной",
+	"bowling": "боулинг",
+	"split": "сплит",
 	"hold": "удержание",
 	"plank": "планка",
 	"bridge": "мост",
@@ -314,6 +347,23 @@ WORDS: dict[str, str] = {
 	"pectoral": "грудных",
 	"major": "большой",
 	"minor": "малой",
+	"hand": "рукой",
+	"hands": "руками",
+	"pov": "вид",
+	"deep": "глубокие",
+	"drop": "с возвышения",
+	"inverse": "обратное",
+	"support": "с опорой",
+	"lying": "лёжа",
+	"seated": "сидя",
+	"standing": "стоя",
+	"kneeling": "на коленях",
+	"hanging": "в висе",
+	"parallel": "параллельным",
+	"rope": "канатом",
+	"attachment": "рукоятью",
+	"bodyweight": "с собственным весом",
+	"sled": "на санях",
 	"rear": "задний",
 	"front": "передний",
 	"side": "боковой",
@@ -529,10 +579,28 @@ def translate_name(name: str) -> str:
 	# Light post-fixes for awkward leftover English word order.
 	fixes = [
 		(r"^лучника отжимания\b", "отжимания лучника"),
+		(r"^лучника подтягивания\b", "подтягивания лучника"),
 		(r"^на грудь отжимания на брусьях\b", "отжимания на брусьях на грудь"),
 		(r"^широким хватом на грудь отжимания на брусьях\b", "отжимания на брусьях широким хватом на грудь"),
+		(r"^лёжа сгибание ног\b", "сгибание ног лёжа"),
+		(r"^сидя сгибание ног\b", "сгибание ног сидя"),
+		(r"^на коленях сгибание ног\b", "сгибание ног на коленях"),
+		(r"^узким хватом жим лёжа\b", "жим лёжа узким хватом"),
+		(r"^на наклонной скамье вниз жим\b", "жим на наклонной скамье вниз"),
+		(r"^на наклонной скамье жим\b", "жим на наклонной скамье"),
+		(r"^с хлопком отжимания\b", "отжимания с хлопком"),
+		(r"^глубокие отжимания\b", "глубокие отжимания"),
 		(r"\bstability мячом\b", "с фитболом"),
+		(r"\b\(боковой вид\)\b", "(вид сбоку)"),
+		(r"\b\(спины вид\)\b", "(вид сзади)"),
+		(r"\bpov\b", "вид"),
 		(r"\bнаклонный\s+", "наклонный "),
+		(r"\bзадний выпад\b", "выпад назад"),
+		(r"\bвыпад прыжок\b", "прыжковые выпады"),
+		(r"\bвыпад скручивание\b", "выпад с поворотом"),
+		(r"\bV\. 2\b", "вариант 2"),
+		(r"\bв подвеске сплит-присед\b", "сплит-присед в подвеске"),
+		(r"\bна одной ноге сплит-присед\b", "болгарский сплит-присед"),
 	]
 	for pattern, repl in fixes:
 		result = re.sub(pattern, repl, result, flags=re.IGNORECASE)
@@ -543,19 +611,35 @@ def translate_name(name: str) -> str:
 
 def main() -> None:
 	index = json.loads(INDEX_PATH.read_text(encoding="utf-8"))
-	full = json.loads(FULL_PATH.read_text(encoding="utf-8"))
+	overrides: dict[str, str] = {}
+	if OVERRIDES_PATH.exists():
+		overrides = json.loads(OVERRIDES_PATH.read_text(encoding="utf-8"))
 
 	for item in index:
-		item["name_ru"] = translate_name(item["name"])
-	for item in full:
-		item["name_ru"] = translate_name(item["name"])
+		ru = translate_name(item["name"])
+		oid = str(item.get("id", ""))
+		if oid in overrides:
+			ru = overrides[oid]
+		item["name_ru"] = ru
 
 	INDEX_PATH.write_text(
 		json.dumps(index, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8"
 	)
-	FULL_PATH.write_text(
-		json.dumps(full, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8"
-	)
+
+	if FULL_PATH.exists():
+		full = json.loads(FULL_PATH.read_text(encoding="utf-8"))
+		for item in full:
+			ru = translate_name(item["name"])
+			oid = str(item.get("id", ""))
+			if oid in overrides:
+				ru = overrides[oid]
+			item["name_ru"] = ru
+		FULL_PATH.write_text(
+			json.dumps(full, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8"
+		)
+		print(f"updated full catalog → {FULL_PATH.relative_to(ROOT)}")
+	else:
+		print(f"skip full catalog (missing {FULL_PATH.relative_to(ROOT)})")
 
 	samples = [
 		"archer push up",
@@ -563,6 +647,8 @@ def main() -> None:
 		"band bench press",
 		"barbell bench press",
 		"barbell decline bench press",
+		"barbell full squat (side pov)",
+		"lever lying leg curl",
 		"3/4 sit-up",
 		"dumbbell curl",
 		"cable seated row",
@@ -575,7 +661,7 @@ def main() -> None:
 	import re as _re
 
 	latin = sum(1 for x in index if _re.search(r"[A-Za-z]{4,}", x["name_ru"]))
-	print(f"updated {len(index)}; still have 4+ latin letters: {latin}")
+	print(f"updated {len(index)}; overrides {len(overrides)}; still have 4+ latin letters: {latin}")
 
 
 if __name__ == "__main__":

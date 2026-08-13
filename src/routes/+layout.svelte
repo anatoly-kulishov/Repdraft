@@ -28,13 +28,11 @@
 	let themeColor = $derived(THEME_META_COLORS[$appTheme]);
 	let isLight = $derived($appTheme === 'light');
 	function mobileFlowChrome(pathname: string): boolean {
-		if (pathname.startsWith('/catalog/')) return true;
 		if (pathname.startsWith('/live/')) return true;
 		if (pathname.startsWith('/builder')) return true;
 		if (pathname.startsWith('/exercise/')) return true;
 		if (pathname.startsWith('/articles')) return true;
 		if (pathname.startsWith('/auth')) return true;
-		if (pathname === '/settings') return true;
 		if (pathname === '/exercises/saved') return true;
 		if (pathname === '/records') return true;
 		if (pathname === '/workouts/summary') return true;
@@ -109,7 +107,6 @@
 		if (href === '/builder') {
 			return path.startsWith('/builder');
 		}
-		if (href === '/settings') return path === '/settings';
 		if (href === '/auth') return path === '/auth' || path.startsWith('/auth/');
 		return path === href || path.startsWith(`${href}/`);
 	}

@@ -53,11 +53,8 @@
 		opacity: 1;
 	}
 
-	.toast-item {
-		animation: toast-in 220ms ease-out;
-	}
-
-	/* Sit just above tabbar / sticky CTA — never mid-viewport. */
+	/* Sit just above tabbar / sticky CTA — never mid-viewport.
+	   Enter motion: .toast-item → kineticsToastIn in layout.css */
 	.toast-stack {
 		left: 50%;
 		bottom: calc(var(--mobile-chrome-bottom) + 0.65rem);
@@ -92,20 +89,4 @@
 		}
 	}
 
-	@keyframes toast-in {
-		from {
-			opacity: 0;
-			transform: translateY(0.45rem);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.toast-item {
-			animation: none;
-		}
-	}
 </style>
