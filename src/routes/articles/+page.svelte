@@ -22,7 +22,7 @@
 	<title>{title} — Repdraft</title>
 </svelte:head>
 
-<div class="content-page content-page--wide">
+<div class="content-page content-page--catalog">
 	<ScreenHeader class="md:hidden" {title} backHref="/exercises" />
 
 	<section class="articles-hub" aria-labelledby="articles-hub-heading">

@@ -152,7 +152,7 @@
 	<title>{translate(lang, 'workouts.title')} — Repdraft</title>
 </svelte:head>
 
-<section class="workouts-page content-page">
+<section class="workouts-page content-page content-page--narrow">
 	<div class="page-header workouts-page__header">
 		<div class="workouts-page__intro min-w-0">
 			<h1 class="page-title">{translate(lang, 'workouts.title')}</h1>

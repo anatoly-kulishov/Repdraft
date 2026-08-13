@@ -25,7 +25,7 @@ export function applyAppTheme(theme: AppTheme) {
 	root.style.colorScheme = theme;
 	const bg = THEME_META_COLORS[theme];
 	root.style.backgroundColor = bg;
-	document.body.style.backgroundColor = bg;
+	document.body.style.backgroundColor = '';
 	const meta = document.querySelector('meta[name="theme-color"]');
 	if (meta) meta.setAttribute('content', bg);
 	const boot = document.getElementById('pwa-boot');
