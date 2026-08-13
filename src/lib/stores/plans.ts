@@ -18,6 +18,12 @@ function createPlansStore() {
 	const ready = writable(false);
 	let inflight: Promise<void> | null = null;
 
+	function invalidate() {
+		inflight = null;
+		store.set([]);
+		ready.set(false);
+	}
+
 	async function refresh(opts?: { cloud?: boolean }) {
 		if (!browser) {
 			store.set([]);
@@ -57,6 +63,7 @@ function createPlansStore() {
 	return {
 		subscribe: store.subscribe,
 		ready: { subscribe: ready.subscribe },
+		invalidate,
 		refresh,
 		async saveCurrent(): Promise<WorkoutPlan> {
 			const lang = get(resolvedLocale);

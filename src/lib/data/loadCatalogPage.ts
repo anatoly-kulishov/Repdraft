@@ -3,6 +3,7 @@ import {
 	hubCatalogZones,
 	type CatalogZoneSlug
 } from '$lib/domain/catalogLinks';
+import { pickCatalogCoverImage, pickZoneCoverImage } from '$lib/domain/catalogCover';
 import { targetCountsForZone, uniqueSorted, type TargetChip } from '$lib/domain/filters';
 import type { ExerciseIndexItem } from '$lib/domain/types';
 
@@ -20,11 +21,8 @@ export type CatalogHubPayload = CatalogIndexPayload & {
 	zoneCovers: Record<string, string>;
 };
 
-function pickCoverImage(list: ExerciseIndexItem[]): string {
-	if (!list.length) return '';
-	const sorted = [...list].sort((a, b) => a.id.localeCompare(b.id));
-	const pick = sorted[Math.floor(sorted.length / 2)] ?? sorted[0];
-	return pick?.image ?? '';
+function pickCoverImage(list: ExerciseIndexItem[], target?: string): string {
+	return pickCatalogCoverImage(list, target);
 }
 
 function targetCoversForZone(
@@ -40,36 +38,22 @@ function targetCoversForZone(
 	}
 	const covers: Record<string, string> = {};
 	for (const [target, list] of byTarget) {
-		const image = pickCoverImage(list);
+		const image = pickCoverImage(list, target);
 		if (image) covers[target] = image;
 	}
 	return covers;
 }
 
 function catalogHubMeta(exercises: ExerciseIndexItem[]) {
-	const rawCounts: Record<string, number> = {};
-	const byPart = new Map<string, ExerciseIndexItem[]>();
-	for (const ex of exercises) {
-		rawCounts[ex.body_part] = (rawCounts[ex.body_part] ?? 0) + 1;
-		const bucket = byPart.get(ex.body_part) ?? [];
-		bucket.push(ex);
-		byPart.set(ex.body_part, bucket);
-	}
-	const rawCovers: Record<string, string> = {};
-	for (const [part, list] of byPart) {
-		const image = pickCoverImage(list);
-		if (image) rawCovers[part] = image;
-	}
-
 	const bodyParts = uniqueSorted(exercises, 'body_part');
 	const hubZones = hubCatalogZones(bodyParts);
 	const zoneCounts: Record<string, number> = {};
 	const zoneCovers: Record<string, string> = {};
 	for (const zone of hubZones) {
 		const parts = catalogZoneBodyParts(zone);
-		zoneCounts[zone] = parts.reduce((sum, part) => sum + (rawCounts[part] ?? 0), 0);
-		zoneCovers[zone] =
-			rawCovers[parts[0] ?? ''] ?? rawCovers[parts[1] ?? ''] ?? Object.values(rawCovers)[0] ?? '';
+		const inZone = exercises.filter((ex) => parts.includes(ex.body_part));
+		zoneCounts[zone] = inZone.length;
+		zoneCovers[zone] = pickZoneCoverImage(inZone, zone);
 	}
 	return { zoneCounts, zoneCovers, hubZones };
 }
@@ -130,7 +114,7 @@ export async function loadCatalogZone(
 		targetChips,
 		zoneCount,
 		targetCovers: targetCoversForZone(exercises, parts),
-		zoneCover: pickCoverImage(inZone)
+		zoneCover: pickZoneCoverImage(inZone, bodyPart)
 	};
 }
 

@@ -27,6 +27,7 @@ export const RECORDS_STORAGE_KEY = 'repdraft:records';
 export const SESSIONS_STORAGE_KEY = 'repdraft:sessions';
 export const ACTIVE_SESSION_KEY = 'repdraft:active-session';
 export const BOOKMARKS_STORAGE_KEY = 'repdraft:bookmarks';
+export const REST_UNTIL_STORAGE_KEY = 'repdraft:rest-until';
 
 export interface BookmarkRepository {
 	list(): Promise<string[]>;

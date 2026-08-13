@@ -1,6 +1,5 @@
 import { browser } from '$app/environment';
 import { sanitizeGreetingName } from '$lib/domain/greetingName';
-import { readGreetingName, writeGreetingName } from '$lib/storage/localGreetingName';
 import { getSupabase } from '$lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 import { writable } from 'svelte/store';
@@ -22,25 +21,18 @@ function createGreetingNameStore() {
 				set('');
 				return;
 			}
-			const local = readGreetingName(user.id);
-			if (local !== null) {
-				set(local);
-				return;
-			}
 			set(metaGreetingName(user) ?? '');
 		},
 		async save(raw: string, userId: string): Promise<void> {
 			if (!browser || !userId) return;
 			const sanitized = sanitizeGreetingName(raw);
-			set(sanitized);
-			writeGreetingName(userId, sanitized || null);
-
 			const supabase = getSupabase();
-			if (!supabase) return;
-			const { error } = await supabase.auth.updateUser({
+			if (!supabase) throw new Error('errors.cloudOff');
+			const { data, error } = await supabase.auth.updateUser({
 				data: { greeting_name: sanitized || null }
 			});
 			if (error) throw error;
+			set(metaGreetingName(data.user) ?? sanitized);
 		}
 	};
 }

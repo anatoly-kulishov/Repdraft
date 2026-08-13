@@ -20,6 +20,8 @@ const checks = [
 	'authFlow',
 	'greetingName',
 	'localCacheUser',
+	'catalogCover',
+	'exerciseName',
 	'articles'
 ];
 

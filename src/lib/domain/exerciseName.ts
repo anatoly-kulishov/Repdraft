@@ -32,11 +32,15 @@ export function exerciseNameSortLocale(locale: AppLocale): string {
 }
 
 /** Reject mixed EN/RU and leftover tokens like `pov`. */
+const MIXED_EN_BLOCKLIST =
+	/\b(tap|flip|towel|motion|slingers|rollerout|bottoms|cocoons|judo|russian|bicycle|windmill|oblique|negative|pelvic|landmine|planche|otis|slam|crab|lean)\b/i;
+
 export function isDisplayableRuName(ru: string): boolean {
 	const value = ru.trim();
 	if (!value) return false;
 	if (!/[а-яё]/i.test(value)) return false;
 	if (/[A-Za-z]{4,}/.test(value)) return false;
+	if (/[а-яё]/i.test(value) && MIXED_EN_BLOCKLIST.test(value)) return false;
 	if (/\bpov\b/i.test(value)) return false;
 	return true;
 }
