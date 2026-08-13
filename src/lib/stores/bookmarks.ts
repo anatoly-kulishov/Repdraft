@@ -21,9 +21,15 @@ function createBookmarksStore() {
 		}
 	}
 
+	function invalidate() {
+		store.set([]);
+		ready.set(false);
+	}
+
 	return {
 		subscribe: store.subscribe,
 		ready: { subscribe: ready.subscribe },
+		invalidate,
 		refresh,
 		has(exerciseId: string): boolean {
 			return get(store).includes(exerciseId);

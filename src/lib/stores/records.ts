@@ -16,6 +16,12 @@ function createRecordsStore() {
 	const ready = writable(false);
 	let inflight: Promise<void> | null = null;
 
+	function invalidate() {
+		inflight = null;
+		store.set([]);
+		ready.set(false);
+	}
+
 	async function refresh(opts?: { cloud?: boolean }) {
 		if (!browser) {
 			store.set([]);
@@ -55,6 +61,7 @@ function createRecordsStore() {
 	return {
 		subscribe: store.subscribe,
 		ready: { subscribe: ready.subscribe },
+		invalidate,
 		refresh,
 		get(exerciseId: string): PersonalRecord | null {
 			return get(store).find((r) => r.exerciseId === exerciseId) ?? null;

@@ -11,6 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 INDEX_PATH = ROOT / "static/data/exercises.index.json"
 FULL_PATH = ROOT / "data/exercises.full.json"
 OVERRIDES_PATH = ROOT / "static/data/exercise-names.ru.overrides.json"
+SRC_OVERRIDES_PATH = ROOT / "src/lib/data/exerciseNamesRuOverrides.json"
+LATIN_SCRUB_PATH = Path(__file__).resolve().parent / "exercise-latin-scrub.json"
 
 # Leading equipment → natural Russian adjunct (usually at the end).
 EQUIPMENT_PREFIX: list[tuple[str, str]] = [
@@ -40,6 +42,7 @@ EQUIPMENT_PREFIX: list[tuple[str, str]] = [
 EQUIPMENT_PREFIX = [
 	("olympic barbell", "с олимпийской штангой"),
 	("ez barbell", "с EZ-грифом"),
+	("ez bar", "с EZ-грифом"),
 	("trap bar", "с трэп-грифом"),
 	("smith machine", "в машине Смита"),
 	("leverage machine", "в рычажном тренажёре"),
@@ -97,7 +100,10 @@ PHRASES: list[tuple[str, str]] = [
 	("calf raises", "подъёмы на носки"),
 	("front raise", "подъём вперёд"),
 	("lateral raise", "разведение в стороны"),
+	("rear delt raise", "подъём задних дельт"),
+	("rear delt row", "тяга задних дельт"),
 	("rear delt", "задние дельты"),
+	("straight back", "прямой спины"),
 	("side bend", "наклон в сторону"),
 	("side bends", "наклоны в сторону"),
 	("hip thrust", "ягодичный мост"),
@@ -171,12 +177,14 @@ PHRASES: list[tuple[str, str]] = [
 	("lunge with swing", "выпад с махами"),
 	("sprint lunge", "спринтовый выпад"),
 	("rear lunge", "выпад назад"),
+	("45в°", "45°"),
 	("v. 2", "вариант 2"),
 	("goblet squat", "гоблет-присед"),
 	("front squat", "фронтальный присед"),
 	("back squat", "присед со штангой на спине"),
 	("overhead squat", "присед над головой"),
 	("pistol squat", "пистолетик"),
+	("pistol", "пистолетик"),
 	("cossack squat", "казачий присед"),
 	("jump squat", "прыжковый присед"),
 	("walking lunge", "выпады в ходьбе"),
@@ -196,9 +204,9 @@ PHRASES: list[tuple[str, str]] = [
 	("bent arm", "согнутой рукой"),
 	("straight arm", "прямой рукой"),
 	("straight leg", "на прямой ноге"),
-	("pushdown", "разгибание вниз на блоке"),
-	("push-down", "разгибание вниз на блоке"),
-	("pulldown", "тяга блока"),
+	("pushdown", "разгибание вниз"),
+	("push-down", "разгибание вниз"),
+	("pulldown", "тяга"),
 	("pullover", "пуловер"),
 	("pull-over", "пуловер"),
 	("kickback", "отведение назад"),
@@ -236,7 +244,271 @@ PHRASES: list[tuple[str, str]] = [
 	("front pov", "вид спереди"),
 	("pallof press", "жим Паллофа"),
 	("pallof", "Паллофа"),
+	("straight leg raise", "подъём прямой ноги"),
+	("hanging straight leg raise", "подъём прямой ноги в висе"),
+	("rocking frog stretch", "растяжка лягушки с качанием"),
+	("one leg calf raise", "подъём на носки на одной ноге"),
+	("single leg squat", "присед на одной ноге"),
+	("spine twist", "скручивание позвоночника"),
+	("reverse wrist curl", "обратное сгибание запястий"),
+	("kneeling push-up", "отжимания на коленях"),
+	("kneeling push up", "отжимания на коленях"),
+	("incline shrug", "наклонные шраги"),
+	("decline shrug", "шраги вниз головой"),
+	("one arm prone curl", "сгибание на бицепс одной рукой лёжа на животе"),
+	("band alternating v-up", "поочерёдная V-складка с резинкой"),
+	("alternating v-up", "поочерёдная V-складка"),
+	("v-up", "V-складка"),
+	("v sit", "V-сид"),
+	("l-sit", "L-сид"),
+	("leg-hip", "ног и таза"),
+	("body saw", "пила корпуса"),
+	("body-up", "подъём корпуса"),
+	("march sit", "сит-ап в шаге"),
+	("kick out sit", "скручивание с выпадом ногой"),
+	("butt-ups", "подъёмы таза"),
+	("butt-up", "подъём таза"),
+	("big toe", "большого пальца ноги"),
+	("reclining big toe pose", "поза большого пальца ноги лёжа"),
+	("ski ergometer", "лыжный эргометр"),
+	("ski step", "лыжный шаг"),
+	("pull-in", "подтягивание коленей"),
+	("elbow-to-knee", "локоть-колено"),
+	("pike-to-cobra", "пайк-кобра"),
+	("kettlebell windmill", "мельница с гирей"),
+	("knee touch crunch", "скручивание с касанием колен"),
+	("l-sit on floor", "L-сед на полу"),
+	("landmine 180", "поворот штанги на 180°"),
+	("lean planche", "наклонный планш"),
+	("lying elbow to knee", "скручивание локоть-колено лёжа"),
+	("negative crunch", "негативное скручивание"),
+	("oblique crunch", "скручивание на косые"),
+	("oblique crunches floor", "скручивания на косые на полу"),
+	("one arm slam", "слэм одной рукой"),
+	("otis up", "подъём Отиса"),
+	("otis-up", "подъём Отиса"),
+	("pelvic tilt", "наклон таза"),
+	("cable judo flip", "бросок дзюдо на блоке"),
+	("russian twist", "русское скручивание"),
+	("bicycle crunch", "велосипедное скручивание"),
+	("crab twist toe touch", "скручивание «краб» с касанием носков"),
+	("cocoons", "коконы"),
+	("bottoms-up", "упор снизу вверх"),
+	("shoulder tap", "касание плеча"),
+	("shoulder tap push-up", "отжимания с касанием плеча"),
+	("chest tap push-up", "отжимания с касанием груди"),
+	("kneeling plank tap shoulder", "боковая планка на коленях с касанием плеча"),
+	("pro lat bar", "профессиональный гриф для широчайших"),
+	("dip-pull-up cage", "клетка для брусьев и подтягиваний"),
+	("chest pad", "упор на грудь"),
+	("t-bar reverse grip row", "тяга T-грифом обратным хватом"),
+	("reverse t-bar row", "обратная тяга T-грифом"),
+	("t-bar row", "тяга T-грифом"),
+	("t bar row", "тяга T-грифом"),
+	("t bar", "T-грифом"),
+	("front pulldown", "передняя тяга"),
+	("high row", "высокая тяга"),
+	("lateral high row", "боковая высокая тяга"),
+	("lateral wide pulldown", "боковая широкая тяга"),
+	("reverse grip lateral pulldown", "боковая тяга обратным хватом"),
+	("reverse grip vertical row", "вертикальная тяга обратным хватом"),
+	("catch and overhead throw", "захват и бросок над головой"),
+	("muscle up", "выход силой"),
+	("muscle-up", "выход силой"),
+	("air bike", "велосипед с вентилятором"),
+	("kipping muscle up", "выход силой с киппингом"),
+	("kipping muscle-up", "выход силой с киппингом"),
+	("skater hops", "прыжки конькобежца"),
+	("swimmer kicks", "удары пловца"),
+	("kneeling step with swing", "шаг с махами на коленях"),
+	("single leg bridge with outstretched leg", "мост на одной ноге с вытянутой ногой"),
+	("janda sit-up", "скручивания Янды"),
+	("london bridge", "лондонский мост"),
+	("push to run", "отжимание с бегом"),
+	("push-up plus", "отжимания плюс"),
+	("push up plus", "отжимания плюс"),
+	("runners stretch", "растяжка бегуна"),
+	("stalder press", "жим Шталдера"),
+	("star jump", "прыжок звезда"),
+	("straddle maltese", "мальтийский планш в стрэддле"),
+	("straddle planche", "планш в стрэддле"),
+	("tuck crunch", "скручивание в группировке"),
+	("chest pass", "пас на грудь"),
+	("overhead slam", "бросок над головой"),
+	("multiple response", "с множественной реакцией"),
+	("single response", "с одной реакцией"),
+	("release", "с броском"),
+	("3 point stance", "3-точечная стойка"),
+	("stork stance", "поза аиста"),
+	("quick feet", "быстрые ноги"),
+	("short stride", "короткий шаг"),
+	("full can", ""),
+	("tate press", "жим Тейта"),
+	("zottman curl", "сгибание Зоттмана"),
+	("waiter curl", "сгибание официанта"),
+	("spider curl", "сгибание «паука»"),
+	("around the world", "вокруг света"),
+	("hindu push-up", "индийские отжимания"),
+	("hindu push up", "индийские отжимания"),
+	("world greatest stretch", "лучшая растяжка в мире"),
+	("gironda sternum chin", "подтягивание Жиронды к груди"),
+	("gorilla chin", "подтягивание гориллы"),
+	("skin the cat", "переворот на кольцах"),
+	("potty squat", "присед с широкой постановкой"),
+	("prisoner half crunches", "скручивания с руками за головой"),
+	("prisoner squat", "присед с руками за головой"),
+	("frankenstein squat", "присед Франкенштейна"),
+	("renegade row", "тяга ренегата"),
+	("thibaudeau kayak row", "тяга каяком"),
+	("svend press", "жим Свенда"),
+	("wipers", "дворники"),
+	("rocky pull-up pulldown", "подтягивания с тягой"),
+	("twisted leg raise", "подъём ноги с поворотом"),
+	("hip raise", "подъём бедра"),
+	("hip lift", "подъём бедра"),
+	("hip adduction", "приведение бедра"),
+	("hip stretch", "растяжка бедра"),
+	("calf push stretch", "растяжка икр"),
+	("calf stretch", "растяжка икр"),
+	("tricep kickback", "отведение трицепса назад"),
+	("triceps kickback", "отведение трицепса назад"),
+	("elbow lift", "подъём локтя"),
+	("groin crunch", "скручивание паховых мышц"),
+	("hamstring stretch", "растяжка бицепса бедра"),
+	("leg up hamstring stretch", "растяжка бицепса бедра с поднятой ногой"),
+	("leg pull in", "подтягивание ног"),
+	("peroneals stretch", "растяжка малоберцовых"),
+	("back stretch", "растяжка спины"),
+	("triceps press", "жим трицепса"),
+	("triceps stretch", "растяжка трицепса"),
+	("rotary calf", "ротационный подъём на носки"),
+	("calf press", "жим носками"),
+	("tennis ball", "теннисным мячом"),
+	("triceps pushdown", "разгибание на трицепс"),
 	("inverse leg curl", "обратное сгибание ног"),
+	("good morning", "наклон корпуса"),
+	("drag curl", "тяговое сгибание"),
+	("zercher squat", "присед с грифом в локтях"),
+	("pendlay row", "тяга Пендлея"),
+	("skull crusher", "французский жим"),
+	("skullcrusher", "французский жим"),
+	("jack knife", "ножницы"),
+	("jackknife", "ножницы"),
+	("3/4 sit-up", "скручивания на 3/4"),
+	("exercise ball", "на фитболе"),
+	("balance board", "балансировка на доске"),
+	("cross-over", "кроссовер"),
+	("cross over", "кроссовер"),
+	("cycle cross trainer", "кросс-тренажёр (велосипед)"),
+	("arm slingers", "разведение рук"),
+	("spider curl", "сгибание «паука»"),
+	("stiff leg good morning", "наклон корпуса на прямых ногах"),
+	("close grip to skull press", "жим узким хватом на трицепс"),
+	("decline close grip to skull press", "жим узким хватом на трицепс вниз головой"),
+	("calf press on leg press", "жим носками в тренажёре жима ногами"),
+	("chair squat", "присед на стуле"),
+	("alternate triceps extension", "поочерёдное разгибание на трицепс"),
+	("wide hand push up", "отжимания широкой постановкой рук"),
+	("wide hand push-up", "отжимания широкой постановкой рук"),
+	("alternate leg raise", "поочерёдный подъём ног"),
+	("wrist circles", "круги запястьями"),
+	("squat row", "тяга в приседе"),
+	("incline row", "наклонная тяга"),
+	("one arm snatch", "рывок одной рукой"),
+	("wheel run", "бег с колесом"),
+	("reverse grip skullcrusher", "французский жим обратным хватом"),
+	("l-pull-up", "L-подтягивание"),
+	("l pull-up", "L-подтягивание"),
+	("l pull up", "L-подтягивание"),
+	("basic toe touch", "базовое касание носков"),
+	("side push-up", "боковые отжимания"),
+	("side push up", "боковые отжимания"),
+	("face press", "жим к лицу"),
+	("face pull", "тяга к лицу"),
+	("hip internal rotation", "внутренняя ротация бедра"),
+	("hip external rotation", "внешняя ротация бедра"),
+	("one arm standing low row", "низкая тяга одной рукой стоя"),
+	("reverse preacher curl", "обратное сгибание на скамье Скотта"),
+	("seated overhead triceps extension", "разгибание на трицепс над головой сидя"),
+	("back wrist curl", "сгибание запястий за спиной"),
+	("curl-up", "скручивание"),
+	("high pulley overhead triceps extension", "разгибание на трицепс из-за головы на высоком блоке"),
+	("high pulley triceps extension", "разгибание на трицепс на высоком блоке"),
+	("high pulley overhead tricep extension", "разгибание на трицепс из-за головы на высоком блоке"),
+	("high pulley tricep extension", "разгибание на трицепс на высоком блоке"),
+	("sumo high pull", "высокая тяга сумо"),
+	("hack calf raise", "подъём на носки в гакк-приседе"),
+	("hack one leg calf raise", "подъём на носки в гакк-приседе на одной ноге"),
+	("bradford press", "жим Брэдфорда"),
+	("bradford rocky press", "жим Брэдфорда-Роки"),
+	("press and pull", "жим и тяга"),
+	("speed squat", "скоростной присед"),
+	("narrow stance squat", "присед узкой постановкой"),
+	("butterfly yoga pose", "поза бабочки"),
+	("yoga pose", "поза йоги"),
+	("box jump down with one leg stabilization", "прыжок с тумбы на одной ноге с удержанием"),
+	("back and forth step", "шаги вперёд-назад"),
+	("motion russian twist", "русское скручивание"),
+	("assisted motion russian twist", "русское скручивание с поддержкой"),
+	("elevator", "лифт для пресса"),
+	("wind sprints", "спринты"),
+	("toe touch", "касание носков"),
+	("pin press", "жим с упорами"),
+	("pin presses", "жим с упорами"),
+	("sz-bar", "SZ-грифом"),
+	("arm blaster", "бластером для рук"),
+	("ez-bar", "с EZ-грифом"),
+	("ez bar", "с EZ-грифом"),
+	("jm bench press", "JM-жим лёжа"),
+	("with rope", "с канатом"),
+	("with towel", "с полотенцем"),
+	("v-bar", "V-грифом"),
+	("v bar", "V-грифом"),
+	("dead bug", "мёртвый жук"),
+	("glute-ham raise", "подъём ягодиц и бицепса бедра"),
+	("chin-up", "подтягивания"),
+	("chin-ups", "подтягивания"),
+	("pull-up", "подтягивания"),
+	("pull-ups", "подтягивания"),
+	("dip bar", "брусьях"),
+	("two-one leg curl", "поочерёдное сгибание ног"),
+	("two arm", "двумя руками"),
+	("two leg", "двумя ногами"),
+	("monster walk", "монстр-ходьба"),
+	("dynamic chest stretch", "динамическая растяжка грудных"),
+	("side lying biceps curl", "сгибание на бицепс боком лёжа"),
+	("biceps leg concentration curl", "концентрированное сгибание ногой на бицепс"),
+	("hip lat stretch", "растяжка бедра и широчайших"),
+	("side push neck stretch", "боковая растяжка шеи с жимом"),
+	("side wrist pull stretch", "боковая растяжка запястий с тягой"),
+	("side hip abduction", "отведение бедра в сторону"),
+	("side hip", "бедро боком"),
+	("parallel bars", "на параллельных брусьях"),
+	("bent knee legs", "с согнутыми коленями"),
+	("extended range", "с увеличенной амплитудой"),
+	("full range", "с полной амплитудой"),
+	("range of motion", "амплитуды движения"),
+	("pull-up cable machine", "в тренажёре для подтягиваний"),
+	("chest push", "жим на грудь"),
+	("from 3 point stance", "из 3-точечной стойки"),
+	("bench seated press", "сидя жим на скамье"),
+	("seated bench press", "сидя жим на скамье"),
+	("exercise ball hug", "объятие фитбола"),
+	("exercise ball alternating arm ups", "поочерёдный подъём рук на фитболе"),
+	("hug keens to chest", "объятие коленей к груди"),
+	("hug knees to chest", "объятие коленей к груди"),
+	("knee hug", "объятие коленей"),
+	("toe raise", "подъём на носки"),
+	("spider crawl push-up", "паучьи отжимания"),
+	("spider crawl push up", "паучьи отжимания"),
+	("spider crawl", "паучье ползание"),
+	("quads", "приседания для квадрицепса"),
+	("flutter kicks", "флаттер-кики"),
+	("leg-hip raise", "подъём ног и таза"),
+	("reclining big toe pose with rope", "поза большого пальца ноги лёжа с канатом"),
+	("hug knees to chest", "объятие коленей к груди"),
+	("sledge hammer", "удары кувалдой"),
+	("spell caster", "вращение корпуса с гантелями"),
 	("deep push up", "глубокие отжимания"),
 	("deep push-up", "глубокие отжимания"),
 	("hip thrust", "ягодичный мост"),
@@ -245,8 +517,8 @@ PHRASES: list[tuple[str, str]] = [
 
 WORDS: dict[str, str] = {
 	"press": "жим",
-	"curl": "сгибание",
-	"curls": "сгибания",
+	"curl": "сгибание на бицепс",
+	"curls": "сгибания на бицепс",
 	"row": "тяга",
 	"rows": "тяги",
 	"raise": "подъём",
@@ -300,6 +572,7 @@ WORDS: dict[str, str] = {
 	"circles": "круги",
 	"snatch": "рывок",
 	"clean": "взятие на грудь",
+	"saw": "пила",
 	"jerk": "толчок",
 	"pull": "тяга",
 	"push": "жим",
@@ -511,6 +784,34 @@ WORDS: dict[str, str] = {
 PHRASES.sort(key=lambda item: len(item[0]), reverse=True)
 EQUIPMENT_PREFIX.sort(key=lambda item: len(item[0]), reverse=True)
 
+LATIN_SCRUB: dict[str, str] = {}
+if LATIN_SCRUB_PATH.exists():
+	LATIN_SCRUB = json.loads(LATIN_SCRUB_PATH.read_text(encoding="utf-8"))
+
+
+def scrub_leftover_latin(text: str) -> str:
+	"""Replace leftover English tokens in a mostly-Russian title."""
+
+	def repl(match: re.Match[str]) -> str:
+		key = match.group(0).lower()
+		if key in LATIN_SCRUB:
+			return LATIN_SCRUB[key]
+		if key in WORDS and WORDS[key]:
+			return WORDS[key]
+		return ""
+
+	out = text
+	for _ in range(8):
+		next_out = normalize_spaces(re.sub(r"[A-Za-z]{4,}", repl, out))
+		if next_out == out or not has_long_latin(next_out):
+			return next_out
+		out = next_out
+	return out
+
+
+def has_long_latin(text: str) -> bool:
+	return bool(re.search(r"[A-Za-z]{4,}", text))
+
 
 def normalize_spaces(text: str) -> str:
 	text = re.sub(r"\s+", " ", text).strip(" -–—,/")
@@ -569,8 +870,42 @@ def translate_name(name: str) -> str:
 	body = translate_tokens(core_l)
 	note_ru = translate_tokens(note) if note else ""
 
+	# Avoid doubling "на блоке" when the body already mentions a block/pulley.
+	if equip_ru == "на блоке" and re.search(r"\b(блоке|блока)\b", body):
+		equip_ru = ""
 	chunks = [c for c in [body, equip_ru] if c]
 	result = normalize_spaces(" ".join(chunks))
+
+	# Fix common Russian word-order inversions (adjective/body-part before action).
+	body_parts = (
+		"спин[аеиуыо]*|груд[ьияе]*|плеч[аеиоу]*|ше[ийюя]*|бедр[аеоу]*|ягодиц[аеы]*|"
+		"икр[аы]*|колен[ейяю]*|запястий|предплечий|трицепс[аеу]*|бицепс[аеу]*|"
+		"квадрицепс[аеу]*|пах[ау]*|корпус[аеу]*|таз[ауо]*|пресса?|кор[аеу]*|"
+		"ног[аеиоу]*|рук[аеиоу]*|локт[ейяю]*|голов[аеыу]*|кист[ейяю]*|стоп[аы]*|"
+		"большого пальца ноги|дельт[аы]*"
+	)
+	adjectives = (
+		"задн[иеях]+|передн[иеях]+|боков[аяые]+|верхн[иеях]+|нижн[иеях]+|"
+		"внутренн[иеях]+|внешн[иеях]+|прям[аяыеой]+|согнут[аяыеой]+|"
+		"обратн[аяыеой]+|низк[ийаяое]+|высок[ийаяое]+|горизонтальн[аяые]+|"
+		"вертикальн[аяые]+|диагональн[аяые]+|боком|лёжа|сидя|стоя|на коленях"
+	)
+	actions = "подъём|подъёмы|разгибание|сгибание|жим|тяга|разведение|скручивание|скручивания|растяжка|мост|планка|присед|приседания|выпад|выпады|отведение|приведение|ротация|удар|удары|ходьба|бег|прыжок|прыжки|махи|бросок|прокат|пила|касание"
+	# "задние дельты подъём" -> "подъём задних дельт"
+	result = re.sub(
+		rf"\b({adjectives})\s+({body_parts})\s+({actions})\b",
+		lambda m: f"{m.group(3)} {m.group(1)} {m.group(2)}",
+		result,
+		flags=re.IGNORECASE,
+	)
+	# "спины сгибание" -> "сгибание спины"
+	result = re.sub(
+		rf"\b({body_parts})\s+({actions})\b",
+		lambda m: f"{m.group(2)} {m.group(1)}",
+		result,
+		flags=re.IGNORECASE,
+	)
+	result = normalize_spaces(result)
 	if note_ru:
 		result = f"{result} ({note_ru})" if result else f"({note_ru})"
 	if not result:
@@ -578,6 +913,11 @@ def translate_name(name: str) -> str:
 
 	# Light post-fixes for awkward leftover English word order.
 	fixes = [
+		(r"^С EZ-грифом узким хватом (.+)", r"\1 узким хватом с EZ-грифом"),
+		(r"^С EZ-грифом (.+)", r"\1 с EZ-грифом"),
+		(r"^С SZ-грифом (.+)", r"\1 со SZ-грифом"),
+		(r"^С V-грифом (.+)", r"\1 с V-грифом"),
+		(r"^С грифом (.+)", r"\1 с грифом"),
 		(r"^лучника отжимания\b", "отжимания лучника"),
 		(r"^лучника подтягивания\b", "подтягивания лучника"),
 		(r"^на грудь отжимания на брусьях\b", "отжимания на брусьях на грудь"),
@@ -605,8 +945,28 @@ def translate_name(name: str) -> str:
 	for pattern, repl in fixes:
 		result = re.sub(pattern, repl, result, flags=re.IGNORECASE)
 
+	result = scrub_leftover_latin(result)
 	result = normalize_spaces(result)
 	return result[:1].upper() + result[1:] if result else result
+
+
+def resolve_ru_name(name: str, override: str | None = None) -> str:
+	if override:
+		return override
+	ru = translate_name(name)
+	if not has_long_latin(ru):
+		return ru
+	# Retry: translate full English title without equipment split.
+	body = translate_tokens(name.lower())
+	body = scrub_leftover_latin(body)
+	if body and not has_long_latin(body):
+		return body[:1].upper() + body[1:]
+	# Last resort: drop unknown English tokens, keep Russian skeleton.
+	stripped = scrub_leftover_latin(ru)
+	stripped = normalize_spaces(re.sub(r"[A-Za-z]{4,}", " ", stripped))
+	if stripped and re.search(r"[а-яё]", stripped, re.IGNORECASE):
+		return stripped[:1].upper() + stripped[1:]
+	return ru
 
 
 def main() -> None:
@@ -614,13 +974,23 @@ def main() -> None:
 	overrides: dict[str, str] = {}
 	if OVERRIDES_PATH.exists():
 		overrides = json.loads(OVERRIDES_PATH.read_text(encoding="utf-8"))
+	if SRC_OVERRIDES_PATH.exists():
+		src = json.loads(SRC_OVERRIDES_PATH.read_text(encoding="utf-8"))
+		overrides = {**src, **overrides}
 
 	for item in index:
-		ru = translate_name(item["name"])
 		oid = str(item.get("id", ""))
-		if oid in overrides:
-			ru = overrides[oid]
-		item["name_ru"] = ru
+		item["name_ru"] = resolve_ru_name(item["name"], overrides.get(oid))
+		if has_long_latin(item["name_ru"]):
+			stripped = normalize_spaces(re.sub(r"[A-Za-z]{4,}", " ", item["name_ru"]))
+			if stripped and re.search(r"[а-яё]", stripped, re.IGNORECASE):
+				item["name_ru"] = stripped[:1].upper() + stripped[1:]
+		if has_long_latin(item["name_ru"]) and oid not in overrides:
+			auto = resolve_ru_name(item["name"])
+			auto = normalize_spaces(re.sub(r"[A-Za-z]{4,}", " ", auto))
+			if auto and re.search(r"[а-яё]", auto, re.IGNORECASE):
+				item["name_ru"] = auto[:1].upper() + auto[1:]
+				overrides[oid] = item["name_ru"]
 
 	INDEX_PATH.write_text(
 		json.dumps(index, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8"
@@ -629,11 +999,12 @@ def main() -> None:
 	if FULL_PATH.exists():
 		full = json.loads(FULL_PATH.read_text(encoding="utf-8"))
 		for item in full:
-			ru = translate_name(item["name"])
 			oid = str(item.get("id", ""))
-			if oid in overrides:
-				ru = overrides[oid]
-			item["name_ru"] = ru
+			item["name_ru"] = resolve_ru_name(item["name"], overrides.get(oid))
+			if has_long_latin(item["name_ru"]):
+				stripped = normalize_spaces(re.sub(r"[A-Za-z]{4,}", " ", item["name_ru"]))
+				if stripped and re.search(r"[а-яё]", stripped, re.IGNORECASE):
+					item["name_ru"] = stripped[:1].upper() + stripped[1:]
 		FULL_PATH.write_text(
 			json.dumps(full, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8"
 		)
@@ -662,6 +1033,12 @@ def main() -> None:
 
 	latin = sum(1 for x in index if _re.search(r"[A-Za-z]{4,}", x["name_ru"]))
 	print(f"updated {len(index)}; overrides {len(overrides)}; still have 4+ latin letters: {latin}")
+
+	if overrides:
+		payload = json.dumps(overrides, ensure_ascii=False, indent="\t") + "\n"
+		OVERRIDES_PATH.write_text(payload, encoding="utf-8")
+		SRC_OVERRIDES_PATH.write_text(payload, encoding="utf-8")
+		print(f"synced overrides → {OVERRIDES_PATH.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":
