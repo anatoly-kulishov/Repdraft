@@ -9,6 +9,7 @@ import { greetingName } from './greetingName';
 import { live } from './live';
 import { plans } from './plans';
 import { records } from './records';
+import { bookmarks } from './bookmarks';
 
 type AuthState = {
 	configured: boolean;
@@ -49,8 +50,15 @@ function createAuthStore() {
 			if (cacheCleared) {
 				draft.resetDraft();
 				live.hydrate();
+				plans.invalidate();
+				records.invalidate();
+				bookmarks.invalidate();
 			}
-			await Promise.all([plans.refresh({ cloud: false }), records.refresh({ cloud: false })]);
+			await Promise.all([
+				plans.refresh({ cloud: false }),
+				records.refresh({ cloud: false }),
+				bookmarks.refresh()
+			]);
 			await Promise.all([plans.refresh(), records.refresh()]);
 			if (loggedIn) {
 				await migrateLocalToCloud();

@@ -9,6 +9,7 @@ import {
 	updateLoggedSet
 } from '$lib/domain/session';
 import type { LastPerformance, LoggedSet, WorkoutPlan, WorkoutSession } from '$lib/domain/types';
+import { REST_UNTIL_STORAGE_KEY } from '$lib/domain/repository';
 import { deleteSession, persistSession, clearFinishedSessionHistory } from '$lib/storage/dataAccess';
 import {
 	localSessionRepository,
@@ -25,7 +26,7 @@ type LiveState = {
 	ready: boolean;
 };
 
-const REST_UNTIL_KEY = 'repdraft:rest-until';
+const REST_UNTIL_KEY = REST_UNTIL_STORAGE_KEY;
 
 function createLiveStore() {
 	const store = writable<LiveState>({

@@ -237,7 +237,7 @@
 										<div class="entity-row__actions">
 											<button
 												type="button"
-												class="btn-secondary inline-flex min-h-11 shrink-0 items-center gap-2 px-4"
+												class="btn-primary inline-flex min-h-11 shrink-0 items-center gap-2 px-4"
 												onclick={() => onStart(plan.id)}
 												disabled={plan.exercises.length === 0 || planBusyId !== null}
 											>

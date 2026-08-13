@@ -2979,11 +2979,6 @@ html[data-theme='dark'] .zone-card__media {
 		min-height: 0;
 		margin-bottom: 0;
 	}
-
-	.home-guest-next {
-		grid-template-columns: 1fr 1fr;
-		gap: 1rem;
-	}
 }
 
 @media (max-width: 1023px) {
@@ -6569,7 +6564,16 @@ html[data-theme='dark'] .auth-segment--sub.is-active {
 }
 
 .article-teaser {
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
 	margin-top: 1rem;
+}
+
+@media (min-width: 1024px) {
+	.article-teaser {
+		gap: 0.75rem;
+	}
 }
 
 .article-teaser__head {
