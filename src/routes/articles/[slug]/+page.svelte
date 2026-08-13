@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ArticleCover from '$lib/components/ArticleCover.svelte';
 	import { renderArticleBody } from '$lib/domain/articles';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
@@ -30,8 +31,11 @@
 	</div>
 
 	<div class="article-page__hero panel" data-tone={tone}>
-		<h1 class="page-title article-page__title hidden md:block">{article.title}</h1>
-		<p class="article-page__excerpt">{article.excerpt}</p>
+		<ArticleCover {article} variant="hero" />
+		<div class="article-page__hero-text">
+			<h1 class="page-title article-page__title hidden md:block">{article.title}</h1>
+			<p class="article-page__excerpt">{article.excerpt}</p>
+		</div>
 	</div>
 
 	<div class="article-body panel prose-article">

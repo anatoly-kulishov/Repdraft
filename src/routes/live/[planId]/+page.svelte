@@ -68,6 +68,16 @@
 	let restLeft = $derived(
 		restUntil != null ? Math.max(0, Math.ceil((restUntil - now) / 1000)) : 0
 	);
+	let restTotalSec = $state(0);
+	$effect(() => {
+		if (restUntil == null) {
+			restTotalSec = 0;
+			return;
+		}
+		const left = Math.max(0, Math.ceil((restUntil - now) / 1000));
+		if (left > restTotalSec) restTotalSec = left;
+	});
+	let restPct = $derived(restTotalSec > 0 ? (restLeft / restTotalSec) * 100 : 0);
 	let canGoNext = $derived(
 		session != null && selectedExerciseIndex < session.exercises.length - 1
 	);
@@ -292,12 +302,22 @@
 
 		{#if restLeft > 0}
 			<div class="live-rest" role="status" aria-live="polite">
-				<div>
+				<div class="live-rest__main">
+					<div
+						class="live-rest-ring"
+						style={`--rest-pct: ${restPct}`}
+						aria-hidden="true"
+					>
+						<div class="live-rest-ring__inner">
+							{#key restLeft}
+								<span class="live-rest-value">{formatRestSec(restLeft)}</span>
+							{/key}
+						</div>
+					</div>
 					<p class="live-rest-label">
 						<LucideIcon icon={Timer} size={ICON_SMALL} />
 						{translate(lang, 'live.rest')}
 					</p>
-					<p class="live-rest-value">{formatRestSec(restLeft)}</p>
 				</div>
 				<button type="button" class="btn-secondary" onclick={() => live.skipRest()}>
 					{translate(lang, 'live.skipRest')}

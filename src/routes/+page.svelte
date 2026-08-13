@@ -2,7 +2,6 @@
 	import ArticleTeaserList from '$lib/components/ArticleTeaserList.svelte';
 	import HomePageSkeleton from '$lib/components/HomePageSkeleton.svelte';
 	import HomeRecordsWidget from '$lib/components/HomeRecordsWidget.svelte';
-	import HomeStatsStack from '$lib/components/HomeDesktopAside.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
@@ -245,10 +244,6 @@
 						</a>
 					{/if}
 				</div>
-
-				{#if homeMode !== 'create'}
-					<HomeStatsStack />
-				{/if}
 			</div>
 
 			<div class="home-dashboard-mid">
@@ -287,59 +282,79 @@
 									<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="entity-row__chevron shrink-0" />
 								</li>
 							{/each}
-						</ul>
-					</div>
-				{/if}
-
-				{#if recent.length > 0}
-					<div class="home-section">
-						<h2 class="section-title">{translate(lang, 'home.recentTitle')}</h2>
-						<ul class="entity-list">
-							{#each recent as session (session.id)}
-								<li>
-									<a class="entity-row entity-row--link" href={`/workouts/history/${session.id}`}>
-										<span class="entity-row__main">
-											<span class="entity-row__title">{session.planName}</span>
-											<span class="entity-row__meta">
-												{translate(lang, 'home.recentMeta', {
-													when: formatRelativeDay(session.finishedAt ?? session.startedAt, lang),
-													min: formatDurationMinutes(sessionDurationMs(session)) ?? '—',
-													sets: completedSetCount(session)
-												})}
-											</span>
+							{#if homePlans.length < 4}
+								<li class="entity-row entity-row--create">
+									<a class="entity-row__main" href="/builder">
+										<span class="entity-row__title entity-row__title--create">
+											<LucideIcon icon={Plus} size={ICON_SMALL} />
+											{translate(lang, 'home.plansCreateTitle')}
 										</span>
-										<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="entity-row__chevron" />
+										<span class="entity-row__meta">{translate(lang, 'home.plansCreateHint')}</span>
 									</a>
 								</li>
-							{/each}
+							{/if}
 						</ul>
-					</div>
-				{:else if !isGuest}
-					<div class="home-section">
-						<h2 class="section-title">{translate(lang, 'home.recentPlaceholderTitle')}</h2>
-						<div class="panel-dashed home-mid-placeholder">
-							<p class="home-mid-placeholder__text">{translate(lang, 'home.recentPlaceholderHint')}</p>
-							<span class="home-soon-badge">{translate(lang, 'home.placeholderSoon')}</span>
-						</div>
 					</div>
 				{/if}
 
-				{#if !isGuest || hasSessionHistory || $records.length > 0}
-					<HomeRecordsWidget {indexById} />
-				{:else}
-					<div class="home-section home-guest-next">
-						<a class="home-guest-next__card panel" href="/exercises">
-							<span class="home-guest-next__title">{translate(lang, 'nav.exercises')}</span>
-							<span class="home-guest-next__hint">{translate(lang, 'home.guestBrowseHint')}</span>
-							<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="home-guest-next__chevron" />
-						</a>
-						<a class="home-guest-next__card panel" href="/builder">
-							<span class="home-guest-next__title">{translate(lang, 'workouts.create')}</span>
-							<span class="home-guest-next__hint">{translate(lang, 'home.guestCreateHint')}</span>
-							<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="home-guest-next__chevron" />
-						</a>
-					</div>
-				{/if}
+				<div class="home-dashboard-aside">
+					{#if recent.length > 0}
+						<div class="home-section">
+							<div class="home-section-head">
+								<h2 class="section-title">{translate(lang, 'home.recentTitle')}</h2>
+								<a class="home-section-link" href="/workouts?tab=history">
+									{translate(lang, 'home.recentAll')}
+									<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
+								</a>
+							</div>
+							<ul class="entity-list">
+								{#each recent as session (session.id)}
+									<li>
+										<a class="entity-row entity-row--link" href={`/workouts/history/${session.id}`}>
+											<span class="entity-row__main">
+												<span class="entity-row__title">{session.planName}</span>
+												<span class="entity-row__meta">
+													{translate(lang, 'home.recentMeta', {
+														when: formatRelativeDay(session.finishedAt ?? session.startedAt, lang),
+														min: formatDurationMinutes(sessionDurationMs(session)) ?? '—',
+														sets: completedSetCount(session)
+													})}
+												</span>
+											</span>
+											<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="entity-row__chevron" />
+										</a>
+									</li>
+								{/each}
+							</ul>
+						</div>
+					{:else if !isGuest && !hasPlans}
+						<div class="home-section">
+							<h2 class="section-title">{translate(lang, 'home.recentPlaceholderTitle')}</h2>
+							<p class="text-sm leading-relaxed text-[var(--color-muted)]">
+								{translate(lang, 'home.recentPlaceholderHint')}
+							</p>
+						</div>
+					{/if}
+
+					{#if !isGuest || hasSessionHistory || $records.length > 0}
+						<HomeRecordsWidget {indexById} limit={3} />
+					{/if}
+
+					{#if isGuest && !hasSessionHistory}
+						<div class="home-section home-guest-next">
+							<a class="home-guest-next__card panel" href="/exercises">
+								<span class="home-guest-next__title">{translate(lang, 'nav.exercises')}</span>
+								<span class="home-guest-next__hint">{translate(lang, 'home.guestBrowseHint')}</span>
+								<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="home-guest-next__chevron" />
+							</a>
+							<a class="home-guest-next__card panel" href="/builder">
+								<span class="home-guest-next__title">{translate(lang, 'workouts.create')}</span>
+								<span class="home-guest-next__hint">{translate(lang, 'home.guestCreateHint')}</span>
+								<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="home-guest-next__chevron" />
+							</a>
+						</div>
+					{/if}
+				</div>
 			</div>
 		</div>
 	{/if}

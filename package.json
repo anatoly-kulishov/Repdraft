@@ -1,7 +1,7 @@
 {
 	"name": "repdraft",
 	"private": true,
-	"version": "0.8.1",
+	"version": "0.8.2",
 	"description": "Каталог упражнений и конструктор тренировок",
 	"type": "module",
 	"scripts": {
@@ -10,6 +10,7 @@
 		"preview": "vite preview --host",
 		"prepare": "svelte-kit sync || echo ''",
 		"build:data": "node scripts/build-exercise-data.mjs",
+		"translate:names": "python3 scripts/translate-exercise-names.py && npm run build:data",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"check:domain": "node ./scripts/run-domain-selfchecks.mjs",

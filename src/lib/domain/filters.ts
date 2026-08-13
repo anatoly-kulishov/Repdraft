@@ -93,7 +93,41 @@ function synonymKeyMatches(stem: string, key: string): boolean {
 	return key.startsWith(stem) && key.length - stem.length <= 2;
 }
 
-function expandToken(token: string): string[] {
+/** Levenshtein edit distance (stdlib only). */
+export function editDistance(a: string, b: string): number {
+	if (a === b) return 0;
+	if (!a.length) return b.length;
+	if (!b.length) return a.length;
+	const row = Array.from({ length: b.length + 1 }, (_, i) => i);
+	for (let i = 1; i <= a.length; i++) {
+		let prev = row[0]!;
+		row[0] = i;
+		for (let j = 1; j <= b.length; j++) {
+			const temp = row[j]!;
+			const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+			row[j] = Math.min(row[j - 1]! + 1, row[j]! + 1, prev + cost);
+			prev = temp;
+		}
+	}
+	return row[b.length]!;
+}
+
+function fuzzyMaxDistance(tokenLen: number): number {
+	if (tokenLen < 5) return 0;
+	if (tokenLen <= 7) return 1;
+	return 2;
+}
+
+function fuzzyStringsMatch(a: string, b: string): boolean {
+	const max = fuzzyMaxDistance(a.length);
+	if (max === 0) return false;
+	if (Math.abs(a.length - b.length) > max) return false;
+	return editDistance(a, b) <= max;
+}
+
+const SYNONYM_KEYS = Object.keys(SEARCH_SYNONYMS);
+
+function expandTokenExact(token: string): string[] {
 	const out = new Set<string>([...russianSearchStems(token), ...englishSearchStems(token)]);
 	for (const stem of [...out]) {
 		for (const [key, aliases] of Object.entries(SEARCH_SYNONYMS)) {
@@ -114,6 +148,83 @@ function expandToken(token: string): string[] {
 		}
 	}
 	return [...out];
+}
+
+function expandTokenFuzzyExtras(token: string, exact: Set<string>): string[] {
+	const extras: string[] = [];
+	if (fuzzyMaxDistance(token.length) === 0) return extras;
+	const probes = new Set([token, ...russianSearchStems(token), ...englishSearchStems(token)]);
+	for (const probe of probes) {
+		if (probe.length < 5) continue;
+		for (const key of SYNONYM_KEYS) {
+			if (exact.has(key) || extras.includes(key)) continue;
+			if (fuzzyStringsMatch(probe, key)) extras.push(key);
+		}
+	}
+	return extras;
+}
+
+function expandToken(token: string): string[] {
+	const cached = tokenExpandCache.get(token);
+	if (cached) return cached;
+	const exactSet = new Set(expandTokenExact(token));
+	for (const key of expandTokenFuzzyExtras(token, exactSet)) {
+		exactSet.add(key);
+		for (const alias of SEARCH_SYNONYMS[key] ?? []) {
+			exactSet.add(normalizeSearchText(alias));
+		}
+	}
+	const result = [...exactSet];
+	tokenExpandCache.set(token, result);
+	return result;
+}
+
+function haystackIncludesToken(haystack: string, token: string, variants: string[]): boolean {
+	if (variants.some((v) => v.length > 0 && haystack.includes(v))) return true;
+	if (fuzzyMaxDistance(token.length) === 0) return false;
+	for (const word of haystack.split(' ')) {
+		if (word.length < 4) continue;
+		if (fuzzyStringsMatch(token, word)) return true;
+		for (const stem of russianSearchStems(token)) {
+			if (stem.length >= 4 && fuzzyStringsMatch(stem, word)) return true;
+		}
+	}
+	return false;
+}
+
+function tokenMatchMode(haystack: string, token: string, variants: string[]): 'exact' | 'fuzzy' | 'miss' {
+	if (variants.some((v) => v.length > 0 && haystack.includes(v))) return 'exact';
+	if (haystackIncludesToken(haystack, token, variants)) return 'fuzzy';
+	return 'miss';
+}
+
+type SearchFields = {
+	haystack: string;
+	name: string;
+	nameEn: string;
+	nameRu: string;
+};
+
+/** ponytail: in-memory cache; catalog is static per session (~1.3k items × 2 locales). */
+const searchFieldsCache = new Map<string, SearchFields>();
+const tokenExpandCache = new Map<string, string[]>();
+
+function searchFieldsKey(item: ExerciseIndexItem, locale: AppLocale): string {
+	return `${item.id}:${locale}`;
+}
+
+function getSearchFields(item: ExerciseIndexItem, locale: AppLocale): SearchFields {
+	const key = searchFieldsKey(item, locale);
+	const hit = searchFieldsCache.get(key);
+	if (hit) return hit;
+	const fields: SearchFields = {
+		haystack: buildHaystack(item, locale),
+		name: normalizeSearchText(exerciseName(item, locale)),
+		nameEn: normalizeSearchText(item.name),
+		nameRu: normalizeSearchText(item.name_ru ?? '')
+	};
+	searchFieldsCache.set(key, fields);
+	return fields;
 }
 
 function buildHaystack(item: ExerciseIndexItem, locale: AppLocale): string {
@@ -139,15 +250,22 @@ function tokenMatches(haystack: string, token: string): boolean {
 	return variants.some((v) => v.length > 0 && haystack.includes(v));
 }
 
-function scoreMatch(item: ExerciseIndexItem, query: string, tokens: string[], locale: AppLocale): number {
-	const name = normalizeSearchText(exerciseName(item, locale));
-	const nameEn = normalizeSearchText(item.name);
-	const nameRu = normalizeSearchText(item.name_ru ?? '');
-	const haystack = buildHaystack(item, locale);
+function scoreMatchFields(
+	fields: SearchFields,
+	query: string,
+	tokens: string[],
+	tokenVariants: string[][]
+): number {
+	const { haystack, name, nameEn, nameRu } = fields;
 
-	if (!tokens.every((t) => tokenMatches(haystack, t))) return -1;
+	let fuzzyTokens = 0;
+	for (let i = 0; i < tokens.length; i++) {
+		const mode = tokenMatchMode(haystack, tokens[i]!, tokenVariants[i]!);
+		if (mode === 'miss') return -1;
+		if (mode === 'fuzzy') fuzzyTokens++;
+	}
 
-	const variants = [...new Set(tokens.flatMap((t) => expandToken(t)))];
+	const variants = [...new Set(tokenVariants.flat())];
 	const inTitle = (v: string) =>
 		v.length > 1 && (name.includes(v) || nameEn.includes(v) || nameRu.includes(v));
 
@@ -160,10 +278,119 @@ function scoreMatch(item: ExerciseIndexItem, query: string, tokens: string[], lo
 	else if (tokens.every((t) => name.includes(t) || nameEn.includes(t) || nameRu.includes(t))) score += 30;
 	else score += 12;
 
-	// Prefer shorter titles when equally related (tighter match)
+	if (fuzzyTokens > 0) score -= 8 * fuzzyTokens;
+
 	score += Math.max(0, 12 - Math.min(name.length, 24) / 2);
 
 	return score;
+}
+
+function scoreMatch(item: ExerciseIndexItem, query: string, tokens: string[], locale: AppLocale): number {
+	const fields = getSearchFields(item, locale);
+	const tokenVariants = tokens.map((t) => expandToken(t));
+	return scoreMatchFields(fields, query, tokens, tokenVariants);
+}
+
+function passesFacets(item: ExerciseIndexItem, filters: ExerciseFilters): boolean {
+	if (filters.bodyPart !== 'all' && item.body_part !== filters.bodyPart) return false;
+	if (filters.equipment !== 'all' && item.equipment !== filters.equipment) return false;
+	if (filters.target !== 'all') {
+		const primary = item.target === filters.target;
+		const secondary = item.secondary_muscles?.includes(filters.target) ?? false;
+		if (!primary && !secondary) return false;
+	}
+	return true;
+}
+
+function filterAndSortExercises(
+	items: ExerciseIndexItem[],
+	filters: ExerciseFilters,
+	locale: AppLocale
+): ExerciseIndexItem[] {
+	const query = normalizeSearchText(filters.query);
+	const tokens = query ? query.split(' ').filter((t) => t.length > 0) : [];
+	const tokenVariants = tokens.map((t) => expandToken(t));
+	const sortLocale = exerciseNameSortLocale(locale);
+
+	if (!query) {
+		return items
+			.filter((item) => passesFacets(item, filters))
+			.sort((a, b) => exerciseName(a, locale).localeCompare(exerciseName(b, locale), sortLocale));
+	}
+
+	return items
+		.reduce<{ item: ExerciseIndexItem; score: number }[]>((acc, item) => {
+			if (!passesFacets(item, filters)) return acc;
+			const fields = getSearchFields(item, locale);
+			const score = scoreMatchFields(fields, query, tokens, tokenVariants);
+			if (score >= 0) acc.push({ item, score });
+			return acc;
+		}, [])
+		.sort((a, b) => {
+			if (b.score !== a.score) return b.score - a.score;
+			return exerciseName(a.item, locale).localeCompare(exerciseName(b.item, locale), sortLocale);
+		})
+		.map((row) => row.item);
+}
+
+/** One catalog pass: filtered list + facet options (avoids 3× filterExercises per keystroke). */
+export function filterCatalogWithFacets(
+	items: ExerciseIndexItem[],
+	filters: ExerciseFilters,
+	locale: AppLocale = 'ru'
+): { items: ExerciseIndexItem[]; equipment: string[]; targets: string[] } {
+	const query = normalizeSearchText(filters.query);
+	const tokens = query ? query.split(' ').filter((t) => t.length > 0) : [];
+	const tokenVariants = tokens.map((t) => expandToken(t));
+	const sortLocale = exerciseNameSortLocale(locale);
+
+	const matched: ExerciseIndexItem[] = [];
+	const equipmentPool = new Set<string>();
+	const targetPool = new Set<string>();
+	const scored: { item: ExerciseIndexItem; score: number }[] = [];
+
+	for (const item of items) {
+		if (filters.bodyPart !== 'all' && item.body_part !== filters.bodyPart) continue;
+
+		const fields = getSearchFields(item, locale);
+		const queryOk =
+			!query ||
+			scoreMatchFields(fields, query, tokens, tokenVariants) >= 0;
+
+		if (queryOk) {
+			if (filters.target === 'all' || item.target === filters.target || item.secondary_muscles?.includes(filters.target)) {
+				equipmentPool.add(item.equipment);
+			}
+			if (filters.equipment === 'all' || item.equipment === filters.equipment) {
+				targetPool.add(item.target);
+			}
+		}
+
+		if (!passesFacets(item, filters)) continue;
+		if (!query) {
+			matched.push(item);
+			continue;
+		}
+		const score = scoreMatchFields(fields, query, tokens, tokenVariants);
+		if (score >= 0) scored.push({ item, score });
+	}
+
+	const resultItems = query
+		? scored
+				.sort((a, b) => {
+					if (b.score !== a.score) return b.score - a.score;
+					return exerciseName(a.item, locale).localeCompare(exerciseName(b.item, locale), sortLocale);
+				})
+				.map((row) => row.item)
+		: matched.sort((a, b) =>
+				exerciseName(a, locale).localeCompare(exerciseName(b, locale), sortLocale)
+			);
+
+	return {
+		items: resultItems,
+		equipment: [...equipmentPool].sort((a, b) => a.localeCompare(b, 'en')),
+		targets: [...targetPool].sort((a, b) => a.localeCompare(b, 'en'))
+	};
 }
 
 export function filterExercises(
@@ -171,36 +398,7 @@ export function filterExercises(
 	filters: ExerciseFilters,
 	locale: AppLocale = 'ru'
 ): ExerciseIndexItem[] {
-	const query = normalizeSearchText(filters.query);
-	const tokens = query ? query.split(' ').filter((t) => t.length > 0) : [];
-
-	const filtered = items.filter((item) => {
-		if (filters.bodyPart !== 'all' && item.body_part !== filters.bodyPart) return false;
-		if (filters.equipment !== 'all' && item.equipment !== filters.equipment) return false;
-		if (filters.target !== 'all') {
-			const primary = item.target === filters.target;
-			const secondary = item.secondary_muscles?.includes(filters.target) ?? false;
-			if (!primary && !secondary) return false;
-		}
-		if (!query) return true;
-		return scoreMatch(item, query, tokens, locale) >= 0;
-	});
-
-	const sortLocale = exerciseNameSortLocale(locale);
-
-	if (!query) {
-		return filtered.sort((a, b) =>
-			exerciseName(a, locale).localeCompare(exerciseName(b, locale), sortLocale)
-		);
-	}
-
-	return filtered
-		.map((item) => ({ item, score: scoreMatch(item, query, tokens, locale) }))
-		.sort((a, b) => {
-			if (b.score !== a.score) return b.score - a.score;
-			return exerciseName(a.item, locale).localeCompare(exerciseName(b.item, locale), sortLocale);
-		})
-		.map((row) => row.item);
+	return filterAndSortExercises(items, filters, locale);
 }
 
 /** Targets present if body/equipment/query stay, ignoring the muscle facet (AND cascade). */
@@ -464,5 +662,60 @@ export function runFiltersSelfCheck(): void {
 		if (!hits.some((h) => h.id === id)) {
 			throw new Error(`query «${q}» should include ${id}, got ${hits.map((i) => i.id).join(',')}`);
 		}
+	}
+
+	const bulgarianCatalog: ExerciseIndexItem[] = [
+		{
+			id: 'bg1',
+			name: 'dumbbell single leg split squat',
+			name_ru: 'Болгарские выпады с гантелями',
+			body_part: 'upper legs',
+			equipment: 'dumbbell',
+			target: 'quads',
+			muscle_group: 'quads',
+			secondary_muscles: ['glutes'],
+			image: ''
+		},
+		{
+			id: 'ln1',
+			name: 'forward lunge',
+			name_ru: 'Выпад вперёд',
+			body_part: 'upper legs',
+			equipment: 'body weight',
+			target: 'glutes',
+			muscle_group: 'glutes',
+			secondary_muscles: [],
+			image: ''
+		}
+	];
+	const bgHits = filterExercises(
+		bulgarianCatalog,
+		{ query: 'Болгарские выпады', bodyPart: 'all', equipment: 'all', target: 'all' },
+		'ru'
+	);
+	if (bgHits.length !== 1 || bgHits[0]!.id !== 'bg1') {
+		throw new Error(
+			`«Болгарские выпады» should hit only Bulgarian split squat, got ${bgHits.map((i) => i.id).join(',')}`
+		);
+	}
+
+	const typoHits = filterExercises(
+		bulgarianCatalog,
+		{ query: 'Болгрские', bodyPart: 'all', equipment: 'all', target: 'all' },
+		'ru'
+	);
+	if (!typoHits.some((h) => h.id === 'bg1')) {
+		throw new Error(
+			`typo «Болгрские» should include bg1, got ${typoHits.map((i) => i.id).join(',')}`
+		);
+	}
+
+	const squatHits = filterExercises(
+		hammerCatalog,
+		{ query: 'присед', bodyPart: 'all', equipment: 'all', target: 'all' },
+		'ru'
+	);
+	if (squatHits.some((h) => h.id === 'h1')) {
+		throw new Error('«присед» must not fuzzy-match unrelated hammer exercise');
 	}
 }

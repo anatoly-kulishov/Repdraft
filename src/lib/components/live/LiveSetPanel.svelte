@@ -138,7 +138,7 @@
 				{:else}
 					<button
 						type="button"
-						class="btn-primary live-set-done-btn"
+						class="btn-secondary live-set-done-btn"
 						aria-label={translate(lang, 'live.done')}
 						title={translate(lang, 'live.done')}
 						onclick={() => onComplete(si)}

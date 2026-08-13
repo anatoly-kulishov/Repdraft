@@ -110,8 +110,8 @@
 			<img
 				src={`/${meta.image}`}
 				alt=""
-				width="56"
-				height="56"
+				width="120"
+				height="120"
 				class="workout-ex-head__media"
 			/>
 			<a

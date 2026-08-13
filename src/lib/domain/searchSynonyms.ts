@@ -110,10 +110,13 @@ export const SEARCH_SYNONYMS: Record<string, string[]> = {
 	утро: ['morning'],
 
 	// —— Legs / glutes ——
-	выпад: ['lunge'],
-	выпады: ['lunge'],
-	болгарск: ['bulgarian', 'split', 'lunge'],
-	сплит: ['split', 'lunge', 'bulgarian'],
+	выпад: ['lunge', 'split'],
+	выпады: ['lunge', 'split'],
+	/** Popular RU name for Bulgarian split squat — not plain lunges. */
+	болгарск: ['bulgarian', 'split'],
+	болгарские: ['bulgarian', 'split'],
+	болгарский: ['bulgarian', 'split'],
+	сплит: ['split', 'bulgarian'],
 	ягодиц: ['glutes', 'hip'],
 	попа: ['glutes', 'hip'],
 	ягодицы: ['glutes', 'hip'],

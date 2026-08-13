@@ -83,6 +83,12 @@
 			</div>
 		</dl>
 
-		<a class="btn-primary btn-block mt-8 min-h-12" href="/workouts?tab=history">{translate(lang, 'summary.done')}</a>
+		<a class="btn-primary btn-block mt-8 hidden min-h-12 lg:inline-flex" href="/workouts?tab=history">{translate(lang, 'summary.done')}</a>
+
+		<div class="sticky-actions lg:hidden">
+			<div class="sticky-actions__inner">
+				<a class="btn-primary btn-block min-h-12" href="/workouts?tab=history">{translate(lang, 'summary.done')}</a>
+			</div>
+		</div>
 	</section>
 {/if}
