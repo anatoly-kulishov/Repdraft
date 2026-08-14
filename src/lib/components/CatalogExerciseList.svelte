@@ -45,7 +45,7 @@
 		initialEquipment?: string;
 		initialTarget?: string;
 		listOnMobile?: boolean;
-		/** List on phone, grid from 768px (catalog all/zone). Picker keeps false. */
+		/** List on phone, grid from 768px (catalog all/zone and builder add flow). */
 		gridOnDesktop?: boolean;
 		returnAfterAdd?: string | null;
 		savedOnly?: boolean;
@@ -147,7 +147,7 @@
 	);
 	let listClass = $derived(
 		cardVariant === 'grid'
-			? 'catalog-grid grid min-w-0 grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7'
+			? 'catalog-grid grid min-w-0 gap-2.5 sm:gap-3'
 			: 'catalog-exercise-list'
 	);
 

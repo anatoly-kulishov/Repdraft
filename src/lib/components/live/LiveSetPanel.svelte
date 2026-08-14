@@ -7,7 +7,7 @@
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
-	import { Check, Plus } from '@lucide/svelte';
+	import { Check, Plus, Trash2 } from '@lucide/svelte';
 
 	let {
 		session,
@@ -22,7 +22,11 @@
 		onWeight,
 		onReps,
 		onComplete,
-		onUncomplete
+		onUncomplete,
+		onRemove,
+		invalidSetIndex = null as number | null,
+		invalidKind = null as 'weight' | 'reps' | null,
+		justDoneSetIndex = null as number | null
 	}: {
 		session: WorkoutSession;
 		exerciseIndex: number;
@@ -37,6 +41,10 @@
 		onReps: (setIndex: number, value: string) => void;
 		onComplete: (setIndex: number) => void;
 		onUncomplete: (setIndex: number) => void;
+		onRemove: (setIndex: number) => void;
+		invalidSetIndex?: number | null;
+		invalidKind?: 'weight' | 'reps' | null;
+		justDoneSetIndex?: number | null;
 	} = $props();
 
 	function titleFor(id: string): string {
@@ -57,6 +65,8 @@
 		const r = last.reps != null ? `${last.reps}` : '—';
 		return `${w} × ${r}`;
 	}
+
+	let canRemoveSet = $derived(exercise.sets.length > 1);
 </script>
 
 <div class="live-panel" class:live-panel--superset={selectedInGroup}>
@@ -95,19 +105,29 @@
 		</p>
 	{/if}
 
-	<div class="live-set-head" aria-hidden="true">
+	<div class="live-set-head" class:live-set-head--with-remove={canRemoveSet} aria-hidden="true">
 		<span>#</span>
 		<span>{translate(lang, 'live.weight')}</span>
 		<span>{translate(lang, 'live.reps')}</span>
 		<span class="live-set-head-done">✓</span>
+		{#if canRemoveSet}
+			<span class="live-set-head-remove"></span>
+		{/if}
 	</div>
 
 	<ul class="live-set-list">
 		{#each exercise.sets as set, si (si)}
-			<li class="live-set-row" class:is-done={set.completed}>
+			<li
+				class="live-set-row"
+				class:is-done={set.completed}
+				class:is-just-done={justDoneSetIndex === si}
+				class:live-set-row--with-remove={canRemoveSet}
+			>
 				<span class="live-set-index">{si + 1}</span>
 				<input
 					class="field live-set-weight tabular-nums"
+					class:is-invalid={invalidSetIndex === si && invalidKind === 'weight'}
+					aria-invalid={invalidSetIndex === si && invalidKind === 'weight'}
 					type="text"
 					inputmode="decimal"
 					autocomplete="off"
@@ -117,6 +137,8 @@
 				/>
 				<input
 					class="field live-set-reps tabular-nums"
+					class:is-invalid={invalidSetIndex === si && invalidKind === 'reps'}
+					aria-invalid={invalidSetIndex === si && invalidKind === 'reps'}
 					type="text"
 					inputmode="numeric"
 					autocomplete="off"
@@ -145,6 +167,17 @@
 					>
 						<LucideIcon icon={Check} size={ICON_BUTTON} />
 						<span class="sr-only">{translate(lang, 'live.done')}</span>
+					</button>
+				{/if}
+				{#if canRemoveSet}
+					<button
+						type="button"
+						class="btn-ghost is-danger live-set-remove-btn"
+						aria-label={translate(lang, 'live.removeSet')}
+						title={translate(lang, 'live.removeSet')}
+						onclick={() => onRemove(si)}
+					>
+						<LucideIcon icon={Trash2} size={ICON_SMALL} />
 					</button>
 				{/if}
 			</li>

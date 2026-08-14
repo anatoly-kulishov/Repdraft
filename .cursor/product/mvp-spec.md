@@ -33,7 +33,7 @@ Last reviewed: 2026-08-13 (branch v0.8.2 UX polish)
 | Desktop sidebar + mobile tabbar (Home / Workouts / Exercises) | Yes — tabbar on `/catalog/*` browse; focused on live/builder/detail |
 | Lucide icon system | Yes — `@lucide/svelte`, `LucideIcon` |
 | Brand mark (no dumbbell cliché) | Yes — `src/lib/assets/brand/` |
-| Plans CRUD, builder, picker | Yes — `/builder`, `/builder/pick` |
+| Plans CRUD, builder, picker | Yes — `/builder`; add exercise opens `/catalog/all` |
 | Live session, autosave active workout | Yes — `live` store + `localSessionRepository` |
 | Finish → summary → history | Yes — sticky Done on summary mobile; history list + detail |
 | Workout preview before live | Yes — `/workouts/[planId]` → Start → `/live/[planId]` |

@@ -95,3 +95,10 @@ export function catalogTargetPath(target: string, bodyPartHint?: string): string
 			: (TARGET_PRIMARY_ZONE[target] ?? null);
 	return zone ? catalogZonePath(zone, { target }) : catalogZonePath('all', { target });
 }
+
+/** Constructor «add exercise» opens the real catalog, not a duplicate picker. */
+export const BUILDER_ADD_EXERCISE_HREF = '/catalog/all?from=%2Fbuilder';
+
+export function isBuilderReturnPath(from: string | null | undefined): boolean {
+	return from === '/builder' || Boolean(from?.startsWith('/builder?'));
+}

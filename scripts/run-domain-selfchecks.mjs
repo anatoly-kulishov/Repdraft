@@ -22,7 +22,8 @@ const checks = [
 	'localCacheUser',
 	'catalogCover',
 	'exerciseName',
-	'articles'
+	'articles',
+	'cloudSync'
 ];
 
 for (const name of checks) {

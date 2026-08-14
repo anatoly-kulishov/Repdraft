@@ -12,7 +12,8 @@
 		autocomplete = 'current-password',
 		required = true,
 		minlength = 6,
-		name
+		name,
+		invalid = false
 	}: {
 		value?: string;
 		label: string;
@@ -21,6 +22,7 @@
 		required?: boolean;
 		minlength?: number;
 		name?: string;
+		invalid?: boolean;
 	} = $props();
 
 	let visible = $state(false);
@@ -32,6 +34,8 @@
 	<div class="relative mt-1">
 		<input
 			class="field w-full pr-11"
+			class:is-invalid={invalid}
+			aria-invalid={invalid}
 			type={visible ? 'text' : 'password'}
 			{required}
 			{minlength}

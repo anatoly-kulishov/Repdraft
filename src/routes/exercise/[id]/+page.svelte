@@ -19,11 +19,10 @@
 	import PersonalRecordPanel from '$lib/components/PersonalRecordPanel.svelte';
 	import TechniqueClipsPanel from '$lib/components/TechniqueClipsPanel.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Bookmark, ClipboardList, Plus, Search } from '@lucide/svelte';
+	import { ArrowLeft, Bookmark, ClipboardList, Plus, Search } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 
@@ -153,12 +152,18 @@
 		actionLabel={translate(lang, 'builder.toCatalog')}
 	/>
 {:else}
-	<article class="content-page content-page--wide exercise-detail-page pb-mobile-actions lg:pb-0">
+	<article class="content-page content-page--exercise exercise-detail-page pb-mobile-actions lg:pb-0">
 		<div class="exercise-detail-page__chrome min-w-0 md:hidden">
 			<ScreenHeader {title} {backHref} actions={exerciseHeaderActions} />
 		</div>
-		<div class="exercise-detail-page__chrome subroute-desktop-head hidden min-w-0 md:block">
-			<SubrouteBack href={backHref} label={backLabel} />
+		<div class="exercise-detail-page__chrome catalog-subroute-header">
+			<a class="catalog-zone-crumb-link" href={backHref}>
+				<LucideIcon icon={ArrowLeft} size={ICON_SMALL} />
+				{backLabel}
+			</a>
+			<div class="page-header page-header--compact catalog-zone-head">
+				<h1 class="page-title catalog-zone-title">{title}</h1>
+			</div>
 		</div>
 
 		<div class="exercise-detail-page__layout">
@@ -188,17 +193,14 @@
 
 					<div class="exercise-detail-page__intro">
 						<div class="flex min-w-0 items-start justify-between gap-3">
-							<div class="min-w-0">
-								<p class="text-sm">
-									<a
-										class="exercise-facet-link exercise-facet-link--muted"
-										href={catalogZonePath(exercise.body_part)}
-									>
-										{labelBodyPart(exercise.body_part, lang)}
-									</a>
-								</p>
-								<h1 class="page-title hidden lg:block">{title}</h1>
-							</div>
+							<p class="min-w-0 text-sm">
+								<a
+									class="exercise-facet-link exercise-facet-link--muted"
+									href={catalogZonePath(exercise.body_part)}
+								>
+									{labelBodyPart(exercise.body_part, lang)}
+								</a>
+							</p>
 							<button
 								type="button"
 								class="btn-ghost exercise-detail-bookmark exercise-detail-bookmark--page shrink-0"

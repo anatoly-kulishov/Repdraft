@@ -40,6 +40,7 @@
 	let loaded = $state(false);
 	let bookmarkBusy = $state(false);
 	let imgEl = $state<HTMLImageElement | null>(null);
+	let justAdded = $state(false);
 
 	$effect(() => {
 		const img = imgEl;
@@ -61,11 +62,13 @@
 		event.stopPropagation();
 		if (inDraft) {
 			draft.removeFromDraft(exercise.id);
+			justAdded = false;
 			toasts.show(translate(lang, 'exercise.removed'), 'info');
 			return;
 		}
 		const result = draft.addToDraft(exercise.id);
 		if (result.added) {
+			justAdded = true;
 			toasts.show(translate(lang, 'exercise.added'), 'success');
 			if (returnAfterAdd) void goto(returnAfterAdd);
 		} else {
@@ -116,6 +119,7 @@
 			type="button"
 			class="exercise-card-add exercise-card-add--inline"
 			class:is-in-draft={inDraft}
+			class:is-just-added={justAdded}
 			onclick={toggleDraft}
 			aria-label={translate(lang, inDraft ? 'exercise.removeDraft' : 'exercise.addDraft')}
 			aria-pressed={inDraft}
@@ -202,9 +206,9 @@
 					bind:this={imgEl}
 					src={`/${exercise.image}`}
 					alt=""
-					width="120"
-					height="120"
-					sizes="(min-width: 768px) 14vw, 45vw"
+					width="180"
+					height="180"
+					sizes="(min-width: 1024px) 16vw, (min-width: 768px) 22vw, 45vw"
 					loading={priority ? 'eager' : 'lazy'}
 					fetchpriority={priority ? 'high' : 'auto'}
 					decoding="async"
@@ -237,6 +241,7 @@
 				type="button"
 				class="exercise-card-add"
 				class:is-in-draft={inDraft}
+				class:is-just-added={justAdded}
 				onclick={toggleDraft}
 				aria-label={translate(lang, inDraft ? 'exercise.removeDraft' : 'exercise.addDraft')}
 				aria-pressed={inDraft}

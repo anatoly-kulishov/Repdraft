@@ -264,7 +264,11 @@ const id = chest.id;
 {
 	const { status, text } = await get(`/exercise/${id}`);
 	assert(status === 200, `GET /exercise/${id} → ${status}`);
-	assertIncludes(text, ['screen-header', 'subroute-back', 'href="/exercises"'], 'exercise detail');
+	assertIncludes(
+		text,
+		['screen-header', 'catalog-zone-crumb-link', 'href="/exercises"'],
+		'exercise detail'
+	);
 }
 
 {
