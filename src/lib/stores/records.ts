@@ -7,24 +7,31 @@ import {
 import type { PersonalRecord } from '$lib/domain/types';
 import { localRecordRepository } from '$lib/storage/localRecordRepository';
 import { supabaseRecordRepository } from '$lib/storage/supabaseRecordRepository';
-import { mirrorCloudWrite, refreshLocalCloudList } from '$lib/stores/cloudLocal';
+import type { CloudSyncState } from '$lib/domain/cloudSync';
+import {
+	mirrorCloudWrite,
+	refreshLocalCloudList
+} from '$lib/stores/cloudLocal';
 import { isCloudMode } from '$lib/storage/dataAccess';
 import { get, writable } from 'svelte/store';
 
 function createRecordsStore() {
 	const store = writable<PersonalRecord[]>([]);
 	const ready = writable(false);
+	const sync = writable<CloudSyncState>('idle');
 	let inflight: Promise<void> | null = null;
 
 	function invalidate() {
 		inflight = null;
 		store.set([]);
+		sync.set('idle');
 		ready.set(false);
 	}
 
 	async function refresh(opts?: { cloud?: boolean }) {
 		if (!browser) {
 			store.set([]);
+			sync.set('synced');
 			ready.set(true);
 			return;
 		}
@@ -34,23 +41,24 @@ function createRecordsStore() {
 
 		inflight = (async () => {
 			try {
-				const merged = await refreshLocalCloudList({
+				await refreshLocalCloudList({
 					localList: () => localRecordRepository.list(),
 					cloudList: () => supabaseRecordRepository.list(),
 					merge: mergePersonalRecords,
 					wantCloud,
 					label: 'records',
-					onLocal: (local) => {
-						store.set(local);
-						ready.set(true);
+					onUpdate: (result) => {
+						store.set(result.items);
+						sync.set(result.state);
+						if (result.state !== 'loading') ready.set(true);
 					}
 				});
-				store.set(merged);
 			} catch (err) {
 				console.error('records.refresh failed', err);
 				store.set([]);
-			} finally {
+				sync.set('error');
 				ready.set(true);
+			} finally {
 				inflight = null;
 			}
 		})();
@@ -61,6 +69,7 @@ function createRecordsStore() {
 	return {
 		subscribe: store.subscribe,
 		ready: { subscribe: ready.subscribe },
+		sync: { subscribe: sync.subscribe },
 		invalidate,
 		refresh,
 		get(exerciseId: string): PersonalRecord | null {
@@ -97,3 +106,4 @@ function createRecordsStore() {
 
 export const records = createRecordsStore();
 export const recordsReady = { subscribe: records.ready.subscribe };
+export const recordsSync = { subscribe: records.sync.subscribe };

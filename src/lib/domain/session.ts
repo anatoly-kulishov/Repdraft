@@ -139,6 +139,21 @@ export function addLoggedSet(session: WorkoutSession, exerciseIndex: number): Wo
 	return { ...session, exercises };
 }
 
+/** Drop a logged set. Keeps at least one row so the exercise stays loggable. */
+export function removeLoggedSet(
+	session: WorkoutSession,
+	exerciseIndex: number,
+	setIndex: number
+): WorkoutSession {
+	const exercises = session.exercises.map((ex, ei) => {
+		if (ei !== exerciseIndex) return ex;
+		if (ex.sets.length <= 1) return ex;
+		if (setIndex < 0 || setIndex >= ex.sets.length) return ex;
+		return { ...ex, sets: ex.sets.filter((_, si) => si !== setIndex) };
+	});
+	return { ...session, exercises };
+}
+
 export function finishSession(session: WorkoutSession): WorkoutSession {
 	return { ...session, finishedAt: new Date().toISOString() };
 }
@@ -241,6 +256,20 @@ export function runSessionSelfCheck(): void {
 	session = addLoggedSet(session, 0);
 	if (session.exercises[0]!.sets.length !== 4) {
 		throw new Error('addLoggedSet should append a set');
+	}
+	const afterRemove = removeLoggedSet(session, 0, 3);
+	if (afterRemove.exercises[0]!.sets.length !== 3) {
+		throw new Error('removeLoggedSet should drop the extra set');
+	}
+	session = afterRemove;
+	const onlyOne: WorkoutSession = {
+		...session,
+		exercises: session.exercises.map((ex, ei) =>
+			ei === 0 ? { ...ex, sets: [ex.sets[0]!] } : ex
+		)
+	};
+	if (removeLoggedSet(onlyOne, 0, 0).exercises[0]!.sets.length !== 1) {
+		throw new Error('removeLoggedSet must keep at least one set');
 	}
 
 	const groupedPlan: WorkoutPlan = {

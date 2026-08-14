@@ -129,6 +129,9 @@ export const SEARCH_SYNONYMS: Record<string, string[]> = {
 	икры: ['calves'],
 	икронож: ['calves'],
 	голени: ['calves', 'lower legs'],
+	ослик: ['donkey', 'calf'],
+	осла: ['donkey', 'calf'],
+	осликом: ['donkey', 'calf'],
 	приводящ: ['adductors', 'adduction'],
 	отводящ: ['abductors', 'abduction'],
 

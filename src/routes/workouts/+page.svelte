@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CloudSyncBanner from '$lib/components/CloudSyncBanner.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import SegmentControl from '$lib/components/SegmentControl.svelte';
 	import WorkoutsPageSkeleton from '$lib/components/WorkoutsPageSkeleton.svelte';
@@ -16,7 +17,8 @@
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { live } from '$lib/stores/live';
-	import { plans, plansReady } from '$lib/stores/plans';
+	import { plans, plansReady, plansSync } from '$lib/stores/plans';
+	import { isCloudListUncertain } from '$lib/domain/cloudSync';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
@@ -39,6 +41,7 @@
 	let pageReady = $derived(
 		$auth.ready && $auth.dataBootstrap && $plansReady && indexReady && historyReady
 	);
+	let listUncertain = $derived(isCloudListUncertain($plansSync));
 
 	let filteredPlans = $derived.by(() => {
 		const q = searchQuery.trim().toLowerCase();
@@ -163,7 +166,13 @@
 						aria-hidden="true"
 					></span>
 				{:else if $auth.user}
-					{translate(lang, 'workouts.cloud')}
+					{#if $plansSync === 'stale'}
+						{translate(lang, 'sync.cloudLoading')}
+					{:else if $plansSync === 'error'}
+						{translate(lang, 'workouts.local')}
+					{:else}
+						{translate(lang, 'workouts.cloud')}
+					{/if}
 				{:else}
 					{translate(lang, 'workouts.local')}
 					<a class="font-semibold text-[var(--color-accent)] underline" href="/auth?next=%2Fworkouts"
@@ -180,6 +189,8 @@
 			{translate(lang, 'workouts.newWorkout')}
 		</a>
 	</div>
+
+	<CloudSyncBanner state={$plansSync} {lang} onRetry={() => void plans.refresh()} />
 
 	{#if !pageReady}
 		<WorkoutsPageSkeleton label={translate(lang, 'common.loading')} />
@@ -212,7 +223,7 @@
 						{translate(lang, 'catalog.emptyTitle')}
 					</p>
 				{:else}
-					<ul class="entity-list entity-list--cards">
+					<ul class="entity-list entity-list--cards" class:cloud-sync-list--uncertain={listUncertain}>
 						{#each filteredPlans as plan (plan.id)}
 							{@const muscles = planTargetSummary(plan, indexById, lang)}
 							<li>

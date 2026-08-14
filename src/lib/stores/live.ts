@@ -3,6 +3,7 @@ import {
 	addLoggedSet,
 	finishSession,
 	lastPerformance,
+	removeLoggedSet,
 	restSecAfterSet,
 	startSessionFromPlan,
 	syncSessionPrescriptionFromPlan,
@@ -120,6 +121,14 @@ function createLiveStore() {
 			store.update((s) => {
 				if (!s.session) return s;
 				const session = addLoggedSet(s.session, exerciseIndex);
+				persistActive(session, s.restUntil);
+				return { ...s, session };
+			});
+		},
+		removeSet(exerciseIndex: number, setIndex: number) {
+			store.update((s) => {
+				if (!s.session) return s;
+				const session = removeLoggedSet(s.session, exerciseIndex, setIndex);
 				persistActive(session, s.restUntil);
 				return { ...s, session };
 			});

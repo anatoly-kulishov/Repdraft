@@ -224,15 +224,22 @@ async function auditViewport(page, viewport) {
 					? pass(viewport, 'exercise.mobile-back')
 					: fail(viewport, 'exercise.mobile-back', 'missing');
 			} else {
-				(await visible(page, '.subroute-back'))
+				(await visible(page, '.catalog-zone-crumb-link, .subroute-back'))
 					? pass(viewport, 'exercise.desktop-back')
 					: fail(viewport, 'exercise.desktop-back', 'missing');
 			}
 
 			await goto(page, `/exercise/${chest.id}?from=${encodeURIComponent('/workouts')}`);
-			const back = page.locator(isMobile ? '.screen-header-back' : '.subroute-back');
-			const href = await back.getAttribute('href');
-			href === '/workouts' || (await page.locator(`a.subroute-back[href="/workouts"], a.screen-header-back[href="/workouts"]`).count()) > 0
+			const back = page.locator(
+				isMobile ? '.screen-header-back' : '.catalog-zone-crumb-link, .subroute-back'
+			);
+			const href = await back.first().getAttribute('href');
+			href === '/workouts' ||
+				(await page
+					.locator(
+						`a.catalog-zone-crumb-link[href="/workouts"], a.subroute-back[href="/workouts"], a.screen-header-back[href="/workouts"]`
+					)
+					.count()) > 0
 				? pass(viewport, 'exercise.from-workouts', `href=${href}`)
 				: fail(viewport, 'exercise.from-workouts', `href=${href}`);
 
@@ -335,7 +342,7 @@ async function auditViewport(page, viewport) {
 				: fail(viewport, 'builder.tabbar-hidden', 'tabbar still hit-testable over sticky CTA');
 			// Sticky save only mounts after ≥1 exercise; empty draft shows pick CTA.
 			const stickySave = page.locator('.sticky-actions button.btn-primary');
-			const pickCta = page.locator('a[href="/builder/pick"]').first();
+			const pickCta = page.locator('a[href*="/catalog/all"]').first();
 			if ((await stickySave.count()) > 0 && (await stickySave.isVisible())) {
 				pass(viewport, 'builder.sticky-save', 'visible');
 			} else if ((await pickCta.count()) > 0 && (await pickCta.isVisible())) {
@@ -412,7 +419,7 @@ async function auditViewport(page, viewport) {
 		await nameInput.fill(stamp);
 		pass(viewport, 'flow.builder-name', stamp);
 
-		const addLink = page.locator('a[href="/builder/pick"]').first();
+		const addLink = page.locator('a[href*="/catalog/all"]').first();
 		if ((await addLink.count()) === 0) {
 			fail(viewport, 'flow.pick', 'add-exercise link missing');
 			return;
@@ -421,7 +428,9 @@ async function auditViewport(page, viewport) {
 		await waitApp(page);
 		await page.waitForTimeout(700);
 
-		const addBtn = page.locator('button.exercise-card-add--inline:not(.is-in-draft)').first();
+		const addBtn = page
+			.locator('button.exercise-card-add--inline:not(.is-in-draft), button.exercise-card-add:not(.is-in-draft)')
+			.first();
 		if ((await addBtn.count()) === 0) {
 			fail(viewport, 'flow.add-exercise', 'add button missing');
 			return;
@@ -430,7 +439,7 @@ async function auditViewport(page, viewport) {
 		await page.waitForTimeout(600);
 		pass(viewport, 'flow.add-exercise', 'clicked add');
 
-		if (page.url().includes('/builder/pick')) {
+		if (!page.url().includes('/builder') || page.url().includes('/builder/pick')) {
 			await goto(page, '/builder');
 			await page.waitForTimeout(500);
 		}
