@@ -4,11 +4,12 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import { catalogZonePath, labelCatalogZone } from '$lib/domain/catalogLinks';
+	import { catalogZonePath, isBuilderReturnPath, labelCatalogZone } from '$lib/domain/catalogLinks';
 	import { labelTarget } from '$lib/domain/labels.ru';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { ArrowLeft } from '@lucide/svelte';
+	import { page } from '$app/stores';
 
 	let { data } = $props();
 
@@ -32,8 +33,18 @@
 			hasTargetBrowse &&
 			(Boolean(data.initialTarget) || data.initialBrowse === 'all')
 	);
-	let backHref = $derived(inTargetList ? catalogZonePath(data.bodyPart) : '/exercises');
-	let backLabel = $derived(inTargetList ? title : translate(lang, 'catalog.hubTitle'));
+	let fromParam = $derived($page.url.searchParams.get('from'));
+	let fromBuilder = $derived(isBuilderReturnPath(fromParam));
+	let backHref = $derived(
+		fromBuilder ? '/builder' : inTargetList ? catalogZonePath(data.bodyPart) : '/exercises'
+	);
+	let backLabel = $derived(
+		fromBuilder
+			? translate(lang, 'builder.createTitle')
+			: inTargetList
+				? title
+				: translate(lang, 'catalog.hubTitle')
+	);
 	let headerTitle = $derived(
 		showExerciseList && data.initialTarget
 			? exerciseTitle

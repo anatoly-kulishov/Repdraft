@@ -15,6 +15,7 @@
 	import { records, recordsReady } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import { tick } from 'svelte';
 
 	let { exerciseId }: { exerciseId: string } = $props();
 
@@ -30,9 +31,21 @@
 	let boundId = '';
 	/** User edited fields - don't clobber with late store hydration / cloud refresh. */
 	let dirty = false;
+	let invalidWeight = $state(false);
+	let invalidReps = $state(false);
 
 	function markDirty() {
 		dirty = true;
+		invalidWeight = false;
+		invalidReps = false;
+	}
+
+	async function flashFields(weight: boolean, reps: boolean) {
+		invalidWeight = false;
+		invalidReps = false;
+		await tick();
+		invalidWeight = weight;
+		invalidReps = reps;
 	}
 
 	function onWeightInput(event: Event) {
@@ -108,6 +121,9 @@
 		});
 		if (!result.ok) {
 			toasts.show(translate(lang, result.errorKey), result.errorKey === 'pr.needValue' ? 'info' : 'error');
+			if (result.errorKey === 'pr.invalidWeight') void flashFields(true, false);
+			else if (result.errorKey === 'pr.invalidReps') void flashFields(false, true);
+			else void flashFields(true, true);
 			return;
 		}
 
@@ -199,6 +215,8 @@
 			<span class="field-shell mt-1">
 				<input
 					class="field"
+					class:is-invalid={invalidWeight}
+					aria-invalid={invalidWeight}
 					type="text"
 					inputmode="decimal"
 					autocomplete="off"
@@ -217,6 +235,8 @@
 			<span class="field-shell mt-1">
 				<input
 					class="field"
+					class:is-invalid={invalidReps}
+					aria-invalid={invalidReps}
 					type="text"
 					inputmode="numeric"
 					autocomplete="off"

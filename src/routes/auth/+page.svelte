@@ -23,6 +23,7 @@
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { GREETING_NAME_MAX } from '$lib/domain/greetingName';
 	import { get } from 'svelte/store';
+	import { tick } from 'svelte';
 
 	type Panel = 'signin' | 'signup' | 'magic' | 'forgot' | 'check-email';
 
@@ -36,6 +37,13 @@
 	let redirected = $state(false);
 	let greetingNameInput = $state('');
 	let greetingNameSaving = $state(false);
+	let fieldsInvalid = $state(false);
+
+	async function flashInvalid() {
+		fieldsInvalid = false;
+		await tick();
+		fieldsInvalid = true;
+	}
 
 	let lang = $derived($resolvedLocale);
 	let nextPath = $derived(safeRedirectPath($page.url.searchParams.get('next')));
@@ -90,6 +98,7 @@
 		}
 		loading = true;
 		message = null;
+		fieldsInvalid = false;
 		try {
 			if (panel === 'signup') {
 				if (!passwordsMatch(password, passwordConfirm)) {
@@ -114,6 +123,7 @@
 			const text = mapErr(err);
 			message = text;
 			toasts.show(text, 'error');
+			void flashInvalid();
 		} finally {
 			loading = false;
 		}
@@ -126,6 +136,7 @@
 		}
 		loading = true;
 		message = null;
+		fieldsInvalid = false;
 		try {
 			await auth.signInWithOtp(email.trim(), nextPath);
 			toasts.show(translate(lang, 'auth.magicToast'), 'success');
@@ -134,6 +145,7 @@
 			const text = mapErr(err);
 			message = text;
 			toasts.show(text, 'error');
+			void flashInvalid();
 		} finally {
 			loading = false;
 		}
@@ -146,6 +158,7 @@
 		}
 		loading = true;
 		message = null;
+		fieldsInvalid = false;
 		try {
 			await auth.resetPasswordForEmail(email.trim());
 			toasts.show(translate(lang, 'auth.resetToast'), 'success');
@@ -154,6 +167,7 @@
 			const text = mapErr(err);
 			message = text;
 			toasts.show(text, 'error');
+			void flashInvalid();
 		} finally {
 			loading = false;
 		}
@@ -162,6 +176,7 @@
 	async function submitRecovery() {
 		loading = true;
 		message = null;
+		fieldsInvalid = false;
 		try {
 			if (!passwordsMatch(password, passwordConfirm)) {
 				throw new Error('auth.errors.passwordMismatch');
@@ -176,6 +191,7 @@
 			const text = mapErr(err);
 			message = text;
 			toasts.show(text, 'error');
+			void flashInvalid();
 		} finally {
 			loading = false;
 		}
@@ -188,6 +204,7 @@
 		}
 		loading = true;
 		message = null;
+		fieldsInvalid = false;
 		try {
 			await auth.signInWithOAuth('google', nextPath);
 		} catch (err) {
@@ -313,12 +330,14 @@
 				label={translate(lang, 'auth.newPassword')}
 				placeholder={translate(lang, 'auth.passwordPh')}
 				autocomplete="new-password"
+				invalid={fieldsInvalid}
 			/>
 			<PasswordField
 				bind:value={passwordConfirm}
 				label={translate(lang, 'auth.passwordConfirm')}
 				placeholder={translate(lang, 'auth.passwordConfirmPh')}
 				autocomplete="new-password"
+				invalid={fieldsInvalid}
 			/>
 			{#if message}
 				<p class="text-sm text-[var(--color-muted)]">{message}</p>
@@ -506,6 +525,8 @@
 						{translate(lang, 'auth.email')}
 						<input
 							class="field mt-1 w-full"
+							class:is-invalid={fieldsInvalid}
+							aria-invalid={fieldsInvalid}
 							type="email"
 							required
 							autocomplete="email"
@@ -540,6 +561,8 @@
 						{translate(lang, 'auth.email')}
 						<input
 							class="field mt-1 w-full"
+							class:is-invalid={fieldsInvalid}
+							aria-invalid={fieldsInvalid}
 							type="email"
 							required
 							autocomplete="email"
@@ -553,6 +576,7 @@
 						label={translate(lang, 'auth.password')}
 						placeholder={translate(lang, 'auth.passwordPh')}
 						autocomplete={passwordMode === 'signup' ? 'new-password' : 'current-password'}
+						invalid={fieldsInvalid}
 					/>
 					{#if passwordMode === 'signup'}
 						<PasswordField
@@ -560,6 +584,7 @@
 							label={translate(lang, 'auth.passwordConfirm')}
 							placeholder={translate(lang, 'auth.passwordConfirmPh')}
 							autocomplete="new-password"
+							invalid={fieldsInvalid}
 						/>
 					{/if}
 
@@ -604,6 +629,8 @@
 						{translate(lang, 'auth.email')}
 						<input
 							class="field mt-1 w-full"
+							class:is-invalid={fieldsInvalid}
+							aria-invalid={fieldsInvalid}
 							type="email"
 							required
 							autocomplete="email"

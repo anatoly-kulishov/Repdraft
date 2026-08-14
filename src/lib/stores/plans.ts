@@ -6,7 +6,11 @@ import { translate } from '$lib/i18n/messages';
 import { getWorkoutRepo, isCloudMode } from '$lib/storage/dataAccess';
 import { localWorkoutRepository } from '$lib/storage/localWorkoutRepository';
 import { supabaseWorkoutRepository } from '$lib/storage/supabaseWorkoutRepository';
-import { mirrorCloudWrite, refreshLocalCloudList } from '$lib/stores/cloudLocal';
+import type { CloudSyncState } from '$lib/domain/cloudSync';
+import {
+	mirrorCloudWrite,
+	refreshLocalCloudList
+} from '$lib/stores/cloudLocal';
 import { writable, get } from 'svelte/store';
 import { draft } from './draft';
 import { resolvedLocale } from './locale';
@@ -16,17 +20,20 @@ const CLOUD_MS = 4000;
 function createPlansStore() {
 	const store = writable<WorkoutPlan[]>([]);
 	const ready = writable(false);
+	const sync = writable<CloudSyncState>('idle');
 	let inflight: Promise<void> | null = null;
 
 	function invalidate() {
 		inflight = null;
 		store.set([]);
+		sync.set('idle');
 		ready.set(false);
 	}
 
 	async function refresh(opts?: { cloud?: boolean }) {
 		if (!browser) {
 			store.set([]);
+			sync.set('synced');
 			ready.set(true);
 			return;
 		}
@@ -36,23 +43,24 @@ function createPlansStore() {
 
 		inflight = (async () => {
 			try {
-				const merged = await refreshLocalCloudList({
+				await refreshLocalCloudList({
 					localList: () => localWorkoutRepository.list(),
 					cloudList: () => supabaseWorkoutRepository.list(),
 					merge: mergeWorkoutPlans,
 					wantCloud,
 					label: 'plans',
-					onLocal: (local) => {
-						store.set(local);
-						ready.set(true);
+					onUpdate: (result) => {
+						store.set(result.items);
+						sync.set(result.state);
+						if (result.state !== 'loading') ready.set(true);
 					}
 				});
-				store.set(merged);
 			} catch (err) {
 				console.error('plans.refresh failed', err);
 				store.set([]);
-			} finally {
+				sync.set('error');
 				ready.set(true);
+			} finally {
 				inflight = null;
 			}
 		})();
@@ -63,6 +71,7 @@ function createPlansStore() {
 	return {
 		subscribe: store.subscribe,
 		ready: { subscribe: ready.subscribe },
+		sync: { subscribe: sync.subscribe },
 		invalidate,
 		refresh,
 		async saveCurrent(): Promise<WorkoutPlan> {
@@ -115,3 +124,4 @@ function createPlansStore() {
 
 export const plans = createPlansStore();
 export const plansReady = { subscribe: plans.ready.subscribe };
+export const plansSync = { subscribe: plans.sync.subscribe };

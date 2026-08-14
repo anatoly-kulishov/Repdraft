@@ -7,6 +7,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import { BUILDER_ADD_EXERCISE_HREF } from '$lib/domain/catalogLinks';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { groupMemberRole } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
@@ -134,7 +135,7 @@
 				<EmptyState
 					title={translate(lang, 'builder.emptyTitle')}
 					description={translate(lang, 'builder.emptyDesc')}
-					actionHref="/builder/pick"
+					actionHref={BUILDER_ADD_EXERCISE_HREF}
 					actionLabel={translate(lang, 'builder.addExercise')}
 				/>
 			{:else}
@@ -155,11 +156,15 @@
 					<p class="text-xs text-[var(--color-muted)]">{translate(lang, 'builder.selectHint')}</p>
 				</div>
 
-				<div class="flex flex-col gap-3">
+				<div class="builder-exercise-list">
 					{#each $draft.exercises as item, index (item.exerciseId)}
 						{@const role = groupMemberRole($draft.exercises, index)}
 						{@const meta = indexById.get(item.exerciseId) ?? null}
-						<div class={role === 'first' || role === 'middle' ? 'mb-[-0.75rem]' : ''}>
+						<div
+							class="builder-exercise-item"
+							class:builder-exercise-item--superset={role !== 'solo'}
+							class:builder-exercise-item--group-continues={role === 'middle' || role === 'last'}
+						>
 							<WorkoutExerciseRow
 								{item}
 								{index}
@@ -186,7 +191,7 @@
 					{/each}
 				</div>
 
-				<a class="btn-secondary mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2" href="/builder/pick">
+				<a class="btn-secondary mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2" href={BUILDER_ADD_EXERCISE_HREF}>
 					<LucideIcon icon={Plus} size={ICON_BUTTON} />
 					{translate(lang, 'builder.addExercise')}
 				</a>

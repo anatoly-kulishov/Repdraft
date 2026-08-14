@@ -22,7 +22,7 @@
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
 	import { get } from 'svelte/store';
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, tick as nextFrame } from 'svelte';
 	import { ArrowLeft, Timer } from '@lucide/svelte';
 
 	let { params } = $props();
@@ -36,6 +36,9 @@
 	let names = $state(new Map<string, ExerciseIndexItem>());
 	let now = $state(Date.now());
 	let selectedExerciseIndex = $state(0);
+	let invalidSetIndex = $state<number | null>(null);
+	let invalidKind = $state<'weight' | 'reps' | null>(null);
+	let justDoneSetIndex = $state<number | null>(null);
 	let tick: ReturnType<typeof setInterval> | null = null;
 
 	let selectedRole = $derived(
@@ -161,7 +164,19 @@
 		});
 	});
 
+	async function flashSetInvalid(si: number, kind: 'weight' | 'reps') {
+		invalidSetIndex = null;
+		invalidKind = null;
+		await nextFrame();
+		invalidSetIndex = si;
+		invalidKind = kind;
+	}
+
 	function onWeight(ei: number, si: number, value: string) {
+		if (invalidSetIndex === si) {
+			invalidSetIndex = null;
+			invalidKind = null;
+		}
 		if (!value.trim()) {
 			live.patchSet(ei, si, { weightKg: null });
 			return;
@@ -172,6 +187,10 @@
 	}
 
 	function onReps(ei: number, si: number, value: string) {
+		if (invalidSetIndex === si) {
+			invalidSetIndex = null;
+			invalidKind = null;
+		}
 		if (!value.trim()) {
 			live.patchSet(ei, si, { reps: null });
 			return;
@@ -187,13 +206,18 @@
 		if (!set) return;
 		if (set.weightKg != null && !coerceWeightKg(String(set.weightKg))) {
 			toasts.show(translate(lang, 'pr.invalidWeight'), 'error');
+			void flashSetInvalid(si, 'weight');
 			return;
 		}
 		if (set.reps == null || !Number.isInteger(set.reps) || set.reps < LIVE_REPS.min || set.reps > LIVE_REPS.max) {
 			toasts.show(translate(lang, 'live.invalidReps'), 'error');
+			void flashSetInvalid(si, 'reps');
 			return;
 		}
+		invalidSetIndex = null;
+		invalidKind = null;
 		live.patchSet(ei, si, { completed: true });
+		justDoneSetIndex = si;
 		const next = get(live).session;
 		if (!next) return;
 		selectedExerciseIndex = nextFocusAfterSetComplete(next, ei, si);
@@ -350,7 +374,26 @@
 							onWeight={(si, v) => onWeight(ei, si, v)}
 							onReps={(si, v) => onReps(ei, si, v)}
 							onComplete={(si) => onComplete(ei, si)}
-							onUncomplete={(si) => live.patchSet(ei, si, { completed: false })}
+							onUncomplete={(si) => {
+								if (justDoneSetIndex === si) justDoneSetIndex = null;
+								live.patchSet(ei, si, { completed: false });
+							}}
+							onRemove={(si) => {
+								if (invalidSetIndex === si) {
+									invalidSetIndex = null;
+									invalidKind = null;
+								} else if (invalidSetIndex != null && invalidSetIndex > si) {
+									invalidSetIndex -= 1;
+								}
+								if (justDoneSetIndex === si) justDoneSetIndex = null;
+								else if (justDoneSetIndex != null && justDoneSetIndex > si) {
+									justDoneSetIndex -= 1;
+								}
+								live.removeSet(ei, si);
+							}}
+							{invalidSetIndex}
+							{invalidKind}
+							{justDoneSetIndex}
 						/>
 					{/if}
 				{/each}

@@ -36,7 +36,7 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 pb-[calc(var(--safe-bottom)+1rem)] backdrop-blur-[2px]"
+	class="clip-lightbox fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 pb-[calc(var(--safe-bottom)+1rem)] backdrop-blur-[2px]"
 	role="dialog"
 	aria-modal="true"
 	tabindex="-1"
@@ -45,7 +45,7 @@
 		if (e.target === e.currentTarget) onClose();
 	}}
 >
-	<div class="panel w-[min(100%,24rem)] max-h-[90vh] overflow-auto !rounded-2xl !p-0 shadow-xl">
+	<div class="clip-lightbox__panel panel w-[min(100%,24rem)] max-h-[90vh] overflow-auto !rounded-2xl !p-0 shadow-xl">
 		<div class="relative aspect-square w-full overflow-hidden bg-[var(--color-surface-muted)]">
 			{#if !ready && !failed}
 				<div class="feed-skel absolute inset-0" aria-hidden="true"></div>
