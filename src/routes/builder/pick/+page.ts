@@ -1,4 +1,7 @@
+import { redirect } from '@sveltejs/kit';
+import { BUILDER_ADD_EXERCISE_HREF } from '$lib/domain/catalogLinks';
 import type { PageLoad } from './$types';
-import { loadCatalogIndex } from '$lib/data/loadCatalogPage';
 
-export const load: PageLoad = async ({ fetch }) => loadCatalogIndex(fetch);
+export const load: PageLoad = () => {
+	redirect(308, BUILDER_ADD_EXERCISE_HREF);
+};
