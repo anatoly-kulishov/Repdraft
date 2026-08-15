@@ -19,7 +19,7 @@
 </script>
 
 <svelte:head>
-	<title>{article.title} — Repdraft</title>
+	<title>{article.title} · Repdraft</title>
 </svelte:head>
 
 <article class="content-page content-page--narrow article-page pb-mobile-actions lg:pb-0">

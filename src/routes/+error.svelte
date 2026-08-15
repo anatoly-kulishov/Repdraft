@@ -14,7 +14,7 @@
 
 <svelte:head>
 	<title>
-		{is404 ? translate(lang, 'error.404.title') : translate(lang, 'error.generic.title')} — Repdraft
+		{is404 ? translate(lang, 'error.404.title') : translate(lang, 'error.generic.title')} · Repdraft
 	</title>
 </svelte:head>
 

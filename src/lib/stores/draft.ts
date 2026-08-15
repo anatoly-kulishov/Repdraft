@@ -11,7 +11,8 @@ import {
 	updateExercise as updateExerciseInPlan,
 	updateGroupRest as updateGroupRestInPlan,
 	updateGroupSets as updateGroupSetsInPlan,
-	type AddExerciseResult
+	type AddExerciseResult,
+	type ExerciseRestHint
 } from '$lib/domain/workout';
 import type { WorkoutExercise, WorkoutPlan } from '$lib/domain/types';
 import { readDraft, writeDraft } from '$lib/storage/localWorkoutRepository';
@@ -50,10 +51,10 @@ function createDraftStore() {
 		},
 		set,
 		update,
-		addToDraft(exerciseId: string): AddExerciseResult {
+		addToDraft(exerciseId: string, hint?: ExerciseRestHint): AddExerciseResult {
 			let result: AddExerciseResult = { plan: createEmptyDraft(), added: false };
 			update((plan) => {
-				result = addExercise(plan, exerciseId);
+				result = addExercise(plan, exerciseId, hint);
 				return result.plan;
 			});
 			return result;

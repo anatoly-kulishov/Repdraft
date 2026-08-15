@@ -10,7 +10,8 @@
 	import {
 		completedExerciseCount,
 		completedSetCount,
-		sessionDurationMs
+		sessionDurationMs,
+		totalSetCount
 	} from '$lib/domain/session';
 	import { planTargetSummary } from '$lib/domain/workout';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
@@ -23,7 +24,6 @@
 	import { plans } from '$lib/stores/plans';
 	import { records } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { ChevronRight, LogIn, Plus } from '@lucide/svelte';
 
@@ -55,13 +55,22 @@
 	let showSignedInMockup = $derived($auth.ready && !isGuest);
 	let showGuestCreateHero = $derived(pageReady && isGuest && isCreateHome);
 
-	let mockupSubtitle = $derived(
-		hasPlans
-			? translate(lang, 'home.readyTitle')
-			: isFirstTimeHome
-				? translate(lang, 'home.welcomeLead')
-				: translate(lang, 'home.noPlansLead')
-	);
+	let mockupSubtitle = $derived.by(() => {
+		if (hasActive && active) {
+			const exercises = translate(lang, 'home.exerciseProgress', {
+				done: completedExerciseCount(active),
+				total: active.exercises.length
+			});
+			const sets = translate(lang, 'home.setsProgress', {
+				done: completedSetCount(active),
+				total: totalSetCount(active)
+			});
+			return `${active.planName} · ${exercises} · ${sets}`;
+		}
+		if (hasPlans) return translate(lang, 'home.readyTitle');
+		if (isFirstTimeHome) return translate(lang, 'home.welcomeLead');
+		return translate(lang, 'home.noPlansLead');
+	});
 	let mockupCtaHref = $derived(
 		hasActive && active
 			? `/live/${active.planId}`
@@ -122,15 +131,10 @@
 			]);
 		})();
 	});
-
-	function onResume() {
-		if (!active) return;
-		void goto(`/live/${active.planId}`);
-	}
 </script>
 
 <svelte:head>
-	<title>{translate(lang, 'home.title')} — Repdraft</title>
+	<title>{translate(lang, 'home.title')} · Repdraft</title>
 </svelte:head>
 
 <section
@@ -214,32 +218,8 @@
 					</div>
 				{/if}
 
-				{#if (hasActive && active) || hasPlans || (!isGuest && !hasPlans)}
+				{#if hasPlans || (!isGuest && !hasPlans)}
 					<div class="home-dashboard-row">
-						{#if hasActive && active}
-							<div class="home-section home-continue">
-								<h2 class="section-title">{translate(lang, 'home.continue')}</h2>
-								<article class="panel home-continue-card">
-									<div class="home-continue-card__body">
-										<h3 class="home-continue-card__title">{active.planName}</h3>
-										<p class="home-continue-card__meta">
-											{translate(lang, 'home.exerciseProgress', {
-												done: completedExerciseCount(active),
-												total: active.exercises.length
-											})}
-										</p>
-										<button
-											type="button"
-											class="btn-secondary home-continue-card__cta min-h-11 items-center justify-center px-5"
-											onclick={onResume}
-										>
-											{translate(lang, 'home.continue')}
-										</button>
-									</div>
-								</article>
-							</div>
-						{/if}
-
 						{#if hasPlans}
 							<div class="home-section home-dashboard-plans">
 								<div class="home-section-head">

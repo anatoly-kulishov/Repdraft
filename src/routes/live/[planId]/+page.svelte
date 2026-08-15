@@ -13,11 +13,13 @@
 	import { completedSetCount, nextFocusAfterSetComplete, totalSetCount } from '$lib/domain/session';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { groupBounds, groupMemberRole } from '$lib/domain/workout';
+	import { playRestDoneChime, unlockAudioFromGesture } from '$lib/domain/prefs';
 	import { formatElapsedClock, formatRestSec } from '$lib/i18n/format';
 	import { pickDefaultExerciseIndex } from '$lib/live/sessionUi';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
 	import { plans } from '$lib/stores/plans';
+	import { restSoundEnabled } from '$lib/stores/prefs';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
@@ -38,6 +40,7 @@
 	let selectedExerciseIndex = $state(0);
 	let invalidSetIndex = $state<number | null>(null);
 	let invalidKind = $state<'weight' | 'reps' | null>(null);
+	let restChimeArmed = $state(false);
 	let justDoneSetIndex = $state<number | null>(null);
 	let tick: ReturnType<typeof setInterval> | null = null;
 
@@ -92,10 +95,23 @@
 		return { current: openIdx + 1, total: ex.sets.length, allDone: false };
 	});
 
+	$effect(() => {
+		if (restUntil != null && restUntil > Date.now()) {
+			restChimeArmed = true;
+		}
+	});
+
 	onMount(() => {
 		tick = setInterval(() => {
 			now = Date.now();
-			if (restUntil != null && restUntil <= Date.now()) live.skipRest();
+			const until = get(live).restUntil;
+			if (until != null && until <= Date.now()) {
+				if (restChimeArmed && get(restSoundEnabled)) {
+					playRestDoneChime();
+				}
+				restChimeArmed = false;
+				live.skipRest();
+			}
 		}, 250);
 
 		void (async () => {
@@ -216,7 +232,10 @@
 		}
 		invalidSetIndex = null;
 		invalidKind = null;
+		unlockAudioFromGesture();
 		live.patchSet(ei, si, { completed: true });
+		restChimeArmed = get(live).restUntil != null;
+		if (restChimeArmed) unlockAudioFromGesture();
 		justDoneSetIndex = si;
 		const next = get(live).session;
 		if (!next) return;
@@ -253,7 +272,7 @@
 {/snippet}
 
 <svelte:head>
-	<title>{session ? session.planName : translate(lang, 'live.title')} — Repdraft</title>
+	<title>{session ? session.planName : translate(lang, 'live.title')} · Repdraft</title>
 </svelte:head>
 
 {#if loading}
@@ -343,7 +362,14 @@
 						{translate(lang, 'live.rest')}
 					</p>
 				</div>
-				<button type="button" class="btn-secondary" onclick={() => live.skipRest()}>
+				<button
+					type="button"
+					class="btn-secondary"
+					onclick={() => {
+						restChimeArmed = false;
+						live.skipRest();
+					}}
+				>
 					{translate(lang, 'live.skipRest')}
 				</button>
 			</div>

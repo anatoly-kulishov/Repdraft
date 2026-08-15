@@ -23,7 +23,8 @@ const checks = [
 	'catalogCover',
 	'exerciseName',
 	'articles',
-	'cloudSync'
+	'cloudSync',
+	'prefs'
 ];
 
 for (const name of checks) {
