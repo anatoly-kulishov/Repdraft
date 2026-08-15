@@ -3,20 +3,35 @@ import {
 	addLoggedSet,
 	finishSession,
 	lastPerformance,
+	mergeWorkoutSessions,
 	removeLoggedSet,
 	restSecAfterSet,
 	startSessionFromPlan,
 	syncSessionPrescriptionFromPlan,
 	updateLoggedSet
 } from '$lib/domain/session';
-import type { LastPerformance, LoggedSet, WorkoutPlan, WorkoutSession } from '$lib/domain/types';
+import type {
+	LastPerformance,
+	LoggedSet,
+	SetKind,
+	WorkoutPlan,
+	WorkoutSession
+} from '$lib/domain/types';
+import { REST_SEC } from '$lib/domain/inputLimits';
 import { REST_UNTIL_STORAGE_KEY } from '$lib/domain/repository';
-import { deleteSession, persistSession, clearFinishedSessionHistory } from '$lib/storage/dataAccess';
+import {
+	deleteSession,
+	isSessionsCloudAvailable,
+	persistSession,
+	clearFinishedSessionHistory
+} from '$lib/storage/dataAccess';
 import {
 	localSessionRepository,
 	readActiveSession,
 	writeActiveSession
 } from '$lib/storage/localSessionRepository';
+import { supabaseSessionRepository } from '$lib/storage/supabaseSessionRepository';
+import { refreshLocalCloudList } from '$lib/stores/cloudLocal';
 import { get, writable } from 'svelte/store';
 
 type LiveState = {
@@ -28,6 +43,13 @@ type LiveState = {
 };
 
 const REST_UNTIL_KEY = REST_UNTIL_STORAGE_KEY;
+
+function clampRestUntil(until: number): number | null {
+	const leftSec = Math.ceil((until - Date.now()) / 1000);
+	if (leftSec <= 0) return null;
+	const clamped = Math.min(REST_SEC.max, leftSec);
+	return Date.now() + clamped * 1000;
+}
 
 function createLiveStore() {
 	const store = writable<LiveState>({
@@ -47,8 +69,27 @@ function createLiveStore() {
 	async function refreshHistory() {
 		if (!browser) return;
 		try {
-			const list = await localSessionRepository.list();
-			store.update((s) => ({ ...s, history: list.filter((x) => x.finishedAt) }));
+			const result = await refreshLocalCloudList({
+				localList: () => localSessionRepository.list(),
+				cloudList: () => supabaseSessionRepository.list(),
+				merge: mergeWorkoutSessions,
+				wantCloud: isSessionsCloudAvailable(),
+				label: 'sessions'
+			});
+			const finished = result.items.filter((x) => x.finishedAt);
+			store.update((s) => ({ ...s, history: finished }));
+
+			// Persist cloud-only finished rows so offline “last time” keeps working.
+			const localIds = new Set((await localSessionRepository.list()).map((s) => s.id));
+			for (const session of finished) {
+				if (!localIds.has(session.id)) {
+					try {
+						await localSessionRepository.save(session);
+					} catch (err) {
+						console.warn('session local mirror failed', err);
+					}
+				}
+			}
 		} catch (err) {
 			console.error('live.refreshHistory failed', err);
 		}
@@ -103,24 +144,24 @@ function createLiveStore() {
 		patchSet(
 			exerciseIndex: number,
 			setIndex: number,
-			patch: Partial<Pick<LoggedSet, 'weightKg' | 'reps' | 'completed'>>
+			patch: Partial<Pick<LoggedSet, 'weightKg' | 'reps' | 'completed' | 'kind'>>
 		) {
 			store.update((s) => {
 				if (!s.session) return s;
 				const session = updateLoggedSet(s.session, exerciseIndex, setIndex, patch);
 				let restUntil = s.restUntil;
 				if (patch.completed === true) {
-					const sec = restSecAfterSet(session, exerciseIndex);
+					const sec = restSecAfterSet(session, exerciseIndex, setIndex);
 					restUntil = sec > 0 ? Date.now() + sec * 1000 : null;
 				}
 				persistActive(session, restUntil);
 				return { ...s, session, restUntil };
 			});
 		},
-		addSet(exerciseIndex: number) {
+		addSet(exerciseIndex: number, kind: SetKind = 'work') {
 			store.update((s) => {
 				if (!s.session) return s;
-				const session = addLoggedSet(s.session, exerciseIndex);
+				const session = addLoggedSet(s.session, exerciseIndex, kind);
 				persistActive(session, s.restUntil);
 				return { ...s, session };
 			});
@@ -137,6 +178,24 @@ function createLiveStore() {
 			store.update((s) => {
 				persistActive(s.session, null);
 				return { ...s, restUntil: null };
+			});
+		},
+		/** Set remaining rest to an absolute duration (presets). */
+		setRestSeconds(sec: number) {
+			const n = Math.min(REST_SEC.max, Math.max(0, Math.round(sec)));
+			store.update((s) => {
+				const restUntil = n > 0 ? Date.now() + n * 1000 : null;
+				persistActive(s.session, restUntil);
+				return { ...s, restUntil };
+			});
+		},
+		/** Nudge active rest by delta seconds (±15). */
+		adjustRestSeconds(deltaSec: number) {
+			store.update((s) => {
+				if (s.restUntil == null) return s;
+				const next = clampRestUntil(s.restUntil + deltaSec * 1000);
+				persistActive(s.session, next);
+				return { ...s, restUntil: next };
 			});
 		},
 		async finish(): Promise<WorkoutSession | null> {
@@ -169,6 +228,16 @@ function createLiveStore() {
 			if (fromHistory?.finishedAt) return fromHistory;
 			const local = await localSessionRepository.get(id);
 			if (local?.finishedAt) return local;
+			if (!isSessionsCloudAvailable()) return null;
+			try {
+				const cloud = await supabaseSessionRepository.get(id);
+				if (cloud?.finishedAt) {
+					await localSessionRepository.save(cloud);
+					return cloud;
+				}
+			} catch (err) {
+				console.warn('getFinishedSession cloud failed', err);
+			}
 			return null;
 		}
 	};

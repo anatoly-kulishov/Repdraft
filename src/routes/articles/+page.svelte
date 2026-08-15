@@ -39,7 +39,7 @@
 			</header>
 		</div>
 
-		<div class="articles-hub__search panel">
+		<div class="articles-hub__search">
 			<SearchInput bind:value={query} placeholder={translate(lang, 'articles.search')} />
 		</div>
 

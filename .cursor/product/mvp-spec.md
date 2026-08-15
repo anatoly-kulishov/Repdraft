@@ -23,7 +23,7 @@
 
 ## Implementation audit (living)
 
-Last reviewed: 2026-08-13 (branch v0.8.2 UX polish)
+Last reviewed: 2026-08-15 (branch v0.9.0 export / wake lock / prefill)
 
 ### Satisfies P0 (foundation)
 
@@ -49,7 +49,9 @@ Last reviewed: 2026-08-13 (branch v0.8.2 UX polish)
 | Home polish | 14–15 | Hero-only focus; records on `/records` |
 | Exercise detail history tab | 22 | P1 — session history on detail |
 | Shared WorkoutCard component | 9 | Optional refactor |
-| Rest timer sound/haptics | 26–30 | P1 optional |
+| Rest timer sound/haptics | 26–30 | Prefs + chime/vibrate; Wake Lock on live (v0.9.0) |
+| Local data export | trust | JSON backup + sessions CSV from `/auth` (v0.9.0) |
+| Last-time one-tap prefill | live | Chip applies weight×reps to open set (v0.9.0) |
 
 ### Explicitly out of MVP
 

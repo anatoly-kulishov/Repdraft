@@ -17,6 +17,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import PersonalRecordPanel from '$lib/components/PersonalRecordPanel.svelte';
+	import ExerciseSessionHistory from '$lib/components/ExerciseSessionHistory.svelte';
 	import TechniqueClipsPanel from '$lib/components/TechniqueClipsPanel.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -195,15 +196,7 @@
 					</div>
 
 					<div class="exercise-detail-page__intro">
-						<div class="flex min-w-0 items-start justify-between gap-3">
-							<p class="min-w-0 text-sm">
-								<a
-									class="exercise-facet-link exercise-facet-link--muted"
-									href={catalogZonePath(exercise.body_part)}
-								>
-									{labelBodyPart(exercise.body_part, lang)}
-								</a>
-							</p>
+						<div class="exercise-detail-page__toolbar">
 							<button
 								type="button"
 								class="btn-ghost exercise-detail-bookmark exercise-detail-bookmark--page shrink-0"
@@ -217,6 +210,14 @@
 						</div>
 
 						<dl class="panel grid min-w-0 gap-3 !p-3 text-sm sm:grid-cols-2 xl:grid-cols-3">
+							<div class="min-w-0">
+								<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.bodyPart')}</dt>
+								<dd class="font-medium break-words">
+									<a class="exercise-facet-link" href={catalogZonePath(exercise.body_part)}>
+										{labelBodyPart(exercise.body_part, lang)}
+									</a>
+								</dd>
+							</div>
 							<div class="min-w-0">
 								<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.equipment')}</dt>
 								<dd class="font-medium break-words">
@@ -289,6 +290,7 @@
 
 			<aside class="exercise-detail-page__aside">
 			<PersonalRecordPanel exerciseId={exercise.id} />
+			<ExerciseSessionHistory exerciseId={exercise.id} />
 
 			{#if data.relatedArticles.length > 0}
 				<section class="exercise-related-articles">

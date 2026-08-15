@@ -218,7 +218,11 @@ assert(
 	const { status, text } = await get('/catalog/back?target=lats');
 	assert(status === 200, `GET /catalog/back?target=lats → ${status}`);
 	assertIncludes(text, ['catalog-filters', 'href="/catalog/back"'], 'back target list');
-	assert(!text.includes('catalog-zone-target-back'), 'target list must use single back affordance');
+	// Class may still appear in inlined CSS; assert it is not used as a markup class.
+	assert(
+		!/<[a-z][^>]*\bcatalog-zone-target-back\b/i.test(text),
+		'target list must use single back affordance'
+	);
 	assert(
 		!text.includes('class="catalog-target-grid catalog-hub-grid"'),
 		'target list must not show browse grid'

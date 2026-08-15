@@ -43,19 +43,25 @@ export function clearUserLocalData(): void {
 }
 
 /** Keep guest local data on first login; wipe on logout or account switch. */
-export function syncLocalCacheUser(userId: string | null): { changed: boolean; cleared: boolean } {
-	if (typeof localStorage === 'undefined') return { changed: false, cleared: false };
+export function syncLocalCacheUser(userId: string | null): {
+	changed: boolean;
+	cleared: boolean;
+	action: import('$lib/domain/localCacheUser').LocalCacheUserAction;
+} {
+	if (typeof localStorage === 'undefined') {
+		return { changed: false, cleared: false, action: 'noop' };
+	}
 
 	const cached = localStorage.getItem(LOCAL_CACHE_USER_KEY);
 	const cachedNorm = cached?.trim() || null;
 	const { action, shouldClear } = localCacheUserAction(cachedNorm, userId);
 
-	if (action === 'noop') return { changed: false, cleared: false };
+	if (action === 'noop') return { changed: false, cleared: false, action };
 
 	if (shouldClear) clearUserLocalData();
 
 	if (userId) localStorage.setItem(LOCAL_CACHE_USER_KEY, userId);
 	else localStorage.removeItem(LOCAL_CACHE_USER_KEY);
 
-	return { changed: true, cleared: shouldClear };
+	return { changed: true, cleared: shouldClear, action };
 }

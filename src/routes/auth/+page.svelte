@@ -8,7 +8,8 @@
 		safeRedirectPath,
 		userAvatarUrl,
 		userAuthProvider,
-		userDisplayName
+		userDisplayName,
+		userInitials
 	} from '$lib/domain/authFlow';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
@@ -21,6 +22,7 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
+	import DataExportSection from '$lib/components/DataExportSection.svelte';
 	import { GREETING_NAME_MAX } from '$lib/domain/greetingName';
 	import type { AppTheme } from '$lib/domain/theme';
 	import { appTheme } from '$lib/stores/theme';
@@ -41,6 +43,8 @@
 	let greetingNameInput = $state('');
 	let greetingNameSaving = $state(false);
 	let fieldsInvalid = $state(false);
+	let deleteConfirmOpen = $state(false);
+	let deleteConfirmText = $state('');
 
 	async function flashInvalid() {
 		fieldsInvalid = false;
@@ -49,10 +53,15 @@
 	}
 
 	let lang = $derived($resolvedLocale);
+	let deleteConfirmWord = $derived(translate(lang, 'auth.deleteConfirmWord'));
+	let deleteConfirmReady = $derived(deleteConfirmText.trim() === deleteConfirmWord);
 	let nextPath = $derived(safeRedirectPath($page.url.searchParams.get('next')));
 	let recoveryMode = $derived($auth.passwordRecovery);
 	let profileName = $derived(userDisplayName($auth.user));
 	let profileAvatar = $derived(userAvatarUrl($auth.user));
+	let profileInitials = $derived(userInitials($auth.user));
+	let profileAvatarBroken = $state(false);
+	let showProfilePhoto = $derived(Boolean(profileAvatar) && !profileAvatarBroken);
 	let profileProvider = $derived(userAuthProvider($auth.user));
 	let profileProviderLabel = $derived.by(() => {
 		const id = profileProvider;
@@ -62,6 +71,11 @@
 		return translate(lang, 'auth.provider.other', {
 			name: id.charAt(0).toUpperCase() + id.slice(1)
 		});
+	});
+
+	$effect(() => {
+		profileAvatar;
+		profileAvatarBroken = false;
 	});
 	let backLabel = $derived(
 		nextPath === '/' ? translate(lang, 'nav.tabHome') : translate(lang, 'a11y.back')
@@ -231,6 +245,32 @@
 		}
 	}
 
+	async function openDeleteConfirm() {
+		deleteConfirmOpen = true;
+		deleteConfirmText = '';
+		await tick();
+		document.getElementById('auth-delete-confirm')?.focus();
+	}
+
+	function cancelDeleteConfirm() {
+		deleteConfirmOpen = false;
+		deleteConfirmText = '';
+	}
+
+	async function deleteAccount() {
+		if (loading || !deleteConfirmReady) return;
+		loading = true;
+		try {
+			await auth.deleteAccount();
+			toasts.show(translate(lang, 'auth.deleteDone'), 'info');
+			await goto('/', { replaceState: true });
+		} catch (err) {
+			toasts.show(mapErr(err) || translateError(lang, err, 'auth.deleteFail'), 'error');
+		} finally {
+			loading = false;
+		}
+	}
+
 	function setPanel(next: Panel) {
 		panel = next;
 		message = null;
@@ -318,6 +358,9 @@
 				>{translate(lang, 'auth.cloudOffAfter')}
 			</p>
 		</div>
+		<div class="panel mt-3">
+			<DataExportSection />
+		</div>
 	{:else if recoveryMode}
 		<form
 			class="panel flex flex-col gap-3"
@@ -360,7 +403,7 @@
 		<div class="auth-account panel">
 			<div class="auth-account__identity">
 				<div class="auth-profile">
-					{#if profileAvatar}
+					{#if showProfilePhoto && profileAvatar}
 						<img
 							class="account-avatar is-photo auth-profile__avatar"
 							src={profileAvatar}
@@ -369,7 +412,12 @@
 							height="64"
 							referrerpolicy="no-referrer"
 							decoding="async"
+							onerror={() => {
+								profileAvatarBroken = true;
+							}}
 						/>
+					{:else if profileInitials}
+						<span class="account-avatar auth-profile__avatar" aria-hidden="true">{profileInitials}</span>
 					{/if}
 					<div class="auth-profile__text min-w-0">
 						<div class="auth-profile__meta">
@@ -387,6 +435,10 @@
 					</div>
 				</div>
 				<p class="auth-account__sync-hint">{translate(lang, 'auth.syncedHint')}</p>
+				<p class="auth-account__sync-hint">
+					{translate(lang, 'auth.privacyHint')}
+					<a class="btn-link" href="/privacy">{translate(lang, 'privacy.link')}</a>
+				</p>
 			</div>
 
 			<form
@@ -463,6 +515,8 @@
 				</label>
 			</div>
 
+			<DataExportSection />
+
 			<div class="auth-account__actions">
 				<button
 					type="button"
@@ -480,6 +534,81 @@
 						{translate(lang, 'auth.logout')}
 					{/if}
 				</button>
+			</div>
+
+			<div class="auth-danger-zone" aria-labelledby="auth-danger-title">
+				<p class="auth-danger-zone__eyebrow">{translate(lang, 'auth.deleteZoneLabel')}</p>
+				<p id="auth-danger-title" class="auth-danger-zone__title">{translate(lang, 'auth.deleteTitle')}</p>
+				<p class="auth-danger-zone__lead">{translate(lang, 'auth.deleteLead')}</p>
+				<ul class="auth-danger-zone__list">
+					<li>{translate(lang, 'auth.deleteBulletPlans')}</li>
+					<li>{translate(lang, 'auth.deleteBulletRecords')}</li>
+					<li>{translate(lang, 'auth.deleteBulletSessions')}</li>
+					<li>{translate(lang, 'auth.deleteBulletClips')}</li>
+				</ul>
+
+				{#if !deleteConfirmOpen}
+					<button
+						type="button"
+						class="btn-danger auth-danger-zone__trigger min-h-11"
+						disabled={loading}
+						onclick={openDeleteConfirm}
+					>
+						{translate(lang, 'auth.deleteButton')}
+					</button>
+				{:else}
+					<div
+						class="auth-danger-zone__confirm"
+						role="group"
+						aria-labelledby="auth-delete-confirm-hint"
+					>
+						<label class="field-label" for="auth-delete-confirm">
+							<span id="auth-delete-confirm-hint">
+								{translate(lang, 'auth.deleteConfirmHint', { word: deleteConfirmWord })}
+							</span>
+							<input
+								id="auth-delete-confirm"
+								class="field mt-1 w-full"
+								type="text"
+								autocomplete="off"
+								autocapitalize="characters"
+								spellcheck="false"
+								placeholder={deleteConfirmWord}
+								bind:value={deleteConfirmText}
+								disabled={loading}
+								onkeydown={(e) => {
+									if (e.key === 'Escape') cancelDeleteConfirm();
+								}}
+							/>
+						</label>
+						<div class="auth-danger-zone__confirm-actions">
+							<button
+								type="button"
+								class="btn-secondary min-h-11"
+								disabled={loading}
+								onclick={cancelDeleteConfirm}
+							>
+								{translate(lang, 'auth.deleteCancel')}
+							</button>
+							<button
+								type="button"
+								class="btn-danger min-h-11"
+								disabled={loading || !deleteConfirmReady}
+								aria-busy={loading}
+								onclick={deleteAccount}
+							>
+								{#if loading}
+									<span class="inline-flex items-center gap-2">
+										<Spinner size="sm" block={false} />
+										{translate(lang, 'auth.wait')}
+									</span>
+								{:else}
+									{translate(lang, 'auth.deleteButtonFinal')}
+								{/if}
+							</button>
+						</div>
+					</div>
+				{/if}
 			</div>
 		</div>
 	{:else if panel === 'check-email'}
@@ -640,6 +769,13 @@
 						<p class="text-sm text-[var(--color-muted)]">{message}</p>
 					{/if}
 
+					{#if passwordMode === 'signup'}
+						<p class="text-sm text-[var(--color-muted)]">
+							{translate(lang, 'auth.privacyHint')}
+							<a class="btn-link" href="/privacy">{translate(lang, 'privacy.link')}</a>
+						</p>
+					{/if}
+
 					<button type="submit" class="btn-primary btn-block min-h-11" disabled={loading}>
 						{#if loading}
 							<span class="inline-flex items-center justify-center gap-2">
@@ -728,6 +864,9 @@
 					{translate(lang, 'auth.google')}
 				</button>
 			{/if}
+		</div>
+		<div class="panel mt-3">
+			<DataExportSection />
 		</div>
 	{/if}
 </section>

@@ -2,7 +2,9 @@
 	import Logo from '$lib/components/Logo.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SIDEBAR } from '$lib/components/icons/sizes';
+	import { userAvatarUrl, userInitials } from '$lib/domain/authFlow';
 	import { translate } from '$lib/i18n/messages';
+	import { auth } from '$lib/stores/auth';
 	import { draft, draftHydrated } from '$lib/stores/draft';
 	import { appTheme } from '$lib/stores/theme';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -23,6 +25,16 @@
 	let draftCount = $derived($draft.exercises.length);
 	let showDraftNav = $derived($draftHydrated && draftCount > 0);
 	let draftActive = $derived(path.startsWith('/builder'));
+	let profileAvatar = $derived(userAvatarUrl($auth.user));
+	let profileInitials = $derived(userInitials($auth.user));
+	let profileAvatarBroken = $state(false);
+	let showProfilePhoto = $derived(Boolean(profileAvatar) && !profileAvatarBroken);
+	let profileSignedIn = $derived(Boolean($auth.ready && $auth.user));
+
+	$effect(() => {
+		profileAvatar;
+		profileAvatarBroken = false;
+	});
 
 	type NavItem = {
 		href: string;
@@ -102,8 +114,30 @@
 			href="/auth"
 			aria-current={isActive('/auth') ? 'page' : undefined}
 		>
-			<span class="sidebar-link-icon" class:is-active={isActive('/auth')}>
-				<LucideIcon icon={UserRound} size={ICON_SIDEBAR} />
+			<span
+				class="sidebar-link-icon"
+				class:sidebar-link-icon--avatar={profileSignedIn}
+				class:is-active={isActive('/auth')}
+			>
+				{#if showProfilePhoto && profileAvatar}
+					<img
+						class="sidebar-avatar is-photo"
+						src={profileAvatar}
+						alt=""
+						width="24"
+						height="24"
+						referrerpolicy="no-referrer"
+						decoding="async"
+						aria-hidden="true"
+						onerror={() => {
+							profileAvatarBroken = true;
+						}}
+					/>
+				{:else if profileSignedIn && profileInitials}
+					<span class="sidebar-avatar" aria-hidden="true">{profileInitials}</span>
+				{:else}
+					<LucideIcon icon={UserRound} size={ICON_SIDEBAR} />
+				{/if}
 			</span>
 			<span>{translate(lang, 'nav.profile')}</span>
 		</a>

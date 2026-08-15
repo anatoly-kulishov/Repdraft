@@ -69,10 +69,14 @@ export type PersonalRecord = {
 };
 
 /** One logged working set during a live session. */
+export type SetKind = 'work' | 'warmup' | 'drop';
+
 export type LoggedSet = {
 	weightKg: number | null;
 	reps: number | null;
 	completed: boolean;
+	/** Omit / undefined = working set (back-compat with stored sessions). */
+	kind?: SetKind;
 };
 
 export type SessionExercise = {

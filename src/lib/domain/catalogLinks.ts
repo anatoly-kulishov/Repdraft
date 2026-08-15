@@ -99,6 +99,9 @@ export function catalogTargetPath(target: string, bodyPartHint?: string): string
 /** Constructor «add exercise» opens the real catalog, not a duplicate picker. */
 export const BUILDER_ADD_EXERCISE_HREF = '/catalog/all?from=%2Fbuilder';
 
+/** Start a blank draft (clears leftover name/exercises from a previous edit). */
+export const BUILDER_NEW_HREF = '/builder?new=1';
+
 export function isBuilderReturnPath(from: string | null | undefined): boolean {
 	return from === '/builder' || Boolean(from?.startsWith('/builder?'));
 }

@@ -3,17 +3,43 @@ import type {
 	LastPerformance,
 	LoggedSet,
 	SessionExercise,
+	SetKind,
 	WorkoutPlan,
 	WorkoutSession
 } from './types';
 import { groupBounds } from './workout';
+
+export function loggedSetKind(set: LoggedSet): SetKind {
+	return set.kind ?? 'work';
+}
+
+/** Working sets drive “last time” / progress memory (skip warm-up). */
+export function isProgressSet(set: LoggedSet): boolean {
+	return loggedSetKind(set) !== 'warmup';
+}
+
+export function nextSetKind(kind: SetKind): SetKind {
+	switch (kind) {
+		case 'work':
+			return 'warmup';
+		case 'warmup':
+			return 'drop';
+		case 'drop':
+			return 'work';
+		default: {
+			const _exhaustive: never = kind;
+			return _exhaustive;
+		}
+	}
+}
 
 function emptySets(count: number, targetReps: number): LoggedSet[] {
 	const n = Math.max(1, count);
 	return Array.from({ length: n }, () => ({
 		weightKg: null,
 		reps: targetReps,
-		completed: false
+		completed: false,
+		kind: 'work' as const
 	}));
 }
 
@@ -118,7 +144,7 @@ export function updateLoggedSet(
 	session: WorkoutSession,
 	exerciseIndex: number,
 	setIndex: number,
-	patch: Partial<Pick<LoggedSet, 'weightKg' | 'reps' | 'completed'>>
+	patch: Partial<Pick<LoggedSet, 'weightKg' | 'reps' | 'completed' | 'kind'>>
 ): WorkoutSession {
 	const exercises = session.exercises.map((ex, ei) => {
 		if (ei !== exerciseIndex) return ex;
@@ -128,12 +154,19 @@ export function updateLoggedSet(
 	return { ...session, exercises };
 }
 
-export function addLoggedSet(session: WorkoutSession, exerciseIndex: number): WorkoutSession {
+export function addLoggedSet(
+	session: WorkoutSession,
+	exerciseIndex: number,
+	kind: SetKind = 'work'
+): WorkoutSession {
 	const exercises = session.exercises.map((ex, ei) => {
 		if (ei !== exerciseIndex) return ex;
 		return {
 			...ex,
-			sets: [...ex.sets, { weightKg: null, reps: ex.targetReps, completed: false }]
+			sets: [
+				...ex.sets,
+				{ weightKg: null, reps: ex.targetReps, completed: false, kind }
+			]
 		};
 	});
 	return { ...session, exercises };
@@ -158,9 +191,17 @@ export function finishSession(session: WorkoutSession): WorkoutSession {
 	return { ...session, finishedAt: new Date().toISOString() };
 }
 
-export function restSecAfterSet(session: WorkoutSession, exerciseIndex: number): number {
+export function restSecAfterSet(
+	session: WorkoutSession,
+	exerciseIndex: number,
+	setIndex?: number
+): number {
 	const ex = session.exercises[exerciseIndex];
 	if (!ex) return 0;
+	if (setIndex != null) {
+		const set = ex.sets[setIndex];
+		if (set && loggedSetKind(set) === 'warmup') return 0;
+	}
 	return Math.max(0, ex.restSec);
 }
 
@@ -179,7 +220,7 @@ export function lastPerformance(
 	for (const session of finished) {
 		const ex = session.exercises.find((e) => e.exerciseId === exerciseId);
 		if (!ex) continue;
-		const done = ex.sets.filter((s) => s.completed);
+		const done = ex.sets.filter((s) => s.completed && isProgressSet(s));
 		if (done.length === 0) continue;
 		const last = done[done.length - 1];
 		return {
@@ -190,6 +231,68 @@ export function lastPerformance(
 		};
 	}
 	return null;
+}
+
+export type ExerciseSessionLog = {
+	sessionId: string;
+	planName: string;
+	finishedAt: string;
+	sets: { weightKg: number | null; reps: number | null; kind?: SetKind }[];
+};
+
+/** Recent finished sessions that logged this exercise (newest first). */
+export function recentExerciseLogs(
+	sessions: WorkoutSession[],
+	exerciseId: string,
+	limit = 5
+): ExerciseSessionLog[] {
+	const out: ExerciseSessionLog[] = [];
+	const finished = sessions
+		.filter((s) => s.finishedAt)
+		.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''));
+
+	for (const session of finished) {
+		const ex = session.exercises.find((e) => e.exerciseId === exerciseId);
+		if (!ex) continue;
+		const done = ex.sets.filter((s) => s.completed);
+		if (done.length === 0) continue;
+		out.push({
+			sessionId: session.id,
+			planName: session.planName,
+			finishedAt: session.finishedAt!,
+			sets: done.map((s) => ({
+				weightKg: s.weightKg,
+				reps: s.reps,
+				kind: loggedSetKind(s)
+			}))
+		});
+		if (out.length >= limit) break;
+	}
+	return out;
+}
+
+/** Prefer newer finishedAt, then startedAt. Keep device-only rows. */
+export function mergeWorkoutSessions(
+	local: WorkoutSession[],
+	cloud: WorkoutSession[]
+): WorkoutSession[] {
+	const map = new Map<string, WorkoutSession>();
+	for (const session of local) map.set(session.id, session);
+	for (const session of cloud) {
+		const prev = map.get(session.id);
+		if (!prev) {
+			map.set(session.id, session);
+			continue;
+		}
+		const prevKey = `${prev.finishedAt ?? ''}\0${prev.startedAt}`;
+		const nextKey = `${session.finishedAt ?? ''}\0${session.startedAt}`;
+		if (nextKey.localeCompare(prevKey) >= 0) map.set(session.id, session);
+	}
+	return [...map.values()].sort((a, b) => {
+		const af = a.finishedAt ?? a.startedAt;
+		const bf = b.finishedAt ?? b.startedAt;
+		return bf.localeCompare(af);
+	});
 }
 
 export function completedSetCount(session: WorkoutSession): number {
@@ -252,6 +355,13 @@ export function runSessionSelfCheck(): void {
 	if (lastPerformance([session], 'ex-b') !== null) {
 		throw new Error('ex-b with no completed sets should have null lastPerformance');
 	}
+	const logs = recentExerciseLogs([session], 'ex-a', 5);
+	if (logs.length !== 1 || logs[0]!.sets.length !== 1 || logs[0]!.sets[0]!.weightKg !== 40) {
+		throw new Error(`recentExerciseLogs unexpected ${JSON.stringify(logs)}`);
+	}
+	if (recentExerciseLogs([session], 'ex-b').length !== 0) {
+		throw new Error('ex-b should have empty recentExerciseLogs');
+	}
 
 	session = addLoggedSet(session, 0);
 	if (session.exercises[0]!.sets.length !== 4) {
@@ -308,5 +418,39 @@ export function runSessionSelfCheck(): void {
 	const synced = syncSessionPrescriptionFromPlan(stale, groupedPlan);
 	if (synced.exercises[0]?.groupId !== 'g1') {
 		throw new Error('syncSessionPrescriptionFromPlan should restore groupId');
+	}
+
+	if (nextSetKind('work') !== 'warmup' || nextSetKind('drop') !== 'work') {
+		throw new Error('nextSetKind cycle failed');
+	}
+
+	let warm = startSessionFromPlan(plan);
+	warm = updateLoggedSet(warm, 0, 0, {
+		weightKg: 20,
+		reps: 8,
+		completed: true,
+		kind: 'warmup'
+	});
+	warm = updateLoggedSet(warm, 0, 1, { weightKg: 50, reps: 5, completed: true, kind: 'work' });
+	warm = finishSession(warm);
+	const lastWork = lastPerformance([warm], 'ex-a');
+	if (!lastWork || lastWork.weightKg !== 50 || lastWork.sets !== 1) {
+		throw new Error(`warmup should not drive lastPerformance ${JSON.stringify(lastWork)}`);
+	}
+
+	const older: WorkoutSession = {
+		...warm,
+		id: 'merge-old',
+		finishedAt: '2026-01-01T00:00:00.000Z'
+	};
+	const newer: WorkoutSession = {
+		...warm,
+		id: 'merge-old',
+		finishedAt: '2026-02-01T00:00:00.000Z',
+		planName: 'Newer'
+	};
+	const merged = mergeWorkoutSessions([older], [newer, { ...warm, id: 'cloud-only' }]);
+	if (merged.length !== 2 || merged.find((s) => s.id === 'merge-old')?.planName !== 'Newer') {
+		throw new Error(`mergeWorkoutSessions unexpected ${JSON.stringify(merged.map((s) => s.id))}`);
 	}
 }

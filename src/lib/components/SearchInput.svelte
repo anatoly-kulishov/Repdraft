@@ -85,7 +85,7 @@
 
 	/* Beat .field { padding: … } so text never sits under the × */
 	.search-field.has-clear {
-		padding-right: 2.85rem;
+		padding-right: 2.5rem;
 	}
 
 	.search-field-with-icon {
@@ -104,23 +104,31 @@
 
 	.clear-btn {
 		position: absolute;
-		right: 0.25rem;
-		top: 50%;
-		display: flex;
-		height: 2.5rem;
-		width: 2.5rem;
-		min-height: 44px;
-		min-width: 44px;
-		transform: translateY(-50%);
-		align-items: center;
-		justify-content: center;
-		border-radius: 9999px;
+		top: 0;
+		bottom: 0;
+		right: 0.35rem;
+		z-index: 1;
+		display: grid;
+		place-items: center;
+		width: 1.85rem;
+		height: 1.85rem;
+		margin-block: auto;
+		padding: 0;
 		border: 0;
+		border-radius: 9999px;
 		background: transparent;
-		font-size: 1.25rem;
-		line-height: 1;
 		color: var(--color-muted);
+		line-height: 0;
 		cursor: pointer;
+		appearance: none;
+		-webkit-appearance: none;
+	}
+
+	/* Keep ≥44px tap without making the visible disc taller than the field. */
+	.clear-btn::before {
+		content: '';
+		position: absolute;
+		inset: -0.55rem;
 	}
 
 	.clear-btn:hover {

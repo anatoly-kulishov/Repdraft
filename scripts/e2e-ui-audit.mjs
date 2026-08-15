@@ -189,9 +189,8 @@ async function auditViewport(page, viewport) {
 		const search = page.locator('input[type="search"], .search-field').first();
 		await search.waitFor({ state: 'visible', timeout: 10_000 });
 		await search.click();
-		await search.fill('');
-		await search.type('bench', { delay: 40 });
-		await page.waitForTimeout(400);
+		await search.pressSequentially('bench', { delay: 40 });
+		await page.waitForTimeout(500);
 		const value = await search.inputValue();
 		value.includes('bench')
 			? pass(viewport, 'zone.search-stable', `value="${value}"`)

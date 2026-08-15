@@ -121,6 +121,31 @@ export function userDisplayName(user: AuthUserLike | null | undefined): string |
 	return email.split('@')[0] || null;
 }
 
+/** Initials for avatar fallback (email local-part or display name). */
+export function userInitials(user: AuthUserLike | null | undefined): string | null {
+	if (!user) return null;
+	const email = user.email?.trim();
+	if (email) {
+		const local = email.split('@')[0] ?? '';
+		const parts = local.split(/[._\-+]/).filter(Boolean);
+		if (parts.length >= 2) {
+			const a = parts[0]![0] ?? '';
+			const b = parts[1]![0] ?? '';
+			const pair = `${a}${b}`.toUpperCase();
+			if (pair) return pair;
+		}
+		const slice = local.slice(0, 2).toUpperCase();
+		if (slice) return slice;
+	}
+	const name = userDisplayName(user);
+	if (!name) return null;
+	const tokens = name.trim().split(/\s+/).filter(Boolean);
+	if (tokens.length >= 2) {
+		return `${tokens[0]![0] ?? ''}${tokens[1]![0] ?? ''}`.toUpperCase() || null;
+	}
+	return name.slice(0, 2).toUpperCase() || null;
+}
+
 /** First token of display name — for home greeting ("Добрый день, Anatoly"). */
 export function userFirstName(user: AuthUserLike | null | undefined): string | null {
 	const name = userDisplayName(user);
@@ -182,6 +207,12 @@ export function runAuthFlowSelfCheck(): void {
 	}
 	if (userDisplayName({ email: 'ada@example.com', user_metadata: {} }) !== 'ada') {
 		throw new Error('userDisplayName should fall back to email local-part');
+	}
+	if (userInitials({ email: 'anatolkulishov@yandex.ru' }) !== 'AN') {
+		throw new Error('userInitials should take 2 chars from single local-part');
+	}
+	if (userInitials({ email: 'anatoly.kulishov@yandex.ru' }) !== 'AK') {
+		throw new Error('userInitials should use dotted local-part parts');
 	}
 	if (userFirstName({ user_metadata: { full_name: 'Anatoly Kulishov' } }) !== 'Anatoly') {
 		throw new Error('userFirstName should use first token');

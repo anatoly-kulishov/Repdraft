@@ -29,5 +29,21 @@
 			"type": "image/png",
 			"purpose": "maskable"
 		}
+	],
+	"shortcuts": [
+		{
+			"name": "Продолжить / Home",
+			"short_name": "Home",
+			"description": "Главная: продолжить или начать",
+			"url": "/",
+			"icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+		},
+		{
+			"name": "Новая тренировка",
+			"short_name": "Новая",
+			"description": "Открыть конструктор",
+			"url": "/builder?new=1",
+			"icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+		}
 	]
 }

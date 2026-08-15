@@ -28,6 +28,11 @@ export function isCloudMode(): boolean {
 	return cloudMode;
 }
 
+/** Cloud session table usable for list/get/mirror. */
+export function isSessionsCloudAvailable(): boolean {
+	return cloudMode && sessionsCloudOk && !isSessionsTableUnavailable();
+}
+
 export function getWorkoutRepo(): WorkoutRepository {
 	return cloudMode ? supabaseWorkoutRepository : localWorkoutRepository;
 }

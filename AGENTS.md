@@ -48,6 +48,7 @@ npm run build
    `https://YOUR_PROJECT.supabase.co/auth/v1/callback`
 4. Письма (confirm / magic / reset): Templates → убедись, что ссылки ведут на `{{ .RedirectTo }}` / сайт из Site URL.
 5. После деплоя на Vercel: те же `PUBLIC_SUPABASE_*`, плюс redirect URL с прод-доменом уже в allow-list.
+6. **Удаление аккаунта** (`/auth` → Удалить аккаунт): на сервере (Vercel) нужен `SUPABASE_SERVICE_ROLE_KEY` (не `PUBLIC_*`). Endpoint: `POST /api/account/delete`.
 
 ## UI
 
