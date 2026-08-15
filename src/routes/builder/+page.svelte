@@ -16,6 +16,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { Plus, ArrowLeft } from '@lucide/svelte';
 
@@ -23,11 +24,22 @@
 	let indexReady = $state(false);
 	let selectedIds = $state<string[]>([]);
 	let saving = $state(false);
+	let freshStartConsumed = $state(false);
 	let lang = $derived($resolvedLocale);
 	let selectedCount = $derived(selectedIds.length);
 	let pageReady = $derived(
 		$draftHydrated && ($draft.exercises.length === 0 || indexReady)
 	);
+
+	/** After hydrate — otherwise localStorage would resurrect the previous draft name. */
+	$effect(() => {
+		if (freshStartConsumed || !$draftHydrated) return;
+		if (!$page.url.searchParams.has('new')) return;
+		freshStartConsumed = true;
+		draft.resetDraft();
+		selectedIds = [];
+		void goto('/builder', { replaceState: true, noScroll: true, keepFocus: true });
+	});
 
 	onMount(() => {
 		loadExerciseIndex()

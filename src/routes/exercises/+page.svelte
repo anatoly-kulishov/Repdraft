@@ -45,7 +45,7 @@
 		<p class="page-lead catalog-hub-intro__lead">{translate(lang, 'catalog.hubLead')}</p>
 	</header>
 
-	<div class="catalog-hub-toolbar panel">
+	<div class="catalog-hub-toolbar">
 		<form class="catalog-hub-toolbar__search" onsubmit={onSearchSubmit}>
 			<SearchInput bind:value={searchQuery} placeholder={translate(lang, 'catalog.search')} />
 		</form>

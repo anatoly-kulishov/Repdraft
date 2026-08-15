@@ -24,7 +24,8 @@ const checks = [
 	'exerciseName',
 	'articles',
 	'cloudSync',
-	'prefs'
+	'prefs',
+	'exportData'
 ];
 
 for (const name of checks) {

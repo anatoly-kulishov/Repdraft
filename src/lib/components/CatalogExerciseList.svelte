@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CatalogExerciseListSkeleton from '$lib/components/CatalogExerciseListSkeleton.svelte';
+	import CatalogListZoneChips from '$lib/components/CatalogListZoneChips.svelte';
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
@@ -18,6 +19,7 @@
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, untrack } from 'svelte';
+	import { Bookmark } from '@lucide/svelte';
 
 	let {
 		bodyParts,
@@ -32,7 +34,6 @@
 		initialBodyPart = '',
 		listOnMobile = true,
 		gridOnDesktop = false,
-		returnAfterAdd = null as string | null,
 		savedOnly = false,
 		hideTargetFilter = false
 	}: {
@@ -50,7 +51,6 @@
 		listOnMobile?: boolean;
 		/** List on phone, grid from 768px (catalog all/zone and builder add flow). */
 		gridOnDesktop?: boolean;
-		returnAfterAdd?: string | null;
 		savedOnly?: boolean;
 		/** Zone chips replace the muscle facet in FilterBar. */
 		hideTargetFilter?: boolean;
@@ -91,6 +91,9 @@
 	let zoneBodyParts = $derived(
 		zoneLocked ? catalogZoneBodyParts(presetBodyPart) : []
 	);
+	/** Zone chips on /catalog/all only — zone pages already have a zone context. */
+	let showZoneChips = $derived(!savedOnly && !zoneLocked);
+	let filterLockBodyPart = $derived(zoneLocked || showZoneChips);
 
 	let lang = $derived($resolvedLocale);
 	let detailFrom = $derived(`${$page.url.pathname}${$page.url.search}`);
@@ -152,7 +155,7 @@
 		filters = { ...filters, bodyPart: presetBodyPart as ExerciseFilters['bodyPart'] };
 	});
 
-	/** URL is the only facet memory — no catalogUi resurrection across builder/hub visits. */
+	/** Apply facet props from the route when they change — not when local filters edit. */
 	$effect(() => {
 		initialQuery;
 		initialEquipment;
@@ -160,9 +163,10 @@
 		initialBodyPart;
 		presetBodyPart;
 		const next = filtersFromUrl();
-		const current = filters;
-		const changed = (Object.keys(next) as (keyof ExerciseFilters)[]).some(
-			(key) => current[key] !== next[key]
+		// Snapshot must be fully untracked: reading `filters.foo` outside untrack
+		// still subscribes and re-runs this effect on every keystroke, wiping query.
+		const changed = untrack(() =>
+			(Object.keys(next) as (keyof ExerciseFilters)[]).some((key) => filters[key] !== next[key])
 		);
 		if (!changed) return;
 		syncingFiltersToUrl = true;
@@ -311,7 +315,23 @@
 
 <div class="catalog-list-layout">
 	<div class="catalog-list-layout__filters">
-		<FilterBar bind:filters {bodyParts} equipment={equipmentOptions} targets={targetOptions} lockBodyPart={zoneLocked} {hideTargetFilter} />
+		{#if showZoneChips}
+			<CatalogListZoneChips
+				{bodyParts}
+				activeZone={zoneLocked ? presetBodyPart : 'all'}
+				equipment={filters.equipment}
+				target={filters.target}
+				query={filters.query}
+			/>
+		{/if}
+		<FilterBar
+			bind:filters
+			{bodyParts}
+			equipment={equipmentOptions}
+			targets={targetOptions}
+			lockBodyPart={filterLockBodyPart}
+			{hideTargetFilter}
+		/>
 	</div>
 
 	<div class="catalog-list-layout__main">
@@ -389,6 +409,8 @@
 		{:else}
 			<EmptyState
 				class="catalog-empty-state"
+				centered={savedOnly}
+				icon={savedOnly ? Bookmark : null}
 				title={translate(lang, savedOnly ? 'bookmarks.emptyTitle' : 'catalog.emptyTitle')}
 				description={translate(lang, savedOnly ? 'bookmarks.emptyDesc' : 'catalog.emptyDesc')}
 				actionHref={savedOnly ? '/exercises' : undefined}
@@ -403,7 +425,6 @@
 					recordChips={recordChipsById.get(exercise.id) ?? []}
 					priority={i < 4}
 					variant={cardVariant}
-					{returnAfterAdd}
 					{detailFrom}
 				/>
 			{/each}

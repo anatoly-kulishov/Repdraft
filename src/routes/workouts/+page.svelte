@@ -13,6 +13,7 @@
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
 	import { planTargetSummary } from '$lib/domain/workout';
+	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
@@ -183,7 +184,7 @@
 		</div>
 		<a
 			class="btn-primary workouts-page__create min-h-11 shrink-0"
-			href="/builder"
+			href={BUILDER_NEW_HREF}
 			class:workouts-page__create--hidden={activeTab === 'history'}
 		>
 			{translate(lang, 'workouts.newWorkout')}
@@ -211,7 +212,7 @@
 					icon={ClipboardList}
 					title={translate(lang, 'workouts.emptyTitle')}
 					description={translate(lang, 'workouts.emptyDesc')}
-					actionHref="/builder"
+					actionHref={BUILDER_NEW_HREF}
 					actionLabel={translate(lang, 'workouts.create')}
 				/>
 			{:else}
@@ -248,7 +249,7 @@
 										<div class="entity-row__actions">
 											<button
 												type="button"
-												class="btn-primary inline-flex min-h-11 shrink-0 items-center gap-2 px-4"
+												class="btn-secondary entity-row__start inline-flex min-h-11 shrink-0 items-center gap-2 px-4"
 												onclick={() => onStart(plan.id)}
 												disabled={plan.exercises.length === 0 || planBusyId !== null}
 											>
@@ -359,7 +360,7 @@
 	<a
 		class="workouts-fab"
 		class:workouts-fab--hidden={activeTab === 'history'}
-		href="/builder"
+		href={BUILDER_NEW_HREF}
 		aria-label={translate(lang, 'workouts.newWorkout')}
 		title={translate(lang, 'workouts.newWorkout')}
 	>

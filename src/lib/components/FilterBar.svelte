@@ -65,7 +65,7 @@
 			{#if activeFilterCount > 0}
 				<button
 					type="button"
-					class="btn-link catalog-filters-reset-desktop hidden md:inline-flex"
+					class="btn-link catalog-filters-reset-desktop"
 					onclick={resetFilters}
 				>
 					{translate(lang, 'catalog.reset')}
