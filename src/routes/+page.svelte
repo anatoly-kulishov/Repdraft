@@ -1,6 +1,5 @@
 <script lang="ts">
 	import ArticleTeaserList from '$lib/components/ArticleTeaserList.svelte';
-	import CatalogHubChips from '$lib/components/CatalogHubChips.svelte';
 	import HomePageSkeleton from '$lib/components/HomePageSkeleton.svelte';
 	import HomeRecordsWidget from '$lib/components/HomeRecordsWidget.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -14,6 +13,7 @@
 		totalSetCount
 	} from '$lib/domain/session';
 	import { planTargetSummary } from '$lib/domain/workout';
+	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
 	import { greetingFirstName } from '$lib/domain/greetingName';
 	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
@@ -56,34 +56,24 @@
 	let showGuestCreateHero = $derived(pageReady && isGuest && isCreateHome);
 
 	let mockupSubtitle = $derived.by(() => {
-		if (hasActive && active) {
-			const exercises = translate(lang, 'home.exerciseProgress', {
-				done: completedExerciseCount(active),
-				total: active.exercises.length
-			});
-			const sets = translate(lang, 'home.setsProgress', {
-				done: completedSetCount(active),
-				total: totalSetCount(active)
-			});
-			return `${active.planName} · ${exercises} · ${sets}`;
-		}
+		if (hasActive) return translate(lang, 'home.readyTitle');
 		if (hasPlans) return translate(lang, 'home.readyTitle');
 		if (isFirstTimeHome) return translate(lang, 'home.welcomeLead');
 		return translate(lang, 'home.noPlansLead');
 	});
-	let mockupCtaHref = $derived(
-		hasActive && active
-			? `/live/${active.planId}`
-			: hasPlans
-				? '/workouts'
-				: '/builder'
-	);
+	let mockupCtaHref = $derived(hasPlans ? '/workouts' : '/builder');
 	let mockupCtaLabel = $derived(
-		translate(
-			lang,
-			hasActive ? 'home.continueWorkout' : hasPlans ? 'home.startWorkout' : 'workouts.create'
-		)
+		translate(lang, hasPlans ? 'home.startWorkout' : 'workouts.create')
 	);
+	let continueRemaining = $derived.by(() => {
+		if (!active) return '';
+		const exercisesLeft = Math.max(0, active.exercises.length - completedExerciseCount(active));
+		const setsLeft = Math.max(0, totalSetCount(active) - completedSetCount(active));
+		return translate(lang, 'home.remainingProgress', {
+			exercises: exercisesLeft,
+			sets: setsLeft
+		});
+	});
 
 	let createHeroTitle = $derived(
 		isGuest
@@ -161,7 +151,7 @@
 					<p class="home-header__subtitle">{mockupSubtitle}</p>
 				{/if}
 			</div>
-			{#if pageReady}
+			{#if pageReady && !hasActive}
 				<a class="btn-primary home-header__cta" href={mockupCtaHref}>
 					{mockupCtaLabel}
 				</a>
@@ -180,7 +170,16 @@
 	{#if !pageReady}
 		<HomePageSkeleton label={translate(lang, 'common.loading')} />
 	{:else}
-		<CatalogHubChips class="home-catalog-chips" />
+		{#if hasActive && active}
+			<a class="home-continue-card panel" href={`/live/${active.planId}`}>
+				<div class="home-continue-card__copy">
+					<p class="home-continue-card__eyebrow">{translate(lang, 'home.workoutInProgress')}</p>
+					<p class="home-continue-card__title">{active.planName}</p>
+					<p class="home-continue-card__meta">{continueRemaining}</p>
+				</div>
+				<span class="btn-primary home-continue-card__cta">{translate(lang, 'home.continue')}</span>
+			</a>
+		{/if}
 		<div class="home-dashboard">
 			{#if showGuestCreateHero}
 				<div class="home-dashboard-top">
@@ -195,11 +194,7 @@
 								<LucideIcon icon={LogIn} size={ICON_PRIMARY} />
 								{translate(lang, 'nav.signIn')}
 							</a>
-							<a
-								class="btn-secondary home-hero-cta-secondary min-h-11 items-center justify-center gap-2"
-								href="/builder"
-							>
-								<LucideIcon icon={Plus} size={ICON_PRIMARY} />
+							<a class="home-hero-skip" href={BUILDER_NEW_HREF}>
 								{translate(lang, 'home.guestCreateLocal')}
 							</a>
 						</div>
@@ -249,7 +244,7 @@
 									{/each}
 									{#if homePlans.length < 4}
 										<li class="entity-row entity-row--create">
-											<a class="entity-row__main" href="/builder">
+											<a class="entity-row__main" href={BUILDER_NEW_HREF}>
 												<span class="entity-row__title entity-row__title--create">
 													<LucideIcon icon={Plus} size={ICON_SMALL} />
 													{translate(lang, 'home.plansCreateTitle')}
@@ -267,7 +262,7 @@
 								</div>
 								<ul class="entity-list">
 									<li class="entity-row entity-row--create">
-										<a class="entity-row__main" href="/builder">
+										<a class="entity-row__main" href={BUILDER_NEW_HREF}>
 											<span class="entity-row__title entity-row__title--create">
 												<LucideIcon icon={Plus} size={ICON_SMALL} />
 												{translate(lang, 'home.plansCreateTitle')}
@@ -335,7 +330,7 @@
 								<span class="home-guest-next__hint">{translate(lang, 'home.guestBrowseHint')}</span>
 								<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="home-guest-next__chevron" />
 							</a>
-							<a class="home-guest-next__card panel" href="/builder">
+							<a class="home-guest-next__card panel" href={BUILDER_NEW_HREF}>
 								<span class="home-guest-next__title">{translate(lang, 'workouts.create')}</span>
 								<span class="home-guest-next__hint">{translate(lang, 'home.guestCreateHint')}</span>
 								<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="home-guest-next__chevron" />

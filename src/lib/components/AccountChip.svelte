@@ -2,7 +2,7 @@
 	import { page } from '$app/stores';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
-	import { userAvatarUrl } from '$lib/domain/authFlow';
+	import { userAvatarUrl, userInitials } from '$lib/domain/authFlow';
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -19,7 +19,7 @@
 	let avatarUrl = $derived(userAvatarUrl($auth.user));
 	let avatarBroken = $state(false);
 	let showPhoto = $derived(Boolean(avatarUrl) && !avatarBroken);
-	let initials = $derived(email ? initialsFromEmail(email) : null);
+	let initials = $derived(userInitials($auth.user));
 	let ariaLabel = $derived(
 		!$auth.ready
 			? translate(lang, 'common.loading')
@@ -42,15 +42,6 @@
 		avatarUrl;
 		avatarBroken = false;
 	});
-
-	function initialsFromEmail(value: string): string {
-		const local = value.split('@')[0] ?? '?';
-		const parts = local.split(/[._\-+]/).filter(Boolean);
-		if (parts.length >= 2) {
-			return `${parts[0]![0] ?? ''}${parts[1]![0] ?? ''}`.toUpperCase();
-		}
-		return local.slice(0, 2).toUpperCase() || '?';
-	}
 </script>
 
 <a

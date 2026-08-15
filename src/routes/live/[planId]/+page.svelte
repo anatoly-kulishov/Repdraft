@@ -13,7 +13,8 @@
 	import { completedSetCount, nextFocusAfterSetComplete, totalSetCount } from '$lib/domain/session';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { groupBounds, groupMemberRole } from '$lib/domain/workout';
-	import { playRestDoneChime, unlockAudioFromGesture } from '$lib/domain/prefs';
+	import { playRestDoneChime, unlockAudioFromGesture, vibrateRestDone } from '$lib/domain/prefs';
+	import { acquireScreenWakeLock, releaseScreenWakeLock } from '$lib/media/wakeLock';
 	import { formatElapsedClock, formatRestSec } from '$lib/i18n/format';
 	import { pickDefaultExerciseIndex } from '$lib/live/sessionUi';
 	import { translate, translateError } from '$lib/i18n/messages';
@@ -102,12 +103,17 @@
 	});
 
 	onMount(() => {
+		const unlockOnce = () => unlockAudioFromGesture();
+		window.addEventListener('pointerdown', unlockOnce, { once: true, capture: true });
+		void acquireScreenWakeLock();
+
 		tick = setInterval(() => {
 			now = Date.now();
 			const until = get(live).restUntil;
 			if (until != null && until <= Date.now()) {
-				if (restChimeArmed && get(restSoundEnabled)) {
-					playRestDoneChime();
+				if (restChimeArmed) {
+					vibrateRestDone();
+					if (get(restSoundEnabled)) playRestDoneChime();
 				}
 				restChimeArmed = false;
 				live.skipRest();
@@ -168,6 +174,7 @@
 
 	onDestroy(() => {
 		if (tick) clearInterval(tick);
+		void releaseScreenWakeLock();
 	});
 
 	$effect(() => {
@@ -322,6 +329,7 @@
 					total: totalSetCount(session)
 				})}
 			</p>
+			<p class="live-local-hint">{translate(lang, 'live.localSaveHint')}</p>
 		</div>
 
 		<header class="live-header hidden lg:flex">
@@ -340,6 +348,7 @@
 					})}
 				</p>
 				<p class="live-timer" aria-live="polite">{elapsedLabel}</p>
+				<p class="live-local-hint">{translate(lang, 'live.localSaveHint')}</p>
 			</div>
 		</header>
 
@@ -357,21 +366,77 @@
 							{/key}
 						</div>
 					</div>
-					<p class="live-rest-label">
-						<LucideIcon icon={Timer} size={ICON_SMALL} />
-						{translate(lang, 'live.rest')}
-					</p>
+					<div class="live-rest__copy">
+						<p class="live-rest-label">
+							<LucideIcon icon={Timer} size={ICON_SMALL} />
+							{translate(lang, 'live.rest')}
+						</p>
+						<div class="live-rest__presets">
+							<button
+								type="button"
+								class="btn-ghost live-rest__chip"
+								onclick={() => {
+									restChimeArmed = true;
+									live.setRestSeconds(60);
+								}}
+							>
+								{translate(lang, 'live.restPreset60')}
+							</button>
+							<button
+								type="button"
+								class="btn-ghost live-rest__chip"
+								onclick={() => {
+									restChimeArmed = true;
+									live.setRestSeconds(90);
+								}}
+							>
+								{translate(lang, 'live.restPreset90')}
+							</button>
+							<button
+								type="button"
+								class="btn-ghost live-rest__chip"
+								onclick={() => {
+									restChimeArmed = true;
+									live.setRestSeconds(120);
+								}}
+							>
+								{translate(lang, 'live.restPreset120')}
+							</button>
+						</div>
+					</div>
 				</div>
-				<button
-					type="button"
-					class="btn-secondary"
-					onclick={() => {
-						restChimeArmed = false;
-						live.skipRest();
-					}}
-				>
-					{translate(lang, 'live.skipRest')}
-				</button>
+				<div class="live-rest__actions">
+					<button
+						type="button"
+						class="btn-ghost live-rest__chip"
+						onclick={() => {
+							restChimeArmed = true;
+							live.adjustRestSeconds(-15);
+						}}
+					>
+						{translate(lang, 'live.restMinus15')}
+					</button>
+					<button
+						type="button"
+						class="btn-ghost live-rest__chip"
+						onclick={() => {
+							restChimeArmed = true;
+							live.adjustRestSeconds(15);
+						}}
+					>
+						{translate(lang, 'live.restPlus15')}
+					</button>
+					<button
+						type="button"
+						class="btn-secondary"
+						onclick={() => {
+							restChimeArmed = false;
+							live.skipRest();
+						}}
+					>
+						{translate(lang, 'live.skipRest')}
+					</button>
+				</div>
 			</div>
 		{/if}
 

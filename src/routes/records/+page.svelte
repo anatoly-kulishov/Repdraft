@@ -17,7 +17,7 @@
 	import { records, recordsReady, recordsSync } from '$lib/stores/records';
 	import { isCloudListUncertain } from '$lib/domain/cloudSync';
 	import { toasts } from '$lib/stores/toasts';
-	import { ArrowLeft, Trash2 } from '@lucide/svelte';
+	import { ArrowLeft, Trophy, Trash2 } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
@@ -110,6 +110,8 @@
 		<PageSkeleton rows={4} />
 	{:else if $records.length === 0}
 		<EmptyState
+			centered
+			icon={Trophy}
 			title={translate(lang, 'records.emptyTitle')}
 			description={translate(lang, 'records.emptyDesc')}
 		/>

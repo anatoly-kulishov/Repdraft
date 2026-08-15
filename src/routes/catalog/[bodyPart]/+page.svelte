@@ -83,7 +83,9 @@
 				query={data.initialQuery}
 			/>
 		{:else if showExerciseList}
-			{#key `${data.bodyPart}|${data.initialEquipment}|${data.initialTarget}|${data.initialQuery}|${data.initialBodyPart}|${data.initialBrowse}`}
+			<!-- Key = route shell only. Facets (q/equipment/target) sync via props+effects;
+			     including them remounts mid-typing and eats keystrokes. -->
+			{#key `${data.bodyPart}|${data.initialBrowse}|${fromBuilder ? 'builder' : 'browse'}`}
 				<CatalogExerciseList
 					bodyParts={data.bodyParts}
 					equipment={data.equipment}
@@ -97,7 +99,6 @@
 					initialBodyPart={data.initialBodyPart}
 					hideTargetFilter={hasTargetBrowse}
 					gridOnDesktop
-					returnAfterAdd={fromBuilder ? '/builder' : null}
 				/>
 			{/key}
 		{/if}
