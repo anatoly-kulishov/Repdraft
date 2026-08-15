@@ -194,11 +194,7 @@
 								<LucideIcon icon={LogIn} size={ICON_PRIMARY} />
 								{translate(lang, 'nav.signIn')}
 							</a>
-							<a
-								class="btn-secondary home-hero-cta-secondary min-h-11 items-center justify-center gap-2"
-								href={BUILDER_NEW_HREF}
-							>
-								<LucideIcon icon={Plus} size={ICON_PRIMARY} />
+							<a class="home-hero-skip" href={BUILDER_NEW_HREF}>
 								{translate(lang, 'home.guestCreateLocal')}
 							</a>
 						</div>
