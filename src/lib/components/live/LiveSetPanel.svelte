@@ -3,7 +3,8 @@
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
-	import type { ExerciseIndexItem, SessionExercise, WorkoutSession } from '$lib/domain/types';
+	import { loggedSetKind, nextSetKind } from '$lib/domain/session';
+	import type { ExerciseIndexItem, SessionExercise, SetKind, WorkoutSession } from '$lib/domain/types';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
@@ -66,7 +67,52 @@
 		return `${w} × ${r}`;
 	}
 
+	function lastVars(exerciseId: string): { w: string; r: string } | null {
+		const last = live.lastFor(exerciseId);
+		if (!last) return null;
+		return {
+			w: last.weightKg != null ? `${last.weightKg}` : '—',
+			r: last.reps != null ? `${last.reps}` : '—'
+		};
+	}
+
+	function applyLastPerformance() {
+		const last = live.lastFor(exercise.exerciseId);
+		if (!last) return;
+		const openIdx = exercise.sets.findIndex((s) => !s.completed);
+		if (openIdx < 0) return;
+		live.patchSet(exerciseIndex, openIdx, {
+			weightKg: last.weightKg,
+			reps: last.reps
+		});
+	}
+
+	function kindLabel(kind: SetKind): string {
+		switch (kind) {
+			case 'work':
+				return translate(lang, 'live.setKindWork');
+			case 'warmup':
+				return translate(lang, 'live.setKindWarmup');
+			case 'drop':
+				return translate(lang, 'live.setKindDrop');
+			default: {
+				const _exhaustive: never = kind;
+				return _exhaustive;
+			}
+		}
+	}
+
+	function cycleKind(setIndex: number) {
+		const set = exercise.sets[setIndex];
+		if (!set || set.completed) return;
+		live.patchSet(exerciseIndex, setIndex, { kind: nextSetKind(loggedSetKind(set)) });
+	}
+
 	let canRemoveSet = $derived(exercise.sets.length > 1);
+	let lastCopy = $derived(lastVars(exercise.exerciseId));
+	let canApplyLast = $derived(
+		lastCopy != null && exercise.sets.some((s) => !s.completed)
+	);
 </script>
 
 <div class="live-panel" class:live-panel--superset={selectedInGroup}>
@@ -98,15 +144,26 @@
 	{#if metaFor(exercise.exerciseId)}
 		<p class="live-panel-meta">{metaFor(exercise.exerciseId)}</p>
 	{/if}
-	{#if formatLast(exercise.exerciseId)}
-		<p class="live-last">
-			{translate(lang, 'live.last')}:
-			<span class="font-medium text-[var(--color-ink)]">{formatLast(exercise.exerciseId)}</span>
-		</p>
+	{#if lastCopy}
+		{#if canApplyLast}
+			<button
+				type="button"
+				class="live-last live-last--action"
+				onclick={applyLastPerformance}
+			>
+				{translate(lang, 'live.lastApply', lastCopy)}
+			</button>
+		{:else}
+			<p class="live-last">
+				{translate(lang, 'live.last')}:
+				<span class="font-medium text-[var(--color-ink)]">{formatLast(exercise.exerciseId)}</span>
+			</p>
+		{/if}
 	{/if}
 
 	<div class="live-set-head" class:live-set-head--with-remove={canRemoveSet} aria-hidden="true">
 		<span>#</span>
+		<span>{translate(lang, 'live.cycleSetKind')}</span>
 		<span>{translate(lang, 'live.weight')}</span>
 		<span>{translate(lang, 'live.reps')}</span>
 		<span class="live-set-head-done">✓</span>
@@ -124,6 +181,27 @@
 				class:live-set-row--with-remove={canRemoveSet}
 			>
 				<span class="live-set-index">{si + 1}</span>
+				{#if !set.completed}
+					<button
+						type="button"
+						class="live-set-kind"
+						class:live-set-kind--warmup={loggedSetKind(set) === 'warmup'}
+						class:live-set-kind--drop={loggedSetKind(set) === 'drop'}
+						aria-label={translate(lang, 'live.cycleSetKind')}
+						title={translate(lang, 'live.cycleSetKind')}
+						onclick={() => cycleKind(si)}
+					>
+						{kindLabel(loggedSetKind(set))}
+					</button>
+				{:else}
+					<span
+						class="live-set-kind live-set-kind--static"
+						class:live-set-kind--warmup={loggedSetKind(set) === 'warmup'}
+						class:live-set-kind--drop={loggedSetKind(set) === 'drop'}
+					>
+						{kindLabel(loggedSetKind(set))}
+					</span>
+				{/if}
 				<input
 					class="field live-set-weight tabular-nums"
 					class:is-invalid={invalidSetIndex === si && invalidKind === 'weight'}

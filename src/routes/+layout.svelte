@@ -7,6 +7,7 @@
 	import AccountChip from '$lib/components/AccountChip.svelte';
 	import DraftDock from '$lib/components/DraftDock.svelte';
 	import Logo from '$lib/components/Logo.svelte';
+	import PwaInstallHint from '$lib/components/PwaInstallHint.svelte';
 	import ToastStack from '$lib/components/ToastStack.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SIDEBAR } from '$lib/components/icons/sizes';
@@ -34,6 +35,7 @@
 		if (pathname.startsWith('/exercise/')) return true;
 		if (pathname.startsWith('/articles')) return true;
 		if (pathname.startsWith('/auth')) return true;
+		if (pathname === '/privacy') return true;
 		if (pathname === '/exercises/saved') return true;
 		if (pathname === '/records') return true;
 		if (pathname === '/workouts/summary') return true;
@@ -108,7 +110,7 @@
 		if (href === '/builder') {
 			return path.startsWith('/builder');
 		}
-		if (href === '/auth') return path === '/auth' || path.startsWith('/auth/');
+		if (href === '/auth') return path === '/auth' || path.startsWith('/auth/') || path === '/privacy';
 		return path === href || path.startsWith(`${href}/`);
 	}
 </script>
@@ -160,6 +162,9 @@
 			class:shell-main--flow={hideMobileHeader}
 			tabindex="-1"
 		>
+			{#if !hideMobileHeader || path === '/'}
+				<PwaInstallHint />
+			{/if}
 			{@render children()}
 		</main>
 

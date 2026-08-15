@@ -30,7 +30,7 @@
 | «Прошлый раз» | есть | есть | есть | есть | Из истории сессий |
 | Личные рекорды | есть | есть | есть | есть | Слабее без истории сессий |
 | Графики объёма / силы | частично | есть | есть | есть | v0.5.0: weekly volume + session PRs on /workouts |
-| Warm-up / drop / failure | нет | есть | есть | частично | Средний приоритет |
+| Warm-up / drop / failure | частично | есть | есть | частично | Live: kind work/warmup/drop |
 | RPE / RIR | нет | есть | частично | частично | Power-user |
 | AI / автогенерация | нет | частично | нет | есть | Категория Fitbod |
 | Соцсеть / follow | нет | есть | нет | нет | Дифференциатор Hevy |
@@ -38,7 +38,7 @@
 | Cloud sync + web/PWA | есть | есть | частично | частично | PWA-first |
 | RU-first UX | есть | частично | частично | частично | Локальный wedge |
 | Watch / wearable | нет | есть | есть | есть | После стабильного web-лога |
-| CSV export / backup | нет | есть | есть | частично | Trust + churn defense |
+| CSV export / backup | есть | есть | есть | частично | JSON + CSV сессий с /auth |
 
 ## Почему уходят с конкурентов
 
@@ -59,7 +59,7 @@
 - ~~Нет live workout~~ → v0.4.0
 - ~~Нет истории сессий / «прошлый раз»~~ → v0.4.0 (local; cloud table optional)
 - Rest timer в live-сессии
-- Нет export → страх lock-in
+- Нет export → страх lock-in → **JSON/CSV backup in v0.9.0**
 
 ## Приоритеты релизов
 
@@ -82,7 +82,7 @@ Semver: patch = polish/багфиксы; minor = пользовательска�
 
 ### P2
 
-5. **Trust и power features** - CSV export, warm-up sets, optional RPE, шаблоны PPL.  
+5. **Trust и power features** - ~~CSV export~~ (**v0.9.0**), ~~warm-up/drop sets~~ (**v0.10.0** live kind), optional RPE, шаблоны PPL.  
    Watch - только после стабильного web-лога.
 
 ## Не делать сейчас

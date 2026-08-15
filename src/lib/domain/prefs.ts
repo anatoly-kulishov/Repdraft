@@ -1,10 +1,21 @@
 /** Local device preferences (not synced to cloud). */
 
 export const REST_SOUND_STORAGE_KEY = 'repdraft:rest-sound';
+export const INSTALL_HINT_DISMISSED_KEY = 'repdraft:install-hint-dismissed';
 
 export function parseRestSoundEnabled(raw: string | null | undefined): boolean {
 	if (raw === '0' || raw === 'false') return false;
 	return true;
+}
+
+export function isInstallHintDismissed(): boolean {
+	if (typeof localStorage === 'undefined') return true;
+	return localStorage.getItem(INSTALL_HINT_DISMISSED_KEY) === '1';
+}
+
+export function dismissInstallHint(): void {
+	if (typeof localStorage === 'undefined') return;
+	localStorage.setItem(INSTALL_HINT_DISMISSED_KEY, '1');
 }
 
 type AudioContextCtor = typeof AudioContext;
@@ -69,6 +80,21 @@ export function playRestDoneChime(): void {
 			/* ignore */
 		}
 	});
+}
+
+/** Haptic pulse when rest ends (no-op if unsupported / denied). */
+export function vibrateRestDone(): void {
+	if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
+	try {
+		navigator.vibrate([40, 60, 40]);
+	} catch {
+		/* ignore */
+	}
+}
+
+export function signalRestDone(): void {
+	vibrateRestDone();
+	playRestDoneChime();
 }
 
 /** Call from a user gesture so later timer chimes can resume AudioContext. */

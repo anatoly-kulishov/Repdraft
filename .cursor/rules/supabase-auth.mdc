@@ -17,6 +17,8 @@ alwaysApply: false
    - Redirect allow-list includes `/auth` for prod + local (`localhost:5173`, `127.0.0.1:5173`)
 3. Google Cloud OAuth client redirect: `https://<project>.supabase.co/auth/v1/callback`
 4. Email templates must honor redirect / Site URL (confirm, magic link, recovery).
-5. Vercel env: `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_ANON_KEY` only (no service role in client).
+5. Vercel env: `PUBLIC_SUPABASE_*`, plus **server-only** `SUPABASE_SERVICE_ROLE_KEY` for account deletion (`POST /api/account/delete`). Never put service role in `PUBLIC_*`.
+6. After deploy: confirm delete-account works once while signed in (cloud rows + Auth user removed).
 
 Симптомы «забыли dashboard»: `provider is not enabled`, письмо не приходит, после клика по ссылке белый экран / ошибка redirect.
+Симптом без service role: «Удаление аккаунта пока не настроено на сервере».

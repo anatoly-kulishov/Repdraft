@@ -11,14 +11,12 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { Bookmark, Check, ChevronRight, Plus } from '@lucide/svelte';
-	import { goto } from '$app/navigation';
 
 	let {
 		exercise,
 		recordChips = [],
 		priority = false,
 		variant = 'grid',
-		returnAfterAdd = null as string | null,
 		detailFrom = null as string | null
 	}: {
 		exercise: ExerciseIndexItem;
@@ -26,8 +24,6 @@
 		/** First-screen images: eager + high fetch priority. */
 		priority?: boolean;
 		variant?: 'grid' | 'list';
-		/** After add-to-draft, navigate here (picker flow). */
-		returnAfterAdd?: string | null;
 		/** Catalog return path for exercise detail back link. */
 		detailFrom?: string | null;
 	} = $props();
@@ -73,7 +69,6 @@
 		if (result.added) {
 			justAdded = true;
 			toasts.show(translate(lang, 'exercise.added'), 'success');
-			if (returnAfterAdd) void goto(returnAfterAdd);
 		} else {
 			toasts.show(translate(lang, 'exercise.already'), 'info');
 		}
