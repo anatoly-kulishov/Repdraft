@@ -84,7 +84,10 @@
 			toasts.show(translate(lang, 'exercise.removed'), 'info');
 			return;
 		}
-		const result = draft.addToDraft(exercise.id);
+		const result = draft.addToDraft(exercise.id, {
+			name: exercise.name,
+			equipment: exercise.equipment
+		});
 		if (result.added) {
 			toasts.show(translate(lang, 'exercise.added'), 'success');
 		} else {
@@ -141,7 +144,7 @@
 <svelte:window onkeydown={onKeydown} />
 
 <svelte:head>
-	<title>{exercise ? `${title} — Repdraft` : `${translate(lang, 'exercise.notFoundTitle')} — Repdraft`}</title>
+	<title>{exercise ? `${title} · Repdraft` : `${translate(lang, 'exercise.notFoundTitle')} · Repdraft`}</title>
 </svelte:head>
 
 {#if !exercise}

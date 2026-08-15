@@ -36,7 +36,7 @@
 </script>
 
 <svelte:head>
-	<title>{translate(lang, 'catalog.hubTitle')} — Repdraft</title>
+	<title>{translate(lang, 'catalog.hubTitle')} · Repdraft</title>
 </svelte:head>
 
 <section class="catalog-hub content-page content-page--catalog" aria-labelledby="catalog-hub-heading">

@@ -3,20 +3,20 @@
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
-	import { filterCatalogWithFacets, filterExercises, isFilterConflict } from '$lib/domain/filters';
+	import { filterCatalogWithFacets, filterExercises, isBodyPart, isFilterConflict } from '$lib/domain/filters';
 	import { catalogZoneBodyParts, isCatalogZone } from '$lib/domain/catalogLinks';
 	import { personalRecordChips } from '$lib/domain/records';
 	import type { ExerciseFilters, ExerciseIndexItem } from '$lib/domain/types';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { translate } from '$lib/i18n/messages';
-	import { CATALOG_PAGE_SIZE, catalogUi, emptyCatalogFilters } from '$lib/stores/catalogUi';
+	import { CATALOG_PAGE_SIZE } from '$lib/stores/catalogUi';
 	import { bookmarks } from '$lib/stores/bookmarks';
 	import { records } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { browser } from '$app/environment';
+	import { replaceState } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { get } from 'svelte/store';
 	import { onMount, untrack } from 'svelte';
 
 	let {
@@ -29,6 +29,7 @@
 		initialQuery = '',
 		initialEquipment = '',
 		initialTarget = '',
+		initialBodyPart = '',
 		listOnMobile = true,
 		gridOnDesktop = false,
 		returnAfterAdd = null as string | null,
@@ -44,6 +45,8 @@
 		initialQuery?: string;
 		initialEquipment?: string;
 		initialTarget?: string;
+		/** /catalog/all facet via ?bodyPart= (not used on zone routes). */
+		initialBodyPart?: string;
 		listOnMobile?: boolean;
 		/** List on phone, grid from 768px (catalog all/zone and builder add flow). */
 		gridOnDesktop?: boolean;
@@ -53,16 +56,12 @@
 		hideTargetFilter?: boolean;
 	} = $props();
 
-	const saved = browser
-		? get(catalogUi)
-		: { filters: emptyCatalogFilters(), visibleLimit: CATALOG_PAGE_SIZE };
-
-	function buildInitialFilters(): ExerciseFilters {
+	function filtersFromUrl(): ExerciseFilters {
 		const urlHasQuery = Boolean(initialQuery.trim());
 		const urlHasEquipment = initialEquipment !== '';
 		const urlHasTarget = initialTarget !== '';
-		/** Hub search / deep-link: URL is source of truth — don't resurrect stale facets. */
-		const urlDriven = urlHasQuery || urlHasEquipment || urlHasTarget;
+		const urlBody =
+			initialBodyPart && isBodyPart(initialBodyPart) ? initialBodyPart : ('all' as const);
 
 		if (presetBodyPart !== 'all' && isCatalogZone(presetBodyPart)) {
 			return {
@@ -73,24 +72,20 @@
 			};
 		}
 
-		if (urlDriven) {
-			return {
-				query: urlHasQuery ? initialQuery : '',
-				bodyPart: 'all',
-				equipment: urlHasEquipment ? initialEquipment : 'all',
-				target: urlHasTarget ? initialTarget : 'all'
-			};
-		}
-
-		/* Soft remount (exercise ↔ catalog): keep session facets. */
-		return { ...saved.filters };
+		return {
+			query: urlHasQuery ? initialQuery : '',
+			bodyPart: urlBody,
+			equipment: urlHasEquipment ? initialEquipment : 'all',
+			target: urlHasTarget ? initialTarget : 'all'
+		};
 	}
 
 	let items = $state<ExerciseIndexItem[]>([]);
 	let indexReady = $state(false);
-	let visibleLimit = $state(saved.visibleLimit);
-	let filters = $state<ExerciseFilters>(buildInitialFilters());
+	let visibleLimit = $state(CATALOG_PAGE_SIZE);
+	let filters = $state<ExerciseFilters>(filtersFromUrl());
 	let filtersHydrated = $state(false);
+	let syncingFiltersToUrl = false;
 
 	let zoneLocked = $derived(presetBodyPart !== 'all' && isCatalogZone(presetBodyPart));
 	let zoneBodyParts = $derived(
@@ -157,19 +152,54 @@
 		filters = { ...filters, bodyPart: presetBodyPart as ExerciseFilters['bodyPart'] };
 	});
 
+	/** URL is the only facet memory — no catalogUi resurrection across builder/hub visits. */
 	$effect(() => {
-		if (!browser) return;
-		catalogUi.setFilters({
-			query: filters.query,
-			bodyPart: filters.bodyPart,
-			equipment: filters.equipment,
-			target: filters.target
+		initialQuery;
+		initialEquipment;
+		initialTarget;
+		initialBodyPart;
+		presetBodyPart;
+		const next = filtersFromUrl();
+		const current = filters;
+		const changed = (Object.keys(next) as (keyof ExerciseFilters)[]).some(
+			(key) => current[key] !== next[key]
+		);
+		if (!changed) return;
+		syncingFiltersToUrl = true;
+		filters = next;
+		queueMicrotask(() => {
+			syncingFiltersToUrl = false;
 		});
 	});
 
 	$effect(() => {
-		if (!browser) return;
-		catalogUi.setVisibleLimit(visibleLimit);
+		if (!browser || !filtersHydrated || syncingFiltersToUrl) return;
+		filters.query;
+		filters.bodyPart;
+		filters.equipment;
+		filters.target;
+
+		const url = new URL($page.url.href);
+		const q = filters.query.trim();
+		if (q) url.searchParams.set('q', q);
+		else url.searchParams.delete('q');
+
+		if (filters.equipment !== 'all') url.searchParams.set('equipment', filters.equipment);
+		else url.searchParams.delete('equipment');
+
+		if (filters.target !== 'all') url.searchParams.set('target', filters.target);
+		else url.searchParams.delete('target');
+
+		if (!zoneLocked) {
+			if (filters.bodyPart !== 'all') url.searchParams.set('bodyPart', filters.bodyPart);
+			else url.searchParams.delete('bodyPart');
+		} else {
+			url.searchParams.delete('bodyPart');
+		}
+
+		const next = `${url.pathname}${url.search}${url.hash}`;
+		const cur = `${$page.url.pathname}${$page.url.search}${$page.url.hash}`;
+		if (next !== cur) replaceState(next, $page.state);
 	});
 
 	$effect(() => {
@@ -183,34 +213,6 @@
 			return;
 		}
 		visibleLimit = CATALOG_PAGE_SIZE;
-	});
-
-	/** Client navigations: URL facets win; missing facet params clear stale session values. */
-	$effect(() => {
-		const eq = initialEquipment;
-		const tg = initialTarget;
-		const q = initialQuery.trim();
-		const zone = presetBodyPart;
-		const urlDriven = eq !== '' || tg !== '' || Boolean(q);
-		if (!urlDriven) return;
-
-		untrack(() => {
-			const patch: ExerciseFilters = {
-				query: q,
-				bodyPart:
-					zone !== 'all' && isCatalogZone(zone)
-						? (zone as ExerciseFilters['bodyPart'])
-						: 'all',
-				equipment: eq !== '' ? eq : 'all',
-				target: tg !== '' ? tg : 'all'
-			};
-
-			const current = filters;
-			const changed = (Object.keys(patch) as (keyof ExerciseFilters)[]).some(
-				(key) => current[key] !== patch[key]
-			);
-			if (changed) filters = patch;
-		});
 	});
 
 	$effect(() => {

@@ -27,6 +27,7 @@
 	let lang = $derived($resolvedLocale);
 	let themeColor = $derived(THEME_META_COLORS[$appTheme]);
 	let isLight = $derived($appTheme === 'light');
+	let hasActiveSession = $derived(Boolean($live.ready && $live.session && !$live.session.finishedAt));
 	function mobileFlowChrome(pathname: string): boolean {
 		if (pathname.startsWith('/live/')) return true;
 		if (pathname.startsWith('/builder')) return true;
@@ -122,7 +123,7 @@
 
 <a class="skip-link" href="#main-content">{translate(lang, 'a11y.skip')}</a>
 <div class="app-shell" class:app-shell--immersive={hideMobileHeader}>
-	<AppSidebar {path} {isActive} />
+	<AppSidebar {path} {isActive} {hasActiveSession} />
 
 	<div class="shell-body flex min-h-dvh min-w-0 flex-1 flex-col">
 		<header
@@ -180,8 +181,27 @@
 			href="/"
 			aria-current={isActive('/') ? 'page' : undefined}
 		>
-			<LucideIcon icon={House} size={ICON_SIDEBAR} />
+			<span class="tab-link-icon">
+				<LucideIcon icon={House} size={ICON_SIDEBAR} />
+			</span>
 			{translate(lang, 'nav.tabHome')}
+		</a>
+		<a
+			class="tab-link"
+			data-active={isActive('/workouts')}
+			href="/workouts"
+			aria-current={isActive('/workouts') ? 'page' : undefined}
+			aria-label={hasActiveSession
+				? `${translate(lang, 'nav.workouts')}. ${translate(lang, 'nav.liveActive')}`
+				: undefined}
+		>
+			<span class="tab-link-icon">
+				<LucideIcon icon={Dumbbell} size={ICON_SIDEBAR} />
+				{#if hasActiveSession}
+					<span class="tab-link-live-dot" aria-hidden="true"></span>
+				{/if}
+			</span>
+			{translate(lang, 'nav.workouts')}
 		</a>
 		<a
 			class="tab-link"
@@ -189,17 +209,10 @@
 			href="/exercises"
 			aria-current={isActive('/exercises') ? 'page' : undefined}
 		>
-			<LucideIcon icon={Library} size={ICON_SIDEBAR} />
+			<span class="tab-link-icon">
+				<LucideIcon icon={Library} size={ICON_SIDEBAR} />
+			</span>
 			{translate(lang, 'nav.exercises')}
-		</a>
-		<a
-			class="tab-link"
-			data-active={isActive('/workouts')}
-			href="/workouts"
-			aria-current={isActive('/workouts') ? 'page' : undefined}
-		>
-			<LucideIcon icon={Dumbbell} size={ICON_SIDEBAR} />
-			{translate(lang, 'nav.workouts')}
 		</a>
 	</div>
 </nav>

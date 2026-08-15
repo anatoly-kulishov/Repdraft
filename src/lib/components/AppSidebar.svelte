@@ -10,10 +10,12 @@
 
 	let {
 		path,
-		isActive
+		isActive,
+		hasActiveSession = false
 	}: {
 		path: string;
 		isActive: (href: string) => boolean;
+		hasActiveSession?: boolean;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
@@ -26,12 +28,13 @@
 		href: string;
 		labelKey: string;
 		icon: typeof House;
+		liveDot?: boolean;
 	};
 
 	const mainNav: NavItem[] = [
 		{ href: '/', labelKey: 'nav.tabHome', icon: House },
-		{ href: '/exercises', labelKey: 'nav.exercises', icon: Library },
-		{ href: '/workouts', labelKey: 'nav.workouts', icon: Dumbbell }
+		{ href: '/workouts', labelKey: 'nav.workouts', icon: Dumbbell, liveDot: true },
+		{ href: '/exercises', labelKey: 'nav.exercises', icon: Library }
 	];
 </script>
 
@@ -42,14 +45,21 @@
 
 	<nav class="shell-sidebar-nav">
 		{#each mainNav as item (item.href + item.labelKey)}
+			{@const showLiveDot = Boolean(item.liveDot && hasActiveSession)}
 			<a
 				class="sidebar-link"
 				data-active={isActive(item.href)}
 				href={item.href}
 				aria-current={isActive(item.href) ? 'page' : undefined}
+				aria-label={showLiveDot
+					? `${translate(lang, item.labelKey)}. ${translate(lang, 'nav.liveActive')}`
+					: undefined}
 			>
 				<span class="sidebar-link-icon" class:is-active={isActive(item.href)}>
 					<LucideIcon icon={item.icon} size={ICON_SIDEBAR} />
+					{#if showLiveDot}
+						<span class="sidebar-link-live-dot" aria-hidden="true"></span>
+					{/if}
 				</span>
 				<span>{translate(lang, item.labelKey)}</span>
 			</a>
