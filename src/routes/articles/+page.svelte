@@ -19,7 +19,7 @@
 </script>
 
 <svelte:head>
-	<title>{title} — Repdraft</title>
+	<title>{title} · Repdraft</title>
 </svelte:head>
 
 <div class="content-page content-page--catalog">

@@ -50,7 +50,7 @@
 
 	function resetFilters() {
 		filters = {
-			...filters,
+			query: '',
 			bodyPart: lockBodyPart ? filters.bodyPart : 'all',
 			equipment: 'all',
 			target: 'all'

@@ -55,7 +55,7 @@
 </script>
 
 <svelte:head>
-	<title>{showExerciseList && data.initialTarget ? `${exerciseTitle} — ${title}` : headerTitle} — Repdraft</title>
+	<title>{showExerciseList && data.initialTarget ? `${exerciseTitle} · ${title}` : headerTitle} · Repdraft</title>
 </svelte:head>
 
 <div class="content-page content-page--catalog">
@@ -83,7 +83,7 @@
 				query={data.initialQuery}
 			/>
 		{:else if showExerciseList}
-			{#key `${data.bodyPart}|${data.initialEquipment}|${data.initialTarget}|${data.initialQuery}|${data.initialBrowse}`}
+			{#key `${data.bodyPart}|${data.initialEquipment}|${data.initialTarget}|${data.initialQuery}|${data.initialBodyPart}|${data.initialBrowse}`}
 				<CatalogExerciseList
 					bodyParts={data.bodyParts}
 					equipment={data.equipment}
@@ -94,8 +94,10 @@
 					initialQuery={data.initialQuery}
 					initialEquipment={data.initialEquipment}
 					initialTarget={data.initialTarget}
+					initialBodyPart={data.initialBodyPart}
 					hideTargetFilter={hasTargetBrowse}
 					gridOnDesktop
+					returnAfterAdd={fromBuilder ? '/builder' : null}
 				/>
 			{/key}
 		{/if}

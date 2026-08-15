@@ -22,6 +22,9 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { GREETING_NAME_MAX } from '$lib/domain/greetingName';
+	import type { AppTheme } from '$lib/domain/theme';
+	import { appTheme } from '$lib/stores/theme';
+	import { restSoundEnabled } from '$lib/stores/prefs';
 	import { get } from 'svelte/store';
 	import { tick } from 'svelte';
 
@@ -278,7 +281,7 @@
 </script>
 
 <svelte:head>
-	<title>{translate(lang, 'auth.title')} — Repdraft</title>
+	<title>{translate(lang, 'auth.title')} · Repdraft</title>
 </svelte:head>
 
 <section
@@ -421,8 +424,43 @@
 			</form>
 
 			<div class="auth-account__section">
-				<LanguageSwitcher />
-				<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'lang.hint')}</p>
+				<p class="auth-prefs__title">{translate(lang, 'settings.interfaceTitle')}</p>
+				<div class="auth-prefs__stack">
+					<LanguageSwitcher />
+					<label class="field-label" for="auth-theme">
+						{translate(lang, 'settings.theme')}
+						<select
+							id="auth-theme"
+							class="field mt-1 w-full"
+							value={$appTheme}
+							onchange={(e) => {
+								appTheme.set((e.currentTarget as HTMLSelectElement).value as AppTheme);
+							}}
+						>
+							<option value="dark">{translate(lang, 'settings.themeDark')}</option>
+							<option value="light">{translate(lang, 'settings.themeLight')}</option>
+						</select>
+					</label>
+				</div>
+				<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'settings.themeHint')}</p>
+			</div>
+
+			<div class="auth-account__section">
+				<p class="auth-prefs__title">{translate(lang, 'settings.sessionTitle')}</p>
+				<label class="auth-pref-toggle">
+					<span class="auth-pref-toggle__copy">
+						<span class="auth-pref-toggle__label">{translate(lang, 'settings.restSound')}</span>
+						<span class="auth-pref-toggle__hint">{translate(lang, 'settings.restSoundHint')}</span>
+					</span>
+					<input
+						type="checkbox"
+						class="auth-pref-toggle__input"
+						checked={$restSoundEnabled}
+						onchange={(e) => {
+							restSoundEnabled.set((e.currentTarget as HTMLInputElement).checked);
+						}}
+					/>
+				</label>
 			</div>
 
 			<div class="auth-account__actions">

@@ -13,30 +13,25 @@ export function emptyCatalogFilters(): ExerciseFilters {
 }
 
 export type CatalogUiState = {
-	filters: ExerciseFilters;
 	visibleLimit: number;
 };
 
 function createCatalogUiStore() {
 	const { subscribe, set, update } = writable<CatalogUiState>({
-		filters: emptyCatalogFilters(),
 		visibleLimit: PAGE_SIZE
 	});
 
 	return {
 		subscribe,
-		setFilters(filters: ExerciseFilters) {
-			update((state) => ({ ...state, filters: { ...filters } }));
-		},
 		setVisibleLimit(visibleLimit: number) {
 			update((state) => ({ ...state, visibleLimit }));
 		},
 		reset() {
-			set({ filters: emptyCatalogFilters(), visibleLimit: PAGE_SIZE });
+			set({ visibleLimit: PAGE_SIZE });
 		}
 	};
 }
 
-/** Session memory for catalog filters while building a workout (survives exercise ↔ catalog). */
+/** Catalog list chrome (pagination). Facets live in the URL, not here. */
 export const catalogUi = createCatalogUiStore();
 export const CATALOG_PAGE_SIZE = PAGE_SIZE;

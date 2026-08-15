@@ -78,7 +78,7 @@
 </script>
 
 <svelte:head>
-	<title>{translate(lang, 'builder.createTitle')} — Repdraft</title>
+	<title>{translate(lang, 'builder.createTitle')} · Repdraft</title>
 </svelte:head>
 
 <section

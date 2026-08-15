@@ -8,6 +8,47 @@ import { REPS, REST_SEC, SETS } from './inputLimits';
 export const DEFAULT_SETS = 3;
 export const DEFAULT_REPS = 10;
 export const DEFAULT_REST_SEC = 90;
+/** Squat / bench / deadlift family — longer recovery between heavy sets. */
+export const HEAVY_COMPOUND_REST_SEC = 180;
+
+export type ExerciseRestHint = {
+	name?: string;
+	equipment?: string;
+};
+
+const HEAVY_REST_EQ =
+	/^(barbell|smith machine|sled machine|olympic barbell|trap bar|hex bar)$/i;
+
+const HEAVY_REST_LIGHT_VARIANT =
+	/jump|прыж|split|bulgarian|болгар|one.?leg|single.?leg|pistol|пистолет|goblet|sissy|wall.?sit|curtsy|lunge|выпад/i;
+
+/**
+ * Default rest when adding to a plan. Heavy barbell/smith compounds → 180s; else 90s.
+ * Uses catalog EN name + equipment (stable); does not rewrite saved plans.
+ */
+export function defaultRestSecForExercise(hint?: ExerciseRestHint): number {
+	if (!hint?.name) return DEFAULT_REST_SEC;
+	return isHeavyCompoundLift(hint.name, hint.equipment ?? '')
+		? HEAVY_COMPOUND_REST_SEC
+		: DEFAULT_REST_SEC;
+}
+
+function isHeavyCompoundLift(name: string, equipment: string): boolean {
+	const n = name.trim();
+	const eq = equipment.trim();
+	if (!n) return false;
+	if (HEAVY_REST_LIGHT_VARIANT.test(n)) return false;
+	if (/^(band|cable|dumbbell|kettlebell|body weight|assisted)$/i.test(eq)) return false;
+
+	const barbellish =
+		HEAVY_REST_EQ.test(eq) || /\b(barbell|smith|trap bar|hex bar)\b/i.test(n) || /\bhack squat\b/i.test(n);
+	if (!barbellish) return false;
+
+	if (/\bsquat\b/i.test(n)) return true;
+	if (/\bbench press\b/i.test(n)) return true;
+	if (/\bdeadlift\b/i.test(n)) return true;
+	return false;
+}
 
 function nowIso(): string {
 	return new Date().toISOString();
@@ -58,7 +99,11 @@ export type AddExerciseResult = {
 	added: boolean;
 };
 
-export function addExercise(plan: WorkoutPlan, exerciseId: string): AddExerciseResult {
+export function addExercise(
+	plan: WorkoutPlan,
+	exerciseId: string,
+	hint?: ExerciseRestHint
+): AddExerciseResult {
 	if (plan.exercises.some((ex) => ex.exerciseId === exerciseId)) {
 		return { plan, added: false };
 	}
@@ -67,7 +112,7 @@ export function addExercise(plan: WorkoutPlan, exerciseId: string): AddExerciseR
 		exerciseId,
 		sets: DEFAULT_SETS,
 		reps: DEFAULT_REPS,
-		restSec: DEFAULT_REST_SEC
+		restSec: defaultRestSecForExercise(hint)
 	};
 
 	return {
@@ -362,10 +407,79 @@ export function mergeWorkoutPlans(local: WorkoutPlan[], cloud: WorkoutPlan[]): W
 
 /** Throws if draft / superset / arrow-move invariants regress. */
 export function runWorkoutSelfCheck(): void {
+	if (defaultRestSecForExercise() !== DEFAULT_REST_SEC) {
+		throw new Error('missing hint should default to 90s');
+	}
+	if (
+		defaultRestSecForExercise({ name: 'barbell full squat', equipment: 'barbell' }) !==
+		HEAVY_COMPOUND_REST_SEC
+	) {
+		throw new Error('barbell squat should default to 180s');
+	}
+	if (
+		defaultRestSecForExercise({ name: 'barbell bench press', equipment: 'barbell' }) !==
+		HEAVY_COMPOUND_REST_SEC
+	) {
+		throw new Error('barbell bench should default to 180s');
+	}
+	if (
+		defaultRestSecForExercise({ name: 'barbell deadlift', equipment: 'barbell' }) !==
+		HEAVY_COMPOUND_REST_SEC
+	) {
+		throw new Error('barbell deadlift should default to 180s');
+	}
+	if (
+		defaultRestSecForExercise({ name: 'barbell romanian deadlift', equipment: 'barbell' }) !==
+		HEAVY_COMPOUND_REST_SEC
+	) {
+		throw new Error('barbell RDL should default to 180s');
+	}
+	if (
+		defaultRestSecForExercise({ name: 'smith bench press', equipment: 'smith machine' }) !==
+		HEAVY_COMPOUND_REST_SEC
+	) {
+		throw new Error('smith bench should default to 180s');
+	}
+	if (
+		defaultRestSecForExercise({ name: 'diamond push-up', equipment: 'body weight' }) !==
+		DEFAULT_REST_SEC
+	) {
+		throw new Error('diamond push-up should stay 90s');
+	}
+	if (
+		defaultRestSecForExercise({ name: 'barbell jump squat', equipment: 'barbell' }) !==
+		DEFAULT_REST_SEC
+	) {
+		throw new Error('jump squat should stay 90s');
+	}
+	if (
+		defaultRestSecForExercise({ name: 'dumbbell goblet squat', equipment: 'dumbbell' }) !==
+		DEFAULT_REST_SEC
+	) {
+		throw new Error('goblet squat should stay 90s');
+	}
+	if (
+		defaultRestSecForExercise({ name: 'band stiff leg deadlift', equipment: 'band' }) !==
+		DEFAULT_REST_SEC
+	) {
+		throw new Error('band deadlift should stay 90s');
+	}
+
 	let plan = createEmptyDraft('Check');
+	const heavy = addExercise(createEmptyDraft('Heavy'), '1462', {
+		name: 'barbell full squat (side pov)',
+		equipment: 'barbell'
+	});
+	if (!heavy.added || heavy.plan.exercises[0]?.restSec !== HEAVY_COMPOUND_REST_SEC) {
+		throw new Error('addExercise should apply heavy rest default');
+	}
+
 	const a = addExercise(plan, 'ex-a');
 	if (!a.added) throw new Error('first add should succeed');
 	plan = a.plan;
+	if (plan.exercises[0]?.restSec !== DEFAULT_REST_SEC) {
+		throw new Error('id-only add should keep 90s rest');
+	}
 	const again = addExercise(plan, 'ex-a');
 	if (again.added) throw new Error('duplicate add should be rejected');
 	plan = addExercise(plan, 'ex-b').plan;

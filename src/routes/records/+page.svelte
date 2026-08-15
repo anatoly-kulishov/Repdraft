@@ -66,7 +66,7 @@
 </script>
 
 <svelte:head>
-	<title>{title} — Repdraft</title>
+	<title>{title} · Repdraft</title>
 </svelte:head>
 
 <section class="content-page content-page--catalog records-page">
