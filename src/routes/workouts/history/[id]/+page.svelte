@@ -83,7 +83,7 @@
 
 <svelte:head>
 	<title
-		>{session ? session.planName : translate(lang, 'workouts.historyDetail')} — Repdraft</title
+		>{session ? session.planName : translate(lang, 'workouts.historyDetail')} · Repdraft</title
 	>
 </svelte:head>
 

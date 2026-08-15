@@ -66,7 +66,10 @@
 			toasts.show(translate(lang, 'exercise.removed'), 'info');
 			return;
 		}
-		const result = draft.addToDraft(exercise.id);
+		const result = draft.addToDraft(exercise.id, {
+			name: exercise.name,
+			equipment: exercise.equipment
+		});
 		if (result.added) {
 			justAdded = true;
 			toasts.show(translate(lang, 'exercise.added'), 'success');

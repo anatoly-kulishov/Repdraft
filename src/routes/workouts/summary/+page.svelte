@@ -42,7 +42,7 @@
 </script>
 
 <svelte:head>
-	<title>{translate(lang, 'summary.title')} — Repdraft</title>
+	<title>{translate(lang, 'summary.title')} · Repdraft</title>
 </svelte:head>
 
 {#if loading}

@@ -227,7 +227,7 @@
 				/>
 			</span>
 			<span id="pr-weight-hint" class="mt-1 block text-[11px] text-[var(--color-muted)]">
-				{WEIGHT_KG.min}–{WEIGHT_KG.max}
+				{WEIGHT_KG.min}-{WEIGHT_KG.max}
 			</span>
 		</label>
 		<label class="field-label min-w-0">
@@ -247,7 +247,7 @@
 				/>
 			</span>
 			<span id="pr-reps-hint" class="mt-1 block text-[11px] text-[var(--color-muted)]">
-				{REPS.min}–{REPS.max}
+				{REPS.min}-{REPS.max}
 			</span>
 		</label>
 		<label class="field-label col-span-2 min-w-0">

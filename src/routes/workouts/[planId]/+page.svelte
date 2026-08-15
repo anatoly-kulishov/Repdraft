@@ -68,7 +68,7 @@
 {/snippet}
 
 <svelte:head>
-	<title>{plan?.name ?? translate(lang, 'preview.title')} — Repdraft</title>
+	<title>{plan?.name ?? translate(lang, 'preview.title')} · Repdraft</title>
 </svelte:head>
 
 {#if loading}

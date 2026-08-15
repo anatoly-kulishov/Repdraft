@@ -152,7 +152,7 @@
 </script>
 
 <svelte:head>
-	<title>{translate(lang, 'workouts.title')} — Repdraft</title>
+	<title>{translate(lang, 'workouts.title')} · Repdraft</title>
 </svelte:head>
 
 <section class="workouts-page content-page content-page--narrow">
