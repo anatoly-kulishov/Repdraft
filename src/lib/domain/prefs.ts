@@ -2,6 +2,7 @@
 
 export const REST_SOUND_STORAGE_KEY = 'repdraft:rest-sound';
 export const INSTALL_HINT_DISMISSED_KEY = 'repdraft:install-hint-dismissed';
+export const PWA_INSTALLED_KEY = 'repdraft:pwa-installed';
 
 export function parseRestSoundEnabled(raw: string | null | undefined): boolean {
 	if (raw === '0' || raw === 'false') return false;
@@ -16,6 +17,21 @@ export function isInstallHintDismissed(): boolean {
 export function dismissInstallHint(): void {
 	if (typeof localStorage === 'undefined') return;
 	localStorage.setItem(INSTALL_HINT_DISMISSED_KEY, '1');
+}
+
+export function isPwaInstalledPref(): boolean {
+	if (typeof localStorage === 'undefined') return false;
+	return localStorage.getItem(PWA_INSTALLED_KEY) === '1';
+}
+
+export function markPwaInstalled(): void {
+	if (typeof localStorage === 'undefined') return;
+	localStorage.setItem(PWA_INSTALLED_KEY, '1');
+}
+
+export function clearPwaInstalledPref(): void {
+	if (typeof localStorage === 'undefined') return;
+	localStorage.removeItem(PWA_INSTALLED_KEY);
 }
 
 type AudioContextCtor = typeof AudioContext;

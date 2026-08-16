@@ -16,6 +16,11 @@ export type ExerciseRestHint = {
 	equipment?: string;
 };
 
+/** Catalog equipment value for calisthenics / own-body load. */
+export function isBodyweightEquipment(equipment: string | null | undefined): boolean {
+	return /^body weight$/i.test((equipment ?? '').trim());
+}
+
 const HEAVY_REST_EQ =
 	/^(barbell|smith machine|sled machine|olympic barbell|trap bar|hex bar)$/i;
 
@@ -445,6 +450,9 @@ export function runWorkoutSelfCheck(): void {
 		DEFAULT_REST_SEC
 	) {
 		throw new Error('diamond push-up should stay 90s');
+	}
+	if (!isBodyweightEquipment('body weight') || isBodyweightEquipment('barbell')) {
+		throw new Error('isBodyweightEquipment should match catalog body weight');
 	}
 	if (
 		defaultRestSecForExercise({ name: 'barbell jump squat', equipment: 'barbell' }) !==

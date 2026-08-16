@@ -10,7 +10,20 @@
 		"coverIcon": "flame",
 		"ctaHref": "/catalog/chest",
 		"ctaLabelKey": "articles.ctaCatalog",
-		"bodyMd": "Перед жимом не нужен «полный тренинг». Нужна **активация** и лёгкая мобилизация.\n\n## Чек-лист 5 минут\n- 1-2 мин лёгкого кардио (велотренажёр, ходьба)\n- 20 отжиманий от пола или с колен\n- 2×15 разведений с лёгкими гантелями\n- 1 разминочный подход жима с пустым грифом\n\n## Что смотреть в зале\nЕсли локти «уезжают» вперёд или плечи поднимаются к ушам, снизьте вес и вернитесь к технике. В Repdraft откройте [упражнения на грудь](/catalog/chest) и добавьте разминочные варианты в план."
+		"bodyMd": "Перед жимом не нужен «полный тренинг».\n\nНужна **активация** и лёгкая мобилизация.\n\n## Чек-лист 5 минут\n\n- 1–2 мин лёгкого кардио (велотренажёр, ходьба)\n- 20 отжиманий от пола или с колен\n- 2×15 разведений с лёгкими гантелями\n- 1 разминочный подход жима с пустым грифом\n\n## Что смотреть в зале\n\nЕсли локти «уезжают» вперёд или плечи поднимаются к ушам, снизьте вес и вернитесь к технике.\n\nВ Repdraft откройте [упражнения на грудь](/catalog/chest) и добавьте разминочные варианты в план."
+	},
+	{
+		"slug": "warmup-before-press",
+		"title": "Warm-up before pressing",
+		"excerpt": "Five minutes that lower shoulder injury risk and make working sets more stable.",
+		"coverTone": "teal",
+		"locale": "en",
+		"tags": ["warmup", "chest", "shoulders"],
+		"exerciseIds": ["0025", "0047"],
+		"coverIcon": "flame",
+		"ctaHref": "/catalog/chest",
+		"ctaLabelKey": "articles.ctaCatalog",
+		"bodyMd": "You do not need a full workout before pressing.\n\nYou need **activation** and light mobility.\n\n## 5-minute checklist\n\n- 1–2 min easy cardio (bike, walk)\n- 20 push-ups from the floor or knees\n- 2×15 light dumbbell flyes\n- 1 warm-up press set with an empty bar\n\n## What to watch in the gym\n\nIf elbows drift forward or shoulders rise toward the ears, drop the load and reset technique.\n\nIn Repdraft open [chest exercises](/catalog/chest) and add warm-up variations to your plan."
 	},
 	{
 		"slug": "read-workout-plan",
@@ -23,7 +36,20 @@
 		"coverIcon": "book-open",
 		"ctaHref": "/builder",
 		"ctaLabelKey": "articles.ctaBuilder",
-		"bodyMd": "План в Repdraft: **порядок упражнений** и целевые подходы. Во время сессии вы фиксируете факт: вес и повторы.\n\n## Обозначения\n- **3×10**: три подхода по десять повторений\n- **Отдых**: пауза после подхода; таймер включается автоматически после «Готово»\n- **Суперсет**: упражнения подряд без длинной паузы между ними\n\n## С чего начать\nСоберите 4-6 упражнений на одну зону или full-body. Не гонитесь за объёмом: лучше закончить сессию и сохранить историю, чем бросить на середине."
+		"bodyMd": "План в Repdraft: **порядок упражнений** и целевые подходы.\n\nВо время сессии вы фиксируете факт: вес и повторы.\n\n## Обозначения\n\n- **3×10**: три подхода по десять повторений\n- **Отдых**: пауза после подхода; таймер включается автоматически после «Готово»\n- **Суперсет**: упражнения подряд без длинной паузы между ними\n\n## С чего начать\n\nСоберите 4–6 упражнений на одну зону или full-body.\n\nНе гонитесь за объёмом: лучше закончить сессию и сохранить историю, чем бросить на середине."
+	},
+	{
+		"slug": "read-workout-plan",
+		"title": "How to read a workout plan",
+		"excerpt": "Sets, reps, and rest: a short guide for your first week in the gym.",
+		"coverTone": "purple",
+		"locale": "en",
+		"tags": ["plan", "beginner"],
+		"exerciseIds": [],
+		"coverIcon": "book-open",
+		"ctaHref": "/builder",
+		"ctaLabelKey": "articles.ctaBuilder",
+		"bodyMd": "A Repdraft plan is the **exercise order** and target sets.\n\nDuring a live session you log what actually happened: weight and reps.\n\n## Notation\n\n- **3×10**: three sets of ten reps\n- **Rest**: the pause after a set; the timer starts automatically after Done\n- **Superset**: exercises back-to-back without a long pause between them\n\n## Where to start\n\nBuild 4–6 exercises for one zone or a full-body day.\n\nDo not chase volume: finishing and saving history beats quitting mid-session."
 	},
 	{
 		"slug": "rest-between-sets",
@@ -36,7 +62,20 @@
 		"coverIcon": "timer",
 		"ctaHref": "/workouts",
 		"ctaLabelKey": "articles.ctaWorkouts",
-		"bodyMd": "Отдых тоже часть прогресса, а не «потерянное время».\n\n## Ориентиры\n- **База (присед, жим, тяга):** 2-3 мин, если цель сила\n- **Изоляция (бицепс, трицепс, дельты):** 60-90 сек\n- **Суперсет:** короткая пауза внутри круга, 2 мин после полного круга\n\n## В Repdraft\nПосле отметки подхода запускается таймер. Можно начать следующий подход раньше: просто нажмите «Готово» снова. История сессии сохранится в [разделе «История»](/workouts?tab=history)."
+		"bodyMd": "Отдых тоже часть прогресса, а не «потерянное время».\n\n## Ориентиры\n\n- **База (присед, жим, тяга):** 2–3 мин, если цель сила\n- **Изоляция (бицепс, трицепс, дельты):** 60–90 сек\n- **Суперсет:** короткая пауза внутри круга, 2 мин после полного круга\n\n## В Repdraft\n\nПосле отметки подхода запускается таймер.\n\nМожно начать следующий подход раньше: просто нажмите «Готово» снова.\n\nИстория сессии сохранится в [разделе «История»](/workouts?tab=history)."
+	},
+	{
+		"slug": "rest-between-sets",
+		"title": "Rest between sets",
+		"excerpt": "How long to wait between sets on compounds and isolation work.",
+		"coverTone": "amber",
+		"locale": "en",
+		"tags": ["rest", "session"],
+		"exerciseIds": [],
+		"coverIcon": "timer",
+		"ctaHref": "/workouts",
+		"ctaLabelKey": "articles.ctaWorkouts",
+		"bodyMd": "Rest is part of progress, not wasted time.\n\n## Guidelines\n\n- **Compounds (squat, press, deadlift):** 2–3 min when strength is the goal\n- **Isolation (biceps, triceps, delts):** 60–90 sec\n- **Superset:** a short pause inside the round, about 2 min after a full round\n\n## In Repdraft\n\nMarking a set done starts the timer.\n\nYou can start the next set earlier: just tap Done again.\n\nSession history lands in the [History tab](/workouts?tab=history)."
 	},
 	{
 		"slug": "technique-clips",
@@ -49,7 +88,20 @@
 		"coverIcon": "library",
 		"ctaHref": "/exercises",
 		"ctaLabelKey": "articles.ctaExercises",
-		"bodyMd": "Каталог Repdraft это не только список названий. На карточке упражнения есть **анимация** и блок **«Техника»** с GIF от сообщества.\n\n## Когда открывать\n- Первый раз делаете упражнение в этой тренировке\n- Меняете хват, стойку или угол скамьи\n- После долгого перерыва\n\n## Как связать с планом\nНашли удачный клип → добавьте упражнение в [конструктор](/builder) → проверьте технику прямо в live-сессии перед рабочим весом."
+		"bodyMd": "Каталог Repdraft это не только список названий.\n\nНа карточке упражнения есть **анимация** и блок **«Техника»** с GIF от сообщества.\n\n## Когда открывать\n\n- Первый раз делаете упражнение в этой тренировке\n- Меняете хват, стойку или угол скамьи\n- После долгого перерыва\n\n## Как связать с планом\n\nНашли удачный клип → добавьте упражнение в [конструктор](/builder) → проверьте технику прямо в live-сессии перед рабочим весом."
+	},
+	{
+		"slug": "technique-clips",
+		"title": "Why check technique before a set",
+		"excerpt": "Community clips and exercise GIFs for a quick path check.",
+		"coverTone": "rose",
+		"locale": "en",
+		"tags": ["technique", "clips"],
+		"exerciseIds": ["0025"],
+		"coverIcon": "library",
+		"ctaHref": "/exercises",
+		"ctaLabelKey": "articles.ctaExercises",
+		"bodyMd": "The Repdraft catalog is more than names.\n\nEach exercise card has an **animation** and a **Technique** block with community GIFs.\n\n## When to open it\n\n- First time you do the move in this workout\n- You change grip, stance, or bench angle\n- After a long break\n\n## How it ties to a plan\n\nFound a useful clip → add the exercise in the [builder](/builder) → review technique in the live session before working weight."
 	},
 	{
 		"slug": "legs-split",
@@ -62,7 +114,20 @@
 		"coverIcon": "dumbbell",
 		"ctaHref": "/catalog/legs",
 		"ctaLabelKey": "articles.ctaLegs",
-		"bodyMd": "Зона **«Ноги»** объединяет бедро и голень. Внутри chips по целевым мышцам: ягодицы, квадрицепс, бицепс бедра, икры.\n\n## Как пользоваться\n1. Откройте [каталог ног](/catalog/legs)\n2. Выберите chip (например, «Ягодицы»)\n3. При необходимости сузьте **оборудование** в фильтрах\n\n## Совет\nДля первой тренировки хватит 3-4 упражнений: одно на ягодицы/квадрицепс, одно на заднюю поверхность бедра, одно на икры."
+		"bodyMd": "Зона **«Ноги»** объединяет бедро и голень.\n\nВнутри chips по целевым мышцам: ягодицы, квадрицепс, бицепс бедра, икры.\n\n## Как пользоваться\n\n1. Откройте [каталог ног](/catalog/legs)\n2. Выберите chip (например, «Ягодицы»)\n3. При необходимости сузьте **оборудование** в фильтрах\n\n## Совет\n\nДля первой тренировки хватит 3–4 упражнений: одно на ягодицы/квадрицепс, одно на заднюю поверхность бедра, одно на икры."
+	},
+	{
+		"slug": "legs-split",
+		"title": "Legs: glutes, quads, and calves",
+		"excerpt": "How to use catalog subcategories so you are not scrolling 200+ moves.",
+		"coverTone": "teal",
+		"locale": "en",
+		"tags": ["legs", "catalog"],
+		"exerciseIds": [],
+		"coverIcon": "dumbbell",
+		"ctaHref": "/catalog/legs",
+		"ctaLabelKey": "articles.ctaLegs",
+		"bodyMd": "The **Legs** zone covers thigh and lower leg.\n\nInside you get chips by target muscle: glutes, quads, hamstrings, calves.\n\n## How to use it\n\n1. Open the [legs catalog](/catalog/legs)\n2. Pick a chip (for example Glutes)\n3. Narrow **equipment** in filters if needed\n\n## Tip\n\nFor a first session, 3–4 exercises are enough: one for glutes/quads, one for hamstrings, one for calves."
 	},
 	{
 		"slug": "first-session",
@@ -75,6 +140,19 @@
 		"coverIcon": "play",
 		"ctaHref": "/builder",
 		"ctaLabelKey": "articles.ctaBuilder",
-		"bodyMd": "Базовый путь в Repdraft: **план → сессия → история**.\n\n## Шаги\n1. [Создайте план](/builder) из 3-5 упражнений\n2. На экране «Тренировки» нажмите **Старт**\n3. Отмечайте подходы; в конце нажмите **Завершить**\n4. Откройте [историю](/workouts?tab=history): там будут вес, повторы и длительность\n\nДанные сохраняются локально в браузере; с аккаунтом синхронизируются между устройствами."
+		"bodyMd": "Базовый путь в Repdraft: **план → сессия → история**.\n\n## Шаги\n\n1. [Создайте план](/builder) из 3–5 упражнений\n2. На экране «Тренировки» нажмите **Старт**\n3. Отмечайте подходы; в конце нажмите **Завершить**\n4. Откройте [историю](/workouts?tab=history): там будут вес, повторы и длительность\n\nДанные сохраняются локально в браузере; с аккаунтом синхронизируются между устройствами."
+	},
+	{
+		"slug": "first-session",
+		"title": "Your first saved session",
+		"excerpt": "Build a plan, run live mode, and find the result in history.",
+		"coverTone": "purple",
+		"locale": "en",
+		"tags": ["beginner", "session"],
+		"exerciseIds": [],
+		"coverIcon": "play",
+		"ctaHref": "/builder",
+		"ctaLabelKey": "articles.ctaBuilder",
+		"bodyMd": "The core Repdraft path: **plan → session → history**.\n\n## Steps\n\n1. [Create a plan](/builder) with 3–5 exercises\n2. On Workouts tap **Start**\n3. Log sets; finish with **Finish**\n4. Open [History](/workouts?tab=history): weight, reps, and duration are there\n\nData stays in the browser locally; with an account it syncs across devices."
 	}
 ]

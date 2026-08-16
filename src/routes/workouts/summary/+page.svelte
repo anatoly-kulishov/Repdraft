@@ -38,7 +38,6 @@
 			loading = false;
 		})();
 	});
-
 </script>
 
 <svelte:head>
@@ -62,35 +61,49 @@
 		<div class="subroute-desktop-head hidden text-left md:block">
 			<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />
 		</div>
-		<div class="summary-check mt-2 lg:mt-0" aria-hidden="true">
-			<LucideIcon icon={CircleCheck} size={ICON_PRIMARY + 12} class="text-[var(--color-accent)]" />
-		</div>
-		<h1 class="page-title mt-4 hidden md:block">{translate(lang, 'summary.title')}</h1>
-		<p class="mt-1 text-lg font-medium text-[var(--color-ink)]">{session.planName}</p>
 
-		<dl class="summary-stats mt-8 grid grid-cols-3 gap-3">
-			<div class="stat-card">
-				<dt class="stat-card-label">{translate(lang, 'summary.duration')}</dt>
-				<dd class="stat-card-value">{formatDurationMs(sessionDurationMs(session), { extended: true })}</dd>
+		<div class="summary-hero">
+			<div class="summary-check" aria-hidden="true">
+				<LucideIcon icon={CircleCheck} size={ICON_PRIMARY + 12} />
 			</div>
-			<div class="stat-card">
-				<dt class="stat-card-label">{translate(lang, 'summary.exercises')}</dt>
-				<dd class="stat-card-value">{completedExerciseCount(session)}</dd>
+			<h1 class="summary-hero__title">{translate(lang, 'summary.title')}</h1>
+			<p class="summary-hero__plan">{session.planName}</p>
+		</div>
+
+		<dl class="summary-stats">
+			<div class="summary-stat">
+				<dt class="summary-stat__label">{translate(lang, 'summary.duration')}</dt>
+				<dd class="summary-stat__value">
+					{formatDurationMs(sessionDurationMs(session), { extended: true })}
+				</dd>
 			</div>
-			<div class="stat-card">
-				<dt class="stat-card-label">{translate(lang, 'summary.sets')}</dt>
-				<dd class="stat-card-value">{completedSetCount(session)}</dd>
+			<div class="summary-stat">
+				<dt class="summary-stat__label">{translate(lang, 'summary.exercises')}</dt>
+				<dd class="summary-stat__value">{completedExerciseCount(session)}</dd>
+			</div>
+			<div class="summary-stat">
+				<dt class="summary-stat__label">{translate(lang, 'summary.sets')}</dt>
+				<dd class="summary-stat__value">{completedSetCount(session)}</dd>
 			</div>
 		</dl>
 
-		<a
-			class="btn-primary btn-block summary-page__done-inline mt-8 min-h-12"
-			href="/workouts?tab=history">{translate(lang, 'summary.done')}</a
-		>
+		<div class="summary-actions summary-page__done-inline">
+			<a class="btn-primary btn-block min-h-12" href="/workouts?tab=history"
+				>{translate(lang, 'summary.done')}</a
+			>
+			<a class="btn-ghost btn-block min-h-11" href={`/workouts/history/${session.id}`}
+				>{translate(lang, 'summary.openSession')}</a
+			>
+		</div>
 
-		<div class="sticky-actions summary-page__done-sticky lg:hidden">
-			<div class="sticky-actions__inner">
-				<a class="btn-primary btn-block min-h-12" href="/workouts?tab=history">{translate(lang, 'summary.done')}</a>
+		<div class="sticky-actions sticky-actions--stack summary-page__done-sticky lg:hidden">
+			<div class="sticky-actions__inner summary-actions">
+				<a class="btn-primary btn-block min-h-12" href="/workouts?tab=history"
+					>{translate(lang, 'summary.done')}</a
+				>
+				<a class="btn-ghost btn-block min-h-11" href={`/workouts/history/${session.id}`}
+					>{translate(lang, 'summary.openSession')}</a
+				>
 			</div>
 		</div>
 	</section>

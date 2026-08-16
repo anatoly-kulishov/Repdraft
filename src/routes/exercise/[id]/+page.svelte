@@ -31,6 +31,12 @@
 
 	let exercise = $derived(data.exercise);
 	let lang = $derived($resolvedLocale);
+	let relatedArticles = $derived.by(() => {
+		const forLocale = data.relatedArticles.filter((a) => a.locale === lang);
+		return forLocale.length > 0
+			? forLocale
+			: data.relatedArticles.filter((a) => a.locale === 'ru');
+	});
 	let title = $derived(exercise ? exerciseName(exercise, lang) : '');
 	let draftCount = $derived($draft.exercises.length);
 	let steps = $derived.by(() => {
@@ -240,7 +246,7 @@
 									</a>
 								</dd>
 							</div>
-							<div class="min-w-0 sm:col-span-2 xl:col-span-1">
+							<div class="min-w-0 sm:col-span-2 xl:col-span-3">
 								<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.secondary')}</dt>
 								<dd class="font-medium break-words">
 									{#if exercise.secondary_muscles.length}
@@ -292,11 +298,11 @@
 			<PersonalRecordPanel exerciseId={exercise.id} />
 			<ExerciseSessionHistory exerciseId={exercise.id} />
 
-			{#if data.relatedArticles.length > 0}
+			{#if relatedArticles.length > 0}
 				<section class="exercise-related-articles">
 					<h2 class="section-title mb-2">{translate(lang, 'articles.relatedTitle')}</h2>
 					<ul class="exercise-related-articles__list">
-						{#each data.relatedArticles as article (article.slug)}
+						{#each relatedArticles as article (article.slug)}
 							<li>
 								<a class="exercise-related-articles__link" href={`/articles/${article.slug}`}>
 									<span class="exercise-related-articles__title">{article.title}</span>
