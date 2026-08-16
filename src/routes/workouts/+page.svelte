@@ -191,7 +191,12 @@
 		</a>
 	</div>
 
-	<CloudSyncBanner state={$plansSync} {lang} onRetry={() => void plans.refresh()} />
+	<CloudSyncBanner
+		sync={$plansSync}
+		{lang}
+		suppressed={!pageReady}
+		onRetry={() => void plans.refresh()}
+	/>
 
 	{#if !pageReady}
 		<WorkoutsPageSkeleton label={translate(lang, 'common.loading')} />

@@ -155,8 +155,9 @@ export function runInputLimitsSelfCheck(): void {
 	if (coerceReps('999', REPS) !== 500) throw new Error('coerceReps clamp max');
 	if (coerceReps('x') !== null) throw new Error('coerceReps junk');
 
-	if (filterWeightInput('600', '100') !== '100') {
-		throw new Error('filterWeightInput should keep previous on overflow');
+	if (coerceWeightKg('-11') !== null) throw new Error('coerceWeightKg rejects negative');
+	if (filterWeightInput('-11', '') !== '11') {
+		throw new Error('filterWeightInput should strip minus');
 	}
 	if (sanitizeNote('  a\nb  ') !== 'a b') throw new Error('sanitizeNote whitespace');
 }

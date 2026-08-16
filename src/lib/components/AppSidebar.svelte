@@ -86,7 +86,9 @@
 				<span class="sidebar-link-icon" class:is-active={draftActive}>
 					<LucideIcon icon={ClipboardList} size={ICON_SIDEBAR} />
 				</span>
-				<span>{translate(lang, 'draft.dock', { n: draftCount })}</span>
+				<span class="sidebar-link-draft-label">
+					{translate(lang, 'draft.dockNav', { n: draftCount })}
+				</span>
 			</a>
 		{/if}
 	</nav>

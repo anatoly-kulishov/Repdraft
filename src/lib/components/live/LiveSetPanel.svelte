@@ -3,8 +3,8 @@
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
-	import { loggedSetKind, nextSetKind } from '$lib/domain/session';
-	import type { ExerciseIndexItem, SessionExercise, SetKind, WorkoutSession } from '$lib/domain/types';
+	import type { ExerciseIndexItem, SessionExercise, WorkoutSession } from '$lib/domain/types';
+	import { isBodyweightEquipment } from '$lib/domain/workout';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
@@ -24,6 +24,7 @@
 		onReps,
 		onComplete,
 		onUncomplete,
+		onToggleAllComplete,
 		onRemove,
 		invalidSetIndex = null as number | null,
 		invalidKind = null as 'weight' | 'reps' | null,
@@ -38,10 +39,11 @@
 		selectedGroupPos: { current: number; total: number } | null;
 		nextInSupersetName: string | null;
 		activeSetProgress: { current: number; total: number; allDone: boolean } | null;
-		onWeight: (setIndex: number, value: string) => void;
+		onWeight: (setIndex: number, value: string) => string;
 		onReps: (setIndex: number, value: string) => void;
 		onComplete: (setIndex: number) => void;
 		onUncomplete: (setIndex: number) => void;
+		onToggleAllComplete: () => void;
 		onRemove: (setIndex: number) => void;
 		invalidSetIndex?: number | null;
 		invalidKind?: 'weight' | 'reps' | null;
@@ -62,17 +64,19 @@
 	function formatLast(exerciseId: string): string | null {
 		const last = live.lastFor(exerciseId);
 		if (!last) return null;
-		const w = last.weightKg != null ? `${last.weightKg}` : '—';
-		const r = last.reps != null ? `${last.reps}` : '—';
-		return `${w} × ${r}`;
+		const r = last.reps != null ? `${last.reps}` : null;
+		if (last.weightKg != null && r != null) return `${last.weightKg} × ${r}`;
+		if (r != null) return `${r} ${translate(lang, 'live.reps').toLowerCase()}`;
+		if (last.weightKg != null) return `${last.weightKg}`;
+		return null;
 	}
 
 	function lastVars(exerciseId: string): { w: string; r: string } | null {
 		const last = live.lastFor(exerciseId);
-		if (!last) return null;
+		if (!last || (last.weightKg == null && last.reps == null)) return null;
 		return {
-			w: last.weightKg != null ? `${last.weightKg}` : '—',
-			r: last.reps != null ? `${last.reps}` : '—'
+			w: last.weightKg != null ? `${last.weightKg}` : '',
+			r: last.reps != null ? `${last.reps}` : ''
 		};
 	}
 
@@ -87,32 +91,28 @@
 		});
 	}
 
-	function kindLabel(kind: SetKind): string {
-		switch (kind) {
-			case 'work':
-				return translate(lang, 'live.setKindWork');
-			case 'warmup':
-				return translate(lang, 'live.setKindWarmup');
-			case 'drop':
-				return translate(lang, 'live.setKindDrop');
-			default: {
-				const _exhaustive: never = kind;
-				return _exhaustive;
-			}
-		}
-	}
-
-	function cycleKind(setIndex: number) {
-		const set = exercise.sets[setIndex];
-		if (!set || set.completed) return;
-		live.patchSet(exerciseIndex, setIndex, { kind: nextSetKind(loggedSetKind(set)) });
-	}
-
 	let canRemoveSet = $derived(exercise.sets.length > 1);
+	let allSetsDone = $derived(
+		exercise.sets.length > 0 && exercise.sets.every((s) => s.completed)
+	);
 	let lastCopy = $derived(lastVars(exercise.exerciseId));
 	let canApplyLast = $derived(
 		lastCopy != null && exercise.sets.some((s) => !s.completed)
 	);
+	let bodyweight = $derived(
+		isBodyweightEquipment(names.get(exercise.exerciseId)?.equipment)
+	);
+	let weightLabel = $derived(
+		translate(lang, bodyweight ? 'live.weightBw' : 'live.weight')
+	);
+	let weightPlaceholder = $derived(bodyweight ? translate(lang, 'live.weightBwPh') : '');
+	let toggleAllLabel = $derived(
+		translate(lang, allSetsDone ? 'live.undoDoneAll' : 'live.doneAll')
+	);
+
+	function showRemove(setIndex: number): boolean {
+		return canRemoveSet && setIndex === exercise.sets.length - 1;
+	}
 </script>
 
 <div class="live-panel" class:live-panel--superset={selectedInGroup}>
@@ -144,29 +144,42 @@
 	{#if metaFor(exercise.exerciseId)}
 		<p class="live-panel-meta">{metaFor(exercise.exerciseId)}</p>
 	{/if}
+	{#if bodyweight}
+		<p class="live-panel-hint">{translate(lang, 'live.weightBwHint')}</p>
+	{/if}
 	{#if lastCopy}
 		{#if canApplyLast}
 			<button
 				type="button"
-				class="live-last live-last--action"
+				class="live-last live-last--tap"
+				aria-label={translate(lang, 'live.lastApplyAria', { value: formatLast(exercise.exerciseId) ?? '' })}
 				onclick={applyLastPerformance}
 			>
-				{translate(lang, 'live.lastApply', lastCopy)}
+				{translate(lang, 'live.last')}:
+				<span class="live-last__value">{formatLast(exercise.exerciseId)}</span>
 			</button>
 		{:else}
 			<p class="live-last">
 				{translate(lang, 'live.last')}:
-				<span class="font-medium text-[var(--color-ink)]">{formatLast(exercise.exerciseId)}</span>
+				<span class="live-last__value">{formatLast(exercise.exerciseId)}</span>
 			</p>
 		{/if}
 	{/if}
 
-	<div class="live-set-head" class:live-set-head--with-remove={canRemoveSet} aria-hidden="true">
+	<div class="live-set-head" class:live-set-head--with-remove={canRemoveSet}>
 		<span>#</span>
-		<span>{translate(lang, 'live.cycleSetKind')}</span>
-		<span>{translate(lang, 'live.weight')}</span>
+		<span>{weightLabel}</span>
 		<span>{translate(lang, 'live.reps')}</span>
-		<span class="live-set-head-done">✓</span>
+		<button
+			type="button"
+			class="live-set-head-done"
+			class:live-set-head-done--all={allSetsDone}
+			aria-label={toggleAllLabel}
+			title={toggleAllLabel}
+			onclick={onToggleAllComplete}
+		>
+			✓
+		</button>
 		{#if canRemoveSet}
 			<span class="live-set-head-remove"></span>
 		{/if}
@@ -181,27 +194,6 @@
 				class:live-set-row--with-remove={canRemoveSet}
 			>
 				<span class="live-set-index">{si + 1}</span>
-				{#if !set.completed}
-					<button
-						type="button"
-						class="live-set-kind"
-						class:live-set-kind--warmup={loggedSetKind(set) === 'warmup'}
-						class:live-set-kind--drop={loggedSetKind(set) === 'drop'}
-						aria-label={translate(lang, 'live.cycleSetKind')}
-						title={translate(lang, 'live.cycleSetKind')}
-						onclick={() => cycleKind(si)}
-					>
-						{kindLabel(loggedSetKind(set))}
-					</button>
-				{:else}
-					<span
-						class="live-set-kind live-set-kind--static"
-						class:live-set-kind--warmup={loggedSetKind(set) === 'warmup'}
-						class:live-set-kind--drop={loggedSetKind(set) === 'drop'}
-					>
-						{kindLabel(loggedSetKind(set))}
-					</span>
-				{/if}
 				<input
 					class="field live-set-weight tabular-nums"
 					class:is-invalid={invalidSetIndex === si && invalidKind === 'weight'}
@@ -209,9 +201,14 @@
 					type="text"
 					inputmode="decimal"
 					autocomplete="off"
-					aria-label={`${translate(lang, 'live.weight')} ${si + 1}`}
+					placeholder={weightPlaceholder}
+					aria-label={`${weightLabel} ${si + 1}`}
 					value={set.weightKg ?? ''}
-					oninput={(e) => onWeight(si, e.currentTarget.value)}
+					oninput={(e) => {
+						const el = e.currentTarget;
+						const next = onWeight(si, el.value);
+						if (el.value !== next) el.value = next;
+					}}
 				/>
 				<input
 					class="field live-set-reps tabular-nums"
@@ -247,16 +244,18 @@
 						<span class="sr-only">{translate(lang, 'live.done')}</span>
 					</button>
 				{/if}
-				{#if canRemoveSet}
+				{#if showRemove(si)}
 					<button
 						type="button"
-						class="btn-ghost is-danger live-set-remove-btn"
+						class="btn-ghost live-set-remove-btn"
 						aria-label={translate(lang, 'live.removeSet')}
 						title={translate(lang, 'live.removeSet')}
 						onclick={() => onRemove(si)}
 					>
 						<LucideIcon icon={Trash2} size={ICON_SMALL} />
 					</button>
+				{:else if canRemoveSet}
+					<span class="live-set-remove-spacer" aria-hidden="true"></span>
 				{/if}
 			</li>
 		{/each}

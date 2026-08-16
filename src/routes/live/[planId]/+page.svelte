@@ -8,7 +8,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
-	import { coerceReps, coerceWeightKg, LIVE_REPS } from '$lib/domain/inputLimits';
+	import { coerceReps, coerceWeightKg, filterWeightInput, LIVE_REPS } from '$lib/domain/inputLimits';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { completedSetCount, nextFocusAfterSetComplete, totalSetCount } from '$lib/domain/session';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
@@ -26,7 +26,7 @@
 	import { goto } from '$app/navigation';
 	import { get } from 'svelte/store';
 	import { onDestroy, onMount, tick as nextFrame } from 'svelte';
-	import { ArrowLeft, Timer } from '@lucide/svelte';
+	import { ArrowLeft } from '@lucide/svelte';
 
 	let { params } = $props();
 
@@ -200,13 +200,19 @@
 			invalidSetIndex = null;
 			invalidKind = null;
 		}
-		if (!value.trim()) {
+		const prev = session?.exercises[ei]?.sets[si]?.weightKg;
+		const filtered = filterWeightInput(value, prev != null ? String(prev) : '');
+		if (!filtered) {
 			live.patchSet(ei, si, { weightKg: null });
-			return;
+			return filtered;
 		}
-		const n = coerceWeightKg(value);
-		if (n == null) return;
+		const n = coerceWeightKg(filtered);
+		if (n == null) {
+			live.patchSet(ei, si, { weightKg: null });
+			return '';
+		}
 		live.patchSet(ei, si, { weightKg: n });
+		return filtered;
 	}
 
 	function onReps(ei: number, si: number, value: string) {
@@ -247,6 +253,57 @@
 		const next = get(live).session;
 		if (!next) return;
 		selectedExerciseIndex = nextFocusAfterSetComplete(next, ei, si);
+	}
+
+	function onToggleAllComplete(ei: number) {
+		const ex = session?.exercises[ei];
+		if (!ex?.sets.length) return;
+		if (ex.sets.every((s) => s.completed)) {
+			justDoneSetIndex = null;
+			invalidSetIndex = null;
+			invalidKind = null;
+			live.setSetsCompleted(
+				ei,
+				ex.sets.map((_, si) => si),
+				false
+			);
+			restChimeArmed = false;
+			return;
+		}
+		for (let si = 0; si < ex.sets.length; si++) {
+			const set = ex.sets[si]!;
+			if (set.completed) continue;
+			if (set.weightKg != null && !coerceWeightKg(String(set.weightKg))) {
+				toasts.show(translate(lang, 'pr.invalidWeight'), 'error');
+				void flashSetInvalid(si, 'weight');
+				return;
+			}
+			if (
+				set.reps == null ||
+				!Number.isInteger(set.reps) ||
+				set.reps < LIVE_REPS.min ||
+				set.reps > LIVE_REPS.max
+			) {
+				toasts.show(translate(lang, 'live.invalidReps'), 'error');
+				void flashSetInvalid(si, 'reps');
+				return;
+			}
+		}
+		const openIndexes = ex.sets
+			.map((s, si) => (s.completed ? -1 : si))
+			.filter((si) => si >= 0);
+		if (openIndexes.length === 0) return;
+		invalidSetIndex = null;
+		invalidKind = null;
+		unlockAudioFromGesture();
+		live.setSetsCompleted(ei, openIndexes, true);
+		restChimeArmed = get(live).restUntil != null;
+		if (restChimeArmed) unlockAudioFromGesture();
+		const lastSi = openIndexes[openIndexes.length - 1]!;
+		justDoneSetIndex = lastSi;
+		const next = get(live).session;
+		if (!next) return;
+		selectedExerciseIndex = nextFocusAfterSetComplete(next, ei, lastSi);
 	}
 
 	async function onFinish() {
@@ -329,7 +386,6 @@
 					total: totalSetCount(session)
 				})}
 			</p>
-			<p class="live-local-hint">{translate(lang, 'live.localSaveHint')}</p>
 		</div>
 
 		<header class="live-header hidden lg:flex">
@@ -348,95 +404,59 @@
 					})}
 				</p>
 				<p class="live-timer" aria-live="polite">{elapsedLabel}</p>
-				<p class="live-local-hint">{translate(lang, 'live.localSaveHint')}</p>
 			</div>
 		</header>
 
 		{#if restLeft > 0}
-			<div class="live-rest" role="status" aria-live="polite">
-				<div class="live-rest__main">
+			<div
+				class="live-rest"
+				role="timer"
+				aria-live="polite"
+				aria-atomic="true"
+				aria-label={`${translate(lang, 'live.rest')}: ${formatRestSec(restLeft)}`}
+			>
+				<button
+					type="button"
+					class="btn-ghost live-rest__chip"
+					aria-label={translate(lang, 'live.restMinus15Aria')}
+					onclick={() => {
+						restChimeArmed = true;
+						live.adjustRestSeconds(-15);
+					}}
+				>
+					{translate(lang, 'live.restMinus15')}
+				</button>
+				<div class="live-rest__mid">
+					{#key restLeft}
+						<p class="live-rest-value">{formatRestSec(restLeft)}</p>
+					{/key}
 					<div
-						class="live-rest-ring"
+						class="live-rest__bar"
 						style={`--rest-pct: ${restPct}`}
 						aria-hidden="true"
-					>
-						<div class="live-rest-ring__inner">
-							{#key restLeft}
-								<span class="live-rest-value">{formatRestSec(restLeft)}</span>
-							{/key}
-						</div>
-					</div>
-					<div class="live-rest__copy">
-						<p class="live-rest-label">
-							<LucideIcon icon={Timer} size={ICON_SMALL} />
-							{translate(lang, 'live.rest')}
-						</p>
-						<div class="live-rest__presets">
-							<button
-								type="button"
-								class="btn-ghost live-rest__chip"
-								onclick={() => {
-									restChimeArmed = true;
-									live.setRestSeconds(60);
-								}}
-							>
-								{translate(lang, 'live.restPreset60')}
-							</button>
-							<button
-								type="button"
-								class="btn-ghost live-rest__chip"
-								onclick={() => {
-									restChimeArmed = true;
-									live.setRestSeconds(90);
-								}}
-							>
-								{translate(lang, 'live.restPreset90')}
-							</button>
-							<button
-								type="button"
-								class="btn-ghost live-rest__chip"
-								onclick={() => {
-									restChimeArmed = true;
-									live.setRestSeconds(120);
-								}}
-							>
-								{translate(lang, 'live.restPreset120')}
-							</button>
-						</div>
-					</div>
+					></div>
 				</div>
-				<div class="live-rest__actions">
-					<button
-						type="button"
-						class="btn-ghost live-rest__chip"
-						onclick={() => {
-							restChimeArmed = true;
-							live.adjustRestSeconds(-15);
-						}}
-					>
-						{translate(lang, 'live.restMinus15')}
-					</button>
-					<button
-						type="button"
-						class="btn-ghost live-rest__chip"
-						onclick={() => {
-							restChimeArmed = true;
-							live.adjustRestSeconds(15);
-						}}
-					>
-						{translate(lang, 'live.restPlus15')}
-					</button>
-					<button
-						type="button"
-						class="btn-secondary"
-						onclick={() => {
-							restChimeArmed = false;
-							live.skipRest();
-						}}
-					>
-						{translate(lang, 'live.skipRest')}
-					</button>
-				</div>
+				<button
+					type="button"
+					class="btn-ghost live-rest__chip"
+					aria-label={translate(lang, 'live.restPlus15Aria')}
+					onclick={() => {
+						restChimeArmed = true;
+						live.adjustRestSeconds(15);
+					}}
+				>
+					{translate(lang, 'live.restPlus15')}
+				</button>
+				<button
+					type="button"
+					class="btn-secondary live-rest__skip"
+					onclick={() => {
+						restChimeArmed = false;
+						live.skipRest();
+					}}
+				>
+					{translate(lang, 'live.skipRest')}
+				</button>
 			</div>
 		{/if}
 
@@ -469,6 +489,7 @@
 								if (justDoneSetIndex === si) justDoneSetIndex = null;
 								live.patchSet(ei, si, { completed: false });
 							}}
+							onToggleAllComplete={() => onToggleAllComplete(ei)}
 							onRemove={(si) => {
 								if (invalidSetIndex === si) {
 									invalidSetIndex = null;

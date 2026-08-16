@@ -274,11 +274,19 @@ export function recentExerciseLogs(
 /** Prefer newer finishedAt, then startedAt. Keep device-only rows. */
 export function mergeWorkoutSessions(
 	local: WorkoutSession[],
-	cloud: WorkoutSession[]
+	cloud: WorkoutSession[],
+	deletedIds: Iterable<string> = []
 ): WorkoutSession[] {
+	const deleted = new Set(
+		[...deletedIds].map((id) => id.trim()).filter((id) => id.length > 0)
+	);
 	const map = new Map<string, WorkoutSession>();
-	for (const session of local) map.set(session.id, session);
+	for (const session of local) {
+		if (deleted.has(session.id)) continue;
+		map.set(session.id, session);
+	}
 	for (const session of cloud) {
+		if (deleted.has(session.id)) continue;
 		const prev = map.get(session.id);
 		if (!prev) {
 			map.set(session.id, session);
@@ -452,5 +460,12 @@ export function runSessionSelfCheck(): void {
 	const merged = mergeWorkoutSessions([older], [newer, { ...warm, id: 'cloud-only' }]);
 	if (merged.length !== 2 || merged.find((s) => s.id === 'merge-old')?.planName !== 'Newer') {
 		throw new Error(`mergeWorkoutSessions unexpected ${JSON.stringify(merged.map((s) => s.id))}`);
+	}
+	const gated = mergeWorkoutSessions([older], [newer, { ...warm, id: 'cloud-only' }], [
+		'cloud-only',
+		'merge-old'
+	]);
+	if (gated.length !== 0) {
+		throw new Error('mergeWorkoutSessions should honor deletion tombstones');
 	}
 }

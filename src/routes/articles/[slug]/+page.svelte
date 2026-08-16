@@ -9,7 +9,11 @@
 	let { data } = $props();
 
 	let lang = $derived($resolvedLocale);
-	let article = $derived(data.article);
+	let article = $derived(
+		data.variants.find((a) => a.locale === lang) ??
+			data.variants.find((a) => a.locale === 'ru') ??
+			data.variants[0]!
+	);
 	let bodyHtml = $derived(renderArticleBody(article.bodyMd));
 	let ctaHref = $derived(article.ctaHref ?? '/exercises');
 	let ctaLabel = $derived(

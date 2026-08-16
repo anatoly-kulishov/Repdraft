@@ -25,6 +25,7 @@ export const PLANS_STORAGE_KEY = 'repdraft:plans';
 export const DRAFT_STORAGE_KEY = 'repdraft:draft';
 export const RECORDS_STORAGE_KEY = 'repdraft:records';
 export const SESSIONS_STORAGE_KEY = 'repdraft:sessions';
+export const SESSIONS_DELETED_KEY = 'repdraft:sessions-deleted';
 export const ACTIVE_SESSION_KEY = 'repdraft:active-session';
 export const BOOKMARKS_STORAGE_KEY = 'repdraft:bookmarks';
 export const REST_UNTIL_STORAGE_KEY = 'repdraft:rest-until';
