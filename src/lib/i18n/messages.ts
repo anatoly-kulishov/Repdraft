@@ -4,7 +4,7 @@ import { authErrorMessageKey } from '$lib/domain/authFlow';
 type Dict = Record<string, string>;
 
 const ru: Dict = {
-	'nav.catalog': 'Каталог',
+	'nav.catalog': 'Упражнения',
 	'nav.builder': 'Конструктор',
 	'nav.draft': 'Черновик',
 	'nav.workouts': 'Тренировки',
@@ -114,7 +114,7 @@ const ru: Dict = {
 	'a11y.clearSearch': 'Очистить поиск',
 	'a11y.clearField': 'Очистить',
 	'a11y.back': 'Назад',
-	'catalog.title': 'Каталог',
+	'catalog.title': 'Упражнения',
 	'catalog.lead': 'Найдите упражнение и добавьте в конструктор.',
 	'catalog.count': '{n} упражнений',
 	'catalog.countShown': '{shown} из {n}',
@@ -135,7 +135,7 @@ const ru: Dict = {
 	'catalog.clearBody': 'Сбросить часть тела',
 	'catalog.clearEquipment': 'Сбросить оборудование',
 	'catalog.dataMissing': 'Данные не найдены',
-	'catalog.hubTitle': 'Каталог',
+	'catalog.hubTitle': 'Упражнения',
 	'catalog.hubLead': 'Зоны по группам мышц или поиск по названию.',
 	'catalog.allExercises': 'Все упражнения',
 	'catalog.browseAll': 'Полный список',
@@ -447,7 +447,7 @@ const ru: Dict = {
 	'exercise.loading': 'Загрузка…',
 	'exercise.notFoundTitle': 'Упражнение не найдено',
 	'exercise.notFoundDesc': 'Вернитесь в каталог и выберите другое.',
-	'exercise.back': '← Каталог',
+	'exercise.back': '← Упражнения',
 	'exercise.bodyPart': 'Часть тела',
 	'exercise.equipment': 'Оборудование',
 	'exercise.target': 'Целевая мышца',
@@ -604,7 +604,7 @@ const ru: Dict = {
 };
 
 const en: Dict = {
-	'nav.catalog': 'Catalog',
+	'nav.catalog': 'Exercises',
 	'nav.builder': 'Builder',
 	'nav.draft': 'Draft',
 	'nav.workouts': 'Workouts',
@@ -714,7 +714,7 @@ const en: Dict = {
 	'a11y.clearSearch': 'Clear search',
 	'a11y.clearField': 'Clear',
 	'a11y.back': 'Back',
-	'catalog.title': 'Catalog',
+	'catalog.title': 'Exercises',
 	'catalog.lead': 'Find an exercise and add it to the builder.',
 	'catalog.count': '{n} exercises',
 	'catalog.countShown': '{shown} of {n}',
@@ -735,7 +735,7 @@ const en: Dict = {
 	'catalog.clearBody': 'Clear body part',
 	'catalog.clearEquipment': 'Clear equipment',
 	'catalog.dataMissing': 'Data not found',
-	'catalog.hubTitle': 'Catalog',
+	'catalog.hubTitle': 'Exercises',
 	'catalog.hubLead': 'Muscle zones or search by name.',
 	'catalog.allExercises': 'All exercises',
 	'catalog.browseAll': 'Full list',
@@ -1046,7 +1046,7 @@ const en: Dict = {
 	'exercise.loading': 'Loading…',
 	'exercise.notFoundTitle': 'Exercise not found',
 	'exercise.notFoundDesc': 'Check the link or go back to the catalog.',
-	'exercise.back': '← Catalog',
+	'exercise.back': '← Exercises',
 	'exercise.bodyPart': 'Body part',
 	'exercise.equipment': 'Equipment',
 	'exercise.target': 'Target muscle',

@@ -201,13 +201,26 @@
 	{#if !pageReady}
 		<WorkoutsPageSkeleton label={translate(lang, 'common.loading')} />
 	{:else}
-		<div class="workouts-page__tabs">
+		<div
+			class="workouts-page__tabs"
+			class:workouts-page__tabs--split={activeTab === 'history' && history.length > 0}
+		>
 			<SegmentControl
 				options={tabOptions}
 				value={activeTab}
 				ariaLabel={translate(lang, 'workouts.tabsAria')}
 				onchange={(id) => setTab(parseWorkoutsTab(id))}
 			/>
+			{#if activeTab === 'history' && history.length > 0}
+				<button
+					type="button"
+					class="btn-link workouts-page__clear-history"
+					disabled={historyBusyId !== null}
+					onclick={() => void onClearHistory()}
+				>
+					{translate(lang, 'workouts.clearHistory')}
+				</button>
+			{/if}
 		</div>
 
 		{#if activeTab === 'plans'}
@@ -307,16 +320,6 @@
 				description={translate(lang, 'workouts.historyEmptyDesc')}
 			/>
 		{:else}
-			<div class="mb-3 flex flex-wrap items-center justify-end gap-2">
-				<button
-					type="button"
-					class="btn-link text-sm !text-[var(--color-muted)]"
-					disabled={historyBusyId !== null}
-					onclick={() => void onClearHistory()}
-				>
-					{translate(lang, 'workouts.clearHistory')}
-				</button>
-			</div>
 			<ul class="entity-list entity-list--cards">
 				{#each history as session (session.id)}
 					<li>

@@ -16,7 +16,7 @@
 	--color-danger: #ef4444;
 	--color-border: #3a3a3e;
 	--hero-card-accent: #2e1065;
-	--hero-card-media-bg: #1c1c20;
+	--hero-card-media-bg: #1a1b22;
 	--hero-card-ink: #f5f5f7;
 	--radius-panel: 12px;
 	--radius-control: 8px;
@@ -36,7 +36,9 @@
 	--page-pad-y: 1rem;
 	--page-section-gap: 1rem;
 	--mobile-chrome-bottom: calc(var(--tabbar-h) + var(--safe-bottom));
-	--shadow-panel: none;
+	--shadow-panel:
+		inset 0 1px 0 rgb(255 255 255 / 0.045),
+		0 10px 28px rgb(0 0 0 / 0.22);
 	--page-content-max: 42rem;
 	--content-max: var(--page-content-max);
 	--page-content-narrow: 28rem;
@@ -51,11 +53,16 @@
 	--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 	--ease-toast: cubic-bezier(0.18, 1.25, 0.4, 1);
 	--press-ms: 60ms;
-	--app-bg-glow: rgb(139 92 246 / 0.18);
+	--app-bg-glow: rgb(139 92 246 / 0.2);
 	--app-bg-wash: color-mix(in srgb, var(--color-accent) 6%, var(--color-bg));
 	--app-bg-image:
-		radial-gradient(ellipse 110% 85% at 50% -14%, var(--app-bg-glow), transparent 62%),
+		radial-gradient(ellipse 130% 78% at 50% -22%, var(--app-bg-glow), transparent 70%),
 		linear-gradient(180deg, var(--app-bg-wash) 0%, var(--color-bg) 42%);
+	--surface-sheen: linear-gradient(
+		180deg,
+		rgb(255 255 255 / 0.035) 0%,
+		transparent 38%
+	);
 }
 
 @media (min-width: 768px) {
@@ -110,6 +117,31 @@ html {
 	color-scheme: dark;
 }
 
+/* Soft film grain — tactile depth without photos or heavy illustration. */
+html::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: 9998;
+	pointer-events: none;
+	opacity: 0.042;
+	mix-blend-mode: overlay;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+	background-repeat: repeat;
+	background-size: 180px 180px;
+}
+
+html[data-theme='light']::before {
+	opacity: 0.028;
+	mix-blend-mode: multiply;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html::before {
+		display: none;
+	}
+}
+
 html[data-theme='dark'] {
 	color-scheme: dark;
 }
@@ -129,14 +161,22 @@ html[data-theme='light'] {
 	--color-accent-muted: rgb(139 92 246 / 0.12);
 	--color-border: #9aa8b8;
 	--hero-card-accent: #5b21b6;
-	--hero-card-media-bg: #eef1f5;
+	--hero-card-media-bg: #e8edf3;
 	--hero-card-ink: #f8fafc;
-	--shadow-panel: 0 1px 2px rgb(18 20 26 / 0.06);
-	--app-bg-glow: rgb(139 92 246 / 0.12);
-	--app-bg-wash: color-mix(in srgb, var(--color-accent) 5%, #ffffff);
+	--shadow-panel:
+		inset 0 1px 0 rgb(255 255 255 / 0.72),
+		0 1px 2px rgb(18 20 26 / 0.05),
+		0 12px 28px rgb(18 20 26 / 0.06);
+	--app-bg-glow: rgb(139 92 246 / 0.16);
+	--app-bg-wash: color-mix(in srgb, var(--color-accent) 5%, #f4f6f9);
 	--app-bg-image:
-		radial-gradient(ellipse 105% 80% at 50% -10%, var(--app-bg-glow), transparent 58%),
+		radial-gradient(ellipse 125% 72% at 50% -18%, var(--app-bg-glow), transparent 68%),
 		linear-gradient(180deg, var(--app-bg-wash) 0%, var(--color-bg) 38%);
+	--surface-sheen: linear-gradient(
+		180deg,
+		rgb(255 255 255 / 0.5) 0%,
+		transparent 40%
+	);
 }
 
 /* Mobile-first chrome. Desktop: left sidebar + no tabbar. */
@@ -639,7 +679,8 @@ select {
 .panel {
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-panel);
-	background: var(--color-surface);
+	background-color: var(--color-surface);
+	background-image: var(--surface-sheen);
 	padding: 1rem;
 	min-width: 0;
 	max-width: 100%;
@@ -2595,6 +2636,39 @@ html[data-theme='dark'] .zone-card__media {
 	max-width: 100%;
 }
 
+.home-header--mockup {
+	position: relative;
+	isolation: isolate;
+	padding: 0.35rem 0 0.15rem;
+}
+
+/* Soft centered wash under greeting — even, not left-heavy. */
+.home-header--mockup::before {
+	content: '';
+	position: absolute;
+	z-index: -1;
+	top: -1.75rem;
+	left: 50%;
+	width: min(22rem, 92vw);
+	height: 9.5rem;
+	translate: -50% 0;
+	border-radius: 50%;
+	background: radial-gradient(
+		ellipse at center,
+		color-mix(in srgb, var(--color-accent) 22%, transparent),
+		transparent 72%
+	);
+	pointer-events: none;
+}
+
+.home-header--mockup .home-header__copy {
+	animation: kineticsSurfaceIn 0.55s var(--ease-toast) both;
+}
+
+.home-header--mockup .home-header__cta {
+	animation: kineticsSurfaceIn 0.65s var(--ease-toast) 0.06s both;
+}
+
 .home-header--compact {
 	margin-bottom: 0.5rem;
 }
@@ -2858,13 +2932,17 @@ html[data-theme='dark'] .zone-card__media {
 }
 
 .home-hero {
+	position: relative;
+	isolation: isolate;
 	margin-bottom: 0;
 	min-height: 0;
 	padding: 1.35rem 1.25rem;
 	border-radius: var(--radius-panel);
-	background: var(--color-surface);
+	background-color: var(--color-surface);
+	background-image: var(--surface-sheen);
 	border: 1px solid var(--color-border);
 	box-shadow: var(--shadow-panel);
+	overflow: hidden;
 }
 
 .home-dashboard {
@@ -3885,6 +3963,7 @@ html[data-theme='dark'] .zone-card__media {
 }
 
 .home-continue-card {
+	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -3892,9 +3971,25 @@ html[data-theme='dark'] .zone-card__media {
 	width: 100%;
 	min-width: 0;
 	margin: 0 0 1.25rem;
-	padding: 0.9rem 1rem;
+	padding: 0.9rem 1rem 0.9rem 1.15rem;
 	text-decoration: none;
 	color: inherit;
+	overflow: hidden;
+}
+
+.home-continue-card::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 0.55rem;
+	bottom: 0.55rem;
+	width: 3px;
+	border-radius: 999px;
+	background: linear-gradient(
+		180deg,
+		var(--color-accent),
+		color-mix(in srgb, var(--color-accent) 35%, transparent)
+	);
 }
 
 .home-continue-card:hover {
@@ -5899,6 +5994,32 @@ html[data-theme='dark'] .zone-card__media {
 	margin-bottom: 1rem;
 }
 
+.workouts-page__tabs--split {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 0.55rem;
+}
+
+.workouts-page__tabs--split :global(.segment-control) {
+	width: 100%;
+}
+
+.workouts-page__clear-history {
+	align-self: flex-end;
+	margin: 0;
+	padding: 0.2rem 0;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	color: var(--color-muted);
+	text-align: end;
+	white-space: nowrap;
+}
+
+.workouts-page__clear-history:hover:not(:disabled) {
+	color: var(--color-danger);
+}
+
 .segment-control {
 	display: grid;
 	grid-template-columns: repeat(var(--segment-count, 2), minmax(0, 1fr));
@@ -6932,16 +7053,42 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 }
 
 .exercise-card--list .exercise-card-media {
+	position: relative;
 	flex-shrink: 0;
 	width: var(--media-native);
 	height: var(--media-native);
 	aspect-ratio: 1;
 	border-radius: var(--radius-control);
 	overflow: hidden;
-	background: var(--hero-card-media-bg);
+	background:
+		radial-gradient(ellipse at 50% 40%, rgb(255 255 255 / 0.04), transparent 55%),
+		var(--hero-card-media-bg);
+}
+
+.exercise-card--list .exercise-card-media::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background: radial-gradient(
+		ellipse at center,
+		transparent 42%,
+		rgb(0 0 0 / 0.22) 100%
+	);
+	z-index: 1;
+}
+
+html[data-theme='light'] .exercise-card--list .exercise-card-media::after {
+	background: radial-gradient(
+		ellipse at center,
+		transparent 48%,
+		rgb(18 20 26 / 0.08) 100%
+	);
 }
 
 .exercise-card--list .exercise-card-img {
+	position: relative;
+	z-index: 0;
 	width: 100%;
 	height: 100%;
 	object-fit: contain;
