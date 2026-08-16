@@ -176,7 +176,7 @@
 					{#if done.length > 0}
 						<ul
 							class="history-exercise__sets"
-							class:history-exercise__sets--grid={done.length >= 3}
+							class:history-exercise__sets--grid={done.length >= 4}
 						>
 							{#each done as set, i (i)}
 								<li class="history-exercise__set tabular-nums">

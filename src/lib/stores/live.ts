@@ -30,6 +30,10 @@ import {
 	readActiveSession,
 	writeActiveSession
 } from '$lib/storage/localSessionRepository';
+import {
+	clearSessionTombstone,
+	listSessionTombstones
+} from '$lib/storage/sessionTombstones';
 import { supabaseSessionRepository } from '$lib/storage/supabaseSessionRepository';
 import { refreshLocalCloudList } from '$lib/stores/cloudLocal';
 import { get, writable } from 'svelte/store';
@@ -69,24 +73,55 @@ function createLiveStore() {
 	async function refreshHistory() {
 		if (!browser) return;
 		try {
+			const deletedIds = listSessionTombstones();
+			const deleted = new Set(deletedIds);
+			// Scrub local copies that sync previously resurrected.
+			for (const id of deletedIds) {
+				try {
+					await localSessionRepository.remove(id);
+				} catch (err) {
+					console.warn('session tombstone local scrub failed', err);
+				}
+			}
+			let cloudSnapshot: WorkoutSession[] = [];
 			const result = await refreshLocalCloudList({
 				localList: () => localSessionRepository.list(),
 				cloudList: () => supabaseSessionRepository.list(),
-				merge: mergeWorkoutSessions,
+				merge: (local, cloud) => {
+					cloudSnapshot = cloud;
+					return mergeWorkoutSessions(local, cloud, deletedIds);
+				},
 				wantCloud: isSessionsCloudAvailable(),
 				label: 'sessions'
 			});
-			const finished = result.items.filter((x) => x.finishedAt);
+			// Always gate UI by tombstones (local-only / cloud-error paths skip merge).
+			const finished = result.items.filter((x) => x.finishedAt && !deleted.has(x.id));
 			store.update((s) => ({ ...s, history: finished }));
 
 			// Persist cloud-only finished rows so offline “last time” keeps working.
 			const localIds = new Set((await localSessionRepository.list()).map((s) => s.id));
 			for (const session of finished) {
-				if (!localIds.has(session.id)) {
+				if (deleted.has(session.id) || localIds.has(session.id)) continue;
+				try {
+					await localSessionRepository.save(session);
+				} catch (err) {
+					console.warn('session local mirror failed', err);
+				}
+			}
+
+			// Retry cloud deletes; clear tombstone only when cloud list no longer has the id.
+			if (isSessionsCloudAvailable() && deletedIds.length > 0) {
+				const stillInCloud = new Set(cloudSnapshot.map((s) => s.id));
+				for (const id of deletedIds) {
+					if (!stillInCloud.has(id)) {
+						clearSessionTombstone(id);
+						continue;
+					}
 					try {
-						await localSessionRepository.save(session);
+						await supabaseSessionRepository.remove(id);
 					} catch (err) {
-						console.warn('session local mirror failed', err);
+						console.warn('session tombstone cloud delete retry failed', err);
+						break;
 					}
 				}
 			}
@@ -158,6 +193,26 @@ function createLiveStore() {
 				return { ...s, session, restUntil };
 			});
 		},
+		/** Mark several sets in one write; rest timer uses the last index when completing. */
+		setSetsCompleted(exerciseIndex: number, setIndexes: number[], completed: boolean) {
+			store.update((s) => {
+				if (!s.session || setIndexes.length === 0) return s;
+				let session = s.session;
+				for (const si of setIndexes) {
+					session = updateLoggedSet(session, exerciseIndex, si, { completed });
+				}
+				let restUntil = s.restUntil;
+				if (completed) {
+					const lastSi = setIndexes[setIndexes.length - 1]!;
+					const sec = restSecAfterSet(session, exerciseIndex, lastSi);
+					restUntil = sec > 0 ? Date.now() + sec * 1000 : null;
+				} else {
+					restUntil = null;
+				}
+				persistActive(session, restUntil);
+				return { ...s, session, restUntil };
+			});
+		},
 		addSet(exerciseIndex: number, kind: SetKind = 'work') {
 			store.update((s) => {
 				if (!s.session) return s;
@@ -178,15 +233,6 @@ function createLiveStore() {
 			store.update((s) => {
 				persistActive(s.session, null);
 				return { ...s, restUntil: null };
-			});
-		},
-		/** Set remaining rest to an absolute duration (presets). */
-		setRestSeconds(sec: number) {
-			const n = Math.min(REST_SEC.max, Math.max(0, Math.round(sec)));
-			store.update((s) => {
-				const restUntil = n > 0 ? Date.now() + n * 1000 : null;
-				persistActive(s.session, restUntil);
-				return { ...s, restUntil };
 			});
 		},
 		/** Nudge active rest by delta seconds (±15). */
@@ -213,10 +259,15 @@ function createLiveStore() {
 			store.update((s) => ({ ...s, session: null, restUntil: null }));
 		},
 		async removeFromHistory(id: string) {
+			store.update((s) => ({
+				...s,
+				history: s.history.filter((x) => x.id !== id)
+			}));
 			await deleteSession(id);
 			await refreshHistory();
 		},
 		async clearHistory() {
+			store.update((s) => ({ ...s, history: [] }));
 			await clearFinishedSessionHistory();
 			await refreshHistory();
 		},
@@ -224,6 +275,7 @@ function createLiveStore() {
 			return lastPerformance(get(store).history, exerciseId);
 		},
 		async getFinishedSession(id: string): Promise<WorkoutSession | null> {
+			if (listSessionTombstones().includes(id)) return null;
 			const fromHistory = get(store).history.find((s) => s.id === id);
 			if (fromHistory?.finishedAt) return fromHistory;
 			const local = await localSessionRepository.get(id);

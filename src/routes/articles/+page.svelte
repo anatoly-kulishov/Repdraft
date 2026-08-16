@@ -50,7 +50,7 @@
 			/>
 		{:else}
 			<div class="articles-hub__grid">
-				{#each filtered as article (article.slug)}
+				{#each filtered as article (`${article.slug}:${article.locale}`)}
 					<ArticleCard {article} />
 				{/each}
 			</div>

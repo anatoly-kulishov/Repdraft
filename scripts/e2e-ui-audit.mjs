@@ -489,8 +489,8 @@ async function auditViewport(page, viewport) {
 			? pass(viewport, 'flow.live', page.url())
 			: fail(viewport, 'flow.live', page.url());
 
-		const weight = page.locator('input[aria-label*="ес"], input[aria-label*="eight"]').first();
-		const reps = page.locator('input[aria-label*="овт"], input[aria-label*="eps"]').first();
+		const weight = page.locator('input.live-set-weight').first();
+		const reps = page.locator('input.live-set-reps').first();
 		if ((await weight.count()) > 0 && (await reps.count()) > 0) {
 			await weight.fill('40');
 			await reps.fill('8');
@@ -503,9 +503,16 @@ async function auditViewport(page, viewport) {
 			} else {
 				pass(viewport, 'flow.complete-set', 'inputs filled');
 			}
+			const headDone = page.locator('button.live-set-head-done').first();
+			if ((await headDone.count()) > 0) {
+				pass(viewport, 'flow.done-all-control', 'header ✓ present');
+			} else {
+				fail(viewport, 'flow.done-all-control', 'header ✓ missing');
+			}
 		} else {
 			fail(viewport, 'flow.log-inputs', 'weight/reps inputs missing');
-			pass(viewport, 'flow.complete-set', 'skipped');
+			fail(viewport, 'flow.complete-set', 'skipped');
+			fail(viewport, 'flow.done-all-control', 'skipped');
 		}
 
 		const finish = page.getByRole('button', { name: /заверш|finish/i }).first();

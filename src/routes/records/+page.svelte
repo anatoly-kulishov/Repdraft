@@ -3,7 +3,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
-	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
+	import RecordsListSkeleton from '$lib/components/RecordsListSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
@@ -25,7 +25,14 @@
 	let busyId = $state<string | null>(null);
 	let lang = $derived($resolvedLocale);
 	let title = $derived(translate(lang, 'records.title'));
-	let pageReady = $derived($recordsReady && ($records.length === 0 || indexReady));
+	/** Avoid empty-state flash while cloud merge is still in flight (local may be []). */
+	let showSkeleton = $derived(
+		!$recordsReady ||
+			$recordsSync === 'loading' ||
+			$recordsSync === 'idle' ||
+			($recordsSync === 'stale' && $records.length === 0) ||
+			($records.length > 0 && !indexReady)
+	);
 	let listUncertain = $derived(isCloudListUncertain($recordsSync));
 
 	onMount(() => {
@@ -86,9 +93,7 @@
 						aria-hidden="true"
 					></span>
 				{:else if $auth.user}
-					{#if $recordsSync === 'stale'}
-						{translate(lang, 'sync.cloudLoading')}
-					{:else if $recordsSync === 'error'}
+					{#if $recordsSync === 'error'}
 						{translate(lang, 'records.local')}
 					{:else}
 						{translate(lang, 'records.cloud')}
@@ -104,10 +109,15 @@
 		</div>
 	</div>
 
-	<CloudSyncBanner state={$recordsSync} {lang} onRetry={() => void records.refresh()} />
+	<CloudSyncBanner
+		sync={$recordsSync}
+		{lang}
+		suppressed={showSkeleton}
+		onRetry={() => void records.refresh()}
+	/>
 
-	{#if !pageReady}
-		<PageSkeleton rows={4} />
+	{#if showSkeleton}
+		<RecordsListSkeleton rows={4} label={translate(lang, 'common.loading')} />
 	{:else if $records.length === 0}
 		<EmptyState
 			centered
