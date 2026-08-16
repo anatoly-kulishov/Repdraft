@@ -1,7 +1,7 @@
 <script lang="ts">
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
-	import { ICON_BUTTON, ICON_PRIMARY } from '$lib/components/icons/sizes';
+	import { ICON_PRIMARY } from '$lib/components/icons/sizes';
 	import { CircleCheck, ChevronRight } from '@lucide/svelte';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
@@ -25,6 +25,55 @@
 	} = $props();
 </script>
 
+{#snippet finishPrimary()}
+	<button
+		type="button"
+		class="btn-primary {layout === 'mobile'
+			? 'btn-block min-h-12'
+			: 'inline-flex min-h-11'} items-center justify-center gap-2"
+		disabled={finishing}
+		aria-busy={finishing}
+		onclick={onFinish}
+	>
+		{#if finishing}
+			<Spinner size="sm" block={false} />
+			{translate(lang, 'auth.wait')}
+		{:else}
+			<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
+			{translate(lang, 'live.finish')}
+		{/if}
+	</button>
+{/snippet}
+
+{#snippet secondaryRow()}
+	<div class="live-session-secondary" class:live-session-secondary--pair={canGoNext}>
+		<button
+			type="button"
+			class="btn-danger live-session-secondary__btn"
+			disabled={finishing}
+			onclick={onDiscard}
+		>
+			{translate(lang, 'live.discard')}
+		</button>
+		{#if canGoNext}
+			<button
+				type="button"
+				class="btn-secondary live-session-secondary__btn"
+				disabled={finishing}
+				aria-busy={finishing}
+				onclick={onFinish}
+			>
+				{#if finishing}
+					<Spinner size="sm" block={false} />
+					{translate(lang, 'auth.wait')}
+				{:else}
+					{translate(lang, 'live.finish')}
+				{/if}
+			</button>
+		{/if}
+	</div>
+{/snippet}
+
 {#if layout === 'desktop'}
 	<footer class="live-desktop-actions">
 		{#if canGoNext}
@@ -37,90 +86,28 @@
 				{translate(lang, 'live.nextExercise')}
 				<LucideIcon icon={ChevronRight} size={ICON_PRIMARY} />
 			</button>
-			<button
-				type="button"
-				class="btn-secondary inline-flex min-h-11 items-center gap-2"
-				disabled={finishing}
-				aria-busy={finishing}
-				onclick={onFinish}
-			>
-				{#if finishing}
-					<Spinner size="sm" block={false} />
-					{translate(lang, 'auth.wait')}
-				{:else}
-					<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
-					{translate(lang, 'live.finish')}
-				{/if}
-			</button>
 		{:else}
-			<button
-				type="button"
-				class="btn-primary inline-flex min-h-11 items-center gap-2"
-				disabled={finishing}
-				aria-busy={finishing}
-				onclick={onFinish}
-			>
-				{#if finishing}
-					<Spinner size="sm" block={false} />
-					{translate(lang, 'auth.wait')}
-				{:else}
-					<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
-					{translate(lang, 'live.finish')}
-				{/if}
-			</button>
+			{@render finishPrimary()}
 		{/if}
-		<button type="button" class="btn-ghost is-danger" disabled={finishing} onclick={onDiscard}>
-			{translate(lang, 'live.discard')}
-		</button>
+		{@render secondaryRow()}
 	</footer>
 {:else}
 	<div class="live-sticky-actions sticky-actions lg:hidden">
 		<div class="sticky-actions__inner">
 			{#if canGoNext}
-				<button type="button" class="btn-primary btn-block min-h-12 gap-2" disabled={finishing} onclick={onNext}>
-					{translate(lang, 'live.nextExercise')}
-					<LucideIcon icon={ChevronRight} size={ICON_PRIMARY} />
-				</button>
-				<button
-					type="button"
-					class="btn-secondary btn-block min-h-11 gap-2"
-					disabled={finishing}
-					aria-busy={finishing}
-					onclick={onFinish}
-				>
-					{#if finishing}
-						<Spinner size="sm" block={false} />
-						{translate(lang, 'auth.wait')}
-					{:else}
-						<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
-						{translate(lang, 'live.finish')}
-					{/if}
-				</button>
-			{:else}
 				<button
 					type="button"
 					class="btn-primary btn-block min-h-12 gap-2"
 					disabled={finishing}
-					aria-busy={finishing}
-					onclick={onFinish}
+					onclick={onNext}
 				>
-					{#if finishing}
-						<Spinner size="sm" block={false} />
-						{translate(lang, 'auth.wait')}
-					{:else}
-						<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
-						{translate(lang, 'live.finish')}
-					{/if}
+					{translate(lang, 'live.nextExercise')}
+					<LucideIcon icon={ChevronRight} size={ICON_PRIMARY} />
 				</button>
+			{:else}
+				{@render finishPrimary()}
 			{/if}
-			<button
-				type="button"
-				class="btn-link mx-auto !text-[var(--color-muted)]"
-				disabled={finishing}
-				onclick={onDiscard}
-			>
-				{translate(lang, 'live.discard')}
-			</button>
+			{@render secondaryRow()}
 		</div>
 	</div>
 {/if}

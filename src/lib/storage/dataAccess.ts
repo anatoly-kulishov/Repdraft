@@ -5,6 +5,11 @@ import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
 import { localRecordRepository } from './localRecordRepository';
 import { localSessionRepository, clearFinishedSessions } from './localSessionRepository';
 import { localWorkoutRepository } from './localWorkoutRepository';
+import {
+	addSessionTombstone,
+	addSessionTombstones,
+	listSessionTombstones
+} from './sessionTombstones';
 import { supabaseRecordRepository } from './supabaseRecordRepository';
 import {
 	isSessionsTableMissing,
@@ -62,6 +67,9 @@ export async function persistSession(session: WorkoutSession): Promise<void> {
 
 export async function deleteSession(id: string): Promise<void> {
 	await localSessionRepository.remove(id);
+	// Keep tombstone until refreshHistory confirms the row is gone from cloud.
+	// Supabase/PostgREST often returns OK with 0 rows when RLS blocks delete.
+	addSessionTombstone(id);
 	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
 	try {
 		await withTimeout(supabaseSessionRepository.remove(id), 4000);
@@ -73,6 +81,7 @@ export async function deleteSession(id: string): Promise<void> {
 export async function clearFinishedSessionHistory(): Promise<void> {
 	const finished = (await localSessionRepository.list()).filter((s) => s.finishedAt);
 	clearFinishedSessions();
+	addSessionTombstones(finished.map((s) => s.id));
 	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
 	for (const s of finished) {
 		try {
@@ -119,7 +128,8 @@ export async function migrateLocalToCloud(): Promise<void> {
 
 	if (!sessionsCloudOk || isSessionsTableUnavailable()) return;
 
-	const localSessions = await localSessionRepository.list();
+	const deleted = new Set(listSessionTombstones());
+	const localSessions = (await localSessionRepository.list()).filter((s) => !deleted.has(s.id));
 	void (async () => {
 		try {
 			const cloudSessions = await withTimeout(supabaseSessionRepository.list(), 2500);
@@ -129,9 +139,8 @@ export async function migrateLocalToCloud(): Promise<void> {
 			}
 			const cloudSessionIds = new Set(cloudSessions.map((s) => s.id));
 			for (const session of localSessions) {
-				if (!cloudSessionIds.has(session.id)) {
-					await supabaseSessionRepository.save(session);
-				}
+				if (deleted.has(session.id) || cloudSessionIds.has(session.id)) continue;
+				await supabaseSessionRepository.save(session);
 			}
 		} catch (err) {
 			markSessionsCloudDown(err);

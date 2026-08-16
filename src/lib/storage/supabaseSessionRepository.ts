@@ -112,13 +112,23 @@ export const supabaseSessionRepository: SessionRepository = {
 		if (tableMissing) return;
 		const supabase = getSupabase();
 		if (!supabase) throw new Error('errors.cloudOff');
-		const { error } = await supabase.from('workout_sessions').delete().eq('id', id);
+		const userId = await requireUserId();
+		// `.select('id')` surfaces RLS no-ops (0 rows) so callers can keep tombstones.
+		const { data, error } = await supabase
+			.from('workout_sessions')
+			.delete()
+			.eq('id', id)
+			.eq('user_id', userId)
+			.select('id');
 		if (error) {
 			if (isSessionsTableMissing(error)) {
 				markTableMissing();
 				return;
 			}
 			throw error;
+		}
+		if (!data?.length) {
+			console.warn('session cloud delete matched 0 rows', id);
 		}
 	}
 };

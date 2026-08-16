@@ -14,6 +14,7 @@
 	} from '$lib/domain/session';
 	import { planTargetSummary } from '$lib/domain/workout';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
+	import { filterArticles } from '$lib/domain/articles';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
 	import { greetingFirstName } from '$lib/domain/greetingName';
 	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
@@ -41,6 +42,7 @@
 	let hasPlans = $derived($plans.length > 0);
 	let hasSessionHistory = $derived(recent.length > 0);
 	let isFirstTimeHome = $derived(!hasPlans && !hasSessionHistory);
+	let homeArticles = $derived(filterArticles(data.articles, '', lang));
 	let isGuest = $derived($auth.ready && $auth.configured && !$auth.user);
 	let authHref = '/auth?next=%2F';
 	let pageReady = $derived(
@@ -203,10 +205,10 @@
 			{/if}
 
 			<div class="home-dashboard-mid">
-				{#if isFirstTimeHome && data.articles.length > 0}
+				{#if isFirstTimeHome && homeArticles.length > 0}
 					<div class="home-dashboard-teaser">
 						<ArticleTeaserList
-							articles={data.articles}
+							articles={homeArticles}
 							title={translate(lang, 'articles.homeTeaserTitle')}
 							limit={3}
 						/>

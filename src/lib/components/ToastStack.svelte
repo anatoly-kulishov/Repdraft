@@ -63,7 +63,7 @@
 	}
 
 	:global(body:has(.sticky-actions)) .toast-stack {
-		bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.4rem);
+		bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.65rem);
 	}
 
 	:global(body:has(.draft-dock)) .toast-stack {

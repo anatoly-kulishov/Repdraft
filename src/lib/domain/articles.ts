@@ -34,16 +34,26 @@ function escapeHtml(value: string): string {
 		.replace(/"/g, '&quot;');
 }
 
-/** ponytail: minimal markdown — headings, lists, paragraphs, links only. */
+const ORDERED_ITEM = /^(\d+)\.\s+(.*)$/;
+
+/** ponytail: minimal markdown — headings, ul/ol, paragraphs, links only. */
 export function renderArticleBody(markdown: string): string {
 	const lines = markdown.replace(/\r\n/g, '\n').split('\n');
 	const out: string[] = [];
-	let inList = false;
+	let listTag: 'ul' | 'ol' | null = null;
 
 	const closeList = () => {
-		if (inList) {
-			out.push('</ul>');
-			inList = false;
+		if (listTag) {
+			out.push(`</${listTag}>`);
+			listTag = null;
+		}
+	};
+
+	const openList = (tag: 'ul' | 'ol') => {
+		if (listTag !== tag) {
+			closeList();
+			out.push(`<${tag}>`);
+			listTag = tag;
 		}
 	};
 
@@ -59,11 +69,14 @@ export function renderArticleBody(markdown: string): string {
 			continue;
 		}
 		if (line.startsWith('- ')) {
-			if (!inList) {
-				out.push('<ul>');
-				inList = true;
-			}
+			openList('ul');
 			out.push(`<li>${inlineMarkdown(line.slice(2))}</li>`);
+			continue;
+		}
+		const ordered = ORDERED_ITEM.exec(line);
+		if (ordered) {
+			openList('ol');
+			out.push(`<li>${inlineMarkdown(ordered[2] ?? '')}</li>`);
 			continue;
 		}
 		closeList();
@@ -83,8 +96,14 @@ function inlineMarkdown(text: string): string {
 	return out;
 }
 
-export function articlesForExercise(articles: Article[], exerciseId: string): Article[] {
-	return articles.filter((a) => a.exerciseIds.includes(exerciseId));
+export function articlesForExercise(
+	articles: Article[],
+	exerciseId: string,
+	locale?: AppLocale
+): Article[] {
+	return articles.filter(
+		(a) => a.exerciseIds.includes(exerciseId) && (locale == null || a.locale === locale)
+	);
 }
 
 export function articleCoverExerciseId(article: Article): string | null {
@@ -111,20 +130,28 @@ export function filterArticles(
 	locale: AppLocale = 'ru'
 ): Article[] {
 	const q = query.trim().toLowerCase();
-	if (!q) return articles.filter((a) => a.locale === locale);
-	return articles.filter(
+	const forLocale = articles.filter((a) => a.locale === locale);
+	// Fallback keeps Guide usable if a locale pack is missing or still loading.
+	const pool = forLocale.length > 0 ? forLocale : articles.filter((a) => a.locale === 'ru');
+	if (!q) return pool;
+	return pool.filter(
 		(a) =>
-			a.locale === locale &&
-			(a.title.toLowerCase().includes(q) ||
-				a.excerpt.toLowerCase().includes(q) ||
-				a.tags.some((t) => t.toLowerCase().includes(q)))
+			a.title.toLowerCase().includes(q) ||
+			a.excerpt.toLowerCase().includes(q) ||
+			a.tags.some((t) => t.toLowerCase().includes(q))
 	);
 }
 
 export function runArticlesSelfCheck(): void {
-	const html = renderArticleBody('## Title\n\nHello **world**.\n\n- one\n- two');
+	const html = renderArticleBody('## Title\n\nHello **world**.\n\n- one\n- two\n\n1. first\n2. second');
 	if (!html.includes('<h2>Title</h2>') || !html.includes('<strong>world</strong>')) {
 		throw new Error('renderArticleBody failed');
+	}
+	if (!html.includes('<ul><li>one</li><li>two</li></ul>')) {
+		throw new Error('renderArticleBody ul failed');
+	}
+	if (!html.includes('<ol><li>first</li><li>second</li></ol>')) {
+		throw new Error('renderArticleBody ol failed');
 	}
 	const articles: Article[] = [
 		{
@@ -138,6 +165,22 @@ export function runArticlesSelfCheck(): void {
 		}
 	];
 	if (articlesForExercise(articles, '1').length !== 1) throw new Error('articlesForExercise failed');
+	if (articlesForExercise(articles, '1', 'en').length !== 0) {
+		throw new Error('articlesForExercise locale filter failed');
+	}
+	const withEn: Article[] = [
+		...articles,
+		{ ...articles[0]!, title: 'A-en', locale: 'en' }
+	];
+	if (filterArticles(withEn, '', 'en').length !== 1) {
+		throw new Error('filterArticles should return en only');
+	}
+	if (filterArticles(withEn, '', 'ru').length !== 1) {
+		throw new Error('filterArticles should return ru only');
+	}
+	if (filterArticles(articles, '', 'en').length !== 1) {
+		throw new Error('filterArticles should fall back to ru when en missing');
+	}
 	if (resolveArticleCoverIcon(articles[0]) !== 'book-open') {
 		throw new Error('resolveArticleCoverIcon failed');
 	}

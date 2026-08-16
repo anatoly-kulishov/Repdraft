@@ -1,9 +1,9 @@
 import { error } from '@sveltejs/kit';
-import { loadArticleBySlug } from '$lib/data/loadArticles';
+import { loadArticleVariantsBySlug } from '$lib/data/loadArticles';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ params, fetch }) => {
-	const article = await loadArticleBySlug(params.slug, fetch);
-	if (!article) error(404, 'Not found');
-	return { article };
+	const variants = await loadArticleVariantsBySlug(params.slug, fetch);
+	if (variants.length === 0) error(404, 'Not found');
+	return { variants };
 };

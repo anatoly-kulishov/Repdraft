@@ -25,7 +25,8 @@ const checks = [
 	'articles',
 	'cloudSync',
 	'prefs',
-	'exportData'
+	'exportData',
+	'pwaInstall'
 ];
 
 for (const name of checks) {

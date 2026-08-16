@@ -170,24 +170,28 @@
 				<span class="exercise-card-list-title line-clamp-2 font-semibold leading-snug text-[var(--color-ink)]">
 					{title}
 				</span>
-				<span
-					class="exercise-card-list-subline"
-					title={recordChips.length ? `${labelTarget(exercise.target, lang)} · ${recordTitle}` : labelTarget(exercise.target, lang)}
-				>
-					<span class="exercise-card-list-target">{labelTarget(exercise.target, lang)}</span>
-					{#if recordChips.length > 0}
+				{#if recordChips.length > 0}
+					<span
+						class="exercise-card-list-meta-stack"
+						title={`${labelTarget(exercise.target, lang)} · ${recordTitle}`}
+					>
+						<span class="exercise-card-list-target">{labelTarget(exercise.target, lang)}</span>
 						<span class="exercise-card-list-records" aria-label={recordTitle}>
 							{#each recordChips as chip, i (chip)}
 								<span
 									class="exercise-card-list-record"
-									class:is-note={i > 0 || recordChips.length === 1}
+									class:is-note={i > 0}
 								>
-									· {chip}
+									{chip}
 								</span>
 							{/each}
 						</span>
-					{/if}
-				</span>
+					</span>
+				{:else}
+					<span class="exercise-card-list-subline" title={labelTarget(exercise.target, lang)}>
+						<span class="exercise-card-list-target">{labelTarget(exercise.target, lang)}</span>
+					</span>
+				{/if}
 			</span>
 		</a>
 		{@render listActions()}
