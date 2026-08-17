@@ -8,6 +8,8 @@
 		REPS,
 		WEIGHT_KG
 	} from '$lib/domain/inputLimits';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { createEmptyRecord, formatPersonalRecord, sanitizePersonalRecord } from '$lib/domain/records';
 	import type { PersonalRecord } from '$lib/domain/types';
@@ -15,6 +17,7 @@
 	import { records, recordsReady } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import { ChevronDown } from '@lucide/svelte';
 	import { tick } from 'svelte';
 
 	let { exerciseId }: { exerciseId: string } = $props();
@@ -33,6 +36,7 @@
 	let dirty = false;
 	let invalidWeight = $state(false);
 	let invalidReps = $state(false);
+	let previewOpen = $state(false);
 
 	function markDirty() {
 		dirty = true;
@@ -80,6 +84,7 @@
 			boundId = id;
 			dirty = false;
 			syncedKey = '';
+			previewOpen = false;
 		}
 		const existing = records.get(id);
 		const next = existing ? { ...existing } : createEmptyRecord(id);
@@ -192,6 +197,7 @@
 			lang
 		)
 	);
+	let canExpandPreview = $derived(noteText.trim().length > 0);
 </script>
 
 <section class="panel">
@@ -201,12 +207,25 @@
 	</div>
 
 	{#if hasSaved && preview}
-		<p
-			class="mb-3 min-w-0 truncate rounded-lg bg-[color-mix(in_srgb,var(--color-accent)_12%,white)] px-3 py-2 text-sm font-semibold text-[var(--color-accent)]"
-			title={preview}
-		>
-			{translate(lang, 'pr.now', { value: preview })}
-		</p>
+		{#if canExpandPreview}
+			<button
+				type="button"
+				class="pr-now-chip is-button"
+				class:is-open={previewOpen}
+				aria-expanded={previewOpen}
+				title={translate(lang, previewOpen ? 'pr.nowCollapse' : 'pr.nowExpand')}
+				onclick={() => (previewOpen = !previewOpen)}
+			>
+				<span class="pr-now-chip__text">{translate(lang, 'pr.now', { value: preview })}</span>
+				<span class="pr-now-chip__chevron" aria-hidden="true">
+					<LucideIcon icon={ChevronDown} size={ICON_SMALL} />
+				</span>
+			</button>
+		{:else}
+			<p class="pr-now-chip" title={preview}>
+				<span class="pr-now-chip__text">{translate(lang, 'pr.now', { value: preview })}</span>
+			</p>
+		{/if}
 	{/if}
 
 	<div class="grid min-w-0 grid-cols-2 gap-3">

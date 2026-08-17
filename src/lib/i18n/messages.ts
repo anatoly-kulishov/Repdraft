@@ -37,7 +37,9 @@ const ru: Dict = {
 	'settings.exportFail': 'Не удалось выгрузить данные',
 	'settings.restSound': 'Звук отдыха',
 	'settings.restSoundHint':
-		'Сигнал и вибрация по окончании отдыха. На iPhone выключите беззвучный режим, иначе может сработать только вибрация.',
+		'Сигнал и вибрация, когда отдых закончился. Громкость и сила вибрации: настройки телефона.',
+	'settings.restSoundHintIos':
+		'Сигнал, когда отдых закончился. Громкость: кнопки телефона. На iPhone выключите беззвучный режим. Вибрации в Safari нет.',
 	'home.title': 'Главная',
 	'home.readyTitle': 'Готов к тренировке?',
 	'home.readyLead': 'Выберите план и начните сессию.',
@@ -471,6 +473,8 @@ const ru: Dict = {
 	'pr.title': 'Личный рекорд',
 	'pr.hint': 'По желанию',
 	'pr.now': 'Сейчас: {value}',
+	'pr.nowExpand': 'Показать заметку целиком',
+	'pr.nowCollapse': 'Свернуть заметку',
 	'pr.weight': 'Вес, кг',
 	'pr.reps': 'Повторы',
 	'pr.note': 'Заметка',
@@ -637,7 +641,9 @@ const en: Dict = {
 	'settings.exportFail': 'Could not export data',
 	'settings.restSound': 'Rest timer sound',
 	'settings.restSoundHint':
-		'Chime and vibration when rest ends. On iPhone, turn off Silent Mode or you may only feel the vibration.',
+		'Chime and vibration when rest ends. Volume and vibration strength are the phone settings.',
+	'settings.restSoundHintIos':
+		'Chime when rest ends. Volume is the phone buttons. On iPhone, turn off Silent Mode. Safari has no vibration.',
 	'home.title': 'Home',
 	'home.readyTitle': 'Ready to train?',
 	'home.readyLead': 'Pick a plan and start your session.',
@@ -1070,6 +1076,8 @@ const en: Dict = {
 	'pr.title': 'Personal record',
 	'pr.hint': 'Optional',
 	'pr.now': 'Now: {value}',
+	'pr.nowExpand': 'Show full note',
+	'pr.nowCollapse': 'Collapse note',
 	'pr.weight': 'Weight, kg',
 	'pr.reps': 'Reps',
 	'pr.note': 'Note',

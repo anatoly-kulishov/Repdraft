@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import {
@@ -24,6 +25,7 @@
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import DataExportSection from '$lib/components/DataExportSection.svelte';
 	import { GREETING_NAME_MAX } from '$lib/domain/greetingName';
+	import { isIosDevice } from '$lib/domain/pwaInstall';
 	import type { AppTheme } from '$lib/domain/theme';
 	import { appTheme } from '$lib/stores/theme';
 	import { restSoundEnabled } from '$lib/stores/prefs';
@@ -53,6 +55,17 @@
 	}
 
 	let lang = $derived($resolvedLocale);
+	let restSoundHintKey = $derived(
+		browser &&
+			isIosDevice({
+				ua: navigator.userAgent,
+				platform: navigator.platform,
+				maxTouchPoints: navigator.maxTouchPoints,
+				coarsePointer: window.matchMedia('(pointer: coarse)').matches
+			})
+			? 'settings.restSoundHintIos'
+			: 'settings.restSoundHint'
+	);
 	let deleteConfirmWord = $derived(translate(lang, 'auth.deleteConfirmWord'));
 	let deleteConfirmReady = $derived(deleteConfirmText.trim() === deleteConfirmWord);
 	let nextPath = $derived(safeRedirectPath($page.url.searchParams.get('next')));
@@ -502,7 +515,7 @@
 				<label class="auth-pref-toggle">
 					<span class="auth-pref-toggle__copy">
 						<span class="auth-pref-toggle__label">{translate(lang, 'settings.restSound')}</span>
-						<span class="auth-pref-toggle__hint">{translate(lang, 'settings.restSoundHint')}</span>
+						<span class="auth-pref-toggle__hint">{translate(lang, restSoundHintKey)}</span>
 					</span>
 					<input
 						type="checkbox"
