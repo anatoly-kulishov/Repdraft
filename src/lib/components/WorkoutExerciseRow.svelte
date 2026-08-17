@@ -44,12 +44,11 @@
 </script>
 
 <article
-	class="panel !p-3"
-	class:ring-2={inGroup}
-	class:ring-[color-mix(in_srgb,var(--color-accent)_35%,transparent)]={inGroup}
-	class:!rounded-b-none={groupRole === 'first' || groupRole === 'middle'}
-	class:!rounded-t-none={groupRole === 'middle' || groupRole === 'last'}
-	class:!border-b-0={groupRole === 'first' || groupRole === 'middle'}
+	class="workout-ex-row"
+	class:workout-ex-row--grouped={inGroup}
+	class:workout-ex-row--first={groupRole === 'first'}
+	class:workout-ex-row--middle={groupRole === 'middle'}
+	class:workout-ex-row--last={groupRole === 'last'}
 >
 	{#if groupRole === 'first'}
 		<div class="superset-bar">
@@ -107,42 +106,77 @@
 			</label>
 		{/if}
 		{#if meta}
-			<img
-				src={`/${meta.image}`}
-				alt=""
-				width="120"
-				height="120"
-				class="workout-ex-head__media"
-			/>
-			<a
-				class="workout-ex-head__title"
-				href={`/exercise/${item.exerciseId}`}
-			>
-				{exerciseName(meta, lang)}
-			</a>
+			<span class="media-well workout-ex-head__media">
+				<img src={`/${meta.image}`} alt="" width="120" height="120" />
+			</span>
+			<div class="workout-ex-head__copy">
+				<a class="workout-ex-head__title" href={`/exercise/${item.exerciseId}`}>
+					{exerciseName(meta, lang)}
+				</a>
+				{#if inGroup}
+					<label class="workout-ex-chip">
+						<span>{translate(lang, 'builder.reps')}</span>
+						<input
+							class="field"
+							type="text"
+							inputmode="numeric"
+							autocomplete="off"
+							value={item.reps}
+							onchange={(e) =>
+								onupdate({
+									reps: coerceReps((e.currentTarget as HTMLInputElement).value, REPS) ?? REPS.min
+								})}
+						/>
+					</label>
+				{:else}
+					<div class="workout-ex-fields">
+						<label class="workout-ex-chip">
+							<span>{translate(lang, 'builder.sets')}</span>
+							<input
+								class="field"
+								type="text"
+								inputmode="numeric"
+								autocomplete="off"
+								value={item.sets}
+								onchange={(e) => onupdate({ sets: coerceSets((e.currentTarget as HTMLInputElement).value) })}
+							/>
+						</label>
+						<span class="workout-ex-fields__times" aria-hidden="true">×</span>
+						<label class="workout-ex-chip">
+							<span>{translate(lang, 'builder.reps')}</span>
+							<input
+								class="field"
+								type="text"
+								inputmode="numeric"
+								autocomplete="off"
+								value={item.reps}
+								onchange={(e) =>
+									onupdate({
+										reps: coerceReps((e.currentTarget as HTMLInputElement).value, REPS) ?? REPS.min
+									})}
+							/>
+						</label>
+						<label class="workout-ex-chip workout-ex-chip--rest">
+							<span>{translate(lang, 'builder.rest')}</span>
+							<input
+								class="field"
+								type="text"
+								inputmode="numeric"
+								autocomplete="off"
+								value={item.restSec}
+								onchange={(e) =>
+									onupdate({ restSec: coerceRestSec((e.currentTarget as HTMLInputElement).value) })}
+							/>
+						</label>
+					</div>
+				{/if}
+			</div>
 		{:else}
-			<div class="workout-ex-head__media animate-pulse bg-[var(--color-surface-muted)]" aria-hidden="true"></div>
-			<div class="min-w-0 flex-1 space-y-2" aria-busy="true">
+			<span class="media-well workout-ex-head__media is-placeholder animate-pulse" aria-hidden="true"></span>
+			<div class="workout-ex-head__copy" aria-busy="true">
 				<div class="h-4 w-3/4 max-w-[14rem] animate-pulse rounded bg-[var(--color-surface-muted)]"></div>
 				<span class="sr-only">{translate(lang, 'common.loading')}</span>
 			</div>
-		{/if}
-
-		{#if inGroup}
-			<label class="superset-reps">
-				<span>{translate(lang, 'builder.reps')}</span>
-				<input
-					class="field"
-					type="text"
-					inputmode="numeric"
-					autocomplete="off"
-					value={item.reps}
-					onchange={(e) =>
-						onupdate({
-							reps: coerceReps((e.currentTarget as HTMLInputElement).value, REPS) ?? REPS.min
-						})}
-				/>
-			</label>
 		{/if}
 
 		<div class="workout-ex-head__actions">
@@ -177,46 +211,4 @@
 			</button>
 		</div>
 	</div>
-
-	{#if !inGroup}
-		<div class="workout-ex-fields">
-			<label class="field-label">
-				{translate(lang, 'builder.sets')}
-				<input
-					class="field mt-1"
-					type="text"
-					inputmode="numeric"
-					autocomplete="off"
-					value={item.sets}
-					onchange={(e) => onupdate({ sets: coerceSets((e.currentTarget as HTMLInputElement).value) })}
-				/>
-			</label>
-			<label class="field-label">
-				{translate(lang, 'builder.reps')}
-				<input
-					class="field mt-1"
-					type="text"
-					inputmode="numeric"
-					autocomplete="off"
-					value={item.reps}
-					onchange={(e) =>
-						onupdate({
-							reps: coerceReps((e.currentTarget as HTMLInputElement).value, REPS) ?? REPS.min
-						})}
-				/>
-			</label>
-			<label class="field-label">
-				{translate(lang, 'builder.rest')}
-				<input
-					class="field mt-1"
-					type="text"
-					inputmode="numeric"
-					autocomplete="off"
-					value={item.restSec}
-					onchange={(e) =>
-						onupdate({ restSec: coerceRestSec((e.currentTarget as HTMLInputElement).value) })}
-				/>
-			</label>
-		</div>
-	{/if}
 </article>

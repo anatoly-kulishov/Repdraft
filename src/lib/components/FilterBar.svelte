@@ -14,8 +14,7 @@
 		bodyParts,
 		equipment,
 		targets,
-		lockBodyPart = false,
-		hideTargetFilter = false
+		lockBodyPart = false
 	}: {
 		filters: ExerciseFilters;
 		bodyParts: string[];
@@ -25,8 +24,6 @@
 		targets: string[];
 		/** Zone route: body part comes from URL, not the facet control. */
 		lockBodyPart?: boolean;
-		/** Zone target chips replace the muscle select. */
-		hideTargetFilter?: boolean;
 	} = $props();
 
 	let filtersOpen = $state(false);
@@ -130,20 +127,18 @@
 					{/each}
 				</select>
 			</label>
-			{#if !hideTargetFilter}
-				<label class="field-label">
-					{translate(lang, 'catalog.muscle')}
-					<select class="field mt-1 w-full" bind:value={filters.target}>
-						<option value="all">{translate(lang, 'catalog.all')}</option>
-						{#if filters.target !== 'all' && !targets.includes(filters.target)}
-							<option value={filters.target}>{labelTarget(filters.target, lang)}</option>
-						{/if}
-						{#each targets as item (item)}
-							<option value={item}>{labelTarget(item, lang)}</option>
-						{/each}
-					</select>
-				</label>
-			{/if}
+			<label class="field-label">
+				{translate(lang, 'catalog.muscle')}
+				<select class="field mt-1 w-full" bind:value={filters.target}>
+					<option value="all">{translate(lang, 'catalog.all')}</option>
+					{#if filters.target !== 'all' && !targets.includes(filters.target)}
+						<option value={filters.target}>{labelTarget(filters.target, lang)}</option>
+					{/if}
+					{#each targets as item (item)}
+						<option value={item}>{labelTarget(item, lang)}</option>
+					{/each}
+				</select>
+			</label>
 		</div>
 	</div>
 </div>

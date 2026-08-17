@@ -23,7 +23,7 @@
 
 ## Implementation audit (living)
 
-Last reviewed: 2026-08-15 (branch v0.9.0 export / wake lock / prefill)
+Last reviewed: 2026-08-17 (branch v0.10.3 home / live / catalog / builder polish)
 
 ### Satisfies P0 (foundation)
 
@@ -33,7 +33,7 @@ Last reviewed: 2026-08-15 (branch v0.9.0 export / wake lock / prefill)
 | Desktop sidebar + mobile tabbar (Home / Workouts / Exercises) | Yes — tabbar on `/catalog/*` browse; focused on live/builder/detail |
 | Lucide icon system | Yes — `@lucide/svelte`, `LucideIcon` |
 | Brand mark (no dumbbell cliché) | Yes — `src/lib/assets/brand/` |
-| Plans CRUD, builder, picker | Yes — `/builder`; add exercise opens `/catalog/all` |
+| Plans CRUD, builder, picker | Yes — `/builder` compact grouped list; add opens `/catalog/all` |
 | Live session, autosave active workout | Yes — `live` store + `localSessionRepository` |
 | Finish → summary → history | Yes — sticky Done on summary mobile; history list + detail |
 | Workout preview before live | Yes — `/workouts/[planId]` → Start → `/live/[planId]` |
@@ -46,7 +46,7 @@ Last reviewed: 2026-08-15 (branch v0.9.0 export / wake lock / prefill)
 
 | Item | Spec § | Notes |
 |------|--------|--------|
-| Home polish | 14–15 | Hero-only focus; records on `/records` |
+| Home polish | 14–15 | Plans + recent only; records on `/records` (v0.10.3) |
 | Exercise detail history tab | 22 | P1 — session history on detail |
 | Shared WorkoutCard component | 9 | Optional refactor |
 | Rest timer sound/haptics | 26–30 | Prefs + chime/vibrate; Wake Lock on live (v0.9.0) |
