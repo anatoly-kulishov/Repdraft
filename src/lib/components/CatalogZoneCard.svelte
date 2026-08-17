@@ -20,14 +20,14 @@
 
 <a {href} class="zone-card">
 	{#if coverImage}
-		<div class="zone-card__media-wrap" aria-hidden="true">
+		<div class="zone-card__media-wrap media-well" aria-hidden="true">
 			<img
 				class="zone-card__media"
 				src={`/${coverImage}`}
 				alt=""
 				width="180"
 				height="180"
-				sizes="(max-width: 767px) 120px, (min-width: 1280px) 116px, 108px"
+				sizes="(min-width: 1280px) 7.25rem, (min-width: 1024px) 6.75rem, 120px"
 				loading="lazy"
 				decoding="async"
 			/>

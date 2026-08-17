@@ -1,7 +1,5 @@
 <script lang="ts">
-	import ArticleTeaserList from '$lib/components/ArticleTeaserList.svelte';
 	import HomePageSkeleton from '$lib/components/HomePageSkeleton.svelte';
-	import HomeRecordsWidget from '$lib/components/HomeRecordsWidget.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
@@ -14,7 +12,6 @@
 	} from '$lib/domain/session';
 	import { planTargetSummary } from '$lib/domain/workout';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
-	import { filterArticles } from '$lib/domain/articles';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
 	import { greetingFirstName } from '$lib/domain/greetingName';
 	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
@@ -23,12 +20,9 @@
 	import { greetingName } from '$lib/stores/greetingName';
 	import { live } from '$lib/stores/live';
 	import { plans } from '$lib/stores/plans';
-	import { records } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { onMount } from 'svelte';
 	import { ChevronRight, LogIn, Plus } from '@lucide/svelte';
-
-	let { data } = $props();
 
 	let lang = $derived($resolvedLocale);
 	let active = $derived($live.session);
@@ -42,15 +36,10 @@
 	let hasPlans = $derived($plans.length > 0);
 	let hasSessionHistory = $derived(recent.length > 0);
 	let isFirstTimeHome = $derived(!hasPlans && !hasSessionHistory);
-	let homeArticles = $derived(filterArticles(data.articles, '', lang));
 	let isGuest = $derived($auth.ready && $auth.configured && !$auth.user);
 	let authHref = '/auth?next=%2F';
 	let pageReady = $derived(
-		$auth.ready &&
-			$auth.dataBootstrap &&
-			$live.ready &&
-			historyReady &&
-			indexReady
+		$auth.ready && $auth.dataBootstrap && $live.ready && historyReady && indexReady
 	);
 
 	let isCreateHome = $derived(!hasPlans);
@@ -118,8 +107,7 @@
 					}),
 				live.refreshHistory().finally(() => {
 					historyReady = true;
-				}),
-				records.refresh()
+				})
 			]);
 		})();
 	});
@@ -201,20 +189,32 @@
 							</a>
 						</div>
 					</div>
+					{#if !hasSessionHistory}
+						<nav class="home-guest-next">
+							<a class="panel home-guest-next__card" href="/exercises">
+								<span class="home-guest-next__title">{translate(lang, 'nav.exercises')}</span>
+								<span class="home-guest-next__hint">{translate(lang, 'home.guestBrowseHint')}</span>
+								<LucideIcon
+									icon={ChevronRight}
+									size={ICON_SMALL}
+									class="home-guest-next__chevron"
+								/>
+							</a>
+							<a class="panel home-guest-next__card" href={BUILDER_NEW_HREF}>
+								<span class="home-guest-next__title">{translate(lang, 'workouts.create')}</span>
+								<span class="home-guest-next__hint">{translate(lang, 'home.guestCreateHint')}</span>
+								<LucideIcon
+									icon={ChevronRight}
+									size={ICON_SMALL}
+									class="home-guest-next__chevron"
+								/>
+							</a>
+						</nav>
+					{/if}
 				</div>
 			{/if}
 
 			<div class="home-dashboard-mid">
-				{#if isFirstTimeHome && homeArticles.length > 0}
-					<div class="home-dashboard-teaser">
-						<ArticleTeaserList
-							articles={homeArticles}
-							title={translate(lang, 'articles.homeTeaserTitle')}
-							limit={3}
-						/>
-					</div>
-				{/if}
-
 				{#if hasPlans || (!isGuest && !hasPlans)}
 					<div class="home-dashboard-row">
 						{#if hasPlans}
@@ -278,6 +278,7 @@
 					</div>
 				{/if}
 
+				{#if recent.length > 0 || (!isGuest && !hasPlans)}
 				<div class="home-dashboard-aside">
 					{#if recent.length > 0}
 						<div class="home-section">
@@ -308,7 +309,7 @@
 								{/each}
 							</ul>
 						</div>
-					{:else if !isGuest && !hasPlans}
+					{:else}
 						<div class="home-section">
 							<div class="home-section-head">
 								<h2 class="section-title">{translate(lang, 'home.recentPlaceholderTitle')}</h2>
@@ -320,26 +321,8 @@
 							</div>
 						</div>
 					{/if}
-
-					{#if !isGuest || hasSessionHistory || $records.length > 0}
-						<HomeRecordsWidget {indexById} limit={3} />
-					{/if}
-
-					{#if isGuest && !hasSessionHistory}
-						<div class="home-section home-guest-next">
-							<a class="home-guest-next__card panel" href="/exercises">
-								<span class="home-guest-next__title">{translate(lang, 'nav.exercises')}</span>
-								<span class="home-guest-next__hint">{translate(lang, 'home.guestBrowseHint')}</span>
-								<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="home-guest-next__chevron" />
-							</a>
-							<a class="home-guest-next__card panel" href={BUILDER_NEW_HREF}>
-								<span class="home-guest-next__title">{translate(lang, 'workouts.create')}</span>
-								<span class="home-guest-next__hint">{translate(lang, 'home.guestCreateHint')}</span>
-								<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="home-guest-next__chevron" />
-							</a>
-						</div>
-					{/if}
 				</div>
+				{/if}
 			</div>
 		</div>
 	{/if}

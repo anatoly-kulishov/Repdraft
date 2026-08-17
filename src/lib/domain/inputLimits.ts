@@ -154,6 +154,13 @@ export function runInputLimitsSelfCheck(): void {
 	if (coerceReps('0', REPS) !== 1) throw new Error('PR reps clamp min to 1');
 	if (coerceReps('999', REPS) !== 500) throw new Error('coerceReps clamp max');
 	if (coerceReps('x') !== null) throw new Error('coerceReps junk');
+	if (filterRepsInput('8', LIVE_REPS, '') !== '8') throw new Error('filterRepsInput keep');
+	if (filterRepsInput('5001', LIVE_REPS, '500') !== '500') {
+		throw new Error('filterRepsInput reject extra digit');
+	}
+	if (filterRepsInput('501', LIVE_REPS, '') !== '50') {
+		throw new Error('filterRepsInput longest valid prefix');
+	}
 
 	if (coerceWeightKg('-11') !== null) throw new Error('coerceWeightKg rejects negative');
 	if (filterWeightInput('-11', '') !== '11') {

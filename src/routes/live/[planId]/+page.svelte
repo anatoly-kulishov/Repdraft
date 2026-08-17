@@ -8,7 +8,13 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
-	import { coerceReps, coerceWeightKg, filterWeightInput, LIVE_REPS } from '$lib/domain/inputLimits';
+	import {
+		coerceReps,
+		coerceWeightKg,
+		filterRepsInput,
+		filterWeightInput,
+		LIVE_REPS
+	} from '$lib/domain/inputLimits';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { completedSetCount, nextFocusAfterSetComplete, totalSetCount } from '$lib/domain/session';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
@@ -222,13 +228,19 @@
 			invalidSetIndex = null;
 			invalidKind = null;
 		}
-		if (!value.trim()) {
+		const prev = session?.exercises[ei]?.sets[si]?.reps;
+		const filtered = filterRepsInput(value, LIVE_REPS, prev != null ? String(prev) : '');
+		if (!filtered) {
 			live.patchSet(ei, si, { reps: null });
-			return;
+			return filtered;
 		}
-		const n = coerceReps(value, LIVE_REPS);
-		if (n == null) return;
+		const n = coerceReps(filtered, LIVE_REPS);
+		if (n == null) {
+			live.patchSet(ei, si, { reps: null });
+			return '';
+		}
 		live.patchSet(ei, si, { reps: n });
+		return filtered;
 	}
 
 	function onComplete(ei: number, si: number) {

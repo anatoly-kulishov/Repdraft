@@ -1,6 +1,5 @@
 <script lang="ts">
 	import CatalogExerciseListSkeleton from '$lib/components/CatalogExerciseListSkeleton.svelte';
-	import CatalogListZoneChips from '$lib/components/CatalogListZoneChips.svelte';
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
@@ -34,8 +33,7 @@
 		initialBodyPart = '',
 		listOnMobile = true,
 		gridOnDesktop = false,
-		savedOnly = false,
-		hideTargetFilter = false
+		savedOnly = false
 	}: {
 		bodyParts: string[];
 		equipment: string[];
@@ -52,8 +50,6 @@
 		/** List on phone, grid from 768px (catalog all/zone and builder add flow). */
 		gridOnDesktop?: boolean;
 		savedOnly?: boolean;
-		/** Zone chips replace the muscle facet in FilterBar. */
-		hideTargetFilter?: boolean;
 	} = $props();
 
 	function filtersFromUrl(): ExerciseFilters {
@@ -91,9 +87,7 @@
 	let zoneBodyParts = $derived(
 		zoneLocked ? catalogZoneBodyParts(presetBodyPart) : []
 	);
-	/** Zone chips on /catalog/all only — zone pages already have a zone context. */
-	let showZoneChips = $derived(!savedOnly && !zoneLocked);
-	let filterLockBodyPart = $derived(zoneLocked || showZoneChips);
+	let filterLockBodyPart = $derived(zoneLocked);
 
 	let lang = $derived($resolvedLocale);
 	let detailFrom = $derived(`${$page.url.pathname}${$page.url.search}`);
@@ -315,22 +309,12 @@
 
 <div class="catalog-list-layout">
 	<div class="catalog-list-layout__filters">
-		{#if showZoneChips}
-			<CatalogListZoneChips
-				{bodyParts}
-				activeZone={zoneLocked ? presetBodyPart : 'all'}
-				equipment={filters.equipment}
-				target={filters.target}
-				query={filters.query}
-			/>
-		{/if}
 		<FilterBar
 			bind:filters
 			{bodyParts}
 			equipment={equipmentOptions}
 			targets={targetOptions}
 			lockBodyPart={filterLockBodyPart}
-			{hideTargetFilter}
 		/>
 	</div>
 

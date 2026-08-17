@@ -228,7 +228,7 @@
 	{@const showGuide = mode === 'ios-safari' || mode === 'ios-chrome' || (mode === 'desktop' && !canInstall)}
 	{@const showInstall = mode === 'prompt' || (mode === 'desktop' && canInstall)}
 	<div
-		class="pwa-install panel"
+		class="pwa-install"
 		class:pwa-install--prompt={showInstall}
 		class:pwa-install--guide={showGuide}
 		role="region"
@@ -242,7 +242,7 @@
 			{#if showInstall}
 				<button
 					type="button"
-					class="btn-primary pwa-install__action min-h-11"
+					class="btn-secondary pwa-install__action min-h-11"
 					onclick={() => void install()}
 				>
 					{translate(lang, 'pwa.installAction')}
