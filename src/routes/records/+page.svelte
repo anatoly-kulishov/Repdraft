@@ -144,18 +144,14 @@
 						<div class="records-list-card">
 							<a class="records-list-main" href={`/exercise/${record.exerciseId}`}>
 								{#if meta}
-									<img
-										src={`/${meta.image}`}
-										alt=""
-										width="80"
-										height="80"
-										class="records-preview__thumb"
-									/>
+									<span class="media-well records-preview__thumb">
+										<img src={`/${meta.image}`} alt="" width="120" height="120" />
+									</span>
 								{:else}
-									<div
-										class="records-preview__thumb records-preview__thumb--empty animate-pulse"
+									<span
+										class="media-well records-preview__thumb records-preview__thumb--empty animate-pulse"
 										aria-hidden="true"
-									></div>
+									></span>
 								{/if}
 								<span class="records-preview__text">
 									<span class="records-preview__name">{recordTitle}</span>

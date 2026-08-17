@@ -50,8 +50,8 @@
 
 	.records-skeleton__thumb {
 		flex-shrink: 0;
-		width: 4.5rem;
-		height: 4.5rem;
+		width: var(--media-native);
+		height: var(--media-native);
 		border-radius: calc(var(--radius-control) + 2px);
 		background: var(--color-surface-muted);
 		animation: records-skeleton-shimmer 1.1s ease-in-out infinite;

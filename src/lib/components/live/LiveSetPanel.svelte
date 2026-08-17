@@ -40,7 +40,7 @@
 		nextInSupersetName: string | null;
 		activeSetProgress: { current: number; total: number; allDone: boolean } | null;
 		onWeight: (setIndex: number, value: string) => string;
-		onReps: (setIndex: number, value: string) => void;
+		onReps: (setIndex: number, value: string) => string;
 		onComplete: (setIndex: number) => void;
 		onUncomplete: (setIndex: number) => void;
 		onToggleAllComplete: () => void;
@@ -95,6 +95,7 @@
 	let allSetsDone = $derived(
 		exercise.sets.length > 0 && exercise.sets.every((s) => s.completed)
 	);
+	let currentSetIndex = $derived(exercise.sets.findIndex((s) => !s.completed));
 	let lastCopy = $derived(lastVars(exercise.exerciseId));
 	let canApplyLast = $derived(
 		lastCopy != null && exercise.sets.some((s) => !s.completed)
@@ -190,6 +191,7 @@
 			<li
 				class="live-set-row"
 				class:is-done={set.completed}
+				class:is-current={currentSetIndex === si}
 				class:is-just-done={justDoneSetIndex === si}
 				class:live-set-row--with-remove={canRemoveSet}
 			>
@@ -219,7 +221,11 @@
 					autocomplete="off"
 					aria-label={`${translate(lang, 'live.reps')} ${si + 1}`}
 					value={set.reps ?? ''}
-					oninput={(e) => onReps(si, e.currentTarget.value)}
+					oninput={(e) => {
+						const el = e.currentTarget;
+						const next = onReps(si, el.value);
+						if (el.value !== next) el.value = next;
+					}}
 				/>
 				{#if set.completed}
 					<button

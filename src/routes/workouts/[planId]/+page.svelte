@@ -129,15 +129,16 @@
 							class="workout-preview-row"
 							href={`/exercise/${meta.id}?from=${encodeURIComponent(`/workouts/${plan.id}`)}`}
 						>
-							<img
-								class="workout-preview-thumb"
-								src={`/${meta.image}`}
-								alt=""
-								width="56"
-								height="56"
-								loading="lazy"
-								decoding="async"
-							/>
+							<span class="media-well workout-preview-thumb">
+								<img
+									src={`/${meta.image}`}
+									alt=""
+									width="120"
+									height="120"
+									loading="lazy"
+									decoding="async"
+								/>
+							</span>
 							<div class="workout-preview-row-body">
 								<p class="workout-preview-row-title">{exerciseName(meta, lang)}</p>
 								<p class="workout-preview-row-sub tabular-nums">
@@ -160,7 +161,7 @@
 						</a>
 					{:else}
 						<div class="workout-preview-row is-static">
-							<span class="workout-preview-thumb is-placeholder" aria-hidden="true"></span>
+							<span class="media-well workout-preview-thumb is-placeholder" aria-hidden="true"></span>
 							<div class="workout-preview-row-body">
 								<p class="workout-preview-row-title">{item.exerciseId}</p>
 								<p class="workout-preview-row-sub tabular-nums">{item.sets} × {item.reps}</p>

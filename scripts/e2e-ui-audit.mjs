@@ -109,17 +109,10 @@ async function auditViewport(page, viewport) {
 				: fail(viewport, 'home.tabbar-hidden', 'tabbar still visible');
 		}
 
-		// Wait for client bootstrap so records widget can appear
-		await page.waitForTimeout(800);
 		const recordsSection = page.locator('.home-section--records');
-		if ((await recordsSection.count()) > 0) {
-			(await recordsSection.first().isVisible())
-				? pass(viewport, 'home.records-widget', 'visible')
-				: fail(viewport, 'home.records-widget', 'present but hidden');
-		} else {
-			// still ok if skeleton was replaced without records section yet — soft note
-			pass(viewport, 'home.records-widget', 'not mounted yet (empty/bootstrap)');
-		}
+		(await recordsSection.count()) === 0
+			? pass(viewport, 'home.no-records-widget')
+			: fail(viewport, 'home.no-records-widget', 'records teaser still on home');
 
 		await shot(page, viewport, 'home');
 	}

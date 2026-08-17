@@ -43,9 +43,10 @@ for (const rel of [
 }
 
 const homeSrc = await readFile(join(root, 'src/routes/+page.svelte'), 'utf8');
-assert(homeSrc.includes('HomeRecordsWidget'), 'home page must mount light HomeRecordsWidget teaser');
+assert(!homeSrc.includes('HomeRecordsWidget'), 'home must not mount records widget');
+assert(!homeSrc.includes('ArticleTeaserList'), 'home must not mount article teaser');
 assert(!homeSrc.includes('HomeStatsStack'), 'home page must not mount analytics placeholder stats');
-assert(homeSrc.includes('home-dashboard-aside'), 'home mid layout must stack recent+records in aside');
+assert(homeSrc.includes('home-dashboard-aside'), 'home mid layout must keep recent in aside');
 
 const catalogListSrc = await readFile(
 	join(root, 'src/lib/components/CatalogExerciseList.svelte'),
