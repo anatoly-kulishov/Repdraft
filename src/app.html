@@ -4,7 +4,7 @@
 		<meta charset="utf-8" />
 		<meta
 			name="viewport"
-			content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5"
+			content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content, maximum-scale=5"
 		/>
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,7 +15,7 @@
 		<meta name="theme-color" content="#E8ECF0" />
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 		<meta name="apple-mobile-web-app-title" content="Repdraft" />
 		<meta name="application-name" content="Repdraft" />
 		<meta name="format-detection" content="telephone=no" />
@@ -94,8 +94,11 @@
 					var bg = theme === 'light' ? '#e8ecf0' : '#0b0b0c';
 					document.documentElement.setAttribute('data-theme', theme);
 					document.documentElement.style.colorScheme = theme;
+					document.documentElement.style.backgroundColor = bg;
 					var meta = document.querySelector('meta[name="theme-color"]');
 					if (meta) meta.setAttribute('content', bg);
+					var bar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+					if (bar) bar.setAttribute('content', 'black-translucent');
 					var localeKey = 'repdraft.locale';
 					var storedLocale = localStorage.getItem(localeKey);
 					if (storedLocale === 'en' || storedLocale === 'ru') {

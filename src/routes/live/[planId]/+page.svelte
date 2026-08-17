@@ -112,8 +112,10 @@
 			const until = get(live).restUntil;
 			if (until != null && until <= Date.now()) {
 				if (restChimeArmed) {
-					vibrateRestDone();
-					if (get(restSoundEnabled)) playRestDoneChime();
+					if (get(restSoundEnabled)) {
+						vibrateRestDone();
+						playRestDoneChime();
+					}
 				}
 				restChimeArmed = false;
 				live.skipRest();

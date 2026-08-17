@@ -1,7 +1,6 @@
 <script lang="ts">
 	import './layout.css';
 	import { appTheme } from '$lib/stores/theme';
-	import { THEME_META_COLORS } from '$lib/domain/theme';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import AttributionFooter from '$lib/components/AttributionFooter.svelte';
 	import AccountChip from '$lib/components/AccountChip.svelte';
@@ -26,7 +25,6 @@
 
 	let path = $derived($page.url.pathname);
 	let lang = $derived($resolvedLocale);
-	let themeColor = $derived(THEME_META_COLORS[$appTheme]);
 	let isLight = $derived($appTheme === 'light');
 	let hasActiveSession = $derived(Boolean($live.ready && $live.session && !$live.session.finishedAt));
 	function mobileFlowChrome(pathname: string): boolean {
@@ -118,7 +116,6 @@
 <svelte:head>
 	<link rel="icon" href="/icon-adaptive.svg" type="image/svg+xml" />
 	<link rel="manifest" href="/manifest.webmanifest" />
-	<meta name="theme-color" content={themeColor} />
 	<meta name="apple-mobile-web-app-title" content="Repdraft" />
 	<title>Repdraft</title>
 </svelte:head>
@@ -129,7 +126,7 @@
 
 	<div class="shell-body flex min-h-dvh min-w-0 flex-1 flex-col">
 		<header
-			class="shell-header-mobile sticky top-0 z-30 border-b border-[var(--color-border)] bg-[var(--color-surface)] pt-[var(--safe-top)]"
+			class="shell-header-mobile sticky top-0 z-30 border-b border-[var(--color-border)] pt-[var(--safe-top)]"
 			class:shell-header-mobile-hidden={hideMobileHeader}
 		>
 			<div

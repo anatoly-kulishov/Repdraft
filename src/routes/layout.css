@@ -31,6 +31,8 @@
 	--draft-dock-clearance: 3.75rem;
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 	--safe-top: env(safe-area-inset-top, 0px);
+	--safe-left: env(safe-area-inset-left, 0px);
+	--safe-right: env(safe-area-inset-right, 0px);
 	--page-gap: 1.25rem;
 	--page-pad-x: 1.125rem;
 	--page-pad-y: 1rem;
@@ -47,8 +49,8 @@
 	--media-native: 120px;
 	/* Gym Visual max — exercise detail inline preview. */
 	--media-detail: 180px;
-	/* Lightbox upscales same asset for readability (source stays 180). */
-	--media-lightbox: 22.5rem;
+	/* Same 180px as source: larger CSS size looks pixelated (and exceeds Gym Visual terms). */
+	--media-lightbox: var(--media-detail);
 	/* Kinetics-inspired springs (CSS cubic-bezier stand-ins, no deps). */
 	--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 	--ease-toast: cubic-bezier(0.18, 1.25, 0.4, 1);
@@ -56,7 +58,7 @@
 	--app-bg-glow: rgb(139 92 246 / 0.2);
 	--app-bg-wash: color-mix(in srgb, var(--color-accent) 6%, var(--color-bg));
 	--app-bg-image:
-		radial-gradient(ellipse 130% 78% at 50% -22%, var(--app-bg-glow), transparent 70%),
+		radial-gradient(ellipse 160% 85% at 50% 0%, var(--app-bg-glow), transparent 72%),
 		linear-gradient(180deg, var(--app-bg-wash) 0%, var(--color-bg) 42%);
 	--surface-sheen: linear-gradient(
 		180deg,
@@ -167,10 +169,10 @@ html[data-theme='light'] {
 		inset 0 1px 0 rgb(255 255 255 / 0.72),
 		0 1px 2px rgb(18 20 26 / 0.05),
 		0 12px 28px rgb(18 20 26 / 0.06);
-	--app-bg-glow: rgb(139 92 246 / 0.16);
+	--app-bg-glow: rgb(139 92 246 / 0.14);
 	--app-bg-wash: color-mix(in srgb, var(--color-accent) 5%, #f4f6f9);
 	--app-bg-image:
-		radial-gradient(ellipse 125% 72% at 50% -18%, var(--app-bg-glow), transparent 68%),
+		radial-gradient(ellipse 160% 85% at 50% 0%, var(--app-bg-glow), transparent 72%),
 		linear-gradient(180deg, var(--app-bg-wash) 0%, var(--color-bg) 38%);
 	--surface-sheen: linear-gradient(
 		180deg,
@@ -200,6 +202,7 @@ html[data-theme='light'] {
 }
 .shell-header-mobile {
 	display: block;
+	background: var(--color-surface);
 }
 .shell-nav-desktop {
 	display: none;
@@ -214,6 +217,8 @@ html[data-theme='light'] {
 	min-width: 0;
 	max-width: 100%;
 	padding: var(--page-pad-y) var(--page-pad-x);
+	padding-left: max(var(--page-pad-x), var(--safe-left));
+	padding-right: max(var(--page-pad-x), var(--safe-right));
 	/* Keep overflow visible so position:fixed sticky CTA / docks use the viewport. */
 	overflow-x: visible;
 }
@@ -283,7 +288,8 @@ html[data-theme='light'] {
 	}
 }
 .shell-header-pad {
-	padding-inline: var(--page-pad-x);
+	padding-left: max(var(--page-pad-x), var(--safe-left));
+	padding-right: max(var(--page-pad-x), var(--safe-right));
 }
 
 .shell-footer-inner {
@@ -312,6 +318,8 @@ html[data-theme='light'] {
 	}
 	.shell-main {
 		padding: var(--page-pad-y) var(--page-pad-x) 3rem;
+		padding-left: max(var(--page-pad-x), var(--safe-left));
+		padding-right: max(var(--page-pad-x), var(--safe-right));
 	}
 	.shell-footer-pad {
 		padding-bottom: 0;
@@ -568,9 +576,14 @@ body {
 	color: var(--color-ink);
 	background: transparent;
 	-webkit-tap-highlight-color: transparent;
-	text-size-adjust: 100%;
-	-webkit-text-size-adjust: 100%;
 	overscroll-behavior-y: contain;
+}
+
+/* One UI / Android 15: never let a 0 inset tuck chrome under the gesture or 3-button bar. */
+@media (pointer: coarse) and (max-width: 767px) {
+	:root {
+		--safe-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+	}
 }
 
 @supports (padding: env(safe-area-inset-top)) {
@@ -1240,6 +1253,63 @@ textarea.field {
 	overflow: auto;
 	text-overflow: unset;
 	line-height: 1.35;
+}
+
+.pr-now-chip {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.35rem;
+	width: 100%;
+	margin: 0 0 0.75rem;
+	padding: 0.5rem 0.65rem;
+	border: 0;
+	border-radius: var(--radius-control);
+	background: color-mix(in srgb, var(--color-accent) 12%, white);
+	color: var(--color-accent);
+	font: inherit;
+	font-size: 0.875rem;
+	font-weight: 600;
+	line-height: 1.35;
+	text-align: left;
+}
+
+html[data-theme='dark'] .pr-now-chip {
+	background: color-mix(in srgb, var(--color-accent) 16%, var(--color-surface));
+}
+
+.pr-now-chip.is-button {
+	cursor: pointer;
+}
+
+.pr-now-chip.is-button:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 2px;
+}
+
+.pr-now-chip__text {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.pr-now-chip.is-open .pr-now-chip__text {
+	overflow: visible;
+	text-overflow: unset;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+.pr-now-chip__chevron {
+	flex-shrink: 0;
+	margin-top: 0.15rem;
+	opacity: 0.75;
+	transition: transform 120ms ease;
+}
+
+.pr-now-chip.is-open .pr-now-chip__chevron {
+	transform: rotate(180deg);
 }
 
 /* PR note: grow with content up to ~6 lines, then scroll.
@@ -2314,7 +2384,8 @@ html[data-theme='light'] .exercise-card-bookmark.is-active {
 	z-index: 30;
 	border-top: 1px solid var(--color-border);
 	background: var(--color-surface);
-	padding: 0.65rem 1rem calc(0.65rem + var(--safe-bottom));
+	padding: 0.65rem max(1rem, var(--safe-right)) calc(0.65rem + var(--safe-bottom))
+		max(1rem, var(--safe-left));
 	max-width: 100%;
 	overflow: hidden;
 	/* Own layer — reduces iOS “fixed stuck mid-scroll” after resume */
@@ -2386,6 +2457,10 @@ body:has(.sticky-actions) .draft-dock {
 	/* Own layer; keep bottom pinned to the visual viewport */
 	transform: translateZ(0);
 	-webkit-backface-visibility: hidden;
+	padding-left: var(--safe-left);
+	padding-right: var(--safe-right);
+	text-size-adjust: 100%;
+	-webkit-text-size-adjust: 100%;
 }
 
 /* Extra room above sticky CTA (footer / tabbar cleared separately) */
@@ -2424,13 +2499,13 @@ body:has(.sticky-actions) .draft-dock {
 	.live-set-row.is-done,
 	.live-set-row.is-just-done,
 	.field.is-invalid,
-	.clip-lightbox,
-	.clip-lightbox__panel,
-	.summary-check,
-	.summary-stat,
-	.cloud-sync-banner,
-	.empty-state__icon,
-	.exercise-card-add.is-just-added .exercise-card-add-icon {
+		.clip-lightbox,
+		.clip-lightbox__panel,
+		.summary-check,
+		.summary-stat,
+		.cloud-sync-banner,
+		.empty-state__icon,
+		.exercise-card-add.is-just-added .exercise-card-add-icon {
 		animation: none !important;
 		transition: none !important;
 		opacity: 1 !important;
@@ -2640,25 +2715,6 @@ html[data-theme='dark'] .zone-card__media {
 	position: relative;
 	isolation: isolate;
 	padding: 0.35rem 0 0.15rem;
-}
-
-/* Soft centered wash under greeting — even, not left-heavy. */
-.home-header--mockup::before {
-	content: '';
-	position: absolute;
-	z-index: -1;
-	top: -1.75rem;
-	left: 50%;
-	width: min(22rem, 92vw);
-	height: 9.5rem;
-	translate: -50% 0;
-	border-radius: 50%;
-	background: radial-gradient(
-		ellipse at center,
-		color-mix(in srgb, var(--color-accent) 22%, transparent),
-		transparent 72%
-	);
-	pointer-events: none;
 }
 
 .home-header--mockup .home-header__copy {
@@ -4598,14 +4654,13 @@ html[data-theme='dark'] .zone-card__media {
 
 .pwa-install__steps {
 	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: flex-start;
-	gap: 0.15rem 0.2rem;
-	width: fit-content;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 0.1rem;
+	width: 100%;
 	max-width: 100%;
 	margin: 0;
-	padding: 0.35rem 0.4rem;
+	padding: 0.3rem 0.35rem;
 	list-style: none;
 	border-radius: calc(var(--radius-control) + 2px);
 	background: color-mix(in srgb, var(--color-surface) 92%, var(--color-accent));
@@ -4613,14 +4668,14 @@ html[data-theme='dark'] .zone-card__media {
 }
 
 .pwa-install__step {
-	display: inline-flex;
+	display: flex;
 	flex-direction: row;
 	align-items: center;
-	gap: 0.35rem;
-	width: auto;
+	gap: 0.4rem;
+	width: 100%;
 	min-width: 0;
-	padding: 0.2rem 0.4rem 0.2rem 0.25rem;
-	border-radius: 999px;
+	padding: 0.28rem 0.4rem 0.28rem 0.25rem;
+	border-radius: var(--radius-control);
 	text-align: left;
 }
 
@@ -4636,20 +4691,15 @@ html[data-theme='dark'] .zone-card__media {
 }
 
 .pwa-install__step-label {
+	min-width: 0;
 	font-size: 0.6875rem;
 	font-weight: 650;
 	line-height: 1.2;
 	color: var(--color-ink);
-	white-space: nowrap;
 }
 
 .pwa-install__step-sep {
-	flex: 0 0 auto;
-	display: flex;
-	align-items: center;
-	color: var(--color-muted);
-	opacity: 0.55;
-	margin: 0;
+	display: none;
 }
 
 @media (min-width: 768px) {
@@ -4673,6 +4723,34 @@ html[data-theme='dark'] .zone-card__media {
 
 	.pwa-install__close {
 		order: 3;
+	}
+
+	.pwa-install__steps {
+		flex-direction: row;
+		flex-wrap: nowrap;
+		align-items: center;
+		gap: 0.15rem 0.2rem;
+		width: fit-content;
+		padding: 0.35rem 0.4rem;
+	}
+
+	.pwa-install__step {
+		width: auto;
+		padding: 0.2rem 0.4rem 0.2rem 0.25rem;
+		border-radius: 999px;
+	}
+
+	.pwa-install__step-label {
+		white-space: nowrap;
+	}
+
+	.pwa-install__step-sep {
+		flex: 0 0 auto;
+		display: flex;
+		align-items: center;
+		color: var(--color-muted);
+		opacity: 0.55;
+		margin: 0;
 	}
 }
 
