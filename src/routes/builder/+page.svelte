@@ -132,7 +132,7 @@
 		<PageSkeleton rows={3} showField={true} />
 	{:else}
 		<div class="soft-enter">
-			<label class="field-label mb-4 block max-w-xl">
+			<label class="field-label mb-5 block max-w-xl">
 				{translate(lang, 'builder.name')}
 				<input
 					class="field mt-1.5 w-full"
@@ -151,9 +151,8 @@
 					actionLabel={translate(lang, 'builder.addExercise')}
 				/>
 			{:else}
-				<p class="section-title mb-2">{translate(lang, 'builder.exercisesSection')}</p>
-
-				<div class="mb-4 flex flex-wrap items-center gap-2">
+				<div class="builder-section-head">
+					<p class="section-title">{translate(lang, 'builder.exercisesSection')}</p>
 					<button
 						type="button"
 						class="btn-secondary"
@@ -165,18 +164,16 @@
 							· {selectedCount}
 						{/if}
 					</button>
-					<p class="text-xs text-[var(--color-muted)]">{translate(lang, 'builder.selectHint')}</p>
 				</div>
+				{#if selectedCount < 2}
+					<p class="builder-select-hint">{translate(lang, 'builder.selectHint')}</p>
+				{/if}
 
 				<div class="builder-exercise-list">
 					{#each $draft.exercises as item, index (item.exerciseId)}
 						{@const role = groupMemberRole($draft.exercises, index)}
 						{@const meta = indexById.get(item.exerciseId) ?? null}
-						<div
-							class="builder-exercise-item"
-							class:builder-exercise-item--superset={role !== 'solo'}
-							class:builder-exercise-item--group-continues={role === 'middle' || role === 'last'}
-						>
+						<div class="builder-exercise-item">
 							<WorkoutExerciseRow
 								{item}
 								{index}

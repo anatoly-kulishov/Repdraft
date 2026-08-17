@@ -56,10 +56,22 @@
 	}
 
 	.catalog-exercise-skeleton__row {
+		position: relative;
 		display: flex;
 		align-items: stretch;
-		min-height: 5.25rem;
-		border-bottom: 1px solid var(--color-border);
+		min-height: var(--media-native);
+		border-bottom: none;
+	}
+
+	.catalog-exercise-skeleton__row:not(:last-child)::after {
+		content: '';
+		position: absolute;
+		top: auto;
+		bottom: 0;
+		right: 0;
+		left: var(--media-native);
+		height: 1px;
+		background: var(--color-border);
 	}
 
 	.catalog-exercise-skeleton__row:last-child {
@@ -67,8 +79,8 @@
 	}
 
 	.catalog-exercise-skeleton__thumb {
-		flex: 0 0 5.25rem;
-		width: 5.25rem;
+		flex: 0 0 var(--media-native);
+		width: var(--media-native);
 		background: var(--color-surface-muted);
 		animation: catalog-exercise-skeleton-shimmer 1.1s ease-in-out infinite;
 		background-image: linear-gradient(

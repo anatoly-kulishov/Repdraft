@@ -142,15 +142,16 @@
 							class="history-exercise__head"
 							href={`/exercise/${meta.id}?from=${encodeURIComponent(fromPath)}`}
 						>
-							<img
-								class="workout-preview-thumb history-exercise__thumb"
-								src={`/${meta.image}`}
-								alt=""
-								width="180"
-								height="180"
-								loading="lazy"
-								decoding="async"
-							/>
+							<span class="media-well history-exercise__thumb">
+								<img
+									src={`/${meta.image}`}
+									alt=""
+									width="180"
+									height="180"
+									loading="lazy"
+									decoding="async"
+								/>
+							</span>
 							<div class="workout-preview-row-body">
 								<p class="workout-preview-row-title">{exerciseName(meta, lang)}</p>
 								<p class="workout-preview-row-sub">
@@ -164,7 +165,7 @@
 					{:else}
 						<div class="history-exercise__head is-static">
 							<span
-								class="workout-preview-thumb history-exercise__thumb is-placeholder"
+								class="media-well history-exercise__thumb is-placeholder"
 								aria-hidden="true"
 							></span>
 							<div class="workout-preview-row-body">

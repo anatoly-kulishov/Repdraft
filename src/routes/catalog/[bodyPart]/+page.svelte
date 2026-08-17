@@ -97,7 +97,6 @@
 					initialEquipment={data.initialEquipment}
 					initialTarget={data.initialTarget}
 					initialBodyPart={data.initialBodyPart}
-					hideTargetFilter={hasTargetBrowse}
 					gridOnDesktop
 				/>
 			{/key}

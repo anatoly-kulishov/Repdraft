@@ -140,8 +140,11 @@
 {/snippet}
 
 <article
-	class="exercise-card relative flex min-w-0 max-w-full flex-col overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)]"
+	class="exercise-card relative flex min-w-0 max-w-full flex-col overflow-hidden bg-[var(--color-surface)]"
 	class:exercise-card--list={variant === 'list'}
+	class:rounded-[var(--radius-panel)]={variant !== 'list'}
+	class:border={variant !== 'list'}
+	class:border-[var(--color-border)]={variant !== 'list'}
 >
 	{#if variant === 'list'}
 		<a
@@ -150,7 +153,7 @@
 			aria-label={title}
 		>
 			<div
-				class="exercise-card-media relative shrink-0 overflow-hidden bg-[var(--hero-card-media-bg)]"
+				class="exercise-card-media media-well relative shrink-0 overflow-hidden"
 			>
 				<img
 					bind:this={imgEl}
@@ -197,7 +200,7 @@
 		{@render listActions()}
 	{:else}
 		<div
-			class="exercise-card-media exercise-card-media--grid relative aspect-square min-w-0 overflow-hidden bg-[var(--hero-card-media-bg)]"
+			class="exercise-card-media exercise-card-media--grid media-well relative aspect-square min-w-0 overflow-hidden"
 		>
 			<a
 				href={exerciseHref(exercise.id)}
