@@ -33,11 +33,15 @@ export async function acquireScreenWakeLock(): Promise<void> {
 		if (document.visibilityState === 'visible') void requestLock();
 	};
 	document.addEventListener('visibilitychange', visibleHandler);
+	window.addEventListener('pageshow', visibleHandler);
+	window.addEventListener('focus', visibleHandler);
 }
 
 export async function releaseScreenWakeLock(): Promise<void> {
 	if (visibleHandler && typeof document !== 'undefined') {
 		document.removeEventListener('visibilitychange', visibleHandler);
+		window.removeEventListener('pageshow', visibleHandler);
+		window.removeEventListener('focus', visibleHandler);
 		visibleHandler = null;
 	}
 	const current = sentinel;

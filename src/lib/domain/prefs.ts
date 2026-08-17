@@ -69,7 +69,7 @@ async function ensureRunning(ctx: AudioContext): Promise<boolean> {
 function beep(ctx: AudioContext, at: number, freq: number, dur: number, peak = 0.35): void {
 	const gain = ctx.createGain();
 	gain.gain.setValueAtTime(0.0001, at);
-	gain.gain.exponentialRampToValueAtTime(peak, at + 0.015);
+	gain.gain.exponentialRampToValueAtTime(peak, at + 0.012);
 	gain.gain.exponentialRampToValueAtTime(0.0001, at + dur);
 	gain.connect(ctx.destination);
 
@@ -89,9 +89,10 @@ export function playRestDoneChime(): void {
 		if (!ok) return;
 		try {
 			const t = ctx.currentTime + 0.02;
-			// Two punches — easier to hear on phone speakers than a soft sine.
-			beep(ctx, t, 880, 0.12, 0.4);
-			beep(ctx, t + 0.16, 1175, 0.18, 0.45);
+			// Peak stays under 1 to avoid clipping; iOS still follows the hardware volume / Silent switch.
+			beep(ctx, t, 880, 0.16, 0.62);
+			beep(ctx, t + 0.18, 1175, 0.22, 0.72);
+			beep(ctx, t + 0.42, 988, 0.14, 0.5);
 		} catch {
 			/* ignore */
 		}
@@ -102,7 +103,9 @@ export function playRestDoneChime(): void {
 export function vibrateRestDone(): void {
 	if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
 	try {
-		navigator.vibrate([40, 60, 40]);
+		// Amplitude is OS-only; a longer pattern is the only way to feel “stronger”.
+		// iOS Safari/PWA: vibrate() is not implemented.
+		navigator.vibrate([120, 70, 160, 70, 220]);
 	} catch {
 		/* ignore */
 	}

@@ -8,7 +8,7 @@
 	"display": "standalone",
 	"orientation": "portrait-primary",
 	"background_color": "#0B0B0C",
-	"theme_color": "#8B5CF6",
+	"theme_color": "#0B0B0C",
 	"lang": "ru",
 	"prefer_related_applications": false,
 	"related_applications": [
