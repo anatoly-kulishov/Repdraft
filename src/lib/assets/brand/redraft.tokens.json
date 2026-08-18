@@ -1,0 +1,31 @@
+{
+  "brand": {
+    "gradientStart": "#8B5CF6",
+    "gradientEnd": "#6366F1",
+    "primary": "#7C3AED",
+    "darkBg": "#080A0F",
+    "darkSurface": "#11141D",
+    "lightBg": "#F7F8FC",
+    "text": "#111118",
+    "muted": "#8A8F99",
+    "borderLight": "#C7CEDB",
+    "borderDark": "#2B3040",
+    "success": "#22C55E",
+    "warning": "#F59E0B",
+    "error": "#EF4444",
+    "info": "#3B82F6"
+  },
+  "type": {
+    "font": "Inter",
+    "weights": [
+      400,
+      500,
+      600,
+      700
+    ]
+  },
+  "logo": {
+    "safeArea": "0.5x",
+    "minDigital": "16px"
+  }
+}

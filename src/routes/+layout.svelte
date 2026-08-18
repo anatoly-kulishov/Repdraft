@@ -172,21 +172,24 @@
 </div>
 
 <nav
-	class="shell-nav-tabbar fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-border)] bg-[var(--color-surface)] pb-[var(--safe-bottom)]"
+	class="shell-nav-tabbar fixed inset-x-0 bottom-0 z-40"
 	class:shell-nav-tabbar-hidden={hideMobileHeader}
 	aria-label={translate(lang, 'nav.main')}
 >
-	<div class="mx-auto grid h-[var(--tabbar-h)] max-w-lg grid-cols-3 px-1">
+	<div class="shell-nav-tabbar__inner">
+		<div class="shell-nav-tabbar__grid">
 		<a
 			class="tab-link"
 			data-active={isActive('/')}
 			href="/"
 			aria-current={isActive('/') ? 'page' : undefined}
 		>
-			<span class="tab-link-icon">
-				<LucideIcon icon={House} size={ICON_SIDEBAR} />
+			<span class="tab-link__inner">
+				<span class="tab-link-icon">
+					<LucideIcon icon={House} size={ICON_SIDEBAR} />
+				</span>
+				<span class="tab-link__label">{translate(lang, 'nav.tabHome')}</span>
 			</span>
-			{translate(lang, 'nav.tabHome')}
 		</a>
 		<a
 			class="tab-link"
@@ -197,13 +200,15 @@
 				? `${translate(lang, 'nav.workouts')}. ${translate(lang, 'nav.liveActive')}`
 				: undefined}
 		>
-			<span class="tab-link-icon">
-				<LucideIcon icon={Dumbbell} size={ICON_SIDEBAR} />
-				{#if hasActiveSession}
-					<span class="tab-link-live-dot" aria-hidden="true"></span>
-				{/if}
+			<span class="tab-link__inner">
+				<span class="tab-link-icon">
+					<LucideIcon icon={Dumbbell} size={ICON_SIDEBAR} />
+					{#if hasActiveSession}
+						<span class="tab-link-live-dot" aria-hidden="true"></span>
+					{/if}
+				</span>
+				<span class="tab-link__label">{translate(lang, 'nav.workouts')}</span>
 			</span>
-			{translate(lang, 'nav.workouts')}
 		</a>
 		<a
 			class="tab-link"
@@ -211,11 +216,14 @@
 			href="/exercises"
 			aria-current={isActive('/exercises') ? 'page' : undefined}
 		>
-			<span class="tab-link-icon">
-				<LucideIcon icon={Library} size={ICON_SIDEBAR} />
+			<span class="tab-link__inner">
+				<span class="tab-link-icon">
+					<LucideIcon icon={Library} size={ICON_SIDEBAR} />
+				</span>
+				<span class="tab-link__label">{translate(lang, 'nav.exercises')}</span>
 			</span>
-			{translate(lang, 'nav.exercises')}
 		</a>
+		</div>
 	</div>
 </nav>
 

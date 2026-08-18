@@ -10,7 +10,9 @@
 		completedSetCount,
 		sessionDurationMs
 	} from '$lib/domain/session';
-	import type { WorkoutSession } from '$lib/domain/types';
+	import { exerciseName } from '$lib/domain/exerciseName';
+	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
 	import { formatDurationMs } from '$lib/i18n/format';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -21,8 +23,43 @@
 
 	let lang = $derived($resolvedLocale);
 	let session = $state<WorkoutSession | null>(null);
+	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let missing = $state(false);
 	let loading = $state(true);
+
+	type PreviewItem = {
+		ex: WorkoutSession['exercises'][number];
+		completedSets: number;
+		lastSet: WorkoutSession['exercises'][number]['sets'][number];
+	};
+
+	let previewExercises = $derived(
+		!session
+			? []
+			: session.exercises
+					.map((ex) => {
+						const completed = ex.sets.filter((s) => s.completed);
+						if (completed.length === 0) return null;
+
+						return {
+							ex,
+							completedSets: completed.length,
+							lastSet: completed[completed.length - 1]
+						} satisfies PreviewItem;
+					})
+					.filter((v): v is PreviewItem => v !== null)
+					.slice(0, 3)
+	);
+
+	let moreCount = $derived(
+		!session
+			? 0
+			: Math.max(
+					0,
+					session.exercises.filter((ex) => ex.sets.some((s) => s.completed)).length -
+						previewExercises.length
+				)
+	);
 
 	onMount(() => {
 		void (async () => {
@@ -32,9 +69,10 @@
 				loading = false;
 				return;
 			}
-			const found = await live.getFinishedSession(id);
+			const [found, index] = await Promise.all([live.getFinishedSession(id), loadExerciseIndex()]);
 			if (!found) missing = true;
 			else session = found;
+			indexById = new Map(index.map((ex) => [ex.id, ex]));
 			loading = false;
 		})();
 	});
@@ -86,6 +124,41 @@
 				<dd class="summary-stat__value">{completedSetCount(session)}</dd>
 			</div>
 		</dl>
+
+			{#if previewExercises.length > 0}
+				<div class="summary-exercises-preview" aria-hidden="true">
+					<p class="summary-exercises-preview__heading">
+						{translate(lang, 'summary.previewExercises')}
+					</p>
+					<div class="summary-exercises-preview__list">
+						{#each previewExercises as item (item.ex.exerciseId)}
+							{@const meta = indexById.get(item.ex.exerciseId) ?? null}
+							{@const ex = item.ex}
+							{@const last = item.lastSet}
+							<div class="summary-exercises-preview__item">
+								<p class="summary-exercises-preview__name">
+									{meta ? exerciseName(meta, lang) : ex.exerciseId}
+								</p>
+								<p class="summary-exercises-preview__meta">
+									{#if last?.weightKg != null}
+										{last.weightKg} kg × {last.reps ?? '—'}
+									{:else}
+										{last?.reps ?? '—'} {translate(lang, 'live.reps').toLowerCase()}
+									{/if}
+									<span class="summary-exercises-preview__sets">
+										· {item.completedSets} {translate(lang, 'summary.sets')}
+									</span>
+								</p>
+							</div>
+						{/each}
+					</div>
+					{#if moreCount > 0}
+						<p class="summary-exercises-preview__more">
+							{translate(lang, 'summary.moreExercises', { n: moreCount })}
+						</p>
+					{/if}
+				</div>
+			{/if}
 
 		<div class="summary-actions summary-page__done-inline">
 			<a class="btn-primary btn-block min-h-12" href="/workouts?tab=history"
