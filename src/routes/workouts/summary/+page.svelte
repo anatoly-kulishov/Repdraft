@@ -45,7 +45,7 @@
 </svelte:head>
 
 {#if loading}
-	<PageSkeleton rows={3} />
+	<PageSkeleton variant="summary" rows={3} />
 {:else if missing || !session}
 	<EmptyState
 		title={translate(lang, 'live.noPlan')}

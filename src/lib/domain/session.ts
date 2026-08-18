@@ -1,4 +1,5 @@
 import { newId } from './id';
+import { SETS } from './inputLimits';
 import type {
 	LastPerformance,
 	LoggedSet,
@@ -172,19 +173,63 @@ export function addLoggedSet(
 	return { ...session, exercises };
 }
 
-/** Drop a logged set. Keeps at least one row so the exercise stays loggable. */
+/** History edit: append a completed set, copying the last logged load when present. */
+export function addCompletedLoggedSet(
+	session: WorkoutSession,
+	exerciseIndex: number,
+	kind: SetKind = 'work'
+): WorkoutSession {
+	const ex = session.exercises[exerciseIndex];
+	if (!ex || ex.sets.length >= SETS.max) return session;
+	const last = ex.sets[ex.sets.length - 1];
+	const exercises = session.exercises.map((item, ei) => {
+		if (ei !== exerciseIndex) return item;
+		return {
+			...item,
+			sets: [
+				...item.sets,
+				{
+					weightKg: last?.weightKg ?? null,
+					reps: last?.reps ?? item.targetReps,
+					completed: true,
+					kind
+				}
+			]
+		};
+	});
+	return { ...session, exercises };
+}
+
+/** Drop a logged set. Live keeps at least one row so the exercise stays loggable. */
 export function removeLoggedSet(
 	session: WorkoutSession,
 	exerciseIndex: number,
-	setIndex: number
+	setIndex: number,
+	options: { keepAtLeastOne?: boolean } = {}
 ): WorkoutSession {
+	const keepAtLeastOne = options.keepAtLeastOne ?? true;
 	const exercises = session.exercises.map((ex, ei) => {
 		if (ei !== exerciseIndex) return ex;
-		if (ex.sets.length <= 1) return ex;
+		if (keepAtLeastOne && ex.sets.length <= 1) return ex;
 		if (setIndex < 0 || setIndex >= ex.sets.length) return ex;
 		return { ...ex, sets: ex.sets.filter((_, si) => si !== setIndex) };
 	});
 	return { ...session, exercises };
+}
+
+/** History edit: drop a logged exercise block. */
+export function removeLoggedExercise(
+	session: WorkoutSession,
+	exerciseIndex: number,
+	options: { keepAtLeastOne?: boolean } = {}
+): WorkoutSession {
+	const keepAtLeastOne = options.keepAtLeastOne ?? true;
+	if (keepAtLeastOne && session.exercises.length <= 1) return session;
+	if (exerciseIndex < 0 || exerciseIndex >= session.exercises.length) return session;
+	return {
+		...session,
+		exercises: session.exercises.filter((_, ei) => ei !== exerciseIndex)
+	};
 }
 
 export function finishSession(session: WorkoutSession): WorkoutSession {
@@ -388,6 +433,27 @@ export function runSessionSelfCheck(): void {
 	};
 	if (removeLoggedSet(onlyOne, 0, 0).exercises[0]!.sets.length !== 1) {
 		throw new Error('removeLoggedSet must keep at least one set');
+	}
+	const emptied = removeLoggedSet(onlyOne, 0, 0, { keepAtLeastOne: false });
+	if (emptied.exercises[0]!.sets.length !== 0) {
+		throw new Error('removeLoggedSet keepAtLeastOne:false should allow empty');
+	}
+	const withCompleted = addCompletedLoggedSet(onlyOne, 0);
+	const added = withCompleted.exercises[0]!.sets.at(-1);
+	if (
+		withCompleted.exercises[0]!.sets.length !== 2 ||
+		!added?.completed ||
+		added.weightKg !== 40 ||
+		added.reps !== 8
+	) {
+		throw new Error(`addCompletedLoggedSet unexpected ${JSON.stringify(added)}`);
+	}
+	const droppedEx = removeLoggedExercise(session, 1);
+	if (droppedEx.exercises.length !== session.exercises.length - 1) {
+		throw new Error('removeLoggedExercise should drop one exercise');
+	}
+	if (removeLoggedExercise(onlyOne, 0).exercises.length !== 1) {
+		throw new Error('removeLoggedExercise must keep at least one exercise');
 	}
 
 	const groupedPlan: WorkoutPlan = {

@@ -129,7 +129,7 @@
 	</div>
 
 	{#if !pageReady}
-		<PageSkeleton rows={3} showField={true} />
+		<PageSkeleton variant="builder" rows={3} />
 	{:else}
 		<div class="soft-enter">
 			<label class="field-label mb-5 block max-w-xl">
