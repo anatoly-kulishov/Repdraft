@@ -58,10 +58,14 @@
 	<title>{showExerciseList && data.initialTarget ? `${exerciseTitle} · ${title}` : headerTitle} · Repdraft</title>
 </svelte:head>
 
-<div class="content-page content-page--catalog">
+<div
+	class={`content-page content-page--catalog ${showTargetBrowse ? 'catalog-page--browse' : 'catalog-page--list'}`}
+>
 	<ScreenHeader class="md:hidden" title={headerTitle} {backHref} />
 
-	<section class="catalog-zone-shell">
+	<section
+		class={`catalog-zone-shell ${showTargetBrowse ? 'catalog-zone-shell--browse' : 'catalog-zone-shell--list'}`}
+	>
 		<div class="catalog-subroute-header">
 			<a class="catalog-zone-crumb-link" href={backHref}>
 				<LucideIcon icon={ArrowLeft} size={ICON_SMALL} />

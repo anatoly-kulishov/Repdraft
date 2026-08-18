@@ -1,33 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" role="img" aria-label="Repdraft">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-label="REDraft">
+	<defs>
+		<linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+			<stop offset="0" stop-color="#8B5CF6" />
+			<stop offset="1" stop-color="#6366F1" />
+		</linearGradient>
+	</defs>
 	<path
-		d="M9 12.5V26"
-		stroke="#8B5CF6"
-		stroke-width="2.65"
-		stroke-linecap="round"
-	/>
-	<path
-		d="M9 6.75V10.25"
-		stroke="#8B5CF6"
-		stroke-width="2.65"
-		stroke-linecap="round"
-	/>
-	<path
-		d="M9 7h11.25a5.35 5.35 0 0 1 0 10.7H9"
-		stroke="#8B5CF6"
-		stroke-width="2.65"
+		d="M148 112V392M148 112H286C347 112 380 148 380 198C380 248 347 280 286 280H148M218 280L350 408"
+		fill="none"
+		stroke="url(#g)"
+		stroke-width="34"
 		stroke-linecap="round"
 		stroke-linejoin="round"
-	/>
-	<path
-		d="M13.35 17.85 20.85 25.5"
-		stroke="#8B5CF6"
-		stroke-width="2.65"
-		stroke-linecap="round"
-	/>
-	<path
-		d="M11.25 13.35h7.1"
-		stroke="#8B5CF6"
-		stroke-width="2.65"
-		stroke-linecap="round"
 	/>
 </svg>

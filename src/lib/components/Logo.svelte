@@ -23,11 +23,9 @@
 
 	let markClass = $derived.by(() => {
 		if (variant === 'sidebar') return 'logo-mark logo-mark--sidebar';
-		return size === 'lg'
-			? 'logo-mark logo-mark--lg'
-			: size === 'sm'
-				? 'logo-mark logo-mark--sm'
-				: 'logo-mark logo-mark--md';
+		if (size === 'lg') return 'logo-mark logo-mark--lg';
+		if (size === 'sm') return 'logo-mark logo-mark--sm';
+		return 'logo-mark logo-mark--md';
 	});
 
 	let linkClass = $derived(
@@ -39,21 +37,18 @@
 	{#if compact}
 		<svg
 			class="{markClass} shrink-0 transition-opacity duration-200 group-hover:opacity-90"
-			viewBox="0 0 32 32"
+			viewBox="0 0 512 512"
 			fill="none"
 			aria-hidden="true"
 		>
-			<path d="M9 12.5V26" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
-			<path d="M9 6.75V10.25" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
 			<path
-				d="M9 7h11.25a5.35 5.35 0 0 1 0 10.7H9"
+				d="M148 112V392M148 112H286C347 112 380 148 380 198C380 248 347 280 286 280H148M218 280L350 408"
+				fill="none"
 				stroke="#8B5CF6"
-				stroke-width="2.65"
+				stroke-width="34"
 				stroke-linecap="round"
 				stroke-linejoin="round"
 			/>
-			<path d="M13.35 17.85 20.85 25.5" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
-			<path d="M11.25 13.35h7.1" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
 		</svg>
 	{:else}
 		<svg
@@ -63,20 +58,19 @@
 			role="img"
 			aria-label="REPDRAFT"
 		>
-			<path d="M9 12.5V26" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
-			<path d="M9 6.75V10.25" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
-			<path
-				d="M9 7h11.25a5.35 5.35 0 0 1 0 10.7H9"
-				stroke="#8B5CF6"
-				stroke-width="2.65"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			/>
-			<path d="M13.35 17.85 20.85 25.5" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
-			<path d="M11.25 13.35h7.1" stroke="#8B5CF6" stroke-width="2.65" stroke-linecap="round" />
+			<g transform="translate(0.8 1.3) scale(0.0565)">
+				<path
+					d="M148 112V392M148 112H286C347 112 380 148 380 198C380 248 347 280 286 280H148M218 280L350 408"
+					fill="none"
+					stroke="#8B5CF6"
+					stroke-width="34"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				/>
+			</g>
 			<text
 				class="logo-wordmark-svg"
-				x="33"
+				x="29"
 				y="22.5"
 				font-family="Inter, system-ui, sans-serif"
 				font-size="16.5"
