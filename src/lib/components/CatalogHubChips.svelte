@@ -25,15 +25,15 @@
 		<LucideIcon icon={Bookmark} size={ICON_BUTTON} />
 		<span>{translate(lang, 'bookmarks.title')}</span>
 	</a>
-	<a class="catalog-hub-chip" href="/articles">
-		<LucideIcon icon={BookOpen} size={ICON_BUTTON} />
-		<span>{translate(lang, 'articles.title')}</span>
-	</a>
 	<a class="catalog-hub-chip" href="/records">
 		<LucideIcon icon={Trophy} size={ICON_BUTTON} />
 		<span>{translate(lang, 'records.title')}</span>
 		{#if $recordsReady && recordCount > 0}
 			<span class="catalog-hub-nav-count">{recordCount}</span>
 		{/if}
+	</a>
+	<a class="catalog-hub-chip" href="/articles">
+		<LucideIcon icon={BookOpen} size={ICON_BUTTON} />
+		<span>{translate(lang, 'articles.title')}</span>
 	</a>
 </nav>

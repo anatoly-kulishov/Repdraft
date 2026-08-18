@@ -17,11 +17,11 @@
 	let lang = $derived($resolvedLocale);
 </script>
 
-<a {href} class="zone-card">
+<a {href} class="zone-card zone-card--target">
 	{#if coverImage}
-		<div class="zone-card__media-wrap media-well" aria-hidden="true">
+		<div class="zone-card__media-wrap zone-card__media-wrap--target media-well" aria-hidden="true">
 			<img
-				class="zone-card__media"
+				class="zone-card__media zone-card__media--target"
 				src={`/${coverImage}`}
 				alt=""
 				width="180"
@@ -32,7 +32,7 @@
 			/>
 		</div>
 	{/if}
-	<div class="zone-card__body">
+	<div class="zone-card__body zone-card__body--target">
 		<h2 class="zone-card__title">{label}</h2>
 		{#if count > 0}
 			<p class="zone-card__meta">{translate(lang, 'catalog.zoneCount', { n: count })}</p>

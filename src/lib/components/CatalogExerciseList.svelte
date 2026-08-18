@@ -142,6 +142,9 @@
 			? 'catalog-grid grid min-w-0 gap-2.5 sm:gap-3'
 			: 'catalog-exercise-list'
 	);
+	let emptyStateClass = $derived(
+		`catalog-empty-state${savedOnly ? ' catalog-empty-state--saved' : ''}`
+	);
 
 	$effect(() => {
 		if (!zoneLocked || !isCatalogZone(presetBodyPart)) return;
@@ -392,7 +395,7 @@
 			</div>
 		{:else}
 			<EmptyState
-				class="catalog-empty-state"
+				class={emptyStateClass}
 				centered={savedOnly}
 				icon={savedOnly ? Bookmark : null}
 				title={translate(lang, savedOnly ? 'bookmarks.emptyTitle' : 'catalog.emptyTitle')}

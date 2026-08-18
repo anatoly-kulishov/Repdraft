@@ -18,11 +18,11 @@
 	let href = $derived(`/catalog/${encodeURIComponent(bodyPart)}`);
 </script>
 
-<a {href} class="zone-card">
+<a {href} class="zone-card zone-card--hub">
 	{#if coverImage}
-		<div class="zone-card__media-wrap media-well" aria-hidden="true">
+		<div class="zone-card__media-wrap zone-card__media-wrap--hub media-well" aria-hidden="true">
 			<img
-				class="zone-card__media"
+				class="zone-card__media zone-card__media--hub"
 				src={`/${coverImage}`}
 				alt=""
 				width="180"
@@ -33,7 +33,7 @@
 			/>
 		</div>
 	{/if}
-	<div class="zone-card__body">
+	<div class="zone-card__body zone-card__body--hub">
 		<h2 class="zone-card__title">{label}</h2>
 		{#if count > 0}
 			<p class="zone-card__meta">{translate(lang, 'catalog.zoneCount', { n: count })}</p>

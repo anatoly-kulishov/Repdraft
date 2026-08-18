@@ -40,20 +40,24 @@
 
 	.records-skeleton__row {
 		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.75rem 0.85rem;
+		align-items: stretch;
+		gap: 0;
+		padding: 0;
+		overflow: hidden;
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-panel);
 		background: var(--color-surface);
+		box-shadow: var(--shadow-panel);
 	}
 
 	.records-skeleton__thumb {
 		flex-shrink: 0;
 		width: var(--media-native);
-		height: var(--media-native);
-		border-radius: calc(var(--radius-control) + 2px);
+		height: auto;
+		min-height: var(--media-native);
+		border-radius: 0;
 		background: var(--color-surface-muted);
+		box-shadow: inset -1px 0 0 color-mix(in srgb, var(--color-border) 85%, transparent);
 		animation: records-skeleton-shimmer 1.1s ease-in-out infinite;
 	}
 
@@ -62,11 +66,13 @@
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.55rem;
+		justify-content: center;
+		gap: 0.45rem;
+		padding: 0.75rem 0.85rem;
 	}
 
 	.records-skeleton__line {
-		height: 0.85rem;
+		height: 0.875rem;
 		border-radius: 999px;
 		background: var(--color-surface-muted);
 		animation: records-skeleton-shimmer 1.1s ease-in-out infinite;
@@ -83,16 +89,16 @@
 	}
 
 	.records-skeleton__chip {
-		width: 6.5rem;
-		height: 1.35rem;
+		width: 7rem;
+		height: 1.45rem;
 		border-radius: 999px;
 		background: var(--color-surface-muted);
 		animation: records-skeleton-shimmer 1.1s ease-in-out infinite;
 	}
 
 	.records-skeleton__date {
-		width: 3.25rem;
-		height: 0.75rem;
+		width: 3.5rem;
+		height: 0.8125rem;
 		border-radius: 999px;
 		background: var(--color-surface-muted);
 		animation: records-skeleton-shimmer 1.1s ease-in-out infinite;
