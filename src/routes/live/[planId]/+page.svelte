@@ -354,7 +354,7 @@
 </svelte:head>
 
 {#if loading}
-	<PageSkeleton rows={4} />
+	<PageSkeleton variant="live" rows={4} />
 {:else if missing || !session}
 	<div class="mx-auto max-w-md space-y-3">
 		<EmptyState
