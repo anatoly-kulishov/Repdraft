@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import {
 	addLoggedSet,
+	completedSetCount,
 	finishSession,
 	lastPerformance,
 	mergeWorkoutSessions,
@@ -31,6 +32,7 @@ import {
 	writeActiveSession
 } from '$lib/storage/localSessionRepository';
 import {
+	addSessionTombstones,
 	clearSessionTombstone,
 	listSessionTombstones
 } from '$lib/storage/sessionTombstones';
@@ -47,6 +49,23 @@ type LiveState = {
 };
 
 const REST_UNTIL_KEY = REST_UNTIL_STORAGE_KEY;
+const AUTO_UNNAMED_SESSION_NAMES = new Set(['', 'тренировка без названия', 'untitled workout']);
+
+function normalizedSessionName(name: string | null | undefined): string {
+	return (name ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function isAutoUnnamedSession(session: WorkoutSession): boolean {
+	return AUTO_UNNAMED_SESSION_NAMES.has(normalizedSessionName(session.planName));
+}
+
+function isJunkUnnamedSession(session: WorkoutSession): boolean {
+	return (
+		session.finishedAt != null &&
+		isAutoUnnamedSession(session) &&
+		completedSetCount(session) === 0
+	);
+}
 
 function clampRestUntil(until: number): number | null {
 	const leftSec = Math.ceil((until - Date.now()) / 1000);
@@ -94,6 +113,20 @@ function createLiveStore() {
 				wantCloud: isSessionsCloudAvailable(),
 				label: 'sessions'
 			});
+			const unnamedIds = result.items
+				.filter((session) => isJunkUnnamedSession(session))
+				.map((session) => session.id);
+			if (unnamedIds.length > 0) {
+				addSessionTombstones(unnamedIds);
+				for (const id of unnamedIds) {
+					deleted.add(id);
+					try {
+						await localSessionRepository.remove(id);
+					} catch (err) {
+						console.warn('unnamed session local scrub failed', err);
+					}
+				}
+			}
 			// Always gate UI by tombstones (local-only / cloud-error paths skip merge).
 			const finished = result.items.filter((x) => x.finishedAt && !deleted.has(x.id));
 			store.update((s) => ({ ...s, history: finished }));
@@ -110,9 +143,9 @@ function createLiveStore() {
 			}
 
 			// Retry cloud deletes; clear tombstone only when cloud list no longer has the id.
-			if (isSessionsCloudAvailable() && deletedIds.length > 0) {
+			if (isSessionsCloudAvailable() && (deletedIds.length > 0 || unnamedIds.length > 0)) {
 				const stillInCloud = new Set(cloudSnapshot.map((s) => s.id));
-				for (const id of deletedIds) {
+				for (const id of [...new Set([...deletedIds, ...unnamedIds])]) {
 					if (!stillInCloud.has(id)) {
 						clearSessionTombstone(id);
 						continue;

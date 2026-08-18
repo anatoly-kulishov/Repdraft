@@ -28,6 +28,9 @@
 		<div class="page-header page-header--compact catalog-zone-head">
 			<h1 class="page-title catalog-zone-title">{title}</h1>
 			<p class="page-lead">{translate(lang, 'bookmarks.lead')}</p>
+			<p class="mt-1 max-w-xl text-sm leading-relaxed text-[var(--color-muted)]">
+				{translate(lang, 'bookmarks.localOnlyHint')}
+			</p>
 		</div>
 	</div>
 
