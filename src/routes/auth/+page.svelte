@@ -360,7 +360,7 @@
 	</header>
 
 	{#if !$auth.ready}
-		<PageSkeleton rows={2} showField={true} />
+		<PageSkeleton variant="auth" rows={2} />
 	{:else if !$auth.configured}
 		<div class="panel text-sm">
 			<p class="font-semibold">{translate(lang, 'auth.cloudOffTitle')}</p>
