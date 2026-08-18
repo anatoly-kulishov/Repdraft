@@ -6,7 +6,14 @@
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
-	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
+	import {
+		addCompletedLoggedSet,
+		completedSetCount,
+		removeLoggedExercise,
+		removeLoggedSet,
+		sessionDurationMs,
+		updateLoggedSet
+	} from '$lib/domain/session';
 	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
 	import { formatDurationMs, formatLongDate } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
@@ -14,12 +21,20 @@
 	import { live } from '$lib/stores/live';
 	import { toasts } from '$lib/stores/toasts';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { ChevronRight, Trash2 } from '@lucide/svelte';
+	import { ChevronRight, Plus, Trash2 } from '@lucide/svelte';
+	import HistoryDetailToolbar from './HistoryDetailToolbar.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
+	import {
+		coerceReps,
+		coerceWeightKg,
+		filterRepsInput,
+		filterWeightInput,
+		LIVE_REPS,
+		SETS
+	} from '$lib/domain/inputLimits';
 
 	let lang = $derived($resolvedLocale);
 	let session = $state<WorkoutSession | null>(null);
@@ -27,7 +42,12 @@
 	let missing = $state(false);
 	let loading = $state(true);
 	let deleting = $state(false);
+	let editing = $state(false);
+	let savingEdit = $state(false);
+	let editSession = $state<WorkoutSession | null>(null);
+	let editDraft = $state<Record<string, { w: string; r: string }>>({});
 	let fromPath = $derived($page.url.pathname);
+	let viewSession = $derived(editing && editSession ? editSession : session);
 
 	onMount(() => {
 		void (async () => {
@@ -47,13 +67,16 @@
 	});
 
 	async function onDeleteSession() {
-		if (!session) return;
-		if (!confirm(translate(lang, 'workouts.confirmDeleteSession', { name: session.planName }))) {
+		const id = $page.params.id;
+		if (!id) return;
+		const current = session ?? (await live.getFinishedSession(id));
+		if (!current) return;
+		if (!confirm(translate(lang, 'workouts.confirmDeleteSession', { name: current.planName }))) {
 			return;
 		}
 		deleting = true;
 		try {
-			await live.removeFromHistory(session.id);
+			await live.removeFromHistory(id);
 			toasts.show(translate(lang, 'workouts.sessionDeleted'), 'info');
 			void goto('/workouts');
 		} catch (err) {
@@ -61,24 +84,143 @@
 			deleting = false;
 		}
 	}
+
+	function setKey(exIndex: number, setIndex: number) {
+		return `${exIndex}:${setIndex}`;
+	}
+
+	function draftFromSession(s: WorkoutSession) {
+		const next: Record<string, { w: string; r: string }> = {};
+		for (const [exIndex, ex] of s.exercises.entries()) {
+			for (const [setIndex, set] of ex.sets.entries()) {
+				next[setKey(exIndex, setIndex)] = {
+					w: set.weightKg != null ? `${set.weightKg}` : '',
+					r: set.reps != null ? `${set.reps}` : ''
+				};
+			}
+		}
+		return next;
+	}
+
+	function applyDraft(s: WorkoutSession) {
+		let next = s;
+		for (const [key, v] of Object.entries(editDraft)) {
+			const [exIndexStr, setIndexStr] = key.split(':');
+			const exIndex = Number(exIndexStr);
+			const setIndex = Number(setIndexStr);
+			const weightKg = v.w.trim() ? coerceWeightKg(v.w) : null;
+			const reps = v.r.trim() ? coerceReps(v.r, LIVE_REPS) : null;
+			next = updateLoggedSet(next, exIndex, setIndex, {
+				weightKg,
+				reps,
+				completed: true
+			});
+		}
+		return next;
+	}
+
+	function cloneForEdit(s: WorkoutSession): WorkoutSession {
+		const cloned = structuredClone(s);
+		cloned.exercises = cloned.exercises.map((ex) => ({
+			...ex,
+			sets: ex.sets.filter((set) => set.completed)
+		}));
+		return cloned;
+	}
+
+	function startEdit() {
+		const id = $page.params.id;
+		if (!id) return;
+		void (async () => {
+			try {
+				const current = await live.getFinishedSession(id);
+				if (!current) {
+					toasts.show(translate(lang, 'workouts.editSessionFail'), 'error');
+					return;
+				}
+				const next = cloneForEdit(current);
+				editSession = next;
+				editDraft = draftFromSession(next);
+				editing = true;
+			} catch (err) {
+				toasts.show(translateError(lang, err, 'workouts.editSessionFail'), 'error');
+			}
+		})();
+	}
+
+	function cancelEdit() {
+		editing = false;
+		editSession = null;
+		editDraft = {};
+	}
+
+	function addHistorySet(exIndex: number) {
+		if (!editSession) return;
+		if ((editSession.exercises[exIndex]?.sets.length ?? 0) >= SETS.max) return;
+		const next = addCompletedLoggedSet(applyDraft(editSession), exIndex);
+		editSession = next;
+		editDraft = draftFromSession(next);
+	}
+
+	function removeHistorySet(exIndex: number, setIndex: number) {
+		if (!editSession) return;
+		const next = removeLoggedSet(applyDraft(editSession), exIndex, setIndex, {
+			keepAtLeastOne: false
+		});
+		editSession = next;
+		editDraft = draftFromSession(next);
+	}
+
+	function exerciseLabel(ex: { exerciseId: string }, meta: ExerciseIndexItem | null) {
+		return meta ? exerciseName(meta, lang) : ex.exerciseId;
+	}
+
+	function removeHistoryExercise(exIndex: number, label: string) {
+		if (!editSession) return;
+		if (editSession.exercises.length <= 1) return;
+		if (!confirm(translate(lang, 'workouts.confirmRemoveExercise', { name: label }))) return;
+		const next = removeLoggedExercise(applyDraft(editSession), exIndex);
+		editSession = next;
+		editDraft = draftFromSession(next);
+	}
+
+	async function onSaveEdit() {
+		if (!editSession) return;
+		const id = $page.params.id;
+		if (!id) return;
+		savingEdit = true;
+		try {
+			const patched = applyDraft(editSession);
+			const ok = await live.patchFinishedSession(id, () => patched);
+
+			if (!ok) {
+				toasts.show(translate(lang, 'workouts.editSessionFail'), 'error');
+				return;
+			}
+
+			session = await live.getFinishedSession(id);
+			cancelEdit();
+			toasts.show(translate(lang, 'workouts.sessionEdited'), 'success');
+		} catch (err) {
+			toasts.show(translateError(lang, err, 'workouts.editSessionFail'), 'error');
+		} finally {
+			savingEdit = false;
+		}
+	}
 </script>
 
-{#snippet deleteHeaderAction()}
-	<button
-		type="button"
-		class="btn-ghost is-danger"
-		disabled={deleting}
-		aria-busy={deleting}
-		aria-label={translate(lang, 'workouts.deleteSession')}
-		title={translate(lang, 'workouts.deleteSession')}
-		onclick={() => void onDeleteSession()}
-	>
-		{#if deleting}
-			<Spinner size="sm" block={false} />
-		{:else}
-			<LucideIcon icon={Trash2} size={ICON_BUTTON} />
-		{/if}
-	</button>
+{#snippet historyDetailActions()}
+	<HistoryDetailToolbar
+		{editing}
+		{savingEdit}
+		{deleting}
+		{loading}
+		canEdit={!!session}
+		onSave={onSaveEdit}
+		onCancel={cancelEdit}
+		onEdit={startEdit}
+		onDelete={onDeleteSession}
+	/>
 {/snippet}
 
 <svelte:head>
@@ -88,7 +230,7 @@
 </svelte:head>
 
 {#if loading}
-	<PageSkeleton rows={4} />
+	<PageSkeleton variant="history" rows={4} />
 {:else if missing || !session}
 	<EmptyState
 		title={translate(lang, 'live.noPlan')}
@@ -102,42 +244,82 @@
 			<ScreenHeader
 				title={session.planName}
 				backHref="/workouts"
-				actions={deleteHeaderAction}
+				actions={historyDetailActions}
 			/>
 		</div>
 		<div class="subroute-desktop-head hidden md:block">
 			<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />
 			<div class="history-detail__title-row">
 				<h1 class="page-title">{session.planName}</h1>
-				<button
-					type="button"
-					class="btn-ghost is-danger history-detail__delete inline-flex min-h-11 shrink-0 items-center gap-2 px-2"
-					disabled={deleting}
-					aria-busy={deleting}
-					onclick={() => void onDeleteSession()}
-				>
-					{#if deleting}
-						<Spinner size="sm" block={false} />
-						{translate(lang, 'auth.wait')}
-					{:else}
-						<LucideIcon icon={Trash2} size={ICON_SMALL} />
-						{translate(lang, 'workouts.deleteSession')}
-					{/if}
-				</button>
+				<div class="history-detail__actions">
+					<HistoryDetailToolbar
+						{editing}
+						{savingEdit}
+						{deleting}
+						{loading}
+						canEdit={!!session}
+						onSave={onSaveEdit}
+						onCancel={cancelEdit}
+						onEdit={startEdit}
+						onDelete={onDeleteSession}
+					/>
+				</div>
 			</div>
 		</div>
 		<p class="page-lead mt-1 lg:mt-0">
 			{formatLongDate(session.finishedAt ?? session.startedAt, lang)} · {formatDurationMs(
 				sessionDurationMs(session)
-			)} · {translate(lang, 'workouts.historySets', { n: completedSetCount(session) })}
+			)} · {translate(lang, 'workouts.historySets', {
+				n: completedSetCount(viewSession ?? session)
+			})}
 		</p>
 
 		<ul class="history-exercise-list">
-			{#each session.exercises as ex (ex.exerciseId)}
+			{#each (viewSession ?? session).exercises as ex, exIndex (ex.exerciseId)}
 				{@const meta = indexById.get(ex.exerciseId) ?? null}
-				{@const done = ex.sets.filter((s) => s.completed)}
+				{@const label = exerciseLabel(ex, meta)}
+				{@const rows = editing
+					? ex.sets.map((set, setIndex) => ({ set, setIndex }))
+					: ex.sets.map((set, setIndex) => ({ set, setIndex })).filter(({ set }) => set.completed)}
 				<li class="history-exercise">
-					{#if meta}
+					{#if editing}
+						<div class="history-exercise__head is-static is-editing">
+							<span
+								class="media-well history-exercise__thumb"
+								class:is-placeholder={!meta}
+								aria-hidden="true"
+							>
+								{#if meta}
+									<img
+										src={`/${meta.image}`}
+										alt=""
+										width="180"
+										height="180"
+										loading="lazy"
+										decoding="async"
+									/>
+								{/if}
+							</span>
+							<div class="workout-preview-row-body">
+								<p class="workout-preview-row-title">{label}</p>
+								{#if meta}
+									<p class="workout-preview-row-sub">
+										{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
+									</p>
+								{/if}
+							</div>
+							<button
+								type="button"
+								class="btn-ghost live-set-remove-btn history-exercise__remove"
+								disabled={savingEdit || (editSession?.exercises.length ?? 0) <= 1}
+								aria-label={translate(lang, 'workouts.removeExercise')}
+								title={translate(lang, 'workouts.removeExercise')}
+								onclick={() => removeHistoryExercise(exIndex, label)}
+							>
+								<LucideIcon icon={Trash2} size={ICON_SMALL} />
+							</button>
+						</div>
+					{:else if meta}
 						<a
 							class="history-exercise__head"
 							href={`/exercise/${meta.id}?from=${encodeURIComponent(fromPath)}`}
@@ -153,7 +335,7 @@
 								/>
 							</span>
 							<div class="workout-preview-row-body">
-								<p class="workout-preview-row-title">{exerciseName(meta, lang)}</p>
+								<p class="workout-preview-row-title">{label}</p>
 								<p class="workout-preview-row-sub">
 									{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
 								</p>
@@ -174,21 +356,75 @@
 						</div>
 					{/if}
 
-					{#if done.length > 0}
+					{#if rows.length > 0}
 						<ul
 							class="history-exercise__sets"
-							class:history-exercise__sets--grid={done.length >= 4}
+							class:history-exercise__sets--grid={rows.length >= 4 && !editing}
+							class:history-exercise__sets--editing={editing}
 						>
-							{#each done as set, i (i)}
+							{#each rows as item, i (item.setIndex)}
 								<li class="history-exercise__set tabular-nums">
 									<span class="history-exercise__set-i">{i + 1}</span>
-									<span class="history-exercise__set-weight">{set.weightKg ?? '—'} kg</span>
-									<span class="history-exercise__set-reps">× {set.reps ?? '—'}</span>
+									{#if editing}
+										{@const key = setKey(exIndex, item.setIndex)}
+										<input
+											class="field history-set-field history-set-weight tabular-nums"
+											type="text"
+											inputmode="decimal"
+											autocomplete="off"
+											value={editDraft[key]?.w ?? ''}
+											aria-label={translate(lang, 'live.weight')}
+											oninput={(e) => {
+												const nextRaw = (e.currentTarget as HTMLInputElement).value;
+												const prev = editDraft[key]?.w ?? '';
+												const next = filterWeightInput(nextRaw, prev);
+												editDraft[key] = { ...(editDraft[key] ?? { w: '', r: '' }), w: next };
+											}}
+										/>
+										<span class="history-exercise__set-unit">kg</span>
+										<input
+											class="field history-set-field history-set-reps tabular-nums"
+											type="text"
+											inputmode="numeric"
+											autocomplete="off"
+											value={editDraft[key]?.r ?? ''}
+											aria-label={translate(lang, 'live.reps')}
+											oninput={(e) => {
+												const nextRaw = (e.currentTarget as HTMLInputElement).value;
+												const prev = editDraft[key]?.r ?? '';
+												const next = filterRepsInput(nextRaw, LIVE_REPS, prev);
+												editDraft[key] = { ...(editDraft[key] ?? { w: '', r: '' }), r: next };
+											}}
+										/>
+										<button
+											type="button"
+											class="btn-ghost live-set-remove-btn"
+											aria-label={translate(lang, 'live.removeSet')}
+											title={translate(lang, 'live.removeSet')}
+											onclick={() => removeHistorySet(exIndex, item.setIndex)}
+										>
+											<LucideIcon icon={Trash2} size={ICON_SMALL} />
+										</button>
+									{:else}
+										<span class="history-exercise__set-weight">{item.set.weightKg ?? '—'} kg</span>
+										<span class="history-exercise__set-reps">× {item.set.reps ?? '—'}</span>
+									{/if}
 								</li>
 							{/each}
 						</ul>
 					{:else}
 						<p class="history-exercise__empty">{translate(lang, 'workouts.noLoggedSets')}</p>
+					{/if}
+					{#if editing}
+						<button
+							type="button"
+							class="btn-ghost history-exercise__add-set"
+							disabled={savingEdit || ex.sets.length >= SETS.max}
+							onclick={() => addHistorySet(exIndex)}
+						>
+							<LucideIcon icon={Plus} size={ICON_SMALL} />
+							{translate(lang, 'live.addSet')}
+						</button>
 					{/if}
 				</li>
 			{/each}

@@ -266,6 +266,47 @@ function createLiveStore() {
 			await deleteSession(id);
 			await refreshHistory();
 		},
+		/**
+		 * Patch a finished (history) session and persist changes locally + mirror to cloud.
+		 * Used for “edit history” UI.
+		 */
+		async patchFinishedSession(
+			id: string,
+			updater: (session: WorkoutSession) => WorkoutSession
+		): Promise<boolean> {
+			// Block resurrecting deleted sessions.
+			if (listSessionTombstones().includes(id)) return false;
+
+			let session: WorkoutSession | null = get(store).history.find((s) => s.id === id) ?? null;
+			if (!session?.finishedAt) session = await localSessionRepository.get(id);
+			if (!session?.finishedAt && isSessionsCloudAvailable()) {
+				try {
+					const cloud = await supabaseSessionRepository.get(id);
+					if (cloud?.finishedAt) {
+						// Keep local mirror in sync so offline "last time" uses edits.
+						await localSessionRepository.save(cloud);
+						session = cloud;
+					}
+				} catch (err) {
+					console.warn('patchFinishedSession cloud failed', err);
+				}
+			}
+
+			if (!session?.finishedAt) return false;
+
+			const next = updater(session);
+			// Safety: keep identity + finished markers intact.
+			const patched: WorkoutSession = {
+				...next,
+				id: session.id,
+				startedAt: session.startedAt,
+				finishedAt: session.finishedAt
+			};
+
+			await persistSession(patched);
+			await refreshHistory();
+			return true;
+		},
 		async clearHistory() {
 			store.update((s) => ({ ...s, history: [] }));
 			await clearFinishedSessionHistory();
