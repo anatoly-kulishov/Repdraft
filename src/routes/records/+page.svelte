@@ -113,7 +113,7 @@
 		sync={$recordsSync}
 		{lang}
 		suppressed={showSkeleton}
-		onRetry={() => void records.refresh()}
+		onRetry={() => void records.refresh({ force: true })}
 	/>
 
 	{#if showSkeleton}

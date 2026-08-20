@@ -2,7 +2,7 @@
 	import HomePageSkeleton from '$lib/components/HomePageSkeleton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import {
 		completedExerciseCount,
@@ -22,15 +22,18 @@
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	import { ChevronRight, LogIn, Plus } from '@lucide/svelte';
 
 	let lang = $derived($resolvedLocale);
 	let active = $derived($live.session);
 	let recent = $derived($live.history.slice(0, 6));
 	let homePlans = $derived($plans.slice(0, 8));
-	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
-	let indexReady = $state(false);
-	let historyReady = $state(false);
+	const peeked = peekExerciseIndex();
+	let indexById = $state<Map<string, ExerciseIndexItem>>(
+		peeked ? new Map(peeked.map((item) => [item.id, item])) : new Map()
+	);
+	let indexReady = $state(peeked != null);
 
 	let hasActive = $derived(Boolean(active && !active.finishedAt));
 	let hasPlans = $derived($plans.length > 0);
@@ -39,12 +42,13 @@
 	let isGuest = $derived($auth.ready && $auth.configured && !$auth.user);
 	let authHref = '/auth?next=%2F';
 	let pageReady = $derived(
-		$auth.ready && $auth.dataBootstrap && $live.ready && historyReady && indexReady
+		$auth.ready && $auth.dataBootstrap && $live.ready && $live.historyHydrated && indexReady
 	);
 
 	let isCreateHome = $derived(!hasPlans);
-	let showSignedInMockup = $derived($auth.ready && !isGuest);
 	let showGuestCreateHero = $derived(pageReady && isGuest && isCreateHome);
+	/** Signed-in home, or guest who already has plans (needs Start, not only a list). */
+	let showReadyHeader = $derived($auth.ready && !showGuestCreateHero && (hasPlans || !isGuest));
 
 	/** Prefer last finished plan if still saved, else first plan — one hop to preview+Start. */
 	let nextPlan = $derived.by(() => {
@@ -81,14 +85,14 @@
 
 	let createHeroTitle = $derived(
 		isGuest
-			? translate(lang, 'home.guestTitle')
+			? translate(lang, 'home.guestTrainTitle')
 			: isFirstTimeHome
 				? translate(lang, 'home.welcomeTitle')
 				: translate(lang, 'home.noPlansTitle')
 	);
 	let createHeroLead = $derived(
 		isGuest
-			? translate(lang, 'home.guestLead')
+			? translate(lang, 'home.guestTrainLead')
 			: isFirstTimeHome
 				? translate(lang, 'home.welcomeLead')
 				: translate(lang, 'home.noPlansLead')
@@ -118,9 +122,7 @@
 					.finally(() => {
 						indexReady = true;
 					}),
-				live.refreshHistory().finally(() => {
-					historyReady = true;
-				})
+				get(live).historyHydrated ? Promise.resolve() : live.refreshHistory()
 			]);
 		})();
 	});
@@ -132,17 +134,19 @@
 
 <section
 	class="home-page content-page"
-	class:home-page--start={pageReady && !isGuest && hasPlans}
+	class:home-page--start={pageReady && hasPlans}
 	class:home-page--create={pageReady && isCreateHome}
 	class:home-page--guest={pageReady && isGuest}
 	aria-labelledby="home-heading"
 >
-	{#if showSignedInMockup}
+	{#if showReadyHeader}
 		<header class="home-header home-header--mockup">
 			<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
 			<div class="home-header__copy">
 				{#if showGreeting}
 					<p class="home-header__greeting">{greetingText}</p>
+				{:else if isGuest}
+					<p class="home-header__greeting">{translate(lang, 'home.readyTitle')}</p>
 				{:else}
 					<p class="home-header__greeting" aria-hidden="true">
 						<span
@@ -150,7 +154,7 @@
 						></span>
 					</p>
 				{/if}
-				{#if pageReady}
+				{#if pageReady && !isGuest}
 					<p class="home-header__subtitle">{mockupSubtitle}</p>
 				{/if}
 			</div>
@@ -192,13 +196,17 @@
 						<div class="home-hero-actions">
 							<a
 								class="btn-primary home-hero-cta min-h-12 items-center justify-center gap-2"
+								href={BUILDER_NEW_HREF}
+							>
+								<LucideIcon icon={Plus} size={ICON_PRIMARY} />
+								{translate(lang, 'home.guestCreateLocal')}
+							</a>
+							<a
+								class="btn-secondary home-hero-secondary min-h-12 items-center justify-center gap-2"
 								href={authHref}
 							>
 								<LucideIcon icon={LogIn} size={ICON_PRIMARY} />
 								{translate(lang, 'nav.signIn')}
-							</a>
-							<a class="home-hero-skip" href={BUILDER_NEW_HREF}>
-								{translate(lang, 'home.guestCreateLocal')}
 							</a>
 						</div>
 					</div>

@@ -8,6 +8,8 @@ import {
 	REST_UNTIL_STORAGE_KEY,
 	SESSIONS_STORAGE_KEY
 } from '$lib/domain/repository';
+import { clearAllLastSyncedAt } from '$lib/storage/syncMeta';
+import { clearSyncOutbox } from '$lib/storage/syncOutbox';
 
 export const LOCAL_CACHE_USER_KEY = 'repdraft:local-cache-user';
 
@@ -40,6 +42,8 @@ export function clearUserLocalData(): void {
 		localStorage.removeItem(key);
 	}
 	clearLegacyGreetingNameKeys();
+	clearAllLastSyncedAt();
+	clearSyncOutbox();
 }
 
 /** Keep guest local data on first login; wipe on logout or account switch. */

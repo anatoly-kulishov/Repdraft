@@ -28,6 +28,7 @@ import {
 	persistSession,
 	clearFinishedSessionHistory
 } from '$lib/storage/dataAccess';
+import { exerciseStats } from '$lib/stores/exerciseStats';
 import {
 	localSessionRepository,
 	readActiveSession,
@@ -38,6 +39,7 @@ import {
 	clearSessionTombstone,
 	listSessionTombstones
 } from '$lib/storage/sessionTombstones';
+import { clearLastSyncedAt } from '$lib/storage/syncMeta';
 import { supabaseSessionRepository } from '$lib/storage/supabaseSessionRepository';
 import { refreshLocalCloudList } from '$lib/stores/cloudLocal';
 import { get, writable } from 'svelte/store';
@@ -48,6 +50,8 @@ type LiveState = {
 	restUntil: number | null;
 	history: WorkoutSession[];
 	ready: boolean;
+	/** True after first history refresh completes (warm nav skips full-page wait). */
+	historyHydrated: boolean;
 };
 
 const REST_UNTIL_KEY = REST_UNTIL_STORAGE_KEY;
@@ -81,7 +85,8 @@ function createLiveStore() {
 		session: null,
 		restUntil: null,
 		history: [],
-		ready: false
+		ready: false,
+		historyHydrated: false
 	});
 
 	function persistActive(session: WorkoutSession | null, restUntil: number | null) {
@@ -113,6 +118,8 @@ function createLiveStore() {
 					return mergeWorkoutSessions(local, cloud, deletedIds);
 				},
 				wantCloud: isSessionsCloudAvailable(),
+				listKey: 'sessions',
+				previousItems: get(store).history,
 				label: 'sessions'
 			});
 			const unnamedIds = result.items
@@ -131,7 +138,7 @@ function createLiveStore() {
 			}
 			// Always gate UI by tombstones (local-only / cloud-error paths skip merge).
 			const finished = result.items.filter((x) => x.finishedAt && !deleted.has(x.id));
-			store.update((s) => ({ ...s, history: finished }));
+			store.update((s) => ({ ...s, history: finished, historyHydrated: true }));
 
 			// Persist cloud-only finished rows so offline “last time” keeps working.
 			const localIds = new Set((await localSessionRepository.list()).map((s) => s.id));
@@ -162,12 +169,19 @@ function createLiveStore() {
 			}
 		} catch (err) {
 			console.error('live.refreshHistory failed', err);
+			store.update((s) => ({ ...s, historyHydrated: true }));
 		}
 	}
 
 	function hydrate() {
 		if (!browser) {
-			store.set({ session: null, restUntil: null, history: [], ready: true });
+			store.set({
+				session: null,
+				restUntil: null,
+				history: [],
+				ready: true,
+				historyHydrated: true
+			});
 			return;
 		}
 		const active = readActiveSession();
@@ -181,12 +195,13 @@ function createLiveStore() {
 		} catch {
 			restUntil = null;
 		}
-		store.set({
+		store.update((s) => ({
 			session: active && !active.finishedAt ? active : null,
 			restUntil,
-			history: [],
-			ready: true
-		});
+			history: s.history,
+			ready: true,
+			historyHydrated: s.historyHydrated
+		}));
 		void refreshHistory();
 	}
 
@@ -195,14 +210,18 @@ function createLiveStore() {
 		hydrate,
 		refreshHistory,
 		async startFromPlan(plan: WorkoutPlan): Promise<WorkoutSession> {
-			await refreshHistory();
 			const history = get(store).history;
 			const session = seedOpenSetsFromLastPerformance(startSessionFromPlan(plan), (id) =>
 				lastPerformance(history, id)
 			);
 			persistActive(session, null);
 			store.update((s) => ({ ...s, session, restUntil: null }));
+			void refreshHistory();
 			return session;
+		},
+		resetHistoryHydration() {
+			clearLastSyncedAt('sessions');
+			store.update((s) => ({ ...s, historyHydrated: false, history: [] }));
 		},
 		/** Merge plan prescription (groupId/rest/targets) into the active session. */
 		syncFromPlan(plan: WorkoutPlan): WorkoutSession | null {
@@ -295,6 +314,10 @@ function createLiveStore() {
 			const current = get(store).session;
 			if (!current) return null;
 			const done = finishSession(current);
+			const usedIds = done.exercises
+				.filter((ex) => ex.sets.some((s) => s.completed))
+				.map((ex) => ex.exerciseId);
+			exerciseStats.recordUses(usedIds);
 			await persistSession(done);
 			persistActive(null, null);
 			await refreshHistory();

@@ -18,6 +18,7 @@ import {
 } from '$lib/domain/workout';
 import type { WorkoutExercise, WorkoutPlan } from '$lib/domain/types';
 import { readDraft, writeDraft } from '$lib/storage/localWorkoutRepository';
+import { exerciseStats } from '$lib/stores/exerciseStats';
 import { writable } from 'svelte/store';
 
 /**
@@ -59,6 +60,7 @@ function createDraftStore() {
 				result = addExercise(plan, exerciseId, hint);
 				return result.plan;
 			});
+			if (result.added) exerciseStats.recordUse(exerciseId);
 			return result;
 		},
 		removeFromDraft(exerciseId: string) {
