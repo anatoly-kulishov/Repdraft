@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CloudSyncBanner from '$lib/components/CloudSyncBanner.svelte';
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import SegmentControl from '$lib/components/SegmentControl.svelte';
 	import WorkoutsPageSkeleton from '$lib/components/WorkoutsPageSkeleton.svelte';
@@ -9,7 +10,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { Copy, ClipboardList, Clock, Play, Plus, Trash2 } from '@lucide/svelte';
-	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
 	import { planExerciseSlotCount, planTargetSummary } from '$lib/domain/workout';
@@ -25,6 +26,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 
 	type WorkoutsTab = 'plans' | 'history';
 
@@ -35,12 +37,14 @@
 	let lang = $derived($resolvedLocale);
 	let activeTab = $derived(parseWorkoutsTab($page.url.searchParams.get('tab')));
 	let searchQuery = $state('');
-	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
-	let indexReady = $state(false);
-	let historyReady = $state(false);
+	const peeked = peekExerciseIndex();
+	let indexById = $state<Map<string, ExerciseIndexItem>>(
+		peeked ? new Map(peeked.map((item) => [item.id, item])) : new Map()
+	);
+	let indexReady = $state(peeked != null);
 
 	let pageReady = $derived(
-		$auth.ready && $auth.dataBootstrap && $plansReady && indexReady && historyReady
+		$auth.ready && $auth.dataBootstrap && $plansReady && indexReady && $live.historyHydrated
 	);
 	let listUncertain = $derived(isCloudListUncertain($plansSync));
 
@@ -55,6 +59,13 @@
 	let planBusyId = $state<string | null>(null);
 	let planBusyOp = $state<'copy' | 'delete' | null>(null);
 
+	type ConfirmOffer =
+		| { kind: 'delete-plan'; id: string; name: string }
+		| { kind: 'delete-session'; id: string; name: string }
+		| { kind: 'clear-history' };
+
+	let confirmOffer = $state<ConfirmOffer | null>(null);
+
 	const tabOptions = $derived([
 		{ id: 'plans', label: translate(lang, 'workouts.tabPlans') },
 		{ id: 'history', label: translate(lang, 'workouts.tabHistory') }
@@ -68,9 +79,9 @@
 			.finally(() => {
 				indexReady = true;
 			});
-		void live.refreshHistory().finally(() => {
-			historyReady = true;
-		});
+		if (!get(live).historyHydrated) {
+			void live.refreshHistory();
+		}
 	});
 
 	function setTab(tab: WorkoutsTab) {
@@ -105,7 +116,14 @@
 
 	async function onRemove(id: string, name: string) {
 		if (planBusyId) return;
-		if (!confirm(translate(lang, 'workouts.confirmDelete', { name }))) return;
+		confirmOffer = { kind: 'delete-plan', id, name };
+	}
+
+	async function commitRemovePlan() {
+		if (!confirmOffer || confirmOffer.kind !== 'delete-plan') return;
+		const { id } = confirmOffer;
+		confirmOffer = null;
+		if (planBusyId) return;
 		planBusyId = id;
 		planBusyOp = 'delete';
 		try {
@@ -119,17 +137,21 @@
 		}
 	}
 
-	function onStart(planId: string) {
+	function onOpen(planId: string) {
 		void goto(`/workouts/${planId}`);
 	}
 
 	async function onRemoveSession(session: (typeof history)[number]) {
-		if (!confirm(translate(lang, 'workouts.confirmDeleteSession', { name: session.planName }))) {
-			return;
-		}
-		historyBusyId = session.id;
+		confirmOffer = { kind: 'delete-session', id: session.id, name: session.planName };
+	}
+
+	async function commitRemoveSession() {
+		if (!confirmOffer || confirmOffer.kind !== 'delete-session') return;
+		const { id } = confirmOffer;
+		confirmOffer = null;
+		historyBusyId = id;
 		try {
-			await live.removeFromHistory(session.id);
+			await live.removeFromHistory(id);
 			toasts.show(translate(lang, 'workouts.sessionDeleted'), 'info');
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'workouts.sessionDeleteFail'), 'error');
@@ -139,7 +161,12 @@
 	}
 
 	async function onClearHistory() {
-		if (!confirm(translate(lang, 'workouts.confirmClearHistory'))) return;
+		confirmOffer = { kind: 'clear-history' };
+	}
+
+	async function commitClearHistory() {
+		if (!confirmOffer || confirmOffer.kind !== 'clear-history') return;
+		confirmOffer = null;
 		historyBusyId = '__clear__';
 		try {
 			await live.clearHistory();
@@ -148,6 +175,51 @@
 			toasts.show(translateError(lang, err, 'workouts.historyClearFail'), 'error');
 		} finally {
 			historyBusyId = null;
+		}
+	}
+
+	function dismissConfirmOffer() {
+		confirmOffer = null;
+	}
+
+	let confirmTitle = $derived.by(() => {
+		if (!confirmOffer) return '';
+		switch (confirmOffer.kind) {
+			case 'delete-plan':
+				return translate(lang, 'workouts.confirmDelete', { name: confirmOffer.name });
+			case 'delete-session':
+				return translate(lang, 'workouts.confirmDeleteSession', { name: confirmOffer.name });
+			case 'clear-history':
+				return translate(lang, 'workouts.confirmClearHistory');
+			default: {
+				const _exhaustive: never = confirmOffer;
+				return _exhaustive;
+			}
+		}
+	});
+
+	let confirmPrimaryLabel = $derived(
+		confirmOffer?.kind === 'clear-history'
+			? translate(lang, 'common.clear')
+			: translate(lang, 'common.delete')
+	);
+
+	function commitConfirmOffer() {
+		if (!confirmOffer) return;
+		switch (confirmOffer.kind) {
+			case 'delete-plan':
+				void commitRemovePlan();
+				return;
+			case 'delete-session':
+				void commitRemoveSession();
+				return;
+			case 'clear-history':
+				void commitClearHistory();
+				return;
+			default: {
+				const _exhaustive: never = confirmOffer;
+				return _exhaustive;
+			}
 		}
 	}
 </script>
@@ -195,7 +267,7 @@
 		sync={$plansSync}
 		{lang}
 		suppressed={!pageReady}
-		onRetry={() => void plans.refresh()}
+		onRetry={() => void plans.refresh({ force: true })}
 	/>
 
 	{#if !pageReady}
@@ -268,11 +340,11 @@
 											<button
 												type="button"
 												class="btn-ghost entity-row__start inline-flex min-h-11 shrink-0 items-center gap-1.5 px-3"
-												onclick={() => onStart(plan.id)}
+												onclick={() => onOpen(plan.id)}
 												disabled={plan.exercises.length === 0 || planBusyId !== null}
 											>
 												<LucideIcon icon={Play} size={ICON_BUTTON} />
-												{translate(lang, 'workouts.start')}
+												{translate(lang, 'workouts.open')}
 											</button>
 											<button
 												type="button"
@@ -375,3 +447,19 @@
 		<LucideIcon icon={Plus} size={ICON_PRIMARY} />
 	</a>
 </section>
+
+<BottomSheet
+	open={confirmOffer != null}
+	titleId="workouts-confirm-title"
+	onDismiss={dismissConfirmOffer}
+>
+	<p id="workouts-confirm-title" class="bottom-sheet__title">{confirmTitle}</p>
+	{#snippet actions()}
+		<button type="button" class="btn-secondary min-h-12" onclick={dismissConfirmOffer}>
+			{translate(lang, 'common.cancel')}
+		</button>
+		<button type="button" class="btn-danger min-h-12" onclick={commitConfirmOffer}>
+			{confirmPrimaryLabel}
+		</button>
+	{/snippet}
+</BottomSheet>

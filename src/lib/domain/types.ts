@@ -21,6 +21,8 @@ export type ExerciseIndexItem = {
 	muscle_group: string;
 	secondary_muscles: string[];
 	image: string;
+	/** Cold-start ranking weight (1–100); present on slim index from build:data. */
+	globalPopularity?: number;
 	/** Present on full exercise payloads; omitted from the slim catalog index. */
 	gif_url?: string;
 };

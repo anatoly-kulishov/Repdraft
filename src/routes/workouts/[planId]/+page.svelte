@@ -13,7 +13,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { ChevronRight, Pencil, Play } from '@lucide/svelte';
+	import { Pencil, Play } from '@lucide/svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 
 	let { params } = $props();
@@ -138,10 +138,7 @@
 						</p>
 					{/if}
 					{#if meta}
-						<a
-							class="workout-preview-row"
-							href={`/exercise/${meta.id}?from=${encodeURIComponent(`/workouts/${plan.id}`)}`}
-						>
+						<div class="workout-preview-row is-static">
 							<span class="media-well workout-preview-thumb">
 								<img
 									src={`/${meta.image}`}
@@ -168,10 +165,7 @@
 									{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
 								</p>
 							</div>
-							<span class="workout-preview-chevron" aria-hidden="true">
-								<LucideIcon icon={ChevronRight} size={ICON_BUTTON} />
-							</span>
-						</a>
+						</div>
 					{:else}
 						<div class="workout-preview-row is-static">
 							<span class="media-well workout-preview-thumb is-placeholder" aria-hidden="true"></span>

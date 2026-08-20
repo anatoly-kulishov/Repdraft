@@ -26,7 +26,8 @@ const checks = [
 	'cloudSync',
 	'prefs',
 	'exportData',
-	'pwaInstall'
+	'pwaInstall',
+	'exerciseScore'
 ];
 
 for (const name of checks) {

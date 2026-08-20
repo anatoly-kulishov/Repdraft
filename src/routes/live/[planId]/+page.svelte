@@ -1,5 +1,6 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import LiveAltPicker from '$lib/components/live/LiveAltPicker.svelte';
 	import LiveExerciseNav from '$lib/components/live/LiveExerciseNav.svelte';
 	import LiveSessionActions from '$lib/components/live/LiveSessionActions.svelte';
@@ -25,7 +26,7 @@
 		totalSetCount,
 		visibleSessionExerciseIndices
 	} from '$lib/domain/session';
-	import type { ExerciseIndexItem } from '$lib/domain/types';
+	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
 	import { altGroupBounds, groupBounds, groupMemberRole } from '$lib/domain/workout';
 	import { playRestDoneChime, unlockAudioFromGesture, vibrateRestDone, vibrateSetDone } from '$lib/domain/prefs';
 	import { acquireScreenWakeLock, releaseScreenWakeLock } from '$lib/media/wakeLock';
@@ -51,6 +52,9 @@
 	let finishing = $state(false);
 	let finishOfferOpen = $state(false);
 	let discardOfferOpen = $state(false);
+	let switchOfferOpen = $state(false);
+	let pendingSwitchPlan = $state<WorkoutPlan | null>(null);
+	let resumeActivePlanId = $state<string | null>(null);
 	let missing = $state(false);
 	let names = $state(new Map<string, ExerciseIndexItem>());
 	let now = $state(Date.now());
@@ -195,11 +199,14 @@
 				}
 
 				if (active && !active.finishedAt && active.planId && active.planId !== planId) {
-					if (!confirm(translate(lang, 'live.confirmDiscard'))) {
-						await goto(`/live/${active.planId}`);
+					if (!plan || plan.exercises.length === 0) {
+						missing = true;
 						return;
 					}
-					live.discard();
+					pendingSwitchPlan = plan;
+					resumeActivePlanId = active.planId;
+					switchOfferOpen = true;
+					return;
 				}
 
 				if (!plan || plan.exercises.length === 0) {
@@ -298,6 +305,10 @@
 		}
 		invalidSetIndex = null;
 		invalidKind = null;
+		if (typeof document !== 'undefined') {
+			const active = document.activeElement;
+			if (active instanceof HTMLElement) active.blur();
+		}
 		unlockAudioFromGesture();
 		vibrateSetDone();
 		live.patchSet(ei, si, { completed: true });
@@ -450,6 +461,35 @@
 		if (finishing) return;
 		discardOfferOpen = false;
 	}
+
+	function keepCurrentLiveSession() {
+		const id = resumeActivePlanId;
+		switchOfferOpen = false;
+		pendingSwitchPlan = null;
+		resumeActivePlanId = null;
+		if (id) void goto(`/live/${id}`);
+		else void goto('/workouts');
+	}
+
+	async function confirmSwitchLivePlan() {
+		const plan = pendingSwitchPlan;
+		switchOfferOpen = false;
+		pendingSwitchPlan = null;
+		resumeActivePlanId = null;
+		if (!plan) return;
+		live.discard();
+		loading = true;
+		try {
+			await live.startFromPlan(plan);
+			const started = get(live).session;
+			if (started) selectedExerciseIndex = pickDefaultExerciseIndex(started);
+		} catch (err) {
+			console.error('live switch start failed', err);
+			missing = true;
+		} finally {
+			loading = false;
+		}
+	}
 </script>
 
 {#snippet liveHeaderActions()}
@@ -460,7 +500,30 @@
 	<title>{session ? session.planName : translate(lang, 'live.title')} · Repdraft</title>
 </svelte:head>
 
-{#if loading}
+{#if switchOfferOpen}
+	<BottomSheet
+		open={switchOfferOpen}
+		titleId="live-switch-offer-title"
+		onDismiss={keepCurrentLiveSession}
+	>
+		<p id="live-switch-offer-title" class="bottom-sheet__title">
+			{translate(lang, 'live.confirmDiscard')}
+		</p>
+		<p class="bottom-sheet__hint">{translate(lang, 'live.switchOfferHint')}</p>
+		{#snippet actions()}
+			<button type="button" class="btn-secondary min-h-12" onclick={keepCurrentLiveSession}>
+				{translate(lang, 'live.switchKeepCurrent')}
+			</button>
+			<button
+				type="button"
+				class="btn-danger min-h-12"
+				onclick={() => void confirmSwitchLivePlan()}
+			>
+				{translate(lang, 'live.switchStartNew')}
+			</button>
+		{/snippet}
+	</BottomSheet>
+{:else if loading && !(session && !session.finishedAt && session.planId === params.planId)}
 	<PageSkeleton variant="live" rows={4} />
 {:else if missing || !session}
 	<div class="mx-auto max-w-md space-y-3">
@@ -534,59 +597,6 @@
 			</div>
 		</header>
 
-		{#if restLeft > 0 && !sessionComplete}
-			<div
-				class="live-rest"
-				role="timer"
-				aria-live="polite"
-				aria-atomic="true"
-				aria-label={`${translate(lang, 'live.rest')}: ${formatRestSec(restLeft)}`}
-			>
-				<button
-					type="button"
-					class="btn-ghost live-rest__chip"
-					aria-label={translate(lang, 'live.restMinus15Aria')}
-					onclick={() => {
-						restChimeArmed = true;
-						live.adjustRestSeconds(-15);
-					}}
-				>
-					{translate(lang, 'live.restMinus15')}
-				</button>
-				<div class="live-rest__mid">
-					{#key restLeft}
-						<p class="live-rest-value">{formatRestSec(restLeft)}</p>
-					{/key}
-					<div
-						class="live-rest__bar"
-						style={`--rest-pct: ${restPct}`}
-						aria-hidden="true"
-					></div>
-				</div>
-				<button
-					type="button"
-					class="btn-ghost live-rest__chip"
-					aria-label={translate(lang, 'live.restPlus15Aria')}
-					onclick={() => {
-						restChimeArmed = true;
-						live.adjustRestSeconds(15);
-					}}
-				>
-					{translate(lang, 'live.restPlus15')}
-				</button>
-				<button
-					type="button"
-					class="btn-secondary live-rest__skip"
-					onclick={() => {
-						restChimeArmed = false;
-						live.skipRest();
-					}}
-				>
-					{translate(lang, 'live.skipRest')}
-				</button>
-			</div>
-		{/if}
-
 		<div class="live-workspace">
 			<LiveExerciseNav
 				{session}
@@ -654,76 +664,87 @@
 					onNext={goNextExercise}
 					onFinish={() => void onFinish()}
 					onDiscard={onDiscard}
+					restLeft={sessionComplete ? 0 : restLeft}
+					restPct={restPct}
+					restLabel={formatRestSec(restLeft)}
+					onRestMinus={() => {
+						restChimeArmed = true;
+						live.adjustRestSeconds(-30);
+					}}
+					onRestPlus={() => {
+						restChimeArmed = true;
+						live.adjustRestSeconds(30);
+					}}
+					onRestSkip={() => {
+						restChimeArmed = false;
+						live.skipRest();
+					}}
 				/>
 			</div>
 		</div>
 
 		{#if finishOfferOpen}
-			<div
-				class="live-finish-offer"
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="live-finish-offer-title"
+			<BottomSheet
+				open={finishOfferOpen}
+				titleId="live-finish-offer-title"
+				dismissible={!finishing}
+				onDismiss={dismissFinishOffer}
 			>
-				<div class="live-finish-offer__card panel">
-					<p id="live-finish-offer-title" class="live-finish-offer__title">
-						{translate(lang, sessionComplete ? 'live.finishOfferReady' : 'live.confirmFinish')}
-					</p>
-					{#if sessionComplete}
-						<p class="live-finish-offer__hint">{translate(lang, 'live.finishOfferHint')}</p>
-					{/if}
-					<div class="live-finish-offer__actions">
-						<button
-							type="button"
-							class="btn-secondary min-h-12"
-							disabled={finishing}
-							onclick={dismissFinishOffer}
-						>
-							{translate(lang, 'live.finishOfferLater')}
-						</button>
-						<button
-							type="button"
-							class="btn-primary min-h-12"
-							disabled={finishing}
-							aria-busy={finishing}
-							onclick={() => void commitFinish()}
-						>
-							{translate(lang, 'live.finish')}
-						</button>
-					</div>
-				</div>
-			</div>
+				<p id="live-finish-offer-title" class="bottom-sheet__title">
+					{translate(lang, sessionComplete ? 'live.finishOfferReady' : 'live.confirmFinish')}
+				</p>
+				{#if sessionComplete}
+					<p class="bottom-sheet__hint">{translate(lang, 'live.finishOfferHint')}</p>
+				{/if}
+				{#snippet actions()}
+					<button
+						type="button"
+						class="btn-secondary min-h-12"
+						disabled={finishing}
+						onclick={dismissFinishOffer}
+					>
+						{translate(lang, 'live.finishOfferLater')}
+					</button>
+					<button
+						type="button"
+						class="btn-primary min-h-12"
+						disabled={finishing}
+						aria-busy={finishing}
+						onclick={() => void commitFinish()}
+					>
+						{translate(lang, 'live.finish')}
+					</button>
+				{/snippet}
+			</BottomSheet>
 		{:else if discardOfferOpen}
-			<div
-				class="live-finish-offer"
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="live-discard-offer-title"
+			<BottomSheet
+				open={discardOfferOpen}
+				titleId="live-discard-offer-title"
+				dismissible={!finishing}
+				onDismiss={dismissDiscardOffer}
 			>
-				<div class="live-finish-offer__card panel">
-					<p id="live-discard-offer-title" class="live-finish-offer__title">
-						{translate(lang, 'live.confirmDiscard')}
-					</p>
-					<div class="live-finish-offer__actions">
-						<button
-							type="button"
-							class="btn-secondary min-h-12"
-							disabled={finishing}
-							onclick={dismissDiscardOffer}
-						>
-							{translate(lang, 'live.finishOfferLater')}
-						</button>
-						<button
-							type="button"
-							class="btn-danger min-h-12"
-							disabled={finishing}
-							onclick={commitDiscard}
-						>
-							{translate(lang, 'live.discard')}
-						</button>
-					</div>
-				</div>
-			</div>
+				<p id="live-discard-offer-title" class="bottom-sheet__title">
+					{translate(lang, 'live.confirmDiscard')}
+				</p>
+				{#snippet actions()}
+					<button
+						type="button"
+						class="btn-secondary min-h-12"
+						disabled={finishing}
+						onclick={dismissDiscardOffer}
+					>
+						{translate(lang, 'live.finishOfferLater')}
+					</button>
+					<button
+						type="button"
+						class="btn-danger min-h-12"
+						disabled={finishing}
+						onclick={commitDiscard}
+					>
+						{translate(lang, 'live.discard')}
+					</button>
+				{/snippet}
+			</BottomSheet>
 		{/if}
 
 		<LiveSessionActions
@@ -734,6 +755,21 @@
 			onNext={goNextExercise}
 			onFinish={() => void onFinish()}
 			onDiscard={onDiscard}
+			restLeft={sessionComplete ? 0 : restLeft}
+			restPct={restPct}
+			restLabel={formatRestSec(restLeft)}
+			onRestMinus={() => {
+				restChimeArmed = true;
+				live.adjustRestSeconds(-30);
+			}}
+			onRestPlus={() => {
+				restChimeArmed = true;
+				live.adjustRestSeconds(30);
+			}}
+			onRestSkip={() => {
+				restChimeArmed = false;
+				live.skipRest();
+			}}
 		/>
 	</section>
 {/if}

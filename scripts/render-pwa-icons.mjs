@@ -65,7 +65,13 @@ const light = { bg: '#F7F8FC', surface: '#FFFFFF', stroke: '#C7CEDB' };
 await writePng(join(staticDir, 'apple-touch-icon.png'), anySvg(dark), 180, dark.bg);
 await writePng(join(staticDir, 'apple-touch-icon-light.png'), anySvg(light), 180, light.bg);
 copyFileSync(join(staticDir, 'apple-touch-icon.png'), join(staticDir, 'apple-touch-icon-precomposed.png'));
-console.log('wrote static/apple-touch-icon-precomposed.png');
+/* Cache-bust installers: manifest / app.html point at *-v2.png */
+copyFileSync(join(staticDir, 'apple-touch-icon.png'), join(staticDir, 'apple-touch-icon-v2.png'));
+copyFileSync(
+	join(staticDir, 'apple-touch-icon-precomposed.png'),
+	join(staticDir, 'apple-touch-icon-precomposed-v2.png')
+);
+console.log('wrote static/apple-touch-icon-precomposed.png (+ v2)');
 
 await writePng(join(staticDir, 'icon-192.png'), anySvg(dark), 192, dark.bg);
 await writePng(join(staticDir, 'icon-192-light.png'), anySvg(light), 192, light.bg);
@@ -78,6 +84,10 @@ await writePng(
 	512,
 	light.bg
 );
+copyFileSync(join(staticDir, 'icon-192.png'), join(staticDir, 'icon-192-v2.png'));
+copyFileSync(join(staticDir, 'icon-512.png'), join(staticDir, 'icon-512-v2.png'));
+copyFileSync(join(staticDir, 'icon-maskable-512.png'), join(staticDir, 'icon-maskable-512-v2.png'));
+console.log('wrote static/icon-*-v2.png');
 
 writeFileSync(join(staticDir, 'icon-maskable.svg'), maskableSvg(dark.bg, dark.stroke).toString('utf8') + '\n');
 writeFileSync(

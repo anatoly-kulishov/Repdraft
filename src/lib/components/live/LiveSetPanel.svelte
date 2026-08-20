@@ -114,6 +114,12 @@
 	function showRemove(setIndex: number): boolean {
 		return canRemoveSet && setIndex === exercise.sets.length - 1;
 	}
+
+	function scrollCurrentSetIntoView(node: HTMLElement) {
+		queueMicrotask(() => {
+			node.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+		});
+	}
 </script>
 
 <div class="live-panel" class:live-panel--superset={selectedInGroup}>
@@ -206,6 +212,7 @@
 					placeholder={weightPlaceholder}
 					aria-label={`${weightLabel} ${si + 1}`}
 					value={set.weightKg ?? ''}
+					onfocus={(e) => scrollCurrentSetIntoView(e.currentTarget)}
 					oninput={(e) => {
 						const el = e.currentTarget;
 						const next = onWeight(si, el.value);
@@ -221,6 +228,7 @@
 					autocomplete="off"
 					aria-label={`${translate(lang, 'live.reps')} ${si + 1}`}
 					value={set.reps ?? ''}
+					onfocus={(e) => scrollCurrentSetIntoView(e.currentTarget)}
 					oninput={(e) => {
 						const el = e.currentTarget;
 						const next = onReps(si, el.value);

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -25,6 +26,7 @@
 	let indexReady = $state(false);
 	let selectedIds = $state<string[]>([]);
 	let saving = $state(false);
+	let clearOfferOpen = $state(false);
 	let freshStartConsumed = $state(false);
 	let lang = $derived($resolvedLocale);
 	let selectedCount = $derived(selectedIds.length);
@@ -69,10 +71,17 @@
 	}
 
 	function clearDraft() {
-		if (confirm(translate(lang, 'builder.confirmClear'))) {
-			draft.resetDraft();
-			selectedIds = [];
-		}
+		clearOfferOpen = true;
+	}
+
+	function commitClearDraft() {
+		clearOfferOpen = false;
+		draft.resetDraft();
+		selectedIds = [];
+	}
+
+	function dismissClearOffer() {
+		clearOfferOpen = false;
 	}
 
 	function toggleSelect(exerciseId: string) {
@@ -274,3 +283,21 @@
 		</div>
 	{/if}
 </section>
+
+<BottomSheet
+	open={clearOfferOpen}
+	titleId="builder-clear-title"
+	onDismiss={dismissClearOffer}
+>
+	<p id="builder-clear-title" class="bottom-sheet__title">
+		{translate(lang, 'builder.confirmClear')}
+	</p>
+	{#snippet actions()}
+		<button type="button" class="btn-secondary min-h-12" onclick={dismissClearOffer}>
+			{translate(lang, 'common.cancel')}
+		</button>
+		<button type="button" class="btn-danger min-h-12" onclick={commitClearDraft}>
+			{translate(lang, 'common.clear')}
+		</button>
+	{/snippet}
+</BottomSheet>
