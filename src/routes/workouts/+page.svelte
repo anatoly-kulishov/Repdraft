@@ -12,7 +12,7 @@
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
-	import { planTargetSummary } from '$lib/domain/workout';
+	import { planExerciseSlotCount, planTargetSummary } from '$lib/domain/workout';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
@@ -261,7 +261,7 @@
 												<span class="entity-row__meta" aria-hidden="true">&nbsp;</span>
 											{/if}
 											<span class="entity-row__meta">
-												{translate(lang, 'workouts.exCount', { n: plan.exercises.length })}
+												{translate(lang, 'workouts.exCount', { n: planExerciseSlotCount(plan) })}
 											</span>
 										</a>
 										<div class="entity-row__actions">

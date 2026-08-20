@@ -5,13 +5,15 @@ alwaysApply: true
 
 # Product roadmap
 
-**MVP scope и UI/UX:** **`.cursor/product/mvp-spec.md`** (главный источник для экранов и flow).
+**Северная звезда:** **`GOAL.md`** (UX священного цикла; не фичи ради фич).  
+**Исследование:** **`.cursor/product/ux-research-mvp-direction.md`**.  
+**MVP scope и UI/UX:** **`.cursor/product/mvp-spec.md`**.
 
-Идеи и приоритеты релизов - в **`.cursor/product/market-roadmap.md`**.
+Идеи и приоритеты релизов - в **`.cursor/product/market-roadmap.md`** (backlog, не отвлечение).
 
 При планировании фич / выборе следующего `cursor/vX.Y.Z-*`:
 
-1. Читай **mvp-spec** (P0 flow), затем roadmap (P0 → P1 → P2).
-2. Не предлагай пункты из «Не делать сейчас», пока P0 не закрыт.
+1. Читай **GOAL.md** + **ux-research-mvp-direction**, затем **mvp-spec** (P0 flow), затем roadmap (P0 → P1 → P2).
+2. Не предлагай пункты из «Не делать сейчас», пока священный цикл не ощущается великолепно.
 3. После шипа пользовательской фичи - обнови статусы в матрице того файла.
-4. Pitch продукта: RU PWA «план + техника + сессия», не клон Strong/Fitbod.
+4. Pitch: THE CLEANEST WAY TO LOG A WORKOUT / calm digital gym notebook - не клон Strong/Fitbod по фичам.

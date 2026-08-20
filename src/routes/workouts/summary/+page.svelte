@@ -26,6 +26,9 @@
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let missing = $state(false);
 	let loading = $state(true);
+	let showAllExercises = $state(false);
+
+	const PREVIEW_LIMIT = 3;
 
 	type PreviewItem = {
 		ex: WorkoutSession['exercises'][number];
@@ -33,7 +36,7 @@
 		lastSet: WorkoutSession['exercises'][number]['sets'][number];
 	};
 
-	let previewExercises = $derived(
+	let loggedExercises = $derived(
 		!session
 			? []
 			: session.exercises
@@ -44,21 +47,18 @@
 						return {
 							ex,
 							completedSets: completed.length,
-							lastSet: completed[completed.length - 1]
+							lastSet: completed[completed.length - 1]!
 						} satisfies PreviewItem;
 					})
 					.filter((v): v is PreviewItem => v !== null)
-					.slice(0, 3)
+	);
+
+	let previewExercises = $derived(
+		showAllExercises ? loggedExercises : loggedExercises.slice(0, PREVIEW_LIMIT)
 	);
 
 	let moreCount = $derived(
-		!session
-			? 0
-			: Math.max(
-					0,
-					session.exercises.filter((ex) => ex.sets.some((s) => s.completed)).length -
-						previewExercises.length
-				)
+		showAllExercises ? 0 : Math.max(0, loggedExercises.length - PREVIEW_LIMIT)
 	);
 
 	onMount(() => {
@@ -126,12 +126,12 @@
 		</dl>
 
 			{#if previewExercises.length > 0}
-				<div class="summary-exercises-preview" aria-hidden="true">
+				<div class="summary-exercises-preview">
 					<p class="summary-exercises-preview__heading">
 						{translate(lang, 'summary.previewExercises')}
 					</p>
 					<div class="summary-exercises-preview__list">
-						{#each previewExercises as item (item.ex.exerciseId)}
+						{#each previewExercises as item, i (item.ex.exerciseId + '-' + i)}
 							{@const meta = indexById.get(item.ex.exerciseId) ?? null}
 							{@const ex = item.ex}
 							{@const last = item.lastSet}
@@ -140,10 +140,10 @@
 									{meta ? exerciseName(meta, lang) : ex.exerciseId}
 								</p>
 								<p class="summary-exercises-preview__meta">
-									{#if last?.weightKg != null}
+									{#if last.weightKg != null}
 										{last.weightKg} kg × {last.reps ?? '—'}
 									{:else}
-										{last?.reps ?? '—'} {translate(lang, 'live.reps').toLowerCase()}
+										{last.reps ?? '—'} {translate(lang, 'live.reps').toLowerCase()}
 									{/if}
 									<span class="summary-exercises-preview__sets">
 										· {item.completedSets} {translate(lang, 'summary.sets')}
@@ -153,9 +153,21 @@
 						{/each}
 					</div>
 					{#if moreCount > 0}
-						<p class="summary-exercises-preview__more">
+						<button
+							type="button"
+							class="summary-exercises-preview__more"
+							onclick={() => (showAllExercises = true)}
+						>
 							{translate(lang, 'summary.moreExercises', { n: moreCount })}
-						</p>
+						</button>
+					{:else if loggedExercises.length > PREVIEW_LIMIT}
+						<button
+							type="button"
+							class="summary-exercises-preview__more"
+							onclick={() => (showAllExercises = false)}
+						>
+							{translate(lang, 'summary.showLess')}
+						</button>
 					{/if}
 				</div>
 			{/if}

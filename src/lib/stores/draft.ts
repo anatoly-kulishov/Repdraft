@@ -2,7 +2,9 @@ import { browser } from '$app/environment';
 import {
 	addExercise,
 	createEmptyDraft,
+	dissolveOrGroup as dissolveOrGroupInPlan,
 	dissolveSuperset as dissolveSupersetInPlan,
+	formOrGroup as formOrGroupInPlan,
 	formSuperset as formSupersetInPlan,
 	moveExercise as moveExerciseInPlan,
 	moveByArrow as moveByArrowInPlan,
@@ -79,6 +81,12 @@ function createDraftStore() {
 		},
 		dissolveSuperset(groupId: string) {
 			update((plan) => dissolveSupersetInPlan(plan, groupId));
+		},
+		formOrGroup(exerciseIds: string[]) {
+			update((plan) => formOrGroupInPlan(plan, exerciseIds));
+		},
+		dissolveOrGroup(altGroupId: string) {
+			update((plan) => dissolveOrGroupInPlan(plan, altGroupId));
 		},
 		updateGroupSets(groupId: string, sets: number) {
 			update((plan) => updateGroupSetsInPlan(plan, groupId, sets));

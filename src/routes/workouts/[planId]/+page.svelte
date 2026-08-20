@@ -7,7 +7,7 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
-	import { groupMemberRole, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
+	import { altGroupMemberRole, groupMemberRole, planExerciseSlotCount, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -104,7 +104,7 @@
 			{/if}
 			<p class="workout-preview-summary-stats">
 				{translate(lang, 'preview.stats', {
-					exercises: plan.exercises.length,
+					exercises: planExerciseSlotCount(plan),
 					sets: totalSets
 				})}
 			</p>
@@ -114,15 +114,28 @@
 			{#each plan.exercises as item, index (item.exerciseId + '-' + index)}
 				{@const meta = indexById.get(item.exerciseId) ?? null}
 				{@const role = groupMemberRole(plan.exercises, index)}
+				{@const altRole = altGroupMemberRole(plan.exercises, index)}
 				<li
 					class="workout-preview-item"
 					class:is-group={role !== 'solo'}
 					class:is-group-first={role === 'first'}
 					class:is-group-middle={role === 'middle'}
 					class:is-group-last={role === 'last'}
+					class:is-or={altRole !== 'solo'}
+					class:is-or-first={altRole === 'first'}
+					class:is-or-middle={altRole === 'middle'}
+					class:is-or-last={altRole === 'last'}
 				>
 					{#if role === 'first'}
 						<p class="workout-preview-group-badge">{translate(lang, 'builder.supersetBadge')}</p>
+					{/if}
+					{#if altRole === 'first'}
+						<p class="workout-preview-or-badge">{translate(lang, 'builder.orBadge')}</p>
+					{/if}
+					{#if altRole === 'middle' || altRole === 'last'}
+						<p class="workout-preview-or-divider" aria-hidden="true">
+							{translate(lang, 'builder.orDivider')}
+						</p>
 					{/if}
 					{#if meta}
 						<a

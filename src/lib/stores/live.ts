@@ -1,12 +1,14 @@
 import { browser } from '$app/environment';
 import {
 	addLoggedSet,
+	chooseAltExercise,
 	completedSetCount,
 	finishSession,
 	lastPerformance,
 	mergeWorkoutSessions,
 	removeLoggedSet,
 	restSecAfterSet,
+	seedOpenSetsFromLastPerformance,
 	startSessionFromPlan,
 	syncSessionPrescriptionFromPlan,
 	updateLoggedSet
@@ -193,7 +195,11 @@ function createLiveStore() {
 		hydrate,
 		refreshHistory,
 		async startFromPlan(plan: WorkoutPlan): Promise<WorkoutSession> {
-			const session = startSessionFromPlan(plan);
+			await refreshHistory();
+			const history = get(store).history;
+			const session = seedOpenSetsFromLastPerformance(startSessionFromPlan(plan), (id) =>
+				lastPerformance(history, id)
+			);
 			persistActive(session, null);
 			store.update((s) => ({ ...s, session, restUntil: null }));
 			return session;
@@ -266,6 +272,14 @@ function createLiveStore() {
 			store.update((s) => {
 				persistActive(s.session, null);
 				return { ...s, restUntil: null };
+			});
+		},
+		chooseAlt(altGroupId: string, exerciseId: string) {
+			store.update((s) => {
+				if (!s.session) return s;
+				const session = chooseAltExercise(s.session, altGroupId, exerciseId);
+				persistActive(session, s.restUntil);
+				return { ...s, session };
 			});
 		},
 		/** Nudge active rest by delta seconds (±15). */

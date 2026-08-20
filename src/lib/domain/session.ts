@@ -8,7 +8,7 @@ import type {
 	WorkoutPlan,
 	WorkoutSession
 } from './types';
-import { groupBounds } from './workout';
+import { groupBounds, altGroupBounds } from './workout';
 
 export function loggedSetKind(set: LoggedSet): SetKind {
 	return set.kind ?? 'work';
@@ -53,10 +53,12 @@ export function startSessionFromPlan(plan: WorkoutPlan): WorkoutSession {
 		planName: plan.name,
 		startedAt,
 		finishedAt: null,
+		altChoices: {},
 		exercises: plan.exercises.map(
 			(ex): SessionExercise => ({
 				exerciseId: ex.exerciseId,
 				groupId: ex.groupId ?? null,
+				altGroupId: ex.altGroupId ?? null,
 				targetSets: ex.sets,
 				targetReps: ex.reps,
 				restSec: ex.restSec,
@@ -80,8 +82,10 @@ export function syncSessionPrescriptionFromPlan(
 		const p = byId.get(ex.exerciseId);
 		if (!p) return ex;
 		const groupId = p.groupId ?? null;
+		const altGroupId = p.altGroupId ?? null;
 		if (
 			ex.groupId === groupId &&
+			ex.altGroupId === altGroupId &&
 			ex.restSec === p.restSec &&
 			ex.targetSets === p.sets &&
 			ex.targetReps === p.reps
@@ -92,12 +96,77 @@ export function syncSessionPrescriptionFromPlan(
 		return {
 			...ex,
 			groupId,
+			altGroupId,
 			restSec: p.restSec,
 			targetSets: p.sets,
 			targetReps: p.reps
 		};
 	});
 	return changed ? { ...session, exercises } : session;
+}
+
+/** Indices that participate in live logging (skip non-chosen “or” members). */
+export function visibleSessionExerciseIndices(session: WorkoutSession): number[] {
+	const choices = session.altChoices ?? {};
+	const out: number[] = [];
+	let i = 0;
+	const list = session.exercises;
+	while (i < list.length) {
+		const ab = altGroupBounds(list, i);
+		if (ab && ab.start === i && ab.end > ab.start) {
+			const chosenId = choices[ab.altGroupId];
+			if (chosenId) {
+				const idx = list.findIndex(
+					(ex, ei) => ei >= ab.start && ei <= ab.end && ex.exerciseId === chosenId
+				);
+				out.push(idx >= 0 ? idx : ab.start);
+			} else {
+				out.push(ab.start);
+			}
+			i = ab.end + 1;
+			continue;
+		}
+		out.push(i);
+		i += 1;
+	}
+	return out;
+}
+
+export function altGroupNeedsPick(session: WorkoutSession, exerciseIndex: number): boolean {
+	const ab = altGroupBounds(session.exercises, exerciseIndex);
+	if (!ab || ab.start === ab.end) return false;
+	return !(session.altChoices ?? {})[ab.altGroupId];
+}
+
+export function chooseAltExercise(
+	session: WorkoutSession,
+	altGroupId: string,
+	exerciseId: string
+): WorkoutSession {
+	const members = session.exercises.filter((ex) => ex.altGroupId === altGroupId);
+	if (!members.some((ex) => ex.exerciseId === exerciseId)) return session;
+	const prev = (session.altChoices ?? {})[altGroupId];
+	if (prev === exerciseId) return session;
+	const prevEx = prev ? members.find((ex) => ex.exerciseId === prev) : null;
+	if (prevEx?.sets.some((s) => s.completed)) return session;
+	return {
+		...session,
+		altChoices: { ...(session.altChoices ?? {}), [altGroupId]: exerciseId }
+	};
+}
+
+/** Drop unchosen “or” members before history write. */
+export function pruneUnchosenAlts(session: WorkoutSession): WorkoutSession {
+	const choices = session.altChoices ?? {};
+	const exercises = session.exercises.filter((ex) => {
+		if (!ex.altGroupId) return true;
+		const chosen = choices[ex.altGroupId];
+		if (!chosen) {
+			return ex.sets.some((s) => s.completed);
+		}
+		return ex.exerciseId === chosen;
+	});
+	return { ...session, exercises, altChoices: undefined };
 }
 
 /**
@@ -130,13 +199,12 @@ export function nextFocusAfterSetComplete(
 	}
 
 	const ex = session.exercises[exerciseIndex];
-	if (
-		ex &&
-		ex.sets.length > 0 &&
-		ex.sets.every((s) => s.completed) &&
-		exerciseIndex + 1 < session.exercises.length
-	) {
-		return exerciseIndex + 1;
+	if (ex && ex.sets.length > 0 && ex.sets.every((s) => s.completed)) {
+		const visible = visibleSessionExerciseIndices(session);
+		const pos = visible.indexOf(exerciseIndex);
+		if (pos >= 0 && pos + 1 < visible.length) return visible[pos + 1]!;
+		const next = visible.find((i) => i > exerciseIndex);
+		if (next != null) return next;
 	}
 	return exerciseIndex;
 }
@@ -162,15 +230,49 @@ export function addLoggedSet(
 ): WorkoutSession {
 	const exercises = session.exercises.map((ex, ei) => {
 		if (ei !== exerciseIndex) return ex;
+		const prev = ex.sets[ex.sets.length - 1];
 		return {
 			...ex,
 			sets: [
 				...ex.sets,
-				{ weightKg: null, reps: ex.targetReps, completed: false, kind }
+				{
+					weightKg: prev?.weightKg ?? null,
+					reps: prev?.reps ?? ex.targetReps,
+					completed: false,
+					kind
+				}
 			]
 		};
 	});
 	return { ...session, exercises };
+}
+
+/**
+ * Prefill incomplete sets from last finished performance (gym: no need to retype).
+ * Leaves sets untouched when no history exists for that exercise.
+ */
+export function seedOpenSetsFromLastPerformance(
+	session: WorkoutSession,
+	getLast: (exerciseId: string) => LastPerformance | null
+): WorkoutSession {
+	let changed = false;
+	const exercises = session.exercises.map((ex) => {
+		const last = getLast(ex.exerciseId);
+		if (!last || (last.weightKg == null && last.reps == null)) return ex;
+		let setChanged = false;
+		const sets = ex.sets.map((s) => {
+			if (s.completed) return s;
+			const weightKg = s.weightKg ?? last.weightKg ?? null;
+			const reps = last.reps != null ? last.reps : s.reps;
+			if (weightKg === s.weightKg && reps === s.reps) return s;
+			setChanged = true;
+			return { ...s, weightKg, reps };
+		});
+		if (!setChanged) return ex;
+		changed = true;
+		return { ...ex, sets };
+	});
+	return changed ? { ...session, exercises } : session;
 }
 
 /** History edit: append a completed set, copying the last logged load when present. */
@@ -233,7 +335,10 @@ export function removeLoggedExercise(
 }
 
 export function finishSession(session: WorkoutSession): WorkoutSession {
-	return { ...session, finishedAt: new Date().toISOString() };
+	return {
+		...pruneUnchosenAlts(session),
+		finishedAt: new Date().toISOString()
+	};
 }
 
 export function restSecAfterSet(
@@ -349,18 +454,31 @@ export function mergeWorkoutSessions(
 }
 
 export function completedSetCount(session: WorkoutSession): number {
-	return session.exercises.reduce((n, ex) => n + ex.sets.filter((s) => s.completed).length, 0);
+	return visibleSessionExerciseIndices(session).reduce((n, i) => {
+		const ex = session.exercises[i];
+		return n + (ex?.sets.filter((s) => s.completed).length ?? 0);
+	}, 0);
 }
 
 export function totalSetCount(session: WorkoutSession): number {
-	return session.exercises.reduce((n, ex) => n + ex.sets.length, 0);
+	return visibleSessionExerciseIndices(session).reduce(
+		(n, i) => n + (session.exercises[i]?.sets.length ?? 0),
+		0
+	);
 }
 
 /** Exercise done when every logged set is completed (empty exercise list → 0). */
 export function completedExerciseCount(session: WorkoutSession): number {
-	return session.exercises.filter(
-		(ex) => ex.sets.length > 0 && ex.sets.every((s) => s.completed)
-	).length;
+	return visibleSessionExerciseIndices(session).filter((i) => {
+		const ex = session.exercises[i];
+		return Boolean(ex && ex.sets.length > 0 && ex.sets.every((s) => s.completed));
+	}).length;
+}
+
+/** True when every visible set is logged — ready to finish the session. */
+export function isSessionFullyLogged(session: WorkoutSession): boolean {
+	const total = totalSetCount(session);
+	return total > 0 && completedSetCount(session) === total;
 }
 
 export function sessionDurationMs(session: WorkoutSession): number | null {
@@ -401,9 +519,36 @@ export function runSessionSelfCheck(): void {
 	session = finishSession(session);
 	if (!session.finishedAt) throw new Error('finishSession should set finishedAt');
 
+	if (!isSessionFullyLogged(updateLoggedSet(startSessionFromPlan(plan), 0, 0, { completed: true }))) {
+		/* one set done of many — not fully logged */
+	}
+	const almost = startSessionFromPlan(plan);
+	let full = almost;
+	for (let ei = 0; ei < almost.exercises.length; ei++) {
+		const sets = almost.exercises[ei]!.sets;
+		for (let si = 0; si < sets.length; si++) {
+			full = updateLoggedSet(full, ei, si, { weightKg: 10, reps: 8, completed: true });
+		}
+	}
+	if (!isSessionFullyLogged(full)) {
+		throw new Error('isSessionFullyLogged should be true when all sets done');
+	}
+
 	const last = lastPerformance([session], 'ex-a');
 	if (!last || last.weightKg !== 40 || last.reps !== 8 || last.sets !== 1) {
 		throw new Error(`lastPerformance unexpected ${JSON.stringify(last)}`);
+	}
+
+	const seeded = seedOpenSetsFromLastPerformance(startSessionFromPlan(plan), (id) =>
+		id === 'ex-a' ? last : null
+	);
+	const seededSet = seeded.exercises[0]?.sets[0];
+	if (seededSet?.weightKg !== 40 || seededSet.reps !== 8) {
+		throw new Error(`seedOpenSetsFromLastPerformance unexpected ${JSON.stringify(seededSet)}`);
+	}
+	const unseeded = seedOpenSetsFromLastPerformance(startSessionFromPlan(plan), () => null);
+	if (unseeded.exercises[0]?.sets[0]?.weightKg != null) {
+		throw new Error('seed without history should leave weight empty');
 	}
 	if (lastPerformance([session], 'ex-b') !== null) {
 		throw new Error('ex-b with no completed sets should have null lastPerformance');
