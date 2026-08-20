@@ -448,10 +448,6 @@
 					</div>
 				</div>
 				<p class="auth-account__sync-hint">{translate(lang, 'auth.syncedHint')}</p>
-				<p class="auth-account__sync-hint">
-					{translate(lang, 'auth.privacyHint')}
-					<a class="btn-link" href="/privacy">{translate(lang, 'privacy.link')}</a>
-				</p>
 			</div>
 
 			<form
@@ -548,6 +544,11 @@
 					{/if}
 				</button>
 			</div>
+
+			<p class="auth-account__legal">
+				<span class="auth-account__legal-label">{translate(lang, 'auth.privacyHint')}</span>
+				<a class="auth-account__legal-link" href="/privacy">{translate(lang, 'privacy.link')}</a>
+			</p>
 
 			<div class="auth-danger-zone" aria-labelledby="auth-danger-title">
 				<p class="auth-danger-zone__eyebrow">{translate(lang, 'auth.deleteZoneLabel')}</p>

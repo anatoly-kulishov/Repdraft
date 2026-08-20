@@ -17,6 +17,7 @@
 	import { live } from '$lib/stores/live';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import { flushSyncOutbox } from '$lib/storage/flushSyncOutbox';
 	import { page } from '$app/stores';
 	import { onNavigate } from '$app/navigation';
 	import { onMount } from 'svelte';
@@ -60,6 +61,29 @@
 		live.hydrate();
 		void auth.init();
 
+		const onOnline = () => {
+			void flushSyncOutbox();
+		};
+		window.addEventListener('online', onOnline);
+		if (navigator.onLine) void flushSyncOutbox();
+
+		const syncKeyboardInset = () => {
+			const root = document.documentElement;
+			const vv = window.visualViewport;
+			if (!vv) {
+				root.style.setProperty('--vv-keyboard-inset', '0px');
+				root.style.removeProperty('--vv-bottom-pad');
+				return;
+			}
+			const inset = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+			root.style.setProperty('--vv-keyboard-inset', `${inset}px`);
+			if (inset > 48) root.style.setProperty('--vv-bottom-pad', '0px');
+			else root.style.removeProperty('--vv-bottom-pad');
+		};
+		syncKeyboardInset();
+		window.visualViewport?.addEventListener('resize', syncKeyboardInset);
+		window.visualViewport?.addEventListener('scroll', syncKeyboardInset);
+
 		const recoverFixedChrome = () => {
 			if (
 				document.body.style.overflow === 'hidden' &&
@@ -70,6 +94,7 @@
 			const y = window.scrollY;
 			window.scrollTo(0, y === 0 ? 1 : y - 1);
 			window.scrollTo(0, y);
+			syncKeyboardInset();
 		};
 
 		const onVisible = () => {
@@ -80,9 +105,14 @@
 		window.visualViewport?.addEventListener('resize', recoverFixedChrome);
 
 		return () => {
+			window.removeEventListener('online', onOnline);
 			document.removeEventListener('visibilitychange', onVisible);
 			window.removeEventListener('pageshow', recoverFixedChrome);
 			window.visualViewport?.removeEventListener('resize', recoverFixedChrome);
+			window.visualViewport?.removeEventListener('resize', syncKeyboardInset);
+			window.visualViewport?.removeEventListener('scroll', syncKeyboardInset);
+			document.documentElement.style.removeProperty('--vv-keyboard-inset');
+			document.documentElement.style.removeProperty('--vv-bottom-pad');
 		};
 	});
 

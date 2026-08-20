@@ -217,6 +217,7 @@ export function runCatalogCoverSelfCheck(): void {
 			target: 'quads',
 			muscle_group: 'quads',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'images/1472-uZKq7lo.jpg'
 		},
 		{
@@ -228,6 +229,7 @@ export function runCatalogCoverSelfCheck(): void {
 			target: 'quads',
 			muscle_group: 'quads',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'images/0585-my33uHU.jpg'
 		}
 	];
@@ -247,6 +249,7 @@ export function runCatalogCoverSelfCheck(): void {
 			target: 'lats',
 			muscle_group: 'lats',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'images/0007-4IKbhHV.jpg'
 		},
 		{
@@ -258,6 +261,7 @@ export function runCatalogCoverSelfCheck(): void {
 			target: 'lats',
 			muscle_group: 'lats',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'images/2330-LEprlgG.jpg'
 		}
 	];
@@ -282,6 +286,7 @@ export function runCatalogCoverSelfCheck(): void {
 			target: 'pectorals',
 			muscle_group: 'triceps',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'images/0009-x.jpg'
 		},
 		{
@@ -293,6 +298,7 @@ export function runCatalogCoverSelfCheck(): void {
 			target: 'pectorals',
 			muscle_group: 'triceps',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'images/0025-y.jpg'
 		}
 	];
@@ -311,6 +317,7 @@ export function runCatalogCoverSelfCheck(): void {
 			target: 'biceps',
 			muscle_group: 'forearms',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'images/0023-x.jpg'
 		},
 		{
@@ -322,6 +329,7 @@ export function runCatalogCoverSelfCheck(): void {
 			target: 'biceps',
 			muscle_group: 'forearms',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'images/0031-y.jpg'
 		}
 	];

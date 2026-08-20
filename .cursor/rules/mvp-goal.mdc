@@ -1,0 +1,38 @@
+---
+description: North-star MVP goal - UX of core loop over new features
+alwaysApply: true
+---
+
+# Главная цель (северная звезда)
+
+Источник: [`GOAL.md`](../../GOAL.md) в корне репозитория.  
+Исследование: [`.cursor/product/ux-research-mvp-direction.md`](../product/ux-research-mvp-direction.md).
+
+**MANTRA:** IMPROVE THE EXPERIENCE. NOT THE FEATURE COUNT.  
+Maximum UI/UX comfort and flawless basic experience in MVP above any new features.
+
+**Концентрируйся только на этом:** UI/UX базового цикла тренировки, не на новых фичах.
+
+```text
+Открыть → Выбрать тренировку → Превью → Начать →
+Подход → Вес × повторы → Следующее → Закончить → Сохранённый результат
+```
+
+**Главная метрика:** time from looking at the phone → completed set.
+
+## Обязательно
+
+- Перед фичей/рефактором: делает ли это существующее действие быстрее / яснее / проще / менее когнитивно тяжёлым?
+- Active Workout = highest priority (exercise → set → weight → reps → complete → next).
+- Полировка Live / Home / Workouts / preview / finish важнее графиков, AI, social, аналитики.
+- Цель успеха MVP: цикл ощущается великолепно → тогда можно думать о native iOS/Android.
+- Scope экранов: `.cursor/product/mvp-spec.md`. Roadmap - backlog, не отвлечение.
+- UX checklist / red flags: `ux-research-mvp-direction.md` §§13–15.
+
+## Запрещено без явного запроса пользователя
+
+- Analytics / charts / PR dashboards
+- AI coach / generation
+- Social / gamification / wearables
+- «Полезные» побочные разделы, которые не ускоряют священный цикл
+- Feature parity with Hevy/JEFIT/Boostcamp

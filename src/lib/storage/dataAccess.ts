@@ -17,6 +17,7 @@ import {
 	supabaseSessionRepository
 } from './supabaseSessionRepository';
 import { supabaseWorkoutRepository } from './supabaseWorkoutRepository';
+import { enqueueOutbox } from './syncOutbox';
 
 let cloudMode = false;
 /** When cloud session table is missing, keep using local for sessions. */
@@ -61,7 +62,13 @@ export async function persistSession(session: WorkoutSession): Promise<void> {
 	try {
 		await withTimeout(supabaseSessionRepository.save(session), 4000);
 	} catch (err) {
-		markSessionsCloudDown(err);
+		enqueueOutbox({ kind: 'session.save', id: session.id });
+		const e = err as { code?: string; message?: string } | null;
+		if (isSessionsTableMissing(e) || e?.message === 'SESSIONS_TABLE_MISSING') {
+			markSessionsCloudDown(err);
+		} else {
+			console.warn('session cloud save failed — queued for retry', err);
+		}
 	}
 }
 
@@ -74,7 +81,13 @@ export async function deleteSession(id: string): Promise<void> {
 	try {
 		await withTimeout(supabaseSessionRepository.remove(id), 4000);
 	} catch (err) {
-		markSessionsCloudDown(err);
+		enqueueOutbox({ kind: 'session.delete', id });
+		const e = err as { code?: string; message?: string } | null;
+		if (isSessionsTableMissing(e) || e?.message === 'SESSIONS_TABLE_MISSING') {
+			markSessionsCloudDown(err);
+		} else {
+			console.warn('session cloud delete failed — queued for retry', err);
+		}
 	}
 }
 

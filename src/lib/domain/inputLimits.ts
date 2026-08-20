@@ -141,6 +141,24 @@ export function isValidReps(
 	return Number.isInteger(value) && value >= bounds.min && value <= bounds.max;
 }
 
+/** Quick-adjust weight without typing (null treated as 0). */
+export function nudgeWeightKg(current: number | null, delta: number): number {
+	const base = current ?? 0;
+	const next = Math.round((base + delta) * 10) / 10;
+	return Math.min(WEIGHT_KG.max, Math.max(WEIGHT_KG.min, next));
+}
+
+/** Quick-adjust reps without typing (null treated as bounds.min). */
+export function nudgeReps(
+	current: number | null,
+	delta: number,
+	bounds: { min: number; max: number } = LIVE_REPS
+): number {
+	const base = current ?? bounds.min;
+	const next = Math.round(base + delta);
+	return Math.min(bounds.max, Math.max(bounds.min, next));
+}
+
 /** Throws if weight/reps coerce bounds regress. */
 export function runInputLimitsSelfCheck(): void {
 	if (coerceWeightKg('80') !== 80) throw new Error('coerceWeightKg 80');
@@ -158,6 +176,12 @@ export function runInputLimitsSelfCheck(): void {
 	if (filterRepsInput('5001', LIVE_REPS, '500') !== '500') {
 		throw new Error('filterRepsInput reject extra digit');
 	}
+	if (nudgeWeightKg(100, 2.5) !== 102.5) throw new Error('nudgeWeightKg +2.5');
+	if (nudgeWeightKg(null, 5) !== 5) throw new Error('nudgeWeightKg from empty');
+	if (nudgeWeightKg(1, -5) !== 0) throw new Error('nudgeWeightKg floor');
+	if (nudgeReps(8, 1, LIVE_REPS) !== 9) throw new Error('nudgeReps +1');
+	if (nudgeReps(null, 1, LIVE_REPS) !== 1) throw new Error('nudgeReps from empty');
+	if (nudgeReps(0, -1, LIVE_REPS) !== 0) throw new Error('nudgeReps floor');
 	if (filterRepsInput('501', LIVE_REPS, '') !== '50') {
 		throw new Error('filterRepsInput longest valid prefix');
 	}

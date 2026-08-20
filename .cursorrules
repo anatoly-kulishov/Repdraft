@@ -1,0 +1,37 @@
+# .cursorrules
+
+## CORE PHILOSOPHY & MANTRA
+
+You are working on the Repdraft MVP web app (SvelteKit + TypeScript PWA).
+
+**MANTRA:** Maximum UI/UX comfort and flawless basic experience in MVP above any new features. Every decision must speed up or simplify the athlete's workflow in the gym.
+
+Also: **IMPROVE THE EXPERIENCE. NOT THE FEATURE COUNT.**  
+Research: `.cursor/product/ux-research-mvp-direction.md`. Metric: phone → completed set.
+
+Sacred loop (see `GOAL.md`):
+
+```text
+Open → Pick workout → Preview → Start → Set → Weight × reps → Next → Finish → Saved result
+```
+
+If that loop is not excellent, ignore charts, AI, social, and other extras. Native iOS/Android is a later reward, not a current build target.
+
+## STRICT CODING RULES
+
+1. **ALWAYS test touch targets:** Interactive controls MUST be at least **48×48px** (`min-height: 48px; min-width: 48px` or Tailwind `min-h-[48px] min-w-[48px]`). Prefer existing `.btn-*` / layout tokens when they already meet this.
+2. **NEVER** add unnecessary dependencies unless the user explicitly asks.
+3. **PREFER bottom sheets** (drawer from the bottom) over centered modals/dialogs on mobile. Reuse existing sheet/overlay patterns in the repo; do **not** add `vaul` / new drawer libs unless requested.
+4. **NO BLOCKING LOADERS:** Prefer Optimistic UI or Skeleton (`PageSkeleton` / local placeholders) over full-screen loading spinners.
+5. **OFFLINE-FIRST:** Persist mutations via domain → stores → `local*` repositories / localStorage (and IndexedDB where already used) before any network/Supabase sync. Do not invent React Query - this is SvelteKit.
+6. **TYPE SAFETY:** Do not use `any`. Prefer strict TypeScript types/interfaces. Exhaustive `switch` on unions (`never` in default).
+7. **NO BREAKING CHANGES:** Do not refactor unrelated files or change working database/storage schemas unless explicitly instructed.
+8. Respect layers: `domain` stays pure; UI does not talk to Supabase/storage directly except established panel/repo paths.
+
+## WORKFLOW & VERIFICATION
+
+- Keep changes isolated and self-contained per task.
+- Run typecheck with **`npm run check`** before declaring a task finished (not `npm run validate` - that script does not exist here).
+- Do not introduce new console errors or warnings.
+- Follow release branches: `cursor/vX.Y.Z-slug` - see `.cursor/rules/release-branches.mdc`.
+- Product north star: `GOAL.md` + `.cursor/product/mvp-spec.md`.

@@ -4,14 +4,15 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import { filterCatalogWithFacets, filterExercises, isBodyPart, isFilterConflict } from '$lib/domain/filters';
+	import { pickFrequent, pickPopular, sortByScore } from '$lib/domain/exerciseScore';
 	import { catalogZoneBodyParts, isCatalogZone } from '$lib/domain/catalogLinks';
 	import { personalRecordChips } from '$lib/domain/records';
 	import type { ExerciseFilters, ExerciseIndexItem } from '$lib/domain/types';
-	import { exerciseName } from '$lib/domain/exerciseName';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { translate } from '$lib/i18n/messages';
 	import { CATALOG_PAGE_SIZE } from '$lib/stores/catalogUi';
 	import { bookmarks } from '$lib/stores/bookmarks';
+	import { exerciseStats } from '$lib/stores/exerciseStats';
 	import { records } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { browser } from '$app/environment';
@@ -92,12 +93,18 @@
 	let lang = $derived($resolvedLocale);
 	let detailFrom = $derived(`${$page.url.pathname}${$page.url.search}`);
 	let catalog = $derived(indexReady ? items : []);
+	let statsMap = $derived($exerciseStats);
 	let catalogFiltered = $derived.by(() => {
 		const queryFilters =
 			zoneLocked && zoneBodyParts.length > 1
 				? { ...filters, bodyPart: 'all' as ExerciseFilters['bodyPart'] }
 				: filters;
-		const { items: base, equipment, targets } = filterCatalogWithFacets(catalog, queryFilters, lang);
+		const { items: base, equipment, targets } = filterCatalogWithFacets(
+			catalog,
+			queryFilters,
+			lang,
+			statsMap
+		);
 		if (zoneLocked && zoneBodyParts.length > 1) {
 			const allowed = new Set(zoneBodyParts);
 			return {
@@ -115,7 +122,28 @@
 	let visible = $derived(
 		savedOnly ? filtered.filter((ex) => bookmarkSet.has(ex.id)) : filtered
 	);
-	let shown = $derived(visible.slice(0, visibleLimit));
+	let useSections = $derived(!savedOnly && !filters.query.trim() && visible.length > 0);
+	let frequentItems = $derived(useSections ? pickFrequent(visible, statsMap, 12) : []);
+	let frequentIds = $derived(new Set(frequentItems.map((ex) => ex.id)));
+	let popularItems = $derived(useSections ? pickPopular(visible, frequentIds, 12) : []);
+	let sectionExcludeIds = $derived(
+		new Set([...frequentItems, ...popularItems].map((ex) => ex.id))
+	);
+	let allSectionItems = $derived(
+		useSections
+			? sortByScore(
+					visible.filter((ex) => !sectionExcludeIds.has(ex.id)),
+					statsMap
+				)
+			: visible
+	);
+	let shownAll = $derived(allSectionItems.slice(0, visibleLimit));
+	let shownFlat = $derived(visible.slice(0, visibleLimit));
+	let shownCount = $derived(
+		useSections
+			? frequentItems.length + popularItems.length + shownAll.length
+			: shownFlat.length
+	);
 	let filtersActive = $derived(
 		Boolean(filters.query.trim()) ||
 			filters.bodyPart !== 'all' ||
@@ -124,7 +152,9 @@
 	);
 	let filterConflict = $derived(isFilterConflict(catalog, filters, lang));
 	let totalForCount = $derived(indexReady ? visible.length : totalCount);
-	let hasMore = $derived(indexReady && visibleLimit < visible.length);
+	let hasMore = $derived(
+		indexReady && visibleLimit < (useSections ? allSectionItems.length : visible.length)
+	);
 	let bookmarksLoaded = $state(false);
 	let recordChipsById = $derived(
 		new Map($records.map((r) => [r.exerciseId, personalRecordChips(r, lang)]))
@@ -277,8 +307,9 @@
 	});
 
 	function loadMore() {
-		if (!indexReady || visibleLimit >= visible.length) return;
-		visibleLimit = Math.min(visible.length, visibleLimit + CATALOG_PAGE_SIZE);
+		const total = useSections ? allSectionItems.length : visible.length;
+		if (!indexReady || visibleLimit >= total) return;
+		visibleLimit = Math.min(total, visibleLimit + CATALOG_PAGE_SIZE);
 	}
 
 	/** Sentinel for infinite scroll — keep loading while it stays in/near the viewport. */
@@ -332,7 +363,7 @@
 {:else}
 	<p class="catalog-list-count mb-3 text-sm text-[var(--color-muted)]" aria-live="polite">
 		{translate(lang, 'catalog.countShown', {
-			shown: shown.length,
+			shown: shownCount,
 			n: filtersActive || indexReady ? visible.length : totalForCount
 		})}
 	</p>
@@ -404,9 +435,77 @@
 				actionLabel={savedOnly ? translate(lang, 'bookmarks.browse') : undefined}
 			/>
 		{/if}
+	{:else if useSections}
+		<div class="catalog-sections">
+			{#if frequentItems.length > 0}
+				<section class="catalog-section" aria-labelledby="catalog-section-frequent">
+					<h2 id="catalog-section-frequent" class="catalog-section__title">
+						{translate(lang, 'catalog.sectionFrequent')}
+					</h2>
+					<div class={listClass}>
+						{#each frequentItems as exercise, i (exercise.id)}
+							<ExerciseCard
+								{exercise}
+								recordChips={recordChipsById.get(exercise.id) ?? []}
+								priority={i < 4}
+								variant={cardVariant}
+								{detailFrom}
+							/>
+						{/each}
+					</div>
+				</section>
+			{/if}
+			{#if popularItems.length > 0}
+				<section class="catalog-section" aria-labelledby="catalog-section-popular">
+					<h2 id="catalog-section-popular" class="catalog-section__title">
+						{translate(lang, 'catalog.sectionPopular')}
+					</h2>
+					<div class={listClass}>
+						{#each popularItems as exercise, i (exercise.id)}
+							<ExerciseCard
+								{exercise}
+								recordChips={recordChipsById.get(exercise.id) ?? []}
+								priority={frequentItems.length === 0 && i < 4}
+								variant={cardVariant}
+								{detailFrom}
+							/>
+						{/each}
+					</div>
+				</section>
+			{/if}
+			<section class="catalog-section" aria-labelledby="catalog-section-all">
+				<h2 id="catalog-section-all" class="catalog-section__title">
+					{translate(lang, 'catalog.sectionAll')}
+				</h2>
+				{#if shownAll.length === 0}
+					<p class="catalog-section__empty text-sm text-[var(--color-muted)]">
+						{translate(lang, 'catalog.emptyDesc')}
+					</p>
+				{:else}
+					<div class={listClass}>
+						{#each shownAll as exercise, i (exercise.id)}
+							<ExerciseCard
+								{exercise}
+								recordChips={recordChipsById.get(exercise.id) ?? []}
+								priority={false}
+								variant={cardVariant}
+								{detailFrom}
+							/>
+						{/each}
+					</div>
+				{/if}
+			</section>
+		</div>
+		{#if hasMore}
+			<div
+				bind:this={loadMoreSentinel}
+				class="catalog-list-load-more"
+				aria-hidden="true"
+			></div>
+		{/if}
 	{:else}
 		<div class={listClass}>
-			{#each shown as exercise, i (exercise.id)}
+			{#each shownFlat as exercise, i (exercise.id)}
 				<ExerciseCard
 					{exercise}
 					recordChips={recordChipsById.get(exercise.id) ?? []}

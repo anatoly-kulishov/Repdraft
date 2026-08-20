@@ -16,11 +16,13 @@
 		total,
 		selected = false,
 		groupRole = 'solo',
+		altRole = 'solo',
 		onupdate,
 		onmove,
 		onremove,
 		ontoggleSelect,
 		ondissolve,
+		ondissolveOr,
 		ongroupSets,
 		ongroupRest
 	}: {
@@ -30,25 +32,29 @@
 		total: number;
 		selected?: boolean;
 		groupRole?: 'solo' | 'first' | 'middle' | 'last';
-		onupdate: (patch: Partial<Omit<WorkoutExercise, 'exerciseId' | 'groupId'>>) => void;
+		altRole?: 'solo' | 'first' | 'middle' | 'last';
+		onupdate: (patch: Partial<Omit<WorkoutExercise, 'exerciseId' | 'groupId' | 'altGroupId'>>) => void;
 		onmove: (from: number, to: number) => void;
 		onremove: () => void;
 		ontoggleSelect?: () => void;
 		ondissolve?: () => void;
+		ondissolveOr?: () => void;
 		ongroupSets?: (sets: number) => void;
 		ongroupRest?: (restSec: number) => void;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
 	let inGroup = $derived(Boolean(item.groupId));
+	let inOrGroup = $derived(Boolean(item.altGroupId));
 </script>
 
 <article
 	class="workout-ex-row"
 	class:workout-ex-row--grouped={inGroup}
-	class:workout-ex-row--first={groupRole === 'first'}
-	class:workout-ex-row--middle={groupRole === 'middle'}
-	class:workout-ex-row--last={groupRole === 'last'}
+	class:workout-ex-row--or={inOrGroup}
+	class:workout-ex-row--first={groupRole === 'first' || altRole === 'first'}
+	class:workout-ex-row--middle={groupRole === 'middle' || altRole === 'middle'}
+	class:workout-ex-row--last={groupRole === 'last' || altRole === 'last'}
 >
 	{#if groupRole === 'first'}
 		<div class="superset-bar">
@@ -93,6 +99,21 @@
 		</div>
 	{/if}
 
+	{#if altRole === 'first'}
+		<div class="or-bar">
+			<span class="or-bar__badge">{translate(lang, 'builder.orBadge')}</span>
+			{#if ondissolveOr}
+				<button type="button" class="btn-link or-bar__dissolve text-xs" onclick={ondissolveOr}>
+					{translate(lang, 'builder.dissolve')}
+				</button>
+			{/if}
+		</div>
+	{/if}
+
+	{#if altRole === 'middle' || altRole === 'last'}
+		<p class="or-divider" aria-hidden="true">{translate(lang, 'builder.orDivider')}</p>
+	{/if}
+
 	<div class="workout-ex-head" class:workout-ex-head--group={inGroup}>
 		{#if ontoggleSelect}
 			<label class="workout-ex-head__check">
@@ -101,7 +122,7 @@
 					class="h-5 w-5 accent-[var(--color-accent)]"
 					checked={selected}
 					onchange={() => ontoggleSelect?.()}
-					aria-label={translate(lang, 'builder.superset')}
+					aria-label={translate(lang, 'builder.selectExercise')}
 				/>
 			</label>
 		{/if}

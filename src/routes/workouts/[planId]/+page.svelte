@@ -7,13 +7,13 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
-	import { groupMemberRole, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
+	import { altGroupMemberRole, groupMemberRole, planExerciseSlotCount, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { ChevronRight, Pencil, Play } from '@lucide/svelte';
+	import { Pencil, Play } from '@lucide/svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 
 	let { params } = $props();
@@ -104,7 +104,7 @@
 			{/if}
 			<p class="workout-preview-summary-stats">
 				{translate(lang, 'preview.stats', {
-					exercises: plan.exercises.length,
+					exercises: planExerciseSlotCount(plan),
 					sets: totalSets
 				})}
 			</p>
@@ -114,21 +114,31 @@
 			{#each plan.exercises as item, index (item.exerciseId + '-' + index)}
 				{@const meta = indexById.get(item.exerciseId) ?? null}
 				{@const role = groupMemberRole(plan.exercises, index)}
+				{@const altRole = altGroupMemberRole(plan.exercises, index)}
 				<li
 					class="workout-preview-item"
 					class:is-group={role !== 'solo'}
 					class:is-group-first={role === 'first'}
 					class:is-group-middle={role === 'middle'}
 					class:is-group-last={role === 'last'}
+					class:is-or={altRole !== 'solo'}
+					class:is-or-first={altRole === 'first'}
+					class:is-or-middle={altRole === 'middle'}
+					class:is-or-last={altRole === 'last'}
 				>
 					{#if role === 'first'}
 						<p class="workout-preview-group-badge">{translate(lang, 'builder.supersetBadge')}</p>
 					{/if}
+					{#if altRole === 'first'}
+						<p class="workout-preview-or-badge">{translate(lang, 'builder.orBadge')}</p>
+					{/if}
+					{#if altRole === 'middle' || altRole === 'last'}
+						<p class="workout-preview-or-divider" aria-hidden="true">
+							{translate(lang, 'builder.orDivider')}
+						</p>
+					{/if}
 					{#if meta}
-						<a
-							class="workout-preview-row"
-							href={`/exercise/${meta.id}?from=${encodeURIComponent(`/workouts/${plan.id}`)}`}
-						>
+						<div class="workout-preview-row is-static">
 							<span class="media-well workout-preview-thumb">
 								<img
 									src={`/${meta.image}`}
@@ -155,10 +165,7 @@
 									{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
 								</p>
 							</div>
-							<span class="workout-preview-chevron" aria-hidden="true">
-								<LucideIcon icon={ChevronRight} size={ICON_BUTTON} />
-							</span>
-						</a>
+						</div>
 					{:else}
 						<div class="workout-preview-row is-static">
 							<span class="media-well workout-preview-thumb is-placeholder" aria-hidden="true"></span>

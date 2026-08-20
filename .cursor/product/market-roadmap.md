@@ -1,5 +1,7 @@
 # Repdraft: рынок и roadmap релизов
 
+**Сначала:** [`GOAL.md`](../../GOAL.md) - полировка священного цикла. Этот файл - backlog идей, не лицензия плодить фичи.
+
 Снимок конкурентного анализа (2025–2026). Источник идей для следующих semver-релизов.
 Обновляй таблицу и приоритеты, когда статус фичи меняется.
 
@@ -82,7 +84,7 @@ Semver: patch = polish/багфиксы; minor = пользовательска�
 
 ### P2
 
-5. **Trust и power features** - ~~CSV export~~ (**v0.9.0**), ~~warm-up/drop sets~~ (**v0.10.0** live kind), optional RPE, шаблоны PPL.  
+5. **Trust и power features** - ~~CSV export~~ (**v0.9.0**), ~~warm-up/drop sets~~ (**v0.10.0** live kind), ~~exercise “or” alternatives~~ (**v0.11.0**), optional RPE, шаблоны PPL.  
    Watch - только после стабильного web-лога.
 
 ### Later (не сейчас)
