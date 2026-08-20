@@ -5,6 +5,7 @@ import { withTimeout } from '$lib/domain/withTimeout';
 import { translate } from '$lib/i18n/messages';
 import { getWorkoutRepo, isCloudMode } from '$lib/storage/dataAccess';
 import { localWorkoutRepository } from '$lib/storage/localWorkoutRepository';
+import { clearLastSyncedAt } from '$lib/storage/syncMeta';
 import { supabaseWorkoutRepository } from '$lib/storage/supabaseWorkoutRepository';
 import type { CloudSyncState } from '$lib/domain/cloudSync';
 import {
@@ -28,9 +29,10 @@ function createPlansStore() {
 		store.set([]);
 		sync.set('idle');
 		ready.set(false);
+		clearLastSyncedAt('plans');
 	}
 
-	async function refresh(opts?: { cloud?: boolean }) {
+	async function refresh(opts?: { cloud?: boolean; force?: boolean }) {
 		if (!browser) {
 			store.set([]);
 			sync.set('synced');
@@ -40,6 +42,7 @@ function createPlansStore() {
 		if (inflight) return inflight;
 
 		const wantCloud = opts?.cloud !== false;
+		const forceCloud = opts?.force === true;
 
 		inflight = (async () => {
 			try {
@@ -48,6 +51,9 @@ function createPlansStore() {
 					cloudList: () => supabaseWorkoutRepository.list(),
 					merge: mergeWorkoutPlans,
 					wantCloud,
+					forceCloud,
+					listKey: 'plans',
+					previousItems: get(store),
 					label: 'plans',
 					onUpdate: (result) => {
 						store.set(result.items);
@@ -57,7 +63,6 @@ function createPlansStore() {
 				});
 			} catch (err) {
 				console.error('plans.refresh failed', err);
-				store.set([]);
 				sync.set('error');
 				ready.set(true);
 			} finally {
@@ -80,7 +85,8 @@ function createPlansStore() {
 			const cloudOk = await mirrorCloudWrite({
 				localWrite: () => localWorkoutRepository.save(current),
 				cloudWrite: () => supabaseWorkoutRepository.save(current),
-				label: 'plans.saveCurrent'
+				label: 'plans.saveCurrent',
+				outboxOnFail: { kind: 'plan.save', id: current.id }
 			});
 			await refresh({ cloud: cloudOk && isCloudMode() });
 			return current;
@@ -89,7 +95,8 @@ function createPlansStore() {
 			const cloudOk = await mirrorCloudWrite({
 				localWrite: () => localWorkoutRepository.remove(id),
 				cloudWrite: () => supabaseWorkoutRepository.remove(id),
-				label: 'plans.removePlan'
+				label: 'plans.removePlan',
+				outboxOnFail: { kind: 'plan.delete', id }
 			});
 			await refresh({ cloud: cloudOk && isCloudMode() });
 		},
@@ -103,7 +110,8 @@ function createPlansStore() {
 			const synced = await mirrorCloudWrite({
 				localWrite: () => localWorkoutRepository.save(copy),
 				cloudWrite: () => supabaseWorkoutRepository.save(copy),
-				label: 'plans.duplicate'
+				label: 'plans.duplicate',
+				outboxOnFail: { kind: 'plan.save', id: copy.id }
 			});
 			await refresh({ cloud: synced && isCloudMode() });
 			return { plan: copy, synced: synced || !isCloudMode() };

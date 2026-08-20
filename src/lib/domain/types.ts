@@ -21,6 +21,8 @@ export type ExerciseIndexItem = {
 	muscle_group: string;
 	secondary_muscles: string[];
 	image: string;
+	/** Cold-start ranking weight (1–100); present on slim index from build:data. */
+	globalPopularity?: number;
 	/** Present on full exercise payloads; omitted from the slim catalog index. */
 	gif_url?: string;
 };
@@ -42,6 +44,8 @@ export type WorkoutExercise = {
 	restSec: number;
 	/** Same id = one superset / giant set (contiguous block in the list). */
 	groupId?: string | null;
+	/** Same id = interchangeable alternatives (“or”); pick one in live. */
+	altGroupId?: string | null;
 };
 
 export type WorkoutPlan = {
@@ -82,6 +86,7 @@ export type LoggedSet = {
 export type SessionExercise = {
 	exerciseId: string;
 	groupId?: string | null;
+	altGroupId?: string | null;
 	targetSets: number;
 	targetReps: number;
 	restSec: number;
@@ -96,6 +101,8 @@ export type WorkoutSession = {
 	startedAt: string;
 	finishedAt: string | null;
 	exercises: SessionExercise[];
+	/** Live: chosen exerciseId per altGroupId (interchangeable slots). */
+	altChoices?: Record<string, string>;
 };
 
 /** Compact “last time” hint for the live logger. */

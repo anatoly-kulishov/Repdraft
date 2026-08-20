@@ -2,6 +2,12 @@
 
 Краткий контракт поддержки. Детали для Cursor: `.cursor/rules/`.
 
+## Главная цель
+
+См. **[`GOAL.md`](GOAL.md)** в корне: полировка UI/UX священного цикла (открыть → выбрать → превью → тренировка → вес×повторы → финиш → результат). Не плодить фичи. Native iOS/Android - только после того, как этот цикл ощущается великолепно.
+
+Исследование и guardrails: [`.cursor/product/ux-research-mvp-direction.md`](.cursor/product/ux-research-mvp-direction.md).
+
 ## Стек
 
 SvelteKit, TypeScript, Tailwind 4, Supabase (опционально), мобильный / PWA first.
@@ -21,9 +27,11 @@ SvelteKit, TypeScript, Tailwind 4, Supabase (опционально), мобил
 npm install
 cp .env.example .env   # PUBLIC_SUPABASE_* при необходимости
 npm run dev            # LAN: --host уже в scripts
-npm run check
+npm run check          # typecheck / svelte-check перед завершением задачи
 npm run build
 ```
+
+Строгие UI/coding-правила MVP: [`.cursorrules`](.cursorrules). Техническое ТЗ (SvelteKit): [`TASK_SPEC.md`](TASK_SPEC.md).
 
 ## Секреты и SQL
 

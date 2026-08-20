@@ -2,7 +2,9 @@ import { browser } from '$app/environment';
 import {
 	addExercise,
 	createEmptyDraft,
+	dissolveOrGroup as dissolveOrGroupInPlan,
 	dissolveSuperset as dissolveSupersetInPlan,
+	formOrGroup as formOrGroupInPlan,
 	formSuperset as formSupersetInPlan,
 	moveExercise as moveExerciseInPlan,
 	moveByArrow as moveByArrowInPlan,
@@ -16,6 +18,7 @@ import {
 } from '$lib/domain/workout';
 import type { WorkoutExercise, WorkoutPlan } from '$lib/domain/types';
 import { readDraft, writeDraft } from '$lib/storage/localWorkoutRepository';
+import { exerciseStats } from '$lib/stores/exerciseStats';
 import { writable } from 'svelte/store';
 
 /**
@@ -57,6 +60,7 @@ function createDraftStore() {
 				result = addExercise(plan, exerciseId, hint);
 				return result.plan;
 			});
+			if (result.added) exerciseStats.recordUse(exerciseId);
 			return result;
 		},
 		removeFromDraft(exerciseId: string) {
@@ -79,6 +83,12 @@ function createDraftStore() {
 		},
 		dissolveSuperset(groupId: string) {
 			update((plan) => dissolveSupersetInPlan(plan, groupId));
+		},
+		formOrGroup(exerciseIds: string[]) {
+			update((plan) => formOrGroupInPlan(plan, exerciseIds));
+		},
+		dissolveOrGroup(altGroupId: string) {
+			update((plan) => dissolveOrGroupInPlan(plan, altGroupId));
 		},
 		updateGroupSets(groupId: string, sets: number) {
 			update((plan) => updateGroupSetsInPlan(plan, groupId, sets));

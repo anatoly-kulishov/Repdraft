@@ -1,7 +1,7 @@
 {
 	"name": "repdraft",
 	"private": true,
-	"version": "0.10.5",
+	"version": "0.12.1",
 	"description": "Каталог упражнений и конструктор тренировок",
 	"type": "module",
 	"scripts": {
@@ -26,7 +26,8 @@
 		"icons:pwa": "node ./scripts/render-pwa-icons.mjs",
 		"e2e:ui": "node ./scripts/e2e-ui-audit.mjs",
 		"e2e:overflow": "node ./scripts/e2e-overflow-stress.mjs",
-		"backfill:gif-cache": "node --env-file=.env scripts/backfill-technique-gif-cache.mjs"
+		"backfill:gif-cache": "node --env-file=.env scripts/backfill-technique-gif-cache.mjs",
+		"validate": "svelte-kit sync && tsc --noEmit"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.1",

@@ -1,6 +1,7 @@
 import type { ExerciseIndexItem } from '$lib/domain/types';
 
 let indexPromise: Promise<ExerciseIndexItem[]> | null = null;
+let cachedIndex: ExerciseIndexItem[] | null = null;
 
 /** Catalog metadata only (~380KB). Full exercise payloads stay on the server. */
 export function loadExerciseIndex(): Promise<ExerciseIndexItem[]> {
@@ -10,7 +11,15 @@ export function loadExerciseIndex(): Promise<ExerciseIndexItem[]> {
 				if (!res.ok) {
 					throw new Error('errors.catalogLoad');
 				}
-				return (await res.json()) as ExerciseIndexItem[];
+				const data = (await res.json()) as ExerciseIndexItem[];
+				cachedIndex = data.map((ex) => ({
+					...ex,
+					globalPopularity:
+						typeof ex.globalPopularity === 'number' && Number.isFinite(ex.globalPopularity)
+							? Math.min(100, Math.max(1, ex.globalPopularity))
+							: 25
+				}));
+				return cachedIndex;
 			})
 			.catch((err) => {
 				indexPromise = null;
@@ -18,6 +27,11 @@ export function loadExerciseIndex(): Promise<ExerciseIndexItem[]> {
 			});
 	}
 	return indexPromise;
+}
+
+/** Warm-nav: non-null when catalog was already fetched this session. */
+export function peekExerciseIndex(): ExerciseIndexItem[] | null {
+	return cachedIndex;
 }
 
 export async function getIndexItemById(id: string): Promise<ExerciseIndexItem | null> {

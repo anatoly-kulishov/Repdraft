@@ -1,10 +1,13 @@
 import type { SessionExercise, WorkoutSession } from '$lib/domain/types';
+import { visibleSessionExerciseIndices } from '$lib/domain/session';
 
 export function pickDefaultExerciseIndex(session: WorkoutSession): number {
-	const idx = session.exercises.findIndex(
-		(ex) => ex.sets.length > 0 && !ex.sets.every((s) => s.completed)
-	);
-	return idx >= 0 ? idx : 0;
+	const visible = visibleSessionExerciseIndices(session);
+	for (const idx of visible) {
+		const ex = session.exercises[idx];
+		if (ex && ex.sets.length > 0 && !ex.sets.every((s) => s.completed)) return idx;
+	}
+	return visible[0] ?? 0;
 }
 
 export function exerciseAllSetsDone(exercises: SessionExercise[], index: number): boolean {

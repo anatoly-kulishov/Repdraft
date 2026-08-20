@@ -36,7 +36,7 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="clip-lightbox fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 pb-[calc(var(--safe-bottom)+1rem)] backdrop-blur-[2px]"
+	class="clip-lightbox fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-4 pb-[calc(var(--mobile-chrome-bottom,0px)+1rem)] backdrop-blur-[2px] lg:items-center lg:pb-[calc(var(--safe-bottom)+1rem)]"
 	role="dialog"
 	aria-modal="true"
 	tabindex="-1"

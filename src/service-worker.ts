@@ -3,9 +3,10 @@ import { build, files, version } from '$service-worker';
 
 /**
  * Minimal SW for installability + app-shell cache.
- * Do not precache static/images|videos — catalog media is huge.
+ * Do not precache static/images|videos — catalog media is huge; runtime CacheFirst instead.
  */
 const CACHE = `repdraft-shell-${version}`;
+const MEDIA_CACHE = `repdraft-media-${version}`;
 const CATALOG_INDEX = '/data/exercises.index.json';
 
 const SHELL = [
@@ -31,7 +32,7 @@ self.addEventListener('activate', (event) => {
 	event.waitUntil(
 		caches.keys().then(async (keys) => {
 			for (const key of keys) {
-				if (key !== CACHE) await caches.delete(key);
+				if (key !== CACHE && key !== MEDIA_CACHE) await caches.delete(key);
 			}
 			await self.clients.claim();
 		})
@@ -56,6 +57,26 @@ async function staleWhileRevalidate(request: Request): Promise<Response> {
 	throw new Error('network unavailable');
 }
 
+async function cacheFirst(request: Request, cacheName: string): Promise<Response> {
+	const cache = await caches.open(cacheName);
+	const cached = await cache.match(request);
+	if (cached) return cached;
+	const response = await fetch(request);
+	if (response.ok) void cache.put(request, response.clone());
+	return response;
+}
+
+function isStaticJson(pathname: string): boolean {
+	return (
+		(pathname.startsWith('/data/') || pathname.startsWith('/content/')) &&
+		pathname.endsWith('.json')
+	);
+}
+
+function isStaticMedia(pathname: string): boolean {
+	return pathname.startsWith('/images/') || pathname.startsWith('/videos/');
+}
+
 self.addEventListener('fetch', (event) => {
 	const { request } = event;
 	if (request.method !== 'GET') return;
@@ -63,8 +84,13 @@ self.addEventListener('fetch', (event) => {
 	const url = new URL(request.url);
 	if (url.origin !== self.location.origin) return;
 
-	if (url.pathname === CATALOG_INDEX) {
+	if (isStaticJson(url.pathname)) {
 		event.respondWith(staleWhileRevalidate(request));
+		return;
+	}
+
+	if (isStaticMedia(url.pathname)) {
+		event.respondWith(cacheFirst(request, MEDIA_CACHE));
 		return;
 	}
 

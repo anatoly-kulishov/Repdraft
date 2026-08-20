@@ -63,6 +63,7 @@ function createAuthStore() {
 		try {
 			if (opts.cacheCleared) {
 				draft.resetDraft();
+				live.resetHistoryHydration();
 				live.hydrate();
 				plans.invalidate();
 				records.invalidate();

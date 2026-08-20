@@ -6,6 +6,7 @@ import {
 } from '$lib/domain/records';
 import type { PersonalRecord } from '$lib/domain/types';
 import { localRecordRepository } from '$lib/storage/localRecordRepository';
+import { clearLastSyncedAt } from '$lib/storage/syncMeta';
 import { supabaseRecordRepository } from '$lib/storage/supabaseRecordRepository';
 import type { CloudSyncState } from '$lib/domain/cloudSync';
 import {
@@ -26,9 +27,10 @@ function createRecordsStore() {
 		store.set([]);
 		sync.set('idle');
 		ready.set(false);
+		clearLastSyncedAt('records');
 	}
 
-	async function refresh(opts?: { cloud?: boolean }) {
+	async function refresh(opts?: { cloud?: boolean; force?: boolean }) {
 		if (!browser) {
 			store.set([]);
 			sync.set('synced');
@@ -38,6 +40,7 @@ function createRecordsStore() {
 		if (inflight) return inflight;
 
 		const wantCloud = opts?.cloud !== false;
+		const forceCloud = opts?.force === true;
 
 		inflight = (async () => {
 			try {
@@ -46,6 +49,9 @@ function createRecordsStore() {
 					cloudList: () => supabaseRecordRepository.list(),
 					merge: mergePersonalRecords,
 					wantCloud,
+					forceCloud,
+					listKey: 'records',
+					previousItems: get(store),
 					label: 'records',
 					onUpdate: (result) => {
 						store.set(result.items);
@@ -55,7 +61,7 @@ function createRecordsStore() {
 				});
 			} catch (err) {
 				console.error('records.refresh failed', err);
-				store.set([]);
+				if (get(store).length === 0) store.set([]);
 				sync.set('error');
 				ready.set(true);
 			} finally {
@@ -85,7 +91,8 @@ function createRecordsStore() {
 			const cloudOk = await mirrorCloudWrite({
 				localWrite: () => localRecordRepository.save(next),
 				cloudWrite: () => supabaseRecordRepository.save(next),
-				label: 'records.save'
+				label: 'records.save',
+				outboxOnFail: { kind: 'record.save', exerciseId: next.exerciseId }
 			});
 			await refresh({ cloud: cloudOk && isCloudMode() });
 			return true;
@@ -94,7 +101,8 @@ function createRecordsStore() {
 			const cloudOk = await mirrorCloudWrite({
 				localWrite: () => localRecordRepository.remove(exerciseId),
 				cloudWrite: () => supabaseRecordRepository.remove(exerciseId),
-				label: 'records.remove'
+				label: 'records.remove',
+				outboxOnFail: { kind: 'record.delete', exerciseId }
 			});
 			await refresh({ cloud: cloudOk && isCloudMode() });
 		},

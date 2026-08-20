@@ -3,6 +3,8 @@ import { exerciseName, exerciseNameSortLocale } from './exerciseName';
 import { BODY_PART_LABELS, EQUIPMENT_LABELS, TARGET_LABELS } from './labels.ru';
 import { SEARCH_SYNONYMS } from './searchSynonyms';
 import type { BodyPart, ExerciseFilters, ExerciseIndexItem } from './types';
+import type { UserExerciseStatsMap } from './exerciseScore';
+import { getScore } from './exerciseScore';
 
 export function uniqueSorted(
 	items: ExerciseIndexItem[],
@@ -337,7 +339,8 @@ function filterAndSortExercises(
 export function filterCatalogWithFacets(
 	items: ExerciseIndexItem[],
 	filters: ExerciseFilters,
-	locale: AppLocale = 'ru'
+	locale: AppLocale = 'ru',
+	statsMap: UserExerciseStatsMap = {}
 ): { items: ExerciseIndexItem[]; equipment: string[]; targets: string[] } {
 	const query = normalizeSearchText(filters.query);
 	const tokens = query ? query.split(' ').filter((t) => t.length > 0) : [];
@@ -379,12 +382,17 @@ export function filterCatalogWithFacets(
 		? scored
 				.sort((a, b) => {
 					if (b.score !== a.score) return b.score - a.score;
+					const hybrid =
+						getScore(b.item, statsMap[b.item.id]) - getScore(a.item, statsMap[a.item.id]);
+					if (hybrid !== 0) return hybrid;
 					return exerciseName(a.item, locale).localeCompare(exerciseName(b.item, locale), sortLocale);
 				})
 				.map((row) => row.item)
-		: matched.sort((a, b) =>
-				exerciseName(a, locale).localeCompare(exerciseName(b, locale), sortLocale)
-			);
+		: matched.sort((a, b) => {
+				const hybrid = getScore(b, statsMap[b.id]) - getScore(a, statsMap[a.id]);
+				if (hybrid !== 0) return hybrid;
+				return exerciseName(a, locale).localeCompare(exerciseName(b, locale), sortLocale);
+			});
 
 	return {
 		items: resultItems,
@@ -504,6 +512,7 @@ export function runFiltersSelfCheck(): void {
 			target: 'quads',
 			muscle_group: 'quads',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'x.jpg'
 		},
 		{
@@ -514,6 +523,7 @@ export function runFiltersSelfCheck(): void {
 			target: 'pectorals',
 			muscle_group: 'chest',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'x.jpg'
 		},
 		{
@@ -524,6 +534,7 @@ export function runFiltersSelfCheck(): void {
 			target: 'glutes',
 			muscle_group: 'glutes',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'x.jpg'
 		},
 		{
@@ -534,6 +545,7 @@ export function runFiltersSelfCheck(): void {
 			target: 'calves',
 			muscle_group: 'calves',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'x.jpg'
 		}
 	];
@@ -592,6 +604,7 @@ export function runFiltersSelfCheck(): void {
 			target: 'abs',
 			muscle_group: 'abs',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'x.jpg'
 		},
 		{
@@ -602,6 +615,7 @@ export function runFiltersSelfCheck(): void {
 			target: 'biceps',
 			muscle_group: 'biceps',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'x.jpg'
 		},
 		{
@@ -612,6 +626,7 @@ export function runFiltersSelfCheck(): void {
 			target: 'hamstrings',
 			muscle_group: 'hamstrings',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'x.jpg'
 		},
 		{
@@ -622,6 +637,7 @@ export function runFiltersSelfCheck(): void {
 			target: 'triceps',
 			muscle_group: 'triceps',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: 'x.jpg'
 		}
 	];
@@ -674,6 +690,7 @@ export function runFiltersSelfCheck(): void {
 			target: 'quads',
 			muscle_group: 'quads',
 			secondary_muscles: ['glutes'],
+			globalPopularity: 25,
 			image: ''
 		},
 		{
@@ -685,6 +702,7 @@ export function runFiltersSelfCheck(): void {
 			target: 'glutes',
 			muscle_group: 'glutes',
 			secondary_muscles: [],
+			globalPopularity: 25,
 			image: ''
 		}
 	];
