@@ -81,6 +81,24 @@ function normalizeGroups(exercises: WorkoutExercise[]): WorkoutExercise[] {
 	});
 }
 
+/** Drop altGroupId when fewer than 2 members remain. */
+function normalizeAltGroups(exercises: WorkoutExercise[]): WorkoutExercise[] {
+	const counts = new Map<string, number>();
+	for (const ex of exercises) {
+		if (!ex.altGroupId) continue;
+		counts.set(ex.altGroupId, (counts.get(ex.altGroupId) ?? 0) + 1);
+	}
+	return exercises.map((ex) => {
+		if (!ex.altGroupId) return ex;
+		if ((counts.get(ex.altGroupId) ?? 0) >= 2) return ex;
+		return { ...ex, altGroupId: null };
+	});
+}
+
+function normalizePlanExercises(exercises: WorkoutExercise[]): WorkoutExercise[] {
+	return normalizeAltGroups(normalizeGroups(exercises));
+}
+
 function applyRoundRest(members: WorkoutExercise[]): WorkoutExercise[] {
 	return members.map((ex, i) => ({
 		...ex,
@@ -127,7 +145,9 @@ export function addExercise(
 }
 
 export function removeExercise(plan: WorkoutPlan, exerciseId: string): WorkoutPlan {
-	const exercises = normalizeGroups(plan.exercises.filter((ex) => ex.exerciseId !== exerciseId));
+	const exercises = normalizePlanExercises(
+		plan.exercises.filter((ex) => ex.exerciseId !== exerciseId)
+	);
 	return withUpdated(plan, exercises);
 }
 
@@ -136,7 +156,7 @@ export function updateExercise(
 	exerciseId: string,
 	patch: Partial<Omit<WorkoutExercise, 'exerciseId'>>
 ): WorkoutPlan {
-	const { groupId: _g, ...safePatch } = patch;
+	const { groupId: _g, altGroupId: _a, ...safePatch } = patch;
 	const clamped: typeof safePatch = { ...safePatch };
 	if (clamped.sets != null) {
 		clamped.sets = Math.min(SETS.max, Math.max(SETS.min, Math.round(clamped.sets)));
@@ -167,6 +187,32 @@ export function groupBounds(
 	return { start, end, groupId };
 }
 
+export function altGroupBounds(
+	exercises: { altGroupId?: string | null }[],
+	index: number
+): { start: number; end: number; altGroupId: string } | null {
+	const item = exercises[index];
+	if (!item?.altGroupId) return null;
+	const altGroupId = item.altGroupId;
+	let start = index;
+	let end = index;
+	while (start > 0 && exercises[start - 1]?.altGroupId === altGroupId) start -= 1;
+	while (end < exercises.length - 1 && exercises[end + 1]?.altGroupId === altGroupId) end += 1;
+	return { start, end, altGroupId };
+}
+
+/** Contiguous block for reorder: superset or “or” group (2+ members). */
+export function blockBounds(
+	exercises: { groupId?: string | null; altGroupId?: string | null }[],
+	index: number
+): { start: number; end: number } | null {
+	const gb = groupBounds(exercises, index);
+	if (gb && gb.start !== gb.end) return { start: gb.start, end: gb.end };
+	const ab = altGroupBounds(exercises, index);
+	if (ab && ab.start !== ab.end) return { start: ab.start, end: ab.end };
+	return null;
+}
+
 export type GroupMemberRole = 'solo' | 'first' | 'middle' | 'last';
 
 export function groupMemberRole(
@@ -174,6 +220,17 @@ export function groupMemberRole(
 	index: number
 ): GroupMemberRole {
 	const bounds = groupBounds(exercises, index);
+	if (!bounds || bounds.start === bounds.end) return 'solo';
+	if (index === bounds.start) return 'first';
+	if (index === bounds.end) return 'last';
+	return 'middle';
+}
+
+export function altGroupMemberRole(
+	exercises: { altGroupId?: string | null }[],
+	index: number
+): GroupMemberRole {
+	const bounds = altGroupBounds(exercises, index);
 	if (!bounds || bounds.start === bounds.end) return 'solo';
 	if (index === bounds.start) return 'first';
 	if (index === bounds.end) return 'last';
@@ -196,11 +253,11 @@ export function moveExercise(plan: WorkoutPlan, fromIndex: number, toIndex: numb
 		return plan;
 	}
 
-	const bounds = groupBounds(exercises, fromIndex);
+	const bounds = blockBounds(exercises, fromIndex);
 	if (!bounds) {
 		const [item] = exercises.splice(fromIndex, 1);
 		exercises.splice(toIndex, 0, item!);
-		return withUpdated(plan, normalizeGroups(exercises));
+		return withUpdated(plan, normalizePlanExercises(exercises));
 	}
 
 	const block = exercises.splice(bounds.start, bounds.end - bounds.start + 1);
@@ -214,7 +271,7 @@ export function moveExercise(plan: WorkoutPlan, fromIndex: number, toIndex: numb
 
 /**
  * ↑/↓ semantics:
- * - inside a superset → reorder within the group
+ * - inside a superset / or-group → reorder within the group
  * - first↑ / last↓ of a group → move the whole block
  * - solo next to a group → jump over the block (do not land in the middle)
  */
@@ -227,20 +284,20 @@ export function moveByArrow(
 	const toIndex = fromIndex + direction;
 	if (fromIndex < 0 || fromIndex >= n || toIndex < 0 || toIndex >= n) return plan;
 
-	const bounds = groupBounds(plan.exercises, fromIndex);
+	const bounds = blockBounds(plan.exercises, fromIndex);
 	if (bounds) {
 		if (direction < 0 && fromIndex > bounds.start) {
-			return moveWithinGroup(plan, fromIndex, fromIndex - 1);
+			return moveWithinBlock(plan, fromIndex, fromIndex - 1);
 		}
 		if (direction > 0 && fromIndex < bounds.end) {
-			return moveWithinGroup(plan, fromIndex, fromIndex + 1);
+			return moveWithinBlock(plan, fromIndex, fromIndex + 1);
 		}
 		const dest = direction < 0 ? bounds.start - 1 : bounds.end + 1;
 		if (dest < 0 || dest >= n) return plan;
 		return moveExercise(plan, fromIndex, dest);
 	}
 
-	const neighborBounds = groupBounds(plan.exercises, toIndex);
+	const neighborBounds = blockBounds(plan.exercises, toIndex);
 	if (neighborBounds) {
 		const dest = direction < 0 ? neighborBounds.start : neighborBounds.end;
 		return moveExercise(plan, fromIndex, dest);
@@ -248,16 +305,21 @@ export function moveByArrow(
 	return moveExercise(plan, fromIndex, toIndex);
 }
 
-/** Reorder within a group only (from/to must be in the same group). */
+/** Reorder within a contiguous block (superset reapplies round rest; or-group keeps rest). */
 export function moveWithinGroup(plan: WorkoutPlan, fromIndex: number, toIndex: number): WorkoutPlan {
-	const bounds = groupBounds(plan.exercises, fromIndex);
+	return moveWithinBlock(plan, fromIndex, toIndex);
+}
+
+function moveWithinBlock(plan: WorkoutPlan, fromIndex: number, toIndex: number): WorkoutPlan {
+	const bounds = blockBounds(plan.exercises, fromIndex);
 	if (!bounds || toIndex < bounds.start || toIndex > bounds.end) return plan;
 	const exercises = [...plan.exercises];
 	const [item] = exercises.splice(fromIndex, 1);
 	exercises.splice(toIndex, 0, item!);
-	const nextBounds = groupBounds(exercises, toIndex);
+	const nextBounds = blockBounds(exercises, toIndex);
 	if (!nextBounds) return withUpdated(plan, exercises);
-	const members = applyRoundRest(exercises.slice(nextBounds.start, nextBounds.end + 1));
+	const slice = exercises.slice(nextBounds.start, nextBounds.end + 1);
+	const members = slice[0]?.groupId ? applyRoundRest(slice) : slice;
 	exercises.splice(nextBounds.start, members.length, ...members);
 	return withUpdated(plan, exercises);
 }
@@ -288,6 +350,7 @@ export function formSuperset(plan: WorkoutPlan, exerciseIds: string[]): WorkoutP
 		selected.map((ex, i) => ({
 			...ex,
 			groupId,
+			altGroupId: null,
 			sets: sharedSets,
 			restSec: i === selected.length - 1 ? lastRest : 0
 		}))
@@ -295,7 +358,7 @@ export function formSuperset(plan: WorkoutPlan, exerciseIds: string[]): WorkoutP
 
 	const exercises = [...rest];
 	exercises.splice(Math.min(insertAt, exercises.length), 0, ...grouped);
-	return withUpdated(plan, normalizeGroups(exercises));
+	return withUpdated(plan, normalizePlanExercises(exercises));
 }
 
 export function dissolveSuperset(plan: WorkoutPlan, groupId: string): WorkoutPlan {
@@ -309,6 +372,44 @@ export function dissolveSuperset(plan: WorkoutPlan, groupId: string): WorkoutPla
 						restSec: ex.restSec > 0 ? ex.restSec : DEFAULT_REST_SEC
 					}
 				: ex
+		)
+	);
+}
+
+/** Interchangeable alternatives (“or”) — each keeps own sets/rest; live picks one. */
+export function formOrGroup(plan: WorkoutPlan, exerciseIds: string[]): WorkoutPlan {
+	const unique = [...new Set(exerciseIds)];
+	if (unique.length < 2) return plan;
+
+	const selected = unique
+		.map((id) => plan.exercises.find((ex) => ex.exerciseId === id))
+		.filter((ex): ex is WorkoutExercise => Boolean(ex));
+	if (selected.length < 2) return plan;
+
+	const selectedSet = new Set(selected.map((ex) => ex.exerciseId));
+	const rest = plan.exercises.filter((ex) => !selectedSet.has(ex.exerciseId));
+	const insertAt = Math.min(
+		...selected.map((ex) => plan.exercises.findIndex((e) => e.exerciseId === ex.exerciseId))
+	);
+
+	const altGroupId = newId();
+	const grouped = selected.map((ex) => ({
+		...ex,
+		groupId: null,
+		altGroupId,
+		restSec: ex.restSec > 0 ? ex.restSec : DEFAULT_REST_SEC
+	}));
+
+	const exercises = [...rest];
+	exercises.splice(Math.min(insertAt, exercises.length), 0, ...grouped);
+	return withUpdated(plan, normalizePlanExercises(exercises));
+}
+
+export function dissolveOrGroup(plan: WorkoutPlan, altGroupId: string): WorkoutPlan {
+	return withUpdated(
+		plan,
+		plan.exercises.map((ex) =>
+			ex.altGroupId === altGroupId ? { ...ex, altGroupId: null } : ex
 		)
 	);
 }
@@ -340,6 +441,7 @@ export function updateGroupRest(plan: WorkoutPlan, groupId: string, restSec: num
 export function duplicatePlan(plan: WorkoutPlan, copySuffix = '(copy)'): WorkoutPlan {
 	const ts = nowIso();
 	const groupMap = new Map<string, string>();
+	const altMap = new Map<string, string>();
 	return {
 		...plan,
 		id: newId(),
@@ -347,13 +449,25 @@ export function duplicatePlan(plan: WorkoutPlan, copySuffix = '(copy)'): Workout
 		createdAt: ts,
 		updatedAt: ts,
 		exercises: plan.exercises.map((ex) => {
-			if (!ex.groupId) return { ...ex };
-			let mapped = groupMap.get(ex.groupId);
-			if (!mapped) {
-				mapped = newId();
-				groupMap.set(ex.groupId, mapped);
+			let groupId = ex.groupId ?? null;
+			let altGroupId = ex.altGroupId ?? null;
+			if (groupId) {
+				let mapped = groupMap.get(groupId);
+				if (!mapped) {
+					mapped = newId();
+					groupMap.set(groupId, mapped);
+				}
+				groupId = mapped;
 			}
-			return { ...ex, groupId: mapped };
+			if (altGroupId) {
+				let mapped = altMap.get(altGroupId);
+				if (!mapped) {
+					mapped = newId();
+					altMap.set(altGroupId, mapped);
+				}
+				altGroupId = mapped;
+			}
+			return { ...ex, groupId, altGroupId };
 		})
 	};
 }
@@ -394,7 +508,38 @@ export function planTargetSummary(
 }
 
 export function planPrescribedSetCount(plan: WorkoutPlan): number {
-	return plan.exercises.reduce((total, ex) => total + Math.max(0, ex.sets), 0);
+	let total = 0;
+	let i = 0;
+	const list = plan.exercises;
+	while (i < list.length) {
+		const ab = altGroupBounds(list, i);
+		if (ab && ab.start === i && ab.end > ab.start) {
+			total += Math.max(0, list[i]!.sets);
+			i = ab.end + 1;
+			continue;
+		}
+		total += Math.max(0, list[i]!.sets);
+		i += 1;
+	}
+	return total;
+}
+
+/** Plan list cards: each “or” block counts as one slot (not N alternatives). */
+export function planExerciseSlotCount(plan: WorkoutPlan): number {
+	let count = 0;
+	let i = 0;
+	const list = plan.exercises;
+	while (i < list.length) {
+		const ab = altGroupBounds(list, i);
+		if (ab && ab.start === i && ab.end > ab.start) {
+			count += 1;
+			i = ab.end + 1;
+			continue;
+		}
+		count += 1;
+		i += 1;
+	}
+	return count;
 }
 
 /** Union local + cloud without dropping device-only rows (empty cloud must not wipe UI). */
@@ -510,6 +655,30 @@ export function runWorkoutSelfCheck(): void {
 	plan = dissolveSuperset(plan, g);
 	if (plan.exercises.some((ex) => ex.groupId === g)) {
 		throw new Error('dissolveSuperset should clear groupId');
+	}
+
+	plan = formOrGroup(plan, ['ex-a', 'ex-b', 'ex-c']);
+	const alt = plan.exercises[0]?.altGroupId;
+	if (
+		!alt ||
+		plan.exercises[0]?.altGroupId !== plan.exercises[1]?.altGroupId ||
+		plan.exercises[1]?.altGroupId !== plan.exercises[2]?.altGroupId
+	) {
+		throw new Error('formOrGroup should share altGroupId');
+	}
+	if (plan.exercises.some((ex) => ex.groupId)) {
+		throw new Error('formOrGroup should clear groupId');
+	}
+	if (planExerciseSlotCount(plan) !== 1) {
+		throw new Error('or-group should count as one slot');
+	}
+
+	plan = dissolveOrGroup(plan, alt);
+	if (plan.exercises.some((ex) => ex.altGroupId === alt)) {
+		throw new Error('dissolveOrGroup should clear altGroupId');
+	}
+	if (planExerciseSlotCount(plan) !== 3) {
+		throw new Error('dissolved or-group should count as three slots');
 	}
 
 	plan = removeExercise(plan, 'ex-b');

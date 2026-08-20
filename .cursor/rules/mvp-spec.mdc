@@ -5,7 +5,9 @@ alwaysApply: true
 
 # MVP specification
 
-**Source of truth:** [`.cursor/product/mvp-spec.md`](.cursor/product/mvp-spec.md)
+**North star:** [`GOAL.md`](../../GOAL.md) - UX of the sacred loop over new features.  
+**Research / principles:** [`.cursor/product/ux-research-mvp-direction.md`](.cursor/product/ux-research-mvp-direction.md)  
+**Screen/spec detail:** [`.cursor/product/mvp-spec.md`](.cursor/product/mvp-spec.md)
 
 ## Before coding
 
@@ -18,11 +20,13 @@ Run **AUDIT CURRENT PROJECT** (checklist in `mvp-spec.md` § Agent workflow):
 
 ## Non‑negotiables
 
-- **Flow:** Create → Train → Log → Finish → History (no analytics/social/AI in MVP)
+- **Sacred loop:** Open → pick workout → preview → start → set → weight×reps → next → finish → saved result
+- If that loop is not excellent, ignore charts / AI / social / “nice extras”
 - **Nav:** Home, Workouts, Exercises (+ Settings/Profile low emphasis)
 - **Visual:** Dark minimal premium (`#0B0B0C`, `#8B5CF6`), Lucide only, productivity not gym brochure
 - **One primary CTA per screen**
 - **Active Workout** gets the most UX attention
 - Reuse working code; no rewrite for UI’s sake
+- Native iOS/Android is a *later* reward for a great PWA loop - not a current build target
 
-Release priorities for *new* features: still see `.cursor/product/market-roadmap.md` for semver; **scope** decisions follow `mvp-spec.md` first.
+Release priorities for *new* features: still see `.cursor/product/market-roadmap.md` for semver; **scope** decisions follow `GOAL.md` + `mvp-spec.md` first.

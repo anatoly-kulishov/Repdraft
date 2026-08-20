@@ -99,6 +99,16 @@ export function playRestDoneChime(): void {
 	});
 }
 
+/** Short haptic when a set is marked done (no-op if unsupported / iOS). */
+export function vibrateSetDone(): void {
+	if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
+	try {
+		navigator.vibrate(50);
+	} catch {
+		/* ignore */
+	}
+}
+
 /** Haptic pulse when rest ends (no-op if unsupported / denied). */
 export function vibrateRestDone(): void {
 	if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;

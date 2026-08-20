@@ -61,21 +61,43 @@ Analytics, charts, PR dashboards, RPE/RIR, muscle volume, social, AI, wearables 
 
 ## 1. What we build
 
-REPdraft — create, run, and save gym workouts. **Fast path:** create plan → live session → log sets → history.
+REPdraft — create, run, and save gym workouts. **North star:** [`GOAL.md`](../../GOAL.md).
+
+**MVP = UX священного цикла**, не каталог фич. Успех: цикл ощущается великолепно на телефоне в зале → тогда можно думать о native iOS & Android.
 
 MVP: simple, fast, clear, dark/minimal, desktop + mobile.
 
-**Criterion:** user knows the next step without a manual.
+**Criterion:** user knows the next step without a manual. If the loop below is not excellent, charts / AI / social do not matter.
 
-## 2. Main user flow
+## 2. Main user flow (sacred loop)
 
-Open → see workouts → create → add exercises → configure sets → save → start → log weight/reps → complete sets → next exercise → finish → summary → history.
+```text
+Открыть приложение
+      ↓
+Выбрать тренировку
+      ↓
+Посмотреть, что сегодня делать
+      ↓
+Начать
+      ↓
+Выполнить подход
+      ↓
+Записать вес × повторения
+      ↓
+Следующее упражнение
+      ↓
+Закончить
+      ↓
+Увидеть сохранённый результат
+```
+
+Builder (create plan → add exercises → sets → save) supports the loop; it is not an excuse for side features.
 
 ## 3. Not in MVP
 
 Progress charts, muscle volume/recovery, RPE/RIR, advanced 1RM, AI coach/generation, nutrition, body metrics/photos, social, gamification, wearables, subscriptions, periodization, auto progression, PR dashboards.
 
-If it doesn’t serve create → train → save → history, defer it.
+If it doesn’t make the sacred loop better, defer it.
 
 ## 4–6. Navigation
 

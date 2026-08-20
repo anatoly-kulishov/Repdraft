@@ -10,7 +10,7 @@
 		sessionDurationMs,
 		totalSetCount
 	} from '$lib/domain/session';
-	import { planTargetSummary } from '$lib/domain/workout';
+	import { planExerciseSlotCount, planTargetSummary } from '$lib/domain/workout';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
 	import { greetingFirstName } from '$lib/domain/greetingName';
@@ -46,15 +46,28 @@
 	let showSignedInMockup = $derived($auth.ready && !isGuest);
 	let showGuestCreateHero = $derived(pageReady && isGuest && isCreateHome);
 
+	/** Prefer last finished plan if still saved, else first plan — one hop to preview+Start. */
+	let nextPlan = $derived.by(() => {
+		if ($plans.length === 0) return null;
+		const lastPlanId = recent[0]?.planId;
+		if (lastPlanId) {
+			const match = $plans.find((p) => p.id === lastPlanId);
+			if (match) return match;
+		}
+		return $plans[0] ?? null;
+	});
+
 	let mockupSubtitle = $derived.by(() => {
 		if (hasActive) return translate(lang, 'home.readyTitle');
-		if (hasPlans) return translate(lang, 'home.readyTitle');
+		if (nextPlan || hasPlans) return translate(lang, 'home.readyTitle');
 		if (isFirstTimeHome) return translate(lang, 'home.welcomeLead');
 		return translate(lang, 'home.noPlansLead');
 	});
-	let mockupCtaHref = $derived(hasPlans ? '/workouts' : '/builder');
+	let mockupCtaHref = $derived(
+		nextPlan ? `/workouts/${nextPlan.id}` : hasPlans ? '/workouts' : BUILDER_NEW_HREF
+	);
 	let mockupCtaLabel = $derived(
-		translate(lang, hasPlans ? 'home.startWorkout' : 'workouts.create')
+		translate(lang, nextPlan || hasPlans ? 'home.startWorkout' : 'workouts.create')
 	);
 	let continueRemaining = $derived.by(() => {
 		if (!active) return '';
@@ -238,7 +251,7 @@
 													<span class="entity-row__meta">{muscles}</span>
 												{/if}
 												<span class="entity-row__meta">
-													{translate(lang, 'workouts.exCount', { n: plan.exercises.length })}
+													{translate(lang, 'workouts.exCount', { n: planExerciseSlotCount(plan) })}
 												</span>
 											</a>
 											<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="entity-row__chevron shrink-0" />

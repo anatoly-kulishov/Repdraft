@@ -2,6 +2,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { exerciseName } from '$lib/domain/exerciseName';
+	import { visibleSessionExerciseIndices } from '$lib/domain/session';
 	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
 	import { groupMemberRole } from '$lib/domain/workout';
 	import type { AppLocale } from '$lib/i18n/locale';
@@ -22,6 +23,8 @@
 		onSelect: (index: number) => void;
 	} = $props();
 
+	let visible = $derived(visibleSessionExerciseIndices(session));
+
 	function titleFor(id: string): string {
 		const item = names.get(id);
 		return item ? exerciseName(item, lang) : translate(lang, 'records.fallback', { id });
@@ -36,7 +39,8 @@
 
 <nav class="live-nav" aria-label={translate(lang, 'live.title')}>
 	<ul class="live-nav-list">
-		{#each session.exercises as ex, ei (ex.exerciseId + '-nav-' + ei)}
+		{#each visible as ei (session.exercises[ei]?.exerciseId + '-nav-' + ei)}
+			{@const ex = session.exercises[ei]!}
 			{@const role = groupMemberRole(session.exercises, ei)}
 			<li
 				class="live-nav-li"

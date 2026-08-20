@@ -1,0 +1,27 @@
+---
+description: Strict MVP coding rules - touch targets, offline-first, no deps bloat
+alwaysApply: true
+---
+
+# Strict coding rules (MVP)
+
+Full text also in [`.cursorrules`](../../.cursorrules). North star: [`GOAL.md`](../../GOAL.md).
+
+**MANTRA:** Maximum UI/UX comfort and flawless basic experience in MVP above any new features. Every decision must speed up or simplify the athlete's workflow in the gym.
+
+## Rules
+
+1. **Touch targets ≥ 48×48px** (`min-height/min-width: 48px` or `min-h-[48px] min-w-[48px]`). Prefer existing `.btn-*` tokens when they already comply.
+2. **No new dependencies** unless the user explicitly asks.
+3. **Bottom sheets over centered modals** on mobile. Reuse repo patterns; do not add `vaul`/drawer libs unless requested.
+4. **No blocking full-screen loaders** - Optimistic UI or skeletons (`PageSkeleton`, etc.).
+5. **Offline-first:** mutate via stores → local repositories / localStorage (IndexedDB where already used) before network sync. SvelteKit stores - not React Query.
+6. **No `any`.** Strict TypeScript; exhaustive switches on unions.
+7. **No drive-by refactors** or schema changes unless explicitly instructed.
+8. Keep `domain` pure; follow `architecture.mdc` layer direction.
+
+## Verification
+
+- Isolated, self-contained diffs per task.
+- Finish only after **`npm run check`** passes.
+- Do not introduce console errors/warnings.

@@ -3,13 +3,14 @@
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
 	import WorkoutExerciseRow from '$lib/components/WorkoutExerciseRow.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { BUILDER_ADD_EXERCISE_HREF } from '$lib/domain/catalogLinks';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
-	import { groupMemberRole } from '$lib/domain/workout';
+	import { altGroupMemberRole, groupMemberRole } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
 	import { draft, draftHydrated } from '$lib/stores/draft';
 	import { plans } from '$lib/stores/plans';
@@ -87,6 +88,12 @@
 		draft.formSuperset(selectedIds);
 		selectedIds = [];
 	}
+
+	function makeOrGroup() {
+		if (selectedIds.length < 2) return;
+		draft.formOrGroup(selectedIds);
+		selectedIds = [];
+	}
 </script>
 
 <svelte:head>
@@ -153,17 +160,31 @@
 			{:else}
 				<div class="builder-section-head">
 					<p class="section-title">{translate(lang, 'builder.exercisesSection')}</p>
-					<button
-						type="button"
-						class="btn-secondary"
-						disabled={selectedCount < 2}
-						onclick={makeSuperset}
-					>
-						{translate(lang, 'builder.superset')}
-						{#if selectedCount > 0}
-							· {selectedCount}
-						{/if}
-					</button>
+					<div class="builder-section-head__actions">
+						<button
+							type="button"
+							class="btn-secondary"
+							disabled={selectedCount < 2}
+							onclick={makeOrGroup}
+						>
+							{#if selectedCount === 0}
+								{translate(lang, 'builder.orEmpty')}
+							{:else}
+								{translate(lang, 'builder.or', { n: selectedCount })}
+							{/if}
+						</button>
+						<button
+							type="button"
+							class="btn-secondary"
+							disabled={selectedCount < 2}
+							onclick={makeSuperset}
+						>
+							{translate(lang, 'builder.superset')}
+							{#if selectedCount > 0}
+								· {selectedCount}
+							{/if}
+						</button>
+					</div>
 				</div>
 				{#if selectedCount < 2}
 					<p class="builder-select-hint">{translate(lang, 'builder.selectHint')}</p>
@@ -172,30 +193,46 @@
 				<div class="builder-exercise-list">
 					{#each $draft.exercises as item, index (item.exerciseId)}
 						{@const role = groupMemberRole($draft.exercises, index)}
+						{@const altRole = altGroupMemberRole($draft.exercises, index)}
 						{@const meta = indexById.get(item.exerciseId) ?? null}
-						<div class="builder-exercise-item">
-							<WorkoutExerciseRow
-								{item}
-								{index}
-								total={$draft.exercises.length}
-								{meta}
-								selected={selectedIds.includes(item.exerciseId)}
-								groupRole={role}
-								onupdate={(patch) => draft.updateExercise(item.exerciseId, patch)}
-								onmove={(from, to) => draft.moveByArrow(from, to > from ? 1 : -1)}
-								onremove={() => {
+						<div
+							class="builder-exercise-item"
+							class:builder-exercise-item--or={Boolean(item.altGroupId)}
+						>
+							<SwipeToDelete
+								label={translate(lang, 'builder.remove')}
+								onDelete={() => {
 									draft.removeFromDraft(item.exerciseId);
 									selectedIds = selectedIds.filter((id) => id !== item.exerciseId);
 								}}
-								ontoggleSelect={() => toggleSelect(item.exerciseId)}
-								ondissolve={item.groupId ? () => draft.dissolveSuperset(item.groupId!) : undefined}
-								ongroupSets={item.groupId
-									? (sets) => draft.updateGroupSets(item.groupId!, sets)
-									: undefined}
-								ongroupRest={item.groupId
-									? (rest) => draft.updateGroupRest(item.groupId!, rest)
-									: undefined}
-							/>
+							>
+								<WorkoutExerciseRow
+									{item}
+									{index}
+									total={$draft.exercises.length}
+									{meta}
+									selected={selectedIds.includes(item.exerciseId)}
+									groupRole={role}
+									{altRole}
+									onupdate={(patch) => draft.updateExercise(item.exerciseId, patch)}
+									onmove={(from, to) => draft.moveByArrow(from, to > from ? 1 : -1)}
+									onremove={() => {
+										draft.removeFromDraft(item.exerciseId);
+										selectedIds = selectedIds.filter((id) => id !== item.exerciseId);
+									}}
+									ontoggleSelect={() => toggleSelect(item.exerciseId)}
+									ondissolve={item.groupId ? () => draft.dissolveSuperset(item.groupId!) : undefined}
+									ondissolveOr={item.altGroupId
+										? () => draft.dissolveOrGroup(item.altGroupId!)
+										: undefined}
+									ongroupSets={item.groupId
+										? (sets) => draft.updateGroupSets(item.groupId!, sets)
+										: undefined}
+									ongroupRest={item.groupId
+										? (rest) => draft.updateGroupRest(item.groupId!, rest)
+										: undefined}
+								/>
+							</SwipeToDelete>
 						</div>
 					{/each}
 				</div>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import LiveAltPicker from '$lib/components/live/LiveAltPicker.svelte';
 	import LiveExerciseNav from '$lib/components/live/LiveExerciseNav.svelte';
 	import LiveSessionActions from '$lib/components/live/LiveSessionActions.svelte';
 	import LiveSetPanel from '$lib/components/live/LiveSetPanel.svelte';
@@ -16,10 +17,17 @@
 		LIVE_REPS
 	} from '$lib/domain/inputLimits';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { completedSetCount, nextFocusAfterSetComplete, totalSetCount } from '$lib/domain/session';
+	import {
+		altGroupNeedsPick,
+		completedSetCount,
+		isSessionFullyLogged,
+		nextFocusAfterSetComplete,
+		totalSetCount,
+		visibleSessionExerciseIndices
+	} from '$lib/domain/session';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
-	import { groupBounds, groupMemberRole } from '$lib/domain/workout';
-	import { playRestDoneChime, unlockAudioFromGesture, vibrateRestDone } from '$lib/domain/prefs';
+	import { altGroupBounds, groupBounds, groupMemberRole } from '$lib/domain/workout';
+	import { playRestDoneChime, unlockAudioFromGesture, vibrateRestDone, vibrateSetDone } from '$lib/domain/prefs';
 	import { acquireScreenWakeLock, releaseScreenWakeLock } from '$lib/media/wakeLock';
 	import { formatElapsedClock, formatRestSec } from '$lib/i18n/format';
 	import { pickDefaultExerciseIndex } from '$lib/live/sessionUi';
@@ -41,6 +49,8 @@
 	let restUntil = $derived($live.restUntil);
 	let loading = $state(true);
 	let finishing = $state(false);
+	let finishOfferOpen = $state(false);
+	let discardOfferOpen = $state(false);
 	let missing = $state(false);
 	let names = $state(new Map<string, ExerciseIndexItem>());
 	let now = $state(Date.now());
@@ -91,9 +101,33 @@
 		if (left > restTotalSec) restTotalSec = left;
 	});
 	let restPct = $derived(restTotalSec > 0 ? (restLeft / restTotalSec) * 100 : 0);
-	let canGoNext = $derived(
-		session != null && selectedExerciseIndex < session.exercises.length - 1
+	let canGoNext = $derived.by(() => {
+		if (!session) return false;
+		if (isSessionFullyLogged(session)) return false;
+		const visible = visibleSessionExerciseIndices(session);
+		const pos = visible.indexOf(selectedExerciseIndex);
+		if (pos >= 0) return pos < visible.length - 1;
+		return visible.some((i) => i > selectedExerciseIndex);
+	});
+	let sessionComplete = $derived(session != null && isSessionFullyLogged(session));
+	let slotProgress = $derived.by(() => {
+		if (!session) return { done: 1, total: 1 };
+		const visible = visibleSessionExerciseIndices(session);
+		const pos = visible.indexOf(selectedExerciseIndex);
+		return {
+			done: (pos >= 0 ? pos : 0) + 1,
+			total: Math.max(1, visible.length)
+		};
+	});
+	let needsAltPick = $derived(
+		session != null && altGroupNeedsPick(session, selectedExerciseIndex)
 	);
+	let altPickMembers = $derived.by(() => {
+		if (!session || !needsAltPick) return [];
+		const ab = altGroupBounds(session.exercises, selectedExerciseIndex);
+		if (!ab) return [];
+		return session.exercises.slice(ab.start, ab.end + 1);
+	});
 	let activeSetProgress = $derived.by(() => {
 		const ex = session?.exercises[selectedExerciseIndex];
 		if (!ex || ex.sets.length === 0) return null;
@@ -151,7 +185,12 @@
 					active.exercises.length > 0
 				) {
 					if (plan) live.syncFromPlan(plan);
-					selectedExerciseIndex = pickDefaultExerciseIndex(get(live).session ?? active);
+					const current = get(live).session ?? active;
+					selectedExerciseIndex = pickDefaultExerciseIndex(current);
+					if (isSessionFullyLogged(current)) {
+						live.skipRest();
+						finishOfferOpen = true;
+					}
 					return;
 				}
 
@@ -260,6 +299,7 @@
 		invalidSetIndex = null;
 		invalidKind = null;
 		unlockAudioFromGesture();
+		vibrateSetDone();
 		live.patchSet(ei, si, { completed: true });
 		restChimeArmed = get(live).restUntil != null;
 		if (restChimeArmed) unlockAudioFromGesture();
@@ -267,6 +307,11 @@
 		const next = get(live).session;
 		if (!next) return;
 		selectedExerciseIndex = nextFocusAfterSetComplete(next, ei, si);
+		if (isSessionFullyLogged(next)) {
+			live.skipRest();
+			restChimeArmed = false;
+			finishOfferOpen = true;
+		}
 	}
 
 	function onToggleAllComplete(ei: number) {
@@ -318,12 +363,54 @@
 		const next = get(live).session;
 		if (!next) return;
 		selectedExerciseIndex = nextFocusAfterSetComplete(next, ei, lastSi);
+		if (isSessionFullyLogged(next)) {
+			live.skipRest();
+			restChimeArmed = false;
+			finishOfferOpen = true;
+		}
+	}
+
+	function goNextExercise() {
+		if (!session) return;
+		const visible = visibleSessionExerciseIndices(session);
+		const pos = visible.indexOf(selectedExerciseIndex);
+		if (pos >= 0 && pos + 1 < visible.length) {
+			selectedExerciseIndex = visible[pos + 1]!;
+			return;
+		}
+		const next = visible.find((i) => i > selectedExerciseIndex);
+		if (next != null) selectedExerciseIndex = next;
+	}
+
+	function onChooseAlt(exerciseId: string) {
+		if (!session) return;
+		const ab = altGroupBounds(session.exercises, selectedExerciseIndex);
+		if (!ab) return;
+		live.chooseAlt(ab.altGroupId, exerciseId);
+		const next = get(live).session;
+		if (!next) return;
+		const idx = next.exercises.findIndex(
+			(ex, ei) => ei >= ab.start && ei <= ab.end && ex.exerciseId === exerciseId
+		);
+		if (idx >= 0) selectedExerciseIndex = idx;
 	}
 
 	async function onFinish() {
 		if (finishing) return;
-		if (!confirm(translate(lang, 'live.confirmFinish'))) return;
+		discardOfferOpen = false;
+		// In-app confirm: window.confirm often fails silently in WebViews / PWA shells.
+		if (!finishOfferOpen) {
+			finishOfferOpen = true;
+			return;
+		}
+		await commitFinish();
+	}
+
+	async function commitFinish() {
+		if (finishing) return;
 		finishing = true;
+		finishOfferOpen = false;
+		discardOfferOpen = false;
 		try {
 			const done = await live.finish();
 			toasts.show(translate(lang, 'live.saved'), 'success');
@@ -338,10 +425,30 @@
 		}
 	}
 
+	function dismissFinishOffer() {
+		if (finishing) return;
+		finishOfferOpen = false;
+	}
+
 	function onDiscard() {
-		if (!confirm(translate(lang, 'live.confirmDiscard'))) return;
+		if (finishing) return;
+		finishOfferOpen = false;
+		if (!discardOfferOpen) {
+			discardOfferOpen = true;
+			return;
+		}
+		commitDiscard();
+	}
+
+	function commitDiscard() {
+		discardOfferOpen = false;
 		live.discard();
 		void goto('/workouts');
+	}
+
+	function dismissDiscardOffer() {
+		if (finishing) return;
+		discardOfferOpen = false;
 	}
 </script>
 
@@ -390,8 +497,8 @@
 		<div class="live-mobile-meta lg:hidden">
 			<p class="live-progress-pill">
 				{translate(lang, 'live.progress', {
-					done: selectedExerciseIndex + 1,
-					total: session.exercises.length
+					done: slotProgress.done,
+					total: slotProgress.total
 				})}
 			</p>
 			<p class="live-progress-pill">
@@ -412,6 +519,12 @@
 			</div>
 			<div class="live-header-meta">
 				<p class="live-progress-pill">
+					{translate(lang, 'live.progress', {
+						done: slotProgress.done,
+						total: slotProgress.total
+					})}
+				</p>
+				<p class="live-progress-pill">
 					{translate(lang, 'home.setsProgress', {
 						done: completedSetCount(session),
 						total: totalSetCount(session)
@@ -421,7 +534,7 @@
 			</div>
 		</header>
 
-		{#if restLeft > 0}
+		{#if restLeft > 0 && !sessionComplete}
 			<div
 				class="live-rest"
 				role="timer"
@@ -484,64 +597,141 @@
 			/>
 
 			<div class="live-panel-wrap">
-				{#each session.exercises as ex, ei (ex.exerciseId + '-' + ei)}
-					{#if ei === selectedExerciseIndex}
-						<LiveSetPanel
-							{session}
-							exerciseIndex={ei}
-							exercise={ex}
-							{names}
-							{lang}
-							{selectedInGroup}
-							{selectedGroupPos}
-							{nextInSupersetName}
-							{activeSetProgress}
-							onWeight={(si, v) => onWeight(ei, si, v)}
-							onReps={(si, v) => onReps(ei, si, v)}
-							onComplete={(si) => onComplete(ei, si)}
-							onUncomplete={(si) => {
-								if (justDoneSetIndex === si) justDoneSetIndex = null;
-								live.patchSet(ei, si, { completed: false });
-							}}
-							onToggleAllComplete={() => onToggleAllComplete(ei)}
-							onRemove={(si) => {
-								if (invalidSetIndex === si) {
-									invalidSetIndex = null;
-									invalidKind = null;
-								} else if (invalidSetIndex != null && invalidSetIndex > si) {
-									invalidSetIndex -= 1;
-								}
-								if (justDoneSetIndex === si) justDoneSetIndex = null;
-								else if (justDoneSetIndex != null && justDoneSetIndex > si) {
-									justDoneSetIndex -= 1;
-								}
-								live.removeSet(ei, si);
-							}}
-							{invalidSetIndex}
-							{invalidKind}
-							{justDoneSetIndex}
-						/>
-					{/if}
-				{/each}
+				{#if needsAltPick}
+					<LiveAltPicker
+						members={altPickMembers}
+						{names}
+						{lang}
+						onConfirm={onChooseAlt}
+					/>
+				{:else}
+					{#each session.exercises as ex, ei (ex.exerciseId + '-' + ei)}
+						{#if ei === selectedExerciseIndex}
+							<LiveSetPanel
+								{session}
+								exerciseIndex={ei}
+								exercise={ex}
+								{names}
+								{lang}
+								{selectedInGroup}
+								{selectedGroupPos}
+								{nextInSupersetName}
+								{activeSetProgress}
+								onWeight={(si, v) => onWeight(ei, si, v)}
+								onReps={(si, v) => onReps(ei, si, v)}
+								onComplete={(si) => onComplete(ei, si)}
+								onUncomplete={(si) => {
+									if (justDoneSetIndex === si) justDoneSetIndex = null;
+									live.patchSet(ei, si, { completed: false });
+								}}
+								onToggleAllComplete={() => onToggleAllComplete(ei)}
+								onRemove={(si) => {
+									if (invalidSetIndex === si) {
+										invalidSetIndex = null;
+										invalidKind = null;
+									} else if (invalidSetIndex != null && invalidSetIndex > si) {
+										invalidSetIndex -= 1;
+									}
+									if (justDoneSetIndex === si) justDoneSetIndex = null;
+									else if (justDoneSetIndex != null && justDoneSetIndex > si) {
+										justDoneSetIndex -= 1;
+									}
+									live.removeSet(ei, si);
+								}}
+								{invalidSetIndex}
+								{invalidKind}
+								{justDoneSetIndex}
+							/>
+						{/if}
+					{/each}
+				{/if}
 
 				<LiveSessionActions
 					{lang}
 					{finishing}
 					{canGoNext}
 					layout="desktop"
-					onNext={() => (selectedExerciseIndex += 1)}
+					onNext={goNextExercise}
 					onFinish={() => void onFinish()}
 					onDiscard={onDiscard}
 				/>
 			</div>
 		</div>
 
+		{#if finishOfferOpen}
+			<div
+				class="live-finish-offer"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="live-finish-offer-title"
+			>
+				<div class="live-finish-offer__card panel">
+					<p id="live-finish-offer-title" class="live-finish-offer__title">
+						{translate(lang, sessionComplete ? 'live.finishOfferReady' : 'live.confirmFinish')}
+					</p>
+					{#if sessionComplete}
+						<p class="live-finish-offer__hint">{translate(lang, 'live.finishOfferHint')}</p>
+					{/if}
+					<div class="live-finish-offer__actions">
+						<button
+							type="button"
+							class="btn-secondary min-h-12"
+							disabled={finishing}
+							onclick={dismissFinishOffer}
+						>
+							{translate(lang, 'live.finishOfferLater')}
+						</button>
+						<button
+							type="button"
+							class="btn-primary min-h-12"
+							disabled={finishing}
+							aria-busy={finishing}
+							onclick={() => void commitFinish()}
+						>
+							{translate(lang, 'live.finish')}
+						</button>
+					</div>
+				</div>
+			</div>
+		{:else if discardOfferOpen}
+			<div
+				class="live-finish-offer"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="live-discard-offer-title"
+			>
+				<div class="live-finish-offer__card panel">
+					<p id="live-discard-offer-title" class="live-finish-offer__title">
+						{translate(lang, 'live.confirmDiscard')}
+					</p>
+					<div class="live-finish-offer__actions">
+						<button
+							type="button"
+							class="btn-secondary min-h-12"
+							disabled={finishing}
+							onclick={dismissDiscardOffer}
+						>
+							{translate(lang, 'live.finishOfferLater')}
+						</button>
+						<button
+							type="button"
+							class="btn-danger min-h-12"
+							disabled={finishing}
+							onclick={commitDiscard}
+						>
+							{translate(lang, 'live.discard')}
+						</button>
+					</div>
+				</div>
+			</div>
+		{/if}
+
 		<LiveSessionActions
 			{lang}
 			{finishing}
 			{canGoNext}
 			layout="mobile"
-			onNext={() => (selectedExerciseIndex += 1)}
+			onNext={goNextExercise}
 			onFinish={() => void onFinish()}
 			onDiscard={onDiscard}
 		/>
