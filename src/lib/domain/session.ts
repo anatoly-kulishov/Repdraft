@@ -476,6 +476,20 @@ export function completedExerciseCount(session: WorkoutSession): number {
 	}).length;
 }
 
+/** Sum of weightKg × reps for completed sets (bodyweight / missing weight skipped). */
+export function sessionVolumeKg(session: WorkoutSession): number {
+	let total = 0;
+	for (const i of visibleSessionExerciseIndices(session)) {
+		const ex = session.exercises[i];
+		if (!ex) continue;
+		for (const set of ex.sets) {
+			if (!set.completed || set.weightKg == null || set.reps == null) continue;
+			total += set.weightKg * set.reps;
+		}
+	}
+	return total;
+}
+
 /** True when every visible set is logged — ready to finish the session. */
 export function isSessionFullyLogged(session: WorkoutSession): boolean {
 	const total = totalSetCount(session);
@@ -556,6 +570,9 @@ export function runSessionSelfCheck(): void {
 	session = updateLoggedSet(session, 0, 0, { weightKg: 40, reps: 8, completed: true });
 	if (completedSetCount(session) !== 1) {
 		throw new Error(`completedSetCount expected 1, got ${completedSetCount(session)}`);
+	}
+	if (sessionVolumeKg(session) !== 320) {
+		throw new Error(`sessionVolumeKg expected 320, got ${sessionVolumeKg(session)}`);
 	}
 
 	session = finishSession(session);

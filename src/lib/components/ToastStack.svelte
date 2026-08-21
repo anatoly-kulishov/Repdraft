@@ -66,6 +66,11 @@
 		bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.65rem);
 	}
 
+	/* Live immersive: sticky is taller with rest — keep toasts clear of CTA + safe area. */
+	:global(body:has(.live-sticky-actions)) .toast-stack {
+		bottom: calc(var(--safe-bottom) + var(--sticky-actions-h) + 0.75rem);
+	}
+
 	:global(body:has(.draft-dock)) .toast-stack {
 		bottom: calc(var(--mobile-chrome-bottom) + var(--draft-dock-clearance));
 	}
@@ -76,7 +81,7 @@
 		);
 	}
 
-	@media (min-width: 768px) and (min-height: 560px) {
+	@media (min-width: 1024px) and (min-height: 560px) {
 		.toast-stack,
 		:global(body:has(.sticky-actions)) .toast-stack,
 		:global(body:has(.draft-dock)) .toast-stack,

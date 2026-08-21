@@ -70,7 +70,7 @@
 {#snippet nextButton(primary: boolean)}
 	<button
 		type="button"
-		class="{primary ? 'btn-primary' : 'btn-secondary'} {layout === 'mobile'
+		class="{primary ? 'btn-primary' : 'btn-ghost live-session-next--demoted'} {layout === 'mobile'
 			? 'btn-block min-h-12'
 			: 'inline-flex min-h-11'} items-center justify-center gap-2"
 		disabled={finishing}

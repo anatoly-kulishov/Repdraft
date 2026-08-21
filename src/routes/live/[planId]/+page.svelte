@@ -63,6 +63,7 @@
 	let invalidKind = $state<'weight' | 'reps' | null>(null);
 	let restChimeArmed = $state(false);
 	let justDoneSetIndex = $state<number | null>(null);
+	let forceAltPick = $state(false);
 	let tick: ReturnType<typeof setInterval> | null = null;
 
 	let selectedRole = $derived(
@@ -128,13 +129,26 @@
 		};
 	});
 	let needsAltPick = $derived(
-		session != null && altGroupNeedsPick(session, selectedExerciseIndex)
+		session != null && (forceAltPick || altGroupNeedsPick(session, selectedExerciseIndex))
 	);
 	let altPickMembers = $derived.by(() => {
-		if (!session || !needsAltPick) return [];
+		if (!session) return [];
 		const ab = altGroupBounds(session.exercises, selectedExerciseIndex);
-		if (!ab) return [];
+		if (!ab || ab.start === ab.end) return [];
 		return session.exercises.slice(ab.start, ab.end + 1);
+	});
+	let canSwapAlternative = $derived.by(() => {
+		if (!session || forceAltPick || altGroupNeedsPick(session, selectedExerciseIndex)) {
+			return false;
+		}
+		const ab = altGroupBounds(session.exercises, selectedExerciseIndex);
+		if (!ab || ab.start === ab.end) return false;
+		const chosenId = (session.altChoices ?? {})[ab.altGroupId];
+		if (!chosenId) return false;
+		const chosen = session.exercises.find(
+			(ex) => ex.altGroupId === ab.altGroupId && ex.exerciseId === chosenId
+		);
+		return Boolean(chosen && !chosen.sets.some((s) => s.completed));
 	});
 	let activeSetProgress = $derived.by(() => {
 		const ex = session?.exercises[selectedExerciseIndex];
@@ -395,6 +409,7 @@
 	}
 
 	function goNextExercise() {
+		forceAltPick = false;
 		if (!session) return;
 		const visible = visibleSessionExerciseIndices(session);
 		const pos = visible.indexOf(selectedExerciseIndex);
@@ -411,12 +426,18 @@
 		const ab = altGroupBounds(session.exercises, selectedExerciseIndex);
 		if (!ab) return;
 		live.chooseAlt(ab.altGroupId, exerciseId);
+		forceAltPick = false;
 		const next = get(live).session;
 		if (!next) return;
 		const idx = next.exercises.findIndex(
 			(ex, ei) => ei >= ab.start && ei <= ab.end && ex.exerciseId === exerciseId
 		);
 		if (idx >= 0) selectedExerciseIndex = idx;
+	}
+
+	function selectExercise(index: number) {
+		forceAltPick = false;
+		selectedExerciseIndex = index;
 	}
 
 	async function onFinish() {
@@ -618,7 +639,7 @@
 				{selectedExerciseIndex}
 				{names}
 				{lang}
-				onSelect={(i) => (selectedExerciseIndex = i)}
+				onSelect={selectExercise}
 			/>
 
 			<div class="live-panel-wrap">
@@ -642,6 +663,10 @@
 								{selectedGroupPos}
 								{nextInSupersetName}
 								{activeSetProgress}
+								{canSwapAlternative}
+								onSwapAlternative={() => {
+									forceAltPick = true;
+								}}
 								onWeight={(si, v) => onWeight(ei, si, v)}
 								onReps={(si, v) => onReps(ei, si, v)}
 								onComplete={(si) => onComplete(ei, si)}

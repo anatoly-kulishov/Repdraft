@@ -9,7 +9,8 @@
 	import {
 		completedExerciseCount,
 		completedSetCount,
-		sessionDurationMs
+		sessionDurationMs,
+		sessionVolumeKg
 	} from '$lib/domain/session';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
@@ -30,10 +31,10 @@
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let missing = $state(false);
 	let loading = $state(true);
-	let showAllExercises = $state(false);
+	let showAllExercises = $state(true);
 	let guestHintDismissed = $state(false);
 
-	const PREVIEW_LIMIT = 3;
+	const PREVIEW_LIMIT = 6;
 
 	type PreviewItem = {
 		ex: WorkoutSession['exercises'][number];
@@ -62,6 +63,8 @@
 	let moreCount = $derived(
 		showAllExercises ? 0 : Math.max(0, loggedExercises.length - PREVIEW_LIMIT)
 	);
+
+	let volumeKg = $derived(session ? sessionVolumeKg(session) : 0);
 
 	function formatSet(set: LoggedSet): string {
 		if (set.weightKg != null) return `${set.weightKg} kg × ${set.reps ?? '—'}`;
@@ -120,7 +123,7 @@
 	/>
 {:else}
 	<section class="summary-page content-page content-page--narrow soft-enter pb-mobile-actions text-center lg:pb-0">
-		<div class="md:hidden text-left">
+		<div class="lg:hidden text-left">
 			<ScreenHeader title={translate(lang, 'summary.title')} backHref={WORKOUTS_HISTORY_HREF} />
 		</div>
 		<div class="subroute-desktop-head hidden text-left md:block">
@@ -135,7 +138,7 @@
 			<p class="summary-hero__plan">{session.planName}</p>
 		</div>
 
-		<dl class="summary-stats">
+		<dl class="summary-stats" class:summary-stats--with-volume={volumeKg > 0}>
 			<div class="summary-stat">
 				<dt class="summary-stat__label">{translate(lang, 'summary.duration')}</dt>
 				<dd class="summary-stat__value">
@@ -150,6 +153,12 @@
 				<dt class="summary-stat__label">{translate(lang, 'summary.sets')}</dt>
 				<dd class="summary-stat__value">{completedSetCount(session)}</dd>
 			</div>
+			{#if volumeKg > 0}
+				<div class="summary-stat">
+					<dt class="summary-stat__label">{translate(lang, 'summary.volume')}</dt>
+					<dd class="summary-stat__value tabular-nums">{Math.round(volumeKg)}</dd>
+				</div>
+			{/if}
 		</dl>
 
 		{#if previewExercises.length > 0}

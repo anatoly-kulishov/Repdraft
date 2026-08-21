@@ -296,11 +296,9 @@ function scoreMatch(item: ExerciseIndexItem, query: string, tokens: string[], lo
 function passesFacets(item: ExerciseIndexItem, filters: ExerciseFilters): boolean {
 	if (filters.bodyPart !== 'all' && item.body_part !== filters.bodyPart) return false;
 	if (filters.equipment !== 'all' && item.equipment !== filters.equipment) return false;
-	if (filters.target !== 'all') {
-		const primary = item.target === filters.target;
-		const secondary = item.secondary_muscles?.includes(filters.target) ?? false;
-		if (!primary && !secondary) return false;
-	}
+	// Target chip = primary muscle only. Secondary stays in search fields, not facets —
+	// otherwise «Икры» floods with squats that list calves as assist.
+	if (filters.target !== 'all' && item.target !== filters.target) return false;
 	return true;
 }
 
@@ -357,11 +355,7 @@ export function filterCatalogWithFacets(
 
 		// Facet-only path: skip search-field build (warm cache still costs Map + branch per item).
 		if (!query) {
-			if (
-				filters.target === 'all' ||
-				item.target === filters.target ||
-				(item.secondary_muscles?.includes(filters.target) ?? false)
-			) {
+			if (filters.target === 'all' || item.target === filters.target) {
 				equipmentPool.add(item.equipment);
 			}
 			if (filters.equipment === 'all' || item.equipment === filters.equipment) {
@@ -375,11 +369,7 @@ export function filterCatalogWithFacets(
 		const queryOk = scoreMatchFields(fields, query, tokens, tokenVariants) >= 0;
 		if (!queryOk) continue;
 
-		if (
-			filters.target === 'all' ||
-			item.target === filters.target ||
-			(item.secondary_muscles?.includes(filters.target) ?? false)
-		) {
+		if (filters.target === 'all' || item.target === filters.target) {
 			equipmentPool.add(item.equipment);
 		}
 		if (filters.equipment === 'all' || item.equipment === filters.equipment) {
@@ -715,6 +705,42 @@ export function runFiltersSelfCheck(): void {
 		if (!hits.some((h) => h.id === id)) {
 			throw new Error(`query «${q}» should include ${id}, got ${hits.map((i) => i.id).join(',')}`);
 		}
+	}
+
+	const calvesPrimaryOnly = filterExercises(
+		[
+			{
+				id: 'calf-1',
+				name: 'standing calf raise',
+				name_ru: 'Подъём на носки',
+				body_part: 'lower legs',
+				equipment: 'body weight',
+				target: 'calves',
+				muscle_group: 'calves',
+				secondary_muscles: [],
+				globalPopularity: 40,
+				image: ''
+			},
+			{
+				id: 'squat-calf-sec',
+				name: 'balance board',
+				name_ru: 'Балансировка на доске',
+				body_part: 'upper legs',
+				equipment: 'body weight',
+				target: 'quads',
+				muscle_group: 'quads',
+				secondary_muscles: ['calves', 'hamstrings', 'glutes'],
+				globalPopularity: 10,
+				image: ''
+			}
+		],
+		{ query: '', bodyPart: 'all', equipment: 'all', target: 'calves' },
+		'en'
+	);
+	if (calvesPrimaryOnly.length !== 1 || calvesPrimaryOnly[0]!.id !== 'calf-1') {
+		throw new Error(
+			`target=calves must match primary only, got ${calvesPrimaryOnly.map((i) => i.id).join(',')}`
+		);
 	}
 
 	const bulgarianCatalog: ExerciseIndexItem[] = [

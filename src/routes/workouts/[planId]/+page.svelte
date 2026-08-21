@@ -90,7 +90,7 @@
 	/>
 {:else}
 	<section class="workout-preview content-page content-page--narrow pb-mobile-actions lg:pb-8">
-		<div class="md:hidden">
+		<div class="lg:hidden">
 			<ScreenHeader title={plan.name} backHref="/workouts" actions={headerActions} />
 		</div>
 		<div class="subroute-desktop-head hidden md:block">
