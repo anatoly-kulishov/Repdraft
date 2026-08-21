@@ -5,13 +5,14 @@
 	import { translate } from '$lib/i18n/messages';
 	import { draft } from '$lib/stores/draft';
 	import { bookmarks } from '$lib/stores/bookmarks';
+	import { records } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Bookmark, Check, ChevronRight, Plus } from '@lucide/svelte';
+	import { Bookmark, Check, ChevronRight, Plus, StickyNote } from '@lucide/svelte';
 
 	let {
 		exercise,
@@ -34,6 +35,10 @@
 	let inDraft = $derived($draft.exercises.some((ex) => ex.exerciseId === exercise.id));
 	let bookmarked = $derived($bookmarks.includes(exercise.id));
 	let recordTitle = $derived(recordChips.length ? recordChips.join(' · ') : '');
+	let noteText = $derived(
+		($records.find((r) => r.exerciseId === exercise.id)?.note ?? '').trim()
+	);
+	let hasNote = $derived(noteText.length > 0);
 	let loaded = $state(false);
 	let bookmarkBusy = $state(false);
 	let imgEl = $state<HTMLImageElement | null>(null);
@@ -139,6 +144,20 @@
 	</button>
 {/snippet}
 
+{#snippet noteBadge(placement: 'list' | 'grid')}
+	{#if hasNote}
+		<span
+			class="exercise-card-note"
+			class:exercise-card-note--list={placement === 'list'}
+			class:exercise-card-note--grid={placement === 'grid'}
+			title={noteText}
+			aria-label={translate(lang, 'pr.note')}
+		>
+			<LucideIcon icon={StickyNote} size={12} class="exercise-card-note-icon" />
+		</span>
+	{/if}
+{/snippet}
+
 {#snippet listActions()}
 	<div class="exercise-card-actions exercise-card-actions--list">
 		<button
@@ -199,7 +218,11 @@
 					class={`exercise-card-img pointer-events-none block h-full w-full object-contain ${loaded ? 'is-loaded' : ''}`}
 					onload={onImgLoad}
 				/>
+				{@render noteBadge('list')}
 			</button>
+			<div class="exercise-card-bookmark-slot">
+				{@render bookmarkButton(false)}
+			</div>
 			<a
 				href={exerciseHref(exercise.id)}
 				class="exercise-card-body flex min-w-0 flex-col gap-0.5"
@@ -257,6 +280,7 @@
 				/>
 			</a>
 			{@render bookmarkButton(false)}
+			{@render noteBadge('grid')}
 			<button
 				type="button"
 				class="exercise-card-add"

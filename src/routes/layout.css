@@ -229,6 +229,8 @@ html[data-theme='light'] {
 .shell-header-mobile {
 	display: block;
 	background: var(--color-surface);
+	/* Keep page titles from painting through while sticky. */
+	isolation: isolate;
 }
 .shell-nav-desktop {
 	display: none;
@@ -335,6 +337,17 @@ html[data-theme='light'] {
 	padding-inline: var(--page-pad-x);
 	text-align: center;
 	text-wrap: balance;
+}
+
+.shell-footer-version {
+	margin: 0.35rem 0 0;
+	padding-inline: var(--page-pad-x);
+	text-align: center;
+	font-size: 0.625rem;
+	font-weight: 500;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.04em;
+	color: color-mix(in srgb, var(--color-muted) 78%, transparent);
 }
 
 .shell-header-gap {
@@ -1191,7 +1204,7 @@ a.entity-row--link:hover,
 	gap: 0.15rem;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
 	.entity-list--cards {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(17.5rem, 1fr));
@@ -2112,6 +2125,44 @@ button:focus-visible {
 .exercise-card-bookmark.is-active :global(.exercise-card-bookmark-icon svg),
 .exercise-card-bookmark--inline.is-active :global(.exercise-card-bookmark-icon svg) {
 	stroke: currentColor;
+}
+
+/* Quiet note cue on catalog thumbs — only when a PR note exists. */
+.exercise-card-note {
+	position: absolute;
+	z-index: 6;
+	display: grid;
+	place-items: center;
+	width: 1.05rem;
+	height: 1.05rem;
+	pointer-events: none;
+	color: color-mix(in srgb, var(--color-accent) 72%, var(--color-ink));
+	filter: drop-shadow(0 0 1.25px rgb(255 255 255 / 0.95)) drop-shadow(0 1px 1.5px rgb(18 20 26 / 0.28));
+}
+
+.exercise-card-note--list {
+	/* Bookmark owns top-left on list thumbs. */
+	right: 0.2rem;
+	top: 0.2rem;
+	left: auto;
+}
+
+.exercise-card-note--grid {
+	/* Bookmark owns top-left on grid cards. */
+	right: 0.25rem;
+	top: 0.25rem;
+}
+
+.exercise-card-note :global(.exercise-card-note-icon),
+.exercise-card-note :global(.exercise-card-note-icon svg) {
+	display: block;
+	width: 0.7rem;
+	height: 0.7rem;
+}
+
+html[data-theme='dark'] .exercise-card-note {
+	color: color-mix(in srgb, var(--color-accent) 78%, #fff);
+	filter: drop-shadow(0 0 1.25px rgb(12 12 14 / 0.9)) drop-shadow(0 1px 2px rgb(0 0 0 / 0.4));
 }
 
 html[data-theme='light'] .exercise-card-add:not(.exercise-card-add--inline) {
@@ -3230,7 +3281,7 @@ body:has(.sticky-actions) .draft-dock {
 	}
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
 	.sticky-actions {
 		display: none;
 	}
@@ -7630,6 +7681,13 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	}
 }
 
+/* Tablet + tabbar: use full main width — narrow+2col was clipping plan names. */
+@media (min-width: 768px) and (max-width: 1023px) {
+	.workouts-page.content-page--narrow {
+		max-width: none;
+	}
+}
+
 @media (min-width: 1024px) {
 	.workouts-page__create {
 		display: inline-flex;
@@ -7687,7 +7745,7 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	min-width: 0;
 }
 
-/* One horizontal facet scroller: targets, then equipment (sep in between). */
+/* Muscle facet scroller (equipment lives in a bottom sheet). */
 .catalog-filter-chips {
 	display: flex;
 	flex-wrap: nowrap;
@@ -7704,14 +7762,6 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 
 .catalog-filter-chips::-webkit-scrollbar {
 	display: none;
-}
-
-.catalog-filter-chips__sep {
-	flex: 0 0 auto;
-	align-self: stretch;
-	width: 1px;
-	margin-inline: 0.15rem;
-	background: color-mix(in srgb, var(--color-border) 90%, transparent);
 }
 
 .catalog-filter-chip {
@@ -7761,6 +7811,92 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	color: var(--color-accent);
 }
 
+.catalog-filter-equipment-trigger {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	width: 100%;
+	min-height: 48px;
+	padding: 0.55rem 0.9rem;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+	font-size: 0.875rem;
+	font-weight: 550;
+	line-height: 1.25;
+	color: var(--color-muted);
+	text-align: left;
+	cursor: pointer;
+	transition:
+		border-color 140ms ease,
+		background 140ms ease,
+		color 140ms ease;
+}
+
+.catalog-filter-equipment-trigger:hover {
+	border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+	color: var(--color-ink);
+}
+
+.catalog-filter-equipment-trigger:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
+	outline-offset: 1px;
+}
+
+.catalog-filter-equipment-trigger.is-active {
+	border-color: var(--color-accent);
+	background: var(--color-accent-muted);
+	color: var(--color-accent);
+}
+
+.catalog-equipment-sheet-options {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+	margin-top: 0.85rem;
+	max-height: min(55vh, 22rem);
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+.catalog-equipment-sheet-option {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	width: 100%;
+	min-height: 48px;
+	padding: 0.65rem 0.9rem;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+	font-size: 0.9375rem;
+	font-weight: 500;
+	line-height: 1.25;
+	color: var(--color-ink);
+	text-align: left;
+	cursor: pointer;
+	transition:
+		border-color 140ms ease,
+		background 140ms ease,
+		color 140ms ease;
+}
+
+.catalog-equipment-sheet-option:hover {
+	border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+}
+
+.catalog-equipment-sheet-option:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
+	outline-offset: 1px;
+}
+
+.catalog-equipment-sheet-option.is-active {
+	border-color: var(--color-accent);
+	background: var(--color-accent-muted);
+	color: var(--color-accent);
+	font-weight: 600;
+}
+
 .catalog-section {
 	margin-bottom: 1.25rem;
 }
@@ -7777,16 +7913,31 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 .catalog-filters-reset {
 	display: inline-flex;
 	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
 	align-self: center;
-	padding: 0.35rem 0.15rem;
-	font-size: 0.875rem;
-	font-weight: 600;
-	white-space: nowrap;
-	color: var(--color-muted);
+	width: 48px;
+	height: 48px;
+	min-width: 48px;
+	min-height: 48px;
+	padding: 0;
+	border: none;
+	border-radius: var(--radius-control);
+	background: transparent;
+	color: color-mix(in srgb, var(--color-accent) 72%, var(--color-ink));
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+	transition: color 140ms ease, background 140ms ease;
 }
 
 .catalog-filters-reset:hover {
 	color: var(--color-accent);
+	background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.catalog-filters-reset:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
+	outline-offset: 1px;
 }
 
 @media (min-width: 768px) {
@@ -7794,10 +7945,6 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 		padding: 0.875rem 1rem;
 		gap: 0.75rem;
 	}
-}
-
-.catalog-filters-body {
-	margin: 0;
 }
 
 .catalog-list-count {
@@ -7866,24 +8013,53 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	overflow: hidden;
 }
 
-.records-page .records-list-main {
-	padding: 0;
+.records-page .records-list-body {
+	display: grid;
+	grid-template-columns: var(--media-native) minmax(0, 1fr);
 	align-items: stretch;
-	column-gap: 0;
+	min-width: 0;
+}
+
+.records-page .records-list-thumb {
+	display: block;
+	align-self: start;
+	min-width: 0;
+	text-decoration: none;
+	color: inherit;
 }
 
 .records-page .records-preview__thumb {
+	display: block;
 	width: var(--media-native);
-	height: auto;
+	height: var(--media-native);
 	min-height: var(--media-native);
+	max-height: var(--media-native);
 	border-radius: 0;
 	box-shadow: inset -1px 0 0 color-mix(in srgb, var(--color-border) 85%, transparent);
 }
 
-.records-page .records-preview__text {
+.records-page .records-list-content {
+	display: flex;
+	flex-direction: column;
 	justify-content: center;
+	gap: 0.28rem;
+	min-width: 0;
+	padding: 0.55rem 0.55rem 0.55rem 0.75rem;
+}
+
+.records-page .records-list-body--note .records-list-content {
+	justify-content: flex-start;
+	padding-top: 0.5rem;
+	padding-bottom: 0.4rem;
+}
+
+.records-page .records-list-text {
+	display: flex;
+	flex-direction: column;
 	gap: 0.2rem;
-	padding: 0.75rem 0.65rem 0.75rem 0.85rem;
+	min-width: 0;
+	text-decoration: none;
+	color: inherit;
 }
 
 .records-page .records-preview__name {
@@ -7909,6 +8085,16 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 .records-page .records-list-date {
 	font-size: 0.75rem;
 	line-height: 1.3;
+}
+
+.records-page .records-note-chip {
+	width: 100%;
+	max-width: none;
+	margin: 0;
+}
+
+.records-page .records-note-chip.is-open {
+	margin-bottom: 0;
 }
 
 .records-list {
@@ -7950,27 +8136,52 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 }
 
 .records-note-chip {
+	position: relative;
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	gap: 0.35rem;
 	box-sizing: border-box;
 	width: auto;
 	min-width: 0;
 	max-width: calc(100% - (0.45rem + var(--media-native) + 0.65rem) - 0.45rem);
-	margin: 0 0.45rem 0.45rem;
+	margin: 0 0.45rem 0.35rem;
 	margin-left: calc(0.45rem + var(--media-native) + 0.65rem);
-	padding: 0.35rem 0.55rem;
+	padding: 0.28rem 0.5rem;
 	border: 1px solid color-mix(in srgb, var(--color-accent) 22%, var(--color-border));
 	border-radius: var(--radius-control);
 	background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+	background-clip: padding-box;
+	box-shadow: none;
 	color: var(--color-accent);
 	text-align: left;
 	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
 	-webkit-tap-highlight-color: transparent;
+}
+
+/* Collapsed face stays one line; expand hit to ≥48×48 without extra chrome. */
+.records-note-chip:not(.is-open)::after {
+	content: '';
+	position: absolute;
+	inset: -0.45rem -0.15rem;
 	min-height: 48px;
 }
 
+.records-note-chip.is-open {
+	align-items: flex-start;
+	padding: 0.4rem 0.55rem;
+	margin-bottom: 0.45rem;
+}
+
+.records-note-chip.is-open::after {
+	content: none;
+	display: none;
+}
+
 .records-note-chip__text {
+	position: relative;
+	z-index: 1;
 	flex: 1;
 	min-width: 0;
 	overflow: hidden;
@@ -7978,7 +8189,7 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	white-space: nowrap;
 	font-size: 0.8125rem;
 	font-weight: 600;
-	line-height: 1.35;
+	line-height: 1.3;
 }
 
 .records-note-chip.is-open .records-note-chip__text {
@@ -7990,11 +8201,12 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 }
 
 .records-note-chip__chevron {
+	position: relative;
+	z-index: 1;
 	display: inline-flex;
 	flex-shrink: 0;
 	align-items: center;
 	justify-content: center;
-	margin-top: 0.1rem;
 	opacity: 0.75;
 	transition: transform 160ms var(--ease-toast);
 }
@@ -8019,7 +8231,8 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	white-space: nowrap;
 }
 
-.records-list-main .records-preview__name {
+.records-list-main .records-preview__name,
+.records-list-text .records-preview__name {
 	white-space: normal;
 	line-clamp: 2;
 }
@@ -8366,7 +8579,7 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	margin-top: 0.35rem;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
 	.catalog-hub-grid .zone-card__media-wrap {
 		border-radius: var(--radius-panel) 0 0 var(--radius-panel);
 	}
@@ -8557,7 +8770,7 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	display: none;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
 	.screen-header {
 		display: none;
 	}
@@ -8667,7 +8880,7 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 }
 
 .catalog-exercise-list .exercise-card-bookmark-slot {
-	display: none;
+	display: block;
 }
 
 .catalog-exercise-list .exercise-card--list .exercise-card-body {

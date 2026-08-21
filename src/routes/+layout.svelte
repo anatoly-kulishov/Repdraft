@@ -32,6 +32,7 @@
 		if (pathname.startsWith('/live/')) return true;
 		if (pathname.startsWith('/builder')) return true;
 		if (pathname.startsWith('/exercise/')) return true;
+		if (pathname.startsWith('/catalog')) return true;
 		if (pathname.startsWith('/articles')) return true;
 		if (pathname.startsWith('/auth')) return true;
 		if (pathname === '/privacy') return true;
