@@ -38,6 +38,11 @@ export function writeDraft(plan: WorkoutPlan): void {
 	localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(plan));
 }
 
+/** Replace entire local plans list (after cloud merge). */
+export function replaceAllPlans(plans: WorkoutPlan[]): void {
+	writePlans(plans);
+}
+
 export const localWorkoutRepository: WorkoutRepository = {
 	async list() {
 		return readPlans().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));

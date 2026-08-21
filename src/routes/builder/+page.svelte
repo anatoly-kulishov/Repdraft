@@ -9,7 +9,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
-	import { BUILDER_ADD_EXERCISE_HREF } from '$lib/domain/catalogLinks';
+	import { BUILDER_ADD_EXERCISE_HREF, WORKOUTS_HREF } from '$lib/domain/catalogLinks';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { altGroupMemberRole, groupMemberRole } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
@@ -62,7 +62,7 @@
 			draft.resetDraft();
 			selectedIds = [];
 			toasts.show(translate(lang, 'builder.savedToast'), 'success');
-			await goto('/workouts');
+			await goto(WORKOUTS_HREF, { replaceState: true });
 		} catch (err) {
 			toasts.show(err instanceof Error ? err.message : translate(lang, 'builder.saveFail'), 'error');
 		} finally {
@@ -169,31 +169,16 @@
 			{:else}
 				<div class="builder-section-head">
 					<p class="section-title">{translate(lang, 'builder.exercisesSection')}</p>
-					<div class="builder-section-head__actions">
-						<button
-							type="button"
-							class="btn-secondary"
-							disabled={selectedCount < 2}
-							onclick={makeOrGroup}
-						>
-							{#if selectedCount === 0}
-								{translate(lang, 'builder.orEmpty')}
-							{:else}
+					{#if selectedCount >= 2}
+						<div class="builder-section-head__actions">
+							<button type="button" class="btn-secondary" onclick={makeOrGroup}>
 								{translate(lang, 'builder.or', { n: selectedCount })}
-							{/if}
-						</button>
-						<button
-							type="button"
-							class="btn-secondary"
-							disabled={selectedCount < 2}
-							onclick={makeSuperset}
-						>
-							{translate(lang, 'builder.superset')}
-							{#if selectedCount > 0}
-								· {selectedCount}
-							{/if}
-						</button>
-					</div>
+							</button>
+							<button type="button" class="btn-secondary" onclick={makeSuperset}>
+								{translate(lang, 'builder.superset')} · {selectedCount}
+							</button>
+						</div>
+					{/if}
 				</div>
 				{#if selectedCount < 2}
 					<p class="builder-select-hint">{translate(lang, 'builder.selectHint')}</p>

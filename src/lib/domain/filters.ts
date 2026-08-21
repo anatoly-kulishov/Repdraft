@@ -344,7 +344,7 @@ export function filterCatalogWithFacets(
 ): { items: ExerciseIndexItem[]; equipment: string[]; targets: string[] } {
 	const query = normalizeSearchText(filters.query);
 	const tokens = query ? query.split(' ').filter((t) => t.length > 0) : [];
-	const tokenVariants = tokens.map((t) => expandToken(t));
+	const tokenVariants = query ? tokens.map((t) => expandToken(t)) : [];
 	const sortLocale = exerciseNameSortLocale(locale);
 
 	const matched: ExerciseIndexItem[] = [];
@@ -355,25 +355,38 @@ export function filterCatalogWithFacets(
 	for (const item of items) {
 		if (filters.bodyPart !== 'all' && item.body_part !== filters.bodyPart) continue;
 
-		const fields = getSearchFields(item, locale);
-		const queryOk =
-			!query ||
-			scoreMatchFields(fields, query, tokens, tokenVariants) >= 0;
-
-		if (queryOk) {
-			if (filters.target === 'all' || item.target === filters.target || item.secondary_muscles?.includes(filters.target)) {
+		// Facet-only path: skip search-field build (warm cache still costs Map + branch per item).
+		if (!query) {
+			if (
+				filters.target === 'all' ||
+				item.target === filters.target ||
+				(item.secondary_muscles?.includes(filters.target) ?? false)
+			) {
 				equipmentPool.add(item.equipment);
 			}
 			if (filters.equipment === 'all' || item.equipment === filters.equipment) {
 				targetPool.add(item.target);
 			}
+			if (passesFacets(item, filters)) matched.push(item);
+			continue;
+		}
+
+		const fields = getSearchFields(item, locale);
+		const queryOk = scoreMatchFields(fields, query, tokens, tokenVariants) >= 0;
+		if (!queryOk) continue;
+
+		if (
+			filters.target === 'all' ||
+			item.target === filters.target ||
+			(item.secondary_muscles?.includes(filters.target) ?? false)
+		) {
+			equipmentPool.add(item.equipment);
+		}
+		if (filters.equipment === 'all' || item.equipment === filters.equipment) {
+			targetPool.add(item.target);
 		}
 
 		if (!passesFacets(item, filters)) continue;
-		if (!query) {
-			matched.push(item);
-			continue;
-		}
 		const score = scoreMatchFields(fields, query, tokens, tokenVariants);
 		if (score >= 0) scored.push({ item, score });
 	}
@@ -571,6 +584,30 @@ export function runFiltersSelfCheck(): void {
 	const legsChips = targetCountsForZone(catalog, ['upper legs', 'lower legs']);
 	if (!legsChips.some((c) => c.target === 'calves')) {
 		throw new Error('legs zone chips must include calves');
+	}
+
+	/** Multi-body zone (legs): facets must come from the scoped slice, not the full catalog. */
+	const legsScoped = catalog.filter(
+		(item) => item.body_part === 'upper legs' || item.body_part === 'lower legs'
+	);
+	const legsFacets = filterCatalogWithFacets(
+		legsScoped,
+		{ query: '', bodyPart: 'all', equipment: 'all', target: 'all' },
+		'en'
+	);
+	if (legsFacets.targets.includes('pectorals') || legsFacets.targets.includes('abs')) {
+		throw new Error('legs zone facets must not include chest/abs targets');
+	}
+	if (!legsFacets.targets.includes('calves') || !legsFacets.targets.includes('quads')) {
+		throw new Error(`legs zone facets missing calves/quads: ${legsFacets.targets.join(',')}`);
+	}
+	const buggyFullFacets = filterCatalogWithFacets(
+		catalog,
+		{ query: '', bodyPart: 'all', equipment: 'all', target: 'all' },
+		'en'
+	);
+	if (!buggyFullFacets.targets.includes('pectorals')) {
+		throw new Error('fixture catalog must include pectorals for regression contrast');
 	}
 
 	const conflictFilters: ExerciseFilters = {

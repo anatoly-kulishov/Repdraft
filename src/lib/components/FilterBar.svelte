@@ -1,13 +1,9 @@
 <script lang="ts">
 	import SearchInput from '$lib/components/SearchInput.svelte';
-	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { labelBodyPart, labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseFilters } from '$lib/domain/types';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ChevronDown, SlidersHorizontal } from '@lucide/svelte';
-	import { onMount } from 'svelte';
 
 	let {
 		filters = $bindable(),
@@ -26,14 +22,7 @@
 		lockBodyPart?: boolean;
 	} = $props();
 
-	let filtersOpen = $state(false);
 	let lang = $derived($resolvedLocale);
-
-	onMount(() => {
-		if (!lockBodyPart && filters.bodyPart !== 'all') {
-			filtersOpen = true;
-		}
-	});
 
 	let activeFilterCount = $derived(
 		(lockBodyPart || filters.bodyPart === 'all' ? 0 : 1) +
@@ -76,7 +65,7 @@
 			{#if activeFilterCount > 0}
 				<button
 					type="button"
-					class="btn-link catalog-filters-reset-desktop"
+					class="btn-link catalog-filters-reset min-h-[48px] min-w-[48px]"
 					onclick={resetFilters}
 				>
 					{translate(lang, 'catalog.reset')}
@@ -85,109 +74,49 @@
 		</div>
 
 		{#if targets.length > 0 || equipment.length > 0}
-			<div class="catalog-filter-chips" role="group" aria-label={translate(lang, 'catalog.filterChipsAria')}>
-				{#if targets.length > 0}
-					<div class="catalog-filter-chips__row">
-						{#each targets as item (item)}
-							<button
-								type="button"
-								class="catalog-filter-chip"
-								class:is-active={filters.target === item}
-								aria-pressed={filters.target === item}
-								onclick={() => toggleTarget(item)}
-							>
-								{labelTarget(item, lang)}
-							</button>
-						{/each}
-					</div>
+			<div
+				class="catalog-filter-chips"
+				role="group"
+				aria-label={translate(lang, 'catalog.filterChipsAria')}
+			>
+				{#each targets as item (item)}
+					<button
+						type="button"
+						class="catalog-filter-chip"
+						class:is-active={filters.target === item}
+						aria-pressed={filters.target === item}
+						onclick={() => toggleTarget(item)}
+					>
+						{labelTarget(item, lang)}
+					</button>
+				{/each}
+				{#if targets.length > 0 && equipment.length > 0}
+					<span class="catalog-filter-chips__sep" aria-hidden="true"></span>
 				{/if}
-				{#if equipment.length > 0}
-					<div class="catalog-filter-chips__row">
-						{#each equipment as item (item)}
-							<button
-								type="button"
-								class="catalog-filter-chip"
-								class:is-active={filters.equipment === item}
-								aria-pressed={filters.equipment === item}
-								onclick={() => toggleEquipment(item)}
-							>
-								{labelEquipment(item, lang)}
-							</button>
-						{/each}
-					</div>
-				{/if}
+				{#each equipment as item (item)}
+					<button
+						type="button"
+						class="catalog-filter-chip"
+						class:is-active={filters.equipment === item}
+						aria-pressed={filters.equipment === item}
+						onclick={() => toggleEquipment(item)}
+					>
+						{labelEquipment(item, lang)}
+					</button>
+				{/each}
 			</div>
 		{/if}
 
-		<div class="catalog-filters-toolbar">
-			<button
-				type="button"
-				class="btn-secondary catalog-filters-toggle"
-				onclick={() => (filtersOpen = !filtersOpen)}
-				aria-expanded={filtersOpen}
-				aria-controls="catalog-filters"
-			>
-				<LucideIcon icon={SlidersHorizontal} size={ICON_BUTTON} />
-				{translate(lang, lockBodyPart ? 'catalog.moreFilters' : 'catalog.filters')}
-				{#if activeFilterCount > 0}
-					<span class="catalog-filters-toggle__count" aria-hidden="true">{activeFilterCount}</span>
-				{/if}
-				<span class="catalog-filters-toggle__chevron" aria-hidden="true">
-					<LucideIcon
-						icon={ChevronDown}
-						size={ICON_BUTTON}
-						class={filtersOpen ? 'rotate-180 transition-transform' : 'transition-transform'}
-					/>
-				</span>
-			</button>
-			{#if activeFilterCount > 0}
-				<button type="button" class="btn-secondary catalog-filters-clear" onclick={resetFilters}>
-					{translate(lang, 'catalog.reset')}
-				</button>
-			{/if}
-		</div>
-
-		<div
-			id="catalog-filters"
-			class="catalog-filters-grid"
-			class:is-open={filtersOpen}
-			class:catalog-filters-grid--zone={lockBodyPart}
-		>
-			{#if !lockBodyPart}
-				<label class="field-label">
-					{translate(lang, 'catalog.bodyPart')}
-					<select class="field mt-1 w-full" bind:value={filters.bodyPart}>
-						<option value="all">{translate(lang, 'catalog.all')}</option>
-						{#each bodyParts as part (part)}
-							<option value={part}>{labelBodyPart(part, lang)}</option>
-						{/each}
-					</select>
-				</label>
-			{/if}
-			<label class="field-label">
-				{translate(lang, 'catalog.equipment')}
-				<select class="field mt-1 w-full" bind:value={filters.equipment}>
+		{#if !lockBodyPart}
+			<label class="field-label catalog-filters-body">
+				{translate(lang, 'catalog.bodyPart')}
+				<select class="field mt-1 w-full min-h-[48px]" bind:value={filters.bodyPart}>
 					<option value="all">{translate(lang, 'catalog.all')}</option>
-					{#if filters.equipment !== 'all' && !equipment.includes(filters.equipment)}
-						<option value={filters.equipment}>{labelEquipment(filters.equipment, lang)}</option>
-					{/if}
-					{#each equipment as item (item)}
-						<option value={item}>{labelEquipment(item, lang)}</option>
+					{#each bodyParts as part (part)}
+						<option value={part}>{labelBodyPart(part, lang)}</option>
 					{/each}
 				</select>
 			</label>
-			<label class="field-label">
-				{translate(lang, 'catalog.muscle')}
-				<select class="field mt-1 w-full" bind:value={filters.target}>
-					<option value="all">{translate(lang, 'catalog.all')}</option>
-					{#if filters.target !== 'all' && !targets.includes(filters.target)}
-						<option value={filters.target}>{labelTarget(filters.target, lang)}</option>
-					{/if}
-					{#each targets as item (item)}
-						<option value={item}>{labelTarget(item, lang)}</option>
-					{/each}
-				</select>
-			</label>
-		</div>
+		{/if}
 	</div>
 </div>

@@ -105,13 +105,17 @@
 		if (left > restTotalSec) restTotalSec = left;
 	});
 	let restPct = $derived(restTotalSec > 0 ? (restLeft / restTotalSec) * 100 : 0);
-	let canGoNext = $derived.by(() => {
+	let hasNextExercise = $derived.by(() => {
 		if (!session) return false;
 		if (isSessionFullyLogged(session)) return false;
 		const visible = visibleSessionExerciseIndices(session);
 		const pos = visible.indexOf(selectedExerciseIndex);
 		if (pos >= 0) return pos < visible.length - 1;
 		return visible.some((i) => i > selectedExerciseIndex);
+	});
+	let currentExerciseComplete = $derived.by(() => {
+		const ex = session?.exercises[selectedExerciseIndex];
+		return Boolean(ex && ex.sets.length > 0 && ex.sets.every((s) => s.completed));
 	});
 	let sessionComplete = $derived(session != null && isSessionFullyLogged(session));
 	let slotProgress = $derived.by(() => {
@@ -211,6 +215,15 @@
 
 				if (!plan || plan.exercises.length === 0) {
 					missing = true;
+					return;
+				}
+
+				// Swipe-back onto /live after finish/discard must not spawn a new session.
+				const nav = performance.getEntriesByType?.(
+					'navigation'
+				)?.[0] as PerformanceNavigationTiming | undefined;
+				if (nav?.type === 'back_forward') {
+					await goto('/workouts?tab=history', { replaceState: true });
 					return;
 				}
 
@@ -426,9 +439,11 @@
 			const done = await live.finish();
 			toasts.show(translate(lang, 'live.saved'), 'success');
 			if (done?.id) {
-				await goto(`/workouts/summary?id=${encodeURIComponent(done.id)}`);
+				await goto(`/workouts/summary?id=${encodeURIComponent(done.id)}`, {
+					replaceState: true
+				});
 			} else {
-				await goto('/workouts?tab=history');
+				await goto('/workouts?tab=history', { replaceState: true });
 			}
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'live.saveFail'), 'error');
@@ -454,7 +469,7 @@
 	function commitDiscard() {
 		discardOfferOpen = false;
 		live.discard();
-		void goto('/workouts');
+		void goto('/workouts', { replaceState: true });
 	}
 
 	function dismissDiscardOffer() {
@@ -659,7 +674,8 @@
 				<LiveSessionActions
 					{lang}
 					{finishing}
-					{canGoNext}
+					{hasNextExercise}
+					{currentExerciseComplete}
 					layout="desktop"
 					onNext={goNextExercise}
 					onFinish={() => void onFinish()}
@@ -750,7 +766,8 @@
 		<LiveSessionActions
 			{lang}
 			{finishing}
-			{canGoNext}
+			{hasNextExercise}
+			{currentExerciseComplete}
 			layout="mobile"
 			onNext={goNextExercise}
 			onFinish={() => void onFinish()}

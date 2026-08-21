@@ -40,8 +40,24 @@
 	--page-section-gap: 1rem;
 	--mobile-chrome-bottom: calc(var(--tabbar-h) + var(--tabbar-float-gap) + var(--safe-bottom));
 	--shadow-panel:
-		inset 0 1px 0 rgb(255 255 255 / 0.045),
-		0 10px 28px rgb(0 0 0 / 0.22);
+		inset 0 1px 0 rgb(255 255 255 / 0.03),
+		0 4px 14px rgb(0 0 0 / 0.14);
+	/* Floating chrome above the page (tabbar pill, FAB). */
+	--shadow-float:
+		0 6px 18px rgb(0 0 0 / 0.2),
+		0 1px 4px rgb(0 0 0 / 0.12);
+	/* Sticky bottom bars — shadow casts upward. */
+	--shadow-float-top:
+		0 -6px 18px rgb(0 0 0 / 0.2),
+		0 -1px 4px rgb(0 0 0 / 0.1);
+	/* Sheets, toasts, lightboxes. */
+	--shadow-overlay:
+		0 12px 36px rgb(0 0 0 / 0.32),
+		0 2px 10px rgb(0 0 0 / 0.16);
+	/* Accent FABs / draft dock. */
+	--shadow-accent:
+		0 6px 16px rgb(139 92 246 / 0.28),
+		0 1px 4px rgb(0 0 0 / 0.2);
 	--page-content-max: 42rem;
 	--content-max: var(--page-content-max);
 	--page-content-narrow: 28rem;
@@ -168,6 +184,18 @@ html[data-theme='light'] {
 	--hero-card-ink: #f8fafc;
 	--shadow-panel:
 		0 1px 2px rgb(18 20 26 / 0.04);
+	--shadow-float:
+		0 4px 14px rgb(18 20 26 / 0.08),
+		0 1px 3px rgb(18 20 26 / 0.04);
+	--shadow-float-top:
+		0 -4px 14px rgb(18 20 26 / 0.08),
+		0 -1px 3px rgb(18 20 26 / 0.04);
+	--shadow-overlay:
+		0 12px 32px rgb(18 20 26 / 0.12),
+		0 2px 8px rgb(18 20 26 / 0.06);
+	--shadow-accent:
+		0 5px 14px rgb(139 92 246 / 0.22),
+		0 1px 3px rgb(18 20 26 / 0.08);
 	--app-bg-glow: rgb(139 92 246 / 0.08);
 	--app-bg-wash: color-mix(in srgb, var(--color-accent) 3%, #f3f4f6);
 	--app-bg-image:
@@ -235,6 +263,13 @@ html[data-theme='light'] {
 @media (max-width: 767px) {
 	.shell-main {
 		padding-bottom: calc(var(--mobile-chrome-bottom) + var(--page-pad-y));
+	}
+
+	/* Keep list / cards scrollable above the floating draft pill. */
+	body:has(.draft-dock) .shell-main {
+		padding-bottom: calc(
+			var(--mobile-chrome-bottom) + var(--draft-dock-clearance) + var(--page-pad-y)
+		);
 	}
 
 	.shell-footer-pad {
@@ -1353,6 +1388,12 @@ a.entity-row--link:hover,
 	}
 }
 
+@media (max-width: 767px) {
+	.entity-row__start--desktop {
+		display: none;
+	}
+}
+
 /* ——— Controls ——— */
 
 .field {
@@ -1684,7 +1725,9 @@ button:focus-visible {
 	.actions-inline {
 		display: flex;
 	}
+}
 
+@media (min-width: 768px) and (pointer: fine) {
 	.field {
 		font-size: inherit;
 		min-height: 2.35rem;
@@ -1852,6 +1895,7 @@ button:focus-visible {
 .toast-item {
 	animation: kineticsToastIn 0.55s var(--ease-toast) both;
 	transform-origin: center bottom;
+	box-shadow: var(--shadow-overlay);
 }
 
 .badge-pop {
@@ -1892,19 +1936,22 @@ button:focus-visible {
 	right: 0.5rem;
 	bottom: 0.5rem;
 	z-index: 10;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 48px;
-	height: 48px;
-	min-width: 48px;
-	min-height: 48px;
+	display: grid;
+	place-items: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	min-width: 2.25rem;
+	min-height: 2.25rem;
 	padding: 0;
 	border: none;
-	border-radius: 0.55rem;
+	border-radius: 0.5rem;
 	background: rgb(12 12 14 / 0.78);
 	color: #f5f5f7;
 	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+	font-size: 0;
+	line-height: 0;
 	backdrop-filter: blur(10px);
 	-webkit-backdrop-filter: blur(10px);
 	box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
@@ -1916,10 +1963,16 @@ button:focus-visible {
 }
 
 .exercise-card-add-icon {
-	display: block;
+	display: grid;
+	place-items: center;
 	width: 0.85rem;
 	height: 0.85rem;
 	flex-shrink: 0;
+	line-height: 0;
+}
+
+.exercise-card-add-icon :global(svg) {
+	display: block;
 }
 
 .exercise-card-add:hover {
@@ -1948,28 +2001,70 @@ button:focus-visible {
 
 .exercise-card-bookmark {
 	position: absolute;
-	left: 0.5rem;
-	top: 0.5rem;
+	left: 0.15rem;
+	top: 0.15rem;
 	z-index: 10;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 1.85rem;
-	height: 1.85rem;
+	width: 1.5rem;
+	height: 1.5rem;
+	min-width: 1.5rem;
+	min-height: 1.5rem;
 	padding: 0;
 	border: none;
-	border-radius: 0.55rem;
-	background: rgb(12 12 14 / 0.78);
-	color: #f5f5f7;
+	border-radius: 0.35rem;
+	/* Icon-only: no solid chip over the illustration. */
+	background: transparent;
+	color: var(--color-ink);
 	cursor: pointer;
-	backdrop-filter: blur(10px);
-	-webkit-backdrop-filter: blur(10px);
-	box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+	box-shadow: none;
+	filter: drop-shadow(0 0 1.5px rgb(255 255 255 / 0.95)) drop-shadow(0 1px 2px rgb(18 20 26 / 0.35));
 	transition:
 		background 140ms ease,
 		color 140ms ease,
-		box-shadow 140ms ease,
+		filter 140ms ease,
 		transform 140ms ease;
+}
+
+/* Expand hit to ≥48×48 without growing the visible chip. */
+.exercise-card-bookmark::after {
+	content: '';
+	position: absolute;
+	inset: -0.85rem;
+}
+
+.exercise-card-bookmark :global(.exercise-card-bookmark-icon),
+.exercise-card-bookmark :global(.loader) {
+	position: relative;
+	z-index: 1;
+	display: inline-flex;
+	color: inherit;
+}
+
+.exercise-card-bookmark :global(.exercise-card-bookmark-icon svg) {
+	display: block;
+	width: 0.8rem;
+	height: 0.8rem;
+	stroke: currentColor;
+}
+
+/* List: slot anchors the overlay to the thumb (article is relative). */
+.exercise-card-bookmark-slot {
+	position: absolute;
+	left: 0;
+	top: 0;
+	z-index: 10;
+	width: var(--media-native);
+	height: var(--media-native);
+	max-width: var(--media-native);
+	pointer-events: none;
+}
+
+.exercise-card-bookmark-slot .exercise-card-bookmark {
+	pointer-events: auto;
 }
 
 .exercise-card-bookmark--inline {
@@ -1982,7 +2077,13 @@ button:focus-visible {
 	-webkit-backdrop-filter: none;
 	width: 2.75rem;
 	height: 2.75rem;
+	min-width: 2.75rem;
+	min-height: 2.75rem;
 	color: var(--color-muted);
+}
+
+.exercise-card-bookmark--inline::after {
+	display: none;
 }
 
 .exercise-card-bookmark.is-active,
@@ -1991,14 +2092,16 @@ button:focus-visible {
 }
 
 .exercise-card-bookmark.is-active {
-	background: var(--color-accent);
-	color: #fff;
-	box-shadow: 0 1px 4px rgb(139 92 246 / 0.4);
+	background: transparent;
+	color: var(--color-accent);
+	filter: drop-shadow(0 0 1.5px rgb(255 255 255 / 0.9)) drop-shadow(0 1px 2px rgb(18 20 26 / 0.25));
 }
 
 .exercise-card-bookmark--inline.is-active {
 	background: var(--color-accent-muted);
+	color: var(--color-accent);
 	border-radius: 0.5rem;
+	filter: none;
 }
 
 .exercise-card-bookmark.is-active :global(.exercise-card-bookmark-icon svg),
@@ -2006,24 +2109,40 @@ button:focus-visible {
 	stroke: currentColor;
 }
 
-html[data-theme='light'] .exercise-card-add:not(.exercise-card-add--inline),
-html[data-theme='light'] .exercise-card-bookmark:not(.exercise-card-bookmark--inline) {
+html[data-theme='light'] .exercise-card-add:not(.exercise-card-add--inline) {
 	background: rgb(255 255 255 / 0.92);
-	color: var(--color-ink);
+	color: var(--color-accent);
 	box-shadow:
 		0 0 0 1px rgb(18 20 26 / 0.06),
 		0 1px 3px rgb(18 20 26 / 0.1);
 }
 
-html[data-theme='light'] .exercise-card-add:not(.exercise-card-add--inline) {
+html[data-theme='light'] .exercise-card-bookmark:not(.exercise-card-bookmark--inline) {
+	background: transparent;
+	color: var(--color-ink);
+	filter: drop-shadow(0 0 1.5px rgb(255 255 255 / 0.95)) drop-shadow(0 1px 2px rgb(18 20 26 / 0.3));
+	box-shadow: none;
+}
+
+html[data-theme='dark'] .exercise-card-bookmark:not(.exercise-card-bookmark--inline) {
+	color: #f5f5f7;
+	filter: drop-shadow(0 0 2px rgb(0 0 0 / 0.85)) drop-shadow(0 1px 2px rgb(0 0 0 / 0.55));
+}
+
+html[data-theme='dark'] .exercise-card-bookmark.is-active:not(.exercise-card-bookmark--inline) {
 	color: var(--color-accent);
 }
 
-html[data-theme='light'] .exercise-card-add.is-in-draft,
-html[data-theme='light'] .exercise-card-bookmark.is-active {
+html[data-theme='light'] .exercise-card-add.is-in-draft {
 	background: var(--color-accent);
 	color: #fff;
 	box-shadow: 0 1px 4px rgb(139 92 246 / 0.35);
+}
+
+html[data-theme='light'] .exercise-card-bookmark.is-active:not(.exercise-card-bookmark--inline) {
+	background: transparent;
+	color: var(--color-accent);
+	filter: drop-shadow(0 0 1.5px rgb(255 255 255 / 0.95)) drop-shadow(0 1px 2px rgb(18 20 26 / 0.25));
 }
 
 .exercise-card-head {
@@ -2042,8 +2161,7 @@ html[data-theme='light'] .exercise-card-bookmark.is-active {
 	padding: 0;
 }
 
-.exercise-card--list .exercise-card-add--inline,
-.exercise-card--list .exercise-card-bookmark--inline {
+.exercise-card--list .exercise-card-add--inline {
 	width: 48px;
 	height: 48px;
 	min-width: 48px;
@@ -2141,6 +2259,10 @@ html[data-theme='light'] .exercise-card-bookmark.is-active {
 
 .exercise-card-add--inline {
 	position: static;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
 	width: 48px;
 	height: 48px;
 	min-width: 48px;
@@ -2152,6 +2274,9 @@ html[data-theme='light'] .exercise-card-bookmark.is-active {
 	box-shadow: none;
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
+	font-size: 0;
+	line-height: 0;
+	transform: none;
 }
 
 .exercise-card-add--inline .exercise-card-add-icon {
@@ -2183,6 +2308,23 @@ html[data-theme='light'] .exercise-card-bookmark.is-active {
 
 .exercise-facet-link:hover {
 	text-decoration-color: var(--color-accent);
+}
+
+@media (pointer: fine) {
+	.exercise-card-add:not(.exercise-card-add--inline) {
+		width: 2rem;
+		height: 2rem;
+		min-width: 2rem;
+		min-height: 2rem;
+		right: 0.4rem;
+		bottom: 0.4rem;
+		border-radius: 0.45rem;
+	}
+
+	.exercise-card-add:not(.exercise-card-add--inline) .exercise-card-add-icon {
+		width: 0.75rem;
+		height: 0.75rem;
+	}
 }
 
 @media (pointer: coarse) {
@@ -2794,6 +2936,7 @@ html[data-theme='light'] .exercise-card-bookmark.is-active {
 		calc(0.65rem + var(--vv-bottom-pad, var(--safe-bottom))) max(1rem, var(--safe-left));
 	max-width: 100%;
 	overflow: hidden;
+	box-shadow: var(--shadow-float-top);
 	/* Own layer — reduces iOS “fixed stuck mid-scroll” after resume */
 	transform: translateZ(0);
 	-webkit-backface-visibility: hidden;
@@ -2846,11 +2989,13 @@ body:has(.live-sticky-actions--end) {
 	z-index: 45;
 	left: 50%;
 	bottom: calc(var(--mobile-chrome-bottom) + 0.65rem);
-	transform: translateX(-50%);
+	transform: translateX(-50%) translateZ(0);
 	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	gap: 0.45rem;
-	min-height: 2.75rem;
+	min-height: 3rem;
+	min-width: 3rem;
 	padding: 0.55rem 1.1rem;
 	border-radius: 999px;
 	border: 1px solid color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
@@ -2860,9 +3005,15 @@ body:has(.live-sticky-actions--end) {
 	font-weight: 650;
 	letter-spacing: -0.01em;
 	text-decoration: none;
-	box-shadow: 0 10px 28px rgba(15, 23, 42, 0.22);
-	transform: translateX(-50%) translateZ(0);
+	box-shadow: var(--shadow-accent);
 	-webkit-backface-visibility: hidden;
+	max-width: calc(100vw - 1.5rem);
+}
+
+.draft-dock__count {
+	display: none;
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
 }
 
 .draft-dock:hover {
@@ -2871,6 +3022,49 @@ body:has(.live-sticky-actions--end) {
 
 body:has(.sticky-actions) .draft-dock {
 	bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.55rem);
+}
+
+/* Phones: icon FAB + count badge — stays clear of titles / tabbar. */
+@media (max-width: 767px) {
+	.draft-dock {
+		left: auto;
+		right: max(0.75rem, var(--safe-right));
+		bottom: calc(var(--mobile-chrome-bottom) + 0.75rem);
+		transform: translateZ(0);
+		width: 3rem;
+		height: 3rem;
+		min-width: 3rem;
+		min-height: 3rem;
+		padding: 0;
+		gap: 0;
+	}
+
+	.draft-dock__label {
+		display: none;
+	}
+
+	.draft-dock__count {
+		position: absolute;
+		top: -0.2rem;
+		right: -0.2rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.15rem;
+		height: 1.15rem;
+		padding: 0 0.28rem;
+		border-radius: 999px;
+		background: #fff;
+		color: var(--color-accent);
+		font-size: 0.6875rem;
+		font-weight: 750;
+		line-height: 1;
+		box-shadow: 0 0 0 1.5px var(--color-accent);
+	}
+
+	body:has(.workouts-fab:not(.workouts-fab--hidden)) .draft-dock {
+		right: calc(max(0.75rem, var(--safe-right)) + 4rem);
+	}
 }
 
 @media (min-width: 768px) {
@@ -2901,7 +3095,7 @@ body:has(.sticky-actions) .draft-dock {
 	border: 1px solid var(--color-border);
 	border-radius: 1.25rem;
 	background: var(--color-surface);
-	box-shadow: var(--shadow-panel);
+	box-shadow: var(--shadow-float);
 }
 
 .shell-nav-tabbar__grid {
@@ -2918,7 +3112,7 @@ body:has(.sticky-actions) .draft-dock {
 		border-color: color-mix(in srgb, var(--color-border) 52%, transparent);
 		background: color-mix(in srgb, var(--color-surface) 68%, transparent);
 		box-shadow:
-			0 10px 28px rgb(0 0 0 / 0.22),
+			var(--shadow-float),
 			inset 0 1px 0 rgb(255 255 255 / 0.07);
 		-webkit-backdrop-filter: saturate(1.75) blur(20px);
 		backdrop-filter: saturate(1.75) blur(20px);
@@ -2927,7 +3121,7 @@ body:has(.sticky-actions) .draft-dock {
 	html[data-theme='light'] .shell-nav-tabbar__inner {
 		background: color-mix(in srgb, var(--color-surface) 78%, transparent);
 		box-shadow:
-			0 8px 24px rgb(18 20 26 / 0.1),
+			var(--shadow-float),
 			inset 0 1px 0 rgb(255 255 255 / 0.65);
 	}
 }
@@ -5063,35 +5257,51 @@ html[data-theme='dark'] .zone-card__media {
 
 /* Rest sits inside sticky / desktop actions — one chrome, no floating overlay. */
 .live-rest--sticky {
-	margin: 0 0 0.55rem;
-	padding: 0.35rem 0.15rem 0.5rem;
+	margin: 0 0 0.35rem;
+	padding: 0.15rem 0 0.35rem;
 	border: none;
 	border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
 	border-radius: 0;
 	background: transparent;
 	box-shadow: none;
 	animation: none;
+	gap: 0.25rem;
 }
 
 .live-desktop-actions .live-rest--sticky {
-	margin-bottom: 0.75rem;
+	margin-bottom: 0.55rem;
 	width: 100%;
 }
 
-/* Rest strip inside sticky (~187px measured) — pad must clear set list + add-set. */
+/* Rest + CTA: keep thumb zone clear (~rest row 48 + CTA 48 + discard + pads). */
 body:has(.live-sticky-actions--rest) {
-	--sticky-actions-h: 12.5rem;
+	--sticky-actions-h: 9.25rem;
 }
 
 body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
-	--sticky-actions-h: 12.5rem;
+	--sticky-actions-h: 9.25rem;
 }
 
-.live-sticky-actions.live-sticky-actions--rest {
-	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-	gap: 0;
+@media (max-width: 1023px) {
+	.live-sticky-actions.live-sticky-actions--rest {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0;
+	}
+}
+
+/* `lg:hidden` loses to `.live-sticky-actions--rest { display:flex }` — hide sticky chrome on desktop. */
+@media (min-width: 1024px) {
+	.live-sticky-actions {
+		display: none;
+	}
+
+	body:has(.live-sticky-actions),
+	body:has(.live-sticky-actions--rest),
+	body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
+		--sticky-actions-h: 0px;
+	}
 }
 
 .live-sticky-actions .live-rest--sticky {
@@ -5111,16 +5321,16 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	gap: 0.3rem;
+	gap: 0.2rem;
 	min-width: 0;
-	padding-inline: 0.15rem;
+	padding-inline: 0.1rem;
 }
 
 .live-rest__bar {
 	--rest-pct: 100;
 	width: 100%;
-	max-width: 6.5rem;
-	height: 0.28rem;
+	max-width: 5.5rem;
+	height: 0.2rem;
 	overflow: hidden;
 	border-radius: 999px;
 	background: color-mix(in srgb, var(--color-accent) 16%, var(--color-border));
@@ -5165,10 +5375,21 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 	flex-shrink: 0;
 	min-height: 3rem;
 	min-width: 3rem;
-	padding-inline: 0.7rem;
+	padding-inline: 0.55rem;
 	font-size: 0.8125rem;
 	font-weight: 650;
 	white-space: nowrap;
+}
+
+.live-rest__skip.btn-link {
+	background: transparent;
+	border: none;
+	color: var(--color-muted);
+	text-decoration: none;
+}
+
+.live-rest__skip.btn-link:hover {
+	color: var(--color-accent);
 }
 
 .pwa-install {
@@ -5359,7 +5580,7 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 .live-rest-value {
 	display: block;
 	margin: 0;
-	font-size: 1.125rem;
+	font-size: 1.05rem;
 	font-weight: 700;
 	font-variant-numeric: tabular-nums;
 	line-height: 1;
@@ -5894,7 +6115,7 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: flex-end;
-		gap: 0.15rem;
+		gap: 0.5rem;
 		margin-top: 0.15rem;
 	}
 
@@ -6482,6 +6703,7 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 .live-finish-offer__card {
 	width: min(100%, 24rem);
 	padding: 1.1rem 1.05rem 1.15rem;
+	box-shadow: var(--shadow-overlay);
 	animation: kineticsToastIn 0.35s var(--ease-toast) both;
 }
 
@@ -6508,6 +6730,38 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 	grid-template-columns: 1fr 1fr;
 	gap: 0.5rem;
 	margin-top: 1rem;
+}
+
+.bottom-sheet__actions .btn-primary,
+.bottom-sheet__actions .btn-secondary {
+	width: 100%;
+	min-width: 0;
+	padding-inline: 0.65rem;
+	font-size: 0.8125rem;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.exercise-technique-sheet__media {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-top: 0.85rem;
+	aspect-ratio: 1;
+	width: 100%;
+	max-height: min(58vw, 16.5rem);
+	overflow: hidden;
+	border-radius: var(--radius-control);
+	background: #fff;
+}
+
+.exercise-technique-sheet__img {
+	display: block;
+	max-width: 100%;
+	max-height: 100%;
+	width: auto;
+	height: auto;
+	object-fit: contain;
 }
 
 @media (min-width: 1024px) {
@@ -6641,6 +6895,9 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 
 .workouts-page-lead {
 	min-height: 1.25rem;
+	font-size: 0.8125rem;
+	font-weight: 450;
+	color: var(--color-muted);
 }
 
 .builder-page {
@@ -6776,10 +7033,17 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 
 .or-bar {
 	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.4rem 0.55rem;
+	flex-direction: column;
+	gap: 0.35rem;
 	margin: -0.15rem 0 0.45rem;
+	min-width: 0;
+}
+
+.or-bar__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
 	min-width: 0;
 }
 
@@ -6793,7 +7057,18 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 }
 
 .or-bar__dissolve {
-	margin-left: auto;
+	flex-shrink: 0;
+	min-height: 2.75rem;
+	min-width: 2.75rem;
+	padding-inline: 0.35rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--color-muted);
+	text-decoration: none;
+}
+
+.or-bar__dissolve:hover {
+	color: var(--color-accent);
 }
 
 .or-divider {
@@ -6925,10 +7200,18 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 
 .superset-bar {
 	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.4rem 0.55rem;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 0.4rem;
 	margin: -0.15rem 0 0.55rem;
+	min-width: 0;
+}
+
+.superset-bar__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
 	min-width: 0;
 }
 
@@ -6943,7 +7226,6 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 
 .superset-bar__fields {
 	display: flex;
-	flex: 1 1 auto;
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 0.4rem 0.55rem;
@@ -6951,7 +7233,18 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 }
 
 .superset-bar__dissolve {
-	margin-left: auto;
+	flex-shrink: 0;
+	min-height: 2.75rem;
+	min-width: 2.75rem;
+	padding-inline: 0.35rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--color-muted);
+	text-decoration: none;
+}
+
+.superset-bar__dissolve:hover {
+	color: var(--color-accent);
 }
 
 .superset-chip {
@@ -7107,9 +7400,7 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	border-radius: 999px;
 	background: var(--color-accent);
 	color: #fff;
-	box-shadow:
-		0 4px 14px rgb(139 92 246 / 0.35),
-		0 1px 3px rgb(18 20 26 / 0.12);
+	box-shadow: var(--shadow-accent);
 	text-decoration: none;
 	transition:
 		background 140ms ease,
@@ -7211,14 +7502,14 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 .catalog-filters.panel {
 	display: flex;
 	flex-direction: column;
-	gap: 0.75rem;
-	padding: 0.75rem;
+	gap: 0.55rem;
+	padding: 0.65rem 0.7rem;
 }
 
 .catalog-filters-search-row {
 	display: flex;
 	align-items: center;
-	gap: 0.65rem;
+	gap: 0.5rem;
 	min-width: 0;
 }
 
@@ -7227,26 +7518,31 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	min-width: 0;
 }
 
+/* One horizontal facet scroller: targets, then equipment (sep in between). */
 .catalog-filter-chips {
 	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-}
-
-.catalog-filter-chips__row {
-	display: flex;
 	flex-wrap: nowrap;
-	gap: 0.5rem;
+	align-items: center;
+	gap: 0.4rem;
+	min-width: 0;
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: none;
-	padding-bottom: 0.125rem;
-	margin-inline: -0.125rem;
-	padding-inline: 0.125rem;
+	overscroll-behavior-x: contain;
+	margin-inline: -0.1rem;
+	padding-inline: 0.1rem;
 }
 
-.catalog-filter-chips__row::-webkit-scrollbar {
+.catalog-filter-chips::-webkit-scrollbar {
 	display: none;
+}
+
+.catalog-filter-chips__sep {
+	flex: 0 0 auto;
+	align-self: stretch;
+	width: 1px;
+	margin-inline: 0.15rem;
+	background: color-mix(in srgb, var(--color-border) 90%, transparent);
 }
 
 .catalog-filter-chip {
@@ -7301,91 +7597,19 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	color: var(--color-muted);
 }
 
-.catalog-filters-reset-desktop {
-	display: none;
+.catalog-filters-reset {
+	display: inline-flex;
 	flex-shrink: 0;
 	align-self: center;
 	padding: 0.35rem 0.15rem;
 	font-size: 0.875rem;
+	font-weight: 600;
 	white-space: nowrap;
-}
-
-@media (min-width: 768px) {
-	.catalog-filters-reset-desktop {
-		display: inline-flex;
-	}
-}
-
-.catalog-filters-toolbar {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-}
-
-@media (min-width: 768px) {
-	/* Selects stay open on desktop; collapse toggle is mobile-only. */
-	.catalog-filters-toolbar {
-		display: none;
-	}
-}
-
-.catalog-filters-toggle {
-	display: inline-flex;
-	flex: 1;
-	align-items: center;
-	gap: 0.5rem;
-	min-width: 0;
-	transition: transform 0.28s var(--ease-spring);
-}
-
-.catalog-filters-toggle:active,
-.catalog-filters-clear:active {
-	transform: scale(0.92);
-}
-
-.catalog-filters-toggle__count {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-width: 1.25rem;
-	height: 1.25rem;
-	padding: 0 0.375rem;
-	border-radius: 999px;
-	background: var(--color-accent);
-	color: #fff;
-	font-size: 0.6875rem;
-	font-weight: 650;
-	line-height: 1;
-}
-
-.catalog-filters-toggle__chevron {
-	margin-left: auto;
 	color: var(--color-muted);
 }
 
-.catalog-filters-clear {
-	flex: 0 0 auto;
-	padding-inline: 0.75rem;
-	font-size: 0.875rem;
-	transition: transform 0.28s var(--ease-spring);
-}
-
-.catalog-filters-grid {
-	display: none;
-	grid-template-columns: 1fr;
-	gap: 0.65rem;
-}
-
-.catalog-filters-grid.is-open {
-	display: grid;
-}
-
-.catalog-filters-grid .field-label {
-	margin: 0;
-}
-
-.catalog-filters-grid .field {
-	margin-top: 0.375rem;
+.catalog-filters-reset:hover {
+	color: var(--color-accent);
 }
 
 @media (min-width: 768px) {
@@ -7393,19 +7617,10 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 		padding: 0.875rem 1rem;
 		gap: 0.75rem;
 	}
+}
 
-	.catalog-filters-grid,
-	.catalog-filters-grid.is-open {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 0.75rem;
-		align-items: end;
-	}
-
-	.catalog-filters-grid--zone,
-	.catalog-filters-grid--zone.is-open {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
+.catalog-filters-body {
+	margin: 0;
 }
 
 .catalog-list-count {
@@ -8095,7 +8310,7 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	flex-shrink: 0;
 	align-items: center;
 	justify-content: flex-end;
-	gap: 0.15rem;
+	gap: 0.5rem;
 	min-height: 2.5rem;
 	min-width: 2.5rem;
 }
@@ -8134,14 +8349,17 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	position: relative;
 	display: flex;
 	flex-direction: row;
-	align-items: stretch;
+	align-items: center;
+	gap: 0;
 	min-height: var(--media-native);
 	min-width: 0;
-	padding: 0;
+	/* Room for absolutely centered + control + gap before text. */
+	padding: 0 3.9rem 0 0;
 	border: none;
 	border-radius: 0;
 	box-shadow: none;
 	background: transparent;
+	overflow: visible;
 }
 
 .catalog-exercise-list .exercise-card--list + .exercise-card--list {
@@ -8156,45 +8374,77 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	display: none;
 }
 
+/* Saved: swipe wraps the card — borders live on the card inside each sheet. */
+.catalog-exercise-list > .swipe-to-delete:not(:last-child) .exercise-card--list {
+	border-bottom: 1px solid var(--color-border);
+}
+
+.catalog-exercise-list > .swipe-to-delete {
+	width: 100%;
+	min-width: 0;
+}
+
+.catalog-exercise-list > .swipe-to-delete.is-enabled .swipe-to-delete__sheet {
+	background: var(--color-surface);
+}
+
 .catalog-exercise-list .exercise-card-list-main {
 	display: flex;
 	flex: 1 1 0;
 	flex-direction: row;
-	align-items: stretch;
+	align-items: center;
+	gap: 0.7rem;
 	min-width: 0;
-	column-gap: 0;
 	overflow: hidden;
 	border-radius: 0;
+	padding: 0;
 }
 
 .catalog-exercise-list .exercise-card--list .exercise-card-media {
+	appearance: none;
 	flex: 0 0 var(--media-native);
 	width: var(--media-native);
 	min-width: var(--media-native);
 	max-width: var(--media-native);
-	height: auto;
-	min-height: 100%;
-	align-self: stretch;
-	aspect-ratio: auto;
+	height: var(--media-native);
+	min-height: var(--media-native);
+	aspect-ratio: 1;
+	align-self: center;
+	margin: 0;
+	border: none;
 	border-radius: 0;
 	padding: 0;
 	overflow: hidden;
 	background: #fff;
-	border-right: 0;
 	box-shadow: inset -1px 0 0 color-mix(in srgb, var(--color-border) 85%, transparent);
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	user-select: none;
 }
 
 .catalog-exercise-list .exercise-card--list .exercise-card-media::after {
 	display: none;
 }
 
+.catalog-exercise-list .exercise-card-bookmark-slot {
+	display: none;
+}
+
 .catalog-exercise-list .exercise-card--list .exercise-card-body {
+	display: flex;
 	flex: 1 1 0;
-	min-width: 0;
+	flex-direction: column;
 	justify-content: center;
-	padding: 0.65rem 0.5rem 0.65rem 0.75rem;
-	gap: 0.2rem;
+	align-self: center;
+	min-width: 0;
+	min-height: 0;
+	padding: 0.35rem 0;
+	gap: 0.15rem;
 	overflow: hidden;
+	text-decoration: none;
+	color: inherit;
 }
 
 .catalog-exercise-list .exercise-card--list .exercise-card-list-title {
@@ -8219,44 +8469,94 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 }
 
 .catalog-exercise-list .exercise-card-actions--list {
-	flex: 0 0 auto;
-	align-self: center;
+	position: absolute;
+	top: 50%;
+	right: 0.65rem;
+	z-index: 2;
+	display: flex;
+	flex: none;
 	flex-direction: row;
 	align-items: center;
 	justify-content: center;
-	gap: 0.625rem;
-	padding: 0 0.55rem 0 0.3rem;
-	border-left: none;
+	gap: 0;
+	width: 2.5rem;
+	height: 2.5rem;
+	margin: 0;
+	padding: 0;
+	border: none;
+	transform: translateY(-50%);
 }
 
-.catalog-exercise-list .exercise-card--list .exercise-card-add--inline,
-.catalog-exercise-list .exercise-card--list .exercise-card-bookmark--inline {
-	width: 48px;
-	height: 48px;
-	min-width: 48px;
-	min-height: 48px;
-	border-radius: 0.5rem;
+.catalog-exercise-list .exercise-card--list .exercise-card-add--inline {
+	position: relative;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	box-sizing: border-box;
+	display: grid;
+	place-items: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	min-width: 2.5rem;
+	min-height: 2.5rem;
+	max-width: 2.5rem;
+	max-height: 2.5rem;
+	margin: 0;
+	padding: 0;
+	border: none;
+	border-radius: 999px;
+	background: var(--color-surface) !important;
+	box-shadow: 0 0 0 1px rgb(18 20 26 / 0.08) !important;
+	color: var(--color-accent) !important;
+	overflow: visible;
+	appearance: none;
+	-webkit-appearance: none;
+	font-size: 0;
+	line-height: 0;
+	transform: none;
 }
 
-.catalog-exercise-list .exercise-card-bookmark--inline {
-	background: transparent;
-	color: var(--color-muted);
-	box-shadow: none;
+/* Beat the generic 48×48 list rule so the face stays a centered circle. */
+.catalog-exercise-list .exercise-card--list .exercise-card-add--inline.exercise-card-add {
+	width: 2.5rem;
+	height: 2.5rem;
+	min-width: 2.5rem;
+	min-height: 2.5rem;
 }
 
-.catalog-exercise-list .exercise-card-bookmark--inline.is-active {
-	background: var(--color-accent-muted);
-	color: var(--color-accent);
-	box-shadow: none;
+/* Keep ≥48×48 tap without a huge visible face. */
+.catalog-exercise-list .exercise-card--list .exercise-card-add--inline::after {
+	content: '';
+	position: absolute;
+	inset: -0.4rem;
 }
 
-.catalog-exercise-list .exercise-card-add--inline {
-	background: var(--color-surface-muted);
+.catalog-exercise-list .exercise-card--list .exercise-card-add--inline :global(.exercise-card-add-icon) {
+	position: relative;
+	z-index: 1;
+	display: grid;
+	place-items: center;
+	width: 1rem;
+	height: 1rem;
+	margin: 0;
+	line-height: 0;
+	color: inherit;
 }
 
-.catalog-exercise-list .exercise-card-add--inline.is-in-draft {
-	background: var(--color-accent);
-	color: #fff;
+.catalog-exercise-list .exercise-card--list .exercise-card-add--inline :global(.exercise-card-add-icon svg) {
+	display: block;
+	width: 1rem;
+	height: 1rem;
+	margin: 0;
+	stroke: currentColor;
+}
+
+.catalog-exercise-list .exercise-card--list .exercise-card-add--inline.is-in-draft {
+	background: var(--color-accent) !important;
+	border-color: var(--color-accent);
+	box-shadow: 0 0 0 1px var(--color-accent) !important;
+	color: #fff !important;
 }
 
 .catalog-exercise-list .exercise-card-chevron {
@@ -8269,6 +8569,16 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 
 .catalog-exercise-list .exercise-card-list-main:active {
 	background: transparent;
+}
+
+.catalog-exercise-list .exercise-card-body:active {
+	background: color-mix(in srgb, var(--color-surface-muted) 40%, transparent);
+}
+
+html[data-theme='dark'] .catalog-exercise-list .exercise-card--list .exercise-card-add--inline:not(.is-in-draft) {
+	background: color-mix(in srgb, var(--color-surface-muted) 80%, var(--color-surface)) !important;
+	box-shadow: 0 0 0 1px var(--color-border) !important;
+	color: var(--color-ink) !important;
 }
 
 .catalog-grid {
@@ -8321,7 +8631,6 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	align-items: center;
 	column-gap: 0.7rem;
 	min-width: 0;
-	text-decoration: none;
 	color: inherit;
 	border-radius: var(--radius-control);
 }
@@ -8330,52 +8639,17 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	background: color-mix(in srgb, var(--color-surface-muted) 35%, transparent);
 }
 
-.exercise-card--list .exercise-card-media {
-	position: relative;
-	flex-shrink: 0;
-	width: var(--media-native);
-	height: var(--media-native);
-	aspect-ratio: 1;
-	border-radius: var(--radius-control);
-	overflow: hidden;
-	background:
-		radial-gradient(ellipse at 50% 40%, rgb(255 255 255 / 0.04), transparent 55%),
-		var(--hero-card-media-bg);
-}
-
-.exercise-card--list .exercise-card-media::after {
-	content: '';
-	position: absolute;
-	inset: 0;
-	pointer-events: none;
-	background: radial-gradient(
-		ellipse at center,
-		transparent 42%,
-		rgb(0 0 0 / 0.22) 100%
-	);
-	z-index: 1;
-}
-
-html[data-theme='light'] .exercise-card--list .exercise-card-media::after {
-	background: radial-gradient(
-		ellipse at center,
-		transparent 48%,
-		rgb(18 20 26 / 0.08) 100%
-	);
-}
-
-.exercise-card--list .exercise-card-img {
-	position: relative;
-	z-index: 0;
-}
-
 .exercise-card--list .exercise-card-body {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
+	align-self: stretch;
 	min-width: 0;
+	min-height: 48px;
 	padding: 0;
 	text-align: left;
+	text-decoration: none;
+	color: inherit;
 }
 
 .exercise-card--list .exercise-card-list-title {
@@ -8578,6 +8852,23 @@ html[data-theme='light'] .exercise-card--list .exercise-card-media::after {
 .auth-account__section {
 	padding: 1.15rem 0;
 	border-top: 1px solid var(--color-border);
+}
+
+.data-export-actions {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+	.data-export-actions {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+.data-export-actions__btn {
+	width: 100%;
+	justify-content: center;
 }
 
 /* Standalone backup card (guest / cloud-off): panel already separates — no extra rule. */
@@ -8944,6 +9235,10 @@ html[data-theme='dark'] .auth-segment--sub.is-active {
 	background: #fff;
 	cursor: zoom-in;
 	overflow: hidden;
+	touch-action: manipulation;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	user-select: none;
 	transition:
 		border-color 120ms ease,
 		box-shadow 120ms ease;
@@ -9137,9 +9432,7 @@ html[data-theme='dark'] .auth-segment--sub.is-active {
 	padding: 0.85rem;
 	border-radius: var(--radius-panel);
 	background: #fff;
-	box-shadow:
-		0 16px 48px rgb(0 0 0 / 0.35),
-		0 0 0 1px rgb(255 255 255 / 0.08);
+	box-shadow: var(--shadow-overlay);
 }
 
 .clip-lightbox {
@@ -9149,6 +9442,7 @@ html[data-theme='dark'] .auth-segment--sub.is-active {
 .clip-lightbox__panel {
 	animation: kineticsSurfaceIn 0.45s var(--ease-toast) both;
 	transform-origin: center;
+	box-shadow: var(--shadow-overlay);
 }
 
 /* Standalone PWA: slightly denser chrome */

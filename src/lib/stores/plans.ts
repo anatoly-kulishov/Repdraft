@@ -4,7 +4,10 @@ import type { WorkoutPlan } from '$lib/domain/types';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { translate } from '$lib/i18n/messages';
 import { getWorkoutRepo, isCloudMode } from '$lib/storage/dataAccess';
-import { localWorkoutRepository } from '$lib/storage/localWorkoutRepository';
+import {
+	localWorkoutRepository,
+	replaceAllPlans
+} from '$lib/storage/localWorkoutRepository';
 import { clearLastSyncedAt } from '$lib/storage/syncMeta';
 import { supabaseWorkoutRepository } from '$lib/storage/supabaseWorkoutRepository';
 import type { CloudSyncState } from '$lib/domain/cloudSync';
@@ -39,14 +42,15 @@ function createPlansStore() {
 			ready.set(true);
 			return;
 		}
-		if (inflight) return inflight;
+		// Wait out prior refresh so cloud:false bootstrap cannot swallow a later cloud pull.
+		while (inflight) await inflight;
 
 		const wantCloud = opts?.cloud !== false;
 		const forceCloud = opts?.force === true;
 
-		inflight = (async () => {
+		const run = (async () => {
 			try {
-				await refreshLocalCloudList({
+				const result = await refreshLocalCloudList({
 					localList: () => localWorkoutRepository.list(),
 					cloudList: () => supabaseWorkoutRepository.list(),
 					merge: mergeWorkoutPlans,
@@ -55,12 +59,15 @@ function createPlansStore() {
 					listKey: 'plans',
 					previousItems: get(store),
 					label: 'plans',
-					onUpdate: (result) => {
-						store.set(result.items);
-						sync.set(result.state);
-						if (result.state !== 'loading') ready.set(true);
+					onUpdate: (update) => {
+						store.set(update.items);
+						sync.set(update.state);
+						if (update.state !== 'loading') ready.set(true);
 					}
 				});
+				if (wantCloud && result.state === 'synced' && isCloudMode()) {
+					replaceAllPlans(result.items);
+				}
 			} catch (err) {
 				console.error('plans.refresh failed', err);
 				sync.set('error');
@@ -70,7 +77,8 @@ function createPlansStore() {
 			}
 		})();
 
-		return inflight;
+		inflight = run;
+		return run;
 	}
 
 	return {

@@ -1,14 +1,15 @@
 import { newId } from './id';
-import { SETS } from './inputLimits';
+import { REPS, REST_SEC, SETS } from './inputLimits';
 import type {
 	LastPerformance,
 	LoggedSet,
 	SessionExercise,
 	SetKind,
+	WorkoutExercise,
 	WorkoutPlan,
 	WorkoutSession
 } from './types';
-import { groupBounds, altGroupBounds } from './workout';
+import { DEFAULT_REPS, DEFAULT_REST_SEC, DEFAULT_SETS, groupBounds, altGroupBounds } from './workout';
 
 export function loggedSetKind(set: LoggedSet): SetKind {
 	return set.kind ?? 'work';
@@ -481,6 +482,47 @@ export function isSessionFullyLogged(session: WorkoutSession): boolean {
 	return total > 0 && completedSetCount(session) === total;
 }
 
+function clampInt(n: number, min: number, max: number): number {
+	if (!Number.isFinite(n)) return min;
+	return Math.min(max, Math.max(min, Math.round(n)));
+}
+
+/**
+ * Builder draft from a session: visible exercises only (chosen “or” slots),
+ * sets/reps from what was logged (else targets).
+ */
+export function planDraftFromSession(session: WorkoutSession): WorkoutPlan {
+	const ts = new Date().toISOString();
+	const exercises: WorkoutExercise[] = [];
+	for (const i of visibleSessionExerciseIndices(session)) {
+		const ex = session.exercises[i];
+		if (!ex) continue;
+		const logged = ex.sets.filter((s) => s.completed);
+		const setCount = logged.length > 0 ? logged.length : ex.targetSets;
+		const lastReps = [...logged].reverse().find((s) => s.reps != null)?.reps;
+		const reps = lastReps ?? ex.targetReps;
+		exercises.push({
+			exerciseId: ex.exerciseId,
+			sets: clampInt(setCount > 0 ? setCount : DEFAULT_SETS, SETS.min, SETS.max),
+			reps: clampInt(reps > 0 ? reps : DEFAULT_REPS, REPS.min, REPS.max),
+			restSec: clampInt(
+				ex.restSec > 0 ? ex.restSec : DEFAULT_REST_SEC,
+				REST_SEC.min,
+				REST_SEC.max
+			),
+			groupId: ex.groupId ?? null,
+			altGroupId: null
+		});
+	}
+	return {
+		id: newId(),
+		name: session.planName.trim(),
+		createdAt: ts,
+		updatedAt: ts,
+		exercises
+	};
+}
+
 export function sessionDurationMs(session: WorkoutSession): number | null {
 	const end = session.finishedAt ?? null;
 	if (!end) return null;
@@ -559,6 +601,13 @@ export function runSessionSelfCheck(): void {
 	}
 	if (recentExerciseLogs([session], 'ex-b').length !== 0) {
 		throw new Error('ex-b should have empty recentExerciseLogs');
+	}
+
+	const draftPlan = planDraftFromSession(session);
+	if (draftPlan.name !== 'Push') throw new Error('planDraftFromSession name');
+	const draftExA = draftPlan.exercises.find((ex) => ex.exerciseId === 'ex-a');
+	if (!draftExA || draftExA.sets !== 1 || draftExA.reps !== 8) {
+		throw new Error(`planDraftFromSession sets/reps unexpected ${JSON.stringify(draftExA)}`);
 	}
 
 	session = addLoggedSet(session, 0);

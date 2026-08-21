@@ -334,7 +334,7 @@ async function auditViewport(page, viewport) {
 				: fail(viewport, 'builder.tabbar-hidden', 'tabbar still hit-testable over sticky CTA');
 			// Sticky save only mounts after ≥1 exercise; empty draft shows pick CTA.
 			const stickySave = page.locator('.sticky-actions button.btn-primary');
-			const pickCta = page.locator('a[href*="/catalog/all"]').first();
+			const pickCta = page.locator('a.empty-state__action, a[href*="/exercises?from="]').first();
 			if ((await stickySave.count()) > 0 && (await stickySave.isVisible())) {
 				pass(viewport, 'builder.sticky-save', 'visible');
 			} else if ((await pickCta.count()) > 0 && (await pickCta.isVisible())) {
@@ -411,14 +411,33 @@ async function auditViewport(page, viewport) {
 		await nameInput.fill(stamp);
 		pass(viewport, 'flow.builder-name', stamp);
 
-		const addLink = page.locator('a[href*="/catalog/all"]').first();
-		if ((await addLink.count()) === 0) {
+		const pick = page.locator('a.empty-state__action, a[href*="/exercises?from="]').first();
+		if ((await pick.count()) === 0 || !(await pick.isVisible())) {
 			fail(viewport, 'flow.pick', 'add-exercise link missing');
 			return;
 		}
-		await addLink.click();
+		await pick.click();
 		await waitApp(page);
-		await page.waitForTimeout(700);
+		await page.waitForTimeout(500);
+		pass(viewport, 'flow.pick', page.url());
+
+		// Hub → zone/catalog list (cards live under /catalog/*, not /exercises).
+		if (page.url().includes('/exercises')) {
+			const zone = page.locator('a[href^="/catalog/"]').first();
+			if ((await zone.count()) === 0) {
+				fail(viewport, 'flow.add-exercise', 'catalog zone link missing');
+				return;
+			}
+			await zone.click();
+			await waitApp(page);
+			await page.waitForTimeout(500);
+			const browseAll = page.locator('a[href*="browse=all"]').first();
+			if ((await browseAll.count()) > 0 && (await browseAll.isVisible())) {
+				await browseAll.click();
+				await waitApp(page);
+				await page.waitForTimeout(500);
+			}
+		}
 
 		const addBtn = page
 			.locator('button.exercise-card-add--inline:not(.is-in-draft), button.exercise-card-add:not(.is-in-draft)')
@@ -488,16 +507,26 @@ async function auditViewport(page, viewport) {
 			await weight.fill('40');
 			await reps.fill('8');
 			pass(viewport, 'flow.log-inputs', '40×8');
-			const setDone = page.locator('.live-set-done-btn').first();
-			if ((await setDone.count()) > 0) {
-				await setDone.click();
-				await page.waitForTimeout(300);
-				pass(viewport, 'flow.complete-set', 'set done');
+			const setDone = page.locator('.live-set-done-btn');
+			const n = await setDone.count();
+			if (n > 0) {
+				for (let i = 0; i < n; i++) {
+					const btn = setDone.nth(i);
+					if (await btn.isVisible().catch(() => false)) {
+						await btn.click().catch(() => null);
+						await page.waitForTimeout(150);
+					}
+				}
+				pass(viewport, 'flow.complete-set', `set done ×${n}`);
 			} else {
 				pass(viewport, 'flow.complete-set', 'inputs filled');
 			}
 			const headDone = page.locator('button.live-set-head-done').first();
 			if ((await headDone.count()) > 0) {
+				if (await headDone.isVisible().catch(() => false)) {
+					await headDone.click().catch(() => null);
+					await page.waitForTimeout(200);
+				}
 				pass(viewport, 'flow.done-all-control', 'header ✓ present');
 			} else {
 				fail(viewport, 'flow.done-all-control', 'header ✓ missing');
@@ -508,15 +537,28 @@ async function auditViewport(page, viewport) {
 			fail(viewport, 'flow.done-all-control', 'skipped');
 		}
 
-		const finish = page.getByRole('button', { name: /заверш|finish/i }).first();
-		if ((await finish.count()) === 0) {
-			fail(viewport, 'flow.finish', 'finish button missing');
-			return;
+		const offer = page.locator('.bottom-sheet[aria-labelledby="live-finish-offer-title"]');
+		if ((await offer.count()) > 0 && (await offer.isVisible().catch(() => false))) {
+			await offer.locator('button.btn-primary').click();
+		} else {
+			const finish = isMobile
+				? page.locator('.live-sticky-actions button.btn-primary').filter({ hasText: /заверш|finish/i })
+				: page.locator('.live-desktop-actions button.btn-primary').filter({ hasText: /заверш|finish/i });
+			const finishBtn = finish.first();
+			if ((await finishBtn.count()) === 0 || !(await finishBtn.isVisible().catch(() => false))) {
+				fail(viewport, 'flow.finish', 'finish button missing');
+				return;
+			}
+			await finishBtn.click();
+			const offerAfter = page.locator('.bottom-sheet[aria-labelledby="live-finish-offer-title"]');
+			if ((await offerAfter.count()) > 0 && (await offerAfter.isVisible().catch(() => false))) {
+				await offerAfter.locator('button.btn-primary').click();
+			}
 		}
-		await finish.click();
-		await page.waitForTimeout(1000);
+		await page.waitForURL(/\/(summary|workouts)/, { timeout: 15_000 }).catch(() => null);
+		await page.waitForTimeout(400);
 		const url = page.url();
-		url.includes('/summary') || url.includes('/workouts')
+		url.includes('/summary') || (url.includes('/workouts') && !url.includes('/live/'))
 			? pass(viewport, 'flow.finish', url)
 			: fail(viewport, 'flow.finish', url);
 		await shot(page, viewport, 'flow-finish');

@@ -14,7 +14,7 @@
 	<div class="toast-stack pointer-events-none fixed z-[60] flex flex-col-reverse gap-2" aria-live="polite">
 		{#each items as toast (toast.id)}
 			<div
-				class="toast-item pointer-events-auto relative flex min-h-10 w-full flex-col gap-1 rounded-2xl px-3.5 py-2.5 pr-10 text-sm font-medium leading-snug text-white shadow-[0_8px_24px_rgba(15,23,42,0.18)]"
+				class="toast-item pointer-events-auto relative flex min-h-10 w-full flex-col gap-1 rounded-2xl px-3.5 py-2.5 pr-10 text-sm font-medium leading-snug text-white"
 				class:bg-[var(--color-accent)]={toast.kind === 'success' || toast.kind === 'info'}
 				class:bg-[var(--color-danger)]={toast.kind === 'error'}
 				role="status"

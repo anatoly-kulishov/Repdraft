@@ -18,6 +18,11 @@ function writeAll(records: PersonalRecord[]): void {
 	localStorage.setItem(RECORDS_STORAGE_KEY, JSON.stringify(records));
 }
 
+/** Replace entire local PR list (after cloud merge). */
+export function replaceAllRecords(records: PersonalRecord[]): void {
+	writeAll(records);
+}
+
 export const localRecordRepository: RecordRepository = {
 	async list() {
 		return readAll().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));

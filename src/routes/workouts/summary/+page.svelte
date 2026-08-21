@@ -5,6 +5,7 @@
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_PRIMARY } from '$lib/components/icons/sizes';
+	import { WORKOUTS_HISTORY_HREF } from '$lib/domain/catalogLinks';
 	import {
 		completedExerciseCount,
 		completedSetCount,
@@ -114,16 +115,16 @@
 	<EmptyState
 		title={translate(lang, 'live.noPlan')}
 		description={translate(lang, 'workouts.emptyDesc')}
-		actionHref="/workouts"
+		actionHref={WORKOUTS_HISTORY_HREF}
 		actionLabel={translate(lang, 'nav.workouts')}
 	/>
 {:else}
 	<section class="summary-page content-page content-page--narrow soft-enter pb-mobile-actions text-center lg:pb-0">
 		<div class="md:hidden text-left">
-			<ScreenHeader title={translate(lang, 'summary.title')} backHref="/workouts" />
+			<ScreenHeader title={translate(lang, 'summary.title')} backHref={WORKOUTS_HISTORY_HREF} />
 		</div>
 		<div class="subroute-desktop-head hidden text-left md:block">
-			<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />
+			<SubrouteBack href={WORKOUTS_HISTORY_HREF} label={translate(lang, 'builder.backWorkouts')} />
 		</div>
 
 		<div class="summary-hero">
@@ -217,14 +218,20 @@
 		{/if}
 
 		<div class="summary-actions summary-page__done-inline">
-			<a class="btn-primary btn-block min-h-12" href={`/workouts/history/${session.id}`}
+			<a
+				class="btn-primary btn-block min-h-12"
+				href={`/workouts/history/${session.id}`}
+				data-sveltekit-replacestate
 				>{translate(lang, 'summary.done')}</a
 			>
 		</div>
 
 		<div class="sticky-actions summary-page__done-sticky lg:hidden">
 			<div class="sticky-actions__inner summary-actions">
-				<a class="btn-primary btn-block min-h-12" href={`/workouts/history/${session.id}`}
+				<a
+					class="btn-primary btn-block min-h-12"
+					href={`/workouts/history/${session.id}`}
+					data-sveltekit-replacestate
 					>{translate(lang, 'summary.done')}</a
 				>
 			</div>

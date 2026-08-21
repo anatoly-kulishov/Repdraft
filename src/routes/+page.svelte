@@ -221,15 +221,6 @@
 									class="home-guest-next__chevron"
 								/>
 							</a>
-							<a class="panel home-guest-next__card" href={BUILDER_NEW_HREF}>
-								<span class="home-guest-next__title">{translate(lang, 'workouts.create')}</span>
-								<span class="home-guest-next__hint">{translate(lang, 'home.guestCreateHint')}</span>
-								<LucideIcon
-									icon={ChevronRight}
-									size={ICON_SMALL}
-									class="home-guest-next__chevron"
-								/>
-							</a>
 						</nav>
 					{/if}
 				</div>
