@@ -5894,7 +5894,7 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: flex-end;
-		gap: 0.15rem;
+		gap: 0.5rem;
 		margin-top: 0.15rem;
 	}
 
@@ -8095,7 +8095,7 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	flex-shrink: 0;
 	align-items: center;
 	justify-content: flex-end;
-	gap: 0.15rem;
+	gap: 0.5rem;
 	min-height: 2.5rem;
 	min-width: 2.5rem;
 }

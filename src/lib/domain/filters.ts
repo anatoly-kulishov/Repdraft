@@ -573,6 +573,30 @@ export function runFiltersSelfCheck(): void {
 		throw new Error('legs zone chips must include calves');
 	}
 
+	/** Multi-body zone (legs): facets must come from the scoped slice, not the full catalog. */
+	const legsScoped = catalog.filter(
+		(item) => item.body_part === 'upper legs' || item.body_part === 'lower legs'
+	);
+	const legsFacets = filterCatalogWithFacets(
+		legsScoped,
+		{ query: '', bodyPart: 'all', equipment: 'all', target: 'all' },
+		'en'
+	);
+	if (legsFacets.targets.includes('pectorals') || legsFacets.targets.includes('abs')) {
+		throw new Error('legs zone facets must not include chest/abs targets');
+	}
+	if (!legsFacets.targets.includes('calves') || !legsFacets.targets.includes('quads')) {
+		throw new Error(`legs zone facets missing calves/quads: ${legsFacets.targets.join(',')}`);
+	}
+	const buggyFullFacets = filterCatalogWithFacets(
+		catalog,
+		{ query: '', bodyPart: 'all', equipment: 'all', target: 'all' },
+		'en'
+	);
+	if (!buggyFullFacets.targets.includes('pectorals')) {
+		throw new Error('fixture catalog must include pectorals for regression contrast');
+	}
+
 	const conflictFilters: ExerciseFilters = {
 		query: '',
 		bodyPart: 'upper legs',
