@@ -102,7 +102,6 @@
 			     including them remounts mid-typing and eats keystrokes. -->
 			{#key `${data.bodyPart}|${data.initialBrowse}|${fromBuilder ? 'builder' : 'browse'}`}
 				<CatalogExerciseList
-					bodyParts={data.bodyParts}
 					equipment={data.equipment}
 					targets={data.targets}
 					totalCount={data.totalCount}
