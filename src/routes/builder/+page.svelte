@@ -169,31 +169,16 @@
 			{:else}
 				<div class="builder-section-head">
 					<p class="section-title">{translate(lang, 'builder.exercisesSection')}</p>
-					<div class="builder-section-head__actions">
-						<button
-							type="button"
-							class="btn-secondary"
-							disabled={selectedCount < 2}
-							onclick={makeOrGroup}
-						>
-							{#if selectedCount === 0}
-								{translate(lang, 'builder.orEmpty')}
-							{:else}
+					{#if selectedCount >= 2}
+						<div class="builder-section-head__actions">
+							<button type="button" class="btn-secondary" onclick={makeOrGroup}>
 								{translate(lang, 'builder.or', { n: selectedCount })}
-							{/if}
-						</button>
-						<button
-							type="button"
-							class="btn-secondary"
-							disabled={selectedCount < 2}
-							onclick={makeSuperset}
-						>
-							{translate(lang, 'builder.superset')}
-							{#if selectedCount > 0}
-								· {selectedCount}
-							{/if}
-						</button>
-					</div>
+							</button>
+							<button type="button" class="btn-secondary" onclick={makeSuperset}>
+								{translate(lang, 'builder.superset')} · {selectedCount}
+							</button>
+						</div>
+					{/if}
 				</div>
 				{#if selectedCount < 2}
 					<p class="builder-select-hint">{translate(lang, 'builder.selectHint')}</p>

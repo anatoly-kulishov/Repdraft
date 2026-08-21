@@ -109,12 +109,20 @@ export async function loadCatalogZone(
 	const inZone = exercises.filter((ex) => parts.includes(ex.body_part));
 	const targetChips = targetCountsForZone(exercises, parts);
 	const zoneCount = inZone.length;
+	const targetCovers = targetCoversForZone(exercises, parts);
+	/** Avoid same plate as the top target chip («Грудные» vs «Все упражнения»). */
+	const avoidZoneDup = new Set<string>();
+	const topTarget = targetChips[0]?.target;
+	if (topTarget) {
+		const topCover = targetCovers[topTarget];
+		if (topCover) avoidZoneDup.add(topCover);
+	}
 	return {
 		...meta,
 		targetChips,
 		zoneCount,
-		targetCovers: targetCoversForZone(exercises, parts),
-		zoneCover: pickZoneCoverImage(inZone, bodyPart)
+		targetCovers,
+		zoneCover: pickZoneCoverImage(inZone, bodyPart, avoidZoneDup)
 	};
 }
 

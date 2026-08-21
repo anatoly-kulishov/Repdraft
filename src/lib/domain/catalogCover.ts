@@ -176,18 +176,23 @@ function pickByOverride(
 }
 
 /** Hub / «Все упражнения» card art for a catalog zone. */
-export function pickZoneCoverImage(list: ExerciseIndexItem[], zone: string): string {
+export function pickZoneCoverImage(
+	list: ExerciseIndexItem[],
+	zone: string,
+	avoidImages: ReadonlySet<string> = new Set()
+): string {
 	if (!list.length) return '';
 
 	const override = pickByOverride(list, ZONE_COVER_OVERRIDES[zone]);
-	if (override?.image) return override.image;
+	if (override?.image && !avoidImages.has(override.image)) return override.image;
 
 	const ranked = [...list].sort((a, b) => {
 		const diff = zoneCoverScore(b, zone) - zoneCoverScore(a, zone);
 		return diff !== 0 ? diff : a.id.localeCompare(b.id);
 	});
 
-	return ranked[0]?.image ?? '';
+	const preferred = ranked.find((ex) => ex.image && !avoidImages.has(ex.image));
+	return preferred?.image ?? ranked[0]?.image ?? '';
 }
 
 /** Target/category card art: scored pick; zone fallback skips weak plates. */
@@ -305,6 +310,14 @@ export function runCatalogCoverSelfCheck(): void {
 
 	if (!pickCatalogCoverImage(chest, 'pectorals').includes('0025')) {
 		throw new Error('pectorals cover should prefer bench press over assisted dip');
+	}
+
+	const chestZone = pickZoneCoverImage(chest, 'chest', new Set(['images/0025-y.jpg']));
+	if (chestZone.includes('0025')) {
+		throw new Error('chest zone cover should avoid the top target (pectorals) plate');
+	}
+	if (!chestZone.includes('0009')) {
+		throw new Error('chest zone cover should fall back to next scored plate when bench avoided');
 	}
 
 	const arms: ExerciseIndexItem[] = [

@@ -58,7 +58,18 @@
 >
 	{#if groupRole === 'first'}
 		<div class="superset-bar">
-			<span class="superset-bar__badge">{translate(lang, 'builder.supersetBadge')}</span>
+			<div class="superset-bar__head">
+				<span class="superset-bar__badge">{translate(lang, 'builder.supersetBadge')}</span>
+				{#if ondissolve}
+					<button
+						type="button"
+						class="btn-link superset-bar__dissolve"
+						onclick={ondissolve}
+					>
+						{translate(lang, 'builder.dissolve')}
+					</button>
+				{/if}
+			</div>
 			<div class="superset-bar__fields">
 				<label class="superset-chip">
 					<span>{translate(lang, 'builder.rounds')}</span>
@@ -91,22 +102,19 @@
 					/>
 				</label>
 			</div>
-			{#if ondissolve}
-				<button type="button" class="btn-link superset-bar__dissolve text-xs" onclick={ondissolve}>
-					{translate(lang, 'builder.dissolve')}
-				</button>
-			{/if}
 		</div>
 	{/if}
 
 	{#if altRole === 'first'}
 		<div class="or-bar">
-			<span class="or-bar__badge">{translate(lang, 'builder.orBadge')}</span>
-			{#if ondissolveOr}
-				<button type="button" class="btn-link or-bar__dissolve text-xs" onclick={ondissolveOr}>
-					{translate(lang, 'builder.dissolve')}
-				</button>
-			{/if}
+			<div class="or-bar__head">
+				<span class="or-bar__badge">{translate(lang, 'builder.orBadge')}</span>
+				{#if ondissolveOr}
+					<button type="button" class="btn-link or-bar__dissolve" onclick={ondissolveOr}>
+						{translate(lang, 'builder.dissolve')}
+					</button>
+				{/if}
+			</div>
 		</div>
 	{/if}
 

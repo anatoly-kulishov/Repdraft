@@ -3,7 +3,8 @@
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
-	import { filterCatalogWithFacets, filterExercises, isBodyPart, isFilterConflict } from '$lib/domain/filters';
+	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
+	import { filterCatalogWithFacets, isBodyPart, isFilterConflict } from '$lib/domain/filters';
 	import { pickFrequent, pickPopular, sortByScore } from '$lib/domain/exerciseScore';
 	import { catalogZoneBodyParts, isCatalogZone } from '$lib/domain/catalogLinks';
 	import { personalRecordChips } from '$lib/domain/records';
@@ -15,6 +16,7 @@
 	import { exerciseStats } from '$lib/stores/exerciseStats';
 	import { records } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { toasts } from '$lib/stores/toasts';
 	import { browser } from '$app/environment';
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -91,7 +93,15 @@
 	let filterLockBodyPart = $derived(zoneLocked);
 
 	let lang = $derived($resolvedLocale);
-	let detailFrom = $derived(`${$page.url.pathname}${$page.url.search}`);
+	/** Facets stay in history via replaceState; keep card hrefs stable so chip taps don't re-render every card. */
+	let detailFrom = $derived.by(() => {
+		const path = $page.url.pathname;
+		const from = $page.url.searchParams.get('from');
+		if (from && from.startsWith('/')) {
+			return `${path}?from=${encodeURIComponent(from)}`;
+		}
+		return path;
+	});
 	let catalog = $derived(indexReady ? items : []);
 	let statsMap = $derived($exerciseStats);
 	let catalogFiltered = $derived.by(() => {
@@ -141,7 +151,9 @@
 			filters.equipment !== 'all' ||
 			filters.target !== 'all'
 	);
-	let filterConflict = $derived(isFilterConflict(catalog, filters, lang));
+	let filterConflict = $derived(
+		visible.length === 0 ? isFilterConflict(catalog, filters, lang) : false
+	);
 	let totalForCount = $derived(indexReady ? visible.length : totalCount);
 	let hasMore = $derived(
 		indexReady && visibleLimit < (useSections ? allSectionItems.length : visible.length)
@@ -221,7 +233,13 @@
 
 		const next = `${url.pathname}${url.search}${url.hash}`;
 		const cur = `${$page.url.pathname}${$page.url.search}${$page.url.hash}`;
-		if (next !== cur) replaceState(next, $page.state);
+		if (next === cur) return;
+
+		// After paint so chip press feels instant; facets already applied in local state.
+		const frame = requestAnimationFrame(() => {
+			replaceState(next, $page.state);
+		});
+		return () => cancelAnimationFrame(frame);
 	});
 
 	$effect(() => {
@@ -237,33 +255,17 @@
 		visibleLimit = CATALOG_PAGE_SIZE;
 	});
 
+	/** Drop stale facets using already-cascaded option lists (no second full catalog scan). */
 	$effect(() => {
-		if (!indexReady || catalog.length === 0) return;
-		const pool = filterExercises(
-			catalog,
-			{
-				...filters,
-				bodyPart:
-					zoneLocked && isCatalogZone(presetBodyPart)
-						? (presetBodyPart as ExerciseFilters['bodyPart'])
-						: filters.bodyPart,
-				equipment: 'all',
-				target: 'all'
-			},
-			lang
-		);
-		const zoneItems =
-			zoneLocked && zoneBodyParts.length > 1
-				? pool.filter((item) => zoneBodyParts.includes(item.body_part))
-				: pool;
-		const validEquipment = new Set(zoneItems.map((item) => item.equipment));
-		const validTargets = new Set(zoneItems.map((item) => item.target));
+		if (!indexReady) return;
+		equipmentOptions;
+		targetOptions;
 		const nextEq =
-			filters.equipment !== 'all' && !validEquipment.has(filters.equipment)
+			filters.equipment !== 'all' && !equipmentOptions.includes(filters.equipment)
 				? 'all'
 				: filters.equipment;
 		const nextTarget =
-			filters.target !== 'all' && !validTargets.has(filters.target) ? 'all' : filters.target;
+			filters.target !== 'all' && !targetOptions.includes(filters.target) ? 'all' : filters.target;
 		if (nextEq === filters.equipment && nextTarget === filters.target) return;
 		untrack(() => {
 			filters = { ...filters, equipment: nextEq, target: nextTarget };
@@ -301,6 +303,21 @@
 		const total = useSections ? allSectionItems.length : visible.length;
 		if (!indexReady || visibleLimit >= total) return;
 		visibleLimit = Math.min(total, visibleLimit + CATALOG_PAGE_SIZE);
+	}
+
+	let unbookmarkBusyId = $state<string | null>(null);
+
+	async function unbookmark(exerciseId: string) {
+		if (unbookmarkBusyId) return;
+		unbookmarkBusyId = exerciseId;
+		try {
+			await bookmarks.toggle(exerciseId);
+			toasts.show(translate(lang, 'bookmarks.removed'), 'info');
+		} catch {
+			toasts.show(translate(lang, 'errors.generic'), 'error');
+		} finally {
+			unbookmarkBusyId = null;
+		}
 	}
 
 	/** Sentinel for infinite scroll — keep loading while it stays in/near the viewport. */
@@ -497,13 +514,30 @@
 	{:else}
 		<div class={listClass}>
 			{#each shownFlat as exercise, i (exercise.id)}
-				<ExerciseCard
-					{exercise}
-					recordChips={recordChipsById.get(exercise.id) ?? []}
-					priority={i < 4}
-					variant={cardVariant}
-					{detailFrom}
-				/>
+				{#if savedOnly}
+					<SwipeToDelete
+						label={translate(lang, 'bookmarks.remove')}
+						busy={unbookmarkBusyId === exercise.id}
+						disabled={unbookmarkBusyId !== null && unbookmarkBusyId !== exercise.id}
+						onDelete={() => void unbookmark(exercise.id)}
+					>
+						<ExerciseCard
+							{exercise}
+							recordChips={recordChipsById.get(exercise.id) ?? []}
+							priority={i < 4}
+							variant={cardVariant}
+							{detailFrom}
+						/>
+					</SwipeToDelete>
+				{:else}
+					<ExerciseCard
+						{exercise}
+						recordChips={recordChipsById.get(exercise.id) ?? []}
+						priority={i < 4}
+						variant={cardVariant}
+						{detailFrom}
+					/>
+				{/if}
 			{/each}
 		</div>
 		{#if hasMore}
