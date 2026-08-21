@@ -248,9 +248,6 @@
 					{/if}
 				{:else}
 					{translate(lang, 'workouts.local')}
-					<a class="font-semibold text-[var(--color-accent)] underline" href="/auth?next=%2Fworkouts"
-						>{translate(lang, 'workouts.signInSync')}</a
-					>{translate(lang, 'workouts.syncSuffix')}
 				{/if}
 			</p>
 		</div>
@@ -339,7 +336,7 @@
 										<div class="entity-row__actions">
 											<button
 												type="button"
-												class="btn-ghost entity-row__start inline-flex min-h-11 shrink-0 items-center gap-1.5 px-3"
+												class="btn-ghost entity-row__start entity-row__start--desktop inline-flex min-h-11 shrink-0 items-center gap-1.5 px-3"
 												onclick={() => onOpen(plan.id)}
 												disabled={plan.exercises.length === 0 || planBusyId !== null}
 											>

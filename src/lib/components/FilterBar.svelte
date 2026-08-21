@@ -24,26 +24,6 @@
 
 	let lang = $derived($resolvedLocale);
 
-	/** Active chip first so entering a subgroup doesn’t hide the selection off-screen. */
-	function withActiveFirst(items: string[], active: string): string[] {
-		if (active === 'all' || !items.includes(active)) return items;
-		return [active, ...items.filter((item) => item !== active)];
-	}
-
-	let targetChips = $derived(withActiveFirst(targets, filters.target));
-	let equipmentChips = $derived(withActiveFirst(equipment, filters.equipment));
-	let targetRowEl: HTMLDivElement | undefined = $state();
-	let equipmentRowEl: HTMLDivElement | undefined = $state();
-
-	$effect(() => {
-		filters.target;
-		filters.equipment;
-		queueMicrotask(() => {
-			if (targetRowEl) targetRowEl.scrollLeft = 0;
-			if (equipmentRowEl) equipmentRowEl.scrollLeft = 0;
-		});
-	});
-
 	let activeFilterCount = $derived(
 		(lockBodyPart || filters.bodyPart === 'all' ? 0 : 1) +
 			(filters.equipment !== 'all' ? 1 : 0) +
@@ -85,7 +65,7 @@
 			{#if activeFilterCount > 0}
 				<button
 					type="button"
-					class="btn-link catalog-filters-reset-desktop min-h-[48px] min-w-[48px]"
+					class="btn-link catalog-filters-reset min-h-[48px] min-w-[48px]"
 					onclick={resetFilters}
 				>
 					{translate(lang, 'catalog.reset')}
@@ -94,37 +74,36 @@
 		</div>
 
 		{#if targets.length > 0 || equipment.length > 0}
-			<div class="catalog-filter-chips" role="group" aria-label={translate(lang, 'catalog.filterChipsAria')}>
-				{#if targetChips.length > 0}
-					<div class="catalog-filter-chips__row" bind:this={targetRowEl}>
-						{#each targetChips as item (item)}
-							<button
-								type="button"
-								class="catalog-filter-chip"
-								class:is-active={filters.target === item}
-								aria-pressed={filters.target === item}
-								onclick={() => toggleTarget(item)}
-							>
-								{labelTarget(item, lang)}
-							</button>
-						{/each}
-					</div>
+			<div
+				class="catalog-filter-chips"
+				role="group"
+				aria-label={translate(lang, 'catalog.filterChipsAria')}
+			>
+				{#each targets as item (item)}
+					<button
+						type="button"
+						class="catalog-filter-chip"
+						class:is-active={filters.target === item}
+						aria-pressed={filters.target === item}
+						onclick={() => toggleTarget(item)}
+					>
+						{labelTarget(item, lang)}
+					</button>
+				{/each}
+				{#if targets.length > 0 && equipment.length > 0}
+					<span class="catalog-filter-chips__sep" aria-hidden="true"></span>
 				{/if}
-				{#if equipmentChips.length > 0}
-					<div class="catalog-filter-chips__row" bind:this={equipmentRowEl}>
-						{#each equipmentChips as item (item)}
-							<button
-								type="button"
-								class="catalog-filter-chip"
-								class:is-active={filters.equipment === item}
-								aria-pressed={filters.equipment === item}
-								onclick={() => toggleEquipment(item)}
-							>
-								{labelEquipment(item, lang)}
-							</button>
-						{/each}
-					</div>
-				{/if}
+				{#each equipment as item (item)}
+					<button
+						type="button"
+						class="catalog-filter-chip"
+						class:is-active={filters.equipment === item}
+						aria-pressed={filters.equipment === item}
+						onclick={() => toggleEquipment(item)}
+					>
+						{labelEquipment(item, lang)}
+					</button>
+				{/each}
 			</div>
 		{/if}
 
@@ -138,16 +117,6 @@
 					{/each}
 				</select>
 			</label>
-		{/if}
-
-		{#if activeFilterCount > 0}
-			<button
-				type="button"
-				class="btn-secondary catalog-filters-clear-mobile min-h-[48px] min-w-[48px]"
-				onclick={resetFilters}
-			>
-				{translate(lang, 'catalog.reset')}
-			</button>
 		{/if}
 	</div>
 </div>

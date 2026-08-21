@@ -122,7 +122,7 @@
 		>
 			{translate(lang, 'live.restPlus30')}
 		</button>
-		<button type="button" class="btn-secondary live-rest__skip" onclick={() => onRestSkip?.()}>
+		<button type="button" class="btn-link live-rest__skip" onclick={() => onRestSkip?.()}>
 			{translate(lang, 'live.skipRest')}
 		</button>
 	</div>

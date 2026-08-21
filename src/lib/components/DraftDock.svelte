@@ -26,6 +26,7 @@
 {#if visible}
 	<a class="draft-dock" href="/builder" aria-label={translate(lang, 'draft.dock', { n: count })}>
 		<LucideIcon icon={ClipboardList} size={ICON_BUTTON} />
-		<span>{translate(lang, 'draft.dock', { n: count })}</span>
+		<span class="draft-dock__label">{translate(lang, 'draft.dock', { n: count })}</span>
+		<span class="draft-dock__count">{count}</span>
 	</a>
 {/if}
