@@ -1,6 +1,6 @@
 <script lang="ts">
 	import CatalogTargetCard from '$lib/components/CatalogTargetCard.svelte';
-	import { catalogZonePath } from '$lib/domain/catalogLinks';
+	import { catalogZonePath, withFromParam } from '$lib/domain/catalogLinks';
 	import type { TargetChip } from '$lib/domain/filters';
 	import { labelTarget } from '$lib/domain/labels.ru';
 	import { translate } from '$lib/i18n/messages';
@@ -13,7 +13,8 @@
 		targetCovers,
 		zoneCover = '',
 		equipment = '',
-		query = ''
+		query = '',
+		from = null as string | null
 	}: {
 		bodyPart: string;
 		chips: TargetChip[];
@@ -22,17 +23,21 @@
 		zoneCover?: string;
 		equipment?: string;
 		query?: string;
+		from?: string | null;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
 
 	function targetHref(target?: string, browse?: string) {
-		return catalogZonePath(bodyPart, {
-			target: target && target !== 'all' ? target : undefined,
-			browse,
-			equipment: equipment || undefined,
-			q: query.trim() || undefined
-		});
+		return withFromParam(
+			catalogZonePath(bodyPart, {
+				target: target && target !== 'all' ? target : undefined,
+				browse,
+				equipment: equipment || undefined,
+				q: query.trim() || undefined
+			}),
+			from
+		);
 	}
 </script>
 

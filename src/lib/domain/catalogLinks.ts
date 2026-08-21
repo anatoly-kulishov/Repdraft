@@ -96,12 +96,20 @@ export function catalogTargetPath(target: string, bodyPartHint?: string): string
 	return zone ? catalogZonePath(zone, { target }) : catalogZonePath('all', { target });
 }
 
-/** Constructor «add exercise» opens the real catalog, not a duplicate picker. */
-export const BUILDER_ADD_EXERCISE_HREF = '/catalog/all?from=%2Fbuilder';
+/** Constructor «add exercise» opens the catalog hub (zones), not a flat list. */
+export const BUILDER_ADD_EXERCISE_HREF = '/exercises?from=%2Fbuilder';
 
 /** Start a blank draft (clears leftover name/exercises from a previous edit). */
 export const BUILDER_NEW_HREF = '/builder?new=1';
 
 export function isBuilderReturnPath(from: string | null | undefined): boolean {
 	return from === '/builder' || Boolean(from?.startsWith('/builder?'));
+}
+
+/** Append `?from=` / `&from=` so builder → hub → zone keeps a return path. */
+export function withFromParam(href: string, from: string | null | undefined): string {
+	const value = from?.trim();
+	if (!value) return href;
+	const sep = href.includes('?') ? '&' : '?';
+	return `${href}${sep}from=${encodeURIComponent(value)}`;
 }
