@@ -7,6 +7,7 @@
 	import { bookmarks } from '$lib/stores/bookmarks';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
@@ -37,6 +38,13 @@
 	let bookmarkBusy = $state(false);
 	let imgEl = $state<HTMLImageElement | null>(null);
 	let justAdded = $state(false);
+	let techniqueOpen = $state(false);
+	let techniqueSrc = $state('');
+
+	/** Slim index has JPG only; GIF lives at the same stem under /videos. */
+	function techniqueMediaSrc(imagePath: string): string {
+		return `/${imagePath.replace(/^images\//, 'videos/').replace(/\.jpe?g$/i, '.gif')}`;
+	}
 
 	$effect(() => {
 		const img = imgEl;
@@ -51,6 +59,22 @@
 		const base = `/exercise/${id}`;
 		if (!detailFrom) return base;
 		return `${base}?from=${encodeURIComponent(detailFrom)}`;
+	}
+
+	function openTechnique() {
+		techniqueSrc = techniqueMediaSrc(exercise.image);
+		techniqueOpen = true;
+	}
+
+	function dismissTechnique() {
+		techniqueOpen = false;
+	}
+
+	function onTechniqueImgError(event: Event) {
+		const img = event.currentTarget as HTMLImageElement;
+		const fallback = `/${exercise.image}`;
+		if (img.src.endsWith(fallback) || img.getAttribute('src') === fallback) return;
+		img.src = fallback;
 	}
 
 	function toggleDraft(event: MouseEvent) {
@@ -90,29 +114,33 @@
 	}
 </script>
 
+{#snippet bookmarkButton(inline: boolean)}
+	<button
+		type="button"
+		class="exercise-card-bookmark"
+		class:exercise-card-bookmark--inline={inline}
+		class:is-active={bookmarked}
+		onclick={toggleBookmark}
+		disabled={bookmarkBusy}
+		aria-busy={bookmarkBusy}
+		aria-label={translate(lang, bookmarked ? 'bookmarks.remove' : 'bookmarks.add')}
+		aria-pressed={bookmarked}
+	>
+		{#if bookmarkBusy}
+			<Spinner size="sm" block={false} />
+		{:else}
+			<LucideIcon
+				icon={Bookmark}
+				size={ICON_SMALL}
+				class="exercise-card-bookmark-icon"
+				fill={bookmarked ? 'currentColor' : 'none'}
+			/>
+		{/if}
+	</button>
+{/snippet}
+
 {#snippet listActions()}
 	<div class="exercise-card-actions exercise-card-actions--list">
-		<button
-			type="button"
-			class="exercise-card-bookmark exercise-card-bookmark--inline"
-			class:is-active={bookmarked}
-			onclick={toggleBookmark}
-			disabled={bookmarkBusy}
-			aria-busy={bookmarkBusy}
-			aria-label={translate(lang, bookmarked ? 'bookmarks.remove' : 'bookmarks.add')}
-			aria-pressed={bookmarked}
-		>
-			{#if bookmarkBusy}
-				<Spinner size="sm" block={false} />
-			{:else}
-				<LucideIcon
-					icon={Bookmark}
-					size={ICON_SMALL}
-					class="exercise-card-bookmark-icon"
-					fill={bookmarked ? 'currentColor' : 'none'}
-				/>
-			{/if}
-		</button>
 		<button
 			type="button"
 			class="exercise-card-add exercise-card-add--inline"
@@ -140,20 +168,22 @@
 {/snippet}
 
 <article
-	class="exercise-card relative flex min-w-0 max-w-full flex-col overflow-hidden bg-[var(--color-surface)]"
+	class="exercise-card relative min-w-0 max-w-full bg-[var(--color-surface)]"
 	class:exercise-card--list={variant === 'list'}
+	class:overflow-hidden={variant !== 'list'}
+	class:flex={variant !== 'list'}
+	class:flex-col={variant !== 'list'}
 	class:rounded-[var(--radius-panel)]={variant !== 'list'}
 	class:border={variant !== 'list'}
 	class:border-[var(--color-border)]={variant !== 'list'}
 >
 	{#if variant === 'list'}
-		<a
-			href={exerciseHref(exercise.id)}
-			class="exercise-card-list-main"
-			aria-label={title}
-		>
-			<div
+		<div class="exercise-card-list-main">
+			<button
+				type="button"
 				class="exercise-card-media media-well relative shrink-0 overflow-hidden"
+				aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+				onclick={openTechnique}
 			>
 				<img
 					bind:this={imgEl}
@@ -165,11 +195,16 @@
 					loading={priority ? 'eager' : 'lazy'}
 					fetchpriority={priority ? 'high' : 'auto'}
 					decoding="async"
-					class={`exercise-card-img block h-full w-full object-contain ${loaded ? 'is-loaded' : ''}`}
+					draggable="false"
+					class={`exercise-card-img pointer-events-none block h-full w-full object-contain ${loaded ? 'is-loaded' : ''}`}
 					onload={onImgLoad}
 				/>
-			</div>
-			<span class="exercise-card-body flex min-w-0 flex-col gap-0.5">
+			</button>
+			<a
+				href={exerciseHref(exercise.id)}
+				class="exercise-card-body flex min-w-0 flex-col gap-0.5"
+				aria-label={title}
+			>
 				<span class="exercise-card-list-title line-clamp-2 font-semibold leading-snug text-[var(--color-ink)]">
 					{title}
 				</span>
@@ -195,8 +230,8 @@
 						<span class="exercise-card-list-target">{labelTarget(exercise.target, lang)}</span>
 					</span>
 				{/if}
-			</span>
-		</a>
+			</a>
+		</div>
 		{@render listActions()}
 	{:else}
 		<div
@@ -221,27 +256,7 @@
 					onload={onImgLoad}
 				/>
 			</a>
-			<button
-				type="button"
-				class="exercise-card-bookmark"
-				class:is-active={bookmarked}
-				onclick={toggleBookmark}
-				disabled={bookmarkBusy}
-				aria-busy={bookmarkBusy}
-				aria-label={translate(lang, bookmarked ? 'bookmarks.remove' : 'bookmarks.add')}
-				aria-pressed={bookmarked}
-			>
-				{#if bookmarkBusy}
-					<Spinner size="sm" block={false} />
-				{:else}
-					<LucideIcon
-						icon={Bookmark}
-						size={ICON_SMALL}
-						class="exercise-card-bookmark-icon"
-						fill={bookmarked ? 'currentColor' : 'none'}
-					/>
-				{/if}
-			</button>
+			{@render bookmarkButton(false)}
 			<button
 				type="button"
 				class="exercise-card-add"
@@ -279,3 +294,33 @@
 		</a>
 	{/if}
 </article>
+
+{#if techniqueOpen}
+	<BottomSheet
+		open={techniqueOpen}
+		titleId={`exercise-technique-${exercise.id}`}
+		onDismiss={dismissTechnique}
+	>
+		<p id={`exercise-technique-${exercise.id}`} class="bottom-sheet__title">{title}</p>
+		<p class="bottom-sheet__hint">{labelTarget(exercise.target, lang)}</p>
+		<div class="exercise-technique-sheet__media media-well">
+			<img
+				src={techniqueSrc}
+				alt=""
+				width="180"
+				height="180"
+				decoding="async"
+				class="exercise-technique-sheet__img"
+				onerror={onTechniqueImgError}
+			/>
+		</div>
+		{#snippet actions()}
+			<button type="button" class="btn-secondary min-h-12" onclick={dismissTechnique}>
+				{translate(lang, 'exercise.closeMedia')}
+			</button>
+			<a class="btn-primary min-h-12" href={exerciseHref(exercise.id)} onclick={dismissTechnique}>
+				{translate(lang, 'exercise.openCard')}
+			</a>
+		{/snippet}
+	</BottomSheet>
+{/if}

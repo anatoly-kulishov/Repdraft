@@ -4,7 +4,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import { catalogZonePath, isBuilderReturnPath, labelCatalogZone } from '$lib/domain/catalogLinks';
+	import { catalogZonePath, isBuilderReturnPath, labelCatalogZone, withFromParam } from '$lib/domain/catalogLinks';
 	import { labelTarget } from '$lib/domain/labels.ru';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -35,16 +35,26 @@
 	);
 	let fromParam = $derived($page.url.searchParams.get('from'));
 	let fromBuilder = $derived(isBuilderReturnPath(fromParam));
-	let backHref = $derived(
-		fromBuilder ? '/builder' : inTargetList ? catalogZonePath(data.bodyPart) : '/exercises'
-	);
-	let backLabel = $derived(
-		fromBuilder
-			? translate(lang, 'builder.createTitle')
-			: inTargetList
-				? title
-				: translate(lang, 'catalog.hubTitle')
-	);
+	let hubHref = $derived(withFromParam('/exercises', fromParam));
+	let zoneBrowseHref = $derived(withFromParam(catalogZonePath(data.bodyPart), fromParam));
+	/** Builder flow: hub ← zone browse ← exercise list (keep `from`). */
+	let backHref = $derived.by(() => {
+		if (fromBuilder) {
+			if (inTargetList) return zoneBrowseHref;
+			if (showTargetBrowse || data.bodyPart === 'all') return hubHref;
+			return hubHref;
+		}
+		if (inTargetList) return catalogZonePath(data.bodyPart);
+		return '/exercises';
+	});
+	let backLabel = $derived.by(() => {
+		if (fromBuilder) {
+			if (inTargetList) return title;
+			return translate(lang, 'catalog.hubTitle');
+		}
+		if (inTargetList) return title;
+		return translate(lang, 'catalog.hubTitle');
+	});
 	let headerTitle = $derived(
 		showExerciseList && data.initialTarget
 			? exerciseTitle
@@ -85,6 +95,7 @@
 				zoneCover={data.zoneCover}
 				equipment={data.initialEquipment}
 				query={data.initialQuery}
+				from={fromParam}
 			/>
 		{:else if showExerciseList}
 			<!-- Key = route shell only. Facets (q/equipment/target) sync via props+effects;

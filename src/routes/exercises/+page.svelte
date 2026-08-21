@@ -2,12 +2,15 @@
 	import CatalogHubChips from '$lib/components/CatalogHubChips.svelte';
 	import CatalogZoneCard from '$lib/components/CatalogZoneCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
+	import { isBuilderReturnPath, withFromParam } from '$lib/domain/catalogLinks';
 	import { translate } from '$lib/i18n/messages';
 	import { catalogUi } from '$lib/stores/catalogUi';
 	import { records } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 
 	let { data } = $props();
@@ -15,6 +18,8 @@
 	let lang = $derived($resolvedLocale);
 	let searchQuery = $state('');
 	let error = $derived(data.indexError);
+	let fromParam = $derived($page.url.searchParams.get('from'));
+	let fromBuilder = $derived(isBuilderReturnPath(fromParam));
 
 	onMount(() => {
 		/* Fresh hub visit: drop leftover list facets before search / browse-all. */
@@ -26,7 +31,7 @@
 		const q = query.trim();
 		catalogUi.reset();
 		const path = q ? `/catalog/all?q=${encodeURIComponent(q)}` : '/catalog/all';
-		void goto(path);
+		void goto(withFromParam(path, fromParam));
 	}
 
 	function onSearchSubmit(event: Event) {
@@ -38,6 +43,12 @@
 <svelte:head>
 	<title>{translate(lang, 'catalog.hubTitle')} · Repdraft</title>
 </svelte:head>
+
+{#if fromBuilder}
+	<div class="md:hidden">
+		<ScreenHeader title={translate(lang, 'catalog.hubTitle')} backHref="/builder" />
+	</div>
+{/if}
 
 <section class="catalog-hub content-page content-page--catalog" aria-labelledby="catalog-hub-heading">
 	<header class="page-header catalog-hub-intro">
@@ -51,7 +62,7 @@
 		</form>
 	</div>
 
-	<CatalogHubChips />
+	<CatalogHubChips from={fromParam} />
 
 	{#if error}
 		<EmptyState
@@ -65,6 +76,7 @@
 					{bodyPart}
 					count={data.zoneCounts[bodyPart] ?? 0}
 					coverImage={data.zoneCovers[bodyPart] ?? null}
+					from={fromParam}
 				/>
 			{/each}
 		</div>

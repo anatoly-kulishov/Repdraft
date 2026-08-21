@@ -16,9 +16,9 @@ import {
 	type AddExerciseResult,
 	type ExerciseRestHint
 } from '$lib/domain/workout';
-import type { WorkoutExercise, WorkoutPlan } from '$lib/domain/types';
+import type { WorkoutExercise, WorkoutPlan, WorkoutSession } from '$lib/domain/types';
+import { planDraftFromSession } from '$lib/domain/session';
 import { readDraft, writeDraft } from '$lib/storage/localWorkoutRepository';
-import { exerciseStats } from '$lib/stores/exerciseStats';
 import { writable } from 'svelte/store';
 
 /**
@@ -60,7 +60,8 @@ function createDraftStore() {
 				result = addExercise(plan, exerciseId, hint);
 				return result.plan;
 			});
-			if (result.added) exerciseStats.recordUse(exerciseId);
+			// Do not bump exerciseStats here — it reshuffles catalog sections under the finger.
+			// Uses are recorded when a live session finishes (live store).
 			return result;
 		},
 		removeFromDraft(exerciseId: string) {
@@ -107,6 +108,9 @@ function createDraftStore() {
 				...plan,
 				exercises: plan.exercises.map((ex) => ({ ...ex }))
 			});
+		},
+		loadSessionIntoDraft(session: WorkoutSession) {
+			set(planDraftFromSession(session));
 		}
 	};
 }

@@ -4,6 +4,7 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import { WORKOUTS_HISTORY_HREF } from '$lib/domain/catalogLinks';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import {
@@ -18,8 +19,10 @@
 	import { formatDurationMs, formatLongDate } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { draft } from '$lib/stores/draft';
 	import { live } from '$lib/stores/live';
 	import { toasts } from '$lib/stores/toasts';
+	import { get } from 'svelte/store';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { ChevronRight, Plus, Trash2 } from '@lucide/svelte';
@@ -44,6 +47,7 @@
 	let deleting = $state(false);
 	let editing = $state(false);
 	let savingEdit = $state(false);
+	let sendingToBuilder = $state(false);
 	let editSession = $state<WorkoutSession | null>(null);
 	let editDraft = $state<Record<string, { w: string; r: string }>>({});
 	let fromPath = $derived($page.url.pathname);
@@ -78,7 +82,7 @@
 		try {
 			await live.removeFromHistory(id);
 			toasts.show(translate(lang, 'workouts.sessionDeleted'), 'info');
-			void goto('/workouts');
+			void goto(WORKOUTS_HISTORY_HREF, { replaceState: true });
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'workouts.sessionDeleteFail'), 'error');
 			deleting = false;
@@ -207,6 +211,25 @@
 			savingEdit = false;
 		}
 	}
+
+	function onToBuilder() {
+		if (!session || sendingToBuilder || editing) return;
+		const currentDraft = get(draft);
+		if (
+			currentDraft.exercises.length > 0 &&
+			!confirm(translate(lang, 'workouts.confirmReplaceDraft'))
+		) {
+			return;
+		}
+		sendingToBuilder = true;
+		try {
+			draft.loadSessionIntoDraft(session);
+			toasts.show(translate(lang, 'workouts.toBuilderToast'), 'success');
+			void goto('/builder');
+		} finally {
+			sendingToBuilder = false;
+		}
+	}
 </script>
 
 {#snippet historyDetailActions()}
@@ -215,11 +238,13 @@
 		{savingEdit}
 		{deleting}
 		{loading}
+		{sendingToBuilder}
 		canEdit={!!session}
 		onSave={onSaveEdit}
 		onCancel={cancelEdit}
 		onEdit={startEdit}
 		onDelete={onDeleteSession}
+		onToBuilder={onToBuilder}
 	/>
 {/snippet}
 
@@ -235,7 +260,7 @@
 	<EmptyState
 		title={translate(lang, 'live.noPlan')}
 		description={translate(lang, 'workouts.emptyDesc')}
-		actionHref="/workouts"
+		actionHref={WORKOUTS_HISTORY_HREF}
 		actionLabel={translate(lang, 'nav.workouts')}
 	/>
 {:else}
@@ -243,26 +268,16 @@
 		<div class="md:hidden">
 			<ScreenHeader
 				title={session.planName}
-				backHref="/workouts"
+				backHref={WORKOUTS_HISTORY_HREF}
 				actions={historyDetailActions}
 			/>
 		</div>
 		<div class="subroute-desktop-head hidden md:block">
-			<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />
+			<SubrouteBack href={WORKOUTS_HISTORY_HREF} label={translate(lang, 'builder.backWorkouts')} />
 			<div class="history-detail__title-row">
 				<h1 class="page-title">{session.planName}</h1>
 				<div class="history-detail__actions">
-					<HistoryDetailToolbar
-						{editing}
-						{savingEdit}
-						{deleting}
-						{loading}
-						canEdit={!!session}
-						onSave={onSaveEdit}
-						onCancel={cancelEdit}
-						onEdit={startEdit}
-						onDelete={onDeleteSession}
-					/>
+					{@render historyDetailActions()}
 				</div>
 			</div>
 		</div>

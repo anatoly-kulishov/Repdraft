@@ -9,7 +9,8 @@
 	let {
 		lang,
 		finishing,
-		canGoNext,
+		hasNextExercise,
+		currentExerciseComplete = false,
 		onNext,
 		onFinish,
 		onDiscard,
@@ -23,7 +24,10 @@
 	}: {
 		lang: AppLocale;
 		finishing: boolean;
-		canGoNext: boolean;
+		/** Another exercise exists after the current one. */
+		hasNextExercise: boolean;
+		/** All sets on the current exercise are logged — Next becomes primary. */
+		currentExerciseComplete?: boolean;
 		onNext: () => void;
 		onFinish: () => void;
 		onDiscard: () => void;
@@ -38,6 +42,9 @@
 	} = $props();
 
 	let showRest = $derived(restLeft > 0 && Boolean(onRestMinus && onRestPlus && onRestSkip));
+	/** Primary CTA = Next only after this exercise is done; else Finish on last exercise. */
+	let nextIsPrimary = $derived(hasNextExercise && currentExerciseComplete);
+	let showFinish = $derived(!hasNextExercise);
 </script>
 
 {#snippet finishPrimary()}
@@ -57,6 +64,20 @@
 			<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
 			{translate(lang, 'live.finish')}
 		{/if}
+	</button>
+{/snippet}
+
+{#snippet nextButton(primary: boolean)}
+	<button
+		type="button"
+		class="{primary ? 'btn-primary' : 'btn-secondary'} {layout === 'mobile'
+			? 'btn-block min-h-12'
+			: 'inline-flex min-h-11'} items-center justify-center gap-2"
+		disabled={finishing}
+		onclick={onNext}
+	>
+		{translate(lang, 'live.nextExercise')}
+		<LucideIcon icon={ChevronRight} size={ICON_PRIMARY} />
 	</button>
 {/snippet}
 
@@ -101,7 +122,7 @@
 		>
 			{translate(lang, 'live.restPlus30')}
 		</button>
-		<button type="button" class="btn-secondary live-rest__skip" onclick={() => onRestSkip?.()}>
+		<button type="button" class="btn-link live-rest__skip" onclick={() => onRestSkip?.()}>
 			{translate(lang, 'live.skipRest')}
 		</button>
 	</div>
@@ -112,16 +133,11 @@
 		{#if showRest}
 			{@render restStrip()}
 		{/if}
-		{#if canGoNext}
-			<button
-				type="button"
-				class="btn-primary inline-flex min-h-11 items-center gap-2"
-				disabled={finishing}
-				onclick={onNext}
-			>
-				{translate(lang, 'live.nextExercise')}
-				<LucideIcon icon={ChevronRight} size={ICON_PRIMARY} />
-			</button>
+		{#if nextIsPrimary}
+			{@render nextButton(true)}
+			{@render discardLink()}
+		{:else if hasNextExercise}
+			{@render nextButton(false)}
 			{@render discardLink()}
 		{:else}
 			{@render finishPrimary()}
@@ -130,24 +146,19 @@
 	</footer>
 {:else}
 	<div
-		class="live-sticky-actions sticky-actions lg:hidden"
-		class:live-sticky-actions--end={!canGoNext}
+		class="live-sticky-actions sticky-actions"
+		class:live-sticky-actions--end={showFinish}
 		class:live-sticky-actions--rest={showRest}
 	>
 		{#if showRest}
 			{@render restStrip()}
 		{/if}
 		<div class="sticky-actions__inner">
-			{#if canGoNext}
-				<button
-					type="button"
-					class="btn-primary btn-block min-h-12 gap-2"
-					disabled={finishing}
-					onclick={onNext}
-				>
-					{translate(lang, 'live.nextExercise')}
-					<LucideIcon icon={ChevronRight} size={ICON_PRIMARY} />
-				</button>
+			{#if nextIsPrimary}
+				{@render nextButton(true)}
+				{@render discardLink()}
+			{:else if hasNextExercise}
+				{@render nextButton(false)}
 				{@render discardLink()}
 			{:else}
 				{@render finishPrimary()}

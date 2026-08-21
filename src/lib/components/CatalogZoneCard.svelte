@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { withFromParam } from '$lib/domain/catalogLinks';
 	import { labelCatalogZone } from '$lib/domain/catalogLinks';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -6,16 +7,19 @@
 	let {
 		bodyPart,
 		count = 0,
-		coverImage = null as string | null
+		coverImage = null as string | null,
+		from = null as string | null
 	}: {
 		bodyPart: string;
 		count?: number;
 		coverImage?: string | null;
+		/** Builder return path, e.g. `/builder`. */
+		from?: string | null;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
 	let label = $derived(labelCatalogZone(bodyPart, lang));
-	let href = $derived(`/catalog/${encodeURIComponent(bodyPart)}`);
+	let href = $derived(withFromParam(`/catalog/${encodeURIComponent(bodyPart)}`, from));
 </script>
 
 <a {href} class="zone-card zone-card--hub">
