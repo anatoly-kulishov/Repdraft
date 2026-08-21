@@ -102,6 +102,9 @@ export const BUILDER_ADD_EXERCISE_HREF = '/exercises?from=%2Fbuilder';
 /** Start a blank draft (clears leftover name/exercises from a previous edit). */
 export const BUILDER_NEW_HREF = '/builder?new=1';
 
+export const WORKOUTS_HREF = '/workouts';
+export const WORKOUTS_HISTORY_HREF = '/workouts?tab=history';
+
 export function isBuilderReturnPath(from: string | null | undefined): boolean {
 	return from === '/builder' || Boolean(from?.startsWith('/builder?'));
 }

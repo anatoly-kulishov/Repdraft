@@ -9,7 +9,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
-	import { BUILDER_ADD_EXERCISE_HREF } from '$lib/domain/catalogLinks';
+	import { BUILDER_ADD_EXERCISE_HREF, WORKOUTS_HREF } from '$lib/domain/catalogLinks';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { altGroupMemberRole, groupMemberRole } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
@@ -62,7 +62,7 @@
 			draft.resetDraft();
 			selectedIds = [];
 			toasts.show(translate(lang, 'builder.savedToast'), 'success');
-			await goto('/workouts');
+			await goto(WORKOUTS_HREF, { replaceState: true });
 		} catch (err) {
 			toasts.show(err instanceof Error ? err.message : translate(lang, 'builder.saveFail'), 'error');
 		} finally {

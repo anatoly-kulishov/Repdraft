@@ -138,7 +138,7 @@
 				if (session) {
 					toasts.show(translate(lang, 'auth.signinToast'), 'success');
 					redirected = true;
-					await goto(nextPath);
+					await goto(nextPath, { replaceState: true });
 					return;
 				}
 				toasts.show(translate(lang, 'auth.signupToast'), 'success');
@@ -147,7 +147,7 @@
 				await auth.signIn(email.trim(), password);
 				toasts.show(translate(lang, 'auth.signinToast'), 'success');
 				redirected = true;
-				await goto(nextPath);
+				await goto(nextPath, { replaceState: true });
 			}
 		} catch (err) {
 			const text = mapErr(err);
@@ -216,7 +216,7 @@
 			password = '';
 			passwordConfirm = '';
 			redirected = true;
-			await goto(nextPath);
+			await goto(nextPath, { replaceState: true });
 		} catch (err) {
 			const text = mapErr(err);
 			message = text;

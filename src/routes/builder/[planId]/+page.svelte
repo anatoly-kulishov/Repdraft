@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { browser } from '$app/environment';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import { WORKOUTS_HREF } from '$lib/domain/catalogLinks';
 	import { translate } from '$lib/i18n/messages';
 	import { draft } from '$lib/stores/draft';
 	import { plans } from '$lib/stores/plans';
@@ -14,7 +15,7 @@
 		if (!browser) return;
 		const id = $page.params.planId;
 		if (!id) {
-			goto('/workouts');
+			void goto(WORKOUTS_HREF, { replaceState: true });
 			return;
 		}
 
@@ -22,11 +23,11 @@
 		void plans.getPlan(id).then((plan) => {
 			if (cancelled) return;
 			if (!plan) {
-				goto('/workouts');
+				void goto(WORKOUTS_HREF, { replaceState: true });
 				return;
 			}
 			draft.loadPlanIntoDraft(plan);
-			goto('/builder');
+			void goto('/builder', { replaceState: true });
 		});
 
 		return () => {

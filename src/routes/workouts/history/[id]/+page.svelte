@@ -4,6 +4,7 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import { WORKOUTS_HISTORY_HREF } from '$lib/domain/catalogLinks';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import {
@@ -81,7 +82,7 @@
 		try {
 			await live.removeFromHistory(id);
 			toasts.show(translate(lang, 'workouts.sessionDeleted'), 'info');
-			void goto('/workouts');
+			void goto(WORKOUTS_HISTORY_HREF, { replaceState: true });
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'workouts.sessionDeleteFail'), 'error');
 			deleting = false;
@@ -259,7 +260,7 @@
 	<EmptyState
 		title={translate(lang, 'live.noPlan')}
 		description={translate(lang, 'workouts.emptyDesc')}
-		actionHref="/workouts"
+		actionHref={WORKOUTS_HISTORY_HREF}
 		actionLabel={translate(lang, 'nav.workouts')}
 	/>
 {:else}
@@ -267,12 +268,12 @@
 		<div class="md:hidden">
 			<ScreenHeader
 				title={session.planName}
-				backHref="/workouts"
+				backHref={WORKOUTS_HISTORY_HREF}
 				actions={historyDetailActions}
 			/>
 		</div>
 		<div class="subroute-desktop-head hidden md:block">
-			<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />
+			<SubrouteBack href={WORKOUTS_HISTORY_HREF} label={translate(lang, 'builder.backWorkouts')} />
 			<div class="history-detail__title-row">
 				<h1 class="page-title">{session.planName}</h1>
 				<div class="history-detail__actions">

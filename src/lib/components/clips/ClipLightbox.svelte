@@ -45,7 +45,7 @@
 		if (e.target === e.currentTarget) onClose();
 	}}
 >
-	<div class="clip-lightbox__panel panel w-[min(100%,24rem)] max-h-[90vh] overflow-auto !rounded-2xl !p-0 shadow-xl">
+	<div class="clip-lightbox__panel panel w-[min(100%,24rem)] max-h-[90vh] overflow-auto !rounded-2xl !p-0">
 		<div class="relative aspect-square w-full overflow-hidden bg-[var(--color-surface-muted)]">
 			{#if !ready && !failed}
 				<div class="feed-skel absolute inset-0" aria-hidden="true"></div>
