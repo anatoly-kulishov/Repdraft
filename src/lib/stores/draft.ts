@@ -16,7 +16,8 @@ import {
 	type AddExerciseResult,
 	type ExerciseRestHint
 } from '$lib/domain/workout';
-import type { WorkoutExercise, WorkoutPlan } from '$lib/domain/types';
+import type { WorkoutExercise, WorkoutPlan, WorkoutSession } from '$lib/domain/types';
+import { planDraftFromSession } from '$lib/domain/session';
 import { readDraft, writeDraft } from '$lib/storage/localWorkoutRepository';
 import { exerciseStats } from '$lib/stores/exerciseStats';
 import { writable } from 'svelte/store';
@@ -107,6 +108,9 @@ function createDraftStore() {
 				...plan,
 				exercises: plan.exercises.map((ex) => ({ ...ex }))
 			});
+		},
+		loadSessionIntoDraft(session: WorkoutSession) {
+			set(planDraftFromSession(session));
 		}
 	};
 }

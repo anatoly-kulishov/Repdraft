@@ -105,13 +105,17 @@
 		if (left > restTotalSec) restTotalSec = left;
 	});
 	let restPct = $derived(restTotalSec > 0 ? (restLeft / restTotalSec) * 100 : 0);
-	let canGoNext = $derived.by(() => {
+	let hasNextExercise = $derived.by(() => {
 		if (!session) return false;
 		if (isSessionFullyLogged(session)) return false;
 		const visible = visibleSessionExerciseIndices(session);
 		const pos = visible.indexOf(selectedExerciseIndex);
 		if (pos >= 0) return pos < visible.length - 1;
 		return visible.some((i) => i > selectedExerciseIndex);
+	});
+	let currentExerciseComplete = $derived.by(() => {
+		const ex = session?.exercises[selectedExerciseIndex];
+		return Boolean(ex && ex.sets.length > 0 && ex.sets.every((s) => s.completed));
 	});
 	let sessionComplete = $derived(session != null && isSessionFullyLogged(session));
 	let slotProgress = $derived.by(() => {
@@ -659,7 +663,8 @@
 				<LiveSessionActions
 					{lang}
 					{finishing}
-					{canGoNext}
+					{hasNextExercise}
+					{currentExerciseComplete}
 					layout="desktop"
 					onNext={goNextExercise}
 					onFinish={() => void onFinish()}
@@ -750,7 +755,8 @@
 		<LiveSessionActions
 			{lang}
 			{finishing}
-			{canGoNext}
+			{hasNextExercise}
+			{currentExerciseComplete}
 			layout="mobile"
 			onNext={goNextExercise}
 			onFinish={() => void onFinish()}
