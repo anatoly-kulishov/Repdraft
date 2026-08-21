@@ -28,7 +28,6 @@
 	--tabbar-float-gap: 0.5rem;
 	--sidebar-w: 13.25rem;
 	--sticky-actions-h: 4.5rem;
-	/* draft-dock: bottom offset 0.65 + ~2.9 height + 0.55 gap above */
 	--draft-dock-clearance: 3.75rem;
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 	--safe-top: env(safe-area-inset-top, 0px);
@@ -95,7 +94,6 @@
 		--page-content-catalog: 52rem;
 		--page-content-home: 60rem;
 		--page-content-exercise: 72rem;
-		--draft-dock-clearance: 0rem;
 	}
 }
 
@@ -107,6 +105,7 @@
 		--page-content-catalog: 72rem;
 		--page-content-home: 64rem;
 		--page-content-exercise: 76rem;
+		--draft-dock-clearance: 0rem;
 	}
 
 	.home-page.content-page {
@@ -260,7 +259,7 @@ html[data-theme='light'] {
 	padding-bottom: calc(var(--tabbar-h) + var(--tabbar-float-gap) + var(--safe-bottom));
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
 	.shell-main {
 		padding-bottom: calc(var(--mobile-chrome-bottom) + var(--page-pad-y));
 	}
@@ -270,6 +269,11 @@ html[data-theme='light'] {
 		padding-bottom: calc(
 			var(--mobile-chrome-bottom) + var(--draft-dock-clearance) + var(--page-pad-y)
 		);
+	}
+
+	/* Workouts: draft stacks above Create FAB (~3.5 + 0.75 + 3 + pads). */
+	body:has(.workouts-fab:not(.workouts-fab--hidden)):has(.draft-dock) {
+		--draft-dock-clearance: 7.75rem;
 	}
 
 	.shell-footer-pad {
@@ -337,7 +341,7 @@ html[data-theme='light'] {
 	gap: 0.75rem;
 }
 
-@media (min-width: 768px) and (min-height: 560px) {
+@media (min-width: 1024px) and (min-height: 560px) {
 	.app-shell {
 		flex-direction: row;
 	}
@@ -360,7 +364,7 @@ html[data-theme='light'] {
 	}
 }
 
-@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
 	.app-shell {
 		flex-direction: row;
 	}
@@ -661,7 +665,7 @@ body {
 }
 
 /* One UI / Android 15: never let a 0 inset tuck chrome under the gesture or 3-button bar. */
-@media (pointer: coarse) and (max-width: 767px) {
+@media (pointer: coarse) and (max-width: 1023px) {
 	:root {
 		--safe-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
 	}
@@ -936,7 +940,7 @@ select {
 @media (min-width: 768px) {
 	.content-page {
 		max-width: var(--page-content-max);
-		margin-inline: 0;
+		margin-inline: auto;
 	}
 
 	.content-page--narrow {
@@ -960,11 +964,12 @@ select {
 	}
 
 	.page-container {
-		margin-inline: 0;
+		margin-inline: auto;
 	}
 
 	.sticky-actions__inner {
 		max-width: var(--page-content-max);
+		margin-inline: auto;
 	}
 
 	.content-page--narrow + .sticky-actions .sticky-actions__inner,
@@ -1915,7 +1920,7 @@ button:focus-visible {
 
 @media (min-width: 768px) {
 	.content-page--catalog .catalog-grid {
-		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 	}
 }
 
@@ -2333,6 +2338,53 @@ html[data-theme='light'] .exercise-card-bookmark.is-active:not(.exercise-card-bo
 		height: 48px;
 		min-width: 48px;
 		min-height: 48px;
+	}
+}
+
+/*
+ * Tablet+ catalog grid: cards are small (4–6 cols). Phone keeps 48px for coarse;
+ * here shrink the visible control and expand hit with ::after so thumbs still work.
+ */
+@media (min-width: 768px) {
+	.catalog-grid .exercise-card-add:not(.exercise-card-add--inline) {
+		position: absolute;
+		width: 2.25rem;
+		height: 2.25rem;
+		min-width: 2.25rem;
+		min-height: 2.25rem;
+		right: 0.4rem;
+		bottom: 0.4rem;
+		border-radius: 0.5rem;
+	}
+
+	.catalog-grid .exercise-card-add:not(.exercise-card-add--inline)::after {
+		content: '';
+		position: absolute;
+		inset: -0.55rem;
+	}
+
+	.catalog-grid .exercise-card-add:not(.exercise-card-add--inline) .exercise-card-add-icon {
+		position: relative;
+		z-index: 1;
+		width: 0.8rem;
+		height: 0.8rem;
+	}
+}
+
+@media (min-width: 1024px) {
+	.catalog-grid .exercise-card-add:not(.exercise-card-add--inline) {
+		width: 2rem;
+		height: 2rem;
+		min-width: 2rem;
+		min-height: 2rem;
+		right: 0.35rem;
+		bottom: 0.35rem;
+		border-radius: 0.45rem;
+	}
+
+	.catalog-grid .exercise-card-add:not(.exercise-card-add--inline) .exercise-card-add-icon {
+		width: 0.75rem;
+		height: 0.75rem;
 	}
 }
 
@@ -2967,15 +3019,15 @@ body:has(.summary-page__done-sticky) {
 }
 
 /*
- * Live sticky = primary CTA + discard (min 48px) + chrome pads (~115px).
+ * Live sticky = primary CTA + discard (min 48px) + chrome pads.
  * Keep --sticky-actions-h ≥ measured bar so .pb-mobile-actions clears “Ещё подход”.
  */
 body:has(.live-sticky-actions) {
-	--sticky-actions-h: 8rem;
+	--sticky-actions-h: 6.75rem;
 }
 
 body:has(.live-sticky-actions--end) {
-	--sticky-actions-h: 8rem;
+	--sticky-actions-h: 6.75rem;
 }
 
 .sticky-actions--stack {
@@ -3024,8 +3076,8 @@ body:has(.sticky-actions) .draft-dock {
 	bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.55rem);
 }
 
-/* Phones: icon FAB + count badge — stays clear of titles / tabbar. */
-@media (max-width: 767px) {
+/* Phones + tablet (< sidebar): icon FAB + count badge — stays clear of titles / tabbar. */
+@media (max-width: 1023px) {
 	.draft-dock {
 		left: auto;
 		right: max(0.75rem, var(--safe-right));
@@ -3063,11 +3115,13 @@ body:has(.sticky-actions) .draft-dock {
 	}
 
 	body:has(.workouts-fab:not(.workouts-fab--hidden)) .draft-dock {
-		right: calc(max(0.75rem, var(--safe-right)) + 4rem);
+		/* Stack above Create FAB — side-by-side left ~4px gap (fat-finger). */
+		right: max(1rem, var(--safe-right));
+		bottom: calc(var(--mobile-chrome-bottom) + 0.85rem + 3.5rem + 0.75rem);
 	}
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
 	.draft-dock,
 	body:has(.sticky-actions) .draft-dock {
 		display: none;
@@ -3186,8 +3240,8 @@ body:has(.sticky-actions) .draft-dock {
 	}
 }
 
-/* FO-inspired shell — catalog sub-routes hide app header on narrow viewports only. */
-@media (max-width: 767px) {
+/* FO-inspired shell — catalog sub-routes hide app header on phone+tablet (tabbar era). */
+@media (max-width: 1023px) {
 	.shell-header-mobile-hidden {
 		display: none;
 	}
@@ -4952,6 +5006,10 @@ html[data-theme='dark'] .zone-card__media {
 	margin: 1.35rem 0 0;
 }
 
+.summary-stats--with-volume {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .summary-stat {
 	display: flex;
 	flex-direction: column;
@@ -4975,6 +5033,10 @@ html[data-theme='dark'] .zone-card__media {
 
 .summary-stat:nth-child(3) {
 	animation-delay: 0.14s;
+}
+
+.summary-stat:nth-child(4) {
+	animation-delay: 0.21s;
 }
 
 .summary-stat__label {
@@ -5131,8 +5193,8 @@ html[data-theme='dark'] .zone-card__media {
 	}
 }
 
-@media (max-width: 767px) {
-	/* ScreenHeader already carries the title on small screens. */
+@media (max-width: 1023px) {
+	/* ScreenHeader already carries the title on phone + tablet. */
 	.summary-hero__title {
 		position: absolute;
 		width: 1px;
@@ -5257,15 +5319,15 @@ html[data-theme='dark'] .zone-card__media {
 
 /* Rest sits inside sticky / desktop actions — one chrome, no floating overlay. */
 .live-rest--sticky {
-	margin: 0 0 0.35rem;
-	padding: 0.15rem 0 0.35rem;
+	margin: 0 0 0.2rem;
+	padding: 0.05rem 0 0.25rem;
 	border: none;
 	border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
 	border-radius: 0;
 	background: transparent;
 	box-shadow: none;
 	animation: none;
-	gap: 0.25rem;
+	gap: 0.2rem;
 }
 
 .live-desktop-actions .live-rest--sticky {
@@ -5273,13 +5335,13 @@ html[data-theme='dark'] .zone-card__media {
 	width: 100%;
 }
 
-/* Rest + CTA: keep thumb zone clear (~rest row 48 + CTA 48 + discard + pads). */
+/* Rest + CTA: one strip + CTA + discard — keep thumb zone clear without eating the set log. */
 body:has(.live-sticky-actions--rest) {
-	--sticky-actions-h: 9.25rem;
+	--sticky-actions-h: 8rem;
 }
 
 body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
-	--sticky-actions-h: 9.25rem;
+	--sticky-actions-h: 8rem;
 }
 
 @media (max-width: 1023px) {
@@ -5580,7 +5642,7 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 .live-rest-value {
 	display: block;
 	margin: 0;
-	font-size: 1.05rem;
+	font-size: 1.125rem;
 	font-weight: 700;
 	font-variant-numeric: tabular-nums;
 	line-height: 1;
@@ -5852,7 +5914,7 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 }
 
 .live-panel-meta {
-	margin: -0.35rem 0 0.35rem;
+	margin: 0.2rem 0 0;
 	font-size: 0.8125rem;
 	color: var(--color-muted);
 }
@@ -5865,11 +5927,88 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 }
 
 .live-panel-title {
-	margin: 0 0 0.55rem;
+	margin: 0;
 	font-size: 1.0625rem;
 	font-weight: 600;
 	line-height: 1.3;
 	color: var(--color-ink);
+}
+
+.live-panel-head {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.65rem;
+	margin: 0 0 0.55rem;
+}
+
+.live-panel-head__copy {
+	flex: 1;
+	min-width: 0;
+}
+
+.live-panel-thumb {
+	box-sizing: border-box;
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 3rem;
+	height: 3rem;
+	min-width: 3rem;
+	min-height: 3rem;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.live-panel-thumb img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.live-panel-title--tap {
+	display: block;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	text-align: left;
+	font: inherit;
+	font-size: 1.0625rem;
+	font-weight: 600;
+	line-height: 1.3;
+	color: var(--color-ink);
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.live-panel-title--tap:hover {
+	color: var(--color-accent);
+}
+
+.live-panel-swap {
+	box-sizing: border-box;
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 3rem;
+	height: 3rem;
+	min-width: 3rem;
+	min-height: 3rem;
+	margin: 0;
+	padding: 0;
+	color: var(--color-muted);
+}
+
+.live-panel-swap:hover {
+	color: var(--color-accent);
 }
 
 .live-exercise-step {
@@ -6618,17 +6757,8 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 	color: var(--color-accent);
 }
 
-.live-set-done-btn {
-	display: flex;
-	box-sizing: border-box;
-	height: 3rem;
-	width: 3rem;
-	min-width: 3rem;
-	min-height: 3rem;
-	max-width: 3rem;
-	align-items: center;
-	justify-content: center;
-	padding: 0;
+.live-set-row.is-current .live-set-done-btn.btn-primary {
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 35%, transparent);
 }
 
 @media (min-width: 1024px) {
@@ -6650,8 +6780,20 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 .live-sticky-actions .sticky-actions__inner {
 	display: flex;
 	flex-direction: column;
-	gap: 0.35rem;
+	gap: 0.2rem;
 	align-items: stretch;
+}
+
+.live-session-next--demoted {
+	border: 1px solid color-mix(in srgb, var(--color-border) 90%, transparent);
+	color: var(--color-muted);
+	font-weight: 600;
+	background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+}
+
+.live-session-next--demoted:hover:not(:disabled) {
+	color: var(--color-ink);
+	border-color: var(--color-border);
 }
 
 .live-session-discard {
@@ -6757,11 +6899,12 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 
 .exercise-technique-sheet__img {
 	display: block;
+	width: 100%;
+	height: 100%;
 	max-width: 100%;
 	max-height: 100%;
-	width: auto;
-	height: auto;
 	object-fit: contain;
+	object-position: center center;
 }
 
 @media (min-width: 1024px) {
@@ -6772,11 +6915,28 @@ body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
 	}
 }
 
-/* Mobile: media lightboxes sit in the thumb zone like sheets. */
+/*
+ * Technique preview: vertically centered on phone/tablet (clear of tabbar via padding).
+ */
 @media (max-width: 1023px) {
-	.clip-lightbox,
-	.exercise-media-overlay {
+	.bottom-sheet.bottom-sheet--raised {
+		align-items: center;
+		justify-content: center;
+		padding-top: max(1rem, var(--safe-top));
+		padding-bottom: calc(var(--mobile-chrome-bottom, 0px) + 1rem);
+	}
+}
+
+/* Mobile: exercise GIF lightbox centered; clip sheets stay thumb-zone. */
+@media (max-width: 1023px) {
+	.clip-lightbox {
 		align-items: flex-end !important;
+		padding-bottom: calc(var(--mobile-chrome-bottom, 0px) + 1rem);
+	}
+
+	.exercise-media-overlay {
+		align-items: center !important;
+		padding-top: max(1rem, var(--safe-top));
 		padding-bottom: calc(var(--mobile-chrome-bottom, 0px) + 1rem);
 	}
 
@@ -7420,11 +7580,18 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	display: none !important;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
 	.workouts-page {
 		padding-bottom: 4.75rem;
 	}
 
+	/* Draft dock stacks above FAB — keep last plan card clear of both. */
+	body:has(.workouts-fab:not(.workouts-fab--hidden)):has(.draft-dock) .workouts-page {
+		padding-bottom: 8.25rem;
+	}
+}
+
+@media (max-width: 767px) {
 	.workouts-page__header {
 		flex-direction: column;
 		align-items: stretch;
@@ -7456,6 +7623,14 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 		max-width: 18rem;
 	}
 
+	.workouts-page__search {
+		width: 100%;
+		max-width: none;
+		margin-bottom: 1rem;
+	}
+}
+
+@media (min-width: 1024px) {
 	.workouts-page__create {
 		display: inline-flex;
 		align-items: center;
@@ -7463,12 +7638,6 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 
 	.workouts-fab {
 		display: none;
-	}
-
-	.workouts-page__search {
-		width: 100%;
-		max-width: none;
-		margin-bottom: 1rem;
 	}
 }
 
@@ -7571,6 +7740,14 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 .catalog-filter-chip:hover {
 	border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
 	color: var(--color-ink);
+}
+
+@media (min-width: 768px) {
+	.catalog-filter-chip {
+		min-width: 2.35rem;
+		min-height: 2.35rem;
+		padding: 0.35rem 0.75rem;
+	}
 }
 
 .catalog-filter-chip:focus-visible {
@@ -7746,12 +7923,19 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 .records-list-card {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) auto;
-	align-items: center;
+	align-items: start;
 	min-width: 0;
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-panel);
 	background: var(--color-surface);
 	box-shadow: var(--shadow-panel);
+}
+
+.records-list-body {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	min-width: 0;
 }
 
 .records-list-main {
@@ -7763,6 +7947,60 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	padding: 0.45rem 0.2rem 0.45rem 0.45rem;
 	text-decoration: none;
 	color: inherit;
+}
+
+.records-note-chip {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.35rem;
+	box-sizing: border-box;
+	width: auto;
+	min-width: 0;
+	max-width: calc(100% - (0.45rem + var(--media-native) + 0.65rem) - 0.45rem);
+	margin: 0 0.45rem 0.45rem;
+	margin-left: calc(0.45rem + var(--media-native) + 0.65rem);
+	padding: 0.35rem 0.55rem;
+	border: 1px solid color-mix(in srgb, var(--color-accent) 22%, var(--color-border));
+	border-radius: var(--radius-control);
+	background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+	color: var(--color-accent);
+	text-align: left;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+	min-height: 48px;
+}
+
+.records-note-chip__text {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	line-height: 1.35;
+}
+
+.records-note-chip.is-open .records-note-chip__text {
+	overflow: visible;
+	text-overflow: clip;
+	white-space: normal;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+.records-note-chip__chevron {
+	display: inline-flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	margin-top: 0.1rem;
+	opacity: 0.75;
+	transition: transform 160ms var(--ease-toast);
+}
+
+.records-note-chip.is-open .records-note-chip__chevron {
+	transform: rotate(180deg);
 }
 
 .records-list-meta {
@@ -9421,18 +9659,26 @@ html[data-theme='dark'] .auth-segment--sub.is-active {
 
 .exercise-media-native--lightbox {
 	display: block;
-	width: var(--media-lightbox);
-	height: var(--media-lightbox);
-	max-width: min(88vw, var(--media-lightbox));
-	max-height: min(68dvh, var(--media-lightbox));
+	width: 100%;
+	height: 100%;
+	max-width: 100%;
+	max-height: 100%;
 	object-fit: contain;
+	object-position: center center;
 }
 
 .exercise-media-lightbox {
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: min(88vw, 20rem);
+	aspect-ratio: 1;
 	padding: 0.85rem;
 	border-radius: var(--radius-panel);
 	background: #fff;
 	box-shadow: var(--shadow-overlay);
+	overflow: hidden;
 }
 
 .clip-lightbox {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { exerciseName } from '$lib/domain/exerciseName';
@@ -8,7 +9,7 @@
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
-	import { Check, Plus, Trash2 } from '@lucide/svelte';
+	import { Check, Plus, RefreshCw, Trash2 } from '@lucide/svelte';
 
 	let {
 		session,
@@ -20,6 +21,8 @@
 		selectedGroupPos,
 		nextInSupersetName,
 		activeSetProgress,
+		canSwapAlternative = false,
+		onSwapAlternative = undefined,
 		onWeight,
 		onReps,
 		onComplete,
@@ -39,6 +42,8 @@
 		selectedGroupPos: { current: number; total: number } | null;
 		nextInSupersetName: string | null;
 		activeSetProgress: { current: number; total: number; allDone: boolean } | null;
+		canSwapAlternative?: boolean;
+		onSwapAlternative?: () => void;
 		onWeight: (setIndex: number, value: string) => string;
 		onReps: (setIndex: number, value: string) => string;
 		onComplete: (setIndex: number) => void;
@@ -49,6 +54,9 @@
 		invalidKind?: 'weight' | 'reps' | null;
 		justDoneSetIndex?: number | null;
 	} = $props();
+
+	let techniqueOpen = $state(false);
+	let techniqueSrc = $state('');
 
 	function titleFor(id: string): string {
 		const item = names.get(id);
@@ -91,6 +99,29 @@
 		});
 	}
 
+	function techniqueMediaSrc(imagePath: string): string {
+		return `/${imagePath.replace(/^images\//, 'videos/').replace(/\.jpe?g$/i, '.gif')}`;
+	}
+
+	function openTechnique() {
+		const meta = names.get(exercise.exerciseId);
+		if (!meta) return;
+		techniqueSrc = techniqueMediaSrc(meta.image);
+		techniqueOpen = true;
+	}
+
+	function dismissTechnique() {
+		techniqueOpen = false;
+	}
+
+	function onTechniqueImgError(e: Event) {
+		const img = e.currentTarget as HTMLImageElement;
+		const meta = names.get(exercise.exerciseId);
+		if (meta && img.src.includes('/videos/')) {
+			img.src = `/${meta.image}`;
+		}
+	}
+
 	let canRemoveSet = $derived(exercise.sets.length > 1);
 	let allSetsDone = $derived(
 		exercise.sets.length > 0 && exercise.sets.every((s) => s.completed)
@@ -110,6 +141,8 @@
 	let toggleAllLabel = $derived(
 		translate(lang, allSetsDone ? 'live.undoDoneAll' : 'live.doneAll')
 	);
+	let exerciseMeta = $derived(names.get(exercise.exerciseId) ?? null);
+	let title = $derived(titleFor(exercise.exerciseId));
 
 	function showRemove(setIndex: number): boolean {
 		return canRemoveSet && setIndex === exercise.sets.length - 1;
@@ -147,10 +180,48 @@
 			total: session.exercises.length
 		})}
 	</p>
-	<h2 class="live-panel-title">{titleFor(exercise.exerciseId)}</h2>
-	{#if metaFor(exercise.exerciseId)}
-		<p class="live-panel-meta">{metaFor(exercise.exerciseId)}</p>
-	{/if}
+
+	<div class="live-panel-head">
+		{#if exerciseMeta}
+			<button
+				type="button"
+				class="live-panel-thumb"
+				aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+				onclick={openTechnique}
+			>
+				<img src={`/${exerciseMeta.image}`} alt="" width="48" height="48" decoding="async" />
+			</button>
+		{/if}
+		<div class="live-panel-head__copy">
+			{#if exerciseMeta}
+				<button
+					type="button"
+					class="live-panel-title live-panel-title--tap"
+					aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+					onclick={openTechnique}
+				>
+					{title}
+				</button>
+			{:else}
+				<h2 class="live-panel-title">{title}</h2>
+			{/if}
+			{#if metaFor(exercise.exerciseId)}
+				<p class="live-panel-meta">{metaFor(exercise.exerciseId)}</p>
+			{/if}
+		</div>
+		{#if canSwapAlternative && onSwapAlternative}
+			<button
+				type="button"
+				class="btn-ghost live-panel-swap"
+				aria-label={translate(lang, 'live.swapAlternative')}
+				title={translate(lang, 'live.swapAlternative')}
+				onclick={onSwapAlternative}
+			>
+				<LucideIcon icon={RefreshCw} size={ICON_SMALL} />
+			</button>
+		{/if}
+	</div>
+
 	{#if bodyweight}
 		<p class="live-panel-hint">{translate(lang, 'live.weightBwHint')}</p>
 	{/if}
@@ -249,7 +320,9 @@
 				{:else}
 					<button
 						type="button"
-						class="btn-secondary live-set-done-btn"
+						class="{currentSetIndex === si
+							? 'btn-primary'
+							: 'btn-secondary'} live-set-done-btn"
 						aria-label={translate(lang, 'live.done')}
 						title={translate(lang, 'live.done')}
 						onclick={() => onComplete(si)}
@@ -284,3 +357,31 @@
 		{translate(lang, 'live.addSet')}
 	</button>
 </div>
+
+{#if techniqueOpen && exerciseMeta}
+	<BottomSheet
+		open={techniqueOpen}
+		raised
+		titleId={`live-technique-${exercise.exerciseId}`}
+		onDismiss={dismissTechnique}
+	>
+		<p id={`live-technique-${exercise.exerciseId}`} class="bottom-sheet__title">{title}</p>
+		<p class="bottom-sheet__hint">{labelTarget(exerciseMeta.target, lang)}</p>
+		<div class="exercise-technique-sheet__media media-well">
+			<img
+				src={techniqueSrc}
+				alt=""
+				width="180"
+				height="180"
+				decoding="async"
+				class="exercise-technique-sheet__img"
+				onerror={onTechniqueImgError}
+			/>
+		</div>
+		{#snippet actions()}
+			<button type="button" class="btn-primary min-h-12" onclick={dismissTechnique}>
+				{translate(lang, 'exercise.closeMedia')}
+			</button>
+		{/snippet}
+	</BottomSheet>
+{/if}

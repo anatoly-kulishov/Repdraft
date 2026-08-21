@@ -248,7 +248,7 @@
 					alt=""
 					width="180"
 					height="180"
-					sizes="(min-width: 1024px) 16vw, (min-width: 768px) 22vw, 45vw"
+					sizes="(min-width: 1024px) 16vw, (min-width: 768px) 30vw, 45vw"
 					loading={priority ? 'eager' : 'lazy'}
 					fetchpriority={priority ? 'high' : 'auto'}
 					decoding="async"
@@ -298,6 +298,7 @@
 {#if techniqueOpen}
 	<BottomSheet
 		open={techniqueOpen}
+		raised
 		titleId={`exercise-technique-${exercise.id}`}
 		onDismiss={dismissTechnique}
 	>
