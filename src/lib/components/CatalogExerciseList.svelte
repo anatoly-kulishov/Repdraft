@@ -95,25 +95,16 @@
 	let catalog = $derived(indexReady ? items : []);
 	let statsMap = $derived($exerciseStats);
 	let catalogFiltered = $derived.by(() => {
+		const allowed = zoneLocked && zoneBodyParts.length > 0 ? new Set(zoneBodyParts) : null;
+		const scopedCatalog = allowed
+			? catalog.filter((item) => allowed.has(item.body_part))
+			: catalog;
+		/** Zone already scopes body parts — don't pass a single bodyPart into facets. */
 		const queryFilters =
-			zoneLocked && zoneBodyParts.length > 1
+			allowed != null
 				? { ...filters, bodyPart: 'all' as ExerciseFilters['bodyPart'] }
 				: filters;
-		const { items: base, equipment, targets } = filterCatalogWithFacets(
-			catalog,
-			queryFilters,
-			lang,
-			statsMap
-		);
-		if (zoneLocked && zoneBodyParts.length > 1) {
-			const allowed = new Set(zoneBodyParts);
-			return {
-				items: base.filter((item) => allowed.has(item.body_part)),
-				equipment,
-				targets
-			};
-		}
-		return { items: base, equipment, targets };
+		return filterCatalogWithFacets(scopedCatalog, queryFilters, lang, statsMap);
 	});
 	let equipmentOptions = $derived(catalogFiltered.equipment);
 	let targetOptions = $derived(catalogFiltered.targets);
