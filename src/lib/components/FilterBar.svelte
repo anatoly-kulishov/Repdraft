@@ -1,33 +1,44 @@
 <script lang="ts">
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import SearchInput from '$lib/components/SearchInput.svelte';
-	import { labelBodyPart, labelEquipment, labelTarget } from '$lib/domain/labels.ru';
+	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseFilters } from '$lib/domain/types';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { X } from '@lucide/svelte';
 
 	let {
 		filters = $bindable(),
-		bodyParts,
 		equipment,
 		targets,
 		lockBodyPart = false
 	}: {
 		filters: ExerciseFilters;
-		bodyParts: string[];
 		/** Cascaded: options compatible with current body/target/query. */
 		equipment: string[];
 		/** Cascaded: options compatible with current body/equipment/query. */
 		targets: string[];
-		/** Zone route: body part comes from URL, not the facet control. */
+		/** Zone route: body part comes from URL, not a list facet control. */
 		lockBodyPart?: boolean;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
+	let equipmentSheetOpen = $state(false);
 
 	let activeFilterCount = $derived(
 		(lockBodyPart || filters.bodyPart === 'all' ? 0 : 1) +
 			(filters.equipment !== 'all' ? 1 : 0) +
 			(filters.target !== 'all' ? 1 : 0)
+	);
+
+	let showReset = $derived(activeFilterCount > 0 || filters.query.trim().length > 0);
+
+	let equipmentTriggerLabel = $derived(
+		filters.equipment === 'all'
+			? translate(lang, 'catalog.equipment')
+			: labelEquipment(filters.equipment, lang)
 	);
 
 	function resetFilters() {
@@ -46,11 +57,12 @@
 		};
 	}
 
-	function toggleEquipment(value: string) {
+	function selectEquipment(value: string) {
 		filters = {
 			...filters,
-			equipment: filters.equipment === value ? 'all' : value
+			equipment: value
 		};
+		equipmentSheetOpen = false;
 	}
 </script>
 
@@ -62,18 +74,20 @@
 				debounceMs={150}
 				placeholder={translate(lang, 'catalog.search')}
 			/>
-			{#if activeFilterCount > 0}
+			{#if showReset}
 				<button
 					type="button"
-					class="btn-link catalog-filters-reset min-h-[48px] min-w-[48px]"
+					class="catalog-filters-reset"
 					onclick={resetFilters}
+					aria-label={translate(lang, 'catalog.reset')}
+					title={translate(lang, 'catalog.reset')}
 				>
-					{translate(lang, 'catalog.reset')}
+					<LucideIcon icon={X} size={ICON_BUTTON} />
 				</button>
 			{/if}
 		</div>
 
-		{#if targets.length > 0 || equipment.length > 0}
+		{#if lockBodyPart && targets.length > 0}
 			<div
 				class="catalog-filter-chips"
 				role="group"
@@ -90,33 +104,62 @@
 						{labelTarget(item, lang)}
 					</button>
 				{/each}
-				{#if targets.length > 0 && equipment.length > 0}
-					<span class="catalog-filter-chips__sep" aria-hidden="true"></span>
-				{/if}
-				{#each equipment as item (item)}
-					<button
-						type="button"
-						class="catalog-filter-chip"
-						class:is-active={filters.equipment === item}
-						aria-pressed={filters.equipment === item}
-						onclick={() => toggleEquipment(item)}
-					>
-						{labelEquipment(item, lang)}
-					</button>
-				{/each}
 			</div>
 		{/if}
 
-		{#if !lockBodyPart}
-			<label class="field-label catalog-filters-body">
-				{translate(lang, 'catalog.bodyPart')}
-				<select class="field mt-1 w-full min-h-[48px]" bind:value={filters.bodyPart}>
-					<option value="all">{translate(lang, 'catalog.all')}</option>
-					{#each bodyParts as part (part)}
-						<option value={part}>{labelBodyPart(part, lang)}</option>
-					{/each}
-				</select>
-			</label>
+		{#if equipment.length > 0}
+			<button
+				type="button"
+				class="catalog-filter-equipment-trigger"
+				class:is-active={filters.equipment !== 'all'}
+				aria-haspopup="dialog"
+				aria-expanded={equipmentSheetOpen}
+				onclick={() => {
+					equipmentSheetOpen = true;
+				}}
+			>
+				{equipmentTriggerLabel}
+			</button>
 		{/if}
 	</div>
 </div>
+
+{#if equipmentSheetOpen}
+	<BottomSheet
+		open={equipmentSheetOpen}
+		titleId="catalog-equipment-sheet-title"
+		onDismiss={() => {
+			equipmentSheetOpen = false;
+		}}
+	>
+		<p id="catalog-equipment-sheet-title" class="bottom-sheet__title">
+			{translate(lang, 'catalog.equipment')}
+		</p>
+		<div
+			class="catalog-equipment-sheet-options"
+			role="group"
+			aria-labelledby="catalog-equipment-sheet-title"
+		>
+			<button
+				type="button"
+				class="catalog-equipment-sheet-option"
+				class:is-active={filters.equipment === 'all'}
+				aria-pressed={filters.equipment === 'all'}
+				onclick={() => selectEquipment('all')}
+			>
+				{translate(lang, 'catalog.equipmentAny')}
+			</button>
+			{#each equipment as item (item)}
+				<button
+					type="button"
+					class="catalog-equipment-sheet-option"
+					class:is-active={filters.equipment === item}
+					aria-pressed={filters.equipment === item}
+					onclick={() => selectEquipment(item)}
+				>
+					{labelEquipment(item, lang)}
+				</button>
+			{/each}
+		</div>
+	</BottomSheet>
+{/if}

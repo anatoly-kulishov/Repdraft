@@ -145,8 +145,16 @@
 						onDelete={() => void onRemove(record.exerciseId, recordTitle)}
 					>
 						<div class="records-list-card">
-							<div class="records-list-body">
-								<a class="records-list-main" href={`/exercise/${record.exerciseId}`}>
+							<div
+								class="records-list-body"
+								class:records-list-body--note={Boolean(noteChip)}
+							>
+								<a
+									class="records-list-thumb"
+									href={`/exercise/${record.exerciseId}`}
+									tabindex="-1"
+									aria-hidden="true"
+								>
 									{#if meta}
 										<span class="media-well records-preview__thumb">
 											<img src={`/${meta.image}`} alt="" width="120" height="120" />
@@ -157,7 +165,9 @@
 											aria-hidden="true"
 										></span>
 									{/if}
-									<span class="records-preview__text">
+								</a>
+								<div class="records-list-content">
+									<a class="records-list-text" href={`/exercise/${record.exerciseId}`}>
 										<span class="records-preview__name">{recordTitle}</span>
 										<span class="records-list-meta">
 											{#if liftChip}
@@ -167,25 +177,26 @@
 											{/if}
 											<span class="records-list-date">{formatDate(record.updatedAt)}</span>
 										</span>
-									</span>
-								</a>
-								{#if noteChip}
-									<button
-										type="button"
-										class="records-note-chip"
-										class:is-open={noteOpen}
-										aria-expanded={noteOpen}
-										title={translate(lang, noteOpen ? 'pr.nowCollapse' : 'pr.nowExpand')}
-										onclick={() => {
-											expandedNoteId = noteOpen ? null : record.exerciseId;
-										}}
-									>
-										<span class="records-note-chip__text">{noteChip}</span>
-										<span class="records-note-chip__chevron" aria-hidden="true">
-											<LucideIcon icon={ChevronDown} size={ICON_SMALL} />
-										</span>
-									</button>
-								{/if}
+									</a>
+									{#if noteChip}
+										<button
+											type="button"
+											class="records-note-chip"
+											class:is-open={noteOpen}
+											aria-expanded={noteOpen}
+											aria-label={translate(lang, noteOpen ? 'pr.nowCollapse' : 'pr.nowExpand')}
+											title={translate(lang, noteOpen ? 'pr.nowCollapse' : 'pr.nowExpand')}
+											onclick={() => {
+												expandedNoteId = noteOpen ? null : record.exerciseId;
+											}}
+										>
+											<span class="records-note-chip__text">{noteChip}</span>
+											<span class="records-note-chip__chevron" aria-hidden="true">
+												<LucideIcon icon={ChevronDown} size={ICON_SMALL} />
+											</span>
+										</button>
+									{/if}
+								</div>
 							</div>
 							<button
 								type="button"

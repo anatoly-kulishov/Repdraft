@@ -166,7 +166,9 @@ const ru: Dict = {
 	'catalog.sectionFrequent': 'Часто используемые',
 	'catalog.sectionPopular': 'Популярные в зале',
 	'catalog.sectionAll': 'Все упражнения',
-	'catalog.filterChipsAria': 'Быстрые фильтры',
+	'catalog.filterChipsAria': 'Фильтр по мышце',
+	'catalog.equipment': 'Снаряд',
+	'catalog.equipmentAny': 'Любое',
 	'articles.title': 'Справочник',
 	'articles.lead': 'Короткие гайды: план, техника и первая сессия.',
 	'articles.search': 'Поиск по статьям…',
@@ -658,7 +660,8 @@ const ru: Dict = {
 	'privacy.check5': 'Сроки хранения, бэкапы после erase, возраст 18+',
 	'privacy.check6': 'Форма согласия при регистрации (если требуется); экспорт уже в продукте',
 	'auth.privacyHint': 'Подробнее о данных:',
-	'attr.media': 'Медиа упражнений'
+	'attr.media': 'Медиа упражнений',
+	'attr.versionAria': 'Версия приложения {version}'
 };
 
 const en: Dict = {
@@ -824,7 +827,9 @@ const en: Dict = {
 	'catalog.sectionFrequent': 'Frequently used',
 	'catalog.sectionPopular': 'Popular in the gym',
 	'catalog.sectionAll': 'All exercises',
-	'catalog.filterChipsAria': 'Quick filters',
+	'catalog.filterChipsAria': 'Filter by muscle',
+	'catalog.equipment': 'Equipment',
+	'catalog.equipmentAny': 'Any',
 	'articles.title': 'Guide',
 	'articles.lead': 'Short reads on plans, technique, and your first session.',
 	'articles.search': 'Search articles…',
@@ -1315,7 +1320,8 @@ const en: Dict = {
 	'privacy.check5': 'Retention periods, post-erase backups, 18+ age gate if needed',
 	'privacy.check6': 'Sign-up consent form (if required); export is already in the product',
 	'auth.privacyHint': 'About your data:',
-	'attr.media': 'Exercise media'
+	'attr.media': 'Exercise media',
+	'attr.versionAria': 'App version {version}'
 };
 
 const tables: Record<AppLocale, Dict> = { ru, en };
