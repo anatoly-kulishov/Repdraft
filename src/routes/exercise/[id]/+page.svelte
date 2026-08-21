@@ -163,7 +163,7 @@
 	/>
 {:else}
 	<article class="content-page content-page--exercise exercise-detail-page pb-mobile-actions lg:pb-0">
-		<div class="exercise-detail-page__chrome min-w-0 md:hidden">
+		<div class="exercise-detail-page__chrome min-w-0 lg:hidden">
 			<ScreenHeader {title} {backHref} actions={exerciseHeaderActions} />
 		</div>
 		<div class="exercise-detail-page__chrome catalog-subroute-header">

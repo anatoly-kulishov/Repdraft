@@ -7,7 +7,7 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
-	import { formatPersonalRecord, personalRecordChips } from '$lib/domain/records';
+	import { personalRecordChips } from '$lib/domain/records';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
@@ -17,12 +17,13 @@
 	import { records, recordsReady, recordsSync } from '$lib/stores/records';
 	import { isCloudListUncertain } from '$lib/domain/cloudSync';
 	import { toasts } from '$lib/stores/toasts';
-	import { ArrowLeft, Trophy, Trash2 } from '@lucide/svelte';
+	import { ArrowLeft, ChevronDown, Trophy, Trash2 } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let indexReady = $state(false);
 	let busyId = $state<string | null>(null);
+	let expandedNoteId = $state<string | null>(null);
 	let lang = $derived($resolvedLocale);
 	let title = $derived(translate(lang, 'records.title'));
 	/** Avoid empty-state flash while cloud merge is still in flight (local may be []). */
@@ -77,7 +78,7 @@
 </svelte:head>
 
 <section class="content-page content-page--catalog records-page">
-	<ScreenHeader class="md:hidden" {title} backHref="/exercises" />
+	<ScreenHeader class="lg:hidden" {title} backHref="/exercises" />
 
 	<div class="catalog-subroute-header">
 		<a class="catalog-zone-crumb-link" href="/exercises">
@@ -132,8 +133,10 @@
 				{@const recordTitle = meta
 					? exerciseName(meta, lang)
 					: translate(lang, 'records.fallback', { id: record.exerciseId })}
-				{@const full = formatPersonalRecord(record, lang)}
-				{@const chips = personalRecordChips(record, lang)}
+				{@const chips = personalRecordChips({ ...record, note: '' }, lang)}
+				{@const liftChip = chips[0] ?? ''}
+				{@const noteChip = record.note.trim()}
+				{@const noteOpen = expandedNoteId === record.exerciseId}
 				<li>
 					<SwipeToDelete
 						label={translate(lang, 'records.delete')}
@@ -142,31 +145,48 @@
 						onDelete={() => void onRemove(record.exerciseId, recordTitle)}
 					>
 						<div class="records-list-card">
-							<a class="records-list-main" href={`/exercise/${record.exerciseId}`}>
-								{#if meta}
-									<span class="media-well records-preview__thumb">
-										<img src={`/${meta.image}`} alt="" width="120" height="120" />
+							<div class="records-list-body">
+								<a class="records-list-main" href={`/exercise/${record.exerciseId}`}>
+									{#if meta}
+										<span class="media-well records-preview__thumb">
+											<img src={`/${meta.image}`} alt="" width="120" height="120" />
+										</span>
+									{:else}
+										<span
+											class="media-well records-preview__thumb records-preview__thumb--empty animate-pulse"
+											aria-hidden="true"
+										></span>
+									{/if}
+									<span class="records-preview__text">
+										<span class="records-preview__name">{recordTitle}</span>
+										<span class="records-list-meta">
+											{#if liftChip}
+												<span class="records-preview__chips">
+													<span class="records-preview__chip">{liftChip}</span>
+												</span>
+											{/if}
+											<span class="records-list-date">{formatDate(record.updatedAt)}</span>
+										</span>
 									</span>
-								{:else}
-									<span
-										class="media-well records-preview__thumb records-preview__thumb--empty animate-pulse"
-										aria-hidden="true"
-									></span>
+								</a>
+								{#if noteChip}
+									<button
+										type="button"
+										class="records-note-chip"
+										class:is-open={noteOpen}
+										aria-expanded={noteOpen}
+										title={translate(lang, noteOpen ? 'pr.nowCollapse' : 'pr.nowExpand')}
+										onclick={() => {
+											expandedNoteId = noteOpen ? null : record.exerciseId;
+										}}
+									>
+										<span class="records-note-chip__text">{noteChip}</span>
+										<span class="records-note-chip__chevron" aria-hidden="true">
+											<LucideIcon icon={ChevronDown} size={ICON_SMALL} />
+										</span>
+									</button>
 								{/if}
-								<span class="records-preview__text">
-									<span class="records-preview__name">{recordTitle}</span>
-									<span class="records-list-meta">
-										{#if chips.length > 0}
-											<span class="records-preview__chips" title={full}>
-												{#each chips as chip, i (i)}
-													<span class="records-preview__chip">{chip}</span>
-												{/each}
-											</span>
-										{/if}
-										<span class="records-list-date">{formatDate(record.updatedAt)}</span>
-									</span>
-								</span>
-							</a>
+							</div>
 							<button
 								type="button"
 								class="btn-ghost is-danger records-list-delete"

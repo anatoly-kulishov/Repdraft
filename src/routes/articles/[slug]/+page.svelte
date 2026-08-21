@@ -27,7 +27,7 @@
 </svelte:head>
 
 <article class="content-page content-page--narrow article-page pb-mobile-actions lg:pb-0">
-	<div class="md:hidden">
+	<div class="lg:hidden">
 		<ScreenHeader title={article.title} backHref="/articles" />
 	</div>
 	<div class="subroute-desktop-head hidden md:block">

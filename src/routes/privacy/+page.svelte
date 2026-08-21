@@ -34,7 +34,7 @@
 </svelte:head>
 
 <div class="content-page content-page--narrow privacy-page">
-	<div class="md:hidden">
+	<div class="lg:hidden">
 		<ScreenHeader {title} backHref="/auth" />
 	</div>
 	<div class="subroute-desktop-head hidden md:block">

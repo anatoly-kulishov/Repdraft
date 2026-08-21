@@ -13,6 +13,7 @@
 		removeLoggedExercise,
 		removeLoggedSet,
 		sessionDurationMs,
+		sessionVolumeKg,
 		updateLoggedSet
 	} from '$lib/domain/session';
 	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
@@ -52,6 +53,7 @@
 	let editDraft = $state<Record<string, { w: string; r: string }>>({});
 	let fromPath = $derived($page.url.pathname);
 	let viewSession = $derived(editing && editSession ? editSession : session);
+	let historyVolumeKg = $derived(viewSession ? sessionVolumeKg(viewSession) : 0);
 
 	onMount(() => {
 		void (async () => {
@@ -265,7 +267,7 @@
 	/>
 {:else}
 	<section class="content-page content-page--narrow soft-enter history-detail">
-		<div class="md:hidden">
+		<div class="lg:hidden">
 			<ScreenHeader
 				title={session.planName}
 				backHref={WORKOUTS_HISTORY_HREF}
@@ -286,7 +288,8 @@
 				sessionDurationMs(session)
 			)} · {translate(lang, 'workouts.historySets', {
 				n: completedSetCount(viewSession ?? session)
-			})}
+			})}{#if historyVolumeKg > 0}
+				{' '}· {Math.round(historyVolumeKg)} kg{/if}
 		</p>
 
 		<ul class="history-exercise-list">
