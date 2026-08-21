@@ -23,10 +23,10 @@
 </svelte:head>
 
 <div class="content-page content-page--catalog">
-	<ScreenHeader class="md:hidden" {title} backHref="/exercises" />
+	<ScreenHeader class="lg:hidden" {title} backHref="/exercises" />
 
 	<section class="articles-hub" aria-labelledby="articles-hub-heading">
-		<p class="page-lead md:hidden">{translate(lang, 'articles.lead')}</p>
+		<p class="page-lead lg:hidden">{translate(lang, 'articles.lead')}</p>
 
 		<div class="catalog-subroute-header">
 			<a class="catalog-zone-crumb-link" href="/exercises">

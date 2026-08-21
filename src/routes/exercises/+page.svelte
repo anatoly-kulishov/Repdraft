@@ -45,7 +45,7 @@
 </svelte:head>
 
 {#if fromBuilder}
-	<div class="md:hidden">
+	<div class="lg:hidden">
 		<ScreenHeader title={translate(lang, 'catalog.hubTitle')} backHref="/builder" />
 	</div>
 {/if}

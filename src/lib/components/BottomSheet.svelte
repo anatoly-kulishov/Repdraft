@@ -7,6 +7,7 @@
 		labelledBy = null,
 		label = null,
 		dismissible = true,
+		raised = false,
 		onDismiss,
 		children,
 		actions = null
@@ -18,6 +19,8 @@
 		/** Fallback when there is no visible title id. */
 		label?: string | null;
 		dismissible?: boolean;
+		/** Vertically center the card (technique GIF) instead of flush to tabbar. */
+		raised?: boolean;
 		onDismiss?: () => void;
 		children: Snippet;
 		actions?: Snippet | null;
@@ -48,6 +51,7 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="bottom-sheet"
+		class:bottom-sheet--raised={raised}
 		role="dialog"
 		aria-modal="true"
 		tabindex="-1"

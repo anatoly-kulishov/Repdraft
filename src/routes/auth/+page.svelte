@@ -341,7 +341,7 @@
 	class="auth-page content-page"
 	class:auth-page--account={accountMode}
 >
-	<div class="md:hidden">
+	<div class="lg:hidden">
 		<ScreenHeader title={translate(lang, 'auth.title')} backHref={nextPath} />
 	</div>
 	<header class="page-header auth-page__header">

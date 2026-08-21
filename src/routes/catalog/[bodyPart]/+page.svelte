@@ -71,7 +71,7 @@
 <div
 	class={`content-page content-page--catalog ${showTargetBrowse ? 'catalog-page--browse' : 'catalog-page--list'}`}
 >
-	<ScreenHeader class="md:hidden" title={headerTitle} {backHref} />
+	<ScreenHeader class="lg:hidden" title={headerTitle} {backHref} />
 
 	<section
 		class={`catalog-zone-shell ${showTargetBrowse ? 'catalog-zone-shell--browse' : 'catalog-zone-shell--list'}`}

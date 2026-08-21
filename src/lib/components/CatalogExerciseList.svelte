@@ -7,14 +7,12 @@
 	import { filterCatalogWithFacets, isBodyPart, isFilterConflict } from '$lib/domain/filters';
 	import { pickFrequent, pickPopular, sortByScore } from '$lib/domain/exerciseScore';
 	import { catalogZoneBodyParts, isCatalogZone } from '$lib/domain/catalogLinks';
-	import { personalRecordChips } from '$lib/domain/records';
 	import type { ExerciseFilters, ExerciseIndexItem } from '$lib/domain/types';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { translate } from '$lib/i18n/messages';
 	import { CATALOG_PAGE_SIZE } from '$lib/stores/catalogUi';
 	import { bookmarks } from '$lib/stores/bookmarks';
 	import { exerciseStats } from '$lib/stores/exerciseStats';
-	import { records } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { browser } from '$app/environment';
@@ -159,9 +157,6 @@
 		indexReady && visibleLimit < (useSections ? allSectionItems.length : visible.length)
 	);
 	let bookmarksLoaded = $state(false);
-	let recordChipsById = $derived(
-		new Map($records.map((r) => [r.exerciseId, personalRecordChips(r, lang)]))
-	);
 	let wideViewport = $state(false);
 	let cardVariant = $derived(
 		listOnMobile
@@ -295,7 +290,6 @@
 				items = [];
 				indexReady = true;
 			});
-		void records.refresh();
 		return () => stopViewportSync?.();
 	});
 
@@ -454,7 +448,6 @@
 						{#each frequentItems as exercise, i (exercise.id)}
 							<ExerciseCard
 								{exercise}
-								recordChips={recordChipsById.get(exercise.id) ?? []}
 								priority={i < 4}
 								variant={cardVariant}
 								{detailFrom}
@@ -472,7 +465,6 @@
 						{#each popularItems as exercise, i (exercise.id)}
 							<ExerciseCard
 								{exercise}
-								recordChips={recordChipsById.get(exercise.id) ?? []}
 								priority={frequentItems.length === 0 && i < 4}
 								variant={cardVariant}
 								{detailFrom}
@@ -494,7 +486,6 @@
 						{#each shownAll as exercise, i (exercise.id)}
 							<ExerciseCard
 								{exercise}
-								recordChips={recordChipsById.get(exercise.id) ?? []}
 								priority={false}
 								variant={cardVariant}
 								{detailFrom}
@@ -523,7 +514,6 @@
 					>
 						<ExerciseCard
 							{exercise}
-							recordChips={recordChipsById.get(exercise.id) ?? []}
 							priority={i < 4}
 							variant={cardVariant}
 							{detailFrom}
@@ -532,7 +522,6 @@
 				{:else}
 					<ExerciseCard
 						{exercise}
-						recordChips={recordChipsById.get(exercise.id) ?? []}
 						priority={i < 4}
 						variant={cardVariant}
 						{detailFrom}
