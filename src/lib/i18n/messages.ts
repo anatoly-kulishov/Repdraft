@@ -285,6 +285,10 @@ const ru: Dict = {
 	'workouts.editSession': 'Редактировать',
 	'workouts.saveEdit': 'Сохранить',
 	'workouts.cancelEdit': 'Отмена',
+	'workouts.toBuilder': 'В конструктор',
+	'workouts.toBuilderToast': 'Сессия открыта в конструкторе',
+	'workouts.confirmReplaceDraft':
+		'В конструкторе уже есть упражнения. Заменить черновик этой сессией?',
 	'workouts.editSessionFail': 'Не удалось сохранить правки истории',
 	'workouts.sessionEdited': 'История обновлена',
 	'workouts.removeExercise': 'Удалить упражнение',
@@ -929,6 +933,10 @@ const en: Dict = {
 	'workouts.editSession': 'Edit',
 	'workouts.saveEdit': 'Save',
 	'workouts.cancelEdit': 'Cancel',
+	'workouts.toBuilder': 'Open in builder',
+	'workouts.toBuilderToast': 'Session loaded in the builder',
+	'workouts.confirmReplaceDraft':
+		'The builder already has exercises. Replace the draft with this session?',
 	'workouts.editSessionFail': 'Could not save history edits',
 	'workouts.sessionEdited': 'History updated',
 	'workouts.removeExercise': 'Remove exercise',
