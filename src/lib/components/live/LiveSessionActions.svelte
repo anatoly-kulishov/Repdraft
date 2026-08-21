@@ -146,7 +146,7 @@
 	</footer>
 {:else}
 	<div
-		class="live-sticky-actions sticky-actions lg:hidden"
+		class="live-sticky-actions sticky-actions"
 		class:live-sticky-actions--end={showFinish}
 		class:live-sticky-actions--rest={showRest}
 	>

@@ -5,7 +5,10 @@ import {
 	sanitizePersonalRecord
 } from '$lib/domain/records';
 import type { PersonalRecord } from '$lib/domain/types';
-import { localRecordRepository } from '$lib/storage/localRecordRepository';
+import {
+	localRecordRepository,
+	replaceAllRecords
+} from '$lib/storage/localRecordRepository';
 import { clearLastSyncedAt } from '$lib/storage/syncMeta';
 import { supabaseRecordRepository } from '$lib/storage/supabaseRecordRepository';
 import type { CloudSyncState } from '$lib/domain/cloudSync';
@@ -37,14 +40,14 @@ function createRecordsStore() {
 			ready.set(true);
 			return;
 		}
-		if (inflight) return inflight;
+		while (inflight) await inflight;
 
 		const wantCloud = opts?.cloud !== false;
 		const forceCloud = opts?.force === true;
 
-		inflight = (async () => {
+		const run = (async () => {
 			try {
-				await refreshLocalCloudList({
+				const result = await refreshLocalCloudList({
 					localList: () => localRecordRepository.list(),
 					cloudList: () => supabaseRecordRepository.list(),
 					merge: mergePersonalRecords,
@@ -53,12 +56,15 @@ function createRecordsStore() {
 					listKey: 'records',
 					previousItems: get(store),
 					label: 'records',
-					onUpdate: (result) => {
-						store.set(result.items);
-						sync.set(result.state);
-						if (result.state !== 'loading') ready.set(true);
+					onUpdate: (update) => {
+						store.set(update.items);
+						sync.set(update.state);
+						if (update.state !== 'loading') ready.set(true);
 					}
 				});
+				if (wantCloud && result.state === 'synced' && isCloudMode()) {
+					replaceAllRecords(result.items);
+				}
 			} catch (err) {
 				console.error('records.refresh failed', err);
 				if (get(store).length === 0) store.set([]);
@@ -69,7 +75,8 @@ function createRecordsStore() {
 			}
 		})();
 
-		return inflight;
+		inflight = run;
+		return run;
 	}
 
 	return {

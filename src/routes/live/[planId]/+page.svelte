@@ -218,6 +218,15 @@
 					return;
 				}
 
+				// Swipe-back onto /live after finish/discard must not spawn a new session.
+				const nav = performance.getEntriesByType?.(
+					'navigation'
+				)?.[0] as PerformanceNavigationTiming | undefined;
+				if (nav?.type === 'back_forward') {
+					await goto('/workouts?tab=history', { replaceState: true });
+					return;
+				}
+
 				await live.startFromPlan(plan);
 				const started = get(live).session;
 				if (started) selectedExerciseIndex = pickDefaultExerciseIndex(started);
@@ -430,9 +439,11 @@
 			const done = await live.finish();
 			toasts.show(translate(lang, 'live.saved'), 'success');
 			if (done?.id) {
-				await goto(`/workouts/summary?id=${encodeURIComponent(done.id)}`);
+				await goto(`/workouts/summary?id=${encodeURIComponent(done.id)}`, {
+					replaceState: true
+				});
 			} else {
-				await goto('/workouts?tab=history');
+				await goto('/workouts?tab=history', { replaceState: true });
 			}
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'live.saveFail'), 'error');
@@ -458,7 +469,7 @@
 	function commitDiscard() {
 		discardOfferOpen = false;
 		live.discard();
-		void goto('/workouts');
+		void goto('/workouts', { replaceState: true });
 	}
 
 	function dismissDiscardOffer() {

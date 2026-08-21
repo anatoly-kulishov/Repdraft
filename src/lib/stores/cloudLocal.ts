@@ -40,7 +40,14 @@ export async function refreshLocalCloudList<T>(opts: {
 		return result;
 	}
 
-	if (opts.listKey && !opts.forceCloud && isCloudFresh(readLastSyncedAt(opts.listKey))) {
+	// Skip cloud only when we already have local rows. Empty local + fresh stamp
+	// used to flash an empty UI after reload (cloud merge never mirrored to localStorage).
+	if (
+		local.length > 0 &&
+		opts.listKey &&
+		!opts.forceCloud &&
+		isCloudFresh(readLastSyncedAt(opts.listKey))
+	) {
 		const result: CloudListRefreshResult<T> = { items: local, state: 'synced' };
 		emit(result);
 		return result;
