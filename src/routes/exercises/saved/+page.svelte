@@ -35,7 +35,6 @@
 	</div>
 
 	<CatalogExerciseList
-		bodyParts={data.bodyParts}
 		equipment={data.equipment}
 		targets={data.targets}
 		totalCount={data.totalCount}

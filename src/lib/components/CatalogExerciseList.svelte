@@ -22,7 +22,6 @@
 	import { Bookmark } from '@lucide/svelte';
 
 	let {
-		bodyParts,
 		equipment: equipmentFacets,
 		targets: targetFacets,
 		totalCount,
@@ -36,7 +35,6 @@
 		gridOnDesktop = false,
 		savedOnly = false
 	}: {
-		bodyParts: string[];
 		equipment: string[];
 		targets: string[];
 		totalCount: number;
@@ -45,7 +43,7 @@
 		initialQuery?: string;
 		initialEquipment?: string;
 		initialTarget?: string;
-		/** /catalog/all facet via ?bodyPart= (not used on zone routes). */
+		/** Deep-link ?bodyPart= on /catalog/all (no UI select — body is hub/zone navigation). */
 		initialBodyPart?: string;
 		listOnMobile?: boolean;
 		/** List on phone, grid from 768px (catalog all/zone and builder add flow). */
@@ -347,7 +345,6 @@
 	<div class="catalog-list-layout__filters">
 		<FilterBar
 			bind:filters
-			{bodyParts}
 			equipment={equipmentOptions}
 			targets={targetOptions}
 			lockBodyPart={filterLockBodyPart}
