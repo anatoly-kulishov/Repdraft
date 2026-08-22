@@ -219,21 +219,7 @@
 			{/if}
 		{/if}
 
-		{#if activeSetProgress}
-			<p class="live-set-badge">
-				{translate(lang, 'live.setProgress', {
-					current: activeSetProgress.current,
-					total: activeSetProgress.total
-				})}
-			</p>
-		{/if}
-		<p class="live-exercise-step hidden lg:block">
-			{translate(lang, 'live.progress', {
-				done: exerciseIndex + 1,
-				total: session.exercises.length
-			})}
-		</p>
-
+		<!-- Hybrid Live: technique hero first, then set status (table stays below). -->
 		<div class="live-panel-head">
 			{#if exerciseMeta}
 				<button
@@ -242,7 +228,7 @@
 					aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
 					onclick={openTechnique}
 				>
-					<img src={`/${exerciseMeta.image}`} alt="" width="80" height="80" decoding="async" />
+					<img src={`/${exerciseMeta.image}`} alt="" width="96" height="96" decoding="async" />
 				</button>
 			{/if}
 			<div class="live-panel-head__copy">
@@ -261,6 +247,20 @@
 				{#if metaFor(exercise.exerciseId)}
 					<p class="live-panel-meta">{metaFor(exercise.exerciseId)}</p>
 				{/if}
+				{#if activeSetProgress}
+					<p class="live-set-badge">
+						{translate(lang, 'live.setProgress', {
+							current: activeSetProgress.current,
+							total: activeSetProgress.total
+						})}
+					</p>
+				{/if}
+				<p class="live-exercise-step hidden lg:block">
+					{translate(lang, 'live.progress', {
+						done: exerciseIndex + 1,
+						total: session.exercises.length
+					})}
+				</p>
 			</div>
 			<div class="live-panel-head__actions">
 				{#if canSwapAlternative && onSwapAlternative}
