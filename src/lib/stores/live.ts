@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import {
 	addLoggedSet,
+	applyWeightToOpenSets as fillOpenSetsWeight,
 	chooseAltExercise,
 	completedSetCount,
 	finishSession,
@@ -270,6 +271,15 @@ function createLiveStore() {
 				}
 				persistActive(session, restUntil);
 				return { ...s, session, restUntil };
+			});
+		},
+		applyWeightToOpenSets(exerciseIndex: number, weightKg: number) {
+			store.update((s) => {
+				if (!s.session) return s;
+				const session = fillOpenSetsWeight(s.session, exerciseIndex, weightKg);
+				if (session === s.session) return s;
+				persistActive(session, s.restUntil);
+				return { ...s, session };
 			});
 		},
 		addSet(exerciseIndex: number, kind: SetKind = 'work') {
