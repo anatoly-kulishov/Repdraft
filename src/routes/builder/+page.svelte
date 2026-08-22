@@ -1,8 +1,10 @@
 <script lang="ts">
+	import AppFab from '$lib/components/AppFab.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
+	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
 	import WorkoutExerciseRow from '$lib/components/WorkoutExerciseRow.svelte';
@@ -20,7 +22,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { Plus, ArrowLeft } from '@lucide/svelte';
+	import { Plus, Save, Trash2 } from '@lucide/svelte';
 
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let indexReady = $state(false);
@@ -105,6 +107,20 @@
 	}
 </script>
 
+{#snippet builderClearAction()}
+	{#if $draft.exercises.length > 0}
+		<button
+			type="button"
+			class="btn-ghost is-danger shrink-0"
+			onclick={clearDraft}
+			aria-label={translate(lang, 'builder.clear')}
+			title={translate(lang, 'builder.clear')}
+		>
+			<LucideIcon icon={Trash2} size={ICON_BUTTON} />
+		</button>
+	{/if}
+{/snippet}
+
 <svelte:head>
 	<title>{translate(lang, 'builder.createTitle')} · Repdraft</title>
 </svelte:head>
@@ -114,34 +130,37 @@
 	class:pb-mobile-actions={pageReady && $draft.exercises.length > 0}
 >
 	<div class="lg:hidden">
-		<ScreenHeader title={translate(lang, 'builder.createTitle')} backHref="/workouts" />
+		<ScreenHeader
+			fixed
+			title={translate(lang, 'builder.createTitle')}
+			backHref="/workouts"
+			actions={builderClearAction}
+		/>
 	</div>
 
 	<div class="builder-toolbar mb-5 hidden flex-wrap items-center justify-between gap-3 lg:flex">
 		<div class="min-w-0">
-			<a
-				class="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-muted)] no-underline hover:text-[var(--color-ink)]"
-				href="/workouts"
-			>
-				<LucideIcon icon={ArrowLeft} size={ICON_BUTTON} />
-				{translate(lang, 'builder.backWorkouts')}
-			</a>
+			<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />
 			<h1 class="page-title mt-1">{translate(lang, 'builder.createTitle')}</h1>
 		</div>
-		<button
-			type="button"
-			class="btn-primary inline-flex shrink-0 items-center gap-2 px-5"
-			disabled={!pageReady || saving || $draft.exercises.length === 0}
-			aria-busy={saving}
-			onclick={() => void save()}
-		>
-			{#if saving}
-				<Spinner size="sm" block={false} />
-				{translate(lang, 'auth.wait')}
-			{:else}
-				{translate(lang, 'builder.save')}
-			{/if}
-		</button>
+		<div class="flex shrink-0 items-center gap-2">
+			{@render builderClearAction()}
+			<button
+				type="button"
+				class="btn-primary builder-toolbar-save"
+				disabled={!pageReady || saving || $draft.exercises.length === 0}
+				aria-busy={saving}
+				aria-label={translate(lang, 'builder.save')}
+				title={translate(lang, 'builder.save')}
+				onclick={() => void save()}
+			>
+				{#if saving}
+					<Spinner size="sm" block={false} />
+				{:else}
+					<LucideIcon icon={Save} size={ICON_BUTTON} />
+				{/if}
+			</button>
+		</div>
 	</div>
 
 	{#if !pageReady}
@@ -161,6 +180,7 @@
 
 			{#if $draft.exercises.length === 0}
 				<EmptyState
+					class="builder-empty-state"
 					title={translate(lang, 'builder.emptyTitle')}
 					description={translate(lang, 'builder.emptyDesc')}
 					actionHref={BUILDER_ADD_EXERCISE_HREF}
@@ -231,18 +251,13 @@
 					{/each}
 				</div>
 
-				<a class="btn-secondary mt-4 inline-flex w-full items-center justify-center gap-2" href={BUILDER_ADD_EXERCISE_HREF}>
+				<a
+					class="builder-add-link btn-secondary mt-4 w-full items-center justify-center gap-2"
+					href={BUILDER_ADD_EXERCISE_HREF}
+				>
 					<LucideIcon icon={Plus} size={ICON_BUTTON} />
 					{translate(lang, 'builder.addExercise')}
 				</a>
-
-				<button
-					type="button"
-					class="btn-link mx-auto mt-3 block !text-[var(--color-muted)]"
-					onclick={clearDraft}
-				>
-					{translate(lang, 'builder.clear')}
-				</button>
 
 				<div class="sticky-actions lg:hidden">
 					<div class="sticky-actions__inner flex flex-col gap-1">
@@ -266,6 +281,15 @@
 				</div>
 			{/if}
 		</div>
+	{/if}
+
+	{#if pageReady}
+		<AppFab
+			class="lg:hidden"
+			href={BUILDER_ADD_EXERCISE_HREF}
+			label={translate(lang, 'builder.addExercise')}
+			placement={$draft.exercises.length > 0 ? 'sticky' : 'tabbar'}
+		/>
 	{/if}
 </section>
 

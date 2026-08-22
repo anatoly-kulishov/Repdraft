@@ -20,11 +20,12 @@
 	import PersonalRecordPanel from '$lib/components/PersonalRecordPanel.svelte';
 	import ExerciseSessionHistory from '$lib/components/ExerciseSessionHistory.svelte';
 	import TechniqueClipsPanel from '$lib/components/TechniqueClipsPanel.svelte';
+	import { overlayPortal } from '$lib/actions/overlayPortal';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { ArrowLeft, Bookmark, ClipboardList, Plus, Search } from '@lucide/svelte';
+	import { ArrowLeft, Bookmark, ClipboardList, Plus, Search, X } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 
@@ -264,8 +265,14 @@
 									<LucideIcon icon={ClipboardList} size={ICON_BUTTON} />
 									{translate(lang, 'draft.dock', { n: draftCount })}
 								</a>
-								<button type="button" class="btn-link text-sm" onclick={toggleDraft}>
-									{translate(lang, 'exercise.removeDraft')}
+								<button
+									type="button"
+									class="btn-ghost exercise-detail-remove-draft"
+									onclick={toggleDraft}
+									aria-label={translate(lang, 'exercise.removeDraft')}
+									title={translate(lang, 'exercise.removeDraft')}
+								>
+									<LucideIcon icon={X} size={ICON_BUTTON} />
 								</button>
 							{:else}
 								<button type="button" class="btn-primary" onclick={toggleDraft}>
@@ -315,7 +322,7 @@
 	</article>
 
 	<div class="sticky-actions lg:hidden" class:sticky-actions--stack={inDraft}>
-		<div class="sticky-actions__inner flex flex-col gap-1">
+		<div class="sticky-actions__inner exercise-detail-sticky">
 			{#if inDraft}
 				<a class="btn-primary btn-block inline-flex items-center justify-center gap-1.5" href="/builder">
 					<LucideIcon icon={ClipboardList} size={ICON_BUTTON} />
@@ -323,7 +330,7 @@
 				</a>
 				<button
 					type="button"
-					class="btn-link mx-auto !text-[var(--color-muted)]"
+					class="btn-link exercise-detail-remove-draft"
 					onclick={toggleDraft}
 				>
 					{translate(lang, 'exercise.removeDraft')}
@@ -343,7 +350,8 @@
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
-			class="exercise-media-overlay fixed inset-0 z-[60] flex items-end justify-center bg-black/75 p-4 pb-[calc(var(--mobile-chrome-bottom,0px)+1rem)] lg:items-center lg:pb-[calc(var(--safe-bottom)+1rem)]"
+			use:overlayPortal
+			class="exercise-media-overlay"
 			role="dialog"
 			aria-modal="true"
 			tabindex="-1"

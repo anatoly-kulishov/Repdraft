@@ -438,10 +438,11 @@
 							type="button"
 							class="btn-ghost history-exercise__add-set"
 							disabled={savingEdit || ex.sets.length >= SETS.max}
+							aria-label={translate(lang, 'live.addSet')}
+							title={translate(lang, 'live.addSet')}
 							onclick={() => addHistorySet(exIndex)}
 						>
-							<LucideIcon icon={Plus} size={ICON_SMALL} />
-							{translate(lang, 'live.addSet')}
+							<LucideIcon icon={Plus} size={ICON_BUTTON} />
 						</button>
 					{/if}
 				</li>

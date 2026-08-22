@@ -1,9 +1,13 @@
 <script lang="ts">
 	import CloseIconButton from '$lib/components/CloseIconButton.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import { overlayPortal } from '$lib/actions/overlayPortal';
+	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import type { TechniqueClip } from '$lib/domain/clips';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
+	import { Flag, Link2, Pencil, Share2 } from '@lucide/svelte';
 
 	let {
 		clip,
@@ -32,12 +36,16 @@
 	} = $props();
 
 	let imgEl = $state<HTMLImageElement | null>(null);
+	let shareLabel = $derived(
+		canShareNative ? translate(lang, 'clips.share') : translate(lang, 'clips.link')
+	);
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="clip-lightbox fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-4 pb-[calc(var(--mobile-chrome-bottom,0px)+1rem)] backdrop-blur-[2px] lg:items-center lg:pb-[calc(var(--safe-bottom)+1rem)]"
+	use:overlayPortal
+	class="clip-lightbox"
 	role="dialog"
 	aria-modal="true"
 	tabindex="-1"
@@ -89,21 +97,35 @@
 					{clip.authorLabel} · {clip.createdAt.slice(0, 10)}
 				</p>
 			</div>
-			<div class="grid gap-2">
-				<button type="button" class="btn-primary text-sm" onclick={onShare}>
-					{canShareNative ? translate(lang, 'clips.share') : translate(lang, 'clips.link')}
+			<div class="clip-lightbox__actions">
+				<button
+					type="button"
+					class="btn-ghost clip-lightbox__action"
+					onclick={onShare}
+					aria-label={shareLabel}
+					title={shareLabel}
+				>
+					<LucideIcon icon={canShareNative ? Share2 : Link2} size={ICON_BUTTON} />
 				</button>
 				{#if currentUserId && currentUserId === clip.userId}
-					<button type="button" class="btn-secondary col-span-2 text-sm" onclick={onRename}>
-						{translate(lang, 'clips.rename')}
+					<button
+						type="button"
+						class="btn-ghost clip-lightbox__action"
+						onclick={onRename}
+						aria-label={translate(lang, 'clips.rename')}
+						title={translate(lang, 'clips.rename')}
+					>
+						<LucideIcon icon={Pencil} size={ICON_BUTTON} />
 					</button>
 				{:else if currentUserId}
 					<button
 						type="button"
-						class="btn-secondary col-span-2 text-sm text-[var(--color-muted)]"
+						class="btn-ghost clip-lightbox__action"
 						onclick={onReport}
+						aria-label={translate(lang, 'clips.report')}
+						title={translate(lang, 'clips.report')}
 					>
-						{translate(lang, 'clips.report')}
+						<LucideIcon icon={Flag} size={ICON_BUTTON} />
 					</button>
 				{/if}
 			</div>

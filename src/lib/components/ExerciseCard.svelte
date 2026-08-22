@@ -6,6 +6,7 @@
 	import { draft } from '$lib/stores/draft';
 	import { bookmarks } from '$lib/stores/bookmarks';
 	import { records } from '$lib/stores/records';
+	import { techniqueClipHints } from '$lib/stores/techniqueClipHints';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
@@ -13,7 +14,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Bookmark, Check, ChevronRight, Plus, StickyNote } from '@lucide/svelte';
+	import { Bookmark, Check, ChevronRight, Film, Plus, StickyNote } from '@lucide/svelte';
 
 	let {
 		exercise,
@@ -40,6 +41,8 @@
 		($records.find((r) => r.exerciseId === exercise.id)?.note ?? '').trim()
 	);
 	let hasNote = $derived(noteText.length > 0);
+	let clipHintIds = $derived($techniqueClipHints);
+	let hasClip = $derived(clipHintIds.has(exercise.id));
 	let loaded = $state(false);
 	let bookmarkBusy = $state(false);
 	let imgEl = $state<HTMLImageElement | null>(null);
@@ -159,6 +162,20 @@
 	{/if}
 {/snippet}
 
+{#snippet clipBadge(placement: 'list' | 'grid')}
+	{#if hasClip}
+		<span
+			class="exercise-card-clip"
+			class:exercise-card-clip--list={placement === 'list'}
+			class:exercise-card-clip--grid={placement === 'grid'}
+			aria-label={translate(lang, 'clips.cardBadge')}
+			title={translate(lang, 'clips.cardBadge')}
+		>
+			<LucideIcon icon={Film} size={12} class="exercise-card-clip-icon" />
+		</span>
+	{/if}
+{/snippet}
+
 {#snippet listActions()}
 	<div class="exercise-card-actions exercise-card-actions--list">
 		<button
@@ -220,6 +237,7 @@
 					onload={onImgLoad}
 				/>
 				{@render noteBadge('list')}
+				{@render clipBadge('list')}
 			</button>
 			<div class="exercise-card-bookmark-slot">
 				{@render bookmarkButton(false)}
@@ -282,6 +300,7 @@
 			</a>
 			{@render bookmarkButton(false)}
 			{@render noteBadge('grid')}
+			{@render clipBadge('grid')}
 			<button
 				type="button"
 				class="exercise-card-add"

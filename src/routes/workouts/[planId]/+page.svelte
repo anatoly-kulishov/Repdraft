@@ -59,11 +59,12 @@
 
 {#snippet headerActions()}
 	<a
-		class="btn-ghost workout-preview-edit-link px-2.5 text-sm font-medium"
+		class="btn-ghost workout-preview-edit-link"
 		href={plan ? `/builder/${plan.id}` : '/workouts'}
+		aria-label={translate(lang, 'preview.edit')}
+		title={translate(lang, 'preview.edit')}
 	>
 		<LucideIcon icon={Pencil} size={ICON_BUTTON} />
-		<span class="hidden sm:inline">{translate(lang, 'preview.edit')}</span>
 	</a>
 {/snippet}
 
@@ -91,7 +92,7 @@
 {:else}
 	<section class="workout-preview content-page content-page--narrow pb-mobile-actions lg:pb-8">
 		<div class="lg:hidden">
-			<ScreenHeader title={plan.name} backHref="/workouts" actions={headerActions} />
+			<ScreenHeader fixed title={plan.name} backHref="/workouts" actions={headerActions} />
 		</div>
 		<div class="subroute-desktop-head">
 			<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />
@@ -185,11 +186,12 @@
 				{translate(lang, 'workouts.start')}
 			</button>
 			<a
-				class="btn-secondary inline-flex items-center gap-2 px-5"
+				class="btn-ghost workout-preview-edit-link"
 				href={`/builder/${plan.id}`}
+				aria-label={translate(lang, 'preview.edit')}
+				title={translate(lang, 'preview.edit')}
 			>
 				<LucideIcon icon={Pencil} size={ICON_BUTTON} />
-				{translate(lang, 'preview.edit')}
 			</a>
 		</div>
 

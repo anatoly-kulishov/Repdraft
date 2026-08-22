@@ -269,7 +269,7 @@ async function auditViewport(page, viewport) {
 			: fail(viewport, 'workouts.page', 'missing');
 
 		if (isMobile) {
-			const fab = page.locator('.workouts-fab');
+			const fab = page.locator('.app-fab:not(.app-fab--hidden)');
 			(await fab.count()) > 0 && (await fab.isVisible())
 				? pass(viewport, 'workouts.fab')
 				: fail(viewport, 'workouts.fab', 'FAB missing on mobile');
@@ -332,13 +332,16 @@ async function auditViewport(page, viewport) {
 			tabbarHidden
 				? pass(viewport, 'builder.tabbar-hidden')
 				: fail(viewport, 'builder.tabbar-hidden', 'tabbar still hit-testable over sticky CTA');
-			// Sticky save only mounts after ≥1 exercise; empty draft shows pick CTA.
+			// Sticky save only mounts after ≥1 exercise; empty draft uses AppFab (empty-state CTA hidden on mobile).
 			const stickySave = page.locator('.sticky-actions button.btn-primary');
+			const pickFab = page.locator('.app-fab[href*="exercises"]').first();
 			const pickCta = page.locator('a.empty-state__action, a[href*="/exercises?from="]').first();
 			if ((await stickySave.count()) > 0 && (await stickySave.isVisible())) {
 				pass(viewport, 'builder.sticky-save', 'visible');
+			} else if ((await pickFab.count()) > 0 && (await pickFab.isVisible())) {
+				pass(viewport, 'builder.sticky-save', 'empty draft — AppFab pick');
 			} else if ((await pickCta.count()) > 0 && (await pickCta.isVisible())) {
-				pass(viewport, 'builder.sticky-save', 'empty draft — sticky after add');
+				pass(viewport, 'builder.sticky-save', 'empty draft — inline pick CTA');
 			} else {
 				fail(viewport, 'builder.sticky-save', 'neither sticky save nor pick CTA');
 			}
@@ -412,9 +415,16 @@ async function auditViewport(page, viewport) {
 		await nameInput.fill(stamp);
 		pass(viewport, 'flow.builder-name', stamp);
 
-		const pick = page.locator('a.empty-state__action, a[href*="/exercises?from="]').first();
-		if ((await pick.count()) === 0 || !(await pick.isVisible())) {
-			fail(viewport, 'flow.pick', 'add-exercise link missing');
+		const pickFab = page.locator('.app-fab[href*="exercises"]').first();
+		const pickLink = page.locator('a.empty-state__action, a[href*="/exercises?from="]').first();
+		let pick = null;
+		if ((await pickFab.count()) > 0 && (await pickFab.isVisible())) {
+			pick = pickFab;
+		} else if ((await pickLink.count()) > 0 && (await pickLink.isVisible())) {
+			pick = pickLink;
+		}
+		if (!pick) {
+			fail(viewport, 'flow.pick', 'add-exercise FAB/link missing');
 			return;
 		}
 		await pick.click();

@@ -8,9 +8,10 @@
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
+	import AppFab from '$lib/components/AppFab.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_BUTTON, ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, ClipboardList, Clock, Play, Plus, Trash2 } from '@lucide/svelte';
+	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
+	import { Copy, ClipboardList, Clock, Eraser, Play, Plus, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
@@ -284,11 +285,13 @@
 			{#if activeTab === 'history' && history.length > 0}
 				<button
 					type="button"
-					class="btn-link workouts-page__clear-history"
+					class="btn-ghost is-danger workouts-page__clear-history"
 					disabled={historyBusyId !== null}
+					aria-label={translate(lang, 'workouts.clearHistory')}
+					title={translate(lang, 'workouts.clearHistory')}
 					onclick={() => void onClearHistory()}
 				>
-					{translate(lang, 'workouts.clearHistory')}
+					<LucideIcon icon={Eraser} size={ICON_BUTTON} />
 				</button>
 			{/if}
 		</div>
@@ -341,12 +344,13 @@
 										<div class="entity-row__actions">
 											<button
 												type="button"
-												class="btn-ghost entity-row__start entity-row__start--desktop inline-flex shrink-0 items-center gap-1.5 px-3"
+												class="btn-ghost entity-row__start entity-row__start--desktop"
 												onclick={() => onOpen(plan.id)}
 												disabled={plan.exercises.length === 0 || planBusyId !== null}
+												aria-label={translate(lang, 'workouts.open')}
+												title={translate(lang, 'workouts.open')}
 											>
-												<LucideIcon icon={Play} size={ICON_BUTTON} />
-												{translate(lang, 'workouts.open')}
+												<LucideIcon icon={Play} size={ICON_SMALL} />
 											</button>
 											<button
 												type="button"
@@ -443,15 +447,12 @@
 		{/if}
 	{/if}
 
-	<a
-		class="workouts-fab"
-		class:workouts-fab--hidden={activeTab === 'history'}
+	<AppFab
+		class="lg:hidden"
 		href={BUILDER_NEW_HREF}
-		aria-label={translate(lang, 'workouts.newWorkout')}
-		title={translate(lang, 'workouts.newWorkout')}
-	>
-		<LucideIcon icon={Plus} size={ICON_PRIMARY} />
-	</a>
+		label={translate(lang, 'workouts.newWorkout')}
+		hidden={activeTab === 'history'}
+	/>
 </section>
 
 <BottomSheet

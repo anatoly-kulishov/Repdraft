@@ -20,6 +20,10 @@
 	let error = $derived(data.indexError);
 	let fromParam = $derived($page.url.searchParams.get('from'));
 	let fromBuilder = $derived(isBuilderReturnPath(fromParam));
+	let hubTitle = $derived(translate(lang, 'catalog.hubTitle'));
+	let headerTitle = $derived(
+		fromBuilder ? translate(lang, 'builder.addExercise') : hubTitle
+	);
 
 	onMount(() => {
 		/* Fresh hub visit: drop leftover list facets before search / browse-all. */
@@ -41,18 +45,28 @@
 </script>
 
 <svelte:head>
-	<title>{translate(lang, 'catalog.hubTitle')} · Repdraft</title>
+	<title>{headerTitle} · Repdraft</title>
 </svelte:head>
 
 {#if fromBuilder}
 	<div class="lg:hidden">
-		<ScreenHeader title={translate(lang, 'catalog.hubTitle')} backHref="/builder" />
+		<ScreenHeader fixed title={headerTitle} backHref="/builder" />
 	</div>
 {/if}
 
-<section class="catalog-hub content-page content-page--catalog" aria-labelledby="catalog-hub-heading">
+<section
+	class="catalog-hub content-page content-page--catalog"
+	class:catalog-hub--from-builder={fromBuilder}
+	aria-labelledby="catalog-hub-heading"
+>
 	<header class="page-header catalog-hub-intro">
-		<h1 id="catalog-hub-heading" class="page-title">{translate(lang, 'catalog.hubTitle')}</h1>
+		<h1
+			id="catalog-hub-heading"
+			class="page-title"
+			class:catalog-hub-intro__title--chrome={fromBuilder}
+		>
+			{hubTitle}
+		</h1>
 		<p class="page-lead catalog-hub-intro__lead">{translate(lang, 'catalog.hubLead')}</p>
 	</header>
 
