@@ -2,6 +2,7 @@
 	import CloudSyncBanner from '$lib/components/CloudSyncBanner.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import BackupImportAction from '$lib/components/BackupImportAction.svelte';
 	import SegmentControl from '$lib/components/SegmentControl.svelte';
 	import WorkoutsPageSkeleton from '$lib/components/WorkoutsPageSkeleton.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
@@ -252,7 +253,7 @@
 			</p>
 		</div>
 		<a
-			class="btn-primary workouts-page__create min-h-11 shrink-0"
+			class="btn-primary workouts-page__create shrink-0"
 			href={BUILDER_NEW_HREF}
 			class:workouts-page__create--hidden={activeTab === 'history'}
 		>
@@ -301,7 +302,11 @@
 					description={translate(lang, 'workouts.emptyDesc')}
 					actionHref={BUILDER_NEW_HREF}
 					actionLabel={translate(lang, 'workouts.create')}
-				/>
+				>
+					{#snippet actions()}
+						<BackupImportAction variant="secondary" block />
+					{/snippet}
+				</EmptyState>
 			{:else}
 				<div class="workouts-page__search">
 					<SearchInput bind:value={searchQuery} placeholder={translate(lang, 'workouts.searchPh')} />
@@ -336,7 +341,7 @@
 										<div class="entity-row__actions">
 											<button
 												type="button"
-												class="btn-ghost entity-row__start entity-row__start--desktop inline-flex min-h-11 shrink-0 items-center gap-1.5 px-3"
+												class="btn-ghost entity-row__start entity-row__start--desktop inline-flex shrink-0 items-center gap-1.5 px-3"
 												onclick={() => onOpen(plan.id)}
 												disabled={plan.exercises.length === 0 || planBusyId !== null}
 											>
@@ -387,7 +392,11 @@
 				icon={Clock}
 				title={translate(lang, 'workouts.historyEmptyTitle')}
 				description={translate(lang, 'workouts.historyEmptyDesc')}
-			/>
+			>
+				{#snippet actions()}
+					<BackupImportAction variant="secondary" block />
+				{/snippet}
+			</EmptyState>
 		{:else}
 			<ul class="entity-list entity-list--cards">
 				{#each history as session (session.id)}
@@ -452,10 +461,10 @@
 >
 	<p id="workouts-confirm-title" class="bottom-sheet__title">{confirmTitle}</p>
 	{#snippet actions()}
-		<button type="button" class="btn-secondary min-h-12" onclick={dismissConfirmOffer}>
+		<button type="button" class="btn-secondary" onclick={dismissConfirmOffer}>
 			{translate(lang, 'common.cancel')}
 		</button>
-		<button type="button" class="btn-danger min-h-12" onclick={commitConfirmOffer}>
+		<button type="button" class="btn-danger" onclick={commitConfirmOffer}>
 			{confirmPrimaryLabel}
 		</button>
 	{/snippet}

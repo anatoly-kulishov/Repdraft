@@ -258,7 +258,11 @@
 				? 'all'
 				: filters.equipment;
 		const nextTarget =
-			filters.target !== 'all' && !targetOptions.includes(filters.target) ? 'all' : filters.target;
+			targetOptions.length <= 1
+				? 'all'
+				: filters.target !== 'all' && !targetOptions.includes(filters.target)
+					? 'all'
+					: filters.target;
 		if (nextEq === filters.equipment && nextTarget === filters.target) return;
 		untrack(() => {
 			filters = { ...filters, equipment: nextEq, target: nextTarget };

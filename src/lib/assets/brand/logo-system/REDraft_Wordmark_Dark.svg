@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="300" viewBox="0 0 900 300">
-<rect width="900" height="300" rx="24" fill="#080A0F"/>
-<g transform="translate(36 52) scale(.38)">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8B5CF6"/><stop offset="1" stop-color="#6366F1"/></linearGradient></defs>
-<path d="M148 112V392M148 112H286C347 112 380 148 380 198C380 248 347 280 286 280H148M218 196H320M218 280L350 408" fill="none" stroke="url(#g)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
-</g>
-<text x="190" y="158" font-family="Inter,Arial,sans-serif" font-size="72" font-weight="700" fill="#FFFFFF">RED<tspan fill="#8A8F99" font-weight="400">raft</tspan></text>
-<text x="190" y="205" font-family="Inter,Arial,sans-serif" font-size="22" fill="#8A8F99">Простой и мощный трекер тренировок</text>
-</svg>

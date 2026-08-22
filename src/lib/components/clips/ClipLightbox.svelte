@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CloseIconButton from '$lib/components/CloseIconButton.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import type { TechniqueClip } from '$lib/domain/clips';
 	import type { AppLocale } from '$lib/i18n/locale';
@@ -45,7 +46,8 @@
 		if (e.target === e.currentTarget) onClose();
 	}}
 >
-	<div class="clip-lightbox__panel panel w-[min(100%,24rem)] max-h-[90vh] overflow-auto !rounded-2xl !p-0">
+	<div class="clip-lightbox__panel panel relative w-[min(100%,24rem)] max-h-[90vh] overflow-auto !rounded-2xl !p-0">
+		<CloseIconButton class="clip-lightbox__close" onclick={onClose} />
 		<div class="relative aspect-square w-full overflow-hidden bg-[var(--color-surface-muted)]">
 			{#if !ready && !failed}
 				<div class="feed-skel absolute inset-0" aria-hidden="true"></div>
@@ -87,12 +89,9 @@
 					{clip.authorLabel} · {clip.createdAt.slice(0, 10)}
 				</p>
 			</div>
-			<div class="grid grid-cols-2 gap-2">
+			<div class="grid gap-2">
 				<button type="button" class="btn-primary text-sm" onclick={onShare}>
 					{canShareNative ? translate(lang, 'clips.share') : translate(lang, 'clips.link')}
-				</button>
-				<button type="button" class="btn-secondary text-sm" onclick={onClose}>
-					{translate(lang, 'clips.close')}
 				</button>
 				{#if currentUserId && currentUserId === clip.userId}
 					<button type="button" class="btn-secondary col-span-2 text-sm" onclick={onRename}>

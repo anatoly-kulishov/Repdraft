@@ -7,7 +7,7 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
-	import { personalRecordChips } from '$lib/domain/records';
+	import { hasLiftData, personalRecordChips } from '$lib/domain/records';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
@@ -35,6 +35,7 @@
 			($records.length > 0 && !indexReady)
 	);
 	let listUncertain = $derived(isCloudListUncertain($recordsSync));
+	let displayRecords = $derived($records.filter(hasLiftData));
 
 	onMount(() => {
 		void records.refresh();
@@ -119,7 +120,7 @@
 
 	{#if showSkeleton}
 		<RecordsListSkeleton rows={4} label={translate(lang, 'common.loading')} />
-	{:else if $records.length === 0}
+	{:else if displayRecords.length === 0}
 		<EmptyState
 			centered
 			icon={Trophy}
@@ -128,7 +129,7 @@
 		/>
 	{:else}
 		<ul class="records-list soft-enter" class:cloud-sync-list--uncertain={listUncertain}>
-			{#each $records as record (record.exerciseId)}
+			{#each displayRecords as record (record.exerciseId)}
 				{@const meta = indexById.get(record.exerciseId)}
 				{@const recordTitle = meta
 					? exerciseName(meta, lang)

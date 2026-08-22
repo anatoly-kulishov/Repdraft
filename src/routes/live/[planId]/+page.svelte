@@ -10,32 +10,26 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
-	import {
-		coerceReps,
-		coerceWeightKg,
-		filterRepsInput,
-		filterWeightInput,
-		LIVE_REPS
-	} from '$lib/domain/inputLimits';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import {
 		altGroupNeedsPick,
 		completedSetCount,
 		isSessionFullyLogged,
-		nextFocusAfterSetComplete,
+		nextManualExerciseFocus,
 		totalSetCount,
 		visibleSessionExerciseIndices
 	} from '$lib/domain/session';
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
 	import { altGroupBounds, groupBounds, groupMemberRole } from '$lib/domain/workout';
-	import { playRestDoneChime, unlockAudioFromGesture, vibrateRestDone, vibrateSetDone } from '$lib/domain/prefs';
 	import { acquireScreenWakeLock, releaseScreenWakeLock } from '$lib/media/wakeLock';
 	import { formatElapsedClock, formatRestSec } from '$lib/i18n/format';
+	import { bootLivePage } from '$lib/live/livePageBoot';
+	import { startLiveRestTicker, type LiveRestTicker } from '$lib/live/liveRestTicker';
+	import { createLiveSetActions } from '$lib/live/liveSetActions';
 	import { pickDefaultExerciseIndex } from '$lib/live/sessionUi';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
 	import { plans } from '$lib/stores/plans';
-	import { restSoundEnabled } from '$lib/stores/prefs';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
@@ -52,6 +46,7 @@
 	let finishing = $state(false);
 	let finishOfferOpen = $state(false);
 	let discardOfferOpen = $state(false);
+	let skipExerciseOfferOpen = $state(false);
 	let switchOfferOpen = $state(false);
 	let pendingSwitchPlan = $state<WorkoutPlan | null>(null);
 	let resumeActivePlanId = $state<string | null>(null);
@@ -64,7 +59,7 @@
 	let restChimeArmed = $state(false);
 	let justDoneSetIndex = $state<number | null>(null);
 	let forceAltPick = $state(false);
-	let tick: ReturnType<typeof setInterval> | null = null;
+	let restTicker: LiveRestTicker | null = null;
 
 	let selectedRole = $derived(
 		session ? groupMemberRole(session.exercises, selectedExerciseIndex) : 'solo'
@@ -165,24 +160,17 @@
 	});
 
 	onMount(() => {
-		const unlockOnce = () => unlockAudioFromGesture();
-		window.addEventListener('pointerdown', unlockOnce, { once: true, capture: true });
 		void acquireScreenWakeLock();
 
-		tick = setInterval(() => {
-			now = Date.now();
-			const until = get(live).restUntil;
-			if (until != null && until <= Date.now()) {
-				if (restChimeArmed) {
-					if (get(restSoundEnabled)) {
-						vibrateRestDone();
-						playRestDoneChime();
-					}
-				}
-				restChimeArmed = false;
-				live.skipRest();
+		restTicker = startLiveRestTicker({
+			onNow: (t) => {
+				now = t;
+			},
+			getRestChimeArmed: () => restChimeArmed,
+			setRestChimeArmed: (armed) => {
+				restChimeArmed = armed;
 			}
-		}, 250);
+		});
 
 		void (async () => {
 			live.hydrate();
@@ -196,54 +184,33 @@
 				});
 
 			try {
-				const planId = params.planId;
-				const active = get(live).session;
-				const plan = await plans.getPlan(planId);
-
-				if (
-					active &&
-					!active.finishedAt &&
-					active.planId === planId &&
-					active.exercises.length > 0
-				) {
-					if (plan) live.syncFromPlan(plan);
-					const current = get(live).session ?? active;
-					selectedExerciseIndex = pickDefaultExerciseIndex(current);
-					if (isSessionFullyLogged(current)) {
-						live.skipRest();
-						finishOfferOpen = true;
-					}
-					return;
-				}
-
-				if (active && !active.finishedAt && active.planId && active.planId !== planId) {
-					if (!plan || plan.exercises.length === 0) {
+				const result = await bootLivePage(params.planId);
+				switch (result.kind) {
+					case 'resume':
+						selectedExerciseIndex = result.selectedExerciseIndex;
+						if (result.openFinishOffer) {
+							live.skipRest();
+							finishOfferOpen = true;
+						}
+						break;
+					case 'switch':
+						pendingSwitchPlan = result.pendingSwitchPlan;
+						resumeActivePlanId = result.resumeActivePlanId;
+						switchOfferOpen = true;
+						break;
+					case 'missing':
 						missing = true;
-						return;
+						break;
+					case 'redirect':
+						break;
+					case 'started':
+						selectedExerciseIndex = result.selectedExerciseIndex;
+						break;
+					default: {
+						const _exhaustive: never = result;
+						void _exhaustive;
 					}
-					pendingSwitchPlan = plan;
-					resumeActivePlanId = active.planId;
-					switchOfferOpen = true;
-					return;
 				}
-
-				if (!plan || plan.exercises.length === 0) {
-					missing = true;
-					return;
-				}
-
-				// Swipe-back onto /live after finish/discard must not spawn a new session.
-				const nav = performance.getEntriesByType?.(
-					'navigation'
-				)?.[0] as PerformanceNavigationTiming | undefined;
-				if (nav?.type === 'back_forward') {
-					await goto('/workouts?tab=history', { replaceState: true });
-					return;
-				}
-
-				await live.startFromPlan(plan);
-				const started = get(live).session;
-				if (started) selectedExerciseIndex = pickDefaultExerciseIndex(started);
 			} catch (err) {
 				console.error('live boot failed', err);
 				missing = true;
@@ -254,7 +221,7 @@
 	});
 
 	onDestroy(() => {
-		if (tick) clearInterval(tick);
+		restTicker?.stop();
 		void releaseScreenWakeLock();
 	});
 
@@ -276,149 +243,108 @@
 		invalidKind = kind;
 	}
 
+	function liveSetActionDeps() {
+		return {
+			getSession: () => get(live).session,
+			patchSet: (ei: number, si: number, patch: Parameters<typeof live.patchSet>[2]) =>
+				live.patchSet(ei, si, patch),
+			setSetsCompleted: (ei: number, indexes: number[], completed: boolean) =>
+				live.setSetsCompleted(ei, indexes, completed),
+			skipRest: () => live.skipRest(),
+			getRestUntil: () => get(live).restUntil,
+			showToast: (message: string, kind: 'error' | 'success') => toasts.show(message, kind),
+			invalidWeightMsg: translate(lang, 'pr.invalidWeight'),
+			invalidRepsMsg: translate(lang, 'live.invalidReps'),
+			setInvalid: (si: number | null, kind: 'weight' | 'reps' | null) => {
+				if (si == null || kind == null) {
+					invalidSetIndex = null;
+					invalidKind = null;
+					return;
+				}
+				void flashSetInvalid(si, kind);
+			},
+			clearInvalidIf: (si: number) => {
+				if (invalidSetIndex === si) {
+					invalidSetIndex = null;
+					invalidKind = null;
+				}
+			},
+			setSelectedExerciseIndex: (index: number) => {
+				selectedExerciseIndex = index;
+			},
+			setJustDoneSetIndex: (si: number | null) => {
+				justDoneSetIndex = si;
+			},
+			setRestChimeArmed: (armed: boolean) => {
+				restChimeArmed = armed;
+			},
+			openFinishOffer: () => {
+				finishOfferOpen = true;
+			}
+		};
+	}
+
 	function onWeight(ei: number, si: number, value: string) {
-		if (invalidSetIndex === si) {
-			invalidSetIndex = null;
-			invalidKind = null;
-		}
-		const prev = session?.exercises[ei]?.sets[si]?.weightKg;
-		const filtered = filterWeightInput(value, prev != null ? String(prev) : '');
-		if (!filtered) {
-			live.patchSet(ei, si, { weightKg: null });
-			return filtered;
-		}
-		const n = coerceWeightKg(filtered);
-		if (n == null) {
-			live.patchSet(ei, si, { weightKg: null });
-			return '';
-		}
-		live.patchSet(ei, si, { weightKg: n });
-		return filtered;
+		return createLiveSetActions(liveSetActionDeps()).onWeight(ei, si, value);
 	}
 
 	function onReps(ei: number, si: number, value: string) {
-		if (invalidSetIndex === si) {
-			invalidSetIndex = null;
-			invalidKind = null;
-		}
-		const prev = session?.exercises[ei]?.sets[si]?.reps;
-		const filtered = filterRepsInput(value, LIVE_REPS, prev != null ? String(prev) : '');
-		if (!filtered) {
-			live.patchSet(ei, si, { reps: null });
-			return filtered;
-		}
-		const n = coerceReps(filtered, LIVE_REPS);
-		if (n == null) {
-			live.patchSet(ei, si, { reps: null });
-			return '';
-		}
-		live.patchSet(ei, si, { reps: n });
-		return filtered;
+		return createLiveSetActions(liveSetActionDeps()).onReps(ei, si, value);
 	}
 
 	function onComplete(ei: number, si: number) {
-		const ex = session?.exercises[ei];
-		const set = ex?.sets[si];
-		if (!set) return;
-		if (set.weightKg != null && !coerceWeightKg(String(set.weightKg))) {
-			toasts.show(translate(lang, 'pr.invalidWeight'), 'error');
-			void flashSetInvalid(si, 'weight');
-			return;
-		}
-		if (set.reps == null || !Number.isInteger(set.reps) || set.reps < LIVE_REPS.min || set.reps > LIVE_REPS.max) {
-			toasts.show(translate(lang, 'live.invalidReps'), 'error');
-			void flashSetInvalid(si, 'reps');
-			return;
-		}
-		invalidSetIndex = null;
-		invalidKind = null;
-		if (typeof document !== 'undefined') {
-			const active = document.activeElement;
-			if (active instanceof HTMLElement) active.blur();
-		}
-		unlockAudioFromGesture();
-		vibrateSetDone();
-		live.patchSet(ei, si, { completed: true });
-		restChimeArmed = get(live).restUntil != null;
-		if (restChimeArmed) unlockAudioFromGesture();
-		justDoneSetIndex = si;
-		const next = get(live).session;
-		if (!next) return;
-		selectedExerciseIndex = nextFocusAfterSetComplete(next, ei, si);
-		if (isSessionFullyLogged(next)) {
-			live.skipRest();
-			restChimeArmed = false;
-			finishOfferOpen = true;
-		}
+		createLiveSetActions(liveSetActionDeps()).onComplete(ei, si);
 	}
 
 	function onToggleAllComplete(ei: number) {
-		const ex = session?.exercises[ei];
-		if (!ex?.sets.length) return;
-		if (ex.sets.every((s) => s.completed)) {
-			justDoneSetIndex = null;
-			invalidSetIndex = null;
-			invalidKind = null;
-			live.setSetsCompleted(
-				ei,
-				ex.sets.map((_, si) => si),
-				false
-			);
-			restChimeArmed = false;
-			return;
-		}
-		for (let si = 0; si < ex.sets.length; si++) {
-			const set = ex.sets[si]!;
-			if (set.completed) continue;
-			if (set.weightKg != null && !coerceWeightKg(String(set.weightKg))) {
-				toasts.show(translate(lang, 'pr.invalidWeight'), 'error');
-				void flashSetInvalid(si, 'weight');
-				return;
-			}
-			if (
-				set.reps == null ||
-				!Number.isInteger(set.reps) ||
-				set.reps < LIVE_REPS.min ||
-				set.reps > LIVE_REPS.max
-			) {
-				toasts.show(translate(lang, 'live.invalidReps'), 'error');
-				void flashSetInvalid(si, 'reps');
-				return;
-			}
-		}
-		const openIndexes = ex.sets
-			.map((s, si) => (s.completed ? -1 : si))
-			.filter((si) => si >= 0);
-		if (openIndexes.length === 0) return;
-		invalidSetIndex = null;
-		invalidKind = null;
-		unlockAudioFromGesture();
-		live.setSetsCompleted(ei, openIndexes, true);
-		restChimeArmed = get(live).restUntil != null;
-		if (restChimeArmed) unlockAudioFromGesture();
-		const lastSi = openIndexes[openIndexes.length - 1]!;
-		justDoneSetIndex = lastSi;
-		const next = get(live).session;
-		if (!next) return;
-		selectedExerciseIndex = nextFocusAfterSetComplete(next, ei, lastSi);
-		if (isSessionFullyLogged(next)) {
-			live.skipRest();
-			restChimeArmed = false;
-			finishOfferOpen = true;
-		}
+		createLiveSetActions(liveSetActionDeps()).onToggleAllComplete(ei);
 	}
 
 	function goNextExercise() {
 		forceAltPick = false;
 		if (!session) return;
-		const visible = visibleSessionExerciseIndices(session);
-		const pos = visible.indexOf(selectedExerciseIndex);
-		if (pos >= 0 && pos + 1 < visible.length) {
-			selectedExerciseIndex = visible[pos + 1]!;
+		selectedExerciseIndex = nextManualExerciseFocus(session, selectedExerciseIndex);
+	}
+
+	function skipExerciseTitle(index: number): string {
+		if (!session) return '';
+		const id = session.exercises[index]?.exerciseId;
+		if (!id) return '';
+		const item = names.get(id);
+		return item ? exerciseName(item, lang) : translate(lang, 'records.fallback', { id });
+	}
+
+	function onSkipExercise() {
+		if (finishing || !session) return;
+		finishOfferOpen = false;
+		discardOfferOpen = false;
+		skipExerciseOfferOpen = true;
+	}
+
+	function dismissSkipExerciseOffer() {
+		if (finishing) return;
+		skipExerciseOfferOpen = false;
+	}
+
+	function commitSkipExercise() {
+		if (finishing || !session) return;
+		const ei = selectedExerciseIndex;
+		live.skipExercise(ei);
+		skipExerciseOfferOpen = false;
+		justDoneSetIndex = null;
+		invalidSetIndex = null;
+		invalidKind = null;
+		restChimeArmed = false;
+		const next = get(live).session;
+		if (!next) return;
+		if (next.exercises.length === 0) {
+			discardOfferOpen = true;
 			return;
 		}
-		const next = visible.find((i) => i > selectedExerciseIndex);
-		if (next != null) selectedExerciseIndex = next;
+		selectedExerciseIndex = pickDefaultExerciseIndex(next);
+		if (isSessionFullyLogged(next)) {
+			finishOfferOpen = true;
+		}
 	}
 
 	function onChooseAlt(exerciseId: string) {
@@ -547,12 +473,12 @@
 		</p>
 		<p class="bottom-sheet__hint">{translate(lang, 'live.switchOfferHint')}</p>
 		{#snippet actions()}
-			<button type="button" class="btn-secondary min-h-12" onclick={keepCurrentLiveSession}>
+			<button type="button" class="btn-secondary" onclick={keepCurrentLiveSession}>
 				{translate(lang, 'live.switchKeepCurrent')}
 			</button>
 			<button
 				type="button"
-				class="btn-danger min-h-12"
+				class="btn-danger"
 				onclick={() => void confirmSwitchLivePlan()}
 			>
 				{translate(lang, 'live.switchStartNew')}
@@ -583,7 +509,7 @@
 		{/if}
 	</div>
 {:else}
-	<section class="live-page pb-mobile-actions lg:pb-4">
+	<section class="live-page lg:pb-4">
 		<div class="lg:hidden">
 			<ScreenHeader
 				class="screen-header--live"
@@ -667,6 +593,7 @@
 								onSwapAlternative={() => {
 									forceAltPick = true;
 								}}
+								onSkip={onSkipExercise}
 								onWeight={(si, v) => onWeight(ei, si, v)}
 								onReps={(si, v) => onReps(ei, si, v)}
 								onComplete={(si) => onComplete(ei, si)}
@@ -722,9 +649,69 @@
 					}}
 				/>
 			</div>
+
+			<div class="live-mobile-actions lg:hidden">
+				<LiveSessionActions
+					{lang}
+					{finishing}
+					{hasNextExercise}
+					{currentExerciseComplete}
+					layout="mobile"
+					onNext={goNextExercise}
+					onFinish={() => void onFinish()}
+					onDiscard={onDiscard}
+					restLeft={sessionComplete ? 0 : restLeft}
+					restPct={restPct}
+					restLabel={formatRestSec(restLeft)}
+					onRestMinus={() => {
+						restChimeArmed = true;
+						live.adjustRestSeconds(-30);
+					}}
+					onRestPlus={() => {
+						restChimeArmed = true;
+						live.adjustRestSeconds(30);
+					}}
+					onRestSkip={() => {
+						restChimeArmed = false;
+						live.skipRest();
+					}}
+				/>
+			</div>
 		</div>
 
-		{#if finishOfferOpen}
+		{#if skipExerciseOfferOpen}
+			<BottomSheet
+				open={skipExerciseOfferOpen}
+				titleId="live-skip-exercise-title"
+				dismissible={!finishing}
+				onDismiss={dismissSkipExerciseOffer}
+			>
+				<p id="live-skip-exercise-title" class="bottom-sheet__title">
+					{translate(lang, 'live.confirmSkipExercise', {
+						name: skipExerciseTitle(selectedExerciseIndex)
+					})}
+				</p>
+				<p class="bottom-sheet__hint">{translate(lang, 'live.skipExerciseHint')}</p>
+				{#snippet actions()}
+					<button
+						type="button"
+						class="btn-secondary"
+						disabled={finishing}
+						onclick={dismissSkipExerciseOffer}
+					>
+						{translate(lang, 'live.finishOfferLater')}
+					</button>
+					<button
+						type="button"
+						class="btn-danger"
+						disabled={finishing}
+						onclick={commitSkipExercise}
+					>
+						{translate(lang, 'live.skipExerciseConfirm')}
+					</button>
+				{/snippet}
+			</BottomSheet>
+		{:else if finishOfferOpen}
 			<BottomSheet
 				open={finishOfferOpen}
 				titleId="live-finish-offer-title"
@@ -740,7 +727,7 @@
 				{#snippet actions()}
 					<button
 						type="button"
-						class="btn-secondary min-h-12"
+						class="btn-secondary"
 						disabled={finishing}
 						onclick={dismissFinishOffer}
 					>
@@ -748,7 +735,7 @@
 					</button>
 					<button
 						type="button"
-						class="btn-primary min-h-12"
+						class="btn-primary"
 						disabled={finishing}
 						aria-busy={finishing}
 						onclick={() => void commitFinish()}
@@ -770,7 +757,7 @@
 				{#snippet actions()}
 					<button
 						type="button"
-						class="btn-secondary min-h-12"
+						class="btn-secondary"
 						disabled={finishing}
 						onclick={dismissDiscardOffer}
 					>
@@ -778,7 +765,7 @@
 					</button>
 					<button
 						type="button"
-						class="btn-danger min-h-12"
+						class="btn-danger"
 						disabled={finishing}
 						onclick={commitDiscard}
 					>
@@ -787,31 +774,5 @@
 				{/snippet}
 			</BottomSheet>
 		{/if}
-
-		<LiveSessionActions
-			{lang}
-			{finishing}
-			{hasNextExercise}
-			{currentExerciseComplete}
-			layout="mobile"
-			onNext={goNextExercise}
-			onFinish={() => void onFinish()}
-			onDiscard={onDiscard}
-			restLeft={sessionComplete ? 0 : restLeft}
-			restPct={restPct}
-			restLabel={formatRestSec(restLeft)}
-			onRestMinus={() => {
-				restChimeArmed = true;
-				live.adjustRestSeconds(-30);
-			}}
-			onRestPlus={() => {
-				restChimeArmed = true;
-				live.adjustRestSeconds(30);
-			}}
-			onRestSkip={() => {
-				restChimeArmed = false;
-				live.skipRest();
-			}}
-		/>
 	</section>
 {/if}

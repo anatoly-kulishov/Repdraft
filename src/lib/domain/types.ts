@@ -91,6 +91,8 @@ export type SessionExercise = {
 	targetReps: number;
 	restSec: number;
 	sets: LoggedSet[];
+	/** Live: excluded from nav/progress; partial logs kept in history. */
+	skipped?: boolean;
 };
 
 /** In-progress or finished workout run (performance, not prescription). */

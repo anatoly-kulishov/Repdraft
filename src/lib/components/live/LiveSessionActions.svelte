@@ -51,8 +51,8 @@
 	<button
 		type="button"
 		class="btn-primary {layout === 'mobile'
-			? 'btn-block min-h-12'
-			: 'inline-flex min-h-11'} items-center justify-center gap-2"
+			? 'btn-block'
+			: 'inline-flex'} items-center justify-center gap-2"
 		disabled={finishing}
 		aria-busy={finishing}
 		onclick={onFinish}
@@ -70,9 +70,9 @@
 {#snippet nextButton(primary: boolean)}
 	<button
 		type="button"
-		class="{primary ? 'btn-primary' : 'btn-ghost live-session-next--demoted'} {layout === 'mobile'
-			? 'btn-block min-h-12'
-			: 'inline-flex min-h-11'} items-center justify-center gap-2"
+		class="{primary ? 'btn-primary' : 'btn-secondary live-session-next--demoted'} {layout === 'mobile'
+			? 'btn-block'
+			: 'inline-flex'} items-center justify-center gap-2"
 		disabled={finishing}
 		onclick={onNext}
 	>

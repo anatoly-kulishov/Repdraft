@@ -242,7 +242,7 @@
 			{#if showInstall}
 				<button
 					type="button"
-					class="btn-secondary pwa-install__action min-h-11"
+					class="btn-secondary pwa-install__action"
 					onclick={() => void install()}
 				>
 					{translate(lang, 'pwa.installAction')}
@@ -250,7 +250,7 @@
 			{/if}
 			<button
 				type="button"
-				class="btn-ghost pwa-install__close min-h-11 min-w-11"
+				class="btn-ghost pwa-install__close"
 				onclick={dismiss}
 				aria-label={translate(lang, 'pwa.installDismiss')}
 			>

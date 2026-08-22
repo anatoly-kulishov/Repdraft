@@ -1,3 +1,7 @@
+/**
+ * Legacy icon generator (old inline-SVG mark). Canonical app icons live in
+ * Canonical icons: static/*-v2.png — do not run this unless regenerating legacy set.
+ */
 import { readFileSync, writeFileSync, copyFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,7 +20,7 @@ const GRADIENT = `
 
 const MARK = `
 	<path
-		d="M148 112V392M148 112H286C347 112 380 148 380 198C380 248 347 280 286 280H148M218 280L350 408"
+		d="M148 112V392M148 112H286C347 112 380 148 380 198C380 248 347 280 286 280H148M218 196H320M218 280L350 408"
 		fill="none"
 		stroke="url(#g)"
 		stroke-width="34"
