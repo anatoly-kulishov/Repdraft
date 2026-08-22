@@ -50,7 +50,8 @@
 
 {#if fromBuilder}
 	<div class="lg:hidden">
-		<ScreenHeader fixed title={headerTitle} backHref="/builder" />
+		<!-- sticky (not fixed): avoids phantom spacer when shell chrome is still visible -->
+		<ScreenHeader title={headerTitle} backHref="/builder" />
 	</div>
 {/if}
 
@@ -74,9 +75,8 @@
 		<form class="catalog-hub-toolbar__search" onsubmit={onSearchSubmit}>
 			<SearchInput bind:value={searchQuery} placeholder={translate(lang, 'catalog.search')} />
 		</form>
+		<CatalogHubChips from={fromParam} />
 	</div>
-
-	<CatalogHubChips from={fromParam} />
 
 	{#if error}
 		<EmptyState

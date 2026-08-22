@@ -52,7 +52,7 @@
 
 <aside class="shell-sidebar" aria-label={translate(lang, 'nav.main')}>
 	<div class="shell-sidebar-brand">
-		<Logo variant="sidebar" />
+		<Logo variant="sidebar" compact />
 	</div>
 
 	<nav class="shell-sidebar-nav">

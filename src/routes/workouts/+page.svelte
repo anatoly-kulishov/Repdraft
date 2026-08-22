@@ -10,8 +10,8 @@
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
 	import AppFab from '$lib/components/AppFab.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, ClipboardList, Clock, Eraser, Play, Plus, Trash2 } from '@lucide/svelte';
+	import { ICON_SMALL } from '$lib/components/icons/sizes';
+	import { Copy, ClipboardList, Clock, Play, Plus, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
@@ -63,8 +63,7 @@
 
 	type ConfirmOffer =
 		| { kind: 'delete-plan'; id: string; name: string }
-		| { kind: 'delete-session'; id: string; name: string }
-		| { kind: 'clear-history' };
+		| { kind: 'delete-session'; id: string; name: string };
 
 	let confirmOffer = $state<ConfirmOffer | null>(null);
 
@@ -162,24 +161,6 @@
 		}
 	}
 
-	async function onClearHistory() {
-		confirmOffer = { kind: 'clear-history' };
-	}
-
-	async function commitClearHistory() {
-		if (!confirmOffer || confirmOffer.kind !== 'clear-history') return;
-		confirmOffer = null;
-		historyBusyId = '__clear__';
-		try {
-			await live.clearHistory();
-			toasts.show(translate(lang, 'workouts.historyCleared'), 'info');
-		} catch (err) {
-			toasts.show(translateError(lang, err, 'workouts.historyClearFail'), 'error');
-		} finally {
-			historyBusyId = null;
-		}
-	}
-
 	function dismissConfirmOffer() {
 		confirmOffer = null;
 	}
@@ -191,8 +172,6 @@
 				return translate(lang, 'workouts.confirmDelete', { name: confirmOffer.name });
 			case 'delete-session':
 				return translate(lang, 'workouts.confirmDeleteSession', { name: confirmOffer.name });
-			case 'clear-history':
-				return translate(lang, 'workouts.confirmClearHistory');
 			default: {
 				const _exhaustive: never = confirmOffer;
 				return _exhaustive;
@@ -200,11 +179,7 @@
 		}
 	});
 
-	let confirmPrimaryLabel = $derived(
-		confirmOffer?.kind === 'clear-history'
-			? translate(lang, 'common.clear')
-			: translate(lang, 'common.delete')
-	);
+	let confirmPrimaryLabel = $derived(translate(lang, 'common.delete'));
 
 	function commitConfirmOffer() {
 		if (!confirmOffer) return;
@@ -214,9 +189,6 @@
 				return;
 			case 'delete-session':
 				void commitRemoveSession();
-				return;
-			case 'clear-history':
-				void commitClearHistory();
 				return;
 			default: {
 				const _exhaustive: never = confirmOffer;
@@ -272,28 +244,13 @@
 	{#if !pageReady}
 		<WorkoutsPageSkeleton label={translate(lang, 'common.loading')} />
 	{:else}
-		<div
-			class="workouts-page__tabs"
-			class:workouts-page__tabs--split={activeTab === 'history' && history.length > 0}
-		>
+		<div class="workouts-page__tabs">
 			<SegmentControl
 				options={tabOptions}
 				value={activeTab}
 				ariaLabel={translate(lang, 'workouts.tabsAria')}
 				onchange={(id) => setTab(parseWorkoutsTab(id))}
 			/>
-			{#if activeTab === 'history' && history.length > 0}
-				<button
-					type="button"
-					class="btn-ghost is-danger workouts-page__clear-history"
-					disabled={historyBusyId !== null}
-					aria-label={translate(lang, 'workouts.clearHistory')}
-					title={translate(lang, 'workouts.clearHistory')}
-					onclick={() => void onClearHistory()}
-				>
-					<LucideIcon icon={Eraser} size={ICON_BUTTON} />
-				</button>
-			{/if}
 		</div>
 
 		{#if activeTab === 'plans'}
