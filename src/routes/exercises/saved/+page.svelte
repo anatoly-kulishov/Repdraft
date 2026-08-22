@@ -17,8 +17,8 @@
 	<title>{title} · Repdraft</title>
 </svelte:head>
 
-<div class="content-page content-page--catalog catalog-saved-page">
-	<ScreenHeader class="lg:hidden" {title} backHref="/exercises" />
+<div class="content-page content-page--catalog catalog-page--list catalog-saved-page">
+	<ScreenHeader class="lg:hidden" fixed {title} backHref="/exercises" />
 
 	<div class="catalog-subroute-header">
 		<a class="catalog-zone-crumb-link" href="/exercises">

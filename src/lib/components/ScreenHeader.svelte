@@ -9,18 +9,21 @@
 		title,
 		backHref = '/',
 		class: className = '',
+		fixed = false,
 		actions
 	}: {
 		title: string;
 		backHref?: string;
 		class?: string;
+		/** Pin to viewport top on mobile sub-routes (long scroll lists). */
+		fixed?: boolean;
 		actions?: import('svelte').Snippet;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
 </script>
 
-<header class="screen-header {className}">
+<header class="screen-header {className}" class:screen-header--fixed={fixed}>
 	<a href={backHref} class="screen-header-back" aria-label={translate(lang, 'a11y.back')}>
 		<LucideIcon icon={ArrowLeft} size={ICON_BUTTON + 2} />
 	</a>
@@ -31,3 +34,6 @@
 		</div>
 	{/if}
 </header>
+{#if fixed}
+	<div class="screen-header-spacer lg:hidden" aria-hidden="true"></div>
+{/if}

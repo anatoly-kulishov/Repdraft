@@ -131,9 +131,15 @@
 	);
 	let currentSetIndex = $derived(exercise.sets.findIndex((s) => !s.completed));
 	let lastCopy = $derived(lastVars(exercise.exerciseId));
-	let canApplyLast = $derived(
-		lastCopy != null && exercise.sets.some((s) => !s.completed)
-	);
+	let canApplyLast = $derived.by(() => {
+		const last = live.lastFor(exercise.exerciseId);
+		if (!lastCopy || !last) return false;
+		return exercise.sets.some(
+			(s) =>
+				!s.completed &&
+				(s.weightKg !== last.weightKg || s.reps !== last.reps)
+		);
+	});
 	let bodyweight = $derived(
 		isBodyweightEquipment(names.get(exercise.exerciseId)?.equipment)
 	);
@@ -181,6 +187,22 @@
 	function applyWeightToAllSets() {
 		if (fillWeightKg == null) return;
 		live.applyWeightToOpenSets(exerciseIndex, fillWeightKg);
+	}
+
+	function onWeightKeydown(e: KeyboardEvent, si: number) {
+		if (e.key !== 'Enter') return;
+		if (currentSetIndex !== si || exercise.sets[si]?.completed) return;
+		e.preventDefault();
+		const row = (e.currentTarget as HTMLElement).closest('.live-set-row');
+		const reps = row?.querySelector<HTMLInputElement>('.live-set-reps');
+		reps?.focus();
+	}
+
+	function onRepsKeydown(e: KeyboardEvent, si: number) {
+		if (e.key !== 'Enter') return;
+		if (currentSetIndex !== si || exercise.sets[si]?.completed) return;
+		e.preventDefault();
+		onComplete(si);
 	}
 </script>
 
@@ -307,7 +329,7 @@
 			<p class="live-bw-note">{translate(lang, 'live.weightBwHintShort')}</p>
 		{/if}
 
-		<div class="live-set-head" class:live-set-head--with-remove={canRemoveSet}>
+		<div class="live-set-head">
 			<span class="live-set-head__idx">#</span>
 			<span class="live-set-head__weight" title={bodyweight ? translate(lang, 'live.weightBwHintShort') : undefined}>
 				{weightLabel}
@@ -323,9 +345,6 @@
 			>
 				✓
 			</button>
-			{#if canRemoveSet}
-				<span class="live-set-head-remove" aria-hidden="true"></span>
-			{/if}
 		</div>
 
 		<ul class="live-set-list">
@@ -335,7 +354,7 @@
 					class:is-done={set.completed}
 					class:is-current={currentSetIndex === si}
 					class:is-just-done={justDoneSetIndex === si}
-					class:live-set-row--with-remove={canRemoveSet}
+					class:live-set-row--has-remove={showRemove(si)}
 				>
 					<span class="live-set-index">{si + 1}</span>
 					<input
@@ -345,6 +364,7 @@
 						type="text"
 						inputmode="decimal"
 						autocomplete="off"
+						enterkeyhint="next"
 						placeholder={weightPlaceholder}
 						aria-label={`${weightLabel} ${si + 1}`}
 						value={set.weightKg ?? ''}
@@ -354,6 +374,7 @@
 							const next = onWeight(si, el.value);
 							if (el.value !== next) el.value = next;
 						}}
+						onkeydown={(e) => onWeightKeydown(e, si)}
 					/>
 					<input
 						class="field live-set-reps tabular-nums"
@@ -362,6 +383,7 @@
 						type="text"
 						inputmode="numeric"
 						autocomplete="off"
+						enterkeyhint="done"
 						aria-label={`${translate(lang, 'live.reps')} ${si + 1}`}
 						value={set.reps ?? ''}
 						onfocus={(e) => scrollCurrentSetIntoView(e.currentTarget)}
@@ -370,6 +392,7 @@
 							const next = onReps(si, el.value);
 							if (el.value !== next) el.value = next;
 						}}
+						onkeydown={(e) => onRepsKeydown(e, si)}
 					/>
 					{#if set.completed}
 						<button
@@ -406,8 +429,6 @@
 						>
 							<LucideIcon icon={Trash2} size={ICON_SMALL} />
 						</button>
-					{:else if canRemoveSet}
-						<span class="live-set-remove-spacer" aria-hidden="true"></span>
 					{/if}
 				</li>
 			{/each}
@@ -419,9 +440,10 @@
 			type="button"
 			class="btn-ghost live-panel-add-set"
 			onclick={() => live.addSet(exerciseIndex)}
+			aria-label={translate(lang, 'live.addSet')}
+			title={translate(lang, 'live.addSet')}
 		>
-			<LucideIcon icon={Plus} size={ICON_SMALL} />
-			{translate(lang, 'live.addSet')}
+			<LucideIcon icon={Plus} size={ICON_BUTTON} />
 		</button>
 	</div>
 </div>
