@@ -11,6 +11,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SIDEBAR } from '$lib/components/icons/sizes';
 	import { Dumbbell, House, Library, Moon, Sun } from '@lucide/svelte';
+	import { isBuilderReturnPath } from '$lib/domain/catalogLinks';
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { draft } from '$lib/stores/draft';
@@ -26,10 +27,11 @@
 	let { children } = $props();
 
 	let path = $derived($page.url.pathname);
+	let fromParam = $derived($page.url.searchParams.get('from'));
 	let lang = $derived($resolvedLocale);
 	let isLight = $derived($appTheme === 'light');
 	let hasActiveSession = $derived(Boolean($live.ready && $live.session && !$live.session.finishedAt));
-	function mobileFlowChrome(pathname: string): boolean {
+	function mobileFlowChrome(pathname: string, from: string | null): boolean {
 		if (pathname.startsWith('/live/')) return true;
 		if (pathname.startsWith('/builder')) return true;
 		if (pathname.startsWith('/exercise/')) return true;
@@ -38,6 +40,8 @@
 		if (pathname.startsWith('/auth')) return true;
 		if (pathname === '/privacy') return true;
 		if (pathname === '/exercises/saved') return true;
+		/* Builder → pick exercise: ScreenHeader only (no logo chrome + phantom spacer). */
+		if (pathname === '/exercises' && isBuilderReturnPath(from)) return true;
 		if (pathname === '/records') return true;
 		if (pathname === '/workouts/summary') return true;
 		if (pathname.startsWith('/workouts/history/')) return true;
@@ -45,7 +49,7 @@
 		return false;
 	}
 
-	let hideMobileHeader = $derived(mobileFlowChrome(path));
+	let hideMobileHeader = $derived(mobileFlowChrome(path, fromParam));
 
 	onNavigate((navigation) => {
 		if (typeof document === 'undefined' || !document.startViewTransition) return;
@@ -166,7 +170,7 @@
 			<div
 				class="mx-auto flex h-14 w-full max-w-[var(--page-content-max)] items-center justify-between gap-3 shell-header-pad"
 			>
-				<Logo />
+				<Logo compact />
 				<div class="flex items-center gap-1">
 					<button
 						type="button"
