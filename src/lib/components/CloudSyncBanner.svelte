@@ -1,7 +1,10 @@
 <script lang="ts">
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import type { CloudSyncState } from '$lib/domain/cloudSync';
+	import { RefreshCw } from '@lucide/svelte';
 
 	let {
 		sync,
@@ -49,8 +52,14 @@
 			{/if}
 		</div>
 		{#if sync === 'error'}
-			<button type="button" class="btn-secondary cloud-sync-banner__retry" onclick={onRetry}>
-				{translate(lang, 'sync.retry')}
+			<button
+				type="button"
+				class="btn-ghost cloud-sync-banner__retry"
+				onclick={onRetry}
+				aria-label={translate(lang, 'sync.retry')}
+				title={translate(lang, 'sync.retry')}
+			>
+				<LucideIcon icon={RefreshCw} size={ICON_BUTTON} />
 			</button>
 		{/if}
 	</div>

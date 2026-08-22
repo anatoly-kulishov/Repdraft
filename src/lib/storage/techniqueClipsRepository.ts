@@ -231,3 +231,29 @@ export async function reportTechniqueClip(clipId: string, reason = ''): Promise<
 
 	return { hidden: Boolean(data?.hidden) };
 }
+
+/** Exercise ids with at least one visible community clip — catalog card badge. */
+export async function listExerciseIdsWithPublicClips(limit = 2000): Promise<string[]> {
+	const supabase = getSupabase();
+	if (!supabase) return [];
+
+	const withModeration = await supabase
+		.from('technique_clips')
+		.select('exercise_id')
+		.eq('hidden', false)
+		.limit(limit);
+
+	if (!withModeration.error) {
+		const rows = (withModeration.data as { exercise_id: string }[] | null) ?? [];
+		return [...new Set(rows.map((r) => r.exercise_id))];
+	}
+
+	if (isMissingModerationColumn(withModeration.error)) {
+		const legacy = await supabase.from('technique_clips').select('exercise_id').limit(limit);
+		if (legacy.error) throw legacy.error;
+		const rows = (legacy.data as { exercise_id: string }[] | null) ?? [];
+		return [...new Set(rows.map((r) => r.exercise_id))];
+	}
+
+	throw withModeration.error;
+}

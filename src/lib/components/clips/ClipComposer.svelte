@@ -7,7 +7,7 @@
 	import { clipEncodeDurationSec } from '$lib/media/videoToGif';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { Camera, Image } from '@lucide/svelte';
+	import { Camera, Image, RefreshCw } from '@lucide/svelte';
 
 	let {
 		open = false,
@@ -76,22 +76,24 @@
 			<div class="clip-composer__drop-actions">
 				<button
 					type="button"
-					class="btn-secondary text-sm inline-flex items-center gap-1.5"
+					class="btn-ghost clip-composer__pick"
 					disabled={busy}
 					onclick={onGalleryClick}
+					aria-label={translate(lang, 'clips.gallery')}
+					title={translate(lang, 'clips.gallery')}
 				>
 					<LucideIcon icon={Image} size={ICON_BUTTON} />
-					{translate(lang, 'clips.gallery')}
 				</button>
 				{#if showNativeCamera}
 					<button
 						type="button"
-						class="btn-secondary text-sm inline-flex items-center gap-1.5"
+						class="btn-ghost clip-composer__pick"
 						disabled={busy}
 						onclick={onCameraClick}
+						aria-label={translate(lang, 'clips.camera')}
+						title={translate(lang, 'clips.camera')}
 					>
 						<LucideIcon icon={Camera} size={ICON_BUTTON} />
-						{translate(lang, 'clips.camera')}
 					</button>
 				{/if}
 			</div>
@@ -139,8 +141,15 @@
 					<button type="button" class="btn-primary" disabled={busy} onclick={onPublish}>
 						{translate(lang, 'clips.publish')}
 					</button>
-					<button type="button" class="btn-secondary" disabled={busy} onclick={onClearPreview}>
-						{translate(lang, 'clips.otherVideo')}
+					<button
+						type="button"
+						class="btn-ghost clip-composer__pick"
+						disabled={busy}
+						onclick={onClearPreview}
+						aria-label={translate(lang, 'clips.otherVideo')}
+						title={translate(lang, 'clips.otherVideo')}
+					>
+						<LucideIcon icon={RefreshCw} size={ICON_BUTTON} />
 					</button>
 				</div>
 			</div>

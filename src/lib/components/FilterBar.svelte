@@ -74,6 +74,7 @@
 			<SearchInput
 				bind:value={filters.query}
 				debounceMs={150}
+				showClear={false}
 				placeholder={translate(lang, 'catalog.search')}
 			/>
 			{#if showReset}

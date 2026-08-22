@@ -20,18 +20,22 @@ import {
 		reportTechniqueClip
 	} from '$lib/storage/techniqueClipsRepository';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import ClipGallery from '$lib/components/clips/ClipGallery.svelte';
 	import ClipComposer from '$lib/components/clips/ClipComposer.svelte';
 	import ClipLightbox from '$lib/components/clips/ClipLightbox.svelte';
 	import { withTimeout } from '$lib/domain/withTimeout';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
+	import { techniqueClipHints } from '$lib/stores/techniqueClipHints';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { isSupabaseConfigured } from '$lib/supabase/client';
 	import { page } from '$app/stores';
 	import { replaceState } from '$app/navigation';
 	import { onDestroy, untrack } from 'svelte';
+	import { Plus } from '@lucide/svelte';
 
 	let { exerciseId }: { exerciseId: string } = $props();
 
@@ -79,6 +83,7 @@ import {
 			const list = await withTimeout(listClipsForExercise(id), CLIPS_LOAD_MS);
 			if (gen !== refreshGen) return;
 			clips = list;
+			techniqueClipHints.setExerciseHasClips(id, list.length > 0);
 		} catch (err) {
 			if (gen !== refreshGen) return;
 			console.error(err);
@@ -251,6 +256,7 @@ import {
 				gifBlob
 			});
 			clips = [clip, ...clips];
+			techniqueClipHints.setExerciseHasClips(exerciseId, true);
 			highlightId = clip.id;
 			title = '';
 			clearPreview();
@@ -327,6 +333,7 @@ import {
 		try {
 			await deleteTechniqueClip(clip);
 			clips = clips.filter((c) => c.id !== clip.id);
+			techniqueClipHints.setExerciseHasClips(exerciseId, clips.length > 0);
 			if (lightbox?.id === clip.id) lightbox = null;
 			if (highlightId === clip.id) {
 				highlightId = null;
@@ -444,8 +451,14 @@ import {
 			</p>
 		</div>
 		{#if canUpload && !composerOpen && clips.length > 0}
-			<button type="button" class="btn-primary shrink-0 text-sm" onclick={openComposer}>
-				{translate(lang, 'clips.add')}
+			<button
+				type="button"
+				class="btn-primary clip-section-add shrink-0"
+				onclick={openComposer}
+				aria-label={translate(lang, 'clips.add')}
+				title={translate(lang, 'clips.add')}
+			>
+				<LucideIcon icon={Plus} size={ICON_BUTTON} />
 			</button>
 		{/if}
 	</div>

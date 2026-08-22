@@ -15,6 +15,7 @@
 	import { auth } from '$lib/stores/auth';
 	import { draft } from '$lib/stores/draft';
 	import { live } from '$lib/stores/live';
+	import { techniqueClipHints } from '$lib/stores/techniqueClipHints';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { flushSyncOutbox } from '$lib/storage/flushSyncOutbox';
@@ -60,10 +61,13 @@
 	onMount(() => {
 		draft.hydrate();
 		live.hydrate();
+		techniqueClipHints.hydrate();
+		void techniqueClipHints.refresh();
 		void auth.init();
 
 		const onOnline = () => {
 			void flushSyncOutbox();
+			void techniqueClipHints.refresh();
 		};
 		window.addEventListener('online', onOnline);
 		if (navigator.onLine) void flushSyncOutbox();

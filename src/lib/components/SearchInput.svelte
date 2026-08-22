@@ -9,19 +9,22 @@
 		value = $bindable(''),
 		placeholder = '',
 		debounceMs = 180,
+		showClear = true,
 		onchange
 	}: {
 		value?: string;
 		placeholder?: string;
 		/** Typing delay before parent filter runs (catalog list is heavy). */
 		debounceMs?: number;
+		/** Hide when parent supplies its own reset control (e.g. catalog FilterBar). */
+		showClear?: boolean;
 		onchange?: (value: string) => void;
 	} = $props();
 
 	let local = $state(value);
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let lang = $derived($resolvedLocale);
-	let canClear = $derived(local.trim().length > 0);
+	let canClear = $derived(showClear && local.trim().length > 0);
 
 	$effect(() => {
 		local = value;
@@ -52,7 +55,8 @@
 	</span>
 	<span class="sr-only">{placeholder}</span>
 	<input
-		type="search"
+		type="text"
+		inputmode="search"
 		class="field search-field w-full search-field-with-icon"
 		class:has-clear={canClear}
 		{placeholder}

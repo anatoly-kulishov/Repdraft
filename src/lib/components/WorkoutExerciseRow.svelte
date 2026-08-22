@@ -7,7 +7,7 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ChevronDown, ChevronUp, Trash2 } from '@lucide/svelte';
+	import { ChevronDown, ChevronUp, Trash2, Unlink } from '@lucide/svelte';
 
 	let {
 		item,
@@ -63,10 +63,12 @@
 				{#if ondissolve}
 					<button
 						type="button"
-						class="btn-link superset-bar__dissolve"
+						class="btn-ghost superset-bar__dissolve"
 						onclick={ondissolve}
+						aria-label={translate(lang, 'builder.dissolve')}
+						title={translate(lang, 'builder.dissolve')}
 					>
-						{translate(lang, 'builder.dissolve')}
+						<LucideIcon icon={Unlink} size={ICON_SMALL} />
 					</button>
 				{/if}
 			</div>
@@ -110,8 +112,14 @@
 			<div class="or-bar__head">
 				<span class="or-bar__badge">{translate(lang, 'builder.orBadge')}</span>
 				{#if ondissolveOr}
-					<button type="button" class="btn-link or-bar__dissolve" onclick={ondissolveOr}>
-						{translate(lang, 'builder.dissolve')}
+					<button
+						type="button"
+						class="btn-ghost or-bar__dissolve"
+						onclick={ondissolveOr}
+						aria-label={translate(lang, 'builder.dissolve')}
+						title={translate(lang, 'builder.dissolve')}
+					>
+						<LucideIcon icon={Unlink} size={ICON_SMALL} />
 					</button>
 				{/if}
 			</div>
