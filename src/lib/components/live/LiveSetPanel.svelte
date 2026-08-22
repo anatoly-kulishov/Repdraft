@@ -144,6 +144,26 @@
 	let toggleAllLabel = $derived(
 		translate(lang, allSetsDone ? 'live.undoDoneAll' : 'live.doneAll')
 	);
+	let fillWeightKg = $derived.by(() => {
+		if (currentSetIndex >= 0) {
+			const w = exercise.sets[currentSetIndex]?.weightKg;
+			if (w != null) return w;
+		}
+		for (const s of exercise.sets) {
+			if (!s.completed && s.weightKg != null) return s.weightKg;
+		}
+		return null;
+	});
+	let canFillWeightAll = $derived(
+		fillWeightKg != null &&
+			exercise.sets.length > 1 &&
+			exercise.sets.some((s) => !s.completed && s.weightKg !== fillWeightKg)
+	);
+	let fillWeightAllLabel = $derived(
+		fillWeightKg != null
+			? translate(lang, 'live.weightFillAria', { weight: fillWeightKg })
+			: translate(lang, 'live.weightFillAll')
+	);
 	let exerciseMeta = $derived(names.get(exercise.exerciseId) ?? null);
 	let title = $derived(titleFor(exercise.exerciseId));
 	let lastFormatted = $derived(formatLast(exercise.exerciseId));
@@ -156,6 +176,11 @@
 		queueMicrotask(() => {
 			node.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
 		});
+	}
+
+	function applyWeightToAllSets() {
+		if (fillWeightKg == null) return;
+		live.applyWeightToOpenSets(exerciseIndex, fillWeightKg);
 	}
 </script>
 
@@ -261,6 +286,21 @@
 					<span class="live-last-chip__value tabular-nums">{lastFormatted}</span>
 				</div>
 			{/if}
+		{/if}
+
+		{#if canFillWeightAll && fillWeightKg != null}
+			<button
+				type="button"
+				class="live-last-chip live-last-chip--tap"
+				aria-label={fillWeightAllLabel}
+				onclick={applyWeightToAllSets}
+			>
+				<span class="live-last-chip__label">{translate(lang, 'live.weightFillChip')}</span>
+				<span class="live-last-chip__value tabular-nums">
+					{fillWeightKg} {translate(lang, 'pr.kg')}
+				</span>
+				<span class="live-last-chip__action">{translate(lang, 'live.weightFillAll')}</span>
+			</button>
 		{/if}
 
 		{#if bodyweight}
