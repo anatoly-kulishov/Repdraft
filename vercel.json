@@ -28,7 +28,7 @@
 			]
 		},
 		{
-			"source": "/icon.svg",
+			"source": "/icon-(192|512)-v2\\.png",
 			"headers": [
 				{
 					"key": "Cache-Control",
@@ -37,7 +37,7 @@
 			]
 		},
 		{
-			"source": "/icon-(192|512)(-light)?\\.png",
+			"source": "/icon-maskable-512-v2\\.png",
 			"headers": [
 				{
 					"key": "Cache-Control",
@@ -46,16 +46,7 @@
 			]
 		},
 		{
-			"source": "/icon-maskable-512(-light)?\\.png",
-			"headers": [
-				{
-					"key": "Cache-Control",
-					"value": "public, max-age=86400"
-				}
-			]
-		},
-		{
-			"source": "/apple-touch-icon(-precomposed|-light)?\\.png",
+			"source": "/apple-touch-icon(-precomposed)?-v2\\.png",
 			"headers": [
 				{
 					"key": "Cache-Control",

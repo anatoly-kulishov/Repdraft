@@ -30,14 +30,14 @@
 	<div class="lg:hidden">
 		<ScreenHeader title={article.title} backHref="/articles" />
 	</div>
-	<div class="subroute-desktop-head hidden md:block">
+	<div class="subroute-desktop-head">
 		<SubrouteBack href="/articles" label={translate(lang, 'articles.backHub')} />
 	</div>
 
 	<div class="article-page__hero panel" data-tone={tone}>
 		<ArticleCover {article} variant="hero" />
 		<div class="article-page__hero-text">
-			<h1 class="page-title article-page__title hidden md:block">{article.title}</h1>
+			<h1 class="page-title article-page__title hidden lg:block">{article.title}</h1>
 			<p class="article-page__excerpt">{article.excerpt}</p>
 		</div>
 	</div>
@@ -46,5 +46,5 @@
 		{@html bodyHtml}
 	</div>
 
-	<a class="btn-primary btn-block article-page__cta min-h-12" href={ctaHref}>{ctaLabel}</a>
+	<a class="btn-primary btn-block article-page__cta" href={ctaHref}>{ctaLabel}</a>
 </article>

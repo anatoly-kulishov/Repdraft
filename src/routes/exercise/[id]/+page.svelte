@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CloseIconButton from '$lib/components/CloseIconButton.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import {
 		catalogEquipmentPath,
@@ -45,7 +46,6 @@
 		return map[lang] ?? map.ru ?? map.en ?? [];
 	});
 	let mediaOpen = $state(false);
-	let mediaCloseBtn: HTMLButtonElement | undefined = $state();
 	let bookmarkBusy = $state(false);
 	let inDraft = $derived(
 		Boolean(exercise && $draft.exercises.some((ex) => ex.exerciseId === exercise.id))
@@ -113,11 +113,6 @@
 	function onKeydown(event: KeyboardEvent) {
 		if (event.key === 'Escape' && mediaOpen) closeMedia();
 	}
-
-	$effect(() => {
-		if (!mediaOpen) return;
-		queueMicrotask(() => mediaCloseBtn?.focus());
-	});
 
 	$effect(() => {
 		if (typeof document === 'undefined' || !mediaOpen) return;
@@ -328,7 +323,7 @@
 				</a>
 				<button
 					type="button"
-					class="btn-link mx-auto !min-h-9 !text-[var(--color-muted)]"
+					class="btn-link mx-auto !text-[var(--color-muted)]"
 					onclick={toggleDraft}
 				>
 					{translate(lang, 'exercise.removeDraft')}
@@ -357,7 +352,8 @@
 				if (e.target === e.currentTarget) closeMedia();
 			}}
 		>
-			<div class="flex w-full max-w-lg flex-col items-center gap-3">
+			<div class="exercise-media-lightbox-wrap flex w-full max-w-lg flex-col items-center">
+				<CloseIconButton class="exercise-media-lightbox__close" onclick={closeMedia} />
 				<div class="exercise-media-lightbox">
 					<img
 						src={`/${exercise.gif_url}`}
@@ -368,14 +364,6 @@
 						class="exercise-media-native--lightbox"
 					/>
 				</div>
-				<button
-					type="button"
-					class="btn-secondary"
-					bind:this={mediaCloseBtn}
-					onclick={closeMedia}
-				>
-					{translate(lang, 'exercise.closeMedia')}
-				</button>
 			</div>
 		</div>
 	{/if}

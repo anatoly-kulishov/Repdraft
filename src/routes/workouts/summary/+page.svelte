@@ -126,7 +126,7 @@
 		<div class="lg:hidden text-left">
 			<ScreenHeader title={translate(lang, 'summary.title')} backHref={WORKOUTS_HISTORY_HREF} />
 		</div>
-		<div class="subroute-desktop-head hidden text-left md:block">
+		<div class="subroute-desktop-head text-left">
 			<SubrouteBack href={WORKOUTS_HISTORY_HREF} label={translate(lang, 'builder.backWorkouts')} />
 		</div>
 
@@ -212,12 +212,12 @@
 				<p class="summary-guest-hint__title">{translate(lang, 'summary.guestSyncTitle')}</p>
 				<p class="summary-guest-hint__lead">{translate(lang, 'summary.guestSyncLead')}</p>
 				<div class="summary-guest-hint__actions">
-					<a class="btn-secondary min-h-12 min-w-[48px] px-4" href={authNextHref}
+					<a class="btn-secondary px-4" href={authNextHref}
 						>{translate(lang, 'summary.guestSyncCta')}</a
 					>
 					<button
 						type="button"
-						class="btn-link min-h-12 min-w-[48px] px-3"
+						class="btn-link px-3"
 						onclick={dismissGuestHint}
 					>
 						{translate(lang, 'summary.guestSyncDismiss')}
@@ -228,7 +228,7 @@
 
 		<div class="summary-actions summary-page__done-inline">
 			<a
-				class="btn-primary btn-block min-h-12"
+				class="btn-primary btn-block"
 				href={`/workouts/history/${session.id}`}
 				data-sveltekit-replacestate
 				>{translate(lang, 'summary.done')}</a
@@ -238,7 +238,7 @@
 		<div class="sticky-actions summary-page__done-sticky lg:hidden">
 			<div class="sticky-actions__inner summary-actions">
 				<a
-					class="btn-primary btn-block min-h-12"
+					class="btn-primary btn-block"
 					href={`/workouts/history/${session.id}`}
 					data-sveltekit-replacestate
 					>{translate(lang, 'summary.done')}</a

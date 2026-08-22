@@ -1,9 +1,13 @@
 <script lang="ts">
+	import CloseIconButton from '$lib/components/CloseIconButton.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { CLIP_TITLE_MAX } from '$lib/domain/clips';
 	import { clipEncodeDurationSec } from '$lib/media/videoToGif';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { Camera, Image } from '@lucide/svelte';
 
 	let {
 		open = false,
@@ -43,19 +47,15 @@
 </script>
 
 {#if open}
-	<div class="panel-inset mb-3 space-y-3 md:mb-4">
-		<div class="flex items-center justify-between gap-2">
-			<p class="text-sm font-semibold">{translate(lang, 'clips.new')}</p>
-			<button type="button" class="btn-secondary" disabled={busy} onclick={onClose}>
-				{translate(lang, 'clips.close')}
-			</button>
+	<div class="clip-composer">
+		<div class="clip-composer__head">
+			<p class="clip-composer__title">{translate(lang, 'clips.new')}</p>
+			<CloseIconButton disabled={busy} onclick={onClose} />
 		</div>
 
 		<div
-			class="relative rounded-xl border-2 border-dashed px-3 py-4 text-center transition-colors md:py-6"
-			class:border-[var(--color-accent)]={dragOver}
-			class:bg-[color-mix(in_srgb,var(--color-accent)_8%,var(--color-surface))]={dragOver}
-			class:border-[var(--color-border)]={!dragOver}
+			class="clip-composer__drop"
+			class:is-dragover={dragOver}
 			role="region"
 			aria-label={translate(lang, 'clips.dropZone')}
 			ondragover={(e) => {
@@ -69,23 +69,35 @@
 			}}
 			ondrop={onDrop}
 		>
-			<p class="text-sm font-medium">{translate(lang, 'clips.drop')}</p>
-			<p class="mt-1 text-xs text-[var(--color-muted)]">
+			<p class="clip-composer__drop-title">{translate(lang, 'clips.drop')}</p>
+			<p class="clip-composer__drop-hint">
 				{translate(lang, 'clips.limits', { sec: clipEncodeDurationSec() })}
 			</p>
-			<div class="mt-3 flex flex-wrap justify-center gap-2">
-				<button type="button" class="btn-secondary text-sm" disabled={busy} onclick={onGalleryClick}>
+			<div class="clip-composer__drop-actions">
+				<button
+					type="button"
+					class="btn-secondary text-sm inline-flex items-center gap-1.5"
+					disabled={busy}
+					onclick={onGalleryClick}
+				>
+					<LucideIcon icon={Image} size={ICON_BUTTON} />
 					{translate(lang, 'clips.gallery')}
 				</button>
 				{#if showNativeCamera}
-					<button type="button" class="btn-secondary text-sm" disabled={busy} onclick={onCameraClick}>
+					<button
+						type="button"
+						class="btn-secondary text-sm inline-flex items-center gap-1.5"
+						disabled={busy}
+						onclick={onCameraClick}
+					>
+						<LucideIcon icon={Camera} size={ICON_BUTTON} />
 						{translate(lang, 'clips.camera')}
 					</button>
 				{/if}
 			</div>
 		</div>
 
-		<label class="field-label">
+		<label class="clip-composer__caption">
 			{translate(lang, 'clips.caption')}
 			<input
 				class="field mt-1"
@@ -116,7 +128,7 @@
 				<img
 					src={previewUrl}
 					alt={translate(lang, 'clips.preview')}
-					class="mx-auto h-44 w-44 rounded-lg border border-[var(--color-border)] bg-black object-contain sm:mx-0"
+					class="mx-auto h-44 w-44 rounded-lg border border-[var(--color-field-border)] bg-black object-contain sm:mx-0"
 				/>
 				<div class="flex flex-1 flex-col gap-2">
 					{#if gifSizeLabel}

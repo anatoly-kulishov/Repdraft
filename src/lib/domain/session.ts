@@ -113,12 +113,18 @@ export function visibleSessionExerciseIndices(session: WorkoutSession): number[]
 	let i = 0;
 	const list = session.exercises;
 	while (i < list.length) {
+		const ex = list[i];
+		if (ex?.skipped) {
+			i += 1;
+			continue;
+		}
 		const ab = altGroupBounds(list, i);
 		if (ab && ab.start === i && ab.end > ab.start) {
 			const chosenId = choices[ab.altGroupId];
 			if (chosenId) {
 				const idx = list.findIndex(
-					(ex, ei) => ei >= ab.start && ei <= ab.end && ex.exerciseId === chosenId
+					(item, ei) =>
+						ei >= ab.start && ei <= ab.end && item.exerciseId === chosenId && !item.skipped
 				);
 				out.push(idx >= 0 ? idx : ab.start);
 			} else {
@@ -170,9 +176,56 @@ export function pruneUnchosenAlts(session: WorkoutSession): WorkoutSession {
 	return { ...session, exercises, altChoices: undefined };
 }
 
+function nextVisibleAfterIndex(session: WorkoutSession, fromIndex: number): number | null {
+	const visible = visibleSessionExerciseIndices(session);
+	const pos = visible.indexOf(fromIndex);
+	if (pos >= 0 && pos + 1 < visible.length) return visible[pos + 1]!;
+	return visible.find((i) => i > fromIndex) ?? null;
+}
+
+/** First visible exercise after a contiguous superset / block. */
+function nextVisibleAfterGroupEnd(session: WorkoutSession, groupEnd: number): number {
+	return nextVisibleAfterIndex(session, groupEnd) ?? groupEnd;
+}
+
+function nextIncompleteInGroup(
+	session: WorkoutSession,
+	bounds: { start: number; end: number },
+	fromIndex: number
+): number | null {
+	for (let i = fromIndex + 1; i <= bounds.end; i++) {
+		const ex = session.exercises[i];
+		if (ex?.sets.some((s) => !s.completed)) return i;
+	}
+	for (let i = bounds.start; i < fromIndex; i++) {
+		const ex = session.exercises[i];
+		if (ex?.sets.some((s) => !s.completed)) return i;
+	}
+	return null;
+}
+
+/**
+ * “Next exercise” button: stay inside an open superset; leave only when the block is done.
+ */
+export function nextManualExerciseFocus(session: WorkoutSession, exerciseIndex: number): number {
+	const bounds = groupBounds(session.exercises, exerciseIndex);
+	if (bounds && bounds.start !== bounds.end) {
+		const inside = nextIncompleteInGroup(session, bounds, exerciseIndex);
+		if (inside != null) return inside;
+		return nextVisibleAfterGroupEnd(session, bounds.end);
+	}
+
+	const ex = session.exercises[exerciseIndex];
+	if (ex && ex.sets.length > 0 && ex.sets.every((s) => s.completed)) {
+		const next = nextVisibleAfterIndex(session, exerciseIndex);
+		if (next != null) return next;
+	}
+	return exerciseIndex;
+}
+
 /**
  * After completing set `setIndex` on `exerciseIndex`, pick the next exercise to focus.
- * Supersets go round-robin (A1 → B1 → A2…); solos advance when all sets are done.
+ * Supersets go round-robin (A1 → B1 → C1 → A2…); solos advance when all sets are done.
  */
 export function nextFocusAfterSetComplete(
 	session: WorkoutSession,
@@ -182,6 +235,10 @@ export function nextFocusAfterSetComplete(
 	const bounds = groupBounds(session.exercises, exerciseIndex);
 	if (bounds && bounds.start !== bounds.end) {
 		for (let i = exerciseIndex + 1; i <= bounds.end; i++) {
+			const set = session.exercises[i]?.sets[setIndex];
+			if (set && !set.completed) return i;
+		}
+		for (let i = bounds.start; i < exerciseIndex; i++) {
 			const set = session.exercises[i]?.sets[setIndex];
 			if (set && !set.completed) return i;
 		}
@@ -195,16 +252,12 @@ export function nextFocusAfterSetComplete(
 			}
 			if (!sawSlot) break;
 		}
-		if (bounds.end + 1 < session.exercises.length) return bounds.end + 1;
-		return exerciseIndex;
+		return nextVisibleAfterGroupEnd(session, bounds.end);
 	}
 
 	const ex = session.exercises[exerciseIndex];
 	if (ex && ex.sets.length > 0 && ex.sets.every((s) => s.completed)) {
-		const visible = visibleSessionExerciseIndices(session);
-		const pos = visible.indexOf(exerciseIndex);
-		if (pos >= 0 && pos + 1 < visible.length) return visible[pos + 1]!;
-		const next = visible.find((i) => i > exerciseIndex);
+		const next = nextVisibleAfterIndex(session, exerciseIndex);
 		if (next != null) return next;
 	}
 	return exerciseIndex;
@@ -335,9 +388,41 @@ export function removeLoggedExercise(
 	};
 }
 
+/**
+ * Live: drop an exercise when equipment/time changed.
+ * No logged sets → remove; partial logs → mark skipped and keep completed sets only.
+ */
+export function skipSessionExercise(
+	session: WorkoutSession,
+	exerciseIndex: number
+): WorkoutSession {
+	const ex = session.exercises[exerciseIndex];
+	if (!ex || ex.skipped) return session;
+	const hasCompleted = ex.sets.some((s) => s.completed);
+	if (!hasCompleted) {
+		return removeLoggedExercise(session, exerciseIndex, { keepAtLeastOne: false });
+	}
+	const exercises = session.exercises.map((item, ei) => {
+		if (ei !== exerciseIndex) return item;
+		return {
+			...item,
+			skipped: true,
+			sets: item.sets.filter((s) => s.completed)
+		};
+	});
+	return { ...session, exercises };
+}
+
+function pruneSkippedEmpty(session: WorkoutSession): WorkoutSession {
+	const exercises = session.exercises
+		.filter((ex) => !ex.skipped || ex.sets.some((s) => s.completed))
+		.map(({ skipped: _skipped, ...ex }) => ex);
+	return { ...session, exercises };
+}
+
 export function finishSession(session: WorkoutSession): WorkoutSession {
 	return {
-		...pruneUnchosenAlts(session),
+		...pruneSkippedEmpty(pruneUnchosenAlts(session)),
 		finishedAt: new Date().toISOString()
 	};
 }
@@ -492,6 +577,10 @@ export function sessionVolumeKg(session: WorkoutSession): number {
 
 /** True when every visible set is logged — ready to finish the session. */
 export function isSessionFullyLogged(session: WorkoutSession): boolean {
+	const visible = visibleSessionExerciseIndices(session);
+	if (visible.length === 0) {
+		return session.exercises.some((ex) => ex.sets.some((s) => s.completed));
+	}
 	const total = totalSetCount(session);
 	return total > 0 && completedSetCount(session) === total;
 }
@@ -696,6 +785,58 @@ export function runSessionSelfCheck(): void {
 		throw new Error('finished superset should advance to next solo');
 	}
 
+	const triplePlan: WorkoutPlan = {
+		id: 'p3',
+		name: 'Triple SS',
+		createdAt: '2026-08-01T00:00:00.000Z',
+		updatedAt: '2026-08-01T00:00:00.000Z',
+		exercises: [
+			{ exerciseId: 'ex-a', sets: 3, reps: 10, restSec: 0, groupId: 'g3' },
+			{ exerciseId: 'ex-b', sets: 3, reps: 10, restSec: 0, groupId: 'g3' },
+			{ exerciseId: 'ex-c', sets: 3, reps: 10, restSec: 90, groupId: 'g3' },
+			{ exerciseId: 'ex-solo', sets: 2, reps: 8, restSec: 60 }
+		]
+	};
+	let tri = startSessionFromPlan(triplePlan);
+	tri = updateLoggedSet(tri, 0, 0, { reps: 10, completed: true });
+	if (nextFocusAfterSetComplete(tri, 0, 0) !== 1) {
+		throw new Error('triple superset should advance A1 → B1');
+	}
+	tri = updateLoggedSet(tri, 1, 0, { reps: 10, completed: true });
+	if (nextFocusAfterSetComplete(tri, 1, 0) !== 2) {
+		throw new Error('triple superset should advance B1 → C1');
+	}
+	tri = updateLoggedSet(tri, 2, 0, { reps: 10, completed: true });
+	if (nextFocusAfterSetComplete(tri, 2, 0) !== 0) {
+		throw new Error('triple superset should advance C1 → A2');
+	}
+	// Out-of-order C1 while A1/B1 still open — wrap same round, not skip to round 2.
+	tri = startSessionFromPlan(triplePlan);
+	tri = updateLoggedSet(tri, 2, 0, { reps: 10, completed: true });
+	if (nextFocusAfterSetComplete(tri, 2, 0) !== 0) {
+		throw new Error('triple superset should wrap C1 → A1 when round open');
+	}
+	if (nextManualExerciseFocus(tri, 2) !== 0) {
+		throw new Error('manual next from last superset slot should stay in block');
+	}
+	tri = startSessionFromPlan(triplePlan);
+	for (const [ei, si] of [
+		[0, 0],
+		[1, 0],
+		[2, 0],
+		[0, 1],
+		[1, 1],
+		[2, 1],
+		[0, 2],
+		[1, 2],
+		[2, 2]
+	] as const) {
+		tri = updateLoggedSet(tri, ei, si, { reps: 10, completed: true });
+	}
+	if (nextManualExerciseFocus(tri, 2) !== 3) {
+		throw new Error('manual next after finished superset should leave block');
+	}
+
 	const stale = startSessionFromPlan({
 		...groupedPlan,
 		exercises: groupedPlan.exercises.map(({ groupId: _g, ...ex }) => ex)
@@ -744,5 +885,37 @@ export function runSessionSelfCheck(): void {
 	]);
 	if (gated.length !== 0) {
 		throw new Error('mergeWorkoutSessions should honor deletion tombstones');
+	}
+
+	let skipPlan = startSessionFromPlan(groupedPlan);
+	if (skipSessionExercise(skipPlan, 1).exercises.length !== 2) {
+		throw new Error('skipSessionExercise should remove exercise with no logs');
+	}
+	skipPlan = startSessionFromPlan(groupedPlan);
+	skipPlan = updateLoggedSet(skipPlan, 1, 0, { reps: 12, completed: true });
+	const partialSkip = skipSessionExercise(skipPlan, 1);
+	if (
+		!partialSkip.exercises[1]?.skipped ||
+		partialSkip.exercises[1]?.sets.length !== 1 ||
+		visibleSessionExerciseIndices(partialSkip).includes(1)
+	) {
+		throw new Error('skipSessionExercise should mark partial skip and hide from visible');
+	}
+	skipPlan = startSessionFromPlan(groupedPlan);
+	for (const ei of [0, 2]) {
+		for (let si = 0; si < 2; si++) {
+			skipPlan = updateLoggedSet(skipPlan, ei, si, { reps: 10, completed: true });
+		}
+	}
+	const readySkip = skipSessionExercise(skipPlan, 1);
+	if (readySkip.exercises.length !== 2 || !isSessionFullyLogged(readySkip)) {
+		throw new Error('skipSessionExercise should allow finish when remaining work is done');
+	}
+	const finishedSkip = finishSession(partialSkip);
+	if (
+		finishedSkip.exercises.some((ex) => ex.skipped) ||
+		finishedSkip.exercises.find((ex) => ex.exerciseId === 'ex-b')?.sets.length !== 1
+	) {
+		throw new Error('finishSession should keep partial skip logs without skipped flag');
 	}
 }

@@ -2,29 +2,113 @@
 import { build, files, version } from '$service-worker';
 
 /**
- * Minimal SW for installability + app-shell cache.
- * Do not precache static/images|videos — catalog media is huge; runtime CacheFirst instead.
+ * App shell + immutable bundles for offline PWA.
+ * Exercise JPG thumbs (~11 MB) precached on install; GIFs cache on view (~125 MB total).
+ * Catalog JSON + icons precached with shell.
+ *
+ * Offline QA: use production build (`npm run preview`), not `npm run dev` —
+ * Vite dev serves uncacheable module URLs under /.svelte-kit and /@id.
  */
 const CACHE = `repdraft-shell-${version}`;
 const MEDIA_CACHE = `repdraft-media-${version}`;
-const CATALOG_INDEX = '/data/exercises.index.json';
+const APP_SHELL = '/';
+const DEV = import.meta.env.DEV;
 
-const SHELL = [
-	...build.filter((path) => !path.includes('/videos/') && !path.includes('/images/')),
-	...files.filter(
-		(path) =>
-			path === CATALOG_INDEX ||
-			path === '/manifest.webmanifest' ||
-			(/^\/icon/.test(path) && !path.includes('light'))
-	)
-];
+const BUILD_ASSETS = build.filter(
+	(path) => !path.includes('/videos/') && !path.includes('/images/')
+);
+const BUILD_PATHS = new Set(BUILD_ASSETS);
+
+const STATIC_ESSENTIALS = files.filter(
+	(path) =>
+		path === '/manifest.webmanifest' ||
+		((path.startsWith('/data/') || path.startsWith('/content/')) && path.endsWith('.json')) ||
+		/^\/icon/.test(path)
+);
+
+/** All catalog list thumbs — small enough to precache for offline browse. */
+const IMAGE_PRECACHE = files.filter((path) => path.startsWith('/images/'));
+
+const PRECACHE = [...BUILD_ASSETS, ...STATIC_ESSENTIALS];
+const PRECACHE_PATHS = new Set(PRECACHE);
+
+function offlineResponse(): Response {
+	return new Response('Offline', {
+		status: 503,
+		statusText: 'Offline',
+		headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+	});
+}
+
+function isNavigationRequest(request: Request): boolean {
+	return (
+		request.mode === 'navigate' ||
+		(request.headers.get('accept')?.includes('text/html') ?? false)
+	);
+}
+
+function isStaticJson(pathname: string): boolean {
+	return (
+		pathname.includes('__data.json') ||
+		((pathname.startsWith('/data/') || pathname.startsWith('/content/')) &&
+			pathname.endsWith('.json'))
+	);
+}
+
+function isStaticMedia(pathname: string): boolean {
+	return pathname.startsWith('/images/') || pathname.startsWith('/videos/');
+}
+
+function isShellAsset(pathname: string): boolean {
+	return BUILD_PATHS.has(pathname) || PRECACHE_PATHS.has(pathname) || pathname.startsWith('/_app/');
+}
+
+async function precacheAll(cache: Cache, urls: readonly string[]): Promise<void> {
+	await Promise.all(
+		urls.map(async (path) => {
+			try {
+				await cache.add(path);
+			} catch {
+				// ponytail: one 404 must not reject install and leave cache empty
+			}
+		})
+	);
+}
+
+/** ponytail: 1300+ thumbs — batch so install does not open 1300 parallel fetches. */
+async function precacheInBatches(
+	cache: Cache,
+	urls: readonly string[],
+	batchSize = 32
+): Promise<void> {
+	for (let i = 0; i < urls.length; i += batchSize) {
+		const batch = urls.slice(i, i + batchSize);
+		await Promise.all(
+			batch.map(async (path) => {
+				try {
+					await cache.add(path);
+				} catch {
+					// single missing thumb must not fail install
+				}
+			})
+		);
+	}
+}
 
 self.addEventListener('install', (event) => {
 	event.waitUntil(
-		caches
-			.open(CACHE)
-			.then((cache) => cache.addAll(SHELL))
-			.then(() => self.skipWaiting())
+		(async () => {
+			const cache = await caches.open(CACHE);
+			await precacheAll(cache, PRECACHE);
+			const mediaCache = await caches.open(MEDIA_CACHE);
+			await precacheInBatches(mediaCache, IMAGE_PRECACHE);
+			try {
+				await cache.add(APP_SHELL);
+			} catch {
+				// first online navigation caches HTML
+			}
+			await self.skipWaiting();
+		})()
 	);
 });
 
@@ -54,30 +138,61 @@ async function staleWhileRevalidate(request: Request): Promise<Response> {
 	}
 	const fresh = await network;
 	if (fresh) return fresh;
-	throw new Error('network unavailable');
+	return offlineResponse();
 }
 
 async function cacheFirst(request: Request, cacheName: string): Promise<Response> {
 	const cache = await caches.open(cacheName);
 	const cached = await cache.match(request);
 	if (cached) return cached;
-	const response = await fetch(request);
-	if (response.ok) void cache.put(request, response.clone());
-	return response;
+	try {
+		const response = await fetch(request);
+		if (response.ok) void cache.put(request, response.clone());
+		return response;
+	} catch {
+		return offlineResponse();
+	}
 }
 
-function isStaticJson(pathname: string): boolean {
-	return (
-		(pathname.startsWith('/data/') || pathname.startsWith('/content/')) &&
-		pathname.endsWith('.json')
-	);
+async function cachedAppShell(): Promise<Response | undefined> {
+	const cache = await caches.open(CACHE);
+	return (await cache.match(APP_SHELL)) ?? undefined;
 }
 
-function isStaticMedia(pathname: string): boolean {
-	return pathname.startsWith('/images/') || pathname.startsWith('/videos/');
+/** HTML: network-first, cache hit, then app shell. */
+async function navigationNetworkFirst(request: Request): Promise<Response> {
+	const cache = await caches.open(CACHE);
+	try {
+		const response = await fetch(request);
+		if (response.ok) void cache.put(request, response.clone());
+		return response;
+	} catch {
+		const cached = await cache.match(request);
+		if (cached) return cached;
+		const shell = await cachedAppShell();
+		if (shell) return shell;
+		return offlineResponse();
+	}
+}
+
+/** JS/CSS from precache or /_app/immutable — cache-first (SvelteKit offline pattern). */
+async function cacheFirstShell(request: Request): Promise<Response> {
+	const cache = await caches.open(CACHE);
+	const cached = await cache.match(request);
+	if (cached) return cached;
+	try {
+		const response = await fetch(request);
+		if (response.ok) void cache.put(request, response.clone());
+		return response;
+	} catch {
+		return offlineResponse();
+	}
 }
 
 self.addEventListener('fetch', (event) => {
+	// ponytail: Vite dev URLs are not precacheable; offline QA = `npm run build && npm run preview`.
+	if (DEV) return;
+
 	const { request } = event;
 	if (request.method !== 'GET') return;
 
@@ -94,18 +209,15 @@ self.addEventListener('fetch', (event) => {
 		return;
 	}
 
-	event.respondWith(
-		(async () => {
-			const cached = await caches.match(request);
-			if (cached && SHELL.includes(url.pathname)) return cached;
+	if (isNavigationRequest(request)) {
+		event.respondWith(navigationNetworkFirst(request));
+		return;
+	}
 
-			try {
-				const response = await fetch(request);
-				return response;
-			} catch {
-				if (cached) return cached;
-				throw new Error('network unavailable');
-			}
-		})()
-	);
+	if (isShellAsset(url.pathname)) {
+		event.respondWith(cacheFirstShell(request));
+		return;
+	}
+
+	event.respondWith(staleWhileRevalidate(request));
 });

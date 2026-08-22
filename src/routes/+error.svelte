@@ -60,12 +60,12 @@
 		{/if}
 
 		<div class="error-actions">
-			<a class="btn-primary inline-flex min-h-11 items-center gap-2 px-5" href="/">
+			<a class="btn-primary inline-flex items-center gap-2 px-5" href="/">
 				<LucideIcon icon={House} size={ICON_PRIMARY} />
 				{translate(lang, 'error.home')}
 			</a>
 			{#if is404}
-				<a class="btn-secondary inline-flex min-h-11 items-center gap-2 px-5" href="/exercises">
+				<a class="btn-secondary inline-flex items-center gap-2 px-5" href="/exercises">
 					<LucideIcon icon={Library} size={ICON_PRIMARY} />
 					{translate(lang, 'error.catalog')}
 				</a>

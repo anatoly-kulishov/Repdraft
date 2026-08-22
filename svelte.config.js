@@ -5,7 +5,11 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
 	preprocess: vitePreprocess(),
 	kit: {
-		adapter: adapter()
+		adapter: adapter(),
+		// ponytail: offline PWA QA only on build/preview — Vite dev URLs are not precacheable
+		serviceWorker: {
+			register: process.env.NODE_ENV === 'production'
+		}
 	}
 };
 
