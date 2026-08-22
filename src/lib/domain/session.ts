@@ -277,6 +277,23 @@ export function updateLoggedSet(
 	return { ...session, exercises };
 }
 
+/** Copy weight onto every incomplete set that differs (gym: same load all sets). */
+export function applyWeightToOpenSets(
+	session: WorkoutSession,
+	exerciseIndex: number,
+	weightKg: number
+): WorkoutSession {
+	const ex = session.exercises[exerciseIndex];
+	if (!ex) return session;
+	let next = session;
+	for (let si = 0; si < ex.sets.length; si++) {
+		const set = ex.sets[si]!;
+		if (set.completed || set.weightKg === weightKg) continue;
+		next = updateLoggedSet(next, exerciseIndex, si, { weightKg });
+	}
+	return next;
+}
+
 export function addLoggedSet(
 	session: WorkoutSession,
 	exerciseIndex: number,
@@ -917,5 +934,17 @@ export function runSessionSelfCheck(): void {
 		finishedSkip.exercises.find((ex) => ex.exerciseId === 'ex-b')?.sets.length !== 1
 	) {
 		throw new Error('finishSession should keep partial skip logs without skipped flag');
+	}
+
+	let fillPlan = startSessionFromPlan(plan);
+	fillPlan = updateLoggedSet(fillPlan, 0, 0, { weightKg: 12, reps: 10 });
+	const filled = applyWeightToOpenSets(fillPlan, 0, 12);
+	if (filled.exercises[0]?.sets.some((s, si) => si > 0 && s.weightKg !== 12)) {
+		throw new Error('applyWeightToOpenSets should fill open sets');
+	}
+	fillPlan = updateLoggedSet(fillPlan, 0, 1, { weightKg: 12, reps: 10, completed: true });
+	const skipDone = applyWeightToOpenSets(fillPlan, 0, 60);
+	if (skipDone.exercises[0]?.sets[1]?.weightKg !== 12) {
+		throw new Error('applyWeightToOpenSets should not touch completed sets');
 	}
 }
