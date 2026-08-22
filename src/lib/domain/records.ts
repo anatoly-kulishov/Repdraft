@@ -45,11 +45,14 @@ export function createEmptyRecord(exerciseId: string): PersonalRecord {
 	};
 }
 
-export function isRecordEmpty(record: PersonalRecord): boolean {
+export function hasLiftData(record: PersonalRecord): boolean {
 	const hasWeight = record.weightKg != null && !Number.isNaN(record.weightKg);
 	const hasReps = record.reps != null && !Number.isNaN(record.reps);
-	const hasNote = record.note.trim().length > 0;
-	return !hasWeight && !hasReps && !hasNote;
+	return hasWeight || hasReps;
+}
+
+export function isRecordEmpty(record: PersonalRecord): boolean {
+	return !hasLiftData(record) && record.note.trim().length === 0;
 }
 
 export type RecordSanitizeResult =
@@ -83,6 +86,9 @@ export function sanitizePersonalRecord(input: PersonalRecord): RecordSanitizeRes
 	if (isRecordEmpty(record)) {
 		return { ok: false, errorKey: 'pr.needValue' };
 	}
+	if (!hasLiftData(record)) {
+		return { ok: false, errorKey: 'pr.needLift' };
+	}
 
 	return { ok: true, record };
 }
@@ -111,6 +117,11 @@ export function runRecordsSelfCheck(): void {
 	const needValue = sanitizePersonalRecord(empty);
 	if (needValue.ok || needValue.errorKey !== 'pr.needValue') {
 		throw new Error('empty sanitize should needValue');
+	}
+
+	const noteOnly = sanitizePersonalRecord({ ...empty, note: 'pause cue' });
+	if (noteOnly.ok || noteOnly.errorKey !== 'pr.needLift') {
+		throw new Error('note-only sanitize should needLift');
 	}
 
 	const badWeight = sanitizePersonalRecord({

@@ -12,7 +12,7 @@
 			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
 			rel="stylesheet"
 		/>
-		<meta name="theme-color" content="#E8ECF0" />
+		<meta name="theme-color" content="#F7F5FC" />
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -20,36 +20,21 @@
 		<meta name="application-name" content="Repdraft" />
 		<meta name="format-detection" content="telephone=no" />
 		<link rel="manifest" href="/manifest.webmanifest" />
-		<!--
-			iOS home screen: single opaque PNG, no media=.
-			Safari ignores SVG and often skips apple-touch-icon when media variants are present,
-			then falls back to a lettermark using theme-color (purple square + white R).
-		-->
+		<link rel="icon" href="/icon.svg" type="image/svg+xml" />
 		<link rel="apple-touch-icon" href="/apple-touch-icon-v2.png" sizes="180x180" />
 		<link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed-v2.png" sizes="180x180" />
-		<link
-			rel="icon"
-			href="/icon.svg"
-			type="image/svg+xml"
-			media="(prefers-color-scheme: dark)"
-		/>
-		<link
-			rel="icon"
-			href="/icon-light.svg"
-			type="image/svg+xml"
-			media="(prefers-color-scheme: light)"
-		/>
-		<link rel="icon" href="/icon-adaptive.svg" type="image/svg+xml" />
+		<link rel="icon" href="/favicon.ico" sizes="48x48" />
+		<link rel="icon" href="/icon-192-v2.png" type="image/png" sizes="192x192" />
 		<style>
 			html,
 			body {
 				margin: 0;
 				min-height: 100%;
-				background-color: #e8ecf0;
+				background-color: #f7f5fc;
 			}
 			html[data-theme='dark'],
 			html[data-theme='dark'] body {
-				background-color: #0b0b0c;
+				background-color: #0a0a0d;
 			}
 			#pwa-boot {
 				position: fixed;
@@ -57,26 +42,21 @@
 				z-index: 9999;
 				display: grid;
 				place-items: center;
-				background: #e8ecf0;
+				background: #f7f5fc;
 				pointer-events: none;
 				transition: opacity 0.2s ease;
 			}
 			html[data-theme='dark'] #pwa-boot {
-				background: #0b0b0c;
+				background: #0a0a0d;
 			}
-			#pwa-boot img {
+			#pwa-boot .pwa-boot-icon-wrap {
 				width: 96px;
 				height: 96px;
-				/* Corners live in the SVG (rx) — extra CSS radius double-clips and looks uneven. */
-				display: block;
+				line-height: 0;
 			}
-			#pwa-boot .pwa-boot-icon--dark {
-				display: none;
-			}
-			html[data-theme='dark'] #pwa-boot .pwa-boot-icon--light {
-				display: none;
-			}
-			html[data-theme='dark'] #pwa-boot .pwa-boot-icon--dark {
+			#pwa-boot .pwa-boot-icon {
+				width: 96px;
+				height: 96px;
 				display: block;
 			}
 			#pwa-boot.is-done {
@@ -91,7 +71,7 @@
 					if (theme !== 'light' && theme !== 'dark') {
 						theme = 'light';
 					}
-					var bg = theme === 'light' ? '#e8ecf0' : '#0b0b0c';
+					var bg = theme === 'light' ? '#f7f5fc' : '#0a0a0d';
 					document.documentElement.setAttribute('data-theme', theme);
 					document.documentElement.style.colorScheme = theme;
 					document.documentElement.style.backgroundColor = bg;
@@ -121,20 +101,32 @@
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div id="pwa-boot" aria-hidden="true">
-			<img
-				class="pwa-boot-icon pwa-boot-icon--dark"
-				src="/icon.svg"
-				alt=""
-				width="96"
-				height="96"
-			/>
-			<img
-				class="pwa-boot-icon pwa-boot-icon--light"
-				src="/icon-light.svg"
-				alt=""
-				width="96"
-				height="96"
-			/>
+			<div class="pwa-boot-icon-wrap">
+				<svg
+					class="pwa-boot-icon"
+					viewBox="0 0 512 512"
+					width="96"
+					height="96"
+					aria-hidden="true"
+					focusable="false"
+				>
+					<defs>
+						<linearGradient id="repdraft-boot-g" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+							<stop offset="0" stop-color="#8B5CF6" />
+							<stop offset="1" stop-color="#6366F1" />
+						</linearGradient>
+					</defs>
+					<rect width="512" height="512" rx="114" ry="114" fill="url(#repdraft-boot-g)" />
+					<path
+						d="M148 112V392M148 112H286C347 112 380 148 380 198C380 248 347 280 286 280H148M218 280L350 408"
+						fill="none"
+						stroke="#FFFFFF"
+						stroke-width="34"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					/>
+				</svg>
+			</div>
 		</div>
 		<div style="display: contents">%sveltekit.body%</div>
 		<script>

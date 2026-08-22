@@ -27,10 +27,12 @@
 	let lang = $derived($resolvedLocale);
 	let equipmentSheetOpen = $state(false);
 
+	let showTargetFilters = $derived(lockBodyPart && targets.length > 1);
+
 	let activeFilterCount = $derived(
 		(lockBodyPart || filters.bodyPart === 'all' ? 0 : 1) +
 			(filters.equipment !== 'all' ? 1 : 0) +
-			(filters.target !== 'all' ? 1 : 0)
+			(showTargetFilters && filters.target !== 'all' ? 1 : 0)
 	);
 
 	let showReset = $derived(activeFilterCount > 0 || filters.query.trim().length > 0);
@@ -87,7 +89,7 @@
 			{/if}
 		</div>
 
-		{#if lockBodyPart && targets.length > 0}
+		{#if showTargetFilters}
 			<div
 				class="catalog-filter-chips"
 				role="group"

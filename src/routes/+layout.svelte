@@ -145,7 +145,6 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href="/icon-adaptive.svg" type="image/svg+xml" />
 	<link rel="manifest" href="/manifest.webmanifest" />
 	<meta name="apple-mobile-web-app-title" content="Repdraft" />
 	<title>Repdraft</title>

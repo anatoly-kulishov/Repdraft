@@ -130,7 +130,7 @@
 		</div>
 		<button
 			type="button"
-			class="btn-primary inline-flex min-h-11 shrink-0 items-center gap-2 px-5"
+			class="btn-primary inline-flex shrink-0 items-center gap-2 px-5"
 			disabled={!pageReady || saving || $draft.exercises.length === 0}
 			aria-busy={saving}
 			onclick={() => void save()}
@@ -231,7 +231,7 @@
 					{/each}
 				</div>
 
-				<a class="btn-secondary mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2" href={BUILDER_ADD_EXERCISE_HREF}>
+				<a class="btn-secondary mt-4 inline-flex w-full items-center justify-center gap-2" href={BUILDER_ADD_EXERCISE_HREF}>
 					<LucideIcon icon={Plus} size={ICON_BUTTON} />
 					{translate(lang, 'builder.addExercise')}
 				</a>
@@ -278,10 +278,10 @@
 		{translate(lang, 'builder.confirmClear')}
 	</p>
 	{#snippet actions()}
-		<button type="button" class="btn-secondary min-h-12" onclick={dismissClearOffer}>
+		<button type="button" class="btn-secondary" onclick={dismissClearOffer}>
 			{translate(lang, 'common.cancel')}
 		</button>
-		<button type="button" class="btn-danger min-h-12" onclick={commitClearDraft}>
+		<button type="button" class="btn-danger" onclick={commitClearDraft}>
 			{translate(lang, 'common.clear')}
 		</button>
 	{/snippet}

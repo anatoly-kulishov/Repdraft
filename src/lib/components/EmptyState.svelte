@@ -1,6 +1,6 @@
 <script lang="ts">
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import type { Component } from 'svelte';
+	import type { Component, Snippet } from 'svelte';
 
 	type EmptyStateIcon = Component<{
 		size?: number | string;
@@ -16,7 +16,8 @@
 		actionLabel,
 		icon = null as EmptyStateIcon | null,
 		centered = false,
-		class: className = ''
+		class: className = '',
+		actions
 	}: {
 		title: string;
 		description?: string;
@@ -25,6 +26,7 @@
 		icon?: EmptyStateIcon | null;
 		centered?: boolean;
 		class?: string;
+		actions?: Snippet;
 	} = $props();
 </script>
 
@@ -44,7 +46,14 @@
 			{description}
 		</p>
 	{/if}
-	{#if actionHref && actionLabel}
-		<a class="btn-primary empty-state__action mt-1" href={actionHref}>{actionLabel}</a>
+	{#if (actionHref && actionLabel) || actions}
+		<div class="empty-state__actions mt-1 flex w-full flex-col gap-2 items-stretch">
+			{#if actionHref && actionLabel}
+				<a class="btn-primary btn-block empty-state__action" href={actionHref}>{actionLabel}</a>
+			{/if}
+			{#if actions}
+				{@render actions()}
+			{/if}
+		</div>
 	{/if}
 </div>

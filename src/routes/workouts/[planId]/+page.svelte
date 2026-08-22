@@ -59,7 +59,7 @@
 
 {#snippet headerActions()}
 	<a
-		class="btn-ghost workout-preview-edit-link min-h-10 px-2.5 text-sm font-medium"
+		class="btn-ghost workout-preview-edit-link px-2.5 text-sm font-medium"
 		href={plan ? `/builder/${plan.id}` : '/workouts'}
 	>
 		<LucideIcon icon={Pencil} size={ICON_BUTTON} />
@@ -93,7 +93,7 @@
 		<div class="lg:hidden">
 			<ScreenHeader title={plan.name} backHref="/workouts" actions={headerActions} />
 		</div>
-		<div class="subroute-desktop-head hidden md:block">
+		<div class="subroute-desktop-head">
 			<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />
 			<h1 class="page-title">{plan.name}</h1>
 		</div>
@@ -180,12 +180,12 @@
 		</ul>
 
 		<div class="workout-preview-actions-desktop hidden flex-wrap gap-2 lg:flex">
-			<button type="button" class="btn-primary inline-flex min-h-12 items-center gap-2 px-6" onclick={onStart}>
+			<button type="button" class="btn-primary inline-flex items-center gap-2 px-6" onclick={onStart}>
 				<LucideIcon icon={Play} size={ICON_PRIMARY} />
 				{translate(lang, 'workouts.start')}
 			</button>
 			<a
-				class="btn-secondary inline-flex min-h-12 items-center gap-2 px-5"
+				class="btn-secondary inline-flex items-center gap-2 px-5"
 				href={`/builder/${plan.id}`}
 			>
 				<LucideIcon icon={Pencil} size={ICON_BUTTON} />
@@ -195,7 +195,7 @@
 
 		<div class="sticky-actions lg:hidden">
 			<div class="sticky-actions__inner">
-				<button type="button" class="btn-primary btn-block min-h-12 gap-2" onclick={onStart}>
+				<button type="button" class="btn-primary btn-block gap-2" onclick={onStart}>
 					<LucideIcon icon={Play} size={ICON_PRIMARY} />
 					{translate(lang, 'workouts.start')}
 				</button>
