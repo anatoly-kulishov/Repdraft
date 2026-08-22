@@ -39,7 +39,7 @@
 	} = $props();
 </script>
 
-<ul class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+<ul class="clip-gallery grid grid-cols-1 gap-3">
 	{#each clips as clip (clip.id)}
 		<li
 			data-clip-id={clip.id}
@@ -55,7 +55,7 @@
 				onclick={() => onOpen(clip)}
 				aria-label={translate(lang, 'clips.open', { title: titleFor(clip) })}
 			>
-				<div class="relative aspect-square w-full">
+				<div class="clip-gallery__thumb relative aspect-square w-full lg:aspect-[4/3]">
 					{#if !thumbReady.has(clip.id)}
 						<div class="feed-skel absolute inset-0" aria-hidden="true"></div>
 					{/if}
@@ -64,7 +64,7 @@
 						alt={titleFor(clip)}
 						width="360"
 						height="360"
-						class={`absolute inset-0 m-auto max-h-full max-w-full object-contain transition-opacity duration-200 ${thumbReady.has(clip.id) ? 'opacity-100' : 'opacity-0'}`}
+						class={`absolute inset-0 h-full w-full object-contain transition-opacity duration-200 ${thumbReady.has(clip.id) ? 'opacity-100' : 'opacity-0'}`}
 						loading="lazy"
 						decoding="async"
 						onload={() => onThumbReady(clip.id)}

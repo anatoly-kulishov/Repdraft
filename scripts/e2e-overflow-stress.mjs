@@ -203,7 +203,7 @@ async function scanOverflow(page) {
 			'.shell-header',
 			'.live-rest',
 			'.summary-page__done-sticky',
-			'.workouts-fab'
+			'.app-fab'
 		];
 		const fixed = fixedSel
 			.map((sel) => {

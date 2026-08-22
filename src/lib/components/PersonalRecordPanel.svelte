@@ -22,7 +22,7 @@
 	import { records, recordsReady } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
-	import { ChevronDown } from '@lucide/svelte';
+	import { ChevronDown, X } from '@lucide/svelte';
 	import { tick } from 'svelte';
 
 	let { exerciseId }: { exerciseId: string } = $props();
@@ -290,10 +290,12 @@
 				{#if noteText.length > 0}
 					<button
 						type="button"
-						class="text-[11px] font-medium text-[var(--color-muted)] hover:text-[var(--color-ink)]"
+						class="btn-ghost pr-note-clear"
+						aria-label={translate(lang, 'a11y.clearField')}
+						title={translate(lang, 'a11y.clearField')}
 						onclick={clearNote}
 					>
-						{translate(lang, 'a11y.clearField')}
+						<LucideIcon icon={X} size={ICON_SMALL} />
 					</button>
 				{/if}
 			</span>

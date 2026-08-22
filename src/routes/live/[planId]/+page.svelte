@@ -8,7 +8,7 @@
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_SMALL } from '$lib/components/icons/sizes';
+	import { ICON_SMALL, ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import {
@@ -512,6 +512,7 @@
 	<section class="live-page lg:pb-4">
 		<div class="lg:hidden">
 			<ScreenHeader
+				fixed
 				class="screen-header--live"
 				title={session.planName}
 				backHref="/workouts"
@@ -525,8 +526,7 @@
 					done: slotProgress.done,
 					total: slotProgress.total
 				})}
-			</p>
-			<p class="live-progress-pill">
+				<span class="live-progress-pill__sep" aria-hidden="true">·</span>
 				{translate(lang, 'home.setsProgress', {
 					done: completedSetCount(session),
 					total: totalSetCount(session)
@@ -536,9 +536,13 @@
 
 		<header class="live-header hidden lg:flex">
 			<div class="live-header-main">
-				<a href="/workouts" class="live-back">
-					<LucideIcon icon={ArrowLeft} size={ICON_SMALL} />
-					{translate(lang, 'live.backPlans')}
+				<a
+					href="/workouts"
+					class="live-back"
+					aria-label={translate(lang, 'live.backPlans')}
+					title={translate(lang, 'live.backPlans')}
+				>
+					<LucideIcon icon={ArrowLeft} size={ICON_BUTTON} />
 				</a>
 				<h1 class="live-plan-title">{session.planName}</h1>
 			</div>
