@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BrandTagline from '$lib/components/BrandTagline.svelte';
 	import HomePageSkeleton from '$lib/components/HomePageSkeleton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
@@ -156,6 +157,9 @@
 				{/if}
 				{#if pageReady && !isGuest}
 					<p class="home-header__subtitle">{mockupSubtitle}</p>
+					{#if isFirstTimeHome}
+						<BrandTagline class="brand-tagline--home-header" />
+					{/if}
 				{/if}
 			</div>
 			{#if pageReady && !hasActive}
@@ -193,16 +197,19 @@
 					<div class="home-hero">
 						<h2 class="home-hero-title">{createHeroTitle}</h2>
 						<p class="home-hero-meta">{createHeroLead}</p>
+						{#if isFirstTimeHome}
+							<BrandTagline class="brand-tagline--hero" />
+						{/if}
 						<div class="home-hero-actions">
 							<a
-								class="btn-primary home-hero-cta min-h-12 items-center justify-center gap-2"
+								class="btn-primary home-hero-cta items-center justify-center gap-2"
 								href={BUILDER_NEW_HREF}
 							>
 								<LucideIcon icon={Plus} size={ICON_PRIMARY} />
 								{translate(lang, 'home.guestCreateLocal')}
 							</a>
 							<a
-								class="btn-secondary home-hero-secondary min-h-12 items-center justify-center gap-2"
+								class="btn-secondary home-hero-secondary items-center justify-center gap-2"
 								href={authHref}
 							>
 								<LucideIcon icon={LogIn} size={ICON_PRIMARY} />

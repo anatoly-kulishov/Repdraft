@@ -9,6 +9,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
+	import CloseIconButton from '$lib/components/CloseIconButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
@@ -326,7 +327,10 @@
 		titleId={`exercise-technique-${exercise.id}`}
 		onDismiss={dismissTechnique}
 	>
-		<p id={`exercise-technique-${exercise.id}`} class="bottom-sheet__title">{title}</p>
+		<div class="bottom-sheet__head">
+			<p id={`exercise-technique-${exercise.id}`} class="bottom-sheet__title">{title}</p>
+			<CloseIconButton onclick={dismissTechnique} />
+		</div>
 		<p class="bottom-sheet__hint">{labelTarget(exercise.target, lang)}</p>
 		<div class="exercise-technique-sheet__media media-well">
 			<img
@@ -340,10 +344,7 @@
 			/>
 		</div>
 		{#snippet actions()}
-			<button type="button" class="btn-secondary min-h-12" onclick={dismissTechnique}>
-				{translate(lang, 'exercise.closeMedia')}
-			</button>
-			<a class="btn-primary min-h-12" href={exerciseHref(exercise.id)} onclick={dismissTechnique}>
+			<a class="btn-primary btn-block" href={exerciseHref(exercise.id)} onclick={dismissTechnique}>
 				{translate(lang, 'exercise.openCard')}
 			</a>
 		{/snippet}

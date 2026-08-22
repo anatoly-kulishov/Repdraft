@@ -384,15 +384,16 @@ async function auditViewport(page, viewport) {
 		}
 	}
 
-	// ——— Footer attribution centered ———
+	// ——— Footer attribution alignment ———
 	{
 		await goto(page, '/exercises');
 		const footer = page.locator('.shell-footer-inner');
 		if ((await footer.count()) > 0) {
 			const align = await footer.evaluate((el) => getComputedStyle(el).textAlign);
-			align === 'center'
-				? pass(viewport, 'footer.center', align)
-				: fail(viewport, 'footer.center', align);
+			const expected = isMobile ? 'center' : 'start';
+			align === expected
+				? pass(viewport, 'footer.align', `${expected}`)
+				: fail(viewport, 'footer.align', `expected ${expected}, got ${align}`);
 		}
 	}
 

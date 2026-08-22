@@ -11,7 +11,12 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import Spinner from '$lib/components/Spinner.svelte';
-	import { createEmptyRecord, formatPersonalRecord, sanitizePersonalRecord } from '$lib/domain/records';
+	import {
+		createEmptyRecord,
+		formatPersonalRecord,
+		hasLiftData,
+		sanitizePersonalRecord
+	} from '$lib/domain/records';
 	import type { PersonalRecord } from '$lib/domain/types';
 	import { translate } from '$lib/i18n/messages';
 	import { records, recordsReady } from '$lib/stores/records';
@@ -24,6 +29,7 @@
 
 	let form = $state<PersonalRecord>(createEmptyRecord(''));
 	let hasSaved = $state(false);
+	let hasStoredEntry = $state(false);
 	let weightText = $state('');
 	let repsText = $state('');
 	let noteText = $state('');
@@ -92,7 +98,8 @@
 		const key = existing
 			? `${id}:${existing.updatedAt}:${existing.weightKg}:${existing.reps}:${existing.note}`
 			: `${id}:empty`;
-		hasSaved = existing != null;
+		hasStoredEntry = existing != null;
+		hasSaved = existing != null && hasLiftData(existing);
 		if (dirty) return;
 		if (key === syncedKey) return;
 		syncedKey = key;
@@ -125,10 +132,13 @@
 			updatedAt: new Date().toISOString()
 		});
 		if (!result.ok) {
-			toasts.show(translate(lang, result.errorKey), result.errorKey === 'pr.needValue' ? 'info' : 'error');
+			toasts.show(
+				translate(lang, result.errorKey),
+				result.errorKey === 'pr.needValue' || result.errorKey === 'pr.needLift' ? 'info' : 'error'
+			);
 			if (result.errorKey === 'pr.invalidWeight') void flashFields(true, false);
 			else if (result.errorKey === 'pr.invalidReps') void flashFields(false, true);
-			else void flashFields(true, true);
+			else if (result.errorKey !== 'pr.needLift') void flashFields(true, true);
 			return;
 		}
 
@@ -142,7 +152,8 @@
 			weightText = saved.weightKg != null ? String(saved.weightKg) : '';
 			repsText = saved.reps != null ? String(saved.reps) : '';
 			noteText = saved.note;
-			hasSaved = true;
+			hasStoredEntry = true;
+			hasSaved = hasLiftData(saved);
 			toasts.show(translate(lang, 'pr.saved'), 'success');
 		} catch (err) {
 			toasts.show(err instanceof Error ? err.message : translate(lang, 'pr.saveFail'), 'error');
@@ -153,7 +164,7 @@
 
 	async function onClear() {
 		if (busy) return;
-		if (!hasSaved) {
+		if (!hasStoredEntry) {
 			form = createEmptyRecord(exerciseId);
 			weightText = '';
 			repsText = '';
@@ -170,6 +181,7 @@
 			weightText = '';
 			repsText = '';
 			noteText = '';
+			hasStoredEntry = false;
 			hasSaved = false;
 			dirty = false;
 			syncedKey = `${exerciseId}:empty`;
@@ -186,13 +198,13 @@
 		markDirty();
 	}
 
-	let preview = $derived(
+	let liftPreview = $derived(
 		formatPersonalRecord(
 			{
 				...form,
 				weightKg: weightText.trim() ? coerceWeightKg(weightText) : null,
 				reps: repsText.trim() ? coerceReps(repsText, REPS) : null,
-				note: noteText
+				note: ''
 			},
 			lang
 		)
@@ -206,7 +218,7 @@
 		<p class="shrink-0 text-xs text-[var(--color-muted)]">{translate(lang, 'pr.hint')}</p>
 	</div>
 
-	{#if hasSaved && preview}
+	{#if hasSaved && liftPreview}
 		{#if canExpandPreview}
 			<button
 				type="button"
@@ -216,14 +228,17 @@
 				title={translate(lang, previewOpen ? 'pr.nowCollapse' : 'pr.nowExpand')}
 				onclick={() => (previewOpen = !previewOpen)}
 			>
-				<span class="pr-now-chip__text">{translate(lang, 'pr.now', { value: preview })}</span>
+				<span class="pr-now-chip__text">{translate(lang, 'pr.now', { value: liftPreview })}</span>
 				<span class="pr-now-chip__chevron" aria-hidden="true">
 					<LucideIcon icon={ChevronDown} size={ICON_SMALL} />
 				</span>
 			</button>
+			{#if previewOpen}
+				<p class="pr-now-note">{noteText.trim()}</p>
+			{/if}
 		{:else}
-			<p class="pr-now-chip" title={preview}>
-				<span class="pr-now-chip__text">{translate(lang, 'pr.now', { value: preview })}</span>
+			<p class="pr-now-chip" title={liftPreview}>
+				<span class="pr-now-chip__text">{translate(lang, 'pr.now', { value: liftPreview })}</span>
 			</p>
 		{/if}
 	{/if}
@@ -314,7 +329,7 @@
 			{/if}
 		</button>
 		<button type="button" class="btn-link text-sm" disabled={busy} onclick={() => void onClear()}>
-			{hasSaved ? translate(lang, 'pr.delete') : translate(lang, 'pr.clear')}
+			{hasStoredEntry ? translate(lang, 'pr.delete') : translate(lang, 'pr.clear')}
 		</button>
 	</div>
 </section>

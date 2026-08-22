@@ -19,9 +19,9 @@
 			rel="noreferrer"
 		>
 			{GYM_VISUAL_ATTRIBUTION}
-		</a>
-	</p>
-	<p class="shell-footer-version" aria-label={translate(lang, 'attr.versionAria', { version: APP_VERSION_LABEL })}>
-		{APP_VERSION_LABEL}
+		</a><span
+			class="shell-footer-version"
+			aria-label={translate(lang, 'attr.versionAria', { version: APP_VERSION_LABEL })}
+		><span aria-hidden="true"> · </span>{APP_VERSION_LABEL}</span>
 	</p>
 </footer>

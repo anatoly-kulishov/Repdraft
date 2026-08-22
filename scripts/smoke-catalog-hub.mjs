@@ -66,25 +66,16 @@ assert(
 	'catalog zone must still lock bodyPart for the route'
 );
 
-// ——— Static PWA assets (light/dark home-screen icons) ———
+// ——— Static PWA assets ———
 for (const rel of [
-	'static/icon.svg',
-	'static/icon-light.svg',
-	'static/icon-adaptive.svg',
-	'static/icon-192.png',
 	'static/icon-192-v2.png',
-	'static/icon-192-light.png',
-	'static/icon-512.png',
 	'static/icon-512-v2.png',
-	'static/icon-512-light.png',
-	'static/icon-maskable-512.png',
 	'static/icon-maskable-512-v2.png',
-	'static/icon-maskable-512-light.png',
-	'static/apple-touch-icon.png',
+	'static/icon.svg',
 	'static/apple-touch-icon-v2.png',
-	'static/apple-touch-icon-precomposed.png',
 	'static/apple-touch-icon-precomposed-v2.png',
-	'static/apple-touch-icon-light.png',
+	'static/favicon.ico',
+	'static/icon-boot.png',
 	'static/manifest.webmanifest'
 ]) {
 	await assertFile(rel);

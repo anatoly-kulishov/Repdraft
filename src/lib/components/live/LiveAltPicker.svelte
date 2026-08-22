@@ -65,7 +65,7 @@
 	</ul>
 	<button
 		type="button"
-		class="btn-primary btn-block min-h-12"
+		class="btn-primary btn-block"
 		disabled={!selectedId}
 		onclick={() => {
 			if (selectedId) onConfirm(selectedId);

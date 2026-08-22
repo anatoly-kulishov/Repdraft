@@ -274,7 +274,7 @@
 				actions={historyDetailActions}
 			/>
 		</div>
-		<div class="subroute-desktop-head hidden md:block">
+		<div class="subroute-desktop-head">
 			<SubrouteBack href={WORKOUTS_HISTORY_HREF} label={translate(lang, 'builder.backWorkouts')} />
 			<div class="history-detail__title-row">
 				<h1 class="page-title">{session.planName}</h1>

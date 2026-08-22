@@ -1,14 +1,14 @@
 {
 	"name": "Repdraft",
 	"short_name": "Repdraft",
-	"description": "План тренировок, техника и live-сессия",
+	"description": "Тренировки, техника и запись подходов",
 	"id": "/",
 	"start_url": "/",
 	"scope": "/",
 	"display": "standalone",
 	"orientation": "portrait-primary",
-	"background_color": "#0B0B0C",
-	"theme_color": "#0B0B0C",
+	"background_color": "#0A0A0D",
+	"theme_color": "#0A0A0D",
 	"lang": "ru",
 	"prefer_related_applications": false,
 	"related_applications": [
@@ -39,8 +39,8 @@
 	],
 	"shortcuts": [
 		{
-			"name": "Продолжить / Home",
-			"short_name": "Home",
+			"name": "Продолжить тренировку",
+			"short_name": "Главная",
 			"description": "Главная: продолжить или начать",
 			"url": "/",
 			"icons": [{ "src": "/icon-192-v2.png", "sizes": "192x192" }]
@@ -48,7 +48,7 @@
 		{
 			"name": "Новая тренировка",
 			"short_name": "Новая",
-			"description": "Открыть конструктор",
+			"description": "Создать тренировку",
 			"url": "/builder?new=1",
 			"icons": [{ "src": "/icon-192-v2.png", "sizes": "192x192" }]
 		}

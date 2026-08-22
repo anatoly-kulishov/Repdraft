@@ -37,7 +37,7 @@
 	<div class="lg:hidden">
 		<ScreenHeader {title} backHref="/auth" />
 	</div>
-	<div class="subroute-desktop-head hidden md:block">
+	<div class="subroute-desktop-head">
 		<SubrouteBack href="/auth" label={translate(lang, 'privacy.back')} />
 		<h1 class="page-title">{title}</h1>
 	</div>
