@@ -1,5 +1,4 @@
 <script lang="ts">
-	import AppCheckbox from '$lib/components/AppCheckbox.svelte';
 	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
 	import type { ComponentProps } from 'svelte';
 	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
