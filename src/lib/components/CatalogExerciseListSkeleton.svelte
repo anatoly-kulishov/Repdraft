@@ -53,13 +53,29 @@
 
 	@media (max-width: 767px) {
 		.catalog-exercise-skeleton__list {
-			margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
-			margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
-			width: auto;
-			max-width: none;
+			gap: 0.55rem;
+			overflow: visible;
 			border: none;
 			border-radius: 0;
+			background: transparent;
 			box-shadow: none;
+		}
+
+		.catalog-exercise-skeleton__row {
+			overflow: hidden;
+			border: 1px solid var(--color-border);
+			border-radius: 1rem;
+			background: var(--color-surface);
+			box-shadow: var(--shadow-panel);
+		}
+
+		.catalog-exercise-skeleton__row:not(:last-child)::after {
+			display: none;
+		}
+
+		:global(.catalog-exercise-skeleton__thumb) {
+			border-radius: calc(1rem - 1px) 0 0 calc(1rem - 1px);
+			align-self: stretch;
 		}
 	}
 
