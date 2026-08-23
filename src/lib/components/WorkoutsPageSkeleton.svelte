@@ -1,62 +1,50 @@
 <script lang="ts">
+	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
+
 	let { label }: { label: string } = $props();
 </script>
 
 <div class="workouts-skeleton" aria-busy="true" aria-live="polite">
 	<span class="sr-only">{label}</span>
-	<div class="workouts-skeleton-search" aria-hidden="true"></div>
-	<div class="workouts-skeleton-list" aria-hidden="true">
-		<div class="workouts-skeleton-row"></div>
-		<div class="workouts-skeleton-row"></div>
-		<div class="workouts-skeleton-row"></div>
-		<div class="workouts-skeleton-row"></div>
-	</div>
+	<AppSkeleton class="workouts-skeleton-tabs" aria-hidden="true" />
+	<AppSkeleton class="workouts-skeleton-search" aria-hidden="true" />
+	<ul class="entity-list entity-list--cards workouts-skeleton-list" aria-hidden="true">
+		{#each Array.from({ length: 4 }, (_, i) => i) as i (i)}
+			<li><AppSkeleton class="workouts-skeleton-row" aria-hidden="true" /></li>
+		{/each}
+	</ul>
 </div>
 
 <style>
-	.workouts-skeleton-search {
-		height: 3.25rem;
+	:global(.workouts-skeleton-tabs) {
+		display: block;
+		width: 100%;
+		height: 2.75rem;
 		margin-bottom: 1rem;
-		border-radius: var(--radius-panel);
+		border-radius: var(--radius-control);
 		border: 1px solid var(--color-border);
-		background: var(--color-surface-muted);
-		animation: workouts-skeleton-shimmer 1.1s ease-in-out infinite;
-		background-image: linear-gradient(
-			90deg,
-			var(--color-surface-muted) 0%,
-			color-mix(in srgb, var(--color-surface-elevated) 70%, var(--color-surface-muted)) 50%,
-			var(--color-surface-muted) 100%
-		);
-		background-size: 200% 100%;
+	}
+
+	:global(.workouts-skeleton-search) {
+		display: block;
+		width: 100%;
+		height: 3rem;
+		margin-bottom: 1rem;
+		border-radius: var(--radius-control);
+		border: 1px solid var(--color-border);
 	}
 
 	.workouts-skeleton-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.625rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
 	}
 
-	.workouts-skeleton-row {
+	:global(.workouts-skeleton-row) {
+		display: block;
+		width: 100%;
 		min-height: 5.25rem;
 		border-radius: var(--radius-panel);
 		border: 1px solid var(--color-border);
-		background: var(--color-surface-muted);
-		animation: workouts-skeleton-shimmer 1.1s ease-in-out infinite;
-		background-image: linear-gradient(
-			90deg,
-			var(--color-surface-muted) 0%,
-			color-mix(in srgb, var(--color-surface-elevated) 70%, var(--color-surface-muted)) 50%,
-			var(--color-surface-muted) 100%
-		);
-		background-size: 200% 100%;
-	}
-
-	@keyframes workouts-skeleton-shimmer {
-		0% {
-			background-position: 100% 0;
-		}
-		100% {
-			background-position: -100% 0;
-		}
 	}
 </style>

@@ -1,6 +1,7 @@
 <script lang="ts">
+	import * as Sheet from '$lib/components/ui/sheet/index.js';
+	import { cn } from '$lib/utils.js';
 	import type { Snippet } from 'svelte';
-	import { overlayPortal } from '$lib/actions/overlayPortal';
 
 	let {
 		open = false,
@@ -14,54 +15,41 @@
 		actions = null
 	}: {
 		open?: boolean;
-		/** Prefer stable id pointing at the title inside the card. */
 		titleId?: string;
 		labelledBy?: string | null;
-		/** Fallback when there is no visible title id. */
 		label?: string | null;
 		dismissible?: boolean;
-		/** Vertically center the card (technique GIF) instead of flush to tabbar. */
 		raised?: boolean;
 		onDismiss?: () => void;
 		children: Snippet;
 		actions?: Snippet | null;
 	} = $props();
 
-	function dismiss() {
-		if (!dismissible) return;
-		onDismiss?.();
-	}
-
-	function onBackdropClick(e: MouseEvent) {
-		if (e.target === e.currentTarget) dismiss();
-	}
-
-	function onKeydown(e: KeyboardEvent) {
-		if (!open || !dismissible) return;
-		if (e.key === 'Escape') {
-			e.preventDefault();
-			dismiss();
-		}
+	function onOpenChange(next: boolean) {
+		if (!next && dismissible) onDismiss?.();
 	}
 </script>
 
-<svelte:window onkeydown={onKeydown} />
-
-{#if open}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
-		use:overlayPortal
-		class="bottom-sheet"
-		class:bottom-sheet--raised={raised}
-		role="dialog"
-		aria-modal="true"
-		tabindex="-1"
+<Sheet.Root {open} onOpenChange={onOpenChange}>
+	<Sheet.Content
+		side="bottom"
+		showCloseButton={false}
+		class={cn(
+			'bottom-sheet gap-0 border-0 bg-transparent p-0 shadow-none',
+			raised && 'bottom-sheet--raised'
+		)}
+		onInteractOutside={(e) => {
+			if (!dismissible) e.preventDefault();
+		}}
+		onEscapeKeydown={(e) => {
+			if (!dismissible) e.preventDefault();
+		}}
 		aria-labelledby={labelledBy ?? titleId ?? undefined}
 		aria-label={labelledBy || titleId ? undefined : (label ?? undefined)}
-		onclick={onBackdropClick}
 	>
-		<div class="bottom-sheet__card panel">
+		<div
+			class="bottom-sheet__card panel mx-auto w-full max-w-sm gap-0 border-0 p-0 shadow-[var(--shadow-overlay)]"
+		>
 			{@render children()}
 			{#if actions}
 				<div class="bottom-sheet__actions">
@@ -69,5 +57,5 @@
 				</div>
 			{/if}
 		</div>
-	</div>
-{/if}
+	</Sheet.Content>
+</Sheet.Root>

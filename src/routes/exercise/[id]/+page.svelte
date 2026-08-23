@@ -1,11 +1,10 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppPanel from '$lib/components/AppPanel.svelte';
 	import CloseIconButton from '$lib/components/CloseIconButton.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import {
-		catalogEquipmentPath,
-		catalogTargetPath,
-		catalogZonePath
-	} from '$lib/domain/catalogLinks';
+	import { catalogEquipmentPath, catalogTargetPath, catalogZonePath, withFromParam } from '$lib/domain/catalogLinks';
+	import { currentReturnPath, linkWithFrom, resolveBackFrom } from '$lib/domain/navigation';
 	import {
 		labelBodyPart,
 		labelEquipment,
@@ -13,6 +12,8 @@
 	} from '$lib/domain/labels.ru';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { translate } from '$lib/i18n/messages';
+	import { backLabelForHref } from '$lib/i18n/backLabel';
+	import { cn } from '$lib/utils.js';
 	import { draft } from '$lib/stores/draft';
 	import { bookmarks } from '$lib/stores/bookmarks';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -52,21 +53,9 @@
 		Boolean(exercise && $draft.exercises.some((ex) => ex.exerciseId === exercise.id))
 	);
 	let bookmarked = $derived(Boolean(exercise && $bookmarks.includes(exercise.id)));
-	let backHref = $derived.by(() => {
-		const from = $page.url.searchParams.get('from');
-		if (from?.startsWith('/')) return from;
-		if (from === 'workouts' || from?.startsWith('/workouts')) {
-			return from.startsWith('/') ? from : '/workouts';
-		}
-		if (from === 'catalog' || from === 'exercises') return '/exercises';
-		return '/exercises';
-	});
-	let backLabel = $derived.by(() => {
-		if (backHref.startsWith('/workouts')) return translate(lang, 'builder.backWorkouts');
-		if (backHref.startsWith('/catalog/')) return translate(lang, 'catalog.backToBrowse');
-		if (backHref === '/exercises/saved') return translate(lang, 'bookmarks.title');
-		return translate(lang, 'catalog.hubTitle');
-	});
+	let returnPath = $derived(currentReturnPath($page.url.pathname, $page.url.searchParams));
+	let backHref = $derived(resolveBackFrom($page.url.searchParams.get('from')));
+	let backLabel = $derived(backLabelForHref(backHref, lang));
 
 	onMount(() => {
 		void bookmarks.refresh();
@@ -78,7 +67,7 @@
 		void bookmarks
 			.toggle(exercise.id)
 			.then((saved) => {
-				toasts.show(translate(lang, saved ? 'bookmarks.saved' : 'bookmarks.removed'), 'info');
+				toasts.show(translate(lang, saved ? 'bookmarks.saved' : 'bookmarks.removed'), 'info', 2600, undefined, 'bookmark');
 			})
 			.finally(() => {
 				bookmarkBusy = false;
@@ -89,7 +78,7 @@
 		if (!exercise) return;
 		if (inDraft) {
 			draft.removeFromDraft(exercise.id);
-			toasts.show(translate(lang, 'exercise.removed'), 'info');
+			toasts.show(translate(lang, 'exercise.removed'), 'info', 2600, undefined, 'draft');
 			return;
 		}
 		const result = draft.addToDraft(exercise.id, {
@@ -97,9 +86,9 @@
 			equipment: exercise.equipment
 		});
 		if (result.added) {
-			toasts.show(translate(lang, 'exercise.added'), 'success');
+			toasts.show(translate(lang, 'exercise.added'), 'success', 2600, undefined, 'draft');
 		} else {
-			toasts.show(translate(lang, 'exercise.already'), 'info');
+			toasts.show(translate(lang, 'exercise.already'), 'info', 2600, undefined, 'draft');
 		}
 	}
 
@@ -126,10 +115,9 @@
 </script>
 
 {#snippet exerciseHeaderActions()}
-	<button
-		type="button"
-		class="btn-ghost exercise-detail-bookmark shrink-0"
-		class:is-active={bookmarked}
+	<AppButton
+		variant="ghost"
+		class={cn('exercise-detail-bookmark shrink-0', bookmarked && 'is-active')}
 		onclick={toggleBookmark}
 		disabled={bookmarkBusy}
 		aria-busy={bookmarkBusy}
@@ -141,13 +129,16 @@
 		{:else}
 			<LucideIcon icon={Bookmark} size={ICON_BUTTON + 2} fill={bookmarked ? 'currentColor' : 'none'} />
 		{/if}
-	</button>
+	</AppButton>
 {/snippet}
 
 <svelte:window onkeydown={onKeydown} />
 
 <svelte:head>
 	<title>{exercise ? `${title} · Repdraft` : `${translate(lang, 'exercise.notFoundTitle')} · Repdraft`}</title>
+	{#if exercise}
+		<link rel="preload" as="image" href={`/${exercise.gif_url}`} fetchpriority="high" />
+	{/if}
 </svelte:head>
 
 {#if !exercise}
@@ -159,7 +150,7 @@
 	/>
 {:else}
 	<article class="content-page content-page--exercise exercise-detail-page pb-mobile-actions lg:pb-0">
-		<div class="exercise-detail-page__chrome min-w-0 lg:hidden">
+		<div class="exercise-detail-page__chrome min-w-0 md:hidden">
 			<ScreenHeader {title} {backHref} actions={exerciseHeaderActions} />
 		</div>
 		<div class="exercise-detail-page__chrome catalog-subroute-header">
@@ -176,9 +167,9 @@
 			<div class="exercise-detail-page__primary">
 				<div class="exercise-detail-page__hero">
 					<div class="exercise-detail-page__media">
-						<button
-							type="button"
-							class="exercise-media-frame"
+						<AppButton
+							variant="ghost"
+							class="exercise-media-frame !min-h-0 !min-w-0 h-auto w-auto p-0"
 							aria-label={translate(lang, 'exercise.openMedia')}
 							onclick={openMedia}
 						>
@@ -187,6 +178,7 @@
 								alt={title}
 								width="180"
 								height="180"
+								loading="eager"
 								fetchpriority="high"
 								decoding="async"
 								class="exercise-media-native pointer-events-none block"
@@ -194,28 +186,30 @@
 							<span class="exercise-media-frame__zoom" aria-hidden="true">
 								<LucideIcon icon={Search} size={ICON_SMALL} />
 							</span>
-						</button>
+						</AppButton>
 					</div>
 
 					<div class="exercise-detail-page__intro">
 						<div class="exercise-detail-page__toolbar">
-							<button
-								type="button"
-								class="btn-ghost exercise-detail-bookmark exercise-detail-bookmark--page shrink-0"
-								class:is-active={bookmarked}
+							<AppButton
+								variant="ghost"
+								class={cn(
+									'exercise-detail-bookmark exercise-detail-bookmark--page shrink-0',
+									bookmarked && 'is-active'
+								)}
 								onclick={toggleBookmark}
 								aria-label={translate(lang, bookmarked ? 'bookmarks.remove' : 'bookmarks.add')}
 								aria-pressed={bookmarked}
 							>
 								<LucideIcon icon={Bookmark} size={ICON_BUTTON + 2} fill={bookmarked ? 'currentColor' : 'none'} />
-							</button>
+							</AppButton>
 						</div>
 
-						<dl class="panel grid min-w-0 gap-3 !p-3 text-sm sm:grid-cols-2 xl:grid-cols-3">
+						<AppPanel class="grid min-w-0 gap-3 !p-3 text-sm sm:grid-cols-2 xl:grid-cols-3">
 							<div class="min-w-0">
 								<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.bodyPart')}</dt>
 								<dd class="font-medium break-words">
-									<a class="exercise-facet-link" href={catalogZonePath(exercise.body_part)}>
+									<a class="exercise-facet-link" href={withFromParam(catalogZonePath(exercise.body_part), returnPath)}>
 										{labelBodyPart(exercise.body_part, lang)}
 									</a>
 								</dd>
@@ -225,7 +219,10 @@
 								<dd class="font-medium break-words">
 									<a
 										class="exercise-facet-link"
-										href={catalogEquipmentPath(exercise.body_part, exercise.equipment)}
+										href={withFromParam(
+											catalogEquipmentPath(exercise.body_part, exercise.equipment),
+											returnPath
+										)}
 									>
 										{labelEquipment(exercise.equipment, lang)}
 									</a>
@@ -236,7 +233,10 @@
 								<dd class="font-medium break-words">
 									<a
 										class="exercise-facet-link"
-										href={catalogTargetPath(exercise.target, exercise.body_part)}
+										href={withFromParam(
+											catalogTargetPath(exercise.target, exercise.body_part),
+											returnPath
+										)}
 									>
 										{labelTarget(exercise.target, lang)}
 									</a>
@@ -248,7 +248,7 @@
 									{#if exercise.secondary_muscles.length}
 										{#each exercise.secondary_muscles as muscle, i (muscle)}
 											{#if i > 0}<span class="text-[var(--color-muted)]">, </span>{/if}
-											<a class="exercise-facet-link" href={catalogTargetPath(muscle)}>
+											<a class="exercise-facet-link" href={withFromParam(catalogTargetPath(muscle), returnPath)}>
 												{labelTarget(muscle, lang)}
 											</a>
 										{/each}
@@ -257,30 +257,30 @@
 									{/if}
 								</dd>
 							</div>
-						</dl>
+						</AppPanel>
 
 						<div class="actions-inline">
 							{#if inDraft}
-								<a class="btn-primary inline-flex items-center gap-1.5" href="/builder">
+								<AppButton href="/builder" class="inline-flex items-center gap-1.5">
 									<LucideIcon icon={ClipboardList} size={ICON_BUTTON} />
 									{translate(lang, 'draft.dock', { n: draftCount })}
-								</a>
-								<button
-									type="button"
-									class="btn-ghost exercise-detail-remove-draft"
+								</AppButton>
+								<AppButton
+									variant="ghost"
+									class="exercise-detail-remove-draft"
 									onclick={toggleDraft}
 									aria-label={translate(lang, 'exercise.removeDraft')}
 									title={translate(lang, 'exercise.removeDraft')}
 								>
 									<LucideIcon icon={X} size={ICON_BUTTON} />
-								</button>
+								</AppButton>
 							{:else}
-								<button type="button" class="btn-primary" onclick={toggleDraft}>
+								<AppButton onclick={toggleDraft}>
 									<span class="inline-flex items-center gap-1.5">
 										<LucideIcon icon={Plus} size={ICON_BUTTON} />
 										{translate(lang, 'exercise.addDraft')}
 									</span>
-								</button>
+								</AppButton>
 							{/if}
 						</div>
 					</div>
@@ -306,7 +306,10 @@
 					<ul class="exercise-related-articles__list">
 						{#each relatedArticles as article (article.slug)}
 							<li>
-								<a class="exercise-related-articles__link" href={`/articles/${article.slug}`}>
+								<a
+									class="exercise-related-articles__link"
+									href={linkWithFrom(`/articles/${article.slug}`, returnPath)}
+								>
 									<span class="exercise-related-articles__title">{article.title}</span>
 									<span class="exercise-related-articles__excerpt">{article.excerpt}</span>
 								</a>
@@ -324,24 +327,20 @@
 	<div class="sticky-actions lg:hidden" class:sticky-actions--stack={inDraft}>
 		<div class="sticky-actions__inner exercise-detail-sticky">
 			{#if inDraft}
-				<a class="btn-primary btn-block inline-flex items-center justify-center gap-1.5" href="/builder">
+				<AppButton block href="/builder" class="inline-flex items-center justify-center gap-1.5">
 					<LucideIcon icon={ClipboardList} size={ICON_BUTTON} />
 					{translate(lang, 'draft.dock', { n: draftCount })}
-				</a>
-				<button
-					type="button"
-					class="btn-link exercise-detail-remove-draft"
-					onclick={toggleDraft}
-				>
+				</AppButton>
+				<AppButton variant="link" class="exercise-detail-remove-draft" onclick={toggleDraft}>
 					{translate(lang, 'exercise.removeDraft')}
-				</button>
+				</AppButton>
 			{:else}
-				<button type="button" class="btn-primary btn-block" onclick={toggleDraft}>
+				<AppButton block onclick={toggleDraft}>
 					<span class="inline-flex items-center justify-center gap-1.5">
 						<LucideIcon icon={Plus} size={ICON_BUTTON} />
 						{translate(lang, 'exercise.toDraft')}
 					</span>
-				</button>
+				</AppButton>
 			{/if}
 		</div>
 	</div>
@@ -360,9 +359,9 @@
 				if (e.target === e.currentTarget) closeMedia();
 			}}
 		>
-			<div class="exercise-media-lightbox-wrap flex w-full max-w-lg flex-col items-center">
-				<CloseIconButton class="exercise-media-lightbox__close" onclick={closeMedia} />
+			<div class="exercise-media-lightbox-wrap">
 				<div class="exercise-media-lightbox">
+					<CloseIconButton class="exercise-media-lightbox__close" onclick={closeMedia} />
 					<img
 						src={`/${exercise.gif_url}`}
 						alt={title}

@@ -85,12 +85,13 @@
 		/>
 	{:else}
 		<div class="catalog-hub-grid">
-			{#each data.hubZones as bodyPart (bodyPart)}
+			{#each data.hubZones as bodyPart, index (bodyPart)}
 				<CatalogZoneCard
 					{bodyPart}
 					count={data.zoneCounts[bodyPart] ?? 0}
 					coverImage={data.zoneCovers[bodyPart] ?? null}
 					from={fromParam}
+					priority={index === 0}
 				/>
 			{/each}
 		</div>

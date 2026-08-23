@@ -8,13 +8,16 @@
 		bodyPart,
 		count = 0,
 		coverImage = null as string | null,
-		from = null as string | null
+		from = null as string | null,
+		priority = false
 	}: {
 		bodyPart: string;
 		count?: number;
 		coverImage?: string | null;
 		/** Builder return path, e.g. `/builder`. */
 		from?: string | null;
+		/** Hub LCP candidate: eager + high fetch priority. */
+		priority?: boolean;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
@@ -32,8 +35,9 @@
 				width="180"
 				height="180"
 				sizes="(min-width: 1280px) 7.25rem, (min-width: 1024px) 6.75rem, 120px"
-				loading="lazy"
-				decoding="async"
+				loading={priority ? 'eager' : 'lazy'}
+				fetchpriority={priority ? 'high' : 'auto'}
+				decoding={priority ? 'sync' : 'async'}
 			/>
 		</div>
 	{/if}

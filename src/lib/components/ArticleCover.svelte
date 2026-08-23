@@ -25,7 +25,7 @@
 		compact?: boolean;
 	} = $props();
 
-	let tone = $derived(article.coverTone ?? 'purple');
+	let tone = $derived(article.coverTone ?? 'lime');
 	let iconKey = $derived(resolveArticleCoverIcon(article));
 	let CoverIcon = $derived(COVER_ICONS[iconKey]);
 	let iconSize = $derived(compact ? 28 : variant === 'hero' ? 44 : 36);

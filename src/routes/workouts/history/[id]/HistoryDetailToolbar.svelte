@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
@@ -36,9 +37,9 @@
 </script>
 
 {#if editing}
-	<button
-		type="button"
-		class="btn-primary history-detail__icon-btn"
+	<AppButton
+		variant="ghost"
+		class="history-detail__icon-btn history-detail__icon-btn--save"
 		disabled={savingEdit || deleting}
 		aria-busy={savingEdit}
 		aria-label={translate(lang, 'workouts.saveEdit')}
@@ -50,21 +51,31 @@
 		{:else}
 			<LucideIcon icon={Check} size={ICON_BUTTON} />
 		{/if}
-	</button>
-	<button
-		type="button"
-		class="btn-ghost history-detail__icon-btn"
+	</AppButton>
+	<AppButton
+		variant="ghost"
+		class="history-detail__icon-btn"
 		disabled={savingEdit || deleting}
 		aria-label={translate(lang, 'workouts.cancelEdit')}
 		title={translate(lang, 'workouts.cancelEdit')}
 		onclick={onCancel}
 	>
 		<LucideIcon icon={X} size={ICON_BUTTON} />
-	</button>
+	</AppButton>
 {:else}
-	<button
-		type="button"
-		class="btn-ghost history-detail__icon-btn"
+	<AppButton
+		variant="ghost"
+		class="history-detail__icon-btn"
+		disabled={deleting || loading || !canEdit}
+		aria-label={translate(lang, 'workouts.editSession')}
+		title={translate(lang, 'workouts.editSession')}
+		onclick={onEdit}
+	>
+		<LucideIcon icon={Pencil} size={ICON_BUTTON} />
+	</AppButton>
+	<AppButton
+		variant="ghost"
+		class="history-detail__icon-btn"
 		disabled={deleting || loading || !canEdit || sendingToBuilder}
 		aria-busy={sendingToBuilder}
 		aria-label={translate(lang, 'workouts.toBuilder')}
@@ -76,30 +87,20 @@
 		{:else}
 			<LucideIcon icon={ClipboardCopy} size={ICON_BUTTON} />
 		{/if}
-	</button>
-	<button
-		type="button"
-		class="btn-ghost history-detail__icon-btn"
-		disabled={deleting || loading || !canEdit}
-		aria-label={translate(lang, 'workouts.editSession')}
-		title={translate(lang, 'workouts.editSession')}
-		onclick={onEdit}
+	</AppButton>
+	<AppButton
+		variant="ghost"
+		class="is-danger history-detail__icon-btn"
+		disabled={deleting || sendingToBuilder}
+		aria-busy={deleting}
+		aria-label={translate(lang, 'workouts.deleteSession')}
+		title={translate(lang, 'workouts.deleteSession')}
+		onclick={() => void onDelete()}
 	>
-		<LucideIcon icon={Pencil} size={ICON_BUTTON} />
-	</button>
+		{#if deleting}
+			<Spinner size="sm" block={false} />
+		{:else}
+			<LucideIcon icon={Trash2} size={ICON_BUTTON} />
+		{/if}
+	</AppButton>
 {/if}
-<button
-	type="button"
-	class="btn-ghost is-danger history-detail__icon-btn"
-	disabled={deleting || savingEdit || sendingToBuilder}
-	aria-busy={deleting}
-	aria-label={translate(lang, 'workouts.deleteSession')}
-	title={translate(lang, 'workouts.deleteSession')}
-	onclick={() => void onDelete()}
->
-	{#if deleting}
-		<Spinner size="sm" block={false} />
-	{:else}
-		<LucideIcon icon={Trash2} size={ICON_BUTTON} />
-	{/if}
-</button>

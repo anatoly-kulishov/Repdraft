@@ -12,6 +12,8 @@ export type Toast = {
 	message: string;
 	kind: ToastKind;
 	action?: ToastAction;
+	/** When set, a new toast evicts others in the same group (toggle feedback). */
+	replaceGroup?: string;
 };
 
 const MAX_TOASTS = 2;
@@ -26,14 +28,19 @@ function createToastStore() {
 			message: string,
 			kind: ToastKind = 'info',
 			ms = 2600,
-			action?: ToastAction
+			action?: ToastAction,
+			replaceGroup?: string
 		) {
 			const id = ++seq;
 			const ttl = action ? Math.max(ms, 4200) : ms;
 			update((list) => {
-				// Replace same copy instead of stacking into the middle of the screen.
-				const withoutDup = list.filter((t) => t.message !== message);
-				return [...withoutDup, { id, message, kind, action }].slice(-MAX_TOASTS);
+				let trimmed = list;
+				if (replaceGroup) {
+					trimmed = list.filter((t) => t.replaceGroup !== replaceGroup);
+				} else {
+					trimmed = list.filter((t) => t.message !== message);
+				}
+				return [...trimmed, { id, message, kind, action, replaceGroup }].slice(-MAX_TOASTS);
 			});
 			if (typeof window !== 'undefined') {
 				window.setTimeout(() => {

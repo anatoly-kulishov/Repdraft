@@ -1,4 +1,6 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppInput from '$lib/components/AppInput.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
@@ -269,6 +271,7 @@
 	<section class="content-page content-page--narrow soft-enter history-detail">
 		<div class="lg:hidden">
 			<ScreenHeader
+				class="history-detail__screen-header"
 				title={session.planName}
 				backHref={WORKOUTS_HISTORY_HREF}
 				actions={historyDetailActions}
@@ -326,16 +329,16 @@
 									</p>
 								{/if}
 							</div>
-							<button
-								type="button"
-								class="btn-ghost live-set-remove-btn history-exercise__remove"
+							<AppButton
+								variant="ghost"
+								class="live-set-remove-btn history-exercise__remove"
 								disabled={savingEdit || (editSession?.exercises.length ?? 0) <= 1}
 								aria-label={translate(lang, 'workouts.removeExercise')}
 								title={translate(lang, 'workouts.removeExercise')}
 								onclick={() => removeHistoryExercise(exIndex, label)}
 							>
 								<LucideIcon icon={Trash2} size={ICON_SMALL} />
-							</button>
+							</AppButton>
 						</div>
 					{:else if meta}
 						<a
@@ -385,8 +388,8 @@
 									<span class="history-exercise__set-i">{i + 1}</span>
 									{#if editing}
 										{@const key = setKey(exIndex, item.setIndex)}
-										<input
-											class="field history-set-field history-set-weight tabular-nums"
+										<AppInput
+											class="history-set-field history-set-weight tabular-nums"
 											type="text"
 											inputmode="decimal"
 											autocomplete="off"
@@ -400,8 +403,8 @@
 											}}
 										/>
 										<span class="history-exercise__set-unit">kg</span>
-										<input
-											class="field history-set-field history-set-reps tabular-nums"
+										<AppInput
+											class="history-set-field history-set-reps tabular-nums"
 											type="text"
 											inputmode="numeric"
 											autocomplete="off"
@@ -414,15 +417,15 @@
 												editDraft[key] = { ...(editDraft[key] ?? { w: '', r: '' }), r: next };
 											}}
 										/>
-										<button
-											type="button"
-											class="btn-ghost live-set-remove-btn"
+										<AppButton
+											variant="ghost"
+											class="live-set-remove-btn"
 											aria-label={translate(lang, 'live.removeSet')}
 											title={translate(lang, 'live.removeSet')}
 											onclick={() => removeHistorySet(exIndex, item.setIndex)}
 										>
 											<LucideIcon icon={Trash2} size={ICON_SMALL} />
-										</button>
+										</AppButton>
 									{:else}
 										<span class="history-exercise__set-weight">{item.set.weightKg ?? '—'} kg</span>
 										<span class="history-exercise__set-reps">× {item.set.reps ?? '—'}</span>
@@ -434,16 +437,16 @@
 						<p class="history-exercise__empty">{translate(lang, 'workouts.noLoggedSets')}</p>
 					{/if}
 					{#if editing}
-						<button
-							type="button"
-							class="btn-ghost history-exercise__add-set"
+						<AppButton
+							variant="ghost"
+							class="history-exercise__add-set"
 							disabled={savingEdit || ex.sets.length >= SETS.max}
 							aria-label={translate(lang, 'live.addSet')}
 							title={translate(lang, 'live.addSet')}
 							onclick={() => addHistorySet(exIndex)}
 						>
 							<LucideIcon icon={Plus} size={ICON_BUTTON} />
-						</button>
+						</AppButton>
 					{/if}
 				</li>
 			{/each}

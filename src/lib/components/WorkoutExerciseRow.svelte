@@ -1,24 +1,29 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppCheckbox from '$lib/components/AppCheckbox.svelte';
+	import AppInput from '$lib/components/AppInput.svelte';
+	import ExerciseReorderHandle from '$lib/components/ExerciseReorderHandle.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import type { WorkoutExercise } from '$lib/domain/types';
 	import { coerceReps, coerceRestSec, coerceSets, REPS } from '$lib/domain/inputLimits';
 	import { exerciseName } from '$lib/domain/exerciseName';
+	import { linkWithFrom, currentReturnPath } from '$lib/domain/navigation';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ChevronDown, ChevronUp, Trash2, Unlink } from '@lucide/svelte';
+	import { page } from '$app/stores';
+	import { Trash2, Unlink } from '@lucide/svelte';
 
 	let {
 		item,
 		meta,
 		index,
-		total,
 		selected = false,
 		groupRole = 'solo',
 		altRole = 'solo',
 		onupdate,
-		onmove,
+		onreorder,
 		onremove,
 		ontoggleSelect,
 		ondissolve,
@@ -29,12 +34,11 @@
 		item: WorkoutExercise;
 		meta: ExerciseIndexItem | null;
 		index: number;
-		total: number;
 		selected?: boolean;
 		groupRole?: 'solo' | 'first' | 'middle' | 'last';
 		altRole?: 'solo' | 'first' | 'middle' | 'last';
 		onupdate: (patch: Partial<Omit<WorkoutExercise, 'exerciseId' | 'groupId' | 'altGroupId'>>) => void;
-		onmove: (from: number, to: number) => void;
+		onreorder: (from: number, to: number) => void;
 		onremove: () => void;
 		ontoggleSelect?: () => void;
 		ondissolve?: () => void;
@@ -46,6 +50,12 @@
 	let lang = $derived($resolvedLocale);
 	let inGroup = $derived(Boolean(item.groupId));
 	let inOrGroup = $derived(Boolean(item.altGroupId));
+	const chipInputClass =
+		'workout-ex-chip__input !h-[2.15rem] !min-h-0 w-[2.85rem] min-w-[2.85rem] max-w-[2.85rem] sm:w-[3.5rem] sm:min-w-[3.5rem] sm:max-w-[3.5rem] shrink-0 px-1.5 text-center text-base tabular-nums';
+	const chipInputRestClass =
+		'workout-ex-chip__input workout-ex-chip__input--rest !h-[2.15rem] !min-h-0 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem] sm:w-[4rem] sm:min-w-[4rem] sm:max-w-[4rem] shrink-0 px-1.5 text-center text-base tabular-nums';
+	const supersetInputClass =
+		'workout-ex-chip__input !h-[1.9rem] !min-h-0 w-[2.85rem] min-w-[2.85rem] max-w-[2.85rem] shrink-0 px-1.5 text-center text-base tabular-nums';
 </script>
 
 <article
@@ -61,22 +71,22 @@
 			<div class="superset-bar__head">
 				<span class="superset-bar__badge">{translate(lang, 'builder.supersetBadge')}</span>
 				{#if ondissolve}
-					<button
-						type="button"
-						class="btn-ghost superset-bar__dissolve"
+					<AppButton
+						variant="ghost"
+						class="superset-bar__dissolve"
 						onclick={ondissolve}
 						aria-label={translate(lang, 'builder.dissolve')}
 						title={translate(lang, 'builder.dissolve')}
 					>
 						<LucideIcon icon={Unlink} size={ICON_SMALL} />
-					</button>
+					</AppButton>
 				{/if}
 			</div>
 			<div class="superset-bar__fields">
 				<label class="superset-chip">
 					<span>{translate(lang, 'builder.rounds')}</span>
-					<input
-						class="field"
+					<AppInput
+						class={supersetInputClass}
 						type="text"
 						inputmode="numeric"
 						autocomplete="off"
@@ -90,8 +100,8 @@
 				</label>
 				<label class="superset-chip">
 					<span>{translate(lang, 'builder.rest')}</span>
-					<input
-						class="field"
+					<AppInput
+						class={supersetInputClass}
 						type="text"
 						inputmode="numeric"
 						autocomplete="off"
@@ -112,15 +122,15 @@
 			<div class="or-bar__head">
 				<span class="or-bar__badge">{translate(lang, 'builder.orBadge')}</span>
 				{#if ondissolveOr}
-					<button
-						type="button"
-						class="btn-ghost or-bar__dissolve"
+					<AppButton
+						variant="ghost"
+						class="or-bar__dissolve"
 						onclick={ondissolveOr}
 						aria-label={translate(lang, 'builder.dissolve')}
 						title={translate(lang, 'builder.dissolve')}
 					>
 						<LucideIcon icon={Unlink} size={ICON_SMALL} />
-					</button>
+					</AppButton>
 				{/if}
 			</div>
 		</div>
@@ -133,11 +143,10 @@
 	<div class="workout-ex-head" class:workout-ex-head--group={inGroup}>
 		{#if ontoggleSelect}
 			<label class="workout-ex-head__check">
-				<input
-					type="checkbox"
-					class="h-5 w-5 accent-[var(--color-accent)]"
+				<AppCheckbox
+					class="h-5 w-5"
 					checked={selected}
-					onchange={() => ontoggleSelect?.()}
+					onCheckedChange={() => ontoggleSelect?.()}
 					aria-label={translate(lang, 'builder.selectExercise')}
 				/>
 			</label>
@@ -147,14 +156,20 @@
 				<img src={`/${meta.image}`} alt="" width="120" height="120" />
 			</span>
 			<div class="workout-ex-head__copy">
-				<a class="workout-ex-head__title" href={`/exercise/${item.exerciseId}`}>
+				<a
+					class="workout-ex-head__title"
+					href={linkWithFrom(
+						`/exercise/${item.exerciseId}`,
+						currentReturnPath($page.url.pathname, $page.url.searchParams)
+					)}
+				>
 					{exerciseName(meta, lang)}
 				</a>
 				{#if inGroup}
 					<label class="workout-ex-chip">
 						<span>{translate(lang, 'builder.reps')}</span>
-						<input
-							class="field"
+						<AppInput
+							class={chipInputClass}
 							type="text"
 							inputmode="numeric"
 							autocomplete="off"
@@ -169,8 +184,8 @@
 					<div class="workout-ex-fields">
 						<label class="workout-ex-chip">
 							<span>{translate(lang, 'builder.sets')}</span>
-							<input
-								class="field"
+							<AppInput
+								class={chipInputClass}
 								type="text"
 								inputmode="numeric"
 								autocomplete="off"
@@ -181,8 +196,8 @@
 						<span class="workout-ex-fields__times" aria-hidden="true">×</span>
 						<label class="workout-ex-chip">
 							<span>{translate(lang, 'builder.reps')}</span>
-							<input
-								class="field"
+							<AppInput
+								class={chipInputClass}
 								type="text"
 								inputmode="numeric"
 								autocomplete="off"
@@ -195,8 +210,8 @@
 						</label>
 						<label class="workout-ex-chip workout-ex-chip--rest">
 							<span>{translate(lang, 'builder.rest')}</span>
-							<input
-								class="field"
+							<AppInput
+								class={chipInputRestClass}
 								type="text"
 								inputmode="numeric"
 								autocomplete="off"
@@ -217,35 +232,20 @@
 		{/if}
 
 		<div class="workout-ex-head__actions">
-			<button
-				type="button"
-				class="btn-ghost"
-				disabled={index === 0}
-				onclick={() => onmove(index, index - 1)}
-				aria-label={translate(lang, 'builder.up')}
-				title={translate(lang, 'builder.up')}
-			>
-				<LucideIcon icon={ChevronUp} size={ICON_SMALL} />
-			</button>
-			<button
-				type="button"
-				class="btn-ghost"
-				disabled={index >= total - 1}
-				onclick={() => onmove(index, index + 1)}
-				aria-label={translate(lang, 'builder.down')}
-				title={translate(lang, 'builder.down')}
-			>
-				<LucideIcon icon={ChevronDown} size={ICON_SMALL} />
-			</button>
-			<button
-				type="button"
-				class="btn-ghost is-danger"
+			<ExerciseReorderHandle
+				{index}
+				label={translate(lang, 'builder.reorder')}
+				onreorder={onreorder}
+			/>
+			<AppButton
+				variant="ghost"
+				class="is-danger workout-ex-head__delete"
 				onclick={onremove}
 				aria-label={translate(lang, 'builder.remove')}
 				title={translate(lang, 'builder.remove')}
 			>
 				<LucideIcon icon={Trash2} size={ICON_SMALL} />
-			</button>
+			</AppButton>
 		</div>
 	</div>
 </article>

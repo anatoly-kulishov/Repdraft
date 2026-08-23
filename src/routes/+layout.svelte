@@ -1,6 +1,7 @@
 <script lang="ts">
 	import './layout.css';
 	import { appTheme } from '$lib/stores/theme';
+	import AppButton from '$lib/components/AppButton.svelte';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import AttributionFooter from '$lib/components/AttributionFooter.svelte';
 	import AccountChip from '$lib/components/AccountChip.svelte';
@@ -171,10 +172,10 @@
 				class="mx-auto flex h-14 w-full max-w-[var(--page-content-max)] items-center justify-between gap-3 shell-header-pad"
 			>
 				<Logo compact />
-				<div class="flex items-center gap-1">
-					<button
-						type="button"
-						class="btn-ghost shell-theme-toggle"
+				<div class="shell-header-actions flex items-center">
+					<AppButton
+						variant="ghost"
+						class="shell-theme-toggle"
 						onclick={() => appTheme.toggle()}
 						aria-label={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
 						title={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
@@ -184,7 +185,7 @@
 						{:else}
 							<Sun size={ICON_SIDEBAR} strokeWidth={1.75} aria-hidden="true" />
 						{/if}
-					</button>
+					</AppButton>
 					<AccountChip active={isActive('/auth')} />
 				</div>
 			</div>
@@ -216,10 +217,11 @@
 >
 	<div class="shell-nav-tabbar__inner">
 		<div class="shell-nav-tabbar__grid">
-		<a
-			class="tab-link"
-			data-active={isActive('/')}
+		<AppButton
+			variant="ghost"
 			href="/"
+			class="tab-link !h-auto !min-h-0 !min-w-0 w-auto p-0"
+			data-active={isActive('/')}
 			aria-current={isActive('/') ? 'page' : undefined}
 		>
 			<span class="tab-link__inner">
@@ -228,11 +230,12 @@
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.tabHome')}</span>
 			</span>
-		</a>
-		<a
-			class="tab-link"
-			data-active={isActive('/workouts')}
+		</AppButton>
+		<AppButton
+			variant="ghost"
 			href="/workouts"
+			class="tab-link !h-auto !min-h-0 !min-w-0 w-auto p-0"
+			data-active={isActive('/workouts')}
 			aria-current={isActive('/workouts') ? 'page' : undefined}
 			aria-label={hasActiveSession
 				? `${translate(lang, 'nav.workouts')}. ${translate(lang, 'nav.liveActive')}`
@@ -247,11 +250,12 @@
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.workouts')}</span>
 			</span>
-		</a>
-		<a
-			class="tab-link"
-			data-active={isActive('/exercises')}
+		</AppButton>
+		<AppButton
+			variant="ghost"
 			href="/exercises"
+			class="tab-link !h-auto !min-h-0 !min-w-0 w-auto p-0"
+			data-active={isActive('/exercises')}
 			aria-current={isActive('/exercises') ? 'page' : undefined}
 		>
 			<span class="tab-link__inner">
@@ -260,7 +264,7 @@
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.exercises')}</span>
 			</span>
-		</a>
+		</AppButton>
 		</div>
 	</div>
 </nav>

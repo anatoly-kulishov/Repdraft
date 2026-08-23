@@ -13,8 +13,8 @@ export type Article = {
 	slug: string;
 	title: string;
 	excerpt: string;
-	/** CSS gradient token, e.g. `purple`, `teal`. */
-	coverTone?: 'purple' | 'teal' | 'amber' | 'rose';
+	/** CSS gradient token, e.g. `lime`, `teal`. Legacy `purple` = lime. */
+	coverTone?: 'lime' | 'purple' | 'teal' | 'amber' | 'rose';
 	/** Lucide cover when `exerciseIds` is empty. */
 	coverIcon?: ArticleCoverIcon;
 	bodyMd: string;

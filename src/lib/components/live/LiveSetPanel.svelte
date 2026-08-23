@@ -1,4 +1,7 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppInput from '$lib/components/AppInput.svelte';
+	import { cn } from '$lib/utils.js';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import CloseIconButton from '$lib/components/CloseIconButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -222,25 +225,25 @@
 		<!-- Hybrid Live: technique hero first, then set status (table stays below). -->
 		<div class="live-panel-head">
 			{#if exerciseMeta}
-				<button
-					type="button"
-					class="live-panel-thumb"
+				<AppButton
+					variant="ghost"
+					class="live-panel-thumb !min-h-0 !min-w-0 h-auto w-auto p-0"
 					aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
 					onclick={openTechnique}
 				>
 					<img src={`/${exerciseMeta.image}`} alt="" width="96" height="96" decoding="async" />
-				</button>
+				</AppButton>
 			{/if}
 			<div class="live-panel-head__copy">
 				{#if exerciseMeta}
-					<button
-						type="button"
-						class="live-panel-title live-panel-title--tap"
+					<AppButton
+						variant="ghost"
+						class="live-panel-title live-panel-title--tap !h-auto !min-h-0 !min-w-0 w-auto p-0"
 						aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
 						onclick={openTechnique}
 					>
 						{title}
-					</button>
+					</AppButton>
 				{:else}
 					<h2 class="live-panel-title">{title}</h2>
 				{/if}
@@ -255,35 +258,29 @@
 						})}
 					</p>
 				{/if}
-				<p class="live-exercise-step hidden lg:block">
-					{translate(lang, 'live.progress', {
-						done: exerciseIndex + 1,
-						total: session.exercises.length
-					})}
-				</p>
 			</div>
 			<div class="live-panel-head__actions">
 				{#if canSwapAlternative && onSwapAlternative}
-					<button
-						type="button"
-						class="btn-ghost live-panel-head-btn"
+					<AppButton
+						variant="ghost"
+						class="live-panel-head-btn"
 						aria-label={translate(lang, 'live.swapAlternative')}
 						title={translate(lang, 'live.swapAlternative')}
 						onclick={onSwapAlternative}
 					>
 						<LucideIcon icon={RefreshCw} size={ICON_SMALL} />
-					</button>
+					</AppButton>
 				{/if}
 				{#if onSkip}
-					<button
-						type="button"
-						class="btn-ghost live-panel-head-btn live-panel-head-btn--skip"
+					<AppButton
+						variant="ghost"
+						class="live-panel-head-btn live-panel-head-btn--skip"
 						aria-label={translate(lang, 'live.skipExercise')}
 						title={translate(lang, 'live.skipExercise')}
 						onclick={onSkip}
 					>
 						<LucideIcon icon={SkipForward} size={ICON_SMALL} />
-					</button>
+					</AppButton>
 				{/if}
 			</div>
 		</div>
@@ -292,16 +289,16 @@
 	<section class="live-panel__log" aria-label={translate(lang, 'live.setLogAria')}>
 		{#if lastCopy && lastFormatted}
 			{#if canApplyLast}
-				<button
-					type="button"
-					class="live-last-chip live-last-chip--tap"
+				<AppButton
+					variant="ghost"
+					class="live-last-chip live-last-chip--tap !h-auto !min-h-0 !min-w-0 w-auto p-0"
 					aria-label={translate(lang, 'live.lastApplyAria', { value: lastFormatted })}
 					onclick={applyLastPerformance}
 				>
 					<span class="live-last-chip__label">{translate(lang, 'live.last')}</span>
 					<span class="live-last-chip__value tabular-nums">{lastFormatted}</span>
 					<span class="live-last-chip__action">{translate(lang, 'live.applyLast')}</span>
-				</button>
+				</AppButton>
 			{:else}
 				<div class="live-last-chip">
 					<span class="live-last-chip__label">{translate(lang, 'live.last')}</span>
@@ -311,9 +308,9 @@
 		{/if}
 
 		{#if canFillWeightAll && fillWeightKg != null}
-			<button
-				type="button"
-				class="live-last-chip live-last-chip--tap"
+			<AppButton
+				variant="ghost"
+				class="live-last-chip live-last-chip--tap !h-auto !min-h-0 !min-w-0 w-auto p-0"
 				aria-label={fillWeightAllLabel}
 				onclick={applyWeightToAllSets}
 			>
@@ -322,7 +319,7 @@
 					{fillWeightKg} {translate(lang, 'pr.kg')}
 				</span>
 				<span class="live-last-chip__action">{translate(lang, 'live.weightFillAll')}</span>
-			</button>
+			</AppButton>
 		{/if}
 
 		{#if bodyweight}
@@ -335,16 +332,15 @@
 				{weightLabel}
 			</span>
 			<span class="live-set-head__reps">{translate(lang, 'live.reps')}</span>
-			<button
-				type="button"
-				class="live-set-head-done"
-				class:live-set-head-done--all={allSetsDone}
+			<AppButton
+				variant="ghost"
+				class={cn('live-set-head-done !min-h-0 !min-w-0 size-auto p-0', allSetsDone && 'live-set-head-done--all')}
 				aria-label={toggleAllLabel}
 				title={toggleAllLabel}
 				onclick={onToggleAllComplete}
 			>
 				✓
-			</button>
+			</AppButton>
 		</div>
 
 		<ul class="live-set-list">
@@ -357,9 +353,8 @@
 					class:live-set-row--has-remove={showRemove(si)}
 				>
 					<span class="live-set-index">{si + 1}</span>
-					<input
-						class="field live-set-weight tabular-nums"
-						class:is-invalid={invalidSetIndex === si && invalidKind === 'weight'}
+					<AppInput
+						class={`live-set-weight tabular-nums${invalidSetIndex === si && invalidKind === 'weight' ? ' is-invalid' : ''}`}
 						aria-invalid={invalidSetIndex === si && invalidKind === 'weight'}
 						type="text"
 						inputmode="decimal"
@@ -376,9 +371,8 @@
 						}}
 						onkeydown={(e) => onWeightKeydown(e, si)}
 					/>
-					<input
-						class="field live-set-reps tabular-nums"
-						class:is-invalid={invalidSetIndex === si && invalidKind === 'reps'}
+					<AppInput
+						class={`live-set-reps tabular-nums${invalidSetIndex === si && invalidKind === 'reps' ? ' is-invalid' : ''}`}
 						aria-invalid={invalidSetIndex === si && invalidKind === 'reps'}
 						type="text"
 						inputmode="numeric"
@@ -395,40 +389,38 @@
 						onkeydown={(e) => onRepsKeydown(e, si)}
 					/>
 					{#if set.completed}
-						<button
-							type="button"
-							class="btn-ghost live-set-done-btn live-set-done-btn--done"
+						<AppButton
+							variant="ghost"
+							class="live-set-done-btn live-set-done-btn--done"
 							aria-label={translate(lang, 'live.undoDone')}
 							title={translate(lang, 'live.undoDone')}
 							onclick={() => onUncomplete(si)}
 						>
 							<LucideIcon icon={Check} size={ICON_BUTTON} />
 							<span class="sr-only">{translate(lang, 'live.undoDone')}</span>
-						</button>
+						</AppButton>
 					{:else}
-						<button
-							type="button"
-							class="{currentSetIndex === si
-								? 'btn-primary'
-								: 'btn-secondary'} live-set-done-btn"
+						<AppButton
+							variant={currentSetIndex === si ? 'primary' : 'secondary'}
+							class="live-set-done-btn"
 							aria-label={translate(lang, 'live.done')}
 							title={translate(lang, 'live.done')}
 							onclick={() => onComplete(si)}
 						>
 							<LucideIcon icon={Check} size={ICON_BUTTON} />
 							<span class="sr-only">{translate(lang, 'live.done')}</span>
-						</button>
+						</AppButton>
 					{/if}
 					{#if showRemove(si)}
-						<button
-							type="button"
-							class="btn-ghost live-set-remove-btn"
+						<AppButton
+							variant="ghost"
+							class="live-set-remove-btn"
 							aria-label={translate(lang, 'live.removeSet')}
 							title={translate(lang, 'live.removeSet')}
 							onclick={() => onRemove(si)}
 						>
 							<LucideIcon icon={Trash2} size={ICON_SMALL} />
-						</button>
+						</AppButton>
 					{/if}
 				</li>
 			{/each}
@@ -436,15 +428,15 @@
 	</section>
 
 	<div class="live-panel__tools">
-		<button
-			type="button"
-			class="btn-ghost live-panel-add-set"
+		<AppButton
+			variant="ghost"
+			class="live-panel-add-set"
 			onclick={() => live.addSet(exerciseIndex)}
 			aria-label={translate(lang, 'live.addSet')}
 			title={translate(lang, 'live.addSet')}
 		>
 			<LucideIcon icon={Plus} size={ICON_BUTTON} />
-		</button>
+		</AppButton>
 	</div>
 </div>
 
@@ -455,9 +447,9 @@
 		titleId={`live-technique-${exercise.exerciseId}`}
 		onDismiss={dismissTechnique}
 	>
+		<CloseIconButton class="bottom-sheet__close" onclick={dismissTechnique} />
 		<div class="bottom-sheet__head">
 			<p id={`live-technique-${exercise.exerciseId}`} class="bottom-sheet__title">{title}</p>
-			<CloseIconButton onclick={dismissTechnique} />
 		</div>
 		<p class="bottom-sheet__hint">{labelTarget(exerciseMeta.target, lang)}</p>
 		<div class="exercise-technique-sheet__media media-well">

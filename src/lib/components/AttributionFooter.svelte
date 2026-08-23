@@ -13,7 +13,7 @@
 	<p class="shell-footer-inner">
 		{translate(lang, 'attr.media')}
 		<a
-			class="underline decoration-[var(--color-accent)] underline-offset-2 hover:text-[var(--color-ink)]"
+			class="underline decoration-[var(--color-accent-text)] underline-offset-2 hover:text-[var(--color-ink)]"
 			href={GYM_VISUAL_URL}
 			target="_blank"
 			rel="noreferrer"

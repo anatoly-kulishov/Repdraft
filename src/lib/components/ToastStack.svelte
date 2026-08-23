@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AppIconButton from '$lib/components/AppIconButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { toasts, type Toast } from '$lib/stores/toasts';
@@ -14,9 +15,9 @@
 	<div class="toast-stack pointer-events-none fixed z-[60] flex flex-col-reverse gap-2" aria-live="polite">
 		{#each items as toast (toast.id)}
 			<div
-				class="toast-item pointer-events-auto relative flex min-h-10 w-full flex-col gap-1 rounded-2xl px-3.5 py-2.5 pr-10 text-sm font-medium leading-snug text-white"
-				class:bg-[var(--color-accent)]={toast.kind === 'success' || toast.kind === 'info'}
-				class:bg-[var(--color-danger)]={toast.kind === 'error'}
+				class="toast-item pointer-events-auto relative flex min-h-10 w-full flex-col gap-1 rounded-2xl px-3.5 py-2.5 pr-10 text-sm font-medium leading-snug"
+				class:toast-item--accent={toast.kind === 'success' || toast.kind === 'info'}
+				class:toast-item--error={toast.kind === 'error'}
 				role="status"
 			>
 				<span class="max-w-full text-left">{toast.message}</span>
@@ -25,20 +26,47 @@
 						{toast.action.label}
 					</a>
 				{/if}
-				<button
-					type="button"
-					class="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-white/80 hover:bg-white/15 hover:text-white"
+				<AppIconButton
+					class="toast-item__close absolute right-1.5 top-1/2 !min-h-0 !min-w-0 size-7 -translate-y-1/2 p-0"
 					onclick={() => toasts.dismiss(toast.id)}
 					aria-label={translate(lang, 'a11y.close')}
 				>
 					<LucideIcon icon={X} size={ICON_SMALL} />
-				</button>
+				</AppIconButton>
 			</div>
 		{/each}
 	</div>
 {/if}
 
 <style>
+	.toast-item--accent {
+		background: var(--color-accent);
+		color: var(--color-accent-ink);
+	}
+
+	.toast-item--error {
+		background: var(--color-danger);
+		color: #fcfcfc;
+	}
+
+	.toast-item--accent :global(.toast-item__close) {
+		color: color-mix(in srgb, var(--color-accent-ink) 72%, transparent);
+	}
+
+	.toast-item--accent :global(.toast-item__close:hover) {
+		background: color-mix(in srgb, var(--color-accent-ink) 10%, transparent);
+		color: var(--color-accent-ink);
+	}
+
+	.toast-item--error :global(.toast-item__close) {
+		color: rgb(252 252 252 / 0.8);
+	}
+
+	.toast-item--error :global(.toast-item__close:hover) {
+		background: rgb(252 252 252 / 0.15);
+		color: #fcfcfc;
+	}
+
 	.toast-action {
 		align-self: flex-start;
 		font-size: 0.8125rem;
@@ -65,22 +93,31 @@
 		bottom: calc(var(--mobile-chrome-bottom) + var(--draft-dock-clearance));
 	}
 
-	/* Mobile + sticky CTA: top placement — never cover scroll fields / Save bar. */
+	/* Mobile: single bottom CTA — toast sits above sticky bar (exercise, preview, builder…). */
 	@media (max-width: 1023px) {
-		:global(body:has(.sticky-actions)) .toast-stack,
+		:global(body:has(.sticky-actions):not(:has(.live-sticky-actions))) .toast-stack {
+			top: auto;
+			bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.65rem);
+			flex-direction: column-reverse;
+		}
+
+		:global(body:has(.sticky-actions):not(:has(.live-sticky-actions)):has(.draft-dock)) .toast-stack {
+			bottom: calc(
+				var(--mobile-chrome-bottom) + var(--sticky-actions-h) + var(--draft-dock-clearance)
+			);
+		}
+
+		/* Live workout: bottom is inputs + CTA — keep toast under header. */
 		:global(body:has(.live-sticky-actions)) .toast-stack {
 			top: calc(max(0.65rem, var(--safe-top)) + var(--toast-top-chrome, 0px));
 			bottom: auto;
 			flex-direction: column;
 		}
 
-		/* Sticky/fixed ScreenHeader (exercise detail, builder, preview…) — sit below chrome. */
-		:global(body:has(.screen-header):has(.sticky-actions)) .toast-stack,
 		:global(body:has(.screen-header):has(.live-sticky-actions)) .toast-stack {
 			top: calc(var(--screen-header-chrome-h) + 0.45rem);
 		}
 
-		:global(body:has(.sticky-actions)) .toast-stack .toast-item,
 		:global(body:has(.live-sticky-actions)) .toast-stack .toast-item {
 			animation: kineticsToastInTop 0.55s var(--ease-toast) both;
 		}

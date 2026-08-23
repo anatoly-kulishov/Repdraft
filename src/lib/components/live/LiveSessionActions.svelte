@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_BUTTON, ICON_PRIMARY } from '$lib/components/icons/sizes';
@@ -48,11 +49,9 @@
 </script>
 
 {#snippet finishPrimary()}
-	<button
-		type="button"
-		class="btn-primary {layout === 'mobile'
-			? 'btn-block'
-			: 'inline-flex'} items-center justify-center gap-2"
+	<AppButton
+		block={layout === 'mobile'}
+		class="{layout === 'mobile' ? '' : 'inline-flex'} items-center justify-center gap-2"
 		disabled={finishing}
 		aria-busy={finishing}
 		onclick={onFinish}
@@ -64,32 +63,28 @@
 			<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
 			{translate(lang, 'live.finish')}
 		{/if}
-	</button>
+	</AppButton>
 {/snippet}
 
 {#snippet nextButton(primary: boolean)}
-	<button
-		type="button"
-		class="{primary ? 'btn-primary' : 'btn-secondary live-session-next--demoted'} {layout === 'mobile'
-			? 'btn-block'
-			: 'inline-flex'} items-center justify-center gap-2"
+	<AppButton
+		variant={primary ? 'primary' : 'secondary'}
+		block={layout === 'mobile'}
+		class="{layout === 'mobile' ? '' : 'inline-flex'} items-center justify-center gap-2 {primary
+			? ''
+			: 'live-session-next--demoted'}"
 		disabled={finishing}
 		onclick={onNext}
 	>
 		{translate(lang, 'live.nextExercise')}
 		<LucideIcon icon={ChevronRight} size={ICON_PRIMARY} />
-	</button>
+	</AppButton>
 {/snippet}
 
 {#snippet discardLink()}
-	<button
-		type="button"
-		class="btn-link live-session-discard"
-		disabled={finishing}
-		onclick={onDiscard}
-	>
+	<AppButton variant="link" class="live-session-discard" disabled={finishing} onclick={onDiscard}>
 		{translate(lang, 'live.discard')}
-	</button>
+	</AppButton>
 {/snippet}
 
 {#snippet restStrip()}
@@ -100,39 +95,39 @@
 		aria-atomic="true"
 		aria-label={`${translate(lang, 'live.rest')}: ${restLabel}`}
 	>
-		<button
-			type="button"
-			class="btn-ghost live-rest__chip"
+		<AppButton
+			variant="ghost"
+			class="live-rest__chip"
 			aria-label={translate(lang, 'live.restMinus30Aria')}
 			title={translate(lang, 'live.restMinus30Aria')}
 			onclick={() => onRestMinus?.()}
 		>
 			<LucideIcon icon={Minus} size={ICON_BUTTON} />
-		</button>
+		</AppButton>
 		<div class="live-rest__mid">
 			{#key restLeft}
 				<p class="live-rest-value">{restLabel}</p>
 			{/key}
 			<div class="live-rest__bar" style={`--rest-pct: ${restPct}`} aria-hidden="true"></div>
 		</div>
-		<button
-			type="button"
-			class="btn-ghost live-rest__chip"
+		<AppButton
+			variant="ghost"
+			class="live-rest__chip"
 			aria-label={translate(lang, 'live.restPlus30Aria')}
 			title={translate(lang, 'live.restPlus30Aria')}
 			onclick={() => onRestPlus?.()}
 		>
 			<LucideIcon icon={Plus} size={ICON_BUTTON} />
-		</button>
-		<button
-			type="button"
-			class="btn-ghost live-rest__skip"
+		</AppButton>
+		<AppButton
+			variant="ghost"
+			class="live-rest__skip"
 			aria-label={translate(lang, 'live.skipRest')}
 			title={translate(lang, 'live.skipRest')}
 			onclick={() => onRestSkip?.()}
 		>
 			<LucideIcon icon={SkipForward} size={ICON_BUTTON} />
-		</button>
+		</AppButton>
 	</div>
 {/snippet}
 

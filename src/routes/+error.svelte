@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_PRIMARY } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
@@ -60,15 +61,15 @@
 		{/if}
 
 		<div class="error-actions">
-			<a class="btn-primary inline-flex items-center gap-2 px-5" href="/">
+			<AppButton href="/" class="inline-flex items-center gap-2 px-5">
 				<LucideIcon icon={House} size={ICON_PRIMARY} />
 				{translate(lang, 'error.home')}
-			</a>
+			</AppButton>
 			{#if is404}
-				<a class="btn-secondary inline-flex items-center gap-2 px-5" href="/exercises">
+				<AppButton variant="secondary" href="/exercises" class="inline-flex items-center gap-2 px-5">
 					<LucideIcon icon={Library} size={ICON_PRIMARY} />
 					{translate(lang, 'error.catalog')}
-				</a>
+				</AppButton>
 			{/if}
 		</div>
 	</div>

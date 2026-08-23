@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import type { TechniqueClip } from '$lib/domain/clips';
@@ -49,9 +50,9 @@
 				clip.id}
 			class:border-[var(--color-border)]={highlightId !== clip.id}
 		>
-			<button
-				type="button"
-				class="relative block w-full cursor-zoom-in overflow-hidden bg-[var(--color-surface-muted)] p-0"
+			<AppButton
+				variant="ghost"
+				class="relative block w-full cursor-zoom-in overflow-hidden bg-[var(--color-surface-muted)] !h-auto !min-h-0 !min-w-0 p-0"
 				onclick={() => onOpen(clip)}
 				aria-label={translate(lang, 'clips.open', { title: titleFor(clip) })}
 			>
@@ -71,7 +72,7 @@
 						onerror={() => onThumbReady(clip.id)}
 					/>
 				</div>
-			</button>
+			</AppButton>
 			<div class="space-y-2 p-3">
 				<div>
 					<p class="font-semibold leading-snug">{titleFor(clip)}</p>
@@ -80,53 +81,53 @@
 					</p>
 				</div>
 				<div class="clip-card-actions">
-					<button
-						type="button"
-						class="btn-ghost clip-card-action"
+					<AppButton
+						variant="ghost"
+						class="clip-card-action"
 						onclick={() => onShare(clip)}
 						aria-label={canShareNative ? translate(lang, 'clips.share') : translate(lang, 'clips.link')}
 						title={canShareNative ? translate(lang, 'clips.share') : translate(lang, 'clips.link')}
 					>
 						<LucideIcon icon={canShareNative ? Share2 : Link2} size={ICON_BUTTON} />
-					</button>
-					<button
-						type="button"
-						class="btn-ghost clip-card-action"
+					</AppButton>
+					<AppButton
+						variant="ghost"
+						class="clip-card-action"
 						onclick={() => onCopyGif(clip)}
 						aria-label={translate(lang, 'clips.copyGif')}
 						title={translate(lang, 'clips.copyGif')}
 					>
 						<LucideIcon icon={Copy} size={ICON_BUTTON} />
-					</button>
+					</AppButton>
 					{#if currentUserId === clip.userId}
-						<button
-							type="button"
-							class="btn-ghost clip-card-action"
+						<AppButton
+							variant="ghost"
+							class="clip-card-action"
 							onclick={() => onRename(clip)}
 							aria-label={translate(lang, 'clips.rename')}
 							title={translate(lang, 'clips.rename')}
 						>
 							<LucideIcon icon={Pencil} size={ICON_BUTTON} />
-						</button>
-						<button
-							type="button"
-							class="btn-ghost clip-card-action is-danger"
+						</AppButton>
+						<AppButton
+							variant="ghost"
+							class="is-danger clip-card-action"
 							onclick={() => onRemove(clip)}
 							aria-label={translate(lang, 'clips.delete')}
 							title={translate(lang, 'clips.delete')}
 						>
 							<LucideIcon icon={Trash2} size={ICON_BUTTON} />
-						</button>
+						</AppButton>
 					{:else if currentUserId}
-						<button
-							type="button"
-							class="btn-ghost clip-card-action"
+						<AppButton
+							variant="ghost"
+							class="clip-card-action"
 							onclick={() => onReport(clip)}
 							aria-label={translate(lang, 'clips.report')}
 							title={translate(lang, 'clips.report')}
 						>
 							<LucideIcon icon={Flag} size={ICON_BUTTON} />
-						</button>
+						</AppButton>
 					{/if}
 				</div>
 			</div>

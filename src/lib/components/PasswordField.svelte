@@ -1,4 +1,7 @@
 <script lang="ts">
+	import AppInput from '$lib/components/AppInput.svelte';
+	import AppIconButton from '$lib/components/AppIconButton.svelte';
+	import AppLabel from '$lib/components/AppLabel.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_INPUT } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
@@ -29,13 +32,12 @@
 	let lang = $derived($resolvedLocale);
 </script>
 
-<label class="field-label">
+<AppLabel>
 	{label}
 	<div class="relative mt-1">
-		<input
-			class="field w-full pr-11"
-			class:is-invalid={invalid}
-			aria-invalid={invalid}
+		<AppInput
+			class="w-full pr-11"
+			aria-invalid={invalid || undefined}
 			type={visible ? 'text' : 'password'}
 			{required}
 			{minlength}
@@ -44,9 +46,8 @@
 			{placeholder}
 			bind:value
 		/>
-		<button
-			type="button"
-			class="absolute inset-y-0 right-0 grid w-11 place-items-center text-[var(--color-muted)]"
+		<AppIconButton
+			class="absolute inset-y-0 right-0 !min-h-0 !min-w-0 size-11 p-0 text-[var(--color-muted)]"
 			onclick={() => (visible = !visible)}
 			aria-pressed={visible}
 			aria-label={translate(lang, visible ? 'auth.hidePassword' : 'auth.showPassword')}
@@ -56,6 +57,6 @@
 			{:else}
 				<LucideIcon icon={Eye} size={ICON_INPUT} />
 			{/if}
-		</button>
+		</AppIconButton>
 	</div>
-</label>
+</AppLabel>

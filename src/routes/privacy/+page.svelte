@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
+	import AppPanel from '$lib/components/AppPanel.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -42,7 +43,9 @@
 		<h1 class="page-title">{title}</h1>
 	</div>
 
-	<p class="privacy-page__draft panel-dashed">{translate(lang, 'privacy.draftNote')}</p>
+	<AppPanel dashed class="privacy-page__draft">
+		{translate(lang, 'privacy.draftNote')}
+	</AppPanel>
 	<p class="privacy-page__updated">{translate(lang, 'privacy.updated')}</p>
 
 	<div class="privacy-page__body panel">
