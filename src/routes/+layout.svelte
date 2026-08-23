@@ -70,6 +70,13 @@
 		void techniqueClipHints.refresh();
 		void auth.init();
 
+		/* Belt-and-suspenders: dismiss boot splash if font/preload hang blocked window.load. */
+		const boot = document.getElementById('pwa-boot');
+		if (boot) {
+			boot.classList.add('is-done');
+			window.setTimeout(() => boot.remove(), 220);
+		}
+
 		const onOnline = () => {
 			void flushSyncOutbox();
 			void techniqueClipHints.refresh();
