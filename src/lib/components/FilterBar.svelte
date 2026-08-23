@@ -1,18 +1,14 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppChip from '$lib/components/AppChip.svelte';
-	import AppIconButton from '$lib/components/AppIconButton.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
-	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseFilters } from '$lib/domain/types';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { cn } from '$lib/utils.js';
-	import { X } from '@lucide/svelte';
 
 	let {
 		filters = $bindable(),
@@ -34,28 +30,11 @@
 
 	let showTargetFilters = $derived(lockBodyPart && targets.length > 1);
 
-	let activeFilterCount = $derived(
-		(lockBodyPart || filters.bodyPart === 'all' ? 0 : 1) +
-			(filters.equipment !== 'all' ? 1 : 0) +
-			(showTargetFilters && filters.target !== 'all' ? 1 : 0)
-	);
-
-	let showReset = $derived(activeFilterCount > 0 || filters.query.trim().length > 0);
-
 	let equipmentTriggerLabel = $derived(
 		filters.equipment === 'all'
 			? translate(lang, 'catalog.equipment')
 			: labelEquipment(filters.equipment, lang)
 	);
-
-	function resetFilters() {
-		filters = {
-			query: '',
-			bodyPart: lockBodyPart ? filters.bodyPart : 'all',
-			equipment: 'all',
-			target: 'all'
-		};
-	}
 
 	function toggleTarget(value: string) {
 		filters = {
@@ -75,24 +54,11 @@
 
 <div class="catalog-filters-shell">
 	<AppPanel class={cn('catalog-filters', lockBodyPart && 'catalog-filters--zone')}>
-		<div class="catalog-filters-search-row">
-			<SearchInput
-				bind:value={filters.query}
-				debounceMs={150}
-				showClear={false}
-				placeholder={translate(lang, 'catalog.search')}
-			/>
-			{#if showReset}
-				<AppIconButton
-					class="catalog-filters-reset !min-h-0 !min-w-0 size-auto p-0"
-					onclick={resetFilters}
-					aria-label={translate(lang, 'catalog.reset')}
-					title={translate(lang, 'catalog.reset')}
-				>
-					<LucideIcon icon={X} size={ICON_BUTTON} />
-				</AppIconButton>
-			{/if}
-		</div>
+		<SearchInput
+			bind:value={filters.query}
+			debounceMs={150}
+			placeholder={translate(lang, 'catalog.search')}
+		/>
 
 		{#if showTargetFilters}
 			<div
@@ -102,7 +68,7 @@
 			>
 				{#each targets as item (item)}
 					<AppChip
-						class="catalog-filter-chip !min-h-0 h-auto w-auto min-w-0 rounded-full px-3 py-1.5"
+						class="catalog-filter-chip w-auto min-w-0 rounded-full px-3"
 						active={filters.target === item}
 						onclick={() => toggleTarget(item)}
 					>
@@ -134,6 +100,7 @@
 {#if equipmentSheetOpen}
 	<BottomSheet
 		open={equipmentSheetOpen}
+		raised
 		titleId="catalog-equipment-sheet-title"
 		onDismiss={() => {
 			equipmentSheetOpen = false;

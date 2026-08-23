@@ -62,6 +62,9 @@
 		}
 
 		.catalog-exercise-skeleton__row {
+			position: relative;
+			min-height: 7.65rem;
+			padding-right: 0;
 			overflow: hidden;
 			border: 1px solid var(--color-border);
 			border-radius: 1rem;
@@ -74,8 +77,28 @@
 		}
 
 		:global(.catalog-exercise-skeleton__thumb) {
-			border-radius: calc(1rem - 1px) 0 0 calc(1rem - 1px);
+			flex: 0 0 7.5rem;
+			width: 7.5rem;
+			min-height: 7.5rem;
+			height: 100%;
+			border-radius: 1rem 0 0 1rem;
 			align-self: stretch;
+			box-shadow: inset -1px 0 0 color-mix(in srgb, var(--color-border) 82%, transparent);
+		}
+
+		.catalog-exercise-skeleton__body {
+			padding: 0.75rem 3rem 0.75rem 0.9rem;
+			gap: 0.2rem;
+		}
+
+		:global(.catalog-exercise-skeleton__action) {
+			position: absolute;
+			top: 50%;
+			right: 0.5rem;
+			transform: translateY(-50%);
+			width: 3rem;
+			height: 3rem;
+			border-radius: 999px;
 		}
 	}
 

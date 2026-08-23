@@ -47,7 +47,7 @@
 			bind:value
 		/>
 		<AppIconButton
-			class="absolute inset-y-0 right-0 !min-h-0 !min-w-0 size-11 p-0 text-[var(--color-muted)]"
+			class="absolute inset-y-0 right-0 size-12 min-h-12 min-w-12 p-0 text-[var(--color-muted)]"
 			onclick={() => (visible = !visible)}
 			aria-pressed={visible}
 			aria-label={translate(lang, visible ? 'auth.hidePassword' : 'auth.showPassword')}

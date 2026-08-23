@@ -129,8 +129,8 @@
 {#snippet bookmarkButton(inline: boolean)}
 	<AppIconButton
 		class={cn(
-			'exercise-card-bookmark !min-h-0 !min-w-0 size-auto p-0',
-			inline && 'exercise-card-bookmark--inline',
+			'exercise-card-bookmark p-0',
+			inline ? 'exercise-card-bookmark--inline !min-h-0 !min-w-0 size-auto' : '',
 			bookmarked && 'is-active'
 		)}
 		onclick={toggleBookmark}
@@ -223,7 +223,7 @@
 		<div class="exercise-card-list-main">
 			<AppButton
 				variant="ghost"
-				class="exercise-card-media media-well relative shrink-0 overflow-hidden !min-h-0 !min-w-0 h-auto w-auto p-0"
+				class="exercise-card-media media-well relative shrink-0 overflow-hidden !h-auto !min-h-0 !min-w-0 w-auto self-stretch !p-0"
 				aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
 				onclick={openTechnique}
 			>
@@ -352,12 +352,12 @@
 		titleId={`exercise-technique-${exercise.id}`}
 		onDismiss={dismissTechnique}
 	>
-		<CloseIconButton class="bottom-sheet__close" onclick={dismissTechnique} />
 		<div class="bottom-sheet__head">
 			<p id={`exercise-technique-${exercise.id}`} class="bottom-sheet__title">{title}</p>
 		</div>
 		<p class="bottom-sheet__hint">{labelTarget(exercise.target, lang)}</p>
 		<div class="exercise-technique-sheet__media media-well">
+			<CloseIconButton class="exercise-technique-sheet__close" onclick={dismissTechnique} />
 			<img
 				src={techniqueSrc}
 				alt=""

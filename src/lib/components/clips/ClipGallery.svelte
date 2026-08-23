@@ -52,7 +52,7 @@
 		>
 			<AppButton
 				variant="ghost"
-				class="relative block w-full cursor-zoom-in overflow-hidden bg-[var(--color-surface-muted)] !h-auto !min-h-0 !min-w-0 p-0"
+				class="clip-gallery__open relative block w-full cursor-zoom-in overflow-hidden bg-[var(--color-surface-muted)] !h-auto !min-h-0 !min-w-0 !rounded-none !border-0 !p-0"
 				onclick={() => onOpen(clip)}
 				aria-label={translate(lang, 'clips.open', { title: titleFor(clip) })}
 			>
@@ -73,7 +73,7 @@
 					/>
 				</div>
 			</AppButton>
-			<div class="space-y-2 p-3">
+			<div class="space-y-1.5 px-3 pb-2.5 pt-2.5">
 				<div>
 					<p class="font-semibold leading-snug">{titleFor(clip)}</p>
 					<p class="text-xs text-[var(--color-muted)]">
@@ -136,6 +136,22 @@
 </ul>
 
 <style>
+	:global(.clip-gallery__open.btn-ghost),
+	:global(button.clip-gallery__open) {
+		padding: 0;
+		min-width: 0;
+		min-height: 0;
+		border: none;
+		border-radius: 0;
+		background: var(--color-surface-muted);
+	}
+
+	:global(.clip-gallery__open.btn-ghost:hover) {
+		border-color: transparent;
+		background: var(--color-surface-muted);
+		color: inherit;
+	}
+
 	.clip-card-actions {
 		display: flex;
 		flex-wrap: wrap;
@@ -143,8 +159,8 @@
 	}
 
 	.clip-card-action {
-		min-width: 2.5rem;
-		min-height: 2.5rem;
+		min-width: 3rem;
+		min-height: 3rem;
 		padding: 0.4rem;
 	}
 </style>

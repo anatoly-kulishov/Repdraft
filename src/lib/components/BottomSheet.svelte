@@ -1,5 +1,7 @@
 <script lang="ts">
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
+	import { translate } from '$lib/i18n/messages';
+	import { resolvedLocale } from '$lib/stores/locale';
 	import { cn } from '$lib/utils.js';
 	import type { Snippet } from 'svelte';
 
@@ -25,8 +27,15 @@
 		actions?: Snippet | null;
 	} = $props();
 
+	let lang = $derived($resolvedLocale);
+
 	function onOpenChange(next: boolean) {
 		if (!next && dismissible) onDismiss?.();
+	}
+
+	function dismissBackdrop() {
+		if (!dismissible) return;
+		onDismiss?.();
 	}
 </script>
 
@@ -47,15 +56,25 @@
 		aria-labelledby={labelledBy ?? titleId ?? undefined}
 		aria-label={labelledBy || titleId ? undefined : (label ?? undefined)}
 	>
-		<div
-			class="bottom-sheet__card panel mx-auto w-full max-w-sm gap-0 border-0 p-0 shadow-[var(--shadow-overlay)]"
-		>
-			{@render children()}
-			{#if actions}
-				<div class="bottom-sheet__actions">
-					{@render actions()}
-				</div>
-			{/if}
+		<!-- Full-viewport hit target: dimmed area above the card closes the sheet. -->
+		<div class="bottom-sheet__host">
+			<button
+				type="button"
+				class="bottom-sheet__backdrop"
+				aria-label={translate(lang, 'a11y.close')}
+				tabindex="-1"
+				onclick={dismissBackdrop}
+			></button>
+			<div
+				class="bottom-sheet__card panel mx-auto w-full max-w-sm gap-0 border-0 shadow-[var(--shadow-overlay)]"
+			>
+				{@render children()}
+				{#if actions}
+					<div class="bottom-sheet__actions">
+						{@render actions()}
+					</div>
+				{/if}
+			</div>
 		</div>
 	</Sheet.Content>
 </Sheet.Root>
