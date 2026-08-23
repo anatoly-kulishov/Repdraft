@@ -898,13 +898,15 @@ select {
 	box-shadow: var(--shadow-panel);
 }
 
-/* AppPanel = shadcn Card + .panel: align clip radius and drop duplicate ring. */
+/* AppPanel = shadcn Card + .panel: align clip radius; kill Card ring (lime --ring). */
 .panel[data-slot='card'] {
 	border-radius: var(--radius-panel) !important;
 	overflow: hidden;
-	box-shadow: var(--shadow-panel);
+	box-shadow: var(--shadow-panel) !important;
 	--tw-ring-shadow: 0 0 #0000;
 	--tw-ring-offset-shadow: 0 0 #0000;
+	--tw-inset-ring-shadow: 0 0 #0000;
+	outline: none;
 }
 
 .panel-inset {
@@ -9153,6 +9155,7 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
 		padding-left: max(var(--page-pad-x), var(--safe-left));
 		padding-right: max(var(--page-pad-x), var(--safe-right));
+		padding-top: 0.35rem;
 		padding-bottom: 0.4rem;
 		background: var(--color-bg);
 	}
@@ -9174,6 +9177,7 @@ html[data-theme='light'] .content-page--catalog .catalog-list-layout__filters .c
 	flex-direction: column;
 	gap: 0.55rem;
 	padding: 0.65rem 0.7rem;
+	border-color: var(--color-border);
 }
 
 .catalog-filters-search-row {
@@ -10395,8 +10399,9 @@ html[data-theme='light'] .catalog-empty-state--saved.empty-state {
 
 @media (max-width: 1023px) {
 	:root {
+		/* Content row + pads + header border — sticky filters must sit fully below. */
 		--screen-header-chrome-h: calc(
-			var(--screen-header-min-h) + 2 * var(--screen-header-pad-block) + var(--safe-top)
+			var(--screen-header-min-h) + 2 * var(--screen-header-pad-block) + var(--safe-top) + 1px
 		);
 	}
 

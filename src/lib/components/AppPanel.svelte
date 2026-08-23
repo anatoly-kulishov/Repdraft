@@ -23,7 +23,7 @@
 <Card.Root
 	bind:ref
 	class={cn(
-		'panel gap-0 border-border/80 bg-card py-4 shadow-sm',
+		'panel gap-0 border-border/80 bg-card py-4 shadow-sm ring-0',
 		inset && 'bg-muted/30',
 		dashed && 'panel-dashed border-dashed bg-transparent shadow-none',
 		className
