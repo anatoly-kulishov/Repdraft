@@ -10466,6 +10466,19 @@ html[data-theme='light'] .catalog-empty-state--saved.empty-state {
 	box-shadow: var(--shadow-panel);
 }
 
+/* Phone: edge-to-edge list — no side gutters / panel chrome. */
+@media (max-width: 767px) {
+	.catalog-exercise-list {
+		margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
+		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
+		width: auto;
+		max-width: none;
+		border: none;
+		border-radius: 0;
+		box-shadow: none;
+	}
+}
+
 .catalog-exercise-list .exercise-card--list {
 	position: relative;
 	display: flex;
