@@ -19,6 +19,7 @@ import {
 import type { WorkoutExercise, WorkoutPlan, WorkoutSession } from '$lib/domain/types';
 import { planDraftFromSession } from '$lib/domain/session';
 import { readDraft, writeDraft } from '$lib/storage/localWorkoutRepository';
+import { clampPlanName } from '$lib/domain/inputLimits';
 import { writable } from 'svelte/store';
 
 /**
@@ -98,7 +99,7 @@ function createDraftStore() {
 			update((plan) => updateGroupRestInPlan(plan, groupId, restSec));
 		},
 		setName(name: string) {
-			update((plan) => ({ ...plan, name }));
+			update((plan) => ({ ...plan, name: clampPlanName(name) }));
 		},
 		resetDraft() {
 			set(createEmptyDraft());
@@ -106,6 +107,7 @@ function createDraftStore() {
 		loadPlanIntoDraft(plan: WorkoutPlan) {
 			set({
 				...plan,
+				name: clampPlanName(plan.name),
 				exercises: plan.exercises.map((ex) => ({ ...ex }))
 			});
 		},

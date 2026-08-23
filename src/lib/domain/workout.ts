@@ -3,7 +3,7 @@ import type { ExerciseIndexItem } from './types';
 import { labelTarget } from './labels.ru';
 import type { AppLocale } from '$lib/i18n/locale';
 import { newId } from './id';
-import { REPS, REST_SEC, SETS } from './inputLimits';
+import { REPS, REST_SEC, SETS, clampPlanName } from './inputLimits';
 
 export const DEFAULT_SETS = 3;
 export const DEFAULT_REPS = 10;
@@ -445,7 +445,7 @@ export function duplicatePlan(plan: WorkoutPlan, copySuffix = '(copy)'): Workout
 	return {
 		...plan,
 		id: newId(),
-		name: `${plan.name} ${copySuffix}`.trim(),
+		name: clampPlanName(`${plan.name} ${copySuffix}`.trim()),
 		createdAt: ts,
 		updatedAt: ts,
 		exercises: plan.exercises.map((ex) => {
@@ -473,12 +473,8 @@ export function duplicatePlan(plan: WorkoutPlan, copySuffix = '(copy)'): Workout
 }
 
 export function withSavedName(plan: WorkoutPlan, untitledFallback = 'Untitled workout'): WorkoutPlan {
-	const name =
-		plan.name
-			.replace(/[\u0000-\u001F\u007F]/g, '')
-			.replace(/\s+/g, ' ')
-			.trim()
-			.slice(0, 80) || untitledFallback;
+	const cleaned = clampPlanName(plan.name.replace(/\s+/g, ' ').trim());
+	const name = cleaned || untitledFallback;
 	return {
 		...plan,
 		name,
