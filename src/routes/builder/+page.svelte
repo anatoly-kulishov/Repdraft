@@ -15,6 +15,7 @@
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { BUILDER_ADD_EXERCISE_HREF, WORKOUTS_HREF } from '$lib/domain/catalogLinks';
+	import { PLAN_NAME_MAX } from '$lib/domain/inputLimits';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { altGroupMemberRole, groupMemberRole } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
@@ -189,6 +190,7 @@
 					class="mt-1.5 w-full"
 					type="text"
 					placeholder={translate(lang, 'builder.namePh')}
+					maxlength={PLAN_NAME_MAX}
 					value={$draft.name}
 					oninput={(e) => draft.setName((e.currentTarget as HTMLInputElement).value)}
 				/>
