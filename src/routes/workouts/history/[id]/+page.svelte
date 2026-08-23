@@ -268,15 +268,16 @@
 		actionLabel={translate(lang, 'nav.workouts')}
 	/>
 {:else}
+	<!-- Outside .history-detail: overflow-x:clip there would clip sticky full-bleed margins. -->
+	<div class="lg:hidden">
+		<ScreenHeader
+			class="history-detail__screen-header"
+			title={session.planName}
+			backHref={WORKOUTS_HISTORY_HREF}
+			actions={historyDetailActions}
+		/>
+	</div>
 	<section class="content-page content-page--narrow soft-enter history-detail">
-		<div class="lg:hidden">
-			<ScreenHeader
-				class="history-detail__screen-header"
-				title={session.planName}
-				backHref={WORKOUTS_HISTORY_HREF}
-				actions={historyDetailActions}
-			/>
-		</div>
 		<div class="subroute-desktop-head">
 			<SubrouteBack href={WORKOUTS_HISTORY_HREF} label={translate(lang, 'builder.backWorkouts')} />
 			<div class="history-detail__title-row">

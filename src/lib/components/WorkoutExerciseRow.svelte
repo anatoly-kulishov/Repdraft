@@ -144,7 +144,7 @@
 		{#if ontoggleSelect}
 			<label class="workout-ex-head__check">
 				<AppCheckbox
-					class="h-5 w-5"
+					class="size-5"
 					checked={selected}
 					onCheckedChange={() => ontoggleSelect?.()}
 					aria-label={translate(lang, 'builder.selectExercise')}

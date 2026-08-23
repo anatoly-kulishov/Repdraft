@@ -227,7 +227,7 @@
 			{#if exerciseMeta}
 				<AppButton
 					variant="ghost"
-					class="live-panel-thumb !min-h-0 !min-w-0 h-auto w-auto p-0"
+					class="live-panel-thumb media-well !min-w-0 w-auto !p-0"
 					aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
 					onclick={openTechnique}
 				>
@@ -238,7 +238,7 @@
 				{#if exerciseMeta}
 					<AppButton
 						variant="ghost"
-						class="live-panel-title live-panel-title--tap !h-auto !min-h-0 !min-w-0 w-auto p-0"
+						class="live-panel-title live-panel-title--tap !h-auto !min-w-0 w-auto p-0"
 						aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
 						onclick={openTechnique}
 					>
@@ -291,7 +291,7 @@
 			{#if canApplyLast}
 				<AppButton
 					variant="ghost"
-					class="live-last-chip live-last-chip--tap !h-auto !min-h-0 !min-w-0 w-auto p-0"
+					class="live-last-chip live-last-chip--tap !h-auto !min-w-0 w-auto"
 					aria-label={translate(lang, 'live.lastApplyAria', { value: lastFormatted })}
 					onclick={applyLastPerformance}
 				>
@@ -447,12 +447,12 @@
 		titleId={`live-technique-${exercise.exerciseId}`}
 		onDismiss={dismissTechnique}
 	>
-		<CloseIconButton class="bottom-sheet__close" onclick={dismissTechnique} />
 		<div class="bottom-sheet__head">
 			<p id={`live-technique-${exercise.exerciseId}`} class="bottom-sheet__title">{title}</p>
 		</div>
 		<p class="bottom-sheet__hint">{labelTarget(exerciseMeta.target, lang)}</p>
 		<div class="exercise-technique-sheet__media media-well">
+			<CloseIconButton class="exercise-technique-sheet__close" onclick={dismissTechnique} />
 			<img
 				src={techniqueSrc}
 				alt=""
