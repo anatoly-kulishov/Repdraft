@@ -31,6 +31,7 @@ export function applyAppTheme(theme: AppTheme) {
 	if (!browser) return;
 	const root = document.documentElement;
 	root.dataset.theme = theme;
+	root.classList.toggle('dark', theme === 'dark');
 	root.style.colorScheme = theme;
 	const bg = THEME_META_COLORS[theme];
 	root.style.backgroundColor = bg;

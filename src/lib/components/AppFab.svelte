@@ -1,6 +1,8 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_PRIMARY } from '$lib/components/icons/sizes';
+	import { cn } from '$lib/utils.js';
 	import { Plus } from '@lucide/svelte';
 	import type { Component } from 'svelte';
 
@@ -21,12 +23,11 @@
 	} = $props();
 </script>
 
-<a
-	class="app-fab app-fab--{placement} {className}"
-	class:app-fab--hidden={hidden}
+<AppButton
 	{href}
+	class={cn(`app-fab app-fab--${placement}`, hidden && 'app-fab--hidden', className)}
 	aria-label={label}
 	title={label}
 >
 	<LucideIcon {icon} size={ICON_PRIMARY} />
-</a>
+</AppButton>

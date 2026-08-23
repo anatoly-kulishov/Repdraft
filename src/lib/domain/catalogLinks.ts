@@ -3,6 +3,8 @@ import { labelBodyPart } from './labels.ru';
 import type { AppLocale } from '$lib/i18n/locale';
 import type { BodyPart } from './types';
 
+export { isSafeFromPath, withFromParam } from './navigation';
+
 /** Hub + catalog slug that spans multiple dataset body_part values. */
 export const VIRTUAL_CATALOG_ZONES: Record<string, readonly BodyPart[]> = {
 	legs: ['upper legs', 'lower legs']
@@ -107,12 +109,4 @@ export const WORKOUTS_HISTORY_HREF = '/workouts?tab=history';
 
 export function isBuilderReturnPath(from: string | null | undefined): boolean {
 	return from === '/builder' || Boolean(from?.startsWith('/builder?'));
-}
-
-/** Append `?from=` / `&from=` so builder → hub → zone keeps a return path. */
-export function withFromParam(href: string, from: string | null | undefined): string {
-	const value = from?.trim();
-	if (!value) return href;
-	const sep = href.includes('?') ? '&' : '?';
-	return `${href}${sep}from=${encodeURIComponent(value)}`;
 }

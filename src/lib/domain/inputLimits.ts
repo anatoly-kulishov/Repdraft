@@ -5,7 +5,7 @@ export const REPS = { min: 1, max: 500 } as const;
 export const LIVE_REPS = { min: 0, max: 500 } as const;
 export const SETS = { min: 1, max: 20 } as const;
 export const REST_SEC = { min: 0, max: 600 } as const;
-export const NOTE_MAX = 200;
+export const NOTE_MAX = 100;
 
 /** Digits + optional one decimal; empty crumbs → ''. Does not clamp to max. */
 function shapeWeight(raw: string): string {
@@ -191,4 +191,7 @@ export function runInputLimitsSelfCheck(): void {
 		throw new Error('filterWeightInput should strip minus');
 	}
 	if (sanitizeNote('  a\nb  ') !== 'a b') throw new Error('sanitizeNote whitespace');
+	if (sanitizeNote('x'.repeat(150)).length !== NOTE_MAX) {
+		throw new Error('sanitizeNote max length');
+	}
 }

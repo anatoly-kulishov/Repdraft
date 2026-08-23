@@ -1,20 +1,23 @@
 <script lang="ts">
 	import ArticleCover from '$lib/components/ArticleCover.svelte';
 	import type { Article } from '$lib/domain/articles';
+	import { linkWithFrom } from '$lib/domain/navigation';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 
 	let {
 		article,
-		compact = false
+		compact = false,
+		from = '/articles'
 	}: {
 		article: Article;
 		compact?: boolean;
+		from?: string;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
-	let href = $derived(`/articles/${article.slug}`);
-	let tone = $derived(article.coverTone ?? 'purple');
+	let href = $derived(linkWithFrom(`/articles/${article.slug}`, from));
+	let tone = $derived(article.coverTone ?? 'lime');
 </script>
 
 <a {href} class="article-card" class:article-card--compact={compact} data-tone={tone}>

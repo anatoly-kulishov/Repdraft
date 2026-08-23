@@ -1,4 +1,6 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppPanel from '$lib/components/AppPanel.svelte';
 	import CatalogExerciseListSkeleton from '$lib/components/CatalogExerciseListSkeleton.svelte';
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -7,6 +9,7 @@
 	import { filterCatalogWithFacets, isBodyPart, isFilterConflict } from '$lib/domain/filters';
 	import { pickFrequent, pickPopular, sortByScore } from '$lib/domain/exerciseScore';
 	import { catalogZoneBodyParts, isCatalogZone } from '$lib/domain/catalogLinks';
+	import { currentReturnPath } from '$lib/domain/navigation';
 	import type { ExerciseFilters, ExerciseIndexItem } from '$lib/domain/types';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { translate } from '$lib/i18n/messages';
@@ -89,15 +92,8 @@
 	let filterLockBodyPart = $derived(zoneLocked);
 
 	let lang = $derived($resolvedLocale);
-	/** Facets stay in history via replaceState; keep card hrefs stable so chip taps don't re-render every card. */
-	let detailFrom = $derived.by(() => {
-		const path = $page.url.pathname;
-		const from = $page.url.searchParams.get('from');
-		if (from && from.startsWith('/')) {
-			return `${path}?from=${encodeURIComponent(from)}`;
-		}
-		return path;
-	});
+	/** Current list URL — exercise detail back returns here (preserves `from` chain). */
+	let detailFrom = $derived(currentReturnPath($page.url.pathname, $page.url.searchParams));
 	let catalog = $derived(indexReady ? items : []);
 	let statsMap = $derived($exerciseStats);
 	let catalogFiltered = $derived.by(() => {
@@ -308,7 +304,7 @@
 		unbookmarkBusyId = exerciseId;
 		try {
 			await bookmarks.toggle(exerciseId);
-			toasts.show(translate(lang, 'bookmarks.removed'), 'info');
+			toasts.show(translate(lang, 'bookmarks.removed'), 'info', 2600, undefined, 'bookmark');
 		} catch {
 			toasts.show(translate(lang, 'errors.generic'), 'error');
 		} finally {
@@ -372,48 +368,47 @@
 	</p>
 	{#if visible.length === 0}
 		{#if filterConflict}
-			<div class="panel-dashed flex flex-col items-start gap-3 py-6 text-left md:py-8">
+			<AppPanel dashed class="flex flex-col items-start gap-3 py-6 text-left md:py-8">
 				<h2 class="section-title">{translate(lang, 'catalog.conflictTitle')}</h2>
 				<p class="max-w-md text-sm leading-relaxed text-[var(--color-muted)]">
 					{translate(lang, 'catalog.conflictDesc')}
 				</p>
 				<div class="flex flex-wrap gap-2">
 					{#if filters.target !== 'all'}
-						<button
-							type="button"
-							class="btn-secondary text-sm"
+						<AppButton
+							variant="secondary"
+							class="text-sm"
 							onclick={() => {
 								filters = { ...filters, target: 'all' };
 							}}
 						>
 							{translate(lang, 'catalog.clearMuscle')}
-						</button>
+						</AppButton>
 					{/if}
 					{#if filters.bodyPart !== 'all' && !zoneLocked}
-						<button
-							type="button"
-							class="btn-secondary text-sm"
+						<AppButton
+							variant="secondary"
+							class="text-sm"
 							onclick={() => {
 								filters = { ...filters, bodyPart: 'all' };
 							}}
 						>
 							{translate(lang, 'catalog.clearBody')}
-						</button>
+						</AppButton>
 					{/if}
 					{#if filters.equipment !== 'all'}
-						<button
-							type="button"
-							class="btn-secondary text-sm"
+						<AppButton
+							variant="secondary"
+							class="text-sm"
 							onclick={() => {
 								filters = { ...filters, equipment: 'all' };
 							}}
 						>
 							{translate(lang, 'catalog.clearEquipment')}
-						</button>
+						</AppButton>
 					{/if}
-					<button
-						type="button"
-						class="btn-primary text-sm"
+					<AppButton
+						class="text-sm"
 						onclick={() => {
 							filters = {
 								...filters,
@@ -424,9 +419,9 @@
 						}}
 					>
 						{translate(lang, 'catalog.reset')}
-					</button>
+					</AppButton>
 				</div>
-			</div>
+			</AppPanel>
 		{:else}
 			<EmptyState
 				class={emptyStateClass}

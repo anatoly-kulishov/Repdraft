@@ -1,4 +1,6 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppPanel from '$lib/components/AppPanel.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
@@ -184,65 +186,63 @@
 					{/each}
 				</div>
 				{#if moreCount > 0}
-					<button
-						type="button"
-						class="summary-exercises-preview__more"
+					<AppButton
+						variant="link"
+						class="summary-exercises-preview__more !h-auto !min-h-0 !min-w-0 w-auto p-0"
 						onclick={() => (showAllExercises = true)}
 					>
 						{translate(lang, 'summary.moreExercises', { n: moreCount })}
-					</button>
+					</AppButton>
 				{:else if loggedExercises.length > PREVIEW_LIMIT}
-					<button
-						type="button"
-						class="summary-exercises-preview__more"
+					<AppButton
+						variant="link"
+						class="summary-exercises-preview__more !h-auto !min-h-0 !min-w-0 w-auto p-0"
 						onclick={() => (showAllExercises = false)}
 					>
 						{translate(lang, 'summary.showLess')}
-					</button>
+					</AppButton>
 				{/if}
 			</div>
 		{/if}
 
 		{#if showGuestSyncHint}
-			<div
-				class="summary-guest-hint panel text-left"
+			<AppPanel
+				class="summary-guest-hint text-left"
 				role="region"
 				aria-label={translate(lang, 'summary.guestSyncTitle')}
 			>
 				<p class="summary-guest-hint__title">{translate(lang, 'summary.guestSyncTitle')}</p>
 				<p class="summary-guest-hint__lead">{translate(lang, 'summary.guestSyncLead')}</p>
 				<div class="summary-guest-hint__actions">
-					<a class="btn-secondary px-4" href={authNextHref}
-						>{translate(lang, 'summary.guestSyncCta')}</a
-					>
-					<button
-						type="button"
-						class="btn-link px-3"
-						onclick={dismissGuestHint}
-					>
+					<AppButton variant="secondary" href={authNextHref} class="px-4">
+						{translate(lang, 'summary.guestSyncCta')}
+					</AppButton>
+					<AppButton variant="link" class="px-3" onclick={dismissGuestHint}>
 						{translate(lang, 'summary.guestSyncDismiss')}
-					</button>
+					</AppButton>
 				</div>
-			</div>
+			</AppPanel>
 		{/if}
 
 		<div class="summary-actions summary-page__done-inline">
-			<a
-				class="btn-primary btn-block"
+			<AppButton
+				block
 				href={`/workouts/history/${session.id}`}
 				data-sveltekit-replacestate
-				>{translate(lang, 'summary.done')}</a
 			>
+				{translate(lang, 'summary.done')}
+			</AppButton>
 		</div>
 
 		<div class="sticky-actions summary-page__done-sticky lg:hidden">
 			<div class="sticky-actions__inner summary-actions">
-				<a
-					class="btn-primary btn-block"
+				<AppButton
+					block
 					href={`/workouts/history/${session.id}`}
 					data-sveltekit-replacestate
-					>{translate(lang, 'summary.done')}</a
 				>
+					{translate(lang, 'summary.done')}
+				</AppButton>
 			</div>
 		</div>
 	</section>

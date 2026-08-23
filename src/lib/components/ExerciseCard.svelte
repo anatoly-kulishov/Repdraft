@@ -9,11 +9,15 @@
 	import { techniqueClipHints } from '$lib/stores/techniqueClipHints';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppIconButton from '$lib/components/AppIconButton.svelte';
+	import { cn } from '$lib/utils.js';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import CloseIconButton from '$lib/components/CloseIconButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
+	import { linkWithFrom } from '$lib/domain/navigation';
 	import { Bookmark, Check, ChevronRight, Film, Plus, StickyNote } from '@lucide/svelte';
 
 	let {
@@ -65,9 +69,8 @@
 	}
 
 	function exerciseHref(id: string): string {
-		const base = `/exercise/${id}`;
-		if (!detailFrom) return base;
-		return `${base}?from=${encodeURIComponent(detailFrom)}`;
+		if (!detailFrom) return `/exercise/${id}`;
+		return linkWithFrom(`/exercise/${id}`, detailFrom);
 	}
 
 	function openTechnique() {
@@ -92,7 +95,7 @@
 		if (inDraft) {
 			draft.removeFromDraft(exercise.id);
 			justAdded = false;
-			toasts.show(translate(lang, 'exercise.removed'), 'info');
+			toasts.show(translate(lang, 'exercise.removed'), 'info', 2600, undefined, 'draft');
 			return;
 		}
 		const result = draft.addToDraft(exercise.id, {
@@ -101,9 +104,9 @@
 		});
 		if (result.added) {
 			justAdded = true;
-			toasts.show(translate(lang, 'exercise.added'), 'success');
+			toasts.show(translate(lang, 'exercise.added'), 'success', 2600, undefined, 'draft');
 		} else {
-			toasts.show(translate(lang, 'exercise.already'), 'info');
+			toasts.show(translate(lang, 'exercise.already'), 'info', 2600, undefined, 'draft');
 		}
 	}
 
@@ -115,7 +118,7 @@
 		void bookmarks
 			.toggle(exercise.id)
 			.then((saved) => {
-				toasts.show(translate(lang, saved ? 'bookmarks.saved' : 'bookmarks.removed'), 'info');
+				toasts.show(translate(lang, saved ? 'bookmarks.saved' : 'bookmarks.removed'), 'info', 2600, undefined, 'bookmark');
 			})
 			.finally(() => {
 				bookmarkBusy = false;
@@ -124,11 +127,12 @@
 </script>
 
 {#snippet bookmarkButton(inline: boolean)}
-	<button
-		type="button"
-		class="exercise-card-bookmark"
-		class:exercise-card-bookmark--inline={inline}
-		class:is-active={bookmarked}
+	<AppIconButton
+		class={cn(
+			'exercise-card-bookmark !min-h-0 !min-w-0 size-auto p-0',
+			inline && 'exercise-card-bookmark--inline',
+			bookmarked && 'is-active'
+		)}
 		onclick={toggleBookmark}
 		disabled={bookmarkBusy}
 		aria-busy={bookmarkBusy}
@@ -145,7 +149,7 @@
 				fill={bookmarked ? 'currentColor' : 'none'}
 			/>
 		{/if}
-	</button>
+	</AppIconButton>
 {/snippet}
 
 {#snippet noteBadge(placement: 'list' | 'grid')}
@@ -178,11 +182,12 @@
 
 {#snippet listActions()}
 	<div class="exercise-card-actions exercise-card-actions--list">
-		<button
-			type="button"
-			class="exercise-card-add exercise-card-add--inline"
-			class:is-in-draft={inDraft}
-			class:is-just-added={justAdded}
+		<AppIconButton
+			class={cn(
+				'exercise-card-add exercise-card-add--inline !min-h-0 !min-w-0 size-auto p-0',
+				inDraft && 'is-in-draft',
+				justAdded && 'is-just-added'
+			)}
 			onclick={toggleDraft}
 			aria-label={translate(lang, inDraft ? 'exercise.removeDraft' : 'exercise.addDraft')}
 			aria-pressed={inDraft}
@@ -192,7 +197,7 @@
 			{:else}
 				<LucideIcon icon={Plus} size={ICON_SMALL} class="exercise-card-add-icon" />
 			{/if}
-		</button>
+		</AppIconButton>
 		<a
 			href={exerciseHref(exercise.id)}
 			class="exercise-card-chevron"
@@ -216,9 +221,9 @@
 >
 	{#if variant === 'list'}
 		<div class="exercise-card-list-main">
-			<button
-				type="button"
-				class="exercise-card-media media-well relative shrink-0 overflow-hidden"
+			<AppButton
+				variant="ghost"
+				class="exercise-card-media media-well relative shrink-0 overflow-hidden !min-h-0 !min-w-0 h-auto w-auto p-0"
 				aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
 				onclick={openTechnique}
 			>
@@ -238,7 +243,7 @@
 				/>
 				{@render noteBadge('list')}
 				{@render clipBadge('list')}
-			</button>
+			</AppButton>
 			<div class="exercise-card-bookmark-slot">
 				{@render bookmarkButton(false)}
 			</div>
@@ -290,7 +295,7 @@
 					alt=""
 					width="180"
 					height="180"
-					sizes="(min-width: 1024px) 16vw, (min-width: 768px) 30vw, 45vw"
+					sizes="(min-width: 1024px) 180px, (min-width: 768px) 33vw, 45vw"
 					loading={priority ? 'eager' : 'lazy'}
 					fetchpriority={priority ? 'high' : 'auto'}
 					decoding="async"
@@ -301,11 +306,12 @@
 			{@render bookmarkButton(false)}
 			{@render noteBadge('grid')}
 			{@render clipBadge('grid')}
-			<button
-				type="button"
-				class="exercise-card-add"
-				class:is-in-draft={inDraft}
-				class:is-just-added={justAdded}
+			<AppIconButton
+				class={cn(
+					'exercise-card-add !min-h-0 !min-w-0 size-auto p-0',
+					inDraft && 'is-in-draft',
+					justAdded && 'is-just-added'
+				)}
 				onclick={toggleDraft}
 				aria-label={translate(lang, inDraft ? 'exercise.removeDraft' : 'exercise.addDraft')}
 				aria-pressed={inDraft}
@@ -315,7 +321,7 @@
 				{:else}
 					<LucideIcon icon={Plus} size={ICON_SMALL} class="exercise-card-add-icon" />
 				{/if}
-			</button>
+			</AppIconButton>
 		</div>
 
 		<a
@@ -346,9 +352,9 @@
 		titleId={`exercise-technique-${exercise.id}`}
 		onDismiss={dismissTechnique}
 	>
+		<CloseIconButton class="bottom-sheet__close" onclick={dismissTechnique} />
 		<div class="bottom-sheet__head">
 			<p id={`exercise-technique-${exercise.id}`} class="bottom-sheet__title">{title}</p>
-			<CloseIconButton onclick={dismissTechnique} />
 		</div>
 		<p class="bottom-sheet__hint">{labelTarget(exercise.target, lang)}</p>
 		<div class="exercise-technique-sheet__media media-well">
@@ -363,9 +369,9 @@
 			/>
 		</div>
 		{#snippet actions()}
-			<a class="btn-primary btn-block" href={exerciseHref(exercise.id)} onclick={dismissTechnique}>
+			<AppButton block href={exerciseHref(exercise.id)}>
 				{translate(lang, 'exercise.openCard')}
-			</a>
+			</AppButton>
 		{/snippet}
 	</BottomSheet>
 {/if}

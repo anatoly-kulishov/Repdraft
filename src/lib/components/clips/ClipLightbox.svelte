@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
 	import CloseIconButton from '$lib/components/CloseIconButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -98,35 +99,35 @@
 				</p>
 			</div>
 			<div class="clip-lightbox__actions">
-				<button
-					type="button"
-					class="btn-ghost clip-lightbox__action"
+				<AppButton
+					variant="ghost"
+					class="clip-lightbox__action"
 					onclick={onShare}
 					aria-label={shareLabel}
 					title={shareLabel}
 				>
 					<LucideIcon icon={canShareNative ? Share2 : Link2} size={ICON_BUTTON} />
-				</button>
+				</AppButton>
 				{#if currentUserId && currentUserId === clip.userId}
-					<button
-						type="button"
-						class="btn-ghost clip-lightbox__action"
+					<AppButton
+						variant="ghost"
+						class="clip-lightbox__action"
 						onclick={onRename}
 						aria-label={translate(lang, 'clips.rename')}
 						title={translate(lang, 'clips.rename')}
 					>
 						<LucideIcon icon={Pencil} size={ICON_BUTTON} />
-					</button>
+					</AppButton>
 				{:else if currentUserId}
-					<button
-						type="button"
-						class="btn-ghost clip-lightbox__action"
+					<AppButton
+						variant="ghost"
+						class="clip-lightbox__action"
 						onclick={onReport}
 						aria-label={translate(lang, 'clips.report')}
 						title={translate(lang, 'clips.report')}
 					>
 						<LucideIcon icon={Flag} size={ICON_BUTTON} />
-					</button>
+					</AppButton>
 				{/if}
 			</div>
 		</div>

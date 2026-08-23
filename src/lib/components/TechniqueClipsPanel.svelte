@@ -20,6 +20,8 @@ import {
 		reportTechniqueClip
 	} from '$lib/storage/techniqueClipsRepository';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppPanel from '$lib/components/AppPanel.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import ClipGallery from '$lib/components/clips/ClipGallery.svelte';
@@ -60,7 +62,7 @@ import {
 	let thumbReady = $state(new Set<string>());
 	let galleryInput: HTMLInputElement | undefined = $state();
 	let cameraInput: HTMLInputElement | undefined = $state();
-	let sectionEl: HTMLElement | undefined = $state();
+	let sectionEl = $state<HTMLElement | null>(null);
 	/** Native `capture` only helps on phones; desktop ignores it → same file picker as gallery. */
 	let showNativeCamera = $state(false);
 
@@ -440,7 +442,7 @@ import {
 	/>
 {/if}
 
-<section bind:this={sectionEl} class="panel" aria-labelledby="clips-heading">
+<AppPanel bind:ref={sectionEl} aria-labelledby="clips-heading">
 	<div class="mb-3 flex flex-wrap items-start justify-between gap-3 md:mb-4">
 		<div>
 			<h2 id="clips-heading" class="section-title">
@@ -451,30 +453,29 @@ import {
 			</p>
 		</div>
 		{#if canUpload && !composerOpen && clips.length > 0}
-			<button
-				type="button"
-				class="btn-primary clip-section-add shrink-0"
+			<AppButton
+				class="clip-section-add shrink-0"
 				onclick={openComposer}
 				aria-label={translate(lang, 'clips.add')}
 				title={translate(lang, 'clips.add')}
 			>
 				<LucideIcon icon={Plus} size={ICON_BUTTON} />
-			</button>
+			</AppButton>
 		{/if}
 	</div>
 
 	{#if !cloudReady}
-		<p class="panel-dashed mb-3 text-sm text-[var(--color-muted)] md:mb-4">
+		<AppPanel dashed class="mb-3 text-sm text-[var(--color-muted)] md:mb-4">
 			{translate(lang, 'clips.needSql')}
-		</p>
+		</AppPanel>
 	{:else if !$auth.user}
-		<p class="panel-dashed mb-3 text-sm text-[var(--color-muted)] md:mb-4">
+		<AppPanel dashed class="mb-3 text-sm text-[var(--color-muted)] md:mb-4">
 			<a
-				class="font-semibold text-[var(--color-accent)] underline"
+				class="font-semibold text-[var(--color-accent-text)] underline"
 				href={`/auth?next=${encodeURIComponent(`/exercise/${exerciseId}`)}`}
 				>{translate(lang, 'clips.signInPublish')}</a
 			>{translate(lang, 'clips.signInSuffix')}
-		</p>
+		</AppPanel>
 	{:else if composerOpen}
 		<ClipComposer
 			open={composerOpen}
@@ -501,17 +502,17 @@ import {
 		</div>
 	{:else if clips.length === 0}
 		{#if !composerOpen}
-			<div class="panel-dashed py-4 text-center md:py-8">
+			<AppPanel dashed class="py-4 text-center md:py-8">
 				<p class="text-sm font-medium">{translate(lang, 'clips.emptyTitle')}</p>
 				<p class="mt-1 text-xs text-[var(--color-muted)]">
 					{translate(lang, 'clips.emptyDesc')}
 				</p>
 				{#if canUpload}
-					<button type="button" class="btn-primary mt-3 text-sm md:mt-4" onclick={openComposer}>
+					<AppButton class="mt-3 text-sm md:mt-4" onclick={openComposer}>
 						{translate(lang, 'clips.add')}
-					</button>
+					</AppButton>
 				{/if}
-			</div>
+			</AppPanel>
 		{/if}
 	{:else}
 		<ClipGallery
@@ -531,7 +532,7 @@ import {
 			onReport={reportClip}
 		/>
 	{/if}
-</section>
+</AppPanel>
 
 {#if lightbox}
 	<ClipLightbox

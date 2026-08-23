@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AppIconButton from '$lib/components/AppIconButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
@@ -18,12 +19,6 @@
 	let lang = $derived($resolvedLocale);
 </script>
 
-<button
-	type="button"
-	class="btn-icon-close {className}"
-	{disabled}
-	{onclick}
-	aria-label={translate(lang, 'a11y.close')}
->
+<AppIconButton {disabled} {onclick} class={className} aria-label={translate(lang, 'a11y.close')}>
 	<LucideIcon icon={X} size={ICON_BUTTON} />
-</button>
+</AppIconButton>

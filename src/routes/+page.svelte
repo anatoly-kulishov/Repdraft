@@ -1,4 +1,6 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppPanel from '$lib/components/AppPanel.svelte';
 	import BrandTagline from '$lib/components/BrandTagline.svelte';
 	import HomePageSkeleton from '$lib/components/HomePageSkeleton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -163,9 +165,9 @@
 				{/if}
 			</div>
 			{#if pageReady && !hasActive}
-				<a class="btn-primary home-header__cta" href={mockupCtaHref}>
+				<AppButton href={mockupCtaHref} class="home-header__cta">
 					{mockupCtaLabel}
-				</a>
+				</AppButton>
 			{/if}
 		</header>
 	{:else if showGuestCreateHero}
@@ -188,7 +190,7 @@
 					<p class="home-continue-card__title">{active.planName}</p>
 					<p class="home-continue-card__meta">{continueRemaining}</p>
 				</div>
-				<span class="btn-primary home-continue-card__cta">{translate(lang, 'home.continue')}</span>
+				<span class="inline-flex min-h-12 items-center rounded-md bg-primary px-3.5 text-sm font-semibold text-primary-foreground home-continue-card__cta">{translate(lang, 'home.continue')}</span>
 			</a>
 		{/if}
 		<div class="home-dashboard">
@@ -201,25 +203,26 @@
 							<BrandTagline class="brand-tagline--hero" />
 						{/if}
 						<div class="home-hero-actions">
-							<a
-								class="btn-primary home-hero-cta items-center justify-center gap-2"
+							<AppButton
 								href={BUILDER_NEW_HREF}
+								class="home-hero-cta items-center justify-center gap-2"
 							>
 								<LucideIcon icon={Plus} size={ICON_PRIMARY} />
 								{translate(lang, 'home.guestCreateLocal')}
-							</a>
-							<a
-								class="btn-secondary home-hero-secondary items-center justify-center gap-2"
+							</AppButton>
+							<AppButton
+								variant="secondary"
 								href={authHref}
+								class="home-hero-secondary items-center justify-center gap-2"
 							>
 								<LucideIcon icon={LogIn} size={ICON_PRIMARY} />
 								{translate(lang, 'nav.signIn')}
-							</a>
+							</AppButton>
 						</div>
 					</div>
 					{#if !hasSessionHistory}
 						<nav class="home-guest-next">
-							<a class="panel home-guest-next__card" href="/exercises">
+							<AppButton class="panel home-guest-next__card h-auto flex-col items-start gap-1 text-left" href="/exercises">
 								<span class="home-guest-next__title">{translate(lang, 'nav.exercises')}</span>
 								<span class="home-guest-next__hint">{translate(lang, 'home.guestBrowseHint')}</span>
 								<LucideIcon
@@ -227,7 +230,7 @@
 									size={ICON_SMALL}
 									class="home-guest-next__chevron"
 								/>
-							</a>
+							</AppButton>
 						</nav>
 					{/if}
 				</div>
@@ -333,11 +336,11 @@
 							<div class="home-section-head">
 								<h2 class="section-title">{translate(lang, 'home.recentPlaceholderTitle')}</h2>
 							</div>
-							<div class="panel home-aside-card home-aside-card--compact">
+							<AppPanel class="home-aside-card home-aside-card--compact">
 								<p class="home-aside-card__hint">
 									{translate(lang, 'home.recentPlaceholderHint')}
 								</p>
-							</div>
+							</AppPanel>
 						</div>
 					{/if}
 				</div>

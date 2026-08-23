@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import {
@@ -240,22 +241,18 @@
 				<p class="pwa-install__hint">{translate(lang, hintKey)}</p>
 			</div>
 			{#if showInstall}
-				<button
-					type="button"
-					class="btn-secondary pwa-install__action"
-					onclick={() => void install()}
-				>
+				<AppButton variant="secondary" class="pwa-install__action" onclick={() => void install()}>
 					{translate(lang, 'pwa.installAction')}
-				</button>
+				</AppButton>
 			{/if}
-			<button
-				type="button"
-				class="btn-ghost pwa-install__close"
+			<AppButton
+				variant="ghost"
+				class="pwa-install__close"
 				onclick={dismiss}
 				aria-label={translate(lang, 'pwa.installDismiss')}
 			>
 				<LucideIcon icon={X} size={ICON_SMALL} />
-			</button>
+			</AppButton>
 		</div>
 
 		{#if showGuide}

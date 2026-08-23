@@ -1,4 +1,6 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppPanel from '$lib/components/AppPanel.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -58,14 +60,15 @@
 </script>
 
 {#snippet headerActions()}
-	<a
-		class="btn-ghost workout-preview-edit-link"
+	<AppButton
+		variant="ghost"
+		class="workout-preview-edit-link"
 		href={plan ? `/builder/${plan.id}` : '/workouts'}
 		aria-label={translate(lang, 'preview.edit')}
 		title={translate(lang, 'preview.edit')}
 	>
 		<LucideIcon icon={Pencil} size={ICON_BUTTON} />
-	</a>
+	</AppButton>
 {/snippet}
 
 <svelte:head>
@@ -99,7 +102,7 @@
 			<h1 class="page-title">{plan.name}</h1>
 		</div>
 
-		<div class="workout-preview-summary panel">
+		<AppPanel class="workout-preview-summary">
 			{#if muscles}
 				<p class="workout-preview-summary-muscles">{muscles}</p>
 			{/if}
@@ -109,7 +112,7 @@
 					sets: totalSets
 				})}
 			</p>
-		</div>
+		</AppPanel>
 
 		<ul class="workout-preview-list">
 			{#each plan.exercises as item, index (item.exerciseId + '-' + index)}
@@ -181,26 +184,27 @@
 		</ul>
 
 		<div class="workout-preview-actions-desktop hidden flex-wrap gap-2 lg:flex">
-			<button type="button" class="btn-primary inline-flex items-center gap-2 px-6" onclick={onStart}>
+			<AppButton class="inline-flex items-center gap-2 px-6" onclick={onStart}>
 				<LucideIcon icon={Play} size={ICON_PRIMARY} />
 				{translate(lang, 'workouts.start')}
-			</button>
-			<a
-				class="btn-ghost workout-preview-edit-link"
+			</AppButton>
+			<AppButton
+				variant="ghost"
+				class="workout-preview-edit-link"
 				href={`/builder/${plan.id}`}
 				aria-label={translate(lang, 'preview.edit')}
 				title={translate(lang, 'preview.edit')}
 			>
 				<LucideIcon icon={Pencil} size={ICON_BUTTON} />
-			</a>
+			</AppButton>
 		</div>
 
 		<div class="sticky-actions lg:hidden">
 			<div class="sticky-actions__inner">
-				<button type="button" class="btn-primary btn-block gap-2" onclick={onStart}>
+				<AppButton block class="gap-2" onclick={onStart}>
 					<LucideIcon icon={Play} size={ICON_PRIMARY} />
 					{translate(lang, 'workouts.start')}
-				</button>
+				</AppButton>
 			</div>
 		</div>
 	</section>

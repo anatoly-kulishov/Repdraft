@@ -6,8 +6,8 @@ export const DEFAULT_APP_THEME: AppTheme = 'light';
 export const THEME_STORAGE_KEY = 'repdraft.theme';
 
 export const THEME_META_COLORS: Record<AppTheme, string> = {
-	dark: '#0A0A0D',
-	light: '#F7F5FC'
+	dark: '#0F1012',
+	light: '#FCFCFC'
 };
 
 export function parseAppTheme(value: string | null | undefined): AppTheme | null {

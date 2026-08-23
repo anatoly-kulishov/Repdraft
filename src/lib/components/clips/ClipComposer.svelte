@@ -1,4 +1,6 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppInput from '$lib/components/AppInput.svelte';
 	import CloseIconButton from '$lib/components/CloseIconButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
@@ -74,35 +76,35 @@
 				{translate(lang, 'clips.limits', { sec: clipEncodeDurationSec() })}
 			</p>
 			<div class="clip-composer__drop-actions">
-				<button
-					type="button"
-					class="btn-ghost clip-composer__pick"
+				<AppButton
+					variant="ghost"
+					class="clip-composer__pick"
 					disabled={busy}
 					onclick={onGalleryClick}
 					aria-label={translate(lang, 'clips.gallery')}
 					title={translate(lang, 'clips.gallery')}
 				>
 					<LucideIcon icon={Image} size={ICON_BUTTON} />
-				</button>
+				</AppButton>
 				{#if showNativeCamera}
-					<button
-						type="button"
-						class="btn-ghost clip-composer__pick"
+					<AppButton
+						variant="ghost"
+						class="clip-composer__pick"
 						disabled={busy}
 						onclick={onCameraClick}
 						aria-label={translate(lang, 'clips.camera')}
 						title={translate(lang, 'clips.camera')}
 					>
 						<LucideIcon icon={Camera} size={ICON_BUTTON} />
-					</button>
+					</AppButton>
 				{/if}
 			</div>
 		</div>
 
 		<label class="clip-composer__caption">
 			{translate(lang, 'clips.caption')}
-			<input
-				class="field mt-1"
+			<AppInput
+				class="mt-1"
 				type="text"
 				maxlength={CLIP_TITLE_MAX}
 				placeholder={translate(lang, 'clips.captionPh')}
@@ -138,19 +140,19 @@
 							{translate(lang, 'clips.size', { size: gifSizeLabel })}
 						</p>
 					{/if}
-					<button type="button" class="btn-primary" disabled={busy} onclick={onPublish}>
+					<AppButton disabled={busy} onclick={onPublish}>
 						{translate(lang, 'clips.publish')}
-					</button>
-					<button
-						type="button"
-						class="btn-ghost clip-composer__pick"
+					</AppButton>
+					<AppButton
+						variant="ghost"
+						class="clip-composer__pick"
 						disabled={busy}
 						onclick={onClearPreview}
 						aria-label={translate(lang, 'clips.otherVideo')}
 						title={translate(lang, 'clips.otherVideo')}
 					>
 						<LucideIcon icon={RefreshCw} size={ICON_BUTTON} />
-					</button>
+					</AppButton>
 				</div>
 			</div>
 		{/if}

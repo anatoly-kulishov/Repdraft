@@ -1,4 +1,6 @@
 <script lang="ts">
+	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
+
 	let {
 		rows = 4,
 		label = ''
@@ -12,15 +14,15 @@
 	{#if label}
 		<span class="sr-only">{label}</span>
 	{/if}
-	<ul class="records-skeleton__list" aria-hidden="true">
+	<ul class="records-list records-skeleton__list" aria-hidden="true">
 		{#each Array.from({ length: rows }, (_, i) => i) as i (i)}
 			<li class="records-skeleton__row">
-				<div class="records-skeleton__thumb"></div>
+				<AppSkeleton class="records-skeleton__thumb" aria-hidden="true" />
 				<div class="records-skeleton__body">
-					<div class="records-skeleton__line records-skeleton__line--title"></div>
+					<AppSkeleton class="records-skeleton__line records-skeleton__line--title" aria-hidden="true" />
 					<div class="records-skeleton__meta">
-						<div class="records-skeleton__chip"></div>
-						<div class="records-skeleton__date"></div>
+						<AppSkeleton class="records-skeleton__chip" aria-hidden="true" />
+						<AppSkeleton class="records-skeleton__date" aria-hidden="true" />
 					</div>
 				</div>
 			</li>
@@ -30,9 +32,6 @@
 
 <style>
 	.records-skeleton__list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.65rem;
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -50,15 +49,14 @@
 		box-shadow: var(--shadow-panel);
 	}
 
-	.records-skeleton__thumb {
+	:global(.records-skeleton__thumb) {
 		flex-shrink: 0;
 		width: var(--media-native);
 		height: auto;
 		min-height: var(--media-native);
+		align-self: stretch;
 		border-radius: 0;
-		background: var(--color-surface-muted);
 		box-shadow: inset -1px 0 0 color-mix(in srgb, var(--color-border) 85%, transparent);
-		animation: records-skeleton-shimmer 1.1s ease-in-out infinite;
 	}
 
 	.records-skeleton__body {
@@ -71,15 +69,10 @@
 		padding: 0.75rem 0.85rem;
 	}
 
-	.records-skeleton__line {
+	:global(.records-skeleton__line--title) {
+		width: min(70%, 14rem);
 		height: 0.875rem;
 		border-radius: 999px;
-		background: var(--color-surface-muted);
-		animation: records-skeleton-shimmer 1.1s ease-in-out infinite;
-	}
-
-	.records-skeleton__line--title {
-		width: min(70%, 14rem);
 	}
 
 	.records-skeleton__meta {
@@ -88,29 +81,15 @@
 		gap: 0.5rem;
 	}
 
-	.records-skeleton__chip {
+	:global(.records-skeleton__chip) {
 		width: 7rem;
 		height: 1.45rem;
 		border-radius: 999px;
-		background: var(--color-surface-muted);
-		animation: records-skeleton-shimmer 1.1s ease-in-out infinite;
 	}
 
-	.records-skeleton__date {
+	:global(.records-skeleton__date) {
 		width: 3.5rem;
 		height: 0.8125rem;
 		border-radius: 999px;
-		background: var(--color-surface-muted);
-		animation: records-skeleton-shimmer 1.1s ease-in-out infinite;
-	}
-
-	@keyframes records-skeleton-shimmer {
-		0%,
-		100% {
-			opacity: 0.55;
-		}
-		50% {
-			opacity: 1;
-		}
 	}
 </style>

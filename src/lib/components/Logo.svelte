@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import markUrl from '$lib/assets/brand/mark.svg?url';
+	import markUrl from '$lib/assets/brand/app-icon-master.svg?url';
 
 	let {
 		size = 'md',
@@ -32,7 +32,7 @@
 		class="{markClass} shrink-0 transition-opacity duration-200 group-hover:opacity-90"
 		src={markUrl}
 		alt=""
-		width="49"
+		width="40"
 		height="40"
 		decoding="async"
 	/>
@@ -47,6 +47,7 @@
 		display: block;
 		width: auto;
 		height: 2.5rem;
+		border-radius: 0.65rem;
 	}
 
 	.logo-mark--sidebar {

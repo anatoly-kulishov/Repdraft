@@ -1,4 +1,6 @@
 <script lang="ts">
+	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
+
 	let { label }: { label: string } = $props();
 </script>
 
@@ -6,26 +8,26 @@
 <div class="home-dashboard home-skeleton" aria-busy="true" aria-live="polite">
 	<span class="sr-only">{label}</span>
 
-	<div class="home-skeleton-hero lg:hidden" aria-hidden="true"></div>
+	<AppSkeleton class="home-skeleton-hero lg:hidden" aria-hidden="true" />
 
 	<div class="home-dashboard-mid" aria-hidden="true">
 		<div class="home-section home-dashboard-plans">
-			<div class="home-skeleton-heading"></div>
+			<AppSkeleton class="home-skeleton-heading" aria-hidden="true" />
 			<ul class="entity-list">
-				<li class="home-skeleton-row"></li>
-				<li class="home-skeleton-row"></li>
-				<li class="home-skeleton-row"></li>
-				<li class="home-skeleton-row"></li>
+				<li><AppSkeleton class="home-skeleton-row" aria-hidden="true" /></li>
+				<li><AppSkeleton class="home-skeleton-row" aria-hidden="true" /></li>
+				<li><AppSkeleton class="home-skeleton-row" aria-hidden="true" /></li>
+				<li><AppSkeleton class="home-skeleton-row" aria-hidden="true" /></li>
 			</ul>
 		</div>
 
 		<div class="home-dashboard-aside">
 			<div class="home-section">
-				<div class="home-skeleton-heading"></div>
+				<AppSkeleton class="home-skeleton-heading" aria-hidden="true" />
 				<ul class="entity-list">
-					<li class="home-skeleton-row"></li>
-					<li class="home-skeleton-row"></li>
-					<li class="home-skeleton-row"></li>
+					<li><AppSkeleton class="home-skeleton-row" aria-hidden="true" /></li>
+					<li><AppSkeleton class="home-skeleton-row" aria-hidden="true" /></li>
+					<li><AppSkeleton class="home-skeleton-row" aria-hidden="true" /></li>
 				</ul>
 			</div>
 		</div>
