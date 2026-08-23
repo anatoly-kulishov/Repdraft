@@ -18,7 +18,6 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import AppButton from '$lib/components/AppButton.svelte';
-	import AppCheckbox from '$lib/components/AppCheckbox.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import AuthInterfacePrefs from '$lib/components/AuthInterfacePrefs.svelte';
@@ -489,11 +488,12 @@
 						<span class="auth-pref-toggle__label">{translate(lang, 'settings.restSound')}</span>
 						<span class="auth-pref-toggle__hint">{translate(lang, restSoundHintKey)}</span>
 					</span>
-					<AppCheckbox
-						class="auth-pref-toggle__input shrink-0"
+					<input
+						type="checkbox"
+						class="auth-pref-toggle__input"
 						checked={$restSoundEnabled}
-						onCheckedChange={(checked) => {
-							restSoundEnabled.set(checked === true);
+						onchange={(e) => {
+							restSoundEnabled.set((e.currentTarget as HTMLInputElement).checked);
 						}}
 					/>
 				</label>
