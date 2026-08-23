@@ -139,14 +139,23 @@
 			(function () {
 				var boot = document.getElementById('pwa-boot');
 				if (!boot) return;
+				var done = false;
 				var hide = function () {
+					if (done) return;
+					done = true;
 					boot.classList.add('is-done');
 					window.setTimeout(function () {
-						boot.remove();
+						if (boot && boot.parentNode) boot.remove();
 					}, 220);
 				};
-				if (document.readyState === 'complete') hide();
-				else window.addEventListener('load', hide, { once: true });
+				/* Do not wait for window.load — font/preload hangs leave splash forever. */
+				if (document.readyState === 'interactive' || document.readyState === 'complete') {
+					hide();
+				} else {
+					document.addEventListener('DOMContentLoaded', hide, { once: true });
+				}
+				window.addEventListener('load', hide, { once: true });
+				window.setTimeout(hide, 1200);
 			})();
 		</script>
 	</body>
