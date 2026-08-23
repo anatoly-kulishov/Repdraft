@@ -51,6 +51,18 @@
 		box-shadow: var(--shadow-panel);
 	}
 
+	@media (max-width: 767px) {
+		.catalog-exercise-skeleton__list {
+			margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
+			margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
+			width: auto;
+			max-width: none;
+			border: none;
+			border-radius: 0;
+			box-shadow: none;
+		}
+	}
+
 	.catalog-exercise-skeleton__row {
 		position: relative;
 		display: flex;
