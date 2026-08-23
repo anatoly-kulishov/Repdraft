@@ -9157,12 +9157,7 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 		padding-right: max(var(--page-pad-x), var(--safe-right));
 		padding-top: 0.35rem;
 		padding-bottom: 0.4rem;
-		background: var(--color-bg);
 	}
-}
-
-html[data-theme='light'] .content-page--catalog .catalog-list-layout__filters .catalog-filters-shell {
-	background: color-mix(in srgb, var(--color-surface) 94%, var(--color-bg));
 }
 
 .catalog-list-layout__main {
@@ -10471,16 +10466,45 @@ html[data-theme='light'] .catalog-empty-state--saved.empty-state {
 	box-shadow: var(--shadow-panel);
 }
 
-/* Phone: edge-to-edge list — no side gutters / panel chrome. */
+/* Phone: side page pad + small gap between row-cards (same language as hub zones). */
 @media (max-width: 767px) {
 	.catalog-exercise-list {
-		margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
-		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
-		width: auto;
-		max-width: none;
+		gap: 0.55rem;
 		border: none;
 		border-radius: 0;
+		overflow: visible;
+		background: transparent;
 		box-shadow: none;
+	}
+
+	.catalog-exercise-list .exercise-card--list,
+	.catalog-exercise-list > .swipe-to-delete .exercise-card--list {
+		border: 1px solid var(--color-border);
+		border-radius: 1rem;
+		background: var(--color-surface);
+		box-shadow: var(--shadow-panel);
+		overflow: hidden;
+	}
+
+	.catalog-exercise-list .exercise-card--list:not(:last-child),
+	.catalog-exercise-list > .swipe-to-delete:not(:last-child) .exercise-card--list {
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.catalog-exercise-list > .swipe-to-delete {
+		border-radius: 1rem;
+		overflow: hidden;
+	}
+
+	.catalog-exercise-list > .swipe-to-delete.is-enabled .swipe-to-delete__sheet {
+		border-radius: 1rem;
+	}
+
+	.catalog-exercise-list .exercise-card--list .exercise-card-media {
+		border-radius: calc(1rem - 1px) 0 0 calc(1rem - 1px);
+		align-self: stretch;
+		height: auto;
+		min-height: var(--media-native);
 	}
 }
 
