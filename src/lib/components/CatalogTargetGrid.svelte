@@ -1,5 +1,5 @@
 <script lang="ts">
-	import CatalogTargetCard from '$lib/components/CatalogTargetCard.svelte';
+	import CatalogCategoryCard from '$lib/components/CatalogCategoryCard.svelte';
 	import { catalogZonePath, withFromParam } from '$lib/domain/catalogLinks';
 	import type { TargetChip } from '$lib/domain/filters';
 	import { labelTarget } from '$lib/domain/labels.ru';
@@ -46,14 +46,14 @@
 		class="catalog-target-grid catalog-hub-grid"
 		aria-label={translate(lang, 'catalog.targetChipsAria')}
 	>
-		<CatalogTargetCard
+		<CatalogCategoryCard
 			label={translate(lang, 'catalog.allExercises')}
 			href={targetHref(undefined, 'all')}
 			count={zoneCount}
 			coverImage={zoneCover || null}
 		/>
 		{#each chips as chip (chip.target)}
-			<CatalogTargetCard
+			<CatalogCategoryCard
 				label={labelTarget(chip.target, lang)}
 				href={targetHref(chip.target)}
 				count={chip.count}

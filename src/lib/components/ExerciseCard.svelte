@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { labelTarget } from '$lib/domain/labels.ru';
+	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { translate } from '$lib/i18n/messages';
 	import { draft } from '$lib/stores/draft';
 	import { bookmarks } from '$lib/stores/bookmarks';
@@ -18,7 +18,7 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { linkWithFrom } from '$lib/domain/navigation';
-	import { Bookmark, Check, Film, Plus, StickyNote } from '@lucide/svelte';
+	import { Bookmark, Check, Dumbbell, Film, Plus, StickyNote, Target } from '@lucide/svelte';
 
 	let {
 		exercise,
@@ -320,14 +320,24 @@
 
 		<a
 			href={exerciseHref(exercise.id)}
-			class="exercise-card-body flex min-w-0 flex-1 flex-col gap-0.5 p-2.5 active:bg-[var(--color-surface-muted)]"
+			class="exercise-card-body exercise-card-body--grid flex min-w-0 flex-1 flex-col gap-1 p-2.5 active:bg-[var(--color-surface-muted)]"
 		>
-			<h2 class="line-clamp-2 min-h-[2.1em] text-[13px] font-semibold leading-snug text-[var(--color-ink)]">
+			<h2 class="exercise-card-grid-title line-clamp-2 text-[13px] font-semibold leading-snug">
 				{title}
 			</h2>
-			<p class="truncate text-[11px] text-[var(--color-muted)]">
-				{labelTarget(exercise.target, lang)}
-			</p>
+			<div class="exercise-card-grid-meta">
+				<span class="exercise-card-grid-meta-item" title={labelTarget(exercise.target, lang)}>
+					<LucideIcon icon={Target} size={12} class="exercise-card-grid-meta-icon" />
+					<span class="truncate">{labelTarget(exercise.target, lang)}</span>
+				</span>
+				<span
+					class="exercise-card-grid-meta-item exercise-card-grid-meta-item--equipment"
+					title={labelEquipment(exercise.equipment, lang)}
+				>
+					<LucideIcon icon={Dumbbell} size={12} class="exercise-card-grid-meta-icon" />
+					<span class="truncate">{labelEquipment(exercise.equipment, lang)}</span>
+				</span>
+			</div>
 			{#if recordChips.length > 0}
 				<span class="exercise-card-chip-row exercise-card-chip-row--grid" title={recordTitle}>
 					{#each recordChips as chip (chip)}

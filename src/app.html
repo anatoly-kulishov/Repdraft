@@ -133,6 +133,24 @@
 							document.cookie = 'repdraft_auth_boot=; path=/; Max-Age=0; SameSite=Lax';
 						}
 					} catch (cookieErr) {}
+					/* Home boot: start skeleton when local plans exist (or signed-in). */
+					var homeBoot = authBoot === 'account' ? 'start' : 'create';
+					try {
+						var plansRaw = localStorage.getItem('repdraft:plans');
+						if (plansRaw) {
+							var plansParsed = JSON.parse(plansRaw);
+							if (Array.isArray(plansParsed) && plansParsed.length > 0) homeBoot = 'start';
+						}
+					} catch (plansErr) {}
+					document.documentElement.dataset.homeBoot = homeBoot;
+					try {
+						if (homeBoot === 'start') {
+							document.cookie =
+								'repdraft_home_has_plans=1; path=/; Max-Age=31536000; SameSite=Lax';
+						} else {
+							document.cookie = 'repdraft_home_has_plans=; path=/; Max-Age=0; SameSite=Lax';
+						}
+					} catch (homeCookieErr) {}
 				} catch (e) {}
 			})();
 			// Capture beforeinstallprompt early — it can fire before Svelte mounts.

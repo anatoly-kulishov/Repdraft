@@ -6,13 +6,17 @@
 	import AttributionFooter from '$lib/components/AttributionFooter.svelte';
 	import AccountChip from '$lib/components/AccountChip.svelte';
 	import DraftDock from '$lib/components/DraftDock.svelte';
-	import HomeSearchBar from '$lib/components/HomeSearchBar.svelte';
 	import Logo from '$lib/components/Logo.svelte';
 	import ShellHomeGreeting from '$lib/components/ShellHomeGreeting.svelte';
 	import PwaInstallHint from '$lib/components/PwaInstallHint.svelte';
 	import ToastStack from '$lib/components/ToastStack.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_SIDEBAR } from '$lib/components/icons/sizes';
+	import {
+		ICON_SIDEBAR,
+		ICON_TAB,
+		ICON_TAB_STROKE,
+		ICON_TAB_STROKE_ACTIVE
+	} from '$lib/components/icons/sizes';
 	import { Dumbbell, House, Library, Moon, Sun } from '@lucide/svelte';
 	import { isBuilderReturnPath } from '$lib/domain/catalogLinks';
 	import { translate } from '$lib/i18n/messages';
@@ -179,35 +183,30 @@
 			class:shell-header-mobile-hidden={hideMobileHeader}
 			class:shell-header-mobile--home={showHomeShellHeader}
 		>
-			<div class="shell-header-mobile__stack mx-auto w-full max-w-[var(--page-content-max)] shell-header-pad">
-				<div class="shell-header-mobile__bar flex h-14 w-full items-center justify-between gap-3">
-					{#if showHomeShellHeader}
-						<ShellHomeGreeting />
-					{:else}
-						<Logo compact />
-					{/if}
-					<div class="shell-header-actions flex items-center">
-						<AppButton
-							variant="ghost"
-							class="shell-theme-toggle"
-							onclick={() => appTheme.toggle()}
-							aria-label={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
-							title={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
-						>
-							{#if isLight}
-								<Moon size={ICON_SIDEBAR} strokeWidth={1.75} aria-hidden="true" />
-							{:else}
-								<Sun size={ICON_SIDEBAR} strokeWidth={1.75} aria-hidden="true" />
-							{/if}
-						</AppButton>
-						{#if !showHomeShellHeader}
-							<AccountChip active={isActive('/auth')} />
-						{/if}
-					</div>
-				</div>
+			<div class="shell-header-mobile__bar mx-auto flex h-14 w-full max-w-[var(--page-content-max)] items-center justify-between gap-3 shell-header-pad">
 				{#if showHomeShellHeader}
-					<HomeSearchBar />
+					<ShellHomeGreeting />
+				{:else}
+					<Logo compact />
 				{/if}
+				<div class="shell-header-actions flex items-center">
+					<AppButton
+						variant="ghost"
+						class="shell-theme-toggle"
+						onclick={() => appTheme.toggle()}
+						aria-label={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
+						title={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
+					>
+						{#if isLight}
+							<Moon size={ICON_SIDEBAR} strokeWidth={1.75} aria-hidden="true" />
+						{:else}
+							<Sun size={ICON_SIDEBAR} strokeWidth={1.75} aria-hidden="true" />
+						{/if}
+					</AppButton>
+					{#if !showHomeShellHeader}
+						<AccountChip active={isActive('/auth')} />
+					{/if}
+				</div>
 			</div>
 		</header>
 
@@ -218,10 +217,16 @@
 			class:shell-main--flow={hideMobileHeader}
 			tabindex="-1"
 		>
-			{#if !hideMobileHeader || path === '/'}
+			{#if path === '/'}
+				{@render children()}
+				<!-- After Home primary CTA so install does not steal the first viewport. -->
 				<PwaInstallHint />
+			{:else}
+				{#if !hideMobileHeader}
+					<PwaInstallHint />
+				{/if}
+				{@render children()}
 			{/if}
-			{@render children()}
 		</main>
 
 		<div class="shell-footer-pad">
@@ -246,7 +251,11 @@
 		>
 			<span class="tab-link__inner">
 				<span class="tab-link-icon">
-					<LucideIcon icon={House} size={ICON_SIDEBAR} />
+					<LucideIcon
+						icon={House}
+						size={ICON_TAB}
+						strokeWidth={isActive('/') ? ICON_TAB_STROKE_ACTIVE : ICON_TAB_STROKE}
+					/>
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.tabHome')}</span>
 			</span>
@@ -263,7 +272,11 @@
 		>
 			<span class="tab-link__inner">
 				<span class="tab-link-icon">
-					<LucideIcon icon={Dumbbell} size={ICON_SIDEBAR} />
+					<LucideIcon
+						icon={Dumbbell}
+						size={ICON_TAB}
+						strokeWidth={isActive('/workouts') ? ICON_TAB_STROKE_ACTIVE : ICON_TAB_STROKE}
+					/>
 					{#if hasActiveSession}
 						<span class="tab-link-live-dot" aria-hidden="true"></span>
 					{/if}
@@ -280,7 +293,11 @@
 		>
 			<span class="tab-link__inner">
 				<span class="tab-link-icon">
-					<LucideIcon icon={Library} size={ICON_SIDEBAR} />
+					<LucideIcon
+						icon={Library}
+						size={ICON_TAB}
+						strokeWidth={isActive('/exercises') ? ICON_TAB_STROKE_ACTIVE : ICON_TAB_STROKE}
+					/>
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.exercises')}</span>
 			</span>

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import CatalogHubChips from '$lib/components/CatalogHubChips.svelte';
-	import CatalogZoneCard from '$lib/components/CatalogZoneCard.svelte';
+	import CatalogCategoryCard from '$lib/components/CatalogCategoryCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
-	import { isBuilderReturnPath, withFromParam } from '$lib/domain/catalogLinks';
+	import { isBuilderReturnPath, labelCatalogZone, withFromParam } from '$lib/domain/catalogLinks';
 	import { translate } from '$lib/i18n/messages';
 	import { catalogUi } from '$lib/stores/catalogUi';
 	import { records } from '$lib/stores/records';
@@ -86,11 +86,11 @@
 	{:else}
 		<div class="catalog-hub-grid">
 			{#each data.hubZones as bodyPart, index (bodyPart)}
-				<CatalogZoneCard
-					{bodyPart}
+				<CatalogCategoryCard
+					label={labelCatalogZone(bodyPart, lang)}
+					href={withFromParam(`/catalog/${encodeURIComponent(bodyPart)}`, fromParam)}
 					count={data.zoneCounts[bodyPart] ?? 0}
 					coverImage={data.zoneCovers[bodyPart] ?? null}
-					from={fromParam}
 					priority={index === 0}
 				/>
 			{/each}

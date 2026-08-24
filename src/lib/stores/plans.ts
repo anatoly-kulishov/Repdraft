@@ -6,7 +6,8 @@ import { translate } from '$lib/i18n/messages';
 import { getWorkoutRepo, isCloudMode } from '$lib/storage/dataAccess';
 import {
 	localWorkoutRepository,
-	replaceAllPlans
+	replaceAllPlans,
+	syncHomePlansBootCookie
 } from '$lib/storage/localWorkoutRepository';
 import { clearLastSyncedAt } from '$lib/storage/syncMeta';
 import { supabaseWorkoutRepository } from '$lib/storage/supabaseWorkoutRepository';
@@ -63,6 +64,9 @@ function createPlansStore() {
 						store.set(update.items);
 						sync.set(update.state);
 						if (update.state !== 'loading') ready.set(true);
+						if (browser) {
+							syncHomePlansBootCookie(update.items.length > 0);
+						}
 					}
 				});
 				if (wantCloud && result.state === 'synced' && isCloudMode()) {

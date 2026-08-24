@@ -151,13 +151,8 @@
 		indexReady && visibleLimit < (useSections ? allSectionItems.length : visible.length)
 	);
 	let bookmarksLoaded = $state(false);
-	let wideViewport = $state(false);
 	let cardVariant = $derived(
-		listOnMobile
-			? gridOnDesktop && wideViewport
-				? ('grid' as const)
-				: ('list' as const)
-			: ('grid' as const)
+		!listOnMobile || gridOnDesktop ? ('grid' as const) : ('list' as const)
 	);
 	let listClass = $derived(
 		cardVariant === 'grid'
@@ -266,16 +261,6 @@
 	});
 
 	onMount(() => {
-		let stopViewportSync: (() => void) | undefined;
-		if (gridOnDesktop && typeof window !== 'undefined') {
-			const mq = window.matchMedia('(min-width: 768px)');
-			const sync = () => {
-				wideViewport = mq.matches;
-			};
-			sync();
-			mq.addEventListener('change', sync);
-			stopViewportSync = () => mq.removeEventListener('change', sync);
-		}
 		void bookmarks.refresh().finally(() => {
 			bookmarksLoaded = true;
 		});
@@ -288,7 +273,6 @@
 				items = [];
 				indexReady = true;
 			});
-		return () => stopViewportSync?.();
 	});
 
 	function loadMore() {
@@ -358,7 +342,10 @@
 		description={indexError ? translate(lang, indexError) : ''}
 	/>
 {:else if !indexReady || (savedOnly && !bookmarksLoaded)}
-	<CatalogExerciseListSkeleton label={translate(lang, 'catalog.loading')} />
+	<CatalogExerciseListSkeleton
+		label={translate(lang, 'catalog.loading')}
+		variant={cardVariant}
+	/>
 {:else}
 	<p class="catalog-list-count mb-3 text-sm text-[var(--color-muted)]" aria-live="polite">
 		{translate(lang, 'catalog.countShown', {
