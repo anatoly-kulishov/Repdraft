@@ -3750,6 +3750,46 @@ body:has(.sticky-actions) .draft-dock {
 	}
 }
 
+/*
+ * Phone/tablet scroll: frosted chrome re-blurs every frame behind the tabbar / sticky
+ * CTA and tanks FPS on iOS. Prefer solid surfaces while content is scrolling.
+ */
+@media (max-width: 1023px) {
+	.shell-nav-tabbar__inner,
+	html[data-theme='light'] .shell-nav-tabbar__inner {
+		background: var(--color-surface);
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+
+	.sticky-actions--above-tabbar {
+		background: var(--color-bg);
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+
+	/* Filters on list thumbs: drop-shadow = paint cost × N cards while scrolling. */
+	.exercise-card-bookmark:not(.exercise-card-bookmark--inline),
+	.exercise-card-bookmark.is-active:not(.exercise-card-bookmark--inline),
+	.exercise-card-note,
+	.exercise-card-clip,
+	html[data-theme='light'] .exercise-card-bookmark:not(.exercise-card-bookmark--inline),
+	html[data-theme='light'] .exercise-card-bookmark.is-active:not(.exercise-card-bookmark--inline),
+	html[data-theme='light'] .exercise-card-clip,
+	html[data-theme='light'] .exercise-card-note,
+	html[data-theme='dark'] .exercise-card-bookmark:not(.exercise-card-bookmark--inline),
+	html[data-theme='dark'] .exercise-card-bookmark.is-active:not(.exercise-card-bookmark--inline),
+	html[data-theme='dark'] .exercise-card-note,
+	html[data-theme='dark'] .exercise-card-clip {
+		filter: none;
+	}
+
+	.exercise-card-add:not(.exercise-card-add--inline) {
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+}
+
 /* Extra room above sticky CTA (footer / tabbar cleared separately) */
 .pb-mobile-actions {
 	padding-bottom: calc(var(--sticky-actions-h) + var(--mobile-chrome-bottom) + 0.35rem);
@@ -9287,6 +9327,8 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 		padding-right: max(var(--page-pad-x), var(--safe-right));
 		padding-top: 0.35rem;
 		padding-bottom: 0.4rem;
+		/* Opaque so list cards don't composite under sticky chrome every frame. */
+		background: var(--color-bg);
 	}
 }
 
@@ -10572,12 +10614,14 @@ html[data-theme='light'] .catalog-empty-state--saved.empty-state {
 		border: 1px solid var(--color-border);
 		border-radius: 1rem;
 		background: var(--color-surface);
-		box-shadow: var(--shadow-panel);
+		/* Border-only: multi-layer shadows × N rows stutter mobile scroll. */
+		box-shadow: none;
 		overflow: hidden;
-		transition:
-			transform 0.28s var(--ease-spring),
-			border-color 160ms ease,
-			background 160ms ease;
+		/* Promote once; avoid spring transform transitions on every :active. */
+		transform: translateZ(0);
+		-webkit-backface-visibility: hidden;
+		contain: layout paint style;
+		transition: border-color 160ms ease, background 160ms ease;
 	}
 
 	.catalog-exercise-list .exercise-card--list:not(:last-child),
@@ -10755,8 +10799,7 @@ html[data-theme='light'] .catalog-empty-state--saved.empty-state {
 	}
 
 	.catalog-exercise-list .exercise-card--list:active {
-		transform: scale(0.985);
-		background: var(--color-surface);
+		background: var(--color-surface-muted);
 	}
 
 	.catalog-exercise-list .exercise-card-body:active {
