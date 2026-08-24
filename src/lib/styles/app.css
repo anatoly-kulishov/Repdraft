@@ -10081,7 +10081,8 @@ html[data-theme='light'] .catalog-empty-state--saved.empty-state {
 		border: 1px solid var(--color-border);
 		border-radius: 1rem;
 		background: var(--color-surface);
-		box-shadow: var(--shadow-panel);
+		box-shadow: none;
+		contain: layout paint style;
 	}
 
 	.catalog-hub-grid .zone-card::before {
@@ -10089,7 +10090,7 @@ html[data-theme='light'] .catalog-empty-state--saved.empty-state {
 	}
 
 	.catalog-hub-grid .zone-card.zone-card--hub:active {
-		transform: scale(0.985);
+		background: var(--color-surface-muted);
 	}
 
 	.catalog-hub-grid .zone-card__media-wrap.zone-card__media-wrap--hub {
