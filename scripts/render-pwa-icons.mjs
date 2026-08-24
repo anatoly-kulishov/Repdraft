@@ -12,7 +12,7 @@ const staticDir = join(root, 'static');
 const brandDir = join(root, 'src/lib/assets/brand');
 
 /** Flatten color for rounded-rect masters (gradient top-left). */
-const FLATTEN_BG = '#B2EE37';
+const FLATTEN_BG = '#C8FF00';
 
 const masterSvg = readFileSync(join(brandDir, 'app-icon-master.svg'));
 const maskableSvg = readFileSync(join(brandDir, 'app-icon-maskable.svg'));

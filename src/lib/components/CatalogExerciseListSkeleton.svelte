@@ -44,89 +44,31 @@
 	.catalog-exercise-skeleton__list {
 		display: flex;
 		flex-direction: column;
-		overflow: hidden;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-panel);
-		background: var(--color-surface);
-		box-shadow: var(--shadow-panel);
-	}
-
-	@media (max-width: 767px) {
-		.catalog-exercise-skeleton__list {
-			gap: 0.55rem;
-			overflow: visible;
-			border: none;
-			border-radius: 0;
-			background: transparent;
-			box-shadow: none;
-		}
-
-		.catalog-exercise-skeleton__row {
-			position: relative;
-			min-height: 7.65rem;
-			padding-right: 0;
-			overflow: hidden;
-			border: 1px solid var(--color-border);
-			border-radius: 1rem;
-			background: var(--color-surface);
-			box-shadow: var(--shadow-panel);
-		}
-
-		.catalog-exercise-skeleton__row:not(:last-child)::after {
-			display: none;
-		}
-
-		:global(.catalog-exercise-skeleton__thumb) {
-			flex: 0 0 7.5rem;
-			width: 7.5rem;
-			min-height: 7.5rem;
-			height: 100%;
-			border-radius: 1rem 0 0 1rem;
-			align-self: stretch;
-			box-shadow: inset -1px 0 0 color-mix(in srgb, var(--color-border) 82%, transparent);
-		}
-
-		.catalog-exercise-skeleton__body {
-			padding: 0.75rem 3rem 0.75rem 0.9rem;
-			gap: 0.2rem;
-		}
-
-		:global(.catalog-exercise-skeleton__action) {
-			position: absolute;
-			top: 50%;
-			right: 0.5rem;
-			transform: translateY(-50%);
-			width: 3rem;
-			height: 3rem;
-			border-radius: 999px;
-		}
+		gap: 0.65rem;
+		overflow: visible;
+		border: none;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
 	}
 
 	.catalog-exercise-skeleton__row {
-		position: relative;
 		display: flex;
-		align-items: stretch;
-		min-height: calc(var(--media-native) + 0.35rem);
-		padding-right: 0.35rem;
-	}
-
-	.catalog-exercise-skeleton__row:not(:last-child)::after {
-		content: '';
-		position: absolute;
-		right: 0;
-		bottom: 0;
-		left: var(--media-native);
-		height: 1px;
-		background: var(--color-border);
+		align-items: center;
+		gap: 0.85rem;
+		min-height: calc(4.75rem + 1.5rem);
+		padding: 0.75rem;
+		border: 1px solid var(--color-border);
+		border-radius: 1.5rem;
+		background: var(--color-surface);
+		box-shadow: none;
 	}
 
 	:global(.catalog-exercise-skeleton__thumb) {
-		flex: 0 0 var(--media-native);
-		width: var(--media-native);
-		min-height: var(--media-native);
-		align-self: stretch;
-		border-radius: 0;
-		box-shadow: inset -1px 0 0 color-mix(in srgb, var(--color-border) 85%, transparent);
+		flex: 0 0 4.75rem;
+		width: 4.75rem;
+		height: 4.75rem;
+		border-radius: 0.85rem;
 	}
 
 	.catalog-exercise-skeleton__body {
@@ -136,7 +78,7 @@
 		justify-content: center;
 		gap: 0.45rem;
 		min-width: 0;
-		padding: 0.65rem 0.75rem;
+		padding: 0;
 	}
 
 	:global(.catalog-exercise-skeleton__line--title) {
@@ -153,9 +95,18 @@
 
 	:global(.catalog-exercise-skeleton__action) {
 		flex-shrink: 0;
-		align-self: center;
-		width: 2.75rem;
-		height: 2.75rem;
-		border-radius: var(--radius-control);
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 999px;
+	}
+
+	@media (min-width: 768px) {
+		.catalog-exercise-skeleton__list {
+			gap: 0.75rem;
+		}
+
+		.catalog-exercise-skeleton__row {
+			padding: 0.85rem 1rem;
+		}
 	}
 </style>

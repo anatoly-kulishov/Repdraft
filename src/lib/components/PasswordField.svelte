@@ -1,6 +1,5 @@
 <script lang="ts">
 	import AppInput from '$lib/components/AppInput.svelte';
-	import AppIconButton from '$lib/components/AppIconButton.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_INPUT } from '$lib/components/icons/sizes';
@@ -34,9 +33,9 @@
 
 <AppLabel>
 	{label}
-	<div class="relative mt-1">
+	<div class="password-field relative mt-1">
 		<AppInput
-			class="w-full pr-11"
+			class="password-field__input w-full pr-12"
 			aria-invalid={invalid || undefined}
 			type={visible ? 'text' : 'password'}
 			{required}
@@ -46,8 +45,9 @@
 			{placeholder}
 			bind:value
 		/>
-		<AppIconButton
-			class="absolute inset-y-0 right-0 size-12 min-h-12 min-w-12 p-0 text-[var(--color-muted)]"
+		<button
+			type="button"
+			class="password-field__toggle"
 			onclick={() => (visible = !visible)}
 			aria-pressed={visible}
 			aria-label={translate(lang, visible ? 'auth.hidePassword' : 'auth.showPassword')}
@@ -57,6 +57,6 @@
 			{:else}
 				<LucideIcon icon={Eye} size={ICON_INPUT} />
 			{/if}
-		</AppIconButton>
+		</button>
 	</div>
 </AppLabel>

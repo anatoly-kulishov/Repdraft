@@ -12,15 +12,17 @@
 	let count = $derived($draft.exercises.length);
 	let path = $derived($page.url.pathname);
 
-	let hasOwnStickyCta = $derived(
+	let hideOnRoute = $derived(
 		path.startsWith('/builder') ||
 			path.startsWith('/exercise/') ||
 			path.startsWith('/live/') ||
+			path.startsWith('/auth') ||
+			path === '/privacy' ||
 			path === '/workouts/summary' ||
 			/^\/workouts\/[^/]+$/.test(path)
 	);
 
-	let visible = $derived($draftHydrated && count > 0 && !hasOwnStickyCta);
+	let visible = $derived($draftHydrated && count > 0 && !hideOnRoute);
 </script>
 
 {#if visible}

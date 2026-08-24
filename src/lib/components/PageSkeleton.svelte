@@ -8,7 +8,7 @@
 	}: {
 		rows?: number;
 		showField?: boolean;
-		variant?: 'default' | 'history' | 'live' | 'builder' | 'auth' | 'summary';
+		variant?: 'default' | 'history' | 'live' | 'builder' | 'auth' | 'auth-guest' | 'summary';
 	} = $props();
 </script>
 
@@ -62,17 +62,144 @@
 		{/each}
 		<AppSkeleton class="page-skeleton-row page-skeleton-row--action" aria-hidden="true" />
 	{:else if variant === 'auth'}
-		<div class="page-skeleton-header" aria-hidden="true">
-			<AppSkeleton class="page-skeleton-title page-skeleton-title--lg" />
-			<AppSkeleton class="page-skeleton-toolbar" />
+		<!-- Logged-in /auth: hero + 6 settings cards (2-col from tablet). -->
+		<div class="page-skeleton-auth" aria-hidden="true">
+			<header class="page-skeleton-auth-hero">
+				<div class="page-skeleton-auth-hero__toolbar">
+					<AppSkeleton class="page-skeleton-auth-back" />
+				</div>
+				<div class="page-skeleton-auth-hero__stage">
+					<AppSkeleton class="page-skeleton-auth-avatar" />
+				</div>
+				<AppSkeleton class="page-skeleton-auth-name" />
+				<AppSkeleton class="page-skeleton-auth-meta" />
+				<AppSkeleton class="page-skeleton-auth-badge" />
+			</header>
+
+			<div class="page-skeleton-auth__stack">
+				<div class="page-skeleton-card page-skeleton-card--auth">
+					<AppSkeleton class="page-skeleton-auth-group-title" />
+					<AppSkeleton class="page-skeleton-field" />
+					<AppSkeleton class="page-skeleton-auth-hint" />
+					<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
+				</div>
+
+				<div class="page-skeleton-card page-skeleton-card--auth">
+					<AppSkeleton class="page-skeleton-auth-group-title" />
+					<div class="page-skeleton-auth-pref-row">
+						<AppSkeleton class="page-skeleton-auth-pref-icon" />
+						<AppSkeleton class="page-skeleton-auth-pref-label" />
+						<AppSkeleton class="page-skeleton-auth-pref-value" />
+					</div>
+					<div class="page-skeleton-auth-pref-row">
+						<AppSkeleton class="page-skeleton-auth-pref-icon" />
+						<AppSkeleton class="page-skeleton-auth-pref-label" />
+						<AppSkeleton class="page-skeleton-auth-pref-value" />
+					</div>
+					<AppSkeleton class="page-skeleton-auth-hint" />
+				</div>
+
+				<div class="page-skeleton-card page-skeleton-card--auth">
+					<AppSkeleton class="page-skeleton-auth-group-title" />
+					<div class="page-skeleton-auth-pref-row page-skeleton-auth-pref-row--toggle">
+						<AppSkeleton class="page-skeleton-auth-pref-icon" />
+						<AppSkeleton class="page-skeleton-auth-pref-label" />
+						<AppSkeleton class="page-skeleton-auth-pref-toggle" />
+					</div>
+					<AppSkeleton class="page-skeleton-auth-hint" />
+				</div>
+
+				<div class="page-skeleton-card page-skeleton-card--auth">
+					<AppSkeleton class="page-skeleton-auth-group-title" />
+					<AppSkeleton class="page-skeleton-auth-hint page-skeleton-auth-hint--lead" />
+					<div class="page-skeleton-auth-dual-actions">
+						<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
+						<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
+					</div>
+				</div>
+
+				<div class="page-skeleton-card page-skeleton-card--auth">
+					<AppSkeleton class="page-skeleton-auth-group-title" />
+					<div class="page-skeleton-auth-pref-row">
+						<AppSkeleton class="page-skeleton-auth-pref-icon" />
+						<AppSkeleton class="page-skeleton-auth-pref-label" />
+					</div>
+					<div class="page-skeleton-auth-pref-row">
+						<AppSkeleton class="page-skeleton-auth-pref-icon" />
+						<AppSkeleton class="page-skeleton-auth-pref-label" />
+					</div>
+				</div>
+
+				<div class="page-skeleton-card page-skeleton-card--auth page-skeleton-card--auth-danger">
+					<AppSkeleton class="page-skeleton-auth-danger-eyebrow" />
+					<AppSkeleton class="page-skeleton-auth-danger-title" />
+					<AppSkeleton class="page-skeleton-auth-hint page-skeleton-auth-hint--lead" />
+					<AppSkeleton class="page-skeleton-auth-danger-list" />
+					<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
+				</div>
+			</div>
 		</div>
-		<AppSkeleton class="page-skeleton-line page-skeleton-line--lead" aria-hidden="true" />
-		<div class="page-skeleton-card page-skeleton-card--form" aria-hidden="true">
-			<AppSkeleton class="page-skeleton-label" />
-			<AppSkeleton class="page-skeleton-field" />
-			<AppSkeleton class="page-skeleton-label" />
-			<AppSkeleton class="page-skeleton-field" />
-			<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
+	{:else if variant === 'auth-guest'}
+		<!-- Guest /auth: ScreenHeader + lead + sign-in panel + settings panel. -->
+		<div class="page-skeleton-auth-guest" aria-hidden="true">
+			<div class="page-skeleton-auth-guest__chrome">
+				<AppSkeleton class="page-skeleton-auth-back" />
+				<AppSkeleton class="page-skeleton-auth-guest__title" />
+			</div>
+
+			<header class="page-skeleton-auth-guest__header">
+				<div class="page-skeleton-auth-guest__desktop-head">
+					<AppSkeleton class="page-skeleton-auth-back" />
+				</div>
+				<AppSkeleton class="page-skeleton-auth-guest__page-title" />
+				<AppSkeleton class="page-skeleton-auth-guest__lead" />
+				<AppSkeleton class="page-skeleton-auth-guest__tagline" />
+			</header>
+
+			<div class="page-skeleton-auth-guest__stack">
+				<div class="page-skeleton-card page-skeleton-card--auth page-skeleton-card--auth-signin">
+					<AppSkeleton class="page-skeleton-auth-guest__segments" />
+					<div class="page-skeleton-auth-guest__form">
+						<div class="page-skeleton-auth-guest__field">
+							<AppSkeleton class="page-skeleton-label" />
+							<AppSkeleton class="page-skeleton-field" />
+						</div>
+						<div class="page-skeleton-auth-guest__field">
+							<AppSkeleton class="page-skeleton-label" />
+							<AppSkeleton class="page-skeleton-field" />
+						</div>
+						<AppSkeleton class="page-skeleton-auth-guest__link page-skeleton-auth-guest__link--control" />
+						<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
+						<AppSkeleton class="page-skeleton-auth-guest__link page-skeleton-auth-guest__link--center page-skeleton-auth-guest__link--control" />
+					</div>
+				</div>
+
+				<div class="page-skeleton-card page-skeleton-card--auth page-skeleton-card--auth-settings">
+					<div class="page-skeleton-auth-guest__section">
+						<AppSkeleton class="page-skeleton-auth-group-title" />
+						<div class="page-skeleton-auth-pref-row">
+							<AppSkeleton class="page-skeleton-auth-pref-icon" />
+							<AppSkeleton class="page-skeleton-auth-pref-label" />
+							<AppSkeleton class="page-skeleton-auth-pref-value" />
+						</div>
+						<div class="page-skeleton-auth-pref-row">
+							<AppSkeleton class="page-skeleton-auth-pref-icon" />
+							<AppSkeleton class="page-skeleton-auth-pref-label" />
+							<AppSkeleton class="page-skeleton-auth-pref-value" />
+						</div>
+						<AppSkeleton class="page-skeleton-auth-hint" />
+					</div>
+					<div class="page-skeleton-auth-guest__section">
+						<AppSkeleton class="page-skeleton-auth-group-title" />
+						<AppSkeleton class="page-skeleton-auth-hint page-skeleton-auth-hint--lead" />
+						<div class="page-skeleton-auth-dual-actions">
+							<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
+							<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
+						</div>
+					</div>
+					<AppSkeleton class="page-skeleton-auth-guest__legal" />
+				</div>
+			</div>
 		</div>
 	{:else if variant === 'summary'}
 		<div class="page-skeleton-header" aria-hidden="true">

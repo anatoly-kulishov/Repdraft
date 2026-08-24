@@ -6,7 +6,9 @@
 	import AttributionFooter from '$lib/components/AttributionFooter.svelte';
 	import AccountChip from '$lib/components/AccountChip.svelte';
 	import DraftDock from '$lib/components/DraftDock.svelte';
+	import HomeSearchBar from '$lib/components/HomeSearchBar.svelte';
 	import Logo from '$lib/components/Logo.svelte';
+	import ShellHomeGreeting from '$lib/components/ShellHomeGreeting.svelte';
 	import PwaInstallHint from '$lib/components/PwaInstallHint.svelte';
 	import ToastStack from '$lib/components/ToastStack.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -51,6 +53,7 @@
 	}
 
 	let hideMobileHeader = $derived(mobileFlowChrome(path, fromParam));
+	let showHomeShellHeader = $derived(path === '/' && !hideMobileHeader);
 
 	onNavigate((navigation) => {
 		if (typeof document === 'undefined' || !document.startViewTransition) return;
@@ -174,27 +177,37 @@
 		<header
 			class="shell-header-mobile sticky top-0 z-30 border-b border-[var(--color-border)] pt-[var(--safe-top)]"
 			class:shell-header-mobile-hidden={hideMobileHeader}
+			class:shell-header-mobile--home={showHomeShellHeader}
 		>
-			<div
-				class="mx-auto flex h-14 w-full max-w-[var(--page-content-max)] items-center justify-between gap-3 shell-header-pad"
-			>
-				<Logo compact />
-				<div class="shell-header-actions flex items-center">
-					<AppButton
-						variant="ghost"
-						class="shell-theme-toggle"
-						onclick={() => appTheme.toggle()}
-						aria-label={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
-						title={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
-					>
-						{#if isLight}
-							<Moon size={ICON_SIDEBAR} strokeWidth={1.75} aria-hidden="true" />
-						{:else}
-							<Sun size={ICON_SIDEBAR} strokeWidth={1.75} aria-hidden="true" />
+			<div class="shell-header-mobile__stack mx-auto w-full max-w-[var(--page-content-max)] shell-header-pad">
+				<div class="shell-header-mobile__bar flex h-14 w-full items-center justify-between gap-3">
+					{#if showHomeShellHeader}
+						<ShellHomeGreeting />
+					{:else}
+						<Logo compact />
+					{/if}
+					<div class="shell-header-actions flex items-center">
+						<AppButton
+							variant="ghost"
+							class="shell-theme-toggle"
+							onclick={() => appTheme.toggle()}
+							aria-label={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
+							title={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
+						>
+							{#if isLight}
+								<Moon size={ICON_SIDEBAR} strokeWidth={1.75} aria-hidden="true" />
+							{:else}
+								<Sun size={ICON_SIDEBAR} strokeWidth={1.75} aria-hidden="true" />
+							{/if}
+						</AppButton>
+						{#if !showHomeShellHeader}
+							<AccountChip active={isActive('/auth')} />
 						{/if}
-					</AppButton>
-					<AccountChip active={isActive('/auth')} />
+					</div>
 				</div>
+				{#if showHomeShellHeader}
+					<HomeSearchBar />
+				{/if}
 			</div>
 		</header>
 
