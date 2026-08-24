@@ -143,7 +143,9 @@
 		<!-- Guest /auth: ScreenHeader + lead + sign-in panel + settings panel. -->
 		<div class="page-skeleton-auth-guest" aria-hidden="true">
 			<div class="page-skeleton-auth-guest__chrome">
-				<AppSkeleton class="page-skeleton-auth-back" />
+				<div class="page-skeleton-auth-guest__back-slot">
+					<AppSkeleton class="page-skeleton-auth-guest__back-icon" />
+				</div>
 				<AppSkeleton class="page-skeleton-auth-guest__title" />
 			</div>
 

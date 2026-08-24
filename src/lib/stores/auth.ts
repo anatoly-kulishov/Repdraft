@@ -127,6 +127,20 @@ function createAuthStore() {
 			? syncLocalCacheUser(userId)
 			: { cleared: false, action: 'noop' as const };
 
+		if (browser) {
+			try {
+				if (loggedIn) {
+					document.cookie = 'repdraft_auth_boot=1; path=/; Max-Age=31536000; SameSite=Lax';
+					document.documentElement.dataset.authBoot = 'account';
+				} else {
+					document.cookie = 'repdraft_auth_boot=; path=/; Max-Age=0; SameSite=Lax';
+					document.documentElement.dataset.authBoot = 'guest';
+				}
+			} catch {
+				/* ignore cookie / dataset failures */
+			}
+		}
+
 		setCloudMode(loggedIn);
 		set({
 			configured: isSupabaseConfigured(),
