@@ -13,6 +13,17 @@ import { clearSyncOutbox } from '$lib/storage/syncOutbox';
 
 export const LOCAL_CACHE_USER_KEY = 'repdraft:local-cache-user';
 
+/** Sync peek for auth boot skeleton: true if last session was a signed-in user. */
+export function peekLocalCacheUserId(): string | null {
+	if (typeof localStorage === 'undefined') return null;
+	try {
+		const raw = localStorage.getItem(LOCAL_CACHE_USER_KEY)?.trim();
+		return raw || null;
+	} catch {
+		return null;
+	}
+}
+
 const USER_DATA_KEYS = [
 	RECORDS_STORAGE_KEY,
 	PLANS_STORAGE_KEY,

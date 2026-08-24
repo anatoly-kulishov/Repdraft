@@ -23,7 +23,7 @@
 			case 'action':
 				return 'default';
 			case 'secondary':
-				return 'outline';
+				return 'ghost';
 			case 'danger':
 				return 'destructive';
 			case 'ghost':

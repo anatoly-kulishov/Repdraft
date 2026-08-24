@@ -101,16 +101,13 @@
 				: translate(lang, 'home.noPlansLead')
 	);
 
+	let firstName = $derived(greetingFirstName($greetingName, $auth.user));
+	let showGreeting = $derived($auth.ready && !isGuest);
 	let greetingText = $derived.by(() => {
 		const period = dayGreetingPeriod();
 		const key = homeGreetingMessageKey(period, Boolean(firstName));
 		return firstName ? translate(lang, key, { name: firstName }) : translate(lang, key);
 	});
-
-	let firstName = $derived(greetingFirstName($greetingName, $auth.user));
-
-	/** Guests get the sign-in hero instead of a redundant time-of-day greeting. */
-	let showGreeting = $derived($auth.ready && !isGuest);
 
 	onMount(() => {
 		void (async () => {
@@ -147,21 +144,23 @@
 			<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
 			<div class="home-header__copy">
 				{#if showGreeting}
-					<p class="home-header__greeting">{greetingText}</p>
+					<p class="home-header__greeting home-header__greeting--desktop">{greetingText}</p>
 				{:else if isGuest}
-					<p class="home-header__greeting">{translate(lang, 'home.readyTitle')}</p>
-				{:else}
-					<p class="home-header__greeting" aria-hidden="true">
-						<span
-							class="inline-block h-[1.75rem] w-[min(100%,15rem)] animate-pulse rounded bg-[var(--color-surface-muted)]"
-						></span>
-					</p>
+					<p class="home-header__greeting home-header__greeting--desktop">{translate(lang, 'home.readyTitle')}</p>
 				{/if}
 				{#if pageReady && !isGuest}
 					<p class="home-header__subtitle">{mockupSubtitle}</p>
 					{#if isFirstTimeHome}
 						<BrandTagline class="brand-tagline--home-header" />
 					{/if}
+				{:else if isGuest}
+					<p class="home-header__subtitle">{translate(lang, 'home.readyTitle')}</p>
+				{:else}
+					<p class="home-header__subtitle" aria-hidden="true">
+						<span
+							class="inline-block h-[1.125rem] w-[min(100%,12rem)] animate-pulse rounded bg-[var(--color-surface-muted)]"
+						></span>
+					</p>
 				{/if}
 			</div>
 			{#if pageReady && !hasActive}
@@ -222,7 +221,11 @@
 					</div>
 					{#if !hasSessionHistory}
 						<nav class="home-guest-next">
-							<AppButton class="panel home-guest-next__card h-auto flex-col items-start gap-1 text-left" href="/exercises">
+							<AppButton
+								variant="ghost"
+								class="panel home-guest-next__card h-auto flex-col items-start gap-1 text-left"
+								href="/exercises"
+							>
 								<span class="home-guest-next__title">{translate(lang, 'nav.exercises')}</span>
 								<span class="home-guest-next__hint">{translate(lang, 'home.guestBrowseHint')}</span>
 								<LucideIcon

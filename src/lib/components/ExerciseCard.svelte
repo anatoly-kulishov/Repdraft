@@ -18,7 +18,7 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { linkWithFrom } from '$lib/domain/navigation';
-	import { Bookmark, Check, ChevronRight, Film, Plus, StickyNote } from '@lucide/svelte';
+	import { Bookmark, Check, Film, Plus, StickyNote } from '@lucide/svelte';
 
 	let {
 		exercise,
@@ -184,7 +184,7 @@
 	<div class="exercise-card-actions exercise-card-actions--list">
 		<AppIconButton
 			class={cn(
-				'exercise-card-add exercise-card-add--inline !min-h-0 !min-w-0 size-auto p-0',
+				'exercise-card-add exercise-card-add--inline exercise-card-list-action !size-[2.75rem] !min-h-[2.75rem] !min-w-[2.75rem] !rounded-full !bg-transparent p-0 hover:!bg-transparent',
 				inDraft && 'is-in-draft',
 				justAdded && 'is-just-added'
 			)}
@@ -198,14 +198,6 @@
 				<LucideIcon icon={Plus} size={ICON_SMALL} class="exercise-card-add-icon" />
 			{/if}
 		</AppIconButton>
-		<a
-			href={exerciseHref(exercise.id)}
-			class="exercise-card-chevron"
-			tabindex="-1"
-			aria-hidden="true"
-		>
-			<LucideIcon icon={ChevronRight} size={ICON_SMALL + 2} />
-		</a>
 	</div>
 {/snippet}
 
@@ -221,31 +213,33 @@
 >
 	{#if variant === 'list'}
 		<div class="exercise-card-list-main">
-			<AppButton
-				variant="ghost"
-				class="exercise-card-media media-well relative shrink-0 overflow-hidden !h-auto !min-h-0 !min-w-0 w-auto self-stretch !p-0"
-				aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
-				onclick={openTechnique}
-			>
-				<img
-					bind:this={imgEl}
-					src={`/${exercise.image}`}
-					alt=""
-					width="120"
-					height="120"
-					sizes="120px"
-					loading={priority ? 'eager' : 'lazy'}
-					fetchpriority={priority ? 'high' : 'auto'}
-					decoding="async"
-					draggable="false"
-					class={`exercise-card-img pointer-events-none block h-full w-full object-contain ${loaded ? 'is-loaded' : ''}`}
-					onload={onImgLoad}
-				/>
-				{@render noteBadge('list')}
-				{@render clipBadge('list')}
-			</AppButton>
-			<div class="exercise-card-bookmark-slot">
-				{@render bookmarkButton(false)}
+			<div class="exercise-card-list-thumb">
+				<AppButton
+					variant="ghost"
+					class="exercise-card-media media-well relative shrink-0 overflow-hidden !h-auto !min-h-0 !min-w-0 w-auto !p-0"
+					aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+					onclick={openTechnique}
+				>
+					<img
+						bind:this={imgEl}
+						src={`/${exercise.image}`}
+						alt=""
+						width="120"
+						height="120"
+						sizes="120px"
+						loading={priority ? 'eager' : 'lazy'}
+						fetchpriority={priority ? 'high' : 'auto'}
+						decoding="async"
+						draggable="false"
+						class={`exercise-card-img pointer-events-none block h-full w-full object-contain ${loaded ? 'is-loaded' : ''}`}
+						onload={onImgLoad}
+					/>
+					{@render noteBadge('list')}
+					{@render clipBadge('list')}
+				</AppButton>
+				<div class="exercise-card-bookmark-slot">
+					{@render bookmarkButton(false)}
+				</div>
 			</div>
 			<a
 				href={exerciseHref(exercise.id)}

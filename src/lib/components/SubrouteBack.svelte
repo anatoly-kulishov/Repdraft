@@ -16,5 +16,5 @@
 
 <a class="subroute-back {className}" {href}>
 	<LucideIcon icon={ArrowLeft} size={ICON_SMALL} />
-	{label}
+	<span class="subroute-back__label">{label}</span>
 </a>
