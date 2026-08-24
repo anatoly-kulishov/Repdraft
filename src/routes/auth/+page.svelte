@@ -31,12 +31,13 @@
 	import DataExportSection from '$lib/components/DataExportSection.svelte';
 	import { GREETING_NAME_MAX } from '$lib/domain/greetingName';
 	import { isIosDevice } from '$lib/domain/pwaInstall';
-	import { peekLocalCacheUserId } from '$lib/storage/localUserCache';
 	import { restSoundEnabled } from '$lib/stores/prefs';
 	import { get } from 'svelte/store';
 	import { tick } from 'svelte';
 	import { appTheme } from '$lib/stores/theme';
 	import { Globe, LogOut, Moon, Timer, Shield, Sun } from '@lucide/svelte';
+
+	let { data }: { data: { bootLikelyAccount: boolean } } = $props();
 
 	type Panel = 'signin' | 'signup' | 'magic' | 'forgot' | 'check-email';
 
@@ -311,8 +312,12 @@
 		panel === 'signup' ? ('signup' as const) : panel === 'forgot' ? ('forgot' as const) : ('signin' as const)
 	);
 	let accountMode = $derived($auth.ready && Boolean($auth.user) && !recoveryMode);
-	/** Boot skeleton: match last known session so guest ≠ account grid flash. */
-	let bootLikelyAccount = $derived(browser && Boolean(peekLocalCacheUserId()));
+	/**
+	 * Boot skeleton: prefer account grid when a signed-in session is likely.
+	 * SSR reads `repdraft_auth_boot` cookie (set in auth store + app.html peek).
+	 * Client keeps the same flag for hydration, then live UI replaces when auth is ready.
+	 */
+	let bootLikelyAccount = $derived(data.bootLikelyAccount);
 	/** Dev/QA: force boot skeleton via ?skeleton=account|guest */
 	let skeletonForce = $derived(
 		$page.url.searchParams.get('skeleton') === 'account'
@@ -322,12 +327,16 @@
 				: null
 	);
 	let showAccountSkeleton = $derived(
-		skeletonForce === 'account' || (!$auth.ready && !skeletonForce && bootLikelyAccount)
+		skeletonForce === 'account' ||
+			((!browser || !$auth.ready) && !skeletonForce && bootLikelyAccount)
 	);
 	let showGuestSkeleton = $derived(
-		skeletonForce === 'guest' || (!$auth.ready && !skeletonForce && !bootLikelyAccount)
+		skeletonForce === 'guest' ||
+			((!browser || !$auth.ready) && !skeletonForce && !bootLikelyAccount)
 	);
 	let showBootSkeleton = $derived(showAccountSkeleton || showGuestSkeleton);
+	/** Real cloud-off UI only after client auth finished and keys are missing. */
+	let showCloudOff = $derived(browser && $auth.ready && !$auth.configured && !showBootSkeleton);
 	let guestExtrasMode = $derived(
 		$auth.ready && !accountMode && !recoveryMode && !showBootSkeleton
 	);
@@ -384,7 +393,7 @@
 
 	{#if showBootSkeleton}
 		<PageSkeleton variant={showAccountSkeleton ? 'auth' : 'auth-guest'} rows={2} />
-	{:else if !$auth.configured}
+	{:else if showCloudOff}
 		<div class="auth-guest-stack">
 			<div class="auth-signin panel">
 				<p class="text-sm font-semibold">{translate(lang, 'auth.cloudOffTitle')}</p>

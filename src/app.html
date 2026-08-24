@@ -98,6 +98,41 @@
 						document.documentElement.lang = storedLocale;
 						document.documentElement.dataset.locale = storedLocale;
 					}
+					/* Auth /auth boot: pick account vs guest skeleton before Svelte hydrates. */
+					var authBoot = 'guest';
+					var cacheUser = localStorage.getItem('repdraft:local-cache-user');
+					if (cacheUser && cacheUser.trim()) {
+						authBoot = 'account';
+					} else {
+						for (var i = 0; i < localStorage.length; i++) {
+							var k = localStorage.key(i);
+							if (!k || k.indexOf('sb-') !== 0 || k.slice(-11) !== '-auth-token') continue;
+							var raw = localStorage.getItem(k);
+							if (!raw) continue;
+							try {
+								var parsed = JSON.parse(raw);
+								var uid =
+									(parsed && parsed.user && parsed.user.id) ||
+									(parsed &&
+										parsed.currentSession &&
+										parsed.currentSession.user &&
+										parsed.currentSession.user.id);
+								if (uid) {
+									authBoot = 'account';
+									break;
+								}
+							} catch (err) {}
+						}
+					}
+					document.documentElement.dataset.authBoot = authBoot;
+					try {
+						if (authBoot === 'account') {
+							document.cookie =
+								'repdraft_auth_boot=1; path=/; Max-Age=31536000; SameSite=Lax';
+						} else {
+							document.cookie = 'repdraft_auth_boot=; path=/; Max-Age=0; SameSite=Lax';
+						}
+					} catch (cookieErr) {}
 				} catch (e) {}
 			})();
 			// Capture beforeinstallprompt early — it can fire before Svelte mounts.
