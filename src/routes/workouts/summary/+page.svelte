@@ -72,7 +72,10 @@
 		if (set.weightKg != null) {
 			return `${set.weightKg} ${translate(lang, 'pr.kg')} × ${set.reps ?? '—'}`;
 		}
-		return `× ${set.reps ?? '—'}`;
+		if (set.reps != null) {
+			return `${set.reps} ${translate(lang, 'pr.repsShort')}`;
+		}
+		return '—';
 	}
 
 	let authNextHref = $derived(

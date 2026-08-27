@@ -1,7 +1,6 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { cn } from '$lib/utils.js';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { visibleSessionExerciseIndices } from '$lib/domain/session';
@@ -9,7 +8,7 @@
 	import { groupMemberRole } from '$lib/domain/workout';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
-	import { Check } from '@lucide/svelte';
+	import { Check, Link2 } from '@lucide/svelte';
 
 	let {
 		session,
@@ -77,20 +76,32 @@
 		if (inGroup) return translate(lang, 'live.lastReps', { n: ex.targetReps });
 		return `${ex.sets.length} × ${ex.targetReps}`;
 	}
+
+	$effect(() => {
+		selectedExerciseIndex;
+		if (typeof document === 'undefined') return;
+		const id = window.setTimeout(() => {
+			const el = document.querySelector<HTMLElement>(`.live-nav-item[data-active='true']`);
+			el?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+		}, 0);
+		return () => window.clearTimeout(id);
+	});
 </script>
 
 {#snippet navButton(ei: number, inGroup: boolean)}
 	{@const ex = session.exercises[ei]!}
 	<AppButton
 		variant="ghost"
-		class={cn('live-nav-item !h-auto !min-h-0 !min-w-0 w-auto p-0', inGroup && 'live-nav-item--in-group')}
+		class="live-nav-item"
 		data-active={ei === selectedExerciseIndex}
 		data-done={exerciseDone(ei)}
 		aria-current={ei === selectedExerciseIndex ? 'true' : undefined}
 		onclick={() => onSelect(ei)}
 	>
-		<span class="live-nav-title">{titleFor(ex.exerciseId)}</span>
-		<span class="live-nav-meta">{metaFor(ei, inGroup)}</span>
+		<span class="live-nav-copy">
+			<span class="live-nav-title">{titleFor(ex.exerciseId)}</span>
+			<span class="live-nav-meta">{metaFor(ei, inGroup)}</span>
+		</span>
 		{#if exerciseDone(ei)}
 			<span class="live-nav-check" aria-hidden="true">
 				<LucideIcon icon={Check} size={ICON_SMALL} />
@@ -107,13 +118,15 @@
 					{@render navButton(segment.index, false)}
 				</li>
 			{:else}
-				<li class="live-nav-group">
-					<p class="live-nav-group-badge">{translate(lang, 'builder.supersetBadge')}</p>
-					<div class="live-nav-group__row">
-						{#each segment.indices as ei (ei)}
-							{@render navButton(ei, true)}
-						{/each}
-					</div>
+				<li class="live-nav-chain" aria-label={translate(lang, 'builder.supersetBadge')}>
+					{#each segment.indices as ei, gi (ei)}
+						{#if gi > 0}
+							<span class="live-nav-chain__link" aria-hidden="true">
+								<LucideIcon icon={Link2} size={ICON_SMALL} />
+							</span>
+						{/if}
+						{@render navButton(ei, true)}
+					{/each}
 				</li>
 			{/if}
 		{/each}

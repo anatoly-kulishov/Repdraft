@@ -205,7 +205,8 @@ function nextIncompleteInGroup(
 }
 
 /**
- * “Next exercise” button: stay inside an open superset; leave only when the block is done.
+ * “Next exercise” button: stay inside an open incomplete superset; otherwise always
+ * advance to the next visible exercise (user intent — even if current sets are open).
  */
 export function nextManualExerciseFocus(session: WorkoutSession, exerciseIndex: number): number {
 	const bounds = groupBounds(session.exercises, exerciseIndex);
@@ -215,11 +216,8 @@ export function nextManualExerciseFocus(session: WorkoutSession, exerciseIndex: 
 		return nextVisibleAfterGroupEnd(session, bounds.end);
 	}
 
-	const ex = session.exercises[exerciseIndex];
-	if (ex && ex.sets.length > 0 && ex.sets.every((s) => s.completed)) {
-		const next = nextVisibleAfterIndex(session, exerciseIndex);
-		if (next != null) return next;
-	}
+	const next = nextVisibleAfterIndex(session, exerciseIndex);
+	if (next != null) return next;
 	return exerciseIndex;
 }
 
@@ -852,6 +850,14 @@ export function runSessionSelfCheck(): void {
 	}
 	if (nextManualExerciseFocus(tri, 2) !== 3) {
 		throw new Error('manual next after finished superset should leave block');
+	}
+	// Explicit Next must advance solo even with open sets (button is unlocked on purpose).
+	const soloOpen = startSessionFromPlan(plan);
+	if (nextManualExerciseFocus(soloOpen, 0) !== 1) {
+		throw new Error('manual next should leave incomplete solo for next visible exercise');
+	}
+	if (nextManualExerciseFocus(soloOpen, 1) !== 1) {
+		throw new Error('manual next on last visible should stay put');
 	}
 
 	const stale = startSessionFromPlan({

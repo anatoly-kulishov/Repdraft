@@ -15,7 +15,7 @@
 		sessionDurationMs,
 		totalSetCount
 	} from '$lib/domain/session';
-	import { planExerciseSlotCount, planTargetSummary } from '$lib/domain/workout';
+	import { planExerciseSlotCount, planTargetSummary, suggestNextPlan } from '$lib/domain/workout';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
 	import { greetingFirstName } from '$lib/domain/greetingName';
@@ -74,16 +74,8 @@
 	let showReadyHeader = $derived(
 		pageReady && !showGuestCreateHero && (hasPlans || !isGuest)
 	);
-	/** Prefer last finished plan if still saved, else first plan — one hop to preview+Start. */
-	let nextPlan = $derived.by(() => {
-		if ($plans.length === 0) return null;
-		const lastPlanId = recent[0]?.planId;
-		if (lastPlanId) {
-			const match = $plans.find((p) => p.id === lastPlanId);
-			if (match) return match;
-		}
-		return $plans[0] ?? null;
-	});
+	/** Next in list after last finished — split rotation, not the same workout again. */
+	let nextPlan = $derived.by(() => suggestNextPlan($plans, recent[0]?.planId));
 
 	let mockupSubtitle = $derived.by(() => {
 		if (hasActive) return translate(lang, 'home.readyTitle');
@@ -96,6 +88,11 @@
 	);
 	let mockupCtaLabel = $derived(
 		translate(lang, nextPlan || hasPlans ? 'home.startWorkout' : 'workouts.create')
+	);
+	let mockupCtaAria = $derived(
+		nextPlan
+			? translate(lang, 'home.startWorkoutNamed', { name: nextPlan.name })
+			: mockupCtaLabel
 	);
 	let continueRemaining = $derived.by(() => {
 		if (!active) return '';
@@ -187,14 +184,25 @@
 				{/if}
 				{#if !isGuest}
 					<p class="home-header__subtitle">{mockupSubtitle}</p>
+					{#if nextPlan}
+						<p class="home-header__plan">{nextPlan.name}</p>
+					{/if}
 					{#if isFirstTimeHome}
 						<BrandTagline class="brand-tagline--home-header" />
 					{/if}
 				{:else}
 					<p class="home-header__subtitle">{translate(lang, 'home.readyTitle')}</p>
+					{#if nextPlan}
+						<p class="home-header__plan">{nextPlan.name}</p>
+					{/if}
 				{/if}
 			</div>
-			<AppButton href={mockupCtaHref} class="home-header__cta">
+			<AppButton
+				href={mockupCtaHref}
+				class="home-header__cta"
+				aria-label={mockupCtaAria}
+				title={nextPlan ? translate(lang, 'home.nextPlanHint') : undefined}
+			>
 				{mockupCtaLabel}
 			</AppButton>
 		</header>

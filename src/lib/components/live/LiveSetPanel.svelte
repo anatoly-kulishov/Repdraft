@@ -178,7 +178,7 @@
 
 	function onWeightKeydown(e: KeyboardEvent, si: number) {
 		if (e.key !== 'Enter') return;
-		if (currentSetIndex !== si || exercise.sets[si]?.completed) return;
+		if (exercise.sets[si]?.completed) return;
 		e.preventDefault();
 		const row = (e.currentTarget as HTMLElement).closest('.live-set-row');
 		const reps = row?.querySelector<HTMLInputElement>('.live-set-reps');
@@ -187,7 +187,7 @@
 
 	function onRepsKeydown(e: KeyboardEvent, si: number) {
 		if (e.key !== 'Enter') return;
-		if (currentSetIndex !== si || exercise.sets[si]?.completed) return;
+		if (exercise.sets[si]?.completed) return;
 		e.preventDefault();
 		onComplete(si);
 	}
@@ -220,14 +220,14 @@
 			{/if}
 			<div class="live-panel-head__copy">
 				{#if exerciseMeta}
-					<AppButton
-						variant="ghost"
-						class="live-panel-title live-panel-title--tap !h-auto !min-w-0 w-auto p-0"
+					<button
+						type="button"
+						class="live-panel-title live-panel-title--tap"
 						aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
 						onclick={openTechnique}
 					>
 						{title}
-					</AppButton>
+					</button>
 				{:else}
 					<h2 class="live-panel-title">{title}</h2>
 				{/if}
@@ -347,8 +347,17 @@
 						placeholder={weightPlaceholder}
 						aria-label={`${weightLabel} ${si + 1}`}
 						value={set.weightKg ?? ''}
-						onfocus={(e) => scrollCurrentSetIntoView(e.currentTarget)}
+						readonly={set.completed}
+						tabindex={set.completed ? -1 : undefined}
+						onfocus={(e) => {
+							if (set.completed) {
+								e.currentTarget.blur();
+								return;
+							}
+							scrollCurrentSetIntoView(e.currentTarget);
+						}}
 						oninput={(e) => {
+							if (set.completed) return;
 							const el = e.currentTarget;
 							const next = onWeight(si, el.value);
 							if (el.value !== next) el.value = next;
@@ -364,8 +373,17 @@
 						enterkeyhint="done"
 						aria-label={`${translate(lang, 'live.reps')} ${si + 1}`}
 						value={set.reps ?? ''}
-						onfocus={(e) => scrollCurrentSetIntoView(e.currentTarget)}
+						readonly={set.completed}
+						tabindex={set.completed ? -1 : undefined}
+						onfocus={(e) => {
+							if (set.completed) {
+								e.currentTarget.blur();
+								return;
+							}
+							scrollCurrentSetIntoView(e.currentTarget);
+						}}
 						oninput={(e) => {
+							if (set.completed) return;
 							const el = e.currentTarget;
 							const next = onReps(si, el.value);
 							if (el.value !== next) el.value = next;
