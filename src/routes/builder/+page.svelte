@@ -281,9 +281,18 @@
 				</AppButton>
 
 				<div class="sticky-actions lg:hidden">
-					<div class="sticky-actions__inner flex flex-col gap-1">
+					<div class="sticky-actions__inner builder-sticky-actions">
 						<AppButton
-							block
+							variant="secondary"
+							href={BUILDER_ADD_EXERCISE_HREF}
+							class="builder-sticky-actions__btn gap-1.5"
+							aria-label={translate(lang, 'builder.addExercise')}
+						>
+							<LucideIcon icon={Plus} size={ICON_BUTTON} />
+							{translate(lang, 'builder.addExerciseShort')}
+						</AppButton>
+						<AppButton
+							class="builder-sticky-actions__btn"
 							disabled={saving}
 							aria-busy={saving}
 							onclick={() => void save()}
@@ -303,12 +312,12 @@
 		</div>
 	{/if}
 
-	{#if pageReady}
+	{#if pageReady && $draft.exercises.length === 0}
 		<AppFab
 			class="lg:hidden"
 			href={BUILDER_ADD_EXERCISE_HREF}
 			label={translate(lang, 'builder.addExercise')}
-			placement={$draft.exercises.length > 0 ? 'sticky' : 'tabbar'}
+			placement="tabbar"
 		/>
 	{/if}
 </section>

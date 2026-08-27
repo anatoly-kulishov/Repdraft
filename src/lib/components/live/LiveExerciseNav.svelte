@@ -86,6 +86,7 @@
 		class={cn('live-nav-item !h-auto !min-h-0 !min-w-0 w-auto p-0', inGroup && 'live-nav-item--in-group')}
 		data-active={ei === selectedExerciseIndex}
 		data-done={exerciseDone(ei)}
+		aria-current={ei === selectedExerciseIndex ? 'true' : undefined}
 		onclick={() => onSelect(ei)}
 	>
 		<span class="live-nav-title">{titleFor(ex.exerciseId)}</span>

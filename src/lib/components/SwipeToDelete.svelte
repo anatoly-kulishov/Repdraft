@@ -50,7 +50,7 @@
 	}
 
 	onMount(() => {
-		const mq = window.matchMedia('(max-width: 639px)');
+		const mq = window.matchMedia('(max-width: 1023px)');
 		const sync = () => {
 			swipeOk = mq.matches;
 			if (!swipeOk) close();

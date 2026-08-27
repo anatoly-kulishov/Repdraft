@@ -9,11 +9,8 @@
 	import { techniqueClipHints } from '$lib/stores/techniqueClipHints';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
-	import AppButton from '$lib/components/AppButton.svelte';
 	import AppIconButton from '$lib/components/AppIconButton.svelte';
 	import { cn } from '$lib/utils.js';
-	import BottomSheet from '$lib/components/BottomSheet.svelte';
-	import CloseIconButton from '$lib/components/CloseIconButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
@@ -51,13 +48,6 @@
 	let bookmarkBusy = $state(false);
 	let imgEl = $state<HTMLImageElement | null>(null);
 	let justAdded = $state(false);
-	let techniqueOpen = $state(false);
-	let techniqueSrc = $state('');
-
-	/** Slim index has JPG only; GIF lives at the same stem under /videos. */
-	function techniqueMediaSrc(imagePath: string): string {
-		return `/${imagePath.replace(/^images\//, 'videos/').replace(/\.jpe?g$/i, '.gif')}`;
-	}
 
 	$effect(() => {
 		const img = imgEl;
@@ -71,22 +61,6 @@
 	function exerciseHref(id: string): string {
 		if (!detailFrom) return `/exercise/${id}`;
 		return linkWithFrom(`/exercise/${id}`, detailFrom);
-	}
-
-	function openTechnique() {
-		techniqueSrc = techniqueMediaSrc(exercise.image);
-		techniqueOpen = true;
-	}
-
-	function dismissTechnique() {
-		techniqueOpen = false;
-	}
-
-	function onTechniqueImgError(event: Event) {
-		const img = event.currentTarget as HTMLImageElement;
-		const fallback = `/${exercise.image}`;
-		if (img.src.endsWith(fallback) || img.getAttribute('src') === fallback) return;
-		img.src = fallback;
 	}
 
 	function toggleDraft(event: MouseEvent) {
@@ -129,8 +103,8 @@
 {#snippet bookmarkButton(inline: boolean)}
 	<AppIconButton
 		class={cn(
-			'exercise-card-bookmark p-0',
-			inline ? 'exercise-card-bookmark--inline !min-h-0 !min-w-0 size-auto' : '',
+			'exercise-card-bookmark p-0 !min-h-0 !min-w-0 size-auto',
+			inline ? 'exercise-card-bookmark--inline' : '',
 			bookmarked && 'is-active'
 		)}
 		onclick={toggleBookmark}
@@ -184,7 +158,7 @@
 	<div class="exercise-card-actions exercise-card-actions--list">
 		<AppIconButton
 			class={cn(
-				'exercise-card-add exercise-card-add--inline exercise-card-list-action !size-[2.75rem] !min-h-[2.75rem] !min-w-[2.75rem] !rounded-full !bg-transparent p-0 hover:!bg-transparent',
+				'exercise-card-add exercise-card-add--inline exercise-card-list-action !size-12 !min-h-12 !min-w-12 !rounded-full !bg-transparent p-0 hover:!bg-transparent',
 				inDraft && 'is-in-draft',
 				justAdded && 'is-just-added'
 			)}
@@ -214,11 +188,10 @@
 	{#if variant === 'list'}
 		<div class="exercise-card-list-main">
 			<div class="exercise-card-list-thumb">
-				<AppButton
-					variant="ghost"
-					class="exercise-card-media media-well relative shrink-0 overflow-hidden !h-auto !min-h-0 !min-w-0 w-auto !p-0"
-					aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
-					onclick={openTechnique}
+				<a
+					href={exerciseHref(exercise.id)}
+					class="exercise-card-media media-well relative shrink-0 overflow-hidden"
+					aria-label={title}
 				>
 					<img
 						bind:this={imgEl}
@@ -236,7 +209,7 @@
 					/>
 					{@render noteBadge('list')}
 					{@render clipBadge('list')}
-				</AppButton>
+				</a>
 				<div class="exercise-card-bookmark-slot">
 					{@render bookmarkButton(false)}
 				</div>
@@ -293,7 +266,8 @@
 					loading={priority ? 'eager' : 'lazy'}
 					fetchpriority={priority ? 'high' : 'auto'}
 					decoding="async"
-					class={`exercise-card-img block h-full w-full object-contain ${loaded ? 'is-loaded' : ''}`}
+					draggable="false"
+					class={`exercise-card-img pointer-events-none block h-full w-full object-contain ${loaded ? 'is-loaded' : ''}`}
 					onload={onImgLoad}
 				/>
 			</a>
@@ -348,34 +322,3 @@
 		</a>
 	{/if}
 </article>
-
-{#if techniqueOpen}
-	<BottomSheet
-		open={techniqueOpen}
-		raised
-		titleId={`exercise-technique-${exercise.id}`}
-		onDismiss={dismissTechnique}
-	>
-		<div class="bottom-sheet__head">
-			<p id={`exercise-technique-${exercise.id}`} class="bottom-sheet__title">{title}</p>
-		</div>
-		<p class="bottom-sheet__hint">{labelTarget(exercise.target, lang)}</p>
-		<div class="exercise-technique-sheet__media media-well">
-			<CloseIconButton class="exercise-technique-sheet__close" onclick={dismissTechnique} />
-			<img
-				src={techniqueSrc}
-				alt=""
-				width="180"
-				height="180"
-				decoding="async"
-				class="exercise-technique-sheet__img"
-				onerror={onTechniqueImgError}
-			/>
-		</div>
-		{#snippet actions()}
-			<AppButton block href={exerciseHref(exercise.id)}>
-				{translate(lang, 'exercise.openCard')}
-			</AppButton>
-		{/snippet}
-	</BottomSheet>
-{/if}

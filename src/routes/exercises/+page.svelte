@@ -1,6 +1,7 @@
 <script lang="ts">
 	import CatalogHubChips from '$lib/components/CatalogHubChips.svelte';
 	import CatalogCategoryCard from '$lib/components/CatalogCategoryCard.svelte';
+	import CatalogCategoryGridSkeleton from '$lib/components/CatalogCategoryGridSkeleton.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
@@ -23,6 +24,11 @@
 	let hubTitle = $derived(translate(lang, 'catalog.hubTitle'));
 	let headerTitle = $derived(
 		fromBuilder ? translate(lang, 'builder.addExercise') : hubTitle
+	);
+	/** Dev/QA: ?skeleton=1 — preview category grid placeholders. */
+	let forceSkeleton = $derived($page.url.searchParams.get('skeleton') === '1');
+	let showCategorySkeleton = $derived(
+		forceSkeleton || (!error && data.hubZones.length === 0)
 	);
 
 	onMount(() => {
@@ -83,6 +89,8 @@
 			title={translate(lang, 'catalog.dataMissing')}
 			description={error ? translate(lang, error) : ''}
 		/>
+	{:else if showCategorySkeleton}
+		<CatalogCategoryGridSkeleton label={translate(lang, 'common.loading')} rows={6} />
 	{:else}
 		<div class="catalog-hub-grid">
 			{#each data.hubZones as bodyPart, index (bodyPart)}

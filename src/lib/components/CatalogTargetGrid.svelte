@@ -51,6 +51,7 @@
 			href={targetHref(undefined, 'all')}
 			count={zoneCount}
 			coverImage={zoneCover || null}
+			priority
 		/>
 		{#each chips as chip (chip.target)}
 			<CatalogCategoryCard

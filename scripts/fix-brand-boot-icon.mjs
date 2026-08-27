@@ -49,7 +49,7 @@ function buildIcoFromPngs(pngBySize) {
 async function renderFaviconPng(size) {
 	return sharp(masterSvg)
 		.resize(size, size, { kernel: sharp.kernel.lanczos3 })
-		.flatten({ background: '#C8FF00' })
+		.flatten({ background: '#8b5cf6' })
 		.png({ compressionLevel: 9, force: true })
 		.toBuffer();
 }

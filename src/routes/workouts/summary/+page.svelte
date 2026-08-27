@@ -69,8 +69,10 @@
 	let volumeKg = $derived(session ? sessionVolumeKg(session) : 0);
 
 	function formatSet(set: LoggedSet): string {
-		if (set.weightKg != null) return `${set.weightKg} kg × ${set.reps ?? '—'}`;
-		return `${set.reps ?? '—'} ${translate(lang, 'live.reps').toLowerCase()}`;
+		if (set.weightKg != null) {
+			return `${set.weightKg} ${translate(lang, 'pr.kg')} × ${set.reps ?? '—'}`;
+		}
+		return `× ${set.reps ?? '—'}`;
 	}
 
 	let authNextHref = $derived(
@@ -173,15 +175,38 @@
 						{@const meta = indexById.get(item.ex.exerciseId) ?? null}
 						{@const ex = item.ex}
 						<div class="summary-exercises-preview__item">
+							{#if meta}
+								<div class="summary-exercises-preview__thumb media-well" aria-hidden="true">
+									<img
+										src={`/${meta.image}`}
+										alt=""
+										width="48"
+										height="48"
+										loading="lazy"
+										decoding="async"
+									/>
+								</div>
+							{:else}
+								<div
+									class="summary-exercises-preview__thumb media-well is-placeholder"
+									aria-hidden="true"
+								></div>
+							{/if}
 							<p class="summary-exercises-preview__name">
 								{meta ? exerciseName(meta, lang) : ex.exerciseId}
 							</p>
-							<p class="summary-exercises-preview__meta">
+							<ul class="summary-exercises-preview__sets">
 								{#each item.completed as set, si (si)}
-									{#if si > 0}<span aria-hidden="true"> · </span>{/if}
-									<span class="tabular-nums">{formatSet(set)}</span>
+									<li class="summary-exercises-preview__set">
+										<span class="summary-exercises-preview__set-i tabular-nums" aria-hidden="true"
+											>{si + 1}</span
+										>
+										<span class="summary-exercises-preview__set-val tabular-nums"
+											>{formatSet(set)}</span
+										>
+									</li>
 								{/each}
-							</p>
+							</ul>
 						</div>
 					{/each}
 				</div>

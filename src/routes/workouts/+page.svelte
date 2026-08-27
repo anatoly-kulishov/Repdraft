@@ -168,13 +168,13 @@
 		confirmOffer = null;
 	}
 
-	let confirmTitle = $derived.by(() => {
+	let confirmHeading = $derived.by(() => {
 		if (!confirmOffer) return '';
 		switch (confirmOffer.kind) {
 			case 'delete-plan':
-				return translate(lang, 'workouts.confirmDelete', { name: confirmOffer.name });
+				return translate(lang, 'common.delete');
 			case 'delete-session':
-				return translate(lang, 'workouts.confirmDeleteSession', { name: confirmOffer.name });
+				return translate(lang, 'workouts.deleteSession');
 			default: {
 				const _exhaustive: never = confirmOffer;
 				return _exhaustive;
@@ -409,7 +409,7 @@
 		class="lg:hidden"
 		href={BUILDER_NEW_HREF}
 		label={translate(lang, 'workouts.newWorkout')}
-		hidden={activeTab === 'history'}
+		hidden={activeTab === 'history' || (activeTab === 'plans' && $plans.length === 0)}
 	/>
 </section>
 
@@ -418,7 +418,10 @@
 	titleId="workouts-confirm-title"
 	onDismiss={dismissConfirmOffer}
 >
-	<p id="workouts-confirm-title" class="bottom-sheet__title">{confirmTitle}</p>
+	{#if confirmOffer}
+		<p id="workouts-confirm-title" class="bottom-sheet__title">{confirmHeading}</p>
+		<p class="bottom-sheet__hint workouts-confirm-offer__name">«{confirmOffer.name}»?</p>
+	{/if}
 	{#snippet actions()}
 		<AppButton variant="secondary" onclick={dismissConfirmOffer}>
 			{translate(lang, 'common.cancel')}

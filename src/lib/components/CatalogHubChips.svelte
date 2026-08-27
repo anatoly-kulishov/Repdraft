@@ -3,6 +3,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { withFromParam } from '$lib/domain/catalogLinks';
+	import { hasLiftData } from '$lib/domain/records';
 	import { translate } from '$lib/i18n/messages';
 	import { records, recordsReady } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -17,7 +18,7 @@
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
-	let recordCount = $derived($records.length);
+	let recordCount = $derived($records.filter(hasLiftData).length);
 	let browseAllHref = $derived(withFromParam('/catalog/all', from));
 	let savedHref = $derived(withFromParam('/exercises/saved', from));
 </script>

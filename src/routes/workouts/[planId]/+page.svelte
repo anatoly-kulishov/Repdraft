@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
+	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -14,8 +15,9 @@
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { Pencil, Play } from '@lucide/svelte';
+	import { ChevronRight, Pencil, Play } from '@lucide/svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 
 	let { params } = $props();
@@ -25,6 +27,13 @@
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let loading = $state(true);
 	let missing = $state(false);
+	let fromPath = $derived($page.url.pathname);
+	let technique = $state<{
+		id: string;
+		title: string;
+		hint: string;
+		image: string;
+	} | null>(null);
 
 	let muscles = $derived(plan ? planTargetSummary(plan, indexById, lang) : '');
 	let totalSets = $derived(plan ? planPrescribedSetCount(plan) : 0);
@@ -76,14 +85,23 @@
 </svelte:head>
 
 {#if loading}
-	<section class="workout-preview pb-mobile-actions" aria-busy="true">
-		<div class="workout-preview-skeleton-summary" aria-hidden="true"></div>
-		<div class="workout-preview-skeleton-list" aria-hidden="true">
-			<div class="workout-preview-skeleton-row"></div>
-			<div class="workout-preview-skeleton-row"></div>
-			<div class="workout-preview-skeleton-row"></div>
-			<div class="workout-preview-skeleton-row"></div>
+	<section class="workout-preview content-page content-page--narrow pb-mobile-actions" aria-busy="true">
+		<div class="workout-preview-skeleton-summary" aria-hidden="true">
+			<div class="workout-preview-skeleton-summary__line workout-preview-skeleton-summary__line--lead"></div>
+			<div class="workout-preview-skeleton-summary__line workout-preview-skeleton-summary__line--meta"></div>
 		</div>
+		<ul class="workout-preview-skeleton-list" aria-hidden="true">
+			{#each Array.from({ length: 4 }, (_, i) => i) as i (i)}
+				<li class="workout-preview-skeleton-row">
+					<div class="workout-preview-skeleton-row__thumb"></div>
+					<div class="workout-preview-skeleton-row__body">
+						<div class="workout-preview-skeleton-row__title"></div>
+						<div class="workout-preview-skeleton-row__sub"></div>
+					</div>
+					<div class="workout-preview-skeleton-row__chevron"></div>
+				</li>
+			{/each}
+		</ul>
 	</section>
 {:else if missing || !plan}
 	<EmptyState
@@ -142,8 +160,22 @@
 						</p>
 					{/if}
 					{#if meta}
-						<div class="workout-preview-row is-static">
-							<span class="media-well workout-preview-thumb">
+						{@const title = exerciseName(meta, lang)}
+						{@const detailHref = `/exercise/${meta.id}?from=${encodeURIComponent(fromPath)}`}
+						<div class="workout-preview-row">
+							<AppButton
+								variant="ghost"
+								class="workout-preview-thumb-btn media-well workout-preview-thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+								aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+								onclick={() => {
+									technique = {
+										id: meta.id,
+										title,
+										hint: labelTarget(meta.target, lang),
+										image: meta.image
+									};
+								}}
+							>
 								<img
 									src={`/${meta.image}`}
 									alt=""
@@ -152,23 +184,28 @@
 									loading="lazy"
 									decoding="async"
 								/>
-							</span>
-							<div class="workout-preview-row-body">
-								<p class="workout-preview-row-title">{exerciseName(meta, lang)}</p>
-								<p class="workout-preview-row-sub tabular-nums">
-									{#if role === 'solo'}
-										{item.sets} × {item.reps}
-									{:else if role === 'first'}
-										{item.sets}
-										{translate(lang, 'builder.rounds').toLowerCase()} · {item.reps}
-										{translate(lang, 'builder.reps').toLowerCase()}
-									{:else}
-										{item.reps} {translate(lang, 'builder.reps').toLowerCase()}
-									{/if}
-									<span class="workout-preview-row-dot" aria-hidden="true">·</span>
-									{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
-								</p>
-							</div>
+							</AppButton>
+							<a class="workout-preview-row-main" href={detailHref}>
+								<div class="workout-preview-row-body">
+									<p class="workout-preview-row-title">{title}</p>
+									<p class="workout-preview-row-sub tabular-nums">
+										{#if role === 'solo'}
+											{item.sets} × {item.reps}
+										{:else if role === 'first'}
+											{item.sets}
+											{translate(lang, 'builder.rounds').toLowerCase()} · {item.reps}
+											{translate(lang, 'builder.reps').toLowerCase()}
+										{:else}
+											{item.reps} {translate(lang, 'builder.reps').toLowerCase()}
+										{/if}
+										<span class="workout-preview-row-dot" aria-hidden="true">·</span>
+										{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
+									</p>
+								</div>
+								<span class="workout-preview-chevron" aria-hidden="true">
+									<LucideIcon icon={ChevronRight} size={ICON_BUTTON} />
+								</span>
+							</a>
 						</div>
 					{:else}
 						<div class="workout-preview-row is-static">
@@ -208,4 +245,18 @@
 			</div>
 		</div>
 	</section>
+{/if}
+
+{#if technique}
+	<ExerciseTechniqueSheet
+		open
+		titleId={`preview-technique-${technique.id}`}
+		title={technique.title}
+		hint={technique.hint}
+		imagePath={technique.image}
+		detailHref={`/exercise/${technique.id}?from=${encodeURIComponent(fromPath)}`}
+		onDismiss={() => {
+			technique = null;
+		}}
+	/>
 {/if}

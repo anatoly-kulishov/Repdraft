@@ -27,7 +27,7 @@
 					</a>
 				{/if}
 				<AppIconButton
-					class="toast-item__close absolute right-1.5 top-1/2 !min-h-0 !min-w-0 size-7 -translate-y-1/2 p-0"
+					class="toast-item__close absolute right-0.5 top-1/2 min-h-12 min-w-12 -translate-y-1/2 p-0"
 					onclick={() => toasts.dismiss(toast.id)}
 					aria-label={translate(lang, 'a11y.close')}
 				>
@@ -40,8 +40,10 @@
 
 <style>
 	.toast-item--accent {
-		background: var(--color-accent);
-		color: var(--color-accent-ink);
+		background: var(--color-surface);
+		color: var(--color-ink);
+		border: 1px solid var(--color-border);
+		box-shadow: var(--shadow-float);
 	}
 
 	.toast-item--error {
@@ -50,12 +52,12 @@
 	}
 
 	.toast-item--accent :global(.toast-item__close) {
-		color: color-mix(in srgb, var(--color-accent-ink) 72%, transparent);
+		color: var(--color-muted);
 	}
 
 	.toast-item--accent :global(.toast-item__close:hover) {
-		background: color-mix(in srgb, var(--color-accent-ink) 10%, transparent);
-		color: var(--color-accent-ink);
+		background: var(--color-surface-muted);
+		color: var(--color-ink);
 	}
 
 	.toast-item--error :global(.toast-item__close) {

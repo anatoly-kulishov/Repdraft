@@ -2,6 +2,7 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
@@ -56,6 +57,12 @@
 	let fromPath = $derived($page.url.pathname);
 	let viewSession = $derived(editing && editSession ? editSession : session);
 	let historyVolumeKg = $derived(viewSession ? sessionVolumeKg(viewSession) : 0);
+	let technique = $state<{
+		id: string;
+		title: string;
+		hint: string;
+		image: string;
+	} | null>(null);
 
 	onMount(() => {
 		void (async () => {
@@ -306,12 +313,21 @@
 				<li class="history-exercise">
 					{#if editing}
 						<div class="history-exercise__head is-static is-editing">
-							<span
-								class="media-well history-exercise__thumb"
-								class:is-placeholder={!meta}
-								aria-hidden="true"
-							>
-								{#if meta}
+							{#if meta}
+								{@const title = label}
+								<AppButton
+									variant="ghost"
+									class="history-exercise__thumb-btn media-well history-exercise__thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+									aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+									onclick={() => {
+										technique = {
+											id: meta.id,
+											title,
+											hint: `${labelTarget(meta.target, lang)} · ${labelEquipment(meta.equipment, lang)}`,
+											image: meta.image
+										};
+									}}
+								>
 									<img
 										src={`/${meta.image}`}
 										alt=""
@@ -320,8 +336,13 @@
 										loading="lazy"
 										decoding="async"
 									/>
-								{/if}
-							</span>
+								</AppButton>
+							{:else}
+								<span
+									class="media-well history-exercise__thumb is-placeholder"
+									aria-hidden="true"
+								></span>
+							{/if}
 							<div class="workout-preview-row-body">
 								<p class="workout-preview-row-title">{label}</p>
 								{#if meta}
@@ -342,11 +363,22 @@
 							</AppButton>
 						</div>
 					{:else if meta}
-						<a
-							class="history-exercise__head"
-							href={`/exercise/${meta.id}?from=${encodeURIComponent(fromPath)}`}
-						>
-							<span class="media-well history-exercise__thumb">
+						{@const title = label}
+						{@const detailHref = `/exercise/${meta.id}?from=${encodeURIComponent(fromPath)}`}
+						<div class="history-exercise__head">
+							<AppButton
+								variant="ghost"
+								class="history-exercise__thumb-btn media-well history-exercise__thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+								aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+								onclick={() => {
+									technique = {
+										id: meta.id,
+										title,
+										hint: `${labelTarget(meta.target, lang)} · ${labelEquipment(meta.equipment, lang)}`,
+										image: meta.image
+									};
+								}}
+							>
 								<img
 									src={`/${meta.image}`}
 									alt=""
@@ -355,17 +387,19 @@
 									loading="lazy"
 									decoding="async"
 								/>
-							</span>
-							<div class="workout-preview-row-body">
-								<p class="workout-preview-row-title">{label}</p>
-								<p class="workout-preview-row-sub">
-									{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
-								</p>
-							</div>
-							<span class="workout-preview-chevron" aria-hidden="true">
-								<LucideIcon icon={ChevronRight} size={ICON_BUTTON} />
-							</span>
-						</a>
+							</AppButton>
+							<a class="workout-preview-row-main" href={detailHref}>
+								<div class="workout-preview-row-body">
+									<p class="workout-preview-row-title">{title}</p>
+									<p class="workout-preview-row-sub">
+										{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
+									</p>
+								</div>
+								<span class="workout-preview-chevron" aria-hidden="true">
+									<LucideIcon icon={ChevronRight} size={ICON_BUTTON} />
+								</span>
+							</a>
+						</div>
 					{:else}
 						<div class="history-exercise__head is-static">
 							<span
@@ -453,4 +487,18 @@
 			{/each}
 		</ul>
 	</section>
+{/if}
+
+{#if technique}
+	<ExerciseTechniqueSheet
+		open
+		titleId={`history-technique-${technique.id}`}
+		title={technique.title}
+		hint={technique.hint}
+		imagePath={technique.image}
+		detailHref={`/exercise/${technique.id}?from=${encodeURIComponent(fromPath)}`}
+		onDismiss={() => {
+			technique = null;
+		}}
+	/>
 {/if}

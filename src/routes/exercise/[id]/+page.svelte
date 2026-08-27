@@ -1,7 +1,6 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
-	import CloseIconButton from '$lib/components/CloseIconButton.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import SegmentControl from '$lib/components/SegmentControl.svelte';
 	import { catalogEquipmentPath, catalogTargetPath, catalogZonePath, withFromParam } from '$lib/domain/catalogLinks';
@@ -22,12 +21,11 @@
 	import PersonalRecordPanel from '$lib/components/PersonalRecordPanel.svelte';
 	import ExerciseSessionHistory from '$lib/components/ExerciseSessionHistory.svelte';
 	import TechniqueClipsPanel from '$lib/components/TechniqueClipsPanel.svelte';
-	import { overlayPortal } from '$lib/actions/overlayPortal';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { ArrowLeft, Bookmark, ClipboardList, Plus, Search, X } from '@lucide/svelte';
+	import { ArrowLeft, Bookmark, ClipboardList, Plus } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 
@@ -50,7 +48,6 @@
 		const map = exercise.instruction_steps ?? {};
 		return map[lang] ?? map.ru ?? map.en ?? [];
 	});
-	let mediaOpen = $state(false);
 	let bookmarkBusy = $state(false);
 	let inDraft = $derived(
 		Boolean(exercise && $draft.exercises.some((ex) => ex.exerciseId === exercise.id))
@@ -102,18 +99,6 @@
 		}
 	}
 
-	function openMedia() {
-		mediaOpen = true;
-	}
-
-	function closeMedia() {
-		mediaOpen = false;
-	}
-
-	function onKeydown(event: KeyboardEvent) {
-		if (event.key === 'Escape' && mediaOpen) closeMedia();
-	}
-
 	function setActiveTab(tab: string) {
 		switch (tab) {
 			case 'description':
@@ -126,15 +111,6 @@
 				return;
 		}
 	}
-
-	$effect(() => {
-		if (typeof document === 'undefined' || !mediaOpen) return;
-		const prev = document.body.style.overflow;
-		document.body.style.overflow = 'hidden';
-		return () => {
-			document.body.style.overflow = prev;
-		};
-	});
 </script>
 
 {#snippet exerciseHeaderActions()}
@@ -155,8 +131,6 @@
 	</AppButton>
 {/snippet}
 
-<svelte:window onkeydown={onKeydown} />
-
 <svelte:head>
 	<title>{exercise ? `${title} · Repdraft` : `${translate(lang, 'exercise.notFoundTitle')} · Repdraft`}</title>
 	{#if exercise}
@@ -173,8 +147,8 @@
 	/>
 {:else}
 	<article class="content-page content-page--exercise exercise-detail-page pb-mobile-actions lg:pb-0">
-		<div class="exercise-detail-page__chrome min-w-0 md:hidden">
-			<ScreenHeader {title} {backHref} actions={exerciseHeaderActions} />
+		<div class="exercise-detail-page__chrome min-w-0 lg:hidden">
+			<ScreenHeader fixed {title} {backHref} actions={exerciseHeaderActions} />
 		</div>
 		<div class="exercise-detail-page__chrome catalog-subroute-header">
 			<a class="catalog-zone-crumb-link" href={backHref}>
@@ -190,12 +164,7 @@
 			<div class="exercise-detail-page__primary">
 				<div class="exercise-detail-page__hero">
 					<div class="exercise-detail-page__media">
-						<AppButton
-							variant="ghost"
-							class="exercise-media-frame !min-h-0 !min-w-0 h-auto w-auto p-0"
-							aria-label={translate(lang, 'exercise.openMedia')}
-							onclick={openMedia}
-						>
+						<div class="exercise-media-frame">
 							<img
 								src={`/${exercise.gif_url}`}
 								alt={title}
@@ -204,12 +173,9 @@
 								loading="eager"
 								fetchpriority="high"
 								decoding="async"
-								class="exercise-media-native pointer-events-none block"
+								class="exercise-media-native block"
 							/>
-							<span class="exercise-media-frame__zoom" aria-hidden="true">
-								<LucideIcon icon={Search} size={ICON_SMALL} />
-							</span>
-						</AppButton>
+						</div>
 					</div>
 
 					<div class="exercise-detail-page__intro">
@@ -251,20 +217,21 @@
 							</a>
 						</div>
 
-						<div class="actions-inline">
+						<div class="actions-inline" class:actions-inline--pair={inDraft}>
 							{#if inDraft}
-								<AppButton href="/builder" class="inline-flex items-center gap-1.5">
+								<AppButton
+									href="/builder"
+									class="exercise-detail-actions__btn inline-flex items-center justify-center gap-1.5"
+								>
 									<LucideIcon icon={ClipboardList} size={ICON_BUTTON} />
 									{translate(lang, 'draft.dock', { n: draftCount })}
 								</AppButton>
 								<AppButton
-									variant="ghost"
-									class="exercise-detail-remove-draft"
+									variant="secondary"
+									class="exercise-detail-actions__btn"
 									onclick={toggleDraft}
-									aria-label={translate(lang, 'exercise.removeDraft')}
-									title={translate(lang, 'exercise.removeDraft')}
 								>
-									<LucideIcon icon={X} size={ICON_BUTTON} />
+									{translate(lang, 'exercise.removeDraft')}
 								</AppButton>
 							{:else}
 								<AppButton onclick={toggleDraft}>
@@ -393,14 +360,21 @@
 		</div>
 	</article>
 
-	<div class="sticky-actions lg:hidden" class:sticky-actions--stack={inDraft}>
-		<div class="sticky-actions__inner exercise-detail-sticky">
+	<div class="sticky-actions lg:hidden">
+		<div class="sticky-actions__inner exercise-detail-sticky" class:exercise-detail-sticky--pair={inDraft}>
 			{#if inDraft}
-				<AppButton block href="/builder" class="inline-flex items-center justify-center gap-1.5">
+				<AppButton
+					href="/builder"
+					class="exercise-detail-sticky__btn inline-flex items-center justify-center gap-1.5"
+				>
 					<LucideIcon icon={ClipboardList} size={ICON_BUTTON} />
 					{translate(lang, 'draft.dock', { n: draftCount })}
 				</AppButton>
-				<AppButton variant="link" class="exercise-detail-remove-draft" onclick={toggleDraft}>
+				<AppButton
+					variant="secondary"
+					class="exercise-detail-sticky__btn exercise-detail-remove-draft"
+					onclick={toggleDraft}
+				>
 					{translate(lang, 'exercise.removeDraft')}
 				</AppButton>
 			{:else}
@@ -413,34 +387,4 @@
 			{/if}
 		</div>
 	</div>
-
-	{#if mediaOpen}
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div
-			use:overlayPortal
-			class="exercise-media-overlay"
-			role="dialog"
-			aria-modal="true"
-			tabindex="-1"
-			aria-label={title}
-			onclick={(e) => {
-				if (e.target === e.currentTarget) closeMedia();
-			}}
-		>
-			<div class="exercise-media-lightbox-wrap">
-				<div class="exercise-media-lightbox">
-					<CloseIconButton class="exercise-media-lightbox__close" onclick={closeMedia} />
-					<img
-						src={`/${exercise.gif_url}`}
-						alt={title}
-						width="180"
-						height="180"
-						decoding="async"
-						class="exercise-media-native--lightbox"
-					/>
-				</div>
-			</div>
-		</div>
-	{/if}
 {/if}
