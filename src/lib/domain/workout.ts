@@ -566,6 +566,20 @@ export function suggestNextPlan<T extends { id: string }>(
 	return plans[(idx + 1) % plans.length]!;
 }
 
+/** Manual pin wins; otherwise split rotation from last finished session. */
+export function resolveHomeNextPlan<T extends { id: string }>(
+	plans: readonly T[],
+	lastFinishedPlanId: string | null | undefined,
+	pinnedPlanId: string | null | undefined
+): T | null {
+	if (plans.length === 0) return null;
+	if (pinnedPlanId) {
+		const pinned = plans.find((p) => p.id === pinnedPlanId);
+		if (pinned) return pinned;
+	}
+	return suggestNextPlan(plans, lastFinishedPlanId);
+}
+
 /** Throws if draft / superset / arrow-move invariants regress. */
 export function runWorkoutSelfCheck(): void {
 	if (defaultRestSecForExercise() !== DEFAULT_REST_SEC) {
@@ -713,5 +727,11 @@ export function runWorkoutSelfCheck(): void {
 	}
 	if (suggestNextPlan([{ id: 'solo' }], 'solo')?.id !== 'solo') {
 		throw new Error('suggestNextPlan with one plan should stay on it');
+	}
+	if (resolveHomeNextPlan(rotation, 'a', 'c')?.id !== 'c') {
+		throw new Error('resolveHomeNextPlan should prefer pinned plan');
+	}
+	if (resolveHomeNextPlan(rotation, 'a', 'gone')?.id !== 'b') {
+		throw new Error('resolveHomeNextPlan should fall back when pin missing');
 	}
 }
