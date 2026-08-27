@@ -13,6 +13,63 @@ import { clearSyncOutbox } from '$lib/storage/syncOutbox';
 
 export const LOCAL_CACHE_USER_KEY = 'repdraft:local-cache-user';
 
+/** Sync peek for auth boot skeleton: true if last session was a signed-in user. */
+export function peekLocalCacheUserId(): string | null {
+	if (typeof localStorage === 'undefined') return null;
+	try {
+		const raw = localStorage.getItem(LOCAL_CACHE_USER_KEY)?.trim();
+		return raw || null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Fallback when `repdraft:local-cache-user` is missing but Supabase still has a
+ * persisted session (common after refresh before auth.init finishes).
+ */
+export function peekSupabaseStoredUserId(): string | null {
+	if (typeof localStorage === 'undefined') return null;
+	try {
+		for (let i = 0; i < localStorage.length; i++) {
+			const key = localStorage.key(i);
+			if (!key?.startsWith('sb-') || !key.endsWith('-auth-token')) continue;
+			const raw = localStorage.getItem(key);
+			if (!raw) continue;
+			const parsed: unknown = JSON.parse(raw);
+			const id = readUserIdFromSupabaseAuthStorage(parsed);
+			if (id) return id;
+		}
+	} catch {
+		return null;
+	}
+	return null;
+}
+
+function readUserIdFromSupabaseAuthStorage(parsed: unknown): string | null {
+	if (!parsed || typeof parsed !== 'object') return null;
+	const root = parsed as Record<string, unknown>;
+	const direct = root.user;
+	if (direct && typeof direct === 'object') {
+		const id = (direct as Record<string, unknown>).id;
+		if (typeof id === 'string' && id.trim()) return id.trim();
+	}
+	const current = root.currentSession;
+	if (current && typeof current === 'object') {
+		const user = (current as Record<string, unknown>).user;
+		if (user && typeof user === 'object') {
+			const id = (user as Record<string, unknown>).id;
+			if (typeof id === 'string' && id.trim()) return id.trim();
+		}
+	}
+	return null;
+}
+
+/** Prefer app cache, then Supabase persisted session. */
+export function peekLikelySignedInUserId(): string | null {
+	return peekLocalCacheUserId() ?? peekSupabaseStoredUserId();
+}
+
 const USER_DATA_KEYS = [
 	RECORDS_STORAGE_KEY,
 	PLANS_STORAGE_KEY,

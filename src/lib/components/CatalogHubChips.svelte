@@ -1,7 +1,9 @@
 <script lang="ts">
+	import AppBadge from '$lib/components/AppBadge.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { withFromParam } from '$lib/domain/catalogLinks';
+	import { hasLiftData } from '$lib/domain/records';
 	import { translate } from '$lib/i18n/messages';
 	import { records, recordsReady } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -16,29 +18,29 @@
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
-	let recordCount = $derived($records.length);
+	let recordCount = $derived($records.filter(hasLiftData).length);
 	let browseAllHref = $derived(withFromParam('/catalog/all', from));
 	let savedHref = $derived(withFromParam('/exercises/saved', from));
 </script>
 
 <nav class="catalog-hub-chips {className}" aria-label={translate(lang, 'catalog.hubNavAria')}>
-	<a class="catalog-hub-chip catalog-hub-chip--primary" href={browseAllHref}>
+	<AppBadge href={browseAllHref} variant="outline" class="catalog-hub-chip">
 		<LucideIcon icon={List} size={ICON_BUTTON} />
 		<span>{translate(lang, 'catalog.browseAll')}</span>
-	</a>
-	<a class="catalog-hub-chip" href={savedHref}>
+	</AppBadge>
+	<AppBadge href={savedHref} variant="outline" class="catalog-hub-chip">
 		<LucideIcon icon={Bookmark} size={ICON_BUTTON} />
 		<span>{translate(lang, 'bookmarks.title')}</span>
-	</a>
-	<a class="catalog-hub-chip" href="/records">
+	</AppBadge>
+	<AppBadge href="/records" variant="outline" class="catalog-hub-chip">
 		<LucideIcon icon={Trophy} size={ICON_BUTTON} />
 		<span>{translate(lang, 'records.title')}</span>
 		{#if $recordsReady && recordCount > 0}
 			<span class="catalog-hub-nav-count">{recordCount}</span>
 		{/if}
-	</a>
-	<a class="catalog-hub-chip" href="/articles">
+	</AppBadge>
+	<AppBadge href="/articles" variant="outline" class="catalog-hub-chip">
 		<LucideIcon icon={BookOpen} size={ICON_BUTTON} />
 		<span>{translate(lang, 'articles.title')}</span>
-	</a>
+	</AppBadge>
 </nav>

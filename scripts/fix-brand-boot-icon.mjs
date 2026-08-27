@@ -1,67 +1,19 @@
 /**
- * Render canonical Repdraft app icons from SVG (no export fringe / dark 1px strip).
+ * Render favicon.svg + favicon.ico from brand app-icon-master (full RP monogram).
  *   node scripts/fix-brand-boot-icon.mjs
  *
- * PNG/ICO: required for iOS home screen + manifest (Safari skips SVG icons).
- * SVG: served for in-tab favicon + any vector use (crisp at all DPR).
+ * PNG masters: use npm run icons:pwa (render-pwa-icons.mjs).
  */
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDir = join(root, 'static');
+const brandDir = join(root, 'src/lib/assets/brand');
 
-/** Matches in-app mark; white stroke on violet gradient plate. */
-export const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#8B5CF6"/>
-      <stop offset="1" stop-color="#6366F1"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="114" ry="114" fill="url(#g)"/>
-  <path
-    d="M148 112V392M148 112H286C347 112 380 148 380 198C380 248 347 280 286 280H148M218 280L350 408"
-    fill="none"
-    stroke="#FFFFFF"
-    stroke-width="34"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
-</svg>`;
-
-/** Master raster for downscale — sharper small PNGs than direct SVG→16px. */
-const MASTER_PX = 1024;
-const PNG_OPTS = { compressionLevel: 9, effort: 10, adaptiveFiltering: true };
-
-let masterRaster = null;
-
-async function getMasterRaster() {
-	if (masterRaster) return masterRaster;
-	masterRaster = await sharp(Buffer.from(ICON_SVG), { density: 288 })
-		.resize(MASTER_PX, MASTER_PX, { kernel: sharp.kernel.lanczos3 })
-		.png(PNG_OPTS)
-		.toBuffer();
-	return masterRaster;
-}
-
-async function renderPng(size, outputPath) {
-	const master = await getMasterRaster();
-	await sharp(master)
-		.resize(size, size, { kernel: sharp.kernel.lanczos3 })
-		.png(PNG_OPTS)
-		.toFile(outputPath);
-}
-
-async function renderPngBuffer(size) {
-	const master = await getMasterRaster();
-	return sharp(master)
-		.resize(size, size, { kernel: sharp.kernel.lanczos3 })
-		.png(PNG_OPTS)
-		.toBuffer();
-}
+const masterSvg = readFileSync(join(brandDir, 'app-icon-master.svg'));
 
 /** Vista+ ICO container with embedded PNG payloads (no extra deps). */
 function buildIcoFromPngs(pngBySize) {
@@ -94,19 +46,20 @@ function buildIcoFromPngs(pngBySize) {
 	return Buffer.concat([header, ...entries, ...payloads]);
 }
 
-writeFileSync(join(staticDir, 'icon.svg'), `${ICON_SVG.trim()}\n`);
+async function renderFaviconPng(size) {
+	return sharp(masterSvg)
+		.resize(size, size, { kernel: sharp.kernel.lanczos3 })
+		.flatten({ background: '#8b5cf6' })
+		.png({ compressionLevel: 9, force: true })
+		.toBuffer();
+}
 
-await renderPng(192, join(staticDir, 'icon-192-v2.png'));
-await renderPng(192, join(staticDir, 'icon-boot.png'));
-await renderPng(512, join(staticDir, 'icon-512-v2.png'));
-await renderPng(180, join(staticDir, 'apple-touch-icon-v2.png'));
-await renderPng(180, join(staticDir, 'apple-touch-icon-precomposed-v2.png'));
-await renderPng(512, join(staticDir, 'icon-maskable-512-v2.png'));
+writeFileSync(join(staticDir, 'icon.svg'), masterSvg);
 
 const faviconSizes = [16, 32, 48];
 const faviconPngs = await Promise.all(
-	faviconSizes.map(async (size) => ({ size, png: await renderPngBuffer(size) }))
+	faviconSizes.map(async (size) => ({ size, png: await renderFaviconPng(size) }))
 );
 writeFileSync(join(staticDir, 'favicon.ico'), buildIcoFromPngs(faviconPngs));
 
-console.log('rendered static/icon.svg + *-v2.png + favicon.ico from SVG master');
+console.log('rendered static/icon.svg + favicon.ico from app-icon-master.svg');

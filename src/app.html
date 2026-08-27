@@ -9,10 +9,18 @@
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
+			rel="preload"
+			as="style"
 			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-			rel="stylesheet"
+			onload="this.onload=null;this.rel='stylesheet'"
 		/>
-		<meta name="theme-color" content="#F7F5FC" />
+		<noscript>
+			<link
+				rel="stylesheet"
+				href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+			/>
+		</noscript>
+		<meta name="theme-color" content="#F2F2F7" />
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -30,11 +38,11 @@
 			body {
 				margin: 0;
 				min-height: 100%;
-				background-color: #f7f5fc;
+				background-color: #f2f2f7;
 			}
 			html[data-theme='dark'],
 			html[data-theme='dark'] body {
-				background-color: #0a0a0d;
+				background-color: #0b0b0c;
 			}
 			#pwa-boot {
 				position: fixed;
@@ -42,12 +50,12 @@
 				z-index: 9999;
 				display: grid;
 				place-items: center;
-				background: #f7f5fc;
+				background: #f2f2f7;
 				pointer-events: none;
 				transition: opacity 0.2s ease;
 			}
 			html[data-theme='dark'] #pwa-boot {
-				background: #0a0a0d;
+				background: #0b0b0c;
 			}
 			#pwa-boot .pwa-boot-icon-wrap {
 				width: 96px;
@@ -58,6 +66,25 @@
 				width: 96px;
 				height: 96px;
 				display: block;
+				border-radius: 22px;
+				overflow: hidden;
+				animation: pwa-boot-breathe 2.4s ease-in-out infinite;
+			}
+			@keyframes pwa-boot-breathe {
+				0%,
+				100% {
+					transform: scale(1);
+					filter: saturate(1);
+				}
+				50% {
+					transform: scale(1.035);
+					filter: saturate(1.12);
+				}
+			}
+			@media (prefers-reduced-motion: reduce) {
+				#pwa-boot .pwa-boot-icon {
+					animation: none;
+				}
 			}
 			#pwa-boot.is-done {
 				opacity: 0;
@@ -71,8 +98,13 @@
 					if (theme !== 'light' && theme !== 'dark') {
 						theme = 'light';
 					}
-					var bg = theme === 'light' ? '#f7f5fc' : '#0a0a0d';
+					var bg = theme === 'light' ? '#f2f2f7' : '#0b0b0c';
 					document.documentElement.setAttribute('data-theme', theme);
+					if (theme === 'dark') {
+						document.documentElement.classList.add('dark');
+					} else {
+						document.documentElement.classList.remove('dark');
+					}
 					document.documentElement.style.colorScheme = theme;
 					document.documentElement.style.backgroundColor = bg;
 					var meta = document.querySelector('meta[name="theme-color"]');
@@ -85,6 +117,59 @@
 						document.documentElement.lang = storedLocale;
 						document.documentElement.dataset.locale = storedLocale;
 					}
+					/* Auth /auth boot: pick account vs guest skeleton before Svelte hydrates. */
+					var authBoot = 'guest';
+					var cacheUser = localStorage.getItem('repdraft:local-cache-user');
+					if (cacheUser && cacheUser.trim()) {
+						authBoot = 'account';
+					} else {
+						for (var i = 0; i < localStorage.length; i++) {
+							var k = localStorage.key(i);
+							if (!k || k.indexOf('sb-') !== 0 || k.slice(-11) !== '-auth-token') continue;
+							var raw = localStorage.getItem(k);
+							if (!raw) continue;
+							try {
+								var parsed = JSON.parse(raw);
+								var uid =
+									(parsed && parsed.user && parsed.user.id) ||
+									(parsed &&
+										parsed.currentSession &&
+										parsed.currentSession.user &&
+										parsed.currentSession.user.id);
+								if (uid) {
+									authBoot = 'account';
+									break;
+								}
+							} catch (err) {}
+						}
+					}
+					document.documentElement.dataset.authBoot = authBoot;
+					try {
+						if (authBoot === 'account') {
+							document.cookie =
+								'repdraft_auth_boot=1; path=/; Max-Age=31536000; SameSite=Lax';
+						} else {
+							document.cookie = 'repdraft_auth_boot=; path=/; Max-Age=0; SameSite=Lax';
+						}
+					} catch (cookieErr) {}
+					/* Home boot: start skeleton when local plans exist (or signed-in). */
+					var homeBoot = authBoot === 'account' ? 'start' : 'create';
+					try {
+						var plansRaw = localStorage.getItem('repdraft:plans');
+						if (plansRaw) {
+							var plansParsed = JSON.parse(plansRaw);
+							if (Array.isArray(plansParsed) && plansParsed.length > 0) homeBoot = 'start';
+						}
+					} catch (plansErr) {}
+					document.documentElement.dataset.homeBoot = homeBoot;
+					try {
+						if (homeBoot === 'start') {
+							document.cookie =
+								'repdraft_home_has_plans=1; path=/; Max-Age=31536000; SameSite=Lax';
+						} else {
+							document.cookie = 'repdraft_home_has_plans=; path=/; Max-Age=0; SameSite=Lax';
+						}
+					} catch (homeCookieErr) {}
 				} catch (e) {}
 			})();
 			// Capture beforeinstallprompt early — it can fire before Svelte mounts.
@@ -111,9 +196,42 @@
 					focusable="false"
 				>
 					<defs>
-						<linearGradient id="repdraft-boot-g" x1="0" y1="0" x2="1" y2="1">
-							<stop offset="0%" stop-color="#8B5CF6" />
-							<stop offset="100%" stop-color="#6366F1" />
+						<linearGradient
+							id="repdraft-boot-g"
+							gradientUnits="userSpaceOnUse"
+							x1="0"
+							y1="0"
+							x2="512"
+							y2="512"
+						>
+							<animate attributeName="x1" values="0;420;0" dur="3.2s" repeatCount="indefinite" />
+							<animate attributeName="y1" values="0;80;512;0" dur="3.2s" repeatCount="indefinite" />
+							<animate attributeName="x2" values="512;80;512" dur="3.2s" repeatCount="indefinite" />
+							<animate attributeName="y2" values="512;420;0;512" dur="3.2s" repeatCount="indefinite" />
+							<stop offset="0%" stop-color="#8b5cf6">
+								<animate
+									attributeName="stop-color"
+									values="#8b5cf6;#7c3aed;#a78bfa;#8b5cf6"
+									dur="3.2s"
+									repeatCount="indefinite"
+								/>
+							</stop>
+							<stop offset="62%" stop-color="#a78bfa">
+								<animate
+									attributeName="stop-color"
+									values="#a78bfa;#c4b5fd;#8b5cf6;#a78bfa"
+									dur="3.2s"
+									repeatCount="indefinite"
+								/>
+							</stop>
+							<stop offset="100%" stop-color="#c4b5fd">
+								<animate
+									attributeName="stop-color"
+									values="#c4b5fd;#a78bfa;#7c3aed;#c4b5fd"
+									dur="3.2s"
+									repeatCount="indefinite"
+								/>
+							</stop>
 						</linearGradient>
 					</defs>
 					<rect width="512" height="512" rx="114" fill="url(#repdraft-boot-g)" />
@@ -126,14 +244,42 @@
 			(function () {
 				var boot = document.getElementById('pwa-boot');
 				if (!boot) return;
+				var done = false;
+				var shownAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
+				/* Keep logo splash readable; still escape font/preload hangs via MAX. */
+				/* Long enough to catch a beat of the violet shimmer; escape hangs via MAX. */
+				var MIN_MS = 640;
+				var MAX_MS = 1400;
 				var hide = function () {
-					boot.classList.add('is-done');
+					if (done) return;
+					done = true;
+					var now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+					var wait = Math.max(0, MIN_MS - (now - shownAt));
 					window.setTimeout(function () {
-						boot.remove();
-					}, 220);
+						boot.classList.add('is-done');
+						window.setTimeout(function () {
+							if (boot && boot.parentNode) boot.remove();
+						}, 220);
+					}, wait);
 				};
-				if (document.readyState === 'complete') hide();
-				else window.addEventListener('load', hide, { once: true });
+				window.__repdraftHideBoot = hide;
+				/* Prefer quieter splash when user asks for reduced motion. */
+				try {
+					if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+						var anims = boot.querySelectorAll('animate');
+						for (var i = 0; i < anims.length; i++) anims[i].remove();
+						MIN_MS = 160;
+						MAX_MS = 700;
+					}
+				} catch (rmErr) {}
+				/* Do not wait only on window.load — font/preload hangs left splash forever. */
+				if (document.readyState === 'interactive' || document.readyState === 'complete') {
+					hide();
+				} else {
+					document.addEventListener('DOMContentLoaded', hide, { once: true });
+				}
+				window.addEventListener('load', hide, { once: true });
+				window.setTimeout(hide, MAX_MS);
 			})();
 		</script>
 	</body>

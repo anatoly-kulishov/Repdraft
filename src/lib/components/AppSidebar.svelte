@@ -96,7 +96,7 @@
 	<div class="shell-sidebar-footer">
 		<button
 			type="button"
-			class="sidebar-link w-full"
+			class="sidebar-link"
 			onclick={() => appTheme.toggle()}
 			title={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
 			aria-label={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { labelTarget } from '$lib/domain/labels.ru';
+	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { translate } from '$lib/i18n/messages';
 	import { draft } from '$lib/stores/draft';
 	import { bookmarks } from '$lib/stores/bookmarks';
@@ -9,12 +9,13 @@
 	import { techniqueClipHints } from '$lib/stores/techniqueClipHints';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
-	import BottomSheet from '$lib/components/BottomSheet.svelte';
-	import CloseIconButton from '$lib/components/CloseIconButton.svelte';
+	import AppIconButton from '$lib/components/AppIconButton.svelte';
+	import { cn } from '$lib/utils.js';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Bookmark, Check, ChevronRight, Film, Plus, StickyNote } from '@lucide/svelte';
+	import { linkWithFrom } from '$lib/domain/navigation';
+	import { Bookmark, Check, Dumbbell, Film, Plus, StickyNote, Target } from '@lucide/svelte';
 
 	let {
 		exercise,
@@ -47,13 +48,6 @@
 	let bookmarkBusy = $state(false);
 	let imgEl = $state<HTMLImageElement | null>(null);
 	let justAdded = $state(false);
-	let techniqueOpen = $state(false);
-	let techniqueSrc = $state('');
-
-	/** Slim index has JPG only; GIF lives at the same stem under /videos. */
-	function techniqueMediaSrc(imagePath: string): string {
-		return `/${imagePath.replace(/^images\//, 'videos/').replace(/\.jpe?g$/i, '.gif')}`;
-	}
 
 	$effect(() => {
 		const img = imgEl;
@@ -65,25 +59,8 @@
 	}
 
 	function exerciseHref(id: string): string {
-		const base = `/exercise/${id}`;
-		if (!detailFrom) return base;
-		return `${base}?from=${encodeURIComponent(detailFrom)}`;
-	}
-
-	function openTechnique() {
-		techniqueSrc = techniqueMediaSrc(exercise.image);
-		techniqueOpen = true;
-	}
-
-	function dismissTechnique() {
-		techniqueOpen = false;
-	}
-
-	function onTechniqueImgError(event: Event) {
-		const img = event.currentTarget as HTMLImageElement;
-		const fallback = `/${exercise.image}`;
-		if (img.src.endsWith(fallback) || img.getAttribute('src') === fallback) return;
-		img.src = fallback;
+		if (!detailFrom) return `/exercise/${id}`;
+		return linkWithFrom(`/exercise/${id}`, detailFrom);
 	}
 
 	function toggleDraft(event: MouseEvent) {
@@ -92,7 +69,7 @@
 		if (inDraft) {
 			draft.removeFromDraft(exercise.id);
 			justAdded = false;
-			toasts.show(translate(lang, 'exercise.removed'), 'info');
+			toasts.show(translate(lang, 'exercise.removed'), 'info', 2600, undefined, 'draft');
 			return;
 		}
 		const result = draft.addToDraft(exercise.id, {
@@ -101,9 +78,9 @@
 		});
 		if (result.added) {
 			justAdded = true;
-			toasts.show(translate(lang, 'exercise.added'), 'success');
+			toasts.show(translate(lang, 'exercise.added'), 'success', 2600, undefined, 'draft');
 		} else {
-			toasts.show(translate(lang, 'exercise.already'), 'info');
+			toasts.show(translate(lang, 'exercise.already'), 'info', 2600, undefined, 'draft');
 		}
 	}
 
@@ -115,7 +92,7 @@
 		void bookmarks
 			.toggle(exercise.id)
 			.then((saved) => {
-				toasts.show(translate(lang, saved ? 'bookmarks.saved' : 'bookmarks.removed'), 'info');
+				toasts.show(translate(lang, saved ? 'bookmarks.saved' : 'bookmarks.removed'), 'info', 2600, undefined, 'bookmark');
 			})
 			.finally(() => {
 				bookmarkBusy = false;
@@ -124,11 +101,12 @@
 </script>
 
 {#snippet bookmarkButton(inline: boolean)}
-	<button
-		type="button"
-		class="exercise-card-bookmark"
-		class:exercise-card-bookmark--inline={inline}
-		class:is-active={bookmarked}
+	<AppIconButton
+		class={cn(
+			'exercise-card-bookmark p-0 !min-h-0 !min-w-0 size-auto',
+			inline ? 'exercise-card-bookmark--inline' : '',
+			bookmarked && 'is-active'
+		)}
 		onclick={toggleBookmark}
 		disabled={bookmarkBusy}
 		aria-busy={bookmarkBusy}
@@ -145,7 +123,7 @@
 				fill={bookmarked ? 'currentColor' : 'none'}
 			/>
 		{/if}
-	</button>
+	</AppIconButton>
 {/snippet}
 
 {#snippet noteBadge(placement: 'list' | 'grid')}
@@ -178,11 +156,12 @@
 
 {#snippet listActions()}
 	<div class="exercise-card-actions exercise-card-actions--list">
-		<button
-			type="button"
-			class="exercise-card-add exercise-card-add--inline"
-			class:is-in-draft={inDraft}
-			class:is-just-added={justAdded}
+		<AppIconButton
+			class={cn(
+				'exercise-card-add exercise-card-add--inline exercise-card-list-action !size-12 !min-h-12 !min-w-12 !rounded-full !bg-transparent p-0 hover:!bg-transparent',
+				inDraft && 'is-in-draft',
+				justAdded && 'is-just-added'
+			)}
 			onclick={toggleDraft}
 			aria-label={translate(lang, inDraft ? 'exercise.removeDraft' : 'exercise.addDraft')}
 			aria-pressed={inDraft}
@@ -192,15 +171,7 @@
 			{:else}
 				<LucideIcon icon={Plus} size={ICON_SMALL} class="exercise-card-add-icon" />
 			{/if}
-		</button>
-		<a
-			href={exerciseHref(exercise.id)}
-			class="exercise-card-chevron"
-			tabindex="-1"
-			aria-hidden="true"
-		>
-			<LucideIcon icon={ChevronRight} size={ICON_SMALL + 2} />
-		</a>
+		</AppIconButton>
 	</div>
 {/snippet}
 
@@ -216,31 +187,32 @@
 >
 	{#if variant === 'list'}
 		<div class="exercise-card-list-main">
-			<button
-				type="button"
-				class="exercise-card-media media-well relative shrink-0 overflow-hidden"
-				aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
-				onclick={openTechnique}
-			>
-				<img
-					bind:this={imgEl}
-					src={`/${exercise.image}`}
-					alt=""
-					width="120"
-					height="120"
-					sizes="120px"
-					loading={priority ? 'eager' : 'lazy'}
-					fetchpriority={priority ? 'high' : 'auto'}
-					decoding="async"
-					draggable="false"
-					class={`exercise-card-img pointer-events-none block h-full w-full object-contain ${loaded ? 'is-loaded' : ''}`}
-					onload={onImgLoad}
-				/>
-				{@render noteBadge('list')}
-				{@render clipBadge('list')}
-			</button>
-			<div class="exercise-card-bookmark-slot">
-				{@render bookmarkButton(false)}
+			<div class="exercise-card-list-thumb">
+				<a
+					href={exerciseHref(exercise.id)}
+					class="exercise-card-media media-well relative shrink-0 overflow-hidden"
+					aria-label={title}
+				>
+					<img
+						bind:this={imgEl}
+						src={`/${exercise.image}`}
+						alt=""
+						width="120"
+						height="120"
+						sizes="120px"
+						loading={priority ? 'eager' : 'lazy'}
+						fetchpriority={priority ? 'high' : 'auto'}
+						decoding="async"
+						draggable="false"
+						class={`exercise-card-img pointer-events-none block h-full w-full object-contain ${loaded ? 'is-loaded' : ''}`}
+						onload={onImgLoad}
+					/>
+					{@render noteBadge('list')}
+					{@render clipBadge('list')}
+				</a>
+				<div class="exercise-card-bookmark-slot">
+					{@render bookmarkButton(false)}
+				</div>
 			</div>
 			<a
 				href={exerciseHref(exercise.id)}
@@ -290,22 +262,24 @@
 					alt=""
 					width="180"
 					height="180"
-					sizes="(min-width: 1024px) 16vw, (min-width: 768px) 30vw, 45vw"
+					sizes="(min-width: 1024px) 180px, (min-width: 768px) 33vw, 45vw"
 					loading={priority ? 'eager' : 'lazy'}
 					fetchpriority={priority ? 'high' : 'auto'}
 					decoding="async"
-					class={`exercise-card-img block h-full w-full object-contain ${loaded ? 'is-loaded' : ''}`}
+					draggable="false"
+					class={`exercise-card-img pointer-events-none block h-full w-full object-contain ${loaded ? 'is-loaded' : ''}`}
 					onload={onImgLoad}
 				/>
 			</a>
 			{@render bookmarkButton(false)}
 			{@render noteBadge('grid')}
 			{@render clipBadge('grid')}
-			<button
-				type="button"
-				class="exercise-card-add"
-				class:is-in-draft={inDraft}
-				class:is-just-added={justAdded}
+			<AppIconButton
+				class={cn(
+					'exercise-card-add !min-h-0 !min-w-0 size-auto p-0',
+					inDraft && 'is-in-draft',
+					justAdded && 'is-just-added'
+				)}
 				onclick={toggleDraft}
 				aria-label={translate(lang, inDraft ? 'exercise.removeDraft' : 'exercise.addDraft')}
 				aria-pressed={inDraft}
@@ -315,19 +289,29 @@
 				{:else}
 					<LucideIcon icon={Plus} size={ICON_SMALL} class="exercise-card-add-icon" />
 				{/if}
-			</button>
+			</AppIconButton>
 		</div>
 
 		<a
 			href={exerciseHref(exercise.id)}
-			class="exercise-card-body flex min-w-0 flex-1 flex-col gap-0.5 p-2.5 active:bg-[var(--color-surface-muted)]"
+			class="exercise-card-body exercise-card-body--grid flex min-w-0 flex-1 flex-col gap-1 p-2.5 active:bg-[var(--color-surface-muted)]"
 		>
-			<h2 class="line-clamp-2 min-h-[2.1em] text-[13px] font-semibold leading-snug text-[var(--color-ink)]">
+			<h2 class="exercise-card-grid-title line-clamp-2 text-[13px] font-semibold leading-snug">
 				{title}
 			</h2>
-			<p class="truncate text-[11px] text-[var(--color-muted)]">
-				{labelTarget(exercise.target, lang)}
-			</p>
+			<div class="exercise-card-grid-meta">
+				<span class="exercise-card-grid-meta-item" title={labelTarget(exercise.target, lang)}>
+					<LucideIcon icon={Target} size={12} class="exercise-card-grid-meta-icon" />
+					<span class="truncate">{labelTarget(exercise.target, lang)}</span>
+				</span>
+				<span
+					class="exercise-card-grid-meta-item exercise-card-grid-meta-item--equipment"
+					title={labelEquipment(exercise.equipment, lang)}
+				>
+					<LucideIcon icon={Dumbbell} size={12} class="exercise-card-grid-meta-icon" />
+					<span class="truncate">{labelEquipment(exercise.equipment, lang)}</span>
+				</span>
+			</div>
 			{#if recordChips.length > 0}
 				<span class="exercise-card-chip-row exercise-card-chip-row--grid" title={recordTitle}>
 					{#each recordChips as chip (chip)}
@@ -338,34 +322,3 @@
 		</a>
 	{/if}
 </article>
-
-{#if techniqueOpen}
-	<BottomSheet
-		open={techniqueOpen}
-		raised
-		titleId={`exercise-technique-${exercise.id}`}
-		onDismiss={dismissTechnique}
-	>
-		<div class="bottom-sheet__head">
-			<p id={`exercise-technique-${exercise.id}`} class="bottom-sheet__title">{title}</p>
-			<CloseIconButton onclick={dismissTechnique} />
-		</div>
-		<p class="bottom-sheet__hint">{labelTarget(exercise.target, lang)}</p>
-		<div class="exercise-technique-sheet__media media-well">
-			<img
-				src={techniqueSrc}
-				alt=""
-				width="180"
-				height="180"
-				decoding="async"
-				class="exercise-technique-sheet__img"
-				onerror={onTechniqueImgError}
-			/>
-		</div>
-		{#snippet actions()}
-			<a class="btn-primary btn-block" href={exerciseHref(exercise.id)} onclick={dismissTechnique}>
-				{translate(lang, 'exercise.openCard')}
-			</a>
-		{/snippet}
-	</BottomSheet>
-{/if}

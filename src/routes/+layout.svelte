@@ -1,15 +1,22 @@
 <script lang="ts">
 	import './layout.css';
 	import { appTheme } from '$lib/stores/theme';
+	import AppButton from '$lib/components/AppButton.svelte';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import AttributionFooter from '$lib/components/AttributionFooter.svelte';
 	import AccountChip from '$lib/components/AccountChip.svelte';
 	import DraftDock from '$lib/components/DraftDock.svelte';
 	import Logo from '$lib/components/Logo.svelte';
+	import ShellHomeGreeting from '$lib/components/ShellHomeGreeting.svelte';
 	import PwaInstallHint from '$lib/components/PwaInstallHint.svelte';
 	import ToastStack from '$lib/components/ToastStack.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_SIDEBAR } from '$lib/components/icons/sizes';
+	import {
+		ICON_SIDEBAR,
+		ICON_TAB,
+		ICON_TAB_STROKE,
+		ICON_TAB_STROKE_ACTIVE
+	} from '$lib/components/icons/sizes';
 	import { Dumbbell, House, Library, Moon, Sun } from '@lucide/svelte';
 	import { isBuilderReturnPath } from '$lib/domain/catalogLinks';
 	import { translate } from '$lib/i18n/messages';
@@ -50,6 +57,7 @@
 	}
 
 	let hideMobileHeader = $derived(mobileFlowChrome(path, fromParam));
+	let showHomeShellHeader = $derived(path === '/' && !hideMobileHeader);
 
 	onNavigate((navigation) => {
 		if (typeof document === 'undefined' || !document.startViewTransition) return;
@@ -68,6 +76,18 @@
 		techniqueClipHints.hydrate();
 		void techniqueClipHints.refresh();
 		void auth.init();
+
+		/* Belt-and-suspenders: same hide path as app.html (respects min splash time). */
+		const hideBoot = (window as Window & { __repdraftHideBoot?: () => void }).__repdraftHideBoot;
+		if (typeof hideBoot === 'function') {
+			hideBoot();
+		} else {
+			const boot = document.getElementById('pwa-boot');
+			if (boot) {
+				boot.classList.add('is-done');
+				window.setTimeout(() => boot.remove(), 220);
+			}
+		}
 
 		const onOnline = () => {
 			void flushSyncOutbox();
@@ -166,15 +186,18 @@
 		<header
 			class="shell-header-mobile sticky top-0 z-30 border-b border-[var(--color-border)] pt-[var(--safe-top)]"
 			class:shell-header-mobile-hidden={hideMobileHeader}
+			class:shell-header-mobile--home={showHomeShellHeader}
 		>
-			<div
-				class="mx-auto flex h-14 w-full max-w-[var(--page-content-max)] items-center justify-between gap-3 shell-header-pad"
-			>
-				<Logo compact />
-				<div class="flex items-center gap-1">
-					<button
-						type="button"
-						class="btn-ghost shell-theme-toggle"
+			<div class="shell-header-mobile__bar mx-auto flex h-14 w-full max-w-[var(--page-content-max)] items-center justify-between gap-3 shell-header-pad">
+				{#if showHomeShellHeader}
+					<ShellHomeGreeting />
+				{:else}
+					<Logo compact />
+				{/if}
+				<div class="shell-header-actions flex items-center">
+					<AppButton
+						variant="ghost"
+						class="shell-theme-toggle"
 						onclick={() => appTheme.toggle()}
 						aria-label={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
 						title={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
@@ -184,8 +207,10 @@
 						{:else}
 							<Sun size={ICON_SIDEBAR} strokeWidth={1.75} aria-hidden="true" />
 						{/if}
-					</button>
-					<AccountChip active={isActive('/auth')} />
+					</AppButton>
+					{#if !showHomeShellHeader}
+						<AccountChip active={isActive('/auth')} />
+					{/if}
 				</div>
 			</div>
 		</header>
@@ -197,10 +222,16 @@
 			class:shell-main--flow={hideMobileHeader}
 			tabindex="-1"
 		>
-			{#if !hideMobileHeader || path === '/'}
+			{#if path === '/'}
+				{@render children()}
+				<!-- After Home primary CTA so install does not steal the first viewport. -->
 				<PwaInstallHint />
+			{:else}
+				{#if !hideMobileHeader}
+					<PwaInstallHint />
+				{/if}
+				{@render children()}
 			{/if}
-			{@render children()}
 		</main>
 
 		<div class="shell-footer-pad">
@@ -217,22 +248,26 @@
 	<div class="shell-nav-tabbar__inner">
 		<div class="shell-nav-tabbar__grid">
 		<a
+			href="/"
 			class="tab-link"
 			data-active={isActive('/')}
-			href="/"
 			aria-current={isActive('/') ? 'page' : undefined}
 		>
 			<span class="tab-link__inner">
 				<span class="tab-link-icon">
-					<LucideIcon icon={House} size={ICON_SIDEBAR} />
+					<LucideIcon
+						icon={House}
+						size={ICON_TAB}
+						strokeWidth={isActive('/') ? ICON_TAB_STROKE_ACTIVE : ICON_TAB_STROKE}
+					/>
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.tabHome')}</span>
 			</span>
 		</a>
 		<a
+			href="/workouts"
 			class="tab-link"
 			data-active={isActive('/workouts')}
-			href="/workouts"
 			aria-current={isActive('/workouts') ? 'page' : undefined}
 			aria-label={hasActiveSession
 				? `${translate(lang, 'nav.workouts')}. ${translate(lang, 'nav.liveActive')}`
@@ -240,7 +275,11 @@
 		>
 			<span class="tab-link__inner">
 				<span class="tab-link-icon">
-					<LucideIcon icon={Dumbbell} size={ICON_SIDEBAR} />
+					<LucideIcon
+						icon={Dumbbell}
+						size={ICON_TAB}
+						strokeWidth={isActive('/workouts') ? ICON_TAB_STROKE_ACTIVE : ICON_TAB_STROKE}
+					/>
 					{#if hasActiveSession}
 						<span class="tab-link-live-dot" aria-hidden="true"></span>
 					{/if}
@@ -249,14 +288,18 @@
 			</span>
 		</a>
 		<a
+			href="/exercises"
 			class="tab-link"
 			data-active={isActive('/exercises')}
-			href="/exercises"
 			aria-current={isActive('/exercises') ? 'page' : undefined}
 		>
 			<span class="tab-link__inner">
 				<span class="tab-link-icon">
-					<LucideIcon icon={Library} size={ICON_SIDEBAR} />
+					<LucideIcon
+						icon={Library}
+						size={ICON_TAB}
+						strokeWidth={isActive('/exercises') ? ICON_TAB_STROKE_ACTIVE : ICON_TAB_STROKE}
+					/>
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.exercises')}</span>
 			</span>

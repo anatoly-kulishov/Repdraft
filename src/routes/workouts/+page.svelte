@@ -1,4 +1,6 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppPanel from '$lib/components/AppPanel.svelte';
 	import CloudSyncBanner from '$lib/components/CloudSyncBanner.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -27,6 +29,7 @@
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { cn } from '$lib/utils.js';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 
@@ -165,13 +168,13 @@
 		confirmOffer = null;
 	}
 
-	let confirmTitle = $derived.by(() => {
+	let confirmHeading = $derived.by(() => {
 		if (!confirmOffer) return '';
 		switch (confirmOffer.kind) {
 			case 'delete-plan':
-				return translate(lang, 'workouts.confirmDelete', { name: confirmOffer.name });
+				return translate(lang, 'common.delete');
 			case 'delete-session':
-				return translate(lang, 'workouts.confirmDeleteSession', { name: confirmOffer.name });
+				return translate(lang, 'workouts.deleteSession');
 			default: {
 				const _exhaustive: never = confirmOffer;
 				return _exhaustive;
@@ -225,13 +228,12 @@
 				{/if}
 			</p>
 		</div>
-		<a
-			class="btn-primary workouts-page__create shrink-0"
+		<AppButton
 			href={BUILDER_NEW_HREF}
-			class:workouts-page__create--hidden={activeTab === 'history'}
+			class={cn('workouts-page__create shrink-0', activeTab === 'history' && 'workouts-page__create--hidden')}
 		>
 			{translate(lang, 'workouts.newWorkout')}
-		</a>
+		</AppButton>
 	</div>
 
 	<CloudSyncBanner
@@ -272,9 +274,9 @@
 					<SearchInput bind:value={searchQuery} placeholder={translate(lang, 'workouts.searchPh')} />
 				</div>
 				{#if filteredPlans.length === 0}
-					<p class="panel-dashed text-sm text-[var(--color-muted)]">
+					<AppPanel dashed class="text-sm text-[var(--color-muted)]">
 						{translate(lang, 'catalog.emptyTitle')}
-					</p>
+					</AppPanel>
 				{:else}
 					<ul class="entity-list entity-list--cards" class:cloud-sync-list--uncertain={listUncertain}>
 						{#each filteredPlans as plan (plan.id)}
@@ -299,19 +301,18 @@
 											</span>
 										</a>
 										<div class="entity-row__actions">
-											<button
-												type="button"
-												class="btn-ghost entity-row__start entity-row__start--desktop"
+											<AppButton
+												variant="ghost"
+												class="entity-row__start entity-row__start--desktop"
 												onclick={() => onOpen(plan.id)}
 												disabled={plan.exercises.length === 0 || planBusyId !== null}
 												aria-label={translate(lang, 'workouts.open')}
 												title={translate(lang, 'workouts.open')}
 											>
 												<LucideIcon icon={Play} size={ICON_SMALL} />
-											</button>
-											<button
-												type="button"
-												class="btn-ghost"
+											</AppButton>
+											<AppButton
+												variant="ghost"
 												aria-label={translate(lang, 'workouts.duplicate')}
 												title={translate(lang, 'workouts.duplicate')}
 												disabled={planBusyId !== null}
@@ -323,10 +324,10 @@
 												{:else}
 													<LucideIcon icon={Copy} size={ICON_SMALL} />
 												{/if}
-											</button>
-											<button
-												type="button"
-												class="btn-ghost is-danger"
+											</AppButton>
+											<AppButton
+												variant="ghost"
+												class="is-danger"
 												aria-label={translate(lang, 'workouts.delete')}
 												title={translate(lang, 'workouts.delete')}
 												disabled={planBusyId !== null}
@@ -338,7 +339,7 @@
 												{:else}
 													<LucideIcon icon={Trash2} size={ICON_SMALL} />
 												{/if}
-											</button>
+											</AppButton>
 										</div>
 									</div>
 								</SwipeToDelete>
@@ -380,9 +381,9 @@
 									</span>
 								</a>
 								<div class="entity-row__actions">
-									<button
-										type="button"
-										class="btn-ghost is-danger"
+									<AppButton
+										variant="ghost"
+										class="is-danger"
 										disabled={historyBusyId !== null}
 										aria-busy={historyBusyId === session.id}
 										aria-label={translate(lang, 'workouts.deleteSession')}
@@ -394,7 +395,7 @@
 										{:else}
 											<LucideIcon icon={Trash2} size={ICON_SMALL} />
 										{/if}
-									</button>
+									</AppButton>
 								</div>
 							</div>
 						</SwipeToDelete>
@@ -408,7 +409,7 @@
 		class="lg:hidden"
 		href={BUILDER_NEW_HREF}
 		label={translate(lang, 'workouts.newWorkout')}
-		hidden={activeTab === 'history'}
+		hidden={activeTab === 'history' || (activeTab === 'plans' && $plans.length === 0)}
 	/>
 </section>
 
@@ -417,13 +418,16 @@
 	titleId="workouts-confirm-title"
 	onDismiss={dismissConfirmOffer}
 >
-	<p id="workouts-confirm-title" class="bottom-sheet__title">{confirmTitle}</p>
+	{#if confirmOffer}
+		<p id="workouts-confirm-title" class="bottom-sheet__title">{confirmHeading}</p>
+		<p class="bottom-sheet__hint workouts-confirm-offer__name">«{confirmOffer.name}»?</p>
+	{/if}
 	{#snippet actions()}
-		<button type="button" class="btn-secondary" onclick={dismissConfirmOffer}>
+		<AppButton variant="secondary" onclick={dismissConfirmOffer}>
 			{translate(lang, 'common.cancel')}
-		</button>
-		<button type="button" class="btn-danger" onclick={commitConfirmOffer}>
+		</AppButton>
+		<AppButton variant="danger" onclick={commitConfirmOffer}>
 			{confirmPrimaryLabel}
-		</button>
+		</AppButton>
 	{/snippet}
 </BottomSheet>

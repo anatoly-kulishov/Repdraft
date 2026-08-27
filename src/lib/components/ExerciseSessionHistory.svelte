@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Spinner from '$lib/components/Spinner.svelte';
 	import { recentExerciseLogs } from '$lib/domain/session';
 	import { formatRelativeDay } from '$lib/i18n/format';
 	import { translate } from '$lib/i18n/messages';
@@ -30,9 +31,9 @@
 <section class="exercise-history panel">
 	<h2 class="section-title mb-2">{translate(lang, 'exercise.historyTitle')}</h2>
 	{#if !historyReady}
-		<p class="exercise-history__hint text-sm text-[var(--color-muted)]">
-			{translate(lang, 'common.loading')}
-		</p>
+		<div class="exercise-history__hint">
+			<Spinner label={translate(lang, 'common.loading')} size="sm" />
+		</div>
 	{:else if logs.length === 0}
 		<p class="exercise-history__hint text-sm text-[var(--color-muted)]">
 			{translate(lang, 'exercise.historyEmpty')}

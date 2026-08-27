@@ -1,5 +1,8 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppInput from '$lib/components/AppInput.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
@@ -54,6 +57,12 @@
 	let fromPath = $derived($page.url.pathname);
 	let viewSession = $derived(editing && editSession ? editSession : session);
 	let historyVolumeKg = $derived(viewSession ? sessionVolumeKg(viewSession) : 0);
+	let technique = $state<{
+		id: string;
+		title: string;
+		hint: string;
+		image: string;
+	} | null>(null);
 
 	onMount(() => {
 		void (async () => {
@@ -266,14 +275,16 @@
 		actionLabel={translate(lang, 'nav.workouts')}
 	/>
 {:else}
+	<!-- Outside .history-detail: overflow-x:clip there would clip sticky full-bleed margins. -->
+	<div class="lg:hidden">
+		<ScreenHeader
+			class="history-detail__screen-header"
+			title={session.planName}
+			backHref={WORKOUTS_HISTORY_HREF}
+			actions={historyDetailActions}
+		/>
+	</div>
 	<section class="content-page content-page--narrow soft-enter history-detail">
-		<div class="lg:hidden">
-			<ScreenHeader
-				title={session.planName}
-				backHref={WORKOUTS_HISTORY_HREF}
-				actions={historyDetailActions}
-			/>
-		</div>
 		<div class="subroute-desktop-head">
 			<SubrouteBack href={WORKOUTS_HISTORY_HREF} label={translate(lang, 'builder.backWorkouts')} />
 			<div class="history-detail__title-row">
@@ -302,12 +313,21 @@
 				<li class="history-exercise">
 					{#if editing}
 						<div class="history-exercise__head is-static is-editing">
-							<span
-								class="media-well history-exercise__thumb"
-								class:is-placeholder={!meta}
-								aria-hidden="true"
-							>
-								{#if meta}
+							{#if meta}
+								{@const title = label}
+								<AppButton
+									variant="ghost"
+									class="history-exercise__thumb-btn media-well history-exercise__thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+									aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+									onclick={() => {
+										technique = {
+											id: meta.id,
+											title,
+											hint: `${labelTarget(meta.target, lang)} · ${labelEquipment(meta.equipment, lang)}`,
+											image: meta.image
+										};
+									}}
+								>
 									<img
 										src={`/${meta.image}`}
 										alt=""
@@ -316,8 +336,13 @@
 										loading="lazy"
 										decoding="async"
 									/>
-								{/if}
-							</span>
+								</AppButton>
+							{:else}
+								<span
+									class="media-well history-exercise__thumb is-placeholder"
+									aria-hidden="true"
+								></span>
+							{/if}
 							<div class="workout-preview-row-body">
 								<p class="workout-preview-row-title">{label}</p>
 								{#if meta}
@@ -326,23 +351,34 @@
 									</p>
 								{/if}
 							</div>
-							<button
-								type="button"
-								class="btn-ghost live-set-remove-btn history-exercise__remove"
+							<AppButton
+								variant="ghost"
+								class="live-set-remove-btn history-exercise__remove"
 								disabled={savingEdit || (editSession?.exercises.length ?? 0) <= 1}
 								aria-label={translate(lang, 'workouts.removeExercise')}
 								title={translate(lang, 'workouts.removeExercise')}
 								onclick={() => removeHistoryExercise(exIndex, label)}
 							>
 								<LucideIcon icon={Trash2} size={ICON_SMALL} />
-							</button>
+							</AppButton>
 						</div>
 					{:else if meta}
-						<a
-							class="history-exercise__head"
-							href={`/exercise/${meta.id}?from=${encodeURIComponent(fromPath)}`}
-						>
-							<span class="media-well history-exercise__thumb">
+						{@const title = label}
+						{@const detailHref = `/exercise/${meta.id}?from=${encodeURIComponent(fromPath)}`}
+						<div class="history-exercise__head">
+							<AppButton
+								variant="ghost"
+								class="history-exercise__thumb-btn media-well history-exercise__thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+								aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+								onclick={() => {
+									technique = {
+										id: meta.id,
+										title,
+										hint: `${labelTarget(meta.target, lang)} · ${labelEquipment(meta.equipment, lang)}`,
+										image: meta.image
+									};
+								}}
+							>
 								<img
 									src={`/${meta.image}`}
 									alt=""
@@ -351,17 +387,19 @@
 									loading="lazy"
 									decoding="async"
 								/>
-							</span>
-							<div class="workout-preview-row-body">
-								<p class="workout-preview-row-title">{label}</p>
-								<p class="workout-preview-row-sub">
-									{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
-								</p>
-							</div>
-							<span class="workout-preview-chevron" aria-hidden="true">
-								<LucideIcon icon={ChevronRight} size={ICON_BUTTON} />
-							</span>
-						</a>
+							</AppButton>
+							<a class="workout-preview-row-main" href={detailHref}>
+								<div class="workout-preview-row-body">
+									<p class="workout-preview-row-title">{title}</p>
+									<p class="workout-preview-row-sub">
+										{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
+									</p>
+								</div>
+								<span class="workout-preview-chevron" aria-hidden="true">
+									<LucideIcon icon={ChevronRight} size={ICON_BUTTON} />
+								</span>
+							</a>
+						</div>
 					{:else}
 						<div class="history-exercise__head is-static">
 							<span
@@ -385,8 +423,8 @@
 									<span class="history-exercise__set-i">{i + 1}</span>
 									{#if editing}
 										{@const key = setKey(exIndex, item.setIndex)}
-										<input
-											class="field history-set-field history-set-weight tabular-nums"
+										<AppInput
+											class="history-set-field history-set-weight tabular-nums"
 											type="text"
 											inputmode="decimal"
 											autocomplete="off"
@@ -400,8 +438,8 @@
 											}}
 										/>
 										<span class="history-exercise__set-unit">kg</span>
-										<input
-											class="field history-set-field history-set-reps tabular-nums"
+										<AppInput
+											class="history-set-field history-set-reps tabular-nums"
 											type="text"
 											inputmode="numeric"
 											autocomplete="off"
@@ -414,15 +452,15 @@
 												editDraft[key] = { ...(editDraft[key] ?? { w: '', r: '' }), r: next };
 											}}
 										/>
-										<button
-											type="button"
-											class="btn-ghost live-set-remove-btn"
+										<AppButton
+											variant="ghost"
+											class="live-set-remove-btn"
 											aria-label={translate(lang, 'live.removeSet')}
 											title={translate(lang, 'live.removeSet')}
 											onclick={() => removeHistorySet(exIndex, item.setIndex)}
 										>
 											<LucideIcon icon={Trash2} size={ICON_SMALL} />
-										</button>
+										</AppButton>
 									{:else}
 										<span class="history-exercise__set-weight">{item.set.weightKg ?? '—'} kg</span>
 										<span class="history-exercise__set-reps">× {item.set.reps ?? '—'}</span>
@@ -434,19 +472,33 @@
 						<p class="history-exercise__empty">{translate(lang, 'workouts.noLoggedSets')}</p>
 					{/if}
 					{#if editing}
-						<button
-							type="button"
-							class="btn-ghost history-exercise__add-set"
+						<AppButton
+							variant="ghost"
+							class="history-exercise__add-set"
 							disabled={savingEdit || ex.sets.length >= SETS.max}
 							aria-label={translate(lang, 'live.addSet')}
 							title={translate(lang, 'live.addSet')}
 							onclick={() => addHistorySet(exIndex)}
 						>
 							<LucideIcon icon={Plus} size={ICON_BUTTON} />
-						</button>
+						</AppButton>
 					{/if}
 				</li>
 			{/each}
 		</ul>
 	</section>
+{/if}
+
+{#if technique}
+	<ExerciseTechniqueSheet
+		open
+		titleId={`history-technique-${technique.id}`}
+		title={technique.title}
+		hint={technique.hint}
+		imagePath={technique.image}
+		detailHref={`/exercise/${technique.id}?from=${encodeURIComponent(fromPath)}`}
+		onDismiss={() => {
+			technique = null;
+		}}
+	/>
 {/if}

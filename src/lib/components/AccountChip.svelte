@@ -58,8 +58,8 @@
 			class="account-avatar is-photo"
 			src={avatarUrl}
 			alt=""
-			width="30"
-			height="30"
+			width="32"
+			height="32"
 			referrerpolicy="no-referrer"
 			decoding="async"
 			aria-hidden="true"

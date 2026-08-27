@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { page } from '$app/stores';
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppPanel from '$lib/components/AppPanel.svelte';
 	import BrandTagline from '$lib/components/BrandTagline.svelte';
 	import HomePageSkeleton from '$lib/components/HomePageSkeleton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -8,6 +11,7 @@
 	import {
 		completedExerciseCount,
 		completedSetCount,
+		isSessionFullyLogged,
 		sessionDurationMs,
 		totalSetCount
 	} from '$lib/domain/session';
@@ -24,7 +28,9 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { ChevronRight, LogIn, Plus } from '@lucide/svelte';
+	import { ChevronRight, LogIn, NotebookPen, Plus, Smartphone, UserRound } from '@lucide/svelte';
+
+	let { data }: { data: { bootStart: boolean } } = $props();
 
 	let lang = $derived($resolvedLocale);
 	let active = $derived($live.session);
@@ -46,11 +52,28 @@
 		$auth.ready && $auth.dataBootstrap && $live.ready && $live.historyHydrated && indexReady
 	);
 
+	/** Dev/QA: ?skeleton=create|start */
+	let skeletonForce = $derived(
+		$page.url.searchParams.get('skeleton') === 'create'
+			? ('create' as const)
+			: $page.url.searchParams.get('skeleton') === 'start'
+				? ('start' as const)
+				: null
+	);
+	/** SSR cookie + auth boot: prefer start grid when plans or session are likely. */
+	let bootStart = $derived(data.bootStart);
+	let showBootSkeleton = $derived(!pageReady || skeletonForce !== null);
+	let bootSkeletonVariant = $derived.by(() => {
+		if (skeletonForce) return skeletonForce;
+		return bootStart ? ('start' as const) : ('create' as const);
+	});
+
 	let isCreateHome = $derived(!hasPlans);
 	let showGuestCreateHero = $derived(pageReady && isGuest && isCreateHome);
 	/** Signed-in home, or guest who already has plans (needs Start, not only a list). */
-	let showReadyHeader = $derived($auth.ready && !showGuestCreateHero && (hasPlans || !isGuest));
-
+	let showReadyHeader = $derived(
+		pageReady && !showGuestCreateHero && (hasPlans || !isGuest)
+	);
 	/** Prefer last finished plan if still saved, else first plan — one hop to preview+Start. */
 	let nextPlan = $derived.by(() => {
 		if ($plans.length === 0) return null;
@@ -76,6 +99,9 @@
 	);
 	let continueRemaining = $derived.by(() => {
 		if (!active) return '';
+		if (isSessionFullyLogged(active)) {
+			return translate(lang, 'home.remainingFinishReady');
+		}
 		const exercisesLeft = Math.max(0, active.exercises.length - completedExerciseCount(active));
 		const setsLeft = Math.max(0, totalSetCount(active) - completedSetCount(active));
 		return translate(lang, 'home.remainingProgress', {
@@ -99,16 +125,19 @@
 				: translate(lang, 'home.noPlansLead')
 	);
 
+	const guestHeroPoints = [
+		{ icon: NotebookPen, key: 'home.guestPointLog' as const },
+		{ icon: Smartphone, key: 'home.guestPointLocal' as const },
+		{ icon: UserRound, key: 'home.guestPointSync' as const }
+	];
+
+	let firstName = $derived(greetingFirstName($greetingName, $auth.user));
+	let showGreeting = $derived($auth.ready && !isGuest);
 	let greetingText = $derived.by(() => {
 		const period = dayGreetingPeriod();
 		const key = homeGreetingMessageKey(period, Boolean(firstName));
 		return firstName ? translate(lang, key, { name: firstName }) : translate(lang, key);
 	});
-
-	let firstName = $derived(greetingFirstName($greetingName, $auth.user));
-
-	/** Guests get the sign-in hero instead of a redundant time-of-day greeting. */
-	let showGreeting = $derived($auth.ready && !isGuest);
 
 	onMount(() => {
 		void (async () => {
@@ -138,36 +167,39 @@
 	class:home-page--start={pageReady && hasPlans}
 	class:home-page--create={pageReady && isCreateHome}
 	class:home-page--guest={pageReady && isGuest}
+	class:home-page--booting={showBootSkeleton}
+	class:home-page--booting-start={showBootSkeleton && bootSkeletonVariant === 'start'}
+	class:home-page--booting-create={showBootSkeleton && bootSkeletonVariant === 'create'}
 	aria-labelledby="home-heading"
 >
-	{#if showReadyHeader}
+	{#if showBootSkeleton}
+		<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
+		<HomePageSkeleton
+			label={translate(lang, 'common.loading')}
+			variant={bootSkeletonVariant}
+		/>
+	{:else if showReadyHeader && !hasActive}
 		<header class="home-header home-header--mockup">
 			<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
 			<div class="home-header__copy">
 				{#if showGreeting}
-					<p class="home-header__greeting">{greetingText}</p>
-				{:else if isGuest}
-					<p class="home-header__greeting">{translate(lang, 'home.readyTitle')}</p>
-				{:else}
-					<p class="home-header__greeting" aria-hidden="true">
-						<span
-							class="inline-block h-[1.75rem] w-[min(100%,15rem)] animate-pulse rounded bg-[var(--color-surface-muted)]"
-						></span>
-					</p>
+					<p class="home-header__greeting home-header__greeting--desktop">{greetingText}</p>
 				{/if}
-				{#if pageReady && !isGuest}
+				{#if !isGuest}
 					<p class="home-header__subtitle">{mockupSubtitle}</p>
 					{#if isFirstTimeHome}
 						<BrandTagline class="brand-tagline--home-header" />
 					{/if}
+				{:else}
+					<p class="home-header__subtitle">{translate(lang, 'home.readyTitle')}</p>
 				{/if}
 			</div>
-			{#if pageReady && !hasActive}
-				<a class="btn-primary home-header__cta" href={mockupCtaHref}>
-					{mockupCtaLabel}
-				</a>
-			{/if}
+			<AppButton href={mockupCtaHref} class="home-header__cta">
+				{mockupCtaLabel}
+			</AppButton>
 		</header>
+	{:else if showReadyHeader && hasActive}
+		<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
 	{:else if showGuestCreateHero}
 		<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
 	{:else}
@@ -178,9 +210,7 @@
 		</header>
 	{/if}
 
-	{#if !pageReady}
-		<HomePageSkeleton label={translate(lang, 'common.loading')} />
-	{:else}
+	{#if !showBootSkeleton}
 		{#if hasActive && active}
 			<a class="home-continue-card panel" href={`/live/${active.planId}`}>
 				<div class="home-continue-card__copy">
@@ -188,48 +218,50 @@
 					<p class="home-continue-card__title">{active.planName}</p>
 					<p class="home-continue-card__meta">{continueRemaining}</p>
 				</div>
-				<span class="btn-primary home-continue-card__cta">{translate(lang, 'home.continue')}</span>
+				<span
+					class="btn-primary home-continue-card__cta"
+					>{translate(lang, 'home.continue')}</span
+				>
 			</a>
 		{/if}
 		<div class="home-dashboard">
 			{#if showGuestCreateHero}
 				<div class="home-dashboard-top">
-					<div class="home-hero">
+					<div class="home-hero home-hero--guest">
+						<p class="home-hero-kicker">{translate(lang, 'home.guestTrainKicker')}</p>
 						<h2 class="home-hero-title">{createHeroTitle}</h2>
 						<p class="home-hero-meta">{createHeroLead}</p>
+						<ul class="home-hero-points">
+							{#each guestHeroPoints as point (point.key)}
+								<li class="home-hero-point">
+									<span class="home-hero-point__icon" aria-hidden="true">
+										<LucideIcon icon={point.icon} size={ICON_SMALL} />
+									</span>
+									<span class="home-hero-point__text">{translate(lang, point.key)}</span>
+								</li>
+							{/each}
+						</ul>
 						{#if isFirstTimeHome}
 							<BrandTagline class="brand-tagline--hero" />
 						{/if}
 						<div class="home-hero-actions">
-							<a
-								class="btn-primary home-hero-cta items-center justify-center gap-2"
+							<AppButton
 								href={BUILDER_NEW_HREF}
+								class="home-hero-cta items-center justify-center gap-2"
 							>
 								<LucideIcon icon={Plus} size={ICON_PRIMARY} />
 								{translate(lang, 'home.guestCreateLocal')}
-							</a>
-							<a
-								class="btn-secondary home-hero-secondary items-center justify-center gap-2"
+							</AppButton>
+							<AppButton
+								variant="secondary"
 								href={authHref}
+								class="home-hero-secondary items-center justify-center gap-2"
 							>
 								<LucideIcon icon={LogIn} size={ICON_PRIMARY} />
 								{translate(lang, 'nav.signIn')}
-							</a>
+							</AppButton>
 						</div>
 					</div>
-					{#if !hasSessionHistory}
-						<nav class="home-guest-next">
-							<a class="panel home-guest-next__card" href="/exercises">
-								<span class="home-guest-next__title">{translate(lang, 'nav.exercises')}</span>
-								<span class="home-guest-next__hint">{translate(lang, 'home.guestBrowseHint')}</span>
-								<LucideIcon
-									icon={ChevronRight}
-									size={ICON_SMALL}
-									class="home-guest-next__chevron"
-								/>
-							</a>
-						</nav>
-					{/if}
 				</div>
 			{/if}
 
@@ -240,12 +272,10 @@
 							<div class="home-section home-dashboard-plans">
 								<div class="home-section-head">
 									<h2 class="section-title">{translate(lang, 'home.plansTitle')}</h2>
-									{#if $plans.length > homePlans.length}
-										<a class="home-section-link" href="/workouts">
-											{translate(lang, 'home.viewAllWorkouts')}
-											<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
-										</a>
-									{/if}
+									<a class="home-section-link" href="/workouts">
+										{translate(lang, 'nav.workouts')}
+										<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
+									</a>
 								</div>
 								<ul class="entity-list">
 									{#each homePlans as plan (plan.id)}
@@ -260,7 +290,11 @@
 													{translate(lang, 'workouts.exCount', { n: planExerciseSlotCount(plan) })}
 												</span>
 											</a>
-											<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="entity-row__chevron shrink-0" />
+											<LucideIcon
+												icon={ChevronRight}
+												size={ICON_SMALL}
+												class="entity-row__chevron shrink-0"
+											/>
 										</li>
 									{/each}
 									{#if homePlans.length < 4}
@@ -298,49 +332,59 @@
 				{/if}
 
 				{#if recent.length > 0 || (!isGuest && !hasPlans)}
-				<div class="home-dashboard-aside">
-					{#if recent.length > 0}
-						<div class="home-section">
-							<div class="home-section-head">
-								<h2 class="section-title">{translate(lang, 'home.recentTitle')}</h2>
-								<a class="home-section-link" href="/workouts?tab=history">
-									{translate(lang, 'home.recentAll')}
-									<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
-								</a>
-							</div>
-							<ul class="entity-list">
-								{#each recent as session (session.id)}
-									<li>
-										<a class="entity-row entity-row--link" href={`/workouts/history/${session.id}`}>
-											<span class="entity-row__main">
-												<span class="entity-row__title">{session.planName}</span>
-												<span class="entity-row__meta">
-													{translate(lang, 'home.recentMeta', {
-														when: formatRelativeDay(session.finishedAt ?? session.startedAt, lang),
-														min: formatDurationMinutes(sessionDurationMs(session)) ?? '—',
-														sets: completedSetCount(session)
-													})}
+					<div class="home-dashboard-aside">
+						{#if recent.length > 0}
+							<div class="home-section">
+								<div class="home-section-head">
+									<h2 class="section-title">{translate(lang, 'home.recentTitle')}</h2>
+									<a class="home-section-link" href="/workouts?tab=history">
+										{translate(lang, 'home.recentAll')}
+										<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
+									</a>
+								</div>
+								<ul class="entity-list">
+									{#each recent as session (session.id)}
+										<li>
+											<a
+												class="entity-row entity-row--link"
+												href={`/workouts/history/${session.id}`}
+											>
+												<span class="entity-row__main">
+													<span class="entity-row__title">{session.planName}</span>
+													<span class="entity-row__meta">
+														{translate(lang, 'home.recentMeta', {
+															when: formatRelativeDay(
+																session.finishedAt ?? session.startedAt,
+																lang
+															),
+															min: formatDurationMinutes(sessionDurationMs(session)) ?? '—',
+															sets: completedSetCount(session)
+														})}
+													</span>
 												</span>
-											</span>
-											<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="entity-row__chevron" />
-										</a>
-									</li>
-								{/each}
-							</ul>
-						</div>
-					{:else}
-						<div class="home-section">
-							<div class="home-section-head">
-								<h2 class="section-title">{translate(lang, 'home.recentPlaceholderTitle')}</h2>
+												<LucideIcon
+													icon={ChevronRight}
+													size={ICON_SMALL}
+													class="entity-row__chevron"
+												/>
+											</a>
+										</li>
+									{/each}
+								</ul>
 							</div>
-							<div class="panel home-aside-card home-aside-card--compact">
-								<p class="home-aside-card__hint">
-									{translate(lang, 'home.recentPlaceholderHint')}
-								</p>
+						{:else}
+							<div class="home-section">
+								<div class="home-section-head">
+									<h2 class="section-title">{translate(lang, 'home.recentPlaceholderTitle')}</h2>
+								</div>
+								<AppPanel class="home-aside-card home-aside-card--compact">
+									<p class="home-aside-card__hint">
+										{translate(lang, 'home.recentPlaceholderHint')}
+									</p>
+								</AppPanel>
 							</div>
-						</div>
-					{/if}
-				</div>
+						{/if}
+					</div>
 				{/if}
 			</div>
 		</div>

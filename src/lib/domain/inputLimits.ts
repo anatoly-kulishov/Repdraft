@@ -5,7 +5,9 @@ export const REPS = { min: 1, max: 500 } as const;
 export const LIVE_REPS = { min: 0, max: 500 } as const;
 export const SETS = { min: 1, max: 20 } as const;
 export const REST_SEC = { min: 0, max: 600 } as const;
-export const NOTE_MAX = 200;
+export const NOTE_MAX = 100;
+/** Builder / plan title — keeps cards and headers from overflowing. */
+export const PLAN_NAME_MAX = 48;
 
 /** Digits + optional one decimal; empty crumbs → ''. Does not clamp to max. */
 function shapeWeight(raw: string): string {
@@ -127,6 +129,11 @@ export function sanitizeNote(raw: string, maxLen = NOTE_MAX): string {
 		.slice(0, maxLen);
 }
 
+/** While typing: strip control chars and hard-cap length (no trim — keeps caret stable). */
+export function clampPlanName(raw: string, maxLen = PLAN_NAME_MAX): string {
+	return raw.replace(/[\u0000-\u001F\u007F]/g, '').slice(0, maxLen);
+}
+
 export function isValidWeightKg(value: number | null): boolean {
 	if (value == null) return true;
 	return Number.isFinite(value) && value >= WEIGHT_KG.min && value <= WEIGHT_KG.max;
@@ -191,4 +198,13 @@ export function runInputLimitsSelfCheck(): void {
 		throw new Error('filterWeightInput should strip minus');
 	}
 	if (sanitizeNote('  a\nb  ') !== 'a b') throw new Error('sanitizeNote whitespace');
+	if (sanitizeNote('x'.repeat(150)).length !== NOTE_MAX) {
+		throw new Error('sanitizeNote max length');
+	}
+	if (clampPlanName('x'.repeat(80)).length !== PLAN_NAME_MAX) {
+		throw new Error('clampPlanName max length');
+	}
+	if (clampPlanName('  ab  ') !== '  ab  ') {
+		throw new Error('clampPlanName keeps spaces while typing');
+	}
 }

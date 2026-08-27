@@ -1,4 +1,6 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
+	import { cn } from '$lib/utils.js';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import type { ExerciseIndexItem, SessionExercise } from '$lib/domain/types';
 	import type { AppLocale } from '$lib/i18n/locale';
@@ -40,9 +42,12 @@
 		{#each members as ex (ex.exerciseId)}
 			{@const meta = names.get(ex.exerciseId)}
 			<li>
-				<button
-					type="button"
-					class="live-alt-picker__option"
+				<AppButton
+					variant="ghost"
+					class={cn(
+						'live-alt-picker__option !h-auto !min-h-0 !min-w-0 !shrink w-full max-w-full p-0',
+						selectedId === ex.exerciseId && 'is-active'
+					)}
 					data-active={selectedId === ex.exerciseId}
 					onclick={() => (selectedId = ex.exerciseId)}
 				>
@@ -59,18 +64,17 @@
 							{ex.targetSets} × {ex.targetReps}
 						</span>
 					</span>
-				</button>
+				</AppButton>
 			</li>
 		{/each}
 	</ul>
-	<button
-		type="button"
-		class="btn-primary btn-block"
+	<AppButton
+		block
 		disabled={!selectedId}
 		onclick={() => {
 			if (selectedId) onConfirm(selectedId);
 		}}
 	>
 		{translate(lang, 'live.pickAlternativeContinue')}
-	</button>
+	</AppButton>
 </div>

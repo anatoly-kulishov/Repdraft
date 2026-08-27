@@ -1,4 +1,9 @@
 <script lang="ts">
+	import AppTextarea from '$lib/components/AppTextarea.svelte';
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppInput from '$lib/components/AppInput.svelte';
+	import AppLabel from '$lib/components/AppLabel.svelte';
+	import AppPanel from '$lib/components/AppPanel.svelte';
 	import {
 		coerceReps,
 		coerceWeightKg,
@@ -9,6 +14,7 @@
 		WEIGHT_KG
 	} from '$lib/domain/inputLimits';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import RecordsNoteChip from '$lib/components/RecordsNoteChip.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import {
@@ -22,7 +28,7 @@
 	import { records, recordsReady } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
-	import { ChevronDown, X } from '@lucide/svelte';
+	import { X } from '@lucide/svelte';
 	import { tick } from 'svelte';
 
 	let { exerciseId }: { exerciseId: string } = $props();
@@ -42,7 +48,7 @@
 	let dirty = false;
 	let invalidWeight = $state(false);
 	let invalidReps = $state(false);
-	let previewOpen = $state(false);
+	let notePreviewOpen = $state(false);
 
 	function markDirty() {
 		dirty = true;
@@ -90,7 +96,7 @@
 			boundId = id;
 			dirty = false;
 			syncedKey = '';
-			previewOpen = false;
+			notePreviewOpen = false;
 		}
 		const existing = records.get(id);
 		const next = existing ? { ...existing } : createEmptyRecord(id);
@@ -209,47 +215,38 @@
 			lang
 		)
 	);
-	let canExpandPreview = $derived(noteText.trim().length > 0);
+	let savedNotePreview = $derived(noteText.trim());
 </script>
 
-<section class="panel">
+<AppPanel>
 	<div class="mb-3 flex min-w-0 flex-wrap items-baseline justify-between gap-2">
 		<h2 class="section-title">{translate(lang, 'pr.title')}</h2>
 		<p class="shrink-0 text-xs text-[var(--color-muted)]">{translate(lang, 'pr.hint')}</p>
 	</div>
 
 	{#if hasSaved && liftPreview}
-		{#if canExpandPreview}
-			<button
-				type="button"
-				class="pr-now-chip is-button"
-				class:is-open={previewOpen}
-				aria-expanded={previewOpen}
-				title={translate(lang, previewOpen ? 'pr.nowCollapse' : 'pr.nowExpand')}
-				onclick={() => (previewOpen = !previewOpen)}
-			>
-				<span class="pr-now-chip__text">{translate(lang, 'pr.now', { value: liftPreview })}</span>
-				<span class="pr-now-chip__chevron" aria-hidden="true">
-					<LucideIcon icon={ChevronDown} size={ICON_SMALL} />
-				</span>
-			</button>
-			{#if previewOpen}
-				<p class="pr-now-note">{noteText.trim()}</p>
-			{/if}
-		{:else}
+		<div class="pr-now-preview">
 			<p class="pr-now-chip" title={liftPreview}>
 				<span class="pr-now-chip__text">{translate(lang, 'pr.now', { value: liftPreview })}</span>
 			</p>
-		{/if}
+			{#if savedNotePreview}
+				<RecordsNoteChip
+					text={savedNotePreview}
+					{lang}
+					open={notePreviewOpen}
+					measureRootSelector=".pr-now-preview"
+					onToggle={() => (notePreviewOpen = !notePreviewOpen)}
+				/>
+			{/if}
+		</div>
 	{/if}
 
 	<div class="grid min-w-0 grid-cols-2 gap-3">
-		<label class="field-label min-w-0">
+		<AppLabel class="min-w-0">
 			{translate(lang, 'pr.weight')}
 			<span class="field-shell mt-1">
-				<input
-					class="field"
-					class:is-invalid={invalidWeight}
+				<AppInput
+					class={invalidWeight ? 'is-invalid' : undefined}
 					aria-invalid={invalidWeight}
 					type="text"
 					inputmode="decimal"
@@ -263,13 +260,12 @@
 			<span id="pr-weight-hint" class="mt-1 block text-[11px] text-[var(--color-muted)]">
 				{WEIGHT_KG.min}-{WEIGHT_KG.max}
 			</span>
-		</label>
-		<label class="field-label min-w-0">
+		</AppLabel>
+		<AppLabel class="min-w-0">
 			{translate(lang, 'pr.reps')}
 			<span class="field-shell mt-1">
-				<input
-					class="field"
-					class:is-invalid={invalidReps}
+				<AppInput
+					class={invalidReps ? 'is-invalid' : undefined}
 					aria-invalid={invalidReps}
 					type="text"
 					inputmode="numeric"
@@ -283,31 +279,31 @@
 			<span id="pr-reps-hint" class="mt-1 block text-[11px] text-[var(--color-muted)]">
 				{REPS.min}-{REPS.max}
 			</span>
-		</label>
-		<label class="field-label col-span-2 min-w-0">
+		</AppLabel>
+		<AppLabel class="col-span-2 min-w-0">
 			<span class="flex items-center justify-between gap-2">
 				{translate(lang, 'pr.note')}
 				{#if noteText.length > 0}
-					<button
-						type="button"
-						class="btn-ghost pr-note-clear"
+					<AppButton
+						variant="ghost"
+						class="pr-note-clear"
 						aria-label={translate(lang, 'a11y.clearField')}
 						title={translate(lang, 'a11y.clearField')}
 						onclick={clearNote}
 					>
 						<LucideIcon icon={X} size={ICON_SMALL} />
-					</button>
+					</AppButton>
 				{/if}
 			</span>
 			<span class="field-shell mt-1">
-				<textarea
-					class="field pr-note-field"
-					rows="3"
+				<AppTextarea
+					class="pr-note-field"
+					rows={3}
 					maxlength={NOTE_MAX}
 					placeholder={translate(lang, 'pr.notePh')}
 					value={noteText}
 					oninput={onNoteInput}
-				></textarea>
+				/>
 			</span>
 			<span
 				class="mt-1 block text-right text-[11px]"
@@ -316,22 +312,27 @@
 			>
 				{noteText.length}/{NOTE_MAX}
 			</span>
-		</label>
+		</AppLabel>
 	</div>
 
-	<div class="mt-3 flex flex-wrap items-center gap-2">
-		<button type="button" class="btn-primary" disabled={busy} aria-busy={busy} onclick={() => void onSave()}>
+	<div class="pr-actions">
+		<AppButton
+			variant="secondary"
+			class="pr-actions__btn"
+			disabled={busy}
+			onclick={() => void onClear()}
+		>
+			{hasStoredEntry ? translate(lang, 'pr.delete') : translate(lang, 'pr.clear')}
+		</AppButton>
+		<AppButton class="pr-actions__btn" disabled={busy} aria-busy={busy} onclick={() => void onSave()}>
 			{#if busy}
-				<span class="inline-flex items-center gap-2">
+				<span class="inline-flex items-center justify-center gap-2">
 					<Spinner size="sm" block={false} />
 					{translate(lang, 'auth.wait')}
 				</span>
 			{:else}
 				{translate(lang, 'pr.save')}
 			{/if}
-		</button>
-		<button type="button" class="btn-link text-sm" disabled={busy} onclick={() => void onClear()}>
-			{hasStoredEntry ? translate(lang, 'pr.delete') : translate(lang, 'pr.clear')}
-		</button>
+		</AppButton>
 	</div>
-</section>
+</AppPanel>

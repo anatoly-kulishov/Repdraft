@@ -17,10 +17,14 @@
 	import { greetingName } from '$lib/stores/greetingName';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppInput from '$lib/components/AppInput.svelte';
+	import AppLabel from '$lib/components/AppLabel.svelte';
 	import AuthInterfacePrefs from '$lib/components/AuthInterfacePrefs.svelte';
 	import BrandTagline from '$lib/components/BrandTagline.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import PasswordField from '$lib/components/PasswordField.svelte';
+	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
@@ -30,6 +34,10 @@
 	import { restSoundEnabled } from '$lib/stores/prefs';
 	import { get } from 'svelte/store';
 	import { tick } from 'svelte';
+	import { appTheme } from '$lib/stores/theme';
+	import { Globe, LogOut, Moon, Timer, Shield, Sun } from '@lucide/svelte';
+
+	let { data }: { data: { bootLikelyAccount: boolean } } = $props();
 
 	type Panel = 'signin' | 'signup' | 'magic' | 'forgot' | 'check-email';
 
@@ -54,6 +62,9 @@
 	}
 
 	let lang = $derived($resolvedLocale);
+	let nextLang = $derived(lang === 'ru' ? ('en' as const) : ('ru' as const));
+	let theme = $derived($appTheme);
+	let nextTheme = $derived(theme === 'dark' ? ('light' as const) : ('dark' as const));
 	let restSoundHintKey = $derived(
 		browser &&
 			isIosDevice({
@@ -300,11 +311,34 @@
 	let passwordMode = $derived(
 		panel === 'signup' ? ('signup' as const) : panel === 'forgot' ? ('forgot' as const) : ('signin' as const)
 	);
-	let accountMode = $derived(
-		$auth.ready && $auth.configured && Boolean($auth.user) && !recoveryMode
+	let accountMode = $derived($auth.ready && Boolean($auth.user) && !recoveryMode);
+	/**
+	 * Boot skeleton: prefer account grid when a signed-in session is likely.
+	 * SSR reads `repdraft_auth_boot` cookie (set in auth store + app.html peek).
+	 * Client keeps the same flag for hydration, then live UI replaces when auth is ready.
+	 */
+	let bootLikelyAccount = $derived(data.bootLikelyAccount);
+	/** Dev/QA: force boot skeleton via ?skeleton=account|guest */
+	let skeletonForce = $derived(
+		$page.url.searchParams.get('skeleton') === 'account'
+			? ('account' as const)
+			: $page.url.searchParams.get('skeleton') === 'guest'
+				? ('guest' as const)
+				: null
 	);
+	let showAccountSkeleton = $derived(
+		skeletonForce === 'account' ||
+			((!browser || !$auth.ready) && !skeletonForce && bootLikelyAccount)
+	);
+	let showGuestSkeleton = $derived(
+		skeletonForce === 'guest' ||
+			((!browser || !$auth.ready) && !skeletonForce && !bootLikelyAccount)
+	);
+	let showBootSkeleton = $derived(showAccountSkeleton || showGuestSkeleton);
+	/** Real cloud-off UI only after client auth finished and keys are missing. */
+	let showCloudOff = $derived(browser && $auth.ready && !$auth.configured && !showBootSkeleton);
 	let guestExtrasMode = $derived(
-		$auth.ready && !accountMode && !recoveryMode
+		$auth.ready && !accountMode && !recoveryMode && !showBootSkeleton
 	);
 
 	$effect(() => {
@@ -323,6 +357,7 @@
 			greetingNameSaving = false;
 		}
 	}
+
 </script>
 
 <svelte:head>
@@ -331,27 +366,33 @@
 
 <section
 	class="auth-page content-page"
-	class:auth-page--account={accountMode}
+	class:auth-page--account={accountMode && !showBootSkeleton}
+	class:auth-page--booting={showBootSkeleton}
+	class:auth-page--booting-account={showAccountSkeleton}
+	class:auth-page--booting-guest={showGuestSkeleton}
 >
 	<div class="lg:hidden">
-		<ScreenHeader title={translate(lang, 'auth.title')} backHref={nextPath} />
-	</div>
-	<header class="page-header auth-page__header">
-		<div class="subroute-desktop-head">
-			<SubrouteBack href={nextPath} label={backLabel} />
-		</div>
-		<div class="auth-page__heading">
-			<h1 class="page-title auth-page__title hidden lg:block">{translate(lang, 'auth.title')}</h1>
-		</div>
-		<p class="page-lead auth-page__lead">{translate(lang, 'auth.lead')}</p>
-		{#if guestExtrasMode}
-			<BrandTagline class="brand-tagline--auth" />
+		{#if $auth.ready && !accountMode && !showBootSkeleton}
+			<ScreenHeader title={translate(lang, 'auth.title')} backHref={nextPath} />
 		{/if}
-	</header>
+	</div>
+	{#if $auth.ready && !accountMode && !showBootSkeleton}
+		<header class="page-header page-header--compact auth-page__header">
+			<div class="subroute-desktop-head">
+				<SubrouteBack href={nextPath} label={backLabel} />
+			</div>
+			<div class="auth-page__heading">
+				<h1 class="page-title auth-page__title hidden lg:block">{translate(lang, 'auth.title')}</h1>
+			</div>
+			{#if guestExtrasMode}
+				<BrandTagline class="brand-tagline--auth" />
+			{/if}
+		</header>
+	{/if}
 
-	{#if !$auth.ready}
-		<PageSkeleton variant="auth" rows={2} />
-	{:else if !$auth.configured}
+	{#if showBootSkeleton}
+		<PageSkeleton variant={showAccountSkeleton ? 'auth' : 'auth-guest'} rows={2} />
+	{:else if showCloudOff}
 		<div class="auth-guest-stack">
 			<div class="auth-signin panel">
 				<p class="text-sm font-semibold">{translate(lang, 'auth.cloudOffTitle')}</p>
@@ -385,9 +426,9 @@
 					invalid={fieldsInvalid}
 				/>
 				{#if message}
-					<p class="text-sm text-[var(--color-muted)]">{message}</p>
+					<p class="auth-form__error" role="alert">{message}</p>
 				{/if}
-				<button type="submit" class="btn-primary btn-block" disabled={loading}>
+				<AppButton type="submit" block disabled={loading}>
 					{#if loading}
 						<span class="inline-flex items-center gap-2">
 							<Spinner size="sm" block={false} />
@@ -396,20 +437,25 @@
 					{:else}
 						{translate(lang, 'auth.submitNewPassword')}
 					{/if}
-				</button>
+				</AppButton>
 			</form>
 		</div>
 	{:else if $auth.user}
-		<div class="auth-account panel">
-			<div class="auth-account__identity">
-				<div class="auth-profile">
+		<div class="auth-account">
+			<header class="profile-hero">
+				<div class="profile-hero__toolbar">
+					<SubrouteBack href={nextPath} label={backLabel} />
+				</div>
+
+				<div class="profile-hero__stage">
+					<div class="profile-hero__glow" aria-hidden="true"></div>
 					{#if showProfilePhoto && profileAvatar}
 						<img
-							class="account-avatar is-photo auth-profile__avatar"
+							class="account-avatar is-photo profile-hero__avatar"
 							src={profileAvatar}
 							alt=""
-							width="64"
-							height="64"
+							width="96"
+							height="96"
 							referrerpolicy="no-referrer"
 							decoding="async"
 							onerror={() => {
@@ -417,179 +463,196 @@
 							}}
 						/>
 					{:else if profileInitials}
-						<span class="account-avatar auth-profile__avatar" aria-hidden="true">{profileInitials}</span>
+						<span class="account-avatar profile-hero__avatar" aria-hidden="true">{profileInitials}</span>
+					{:else}
+						<span class="account-avatar is-guest profile-hero__avatar" aria-hidden="true">
+							{profileName?.charAt(0)?.toUpperCase() ?? '?'}
+						</span>
 					{/if}
-					<div class="auth-profile__text min-w-0">
-						<div class="auth-profile__meta">
-							<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.signedInAs')}</p>
-							{#if profileProviderLabel}
-								<span class="auth-provider-badge">{profileProviderLabel}</span>
-							{/if}
-						</div>
-						{#if profileName}
-							<p class="auth-profile__name truncate">{profileName}</p>
-						{/if}
-						{#if $auth.user.email}
-							<p class="text-sm text-[var(--color-muted)] truncate">{$auth.user.email}</p>
-						{/if}
-					</div>
 				</div>
-				<p class="auth-account__sync-hint">{translate(lang, 'auth.syncedHint')}</p>
-			</div>
 
-			<form
-				class="auth-account__section"
-				onsubmit={(e) => {
-					e.preventDefault();
-					void saveGreetingName();
-				}}
-			>
-				<label class="field-label" for="auth-greeting-name">
-					{translate(lang, 'auth.greetingNameLabel')}
-					<input
+				<h1 class="profile-hero__name">{profileName || $auth.user.email}</h1>
+				{#if profileName && $auth.user.email}
+					<p class="profile-hero__meta">{$auth.user.email}</p>
+				{/if}
+				{#if profileProviderLabel}
+					<span class="auth-provider-badge profile-hero__badge">{profileProviderLabel}</span>
+				{/if}
+			</header>
+
+			<div class="profile-settings-stack">
+				<form
+					id="auth-greeting-panel"
+					class="profile-settings-group panel"
+					onsubmit={(e) => {
+						e.preventDefault();
+						void saveGreetingName();
+					}}
+				>
+					<p class="profile-settings-group__title">{translate(lang, 'auth.greetingNameLabel')}</p>
+					<AppInput
 						id="auth-greeting-name"
-						class="field mt-1 w-full"
+						class="profile-settings-group__field"
 						type="text"
 						autocomplete="nickname"
 						maxlength={GREETING_NAME_MAX}
 						placeholder={translate(lang, 'auth.greetingNamePh')}
 						bind:value={greetingNameInput}
+						aria-label={translate(lang, 'auth.greetingNameLabel')}
 					/>
-				</label>
-				<p class="mt-1 text-xs text-[var(--color-muted)]">
-					{translate(lang, 'auth.greetingNameHint')}
-				</p>
-				<button type="submit" class="btn-secondary auth-account__save" disabled={greetingNameSaving}>
-					{#if greetingNameSaving}
-						<span class="inline-flex items-center gap-2">
-							<Spinner size="sm" block={false} />
-							{translate(lang, 'auth.wait')}
-						</span>
-					{:else}
-						{translate(lang, 'auth.greetingNameSave')}
-					{/if}
-				</button>
-			</form>
+					<p class="profile-settings-group__hint">{translate(lang, 'auth.greetingNameHint')}</p>
+					<AppButton
+						type="submit"
+						variant="secondary"
+						class="profile-settings-group__action"
+						disabled={greetingNameSaving}
+					>
+						{#if greetingNameSaving}
+							<span class="inline-flex items-center gap-2">
+								<Spinner size="sm" block={false} />
+								{translate(lang, 'auth.wait')}
+							</span>
+						{:else}
+							{translate(lang, 'auth.greetingNameSave')}
+						{/if}
+					</AppButton>
+				</form>
 
-			<AuthInterfacePrefs />
+				<div class="profile-settings-group panel">
+					<p class="profile-settings-group__title">{translate(lang, 'settings.interfaceTitle')}</p>
+					<ProfileSettingsRow
+						icon={Globe}
+						label={translate(lang, 'lang.label')}
+						value={translate(lang, lang === 'ru' ? 'lang.ru' : 'lang.en')}
+						ariaLabel={translate(lang, 'settings.cycleHint', {
+							label: translate(lang, 'lang.label'),
+							current: translate(lang, lang === 'ru' ? 'lang.ru' : 'lang.en'),
+							next: translate(lang, nextLang === 'ru' ? 'lang.ru' : 'lang.en')
+						})}
+						onclick={() => resolvedLocale.set(nextLang)}
+					/>
+					<ProfileSettingsRow
+						icon={theme === 'light' ? Sun : Moon}
+						label={translate(lang, 'settings.theme')}
+						value={translate(lang, theme === 'light' ? 'settings.themeLight' : 'settings.themeDark')}
+						ariaLabel={translate(lang, 'settings.cycleHint', {
+							label: translate(lang, 'settings.theme'),
+							current: translate(lang, theme === 'light' ? 'settings.themeLight' : 'settings.themeDark'),
+							next: translate(lang, nextTheme === 'light' ? 'settings.themeLight' : 'settings.themeDark')
+						})}
+						onclick={() => appTheme.set(nextTheme)}
+					/>
+					<p class="profile-settings-group__hint">{translate(lang, 'settings.themeHint')}</p>
+				</div>
 
-			<div class="auth-account__section">
-				<p class="auth-prefs__title">{translate(lang, 'settings.sessionTitle')}</p>
-				<label class="auth-pref-toggle">
-					<span class="auth-pref-toggle__copy">
-						<span class="auth-pref-toggle__label">{translate(lang, 'settings.restSound')}</span>
-						<span class="auth-pref-toggle__hint">{translate(lang, restSoundHintKey)}</span>
-					</span>
-					<input
-						type="checkbox"
-						class="auth-pref-toggle__input"
-						checked={$restSoundEnabled}
-						onchange={(e) => {
-							restSoundEnabled.set((e.currentTarget as HTMLInputElement).checked);
+				<div class="profile-settings-group panel">
+					<p class="profile-settings-group__title">{translate(lang, 'settings.sessionTitle')}</p>
+					<ProfileSettingsRow icon={Timer} label={translate(lang, 'settings.restSound')}>
+						<input
+							type="checkbox"
+							class="auth-pref-toggle__input profile-settings-row__toggle"
+							checked={$restSoundEnabled}
+							aria-label={translate(lang, 'settings.restSound')}
+							onchange={(e) => {
+								restSoundEnabled.set((e.currentTarget as HTMLInputElement).checked);
+							}}
+						/>
+					</ProfileSettingsRow>
+					<p class="profile-settings-group__hint">{translate(lang, restSoundHintKey)}</p>
+				</div>
+
+				<div class="profile-settings-group panel profile-settings-group--data">
+					<p class="profile-settings-group__title">{translate(lang, 'settings.exportTitle')}</p>
+					<p class="profile-settings-group__hint">{translate(lang, 'settings.exportHint')}</p>
+					<DataExportSection embedded />
+				</div>
+
+				<div class="profile-settings-group panel">
+					<p class="profile-settings-group__title">{translate(lang, 'settings.accountTitle')}</p>
+					<ProfileSettingsRow
+						icon={Shield}
+						label={translate(lang, 'privacy.link')}
+						href="/privacy"
+					/>
+					<ProfileSettingsRow
+						icon={LogOut}
+						iconTone="accent"
+						label={loading ? translate(lang, 'auth.wait') : translate(lang, 'auth.logout')}
+						ariaLabel={translate(lang, 'auth.logout')}
+						onclick={() => {
+							void logout();
 						}}
 					/>
-				</label>
-			</div>
+				</div>
 
-			<DataExportSection />
+				<div class="auth-danger-zone" aria-labelledby="auth-danger-title">
+					<p class="auth-danger-zone__eyebrow">{translate(lang, 'auth.deleteZoneLabel')}</p>
+					<p id="auth-danger-title" class="auth-danger-zone__title">{translate(lang, 'auth.deleteTitle')}</p>
+					<p class="auth-danger-zone__lead">{translate(lang, 'auth.deleteLead')}</p>
+					<ul class="auth-danger-zone__list">
+						<li>{translate(lang, 'auth.deleteBulletPlans')}</li>
+						<li>{translate(lang, 'auth.deleteBulletRecords')}</li>
+						<li>{translate(lang, 'auth.deleteBulletSessions')}</li>
+						<li>{translate(lang, 'auth.deleteBulletClips')}</li>
+					</ul>
 
-			<div class="auth-account__actions">
-				<button
-					type="button"
-					class="btn-secondary auth-account__logout"
-					disabled={loading}
-					aria-busy={loading}
-					onclick={logout}
-				>
-					{#if loading}
-						<span class="inline-flex items-center gap-2">
-							<Spinner size="sm" block={false} />
-							{translate(lang, 'auth.wait')}
-						</span>
+					{#if !deleteConfirmOpen}
+						<AppButton
+							variant="danger"
+							class="auth-danger-zone__trigger"
+							disabled={loading}
+							onclick={openDeleteConfirm}
+						>
+							{translate(lang, 'auth.deleteButton')}
+						</AppButton>
 					{:else}
-						{translate(lang, 'auth.logout')}
-					{/if}
-				</button>
-			</div>
-
-			<p class="auth-account__legal">
-				<span class="auth-account__legal-label">{translate(lang, 'auth.privacyHint')}</span>
-				<a class="auth-account__legal-link" href="/privacy">{translate(lang, 'privacy.link')}</a>
-			</p>
-
-			<div class="auth-danger-zone" aria-labelledby="auth-danger-title">
-				<p class="auth-danger-zone__eyebrow">{translate(lang, 'auth.deleteZoneLabel')}</p>
-				<p id="auth-danger-title" class="auth-danger-zone__title">{translate(lang, 'auth.deleteTitle')}</p>
-				<p class="auth-danger-zone__lead">{translate(lang, 'auth.deleteLead')}</p>
-				<ul class="auth-danger-zone__list">
-					<li>{translate(lang, 'auth.deleteBulletPlans')}</li>
-					<li>{translate(lang, 'auth.deleteBulletRecords')}</li>
-					<li>{translate(lang, 'auth.deleteBulletSessions')}</li>
-					<li>{translate(lang, 'auth.deleteBulletClips')}</li>
-				</ul>
-
-				{#if !deleteConfirmOpen}
-					<button
-						type="button"
-						class="btn-danger auth-danger-zone__trigger"
-						disabled={loading}
-						onclick={openDeleteConfirm}
-					>
-						{translate(lang, 'auth.deleteButton')}
-					</button>
-				{:else}
-					<div
-						class="auth-danger-zone__confirm"
-						role="group"
-						aria-labelledby="auth-delete-confirm-hint"
-					>
-						<label class="field-label" for="auth-delete-confirm">
-							<span id="auth-delete-confirm-hint">
-								{translate(lang, 'auth.deleteConfirmHint', { word: deleteConfirmWord })}
-							</span>
-							<input
-								id="auth-delete-confirm"
-								class="field mt-1 w-full"
-								type="text"
-								autocomplete="off"
-								autocapitalize="characters"
-								spellcheck="false"
-								placeholder={deleteConfirmWord}
-								bind:value={deleteConfirmText}
-								disabled={loading}
-								onkeydown={(e) => {
-									if (e.key === 'Escape') cancelDeleteConfirm();
-								}}
-							/>
-						</label>
-						<div class="auth-danger-zone__confirm-actions">
-							<button
-								type="button"
-								class="btn-secondary"
-								disabled={loading}
-								onclick={cancelDeleteConfirm}
-							>
-								{translate(lang, 'auth.deleteCancel')}
-							</button>
-							<button
-								type="button"
-								class="btn-danger"
-								disabled={loading || !deleteConfirmReady}
-								aria-busy={loading}
-								onclick={deleteAccount}
-							>
-								{#if loading}
-									<span class="inline-flex items-center gap-2">
-										<Spinner size="sm" block={false} />
-										{translate(lang, 'auth.wait')}
-									</span>
-								{:else}
-									{translate(lang, 'auth.deleteButtonFinal')}
-								{/if}
-							</button>
+						<div
+							class="auth-danger-zone__confirm"
+							role="group"
+							aria-labelledby="auth-delete-confirm-hint"
+						>
+							<AppLabel for="auth-delete-confirm">
+								<span id="auth-delete-confirm-hint">
+									{translate(lang, 'auth.deleteConfirmHint', { word: deleteConfirmWord })}
+								</span>
+								<AppInput
+									id="auth-delete-confirm"
+									class="mt-1 w-full"
+									type="text"
+									autocomplete="off"
+									autocapitalize="characters"
+									spellcheck="false"
+									placeholder={deleteConfirmWord}
+									bind:value={deleteConfirmText}
+									disabled={loading}
+									onkeydown={(e) => {
+										if (e.key === 'Escape') cancelDeleteConfirm();
+									}}
+								/>
+							</AppLabel>
+							<div class="auth-danger-zone__confirm-actions">
+								<AppButton variant="secondary" disabled={loading} onclick={cancelDeleteConfirm}>
+									{translate(lang, 'auth.deleteCancel')}
+								</AppButton>
+								<AppButton
+									variant="danger"
+									disabled={loading || !deleteConfirmReady}
+									aria-busy={loading}
+									onclick={deleteAccount}
+								>
+									{#if loading}
+										<span class="inline-flex items-center gap-2">
+											<Spinner size="sm" block={false} />
+											{translate(lang, 'auth.wait')}
+										</span>
+									{:else}
+										{translate(lang, 'auth.deleteButtonFinal')}
+									{/if}
+								</AppButton>
+							</div>
 						</div>
-					</div>
-				{/if}
+					{/if}
+				</div>
 			</div>
 		</div>
 	{:else if panel === 'check-email'}
@@ -605,9 +668,9 @@
 						{translate(lang, 'auth.checkEmailSignup', { email: email.trim() })}
 					{/if}
 				</p>
-				<button type="button" class="btn-secondary btn-block" onclick={() => setPanel('signin')}>
+				<AppButton variant="secondary" block onclick={() => setPanel('signin')}>
 					{translate(lang, 'auth.backToSignIn')}
-				</button>
+				</AppButton>
 			</div>
 			{@render guestSettingsPanel()}
 		</div>
@@ -623,12 +686,11 @@
 					}}
 				>
 					<p class="text-sm leading-relaxed text-[var(--color-muted)]">{translate(lang, 'auth.magicLead')}</p>
-					<label class="field-label">
+					<AppLabel>
 						{translate(lang, 'auth.email')}
-						<input
-							class="field mt-1 w-full"
-							class:is-invalid={fieldsInvalid}
-							aria-invalid={fieldsInvalid}
+						<AppInput
+							class="mt-1 w-full"
+							aria-invalid={fieldsInvalid || undefined}
 							type="email"
 							required
 							autocomplete="email"
@@ -636,11 +698,11 @@
 							placeholder={translate(lang, 'auth.emailPh')}
 							bind:value={email}
 						/>
-					</label>
+					</AppLabel>
 					{#if message}
-						<p class="text-sm text-[var(--color-muted)]">{message}</p>
+						<p class="auth-form__error" role="alert">{message}</p>
 					{/if}
-					<button type="submit" class="btn-primary btn-block" disabled={loading}>
+					<AppButton type="submit" block disabled={loading}>
 						{#if loading}
 							<span class="inline-flex items-center justify-center gap-2">
 								<Spinner size="sm" block={false} />
@@ -649,10 +711,10 @@
 						{:else}
 							{translate(lang, 'auth.submitMagic')}
 						{/if}
-					</button>
-					<button type="button" class="btn-link auth-form__back" onclick={() => setPanel('signin')}>
+					</AppButton>
+					<AppButton variant="link" class="auth-form__back" onclick={() => setPanel('signin')}>
 						{translate(lang, 'auth.backToPassword')}
-					</button>
+					</AppButton>
 				</form>
 			{:else if panel !== 'forgot'}
 				<div class="auth-segments" role="tablist" aria-label={translate(lang, 'auth.modeAria')}>
@@ -687,12 +749,11 @@
 						void submitPassword();
 					}}
 				>
-					<label class="field-label">
+					<AppLabel>
 						{translate(lang, 'auth.email')}
-						<input
-							class="field mt-1 w-full"
-							class:is-invalid={fieldsInvalid}
-							aria-invalid={fieldsInvalid}
+						<AppInput
+							class="mt-1 w-full"
+							aria-invalid={fieldsInvalid || undefined}
 							type="email"
 							required
 							autocomplete="email"
@@ -700,7 +761,7 @@
 							placeholder={translate(lang, 'auth.emailPh')}
 							bind:value={email}
 						/>
-					</label>
+					</AppLabel>
 					<PasswordField
 						bind:value={password}
 						label={translate(lang, 'auth.password')}
@@ -719,20 +780,20 @@
 					{/if}
 
 					{#if passwordMode === 'signin'}
-						<button
-							type="button"
-							class="btn-link auth-form__alt self-start text-sm"
+						<AppButton
+							variant="link"
+							class="auth-form__alt self-start text-sm"
 							onclick={() => setPanel('forgot')}
 						>
 							{translate(lang, 'auth.forgot')}
-						</button>
+						</AppButton>
 					{/if}
 
 					{#if message}
-						<p class="text-sm text-[var(--color-muted)]">{message}</p>
+						<p class="auth-form__error" role="alert">{message}</p>
 					{/if}
 
-					<button type="submit" class="btn-primary btn-block" disabled={loading}>
+					<AppButton type="submit" block disabled={loading}>
 						{#if loading}
 							<span class="inline-flex items-center justify-center gap-2">
 								<Spinner size="sm" block={false} />
@@ -743,10 +804,10 @@
 								? translate(lang, 'auth.submitSignUp')
 								: translate(lang, 'auth.submitSignIn')}
 						{/if}
-					</button>
-					<button type="button" class="btn-link auth-form__alt auth-form__alt--center" onclick={openMagicLink}>
+					</AppButton>
+					<AppButton variant="link" class="auth-form__alt auth-form__alt--center" onclick={openMagicLink}>
 						{translate(lang, 'auth.useMagicLink')}
-					</button>
+					</AppButton>
 				</form>
 			{:else if panel === 'forgot'}
 				<form
@@ -758,12 +819,11 @@
 				>
 					<p class="text-sm font-semibold text-[var(--color-ink)]">{translate(lang, 'auth.forgot')}</p>
 					<p class="text-sm leading-relaxed text-[var(--color-muted)]">{translate(lang, 'auth.forgotLead')}</p>
-					<label class="field-label">
+					<AppLabel>
 						{translate(lang, 'auth.email')}
-						<input
-							class="field mt-1 w-full"
-							class:is-invalid={fieldsInvalid}
-							aria-invalid={fieldsInvalid}
+						<AppInput
+							class="mt-1 w-full"
+							aria-invalid={fieldsInvalid || undefined}
 							type="email"
 							required
 							autocomplete="email"
@@ -771,11 +831,11 @@
 							placeholder={translate(lang, 'auth.emailPh')}
 							bind:value={email}
 						/>
-					</label>
+					</AppLabel>
 					{#if message}
-						<p class="text-sm text-[var(--color-muted)]">{message}</p>
+						<p class="auth-form__error" role="alert">{message}</p>
 					{/if}
-					<button type="submit" class="btn-primary btn-block" disabled={loading}>
+					<AppButton type="submit" block disabled={loading}>
 						{#if loading}
 							<span class="inline-flex items-center justify-center gap-2">
 								<Spinner size="sm" block={false} />
@@ -784,10 +844,10 @@
 						{:else}
 							{translate(lang, 'auth.submitReset')}
 						{/if}
-					</button>
-					<button type="button" class="btn-secondary btn-block" onclick={() => setPanel('signin')}>
+					</AppButton>
+					<AppButton variant="secondary" block onclick={() => setPanel('signin')}>
 						{translate(lang, 'auth.backToSignIn')}
-					</button>
+					</AppButton>
 				</form>
 			{/if}
 
@@ -796,9 +856,10 @@
 					<span>{translate(lang, 'auth.or')}</span>
 				</div>
 
-				<button
-					type="button"
-					class="btn-secondary inline-flex w-full items-center justify-center gap-2"
+				<AppButton
+					variant="secondary"
+					block
+					class="inline-flex items-center justify-center gap-2"
 					disabled={loading}
 					onclick={() => void google()}
 				>
@@ -821,7 +882,7 @@
 						/>
 					</svg>
 					{translate(lang, 'auth.google')}
-				</button>
+				</AppButton>
 			{/if}
 			</div>
 			{@render guestSettingsPanel()}

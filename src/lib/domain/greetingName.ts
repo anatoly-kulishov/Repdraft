@@ -7,7 +7,16 @@ export const GREETING_NAME_MAX = 24;
 export const GREETING_DISPLAY_MAX = 18;
 
 export function sanitizeGreetingName(raw: string): string {
-	return raw.trim().replace(/\s+/g, ' ').slice(0, GREETING_NAME_MAX);
+	return (
+		raw
+			/* Format marks: zero-width, bidi controls, soft hyphen — layout/edge junk. */
+			.replace(/\p{Cf}+/gu, '')
+			/* Other controls (tab/newline/NUL) → space so tokens do not glue. */
+			.replace(/\p{Cc}+/gu, ' ')
+			.trim()
+			.replace(/\s+/g, ' ')
+			.slice(0, GREETING_NAME_MAX)
+	);
 }
 
 /** Truncate a single display token without mid-word junk when short enough. */
@@ -38,6 +47,12 @@ export function greetingFirstName(
 export function runGreetingNameSelfCheck(): void {
 	if (sanitizeGreetingName('  Ada   Lovelace  ') !== 'Ada Lovelace') {
 		throw new Error('sanitizeGreetingName should trim and collapse spaces');
+	}
+	if (sanitizeGreetingName('Ada\n\tLovelace') !== 'Ada Lovelace') {
+		throw new Error('sanitizeGreetingName should turn control whitespace into spaces');
+	}
+	if (sanitizeGreetingName(`Ada\u200B\uFEFFLovelace`) !== 'AdaLovelace') {
+		throw new Error('sanitizeGreetingName should strip zero-width / BOM');
 	}
 	if (sanitizeGreetingName('x'.repeat(40)).length !== GREETING_NAME_MAX) {
 		throw new Error('sanitizeGreetingName should cap length');
