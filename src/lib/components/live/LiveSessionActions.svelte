@@ -46,12 +46,15 @@
 	/** Primary CTA = Next only after this exercise is done; else Finish on last exercise. */
 	let nextIsPrimary = $derived(hasNextExercise && currentExerciseComplete);
 	let showFinish = $derived(!hasNextExercise);
+	let pairLayout = $derived(layout === 'mobile');
 </script>
 
 {#snippet finishPrimary()}
 	<AppButton
-		block={layout === 'mobile'}
-		class="{layout === 'mobile' ? '' : 'inline-flex'} items-center justify-center gap-2"
+		block={pairLayout}
+		class="{pairLayout
+			? 'live-session-pair__btn'
+			: 'inline-flex'} items-center justify-center gap-2"
 		disabled={finishing}
 		aria-busy={finishing}
 		onclick={onFinish}
@@ -67,30 +70,52 @@
 {/snippet}
 
 {#snippet nextButton(primary: boolean)}
-	{@const nextLocked = !currentExerciseComplete}
 	<AppButton
 		variant={primary ? 'primary' : 'secondary'}
-		block={layout === 'mobile'}
-		class="{layout === 'mobile' ? '' : 'inline-flex'} items-center justify-center gap-2 {primary
-			? ''
-			: 'live-session-next--demoted'}{nextLocked ? ' live-session-next--locked' : ''}"
-		disabled={finishing || nextLocked}
-		aria-disabled={finishing || nextLocked}
-		aria-label={nextLocked
-			? translate(lang, 'live.nextLockedAria')
-			: translate(lang, 'live.nextExercise')}
-		title={nextLocked ? translate(lang, 'live.nextLockedHint') : undefined}
+		block={pairLayout}
+		class="{pairLayout
+			? 'live-session-pair__btn'
+			: 'inline-flex'} items-center justify-center gap-2 {primary
+			? 'live-session-next--ready'
+			: 'live-session-next--soft'}"
+		disabled={finishing}
+		aria-label={translate(lang, 'live.nextExercise')}
 		onclick={onNext}
 	>
-		{translate(lang, 'live.nextExercise')}
+		{translate(lang, pairLayout ? 'live.nextShort' : 'live.nextExercise')}
 		<LucideIcon icon={ChevronRight} size={ICON_PRIMARY} />
 	</AppButton>
 {/snippet}
 
-{#snippet discardLink()}
-	<AppButton variant="link" class="live-session-discard" disabled={finishing} onclick={onDiscard}>
-		{translate(lang, 'live.discard')}
-	</AppButton>
+{#snippet discardAction()}
+	{#if pairLayout}
+		<AppButton
+			variant="danger"
+			block
+			class="live-session-pair__btn live-session-discard-btn"
+			disabled={finishing}
+			onclick={onDiscard}
+		>
+			{translate(lang, 'live.discard')}
+		</AppButton>
+	{:else}
+		<AppButton variant="link" class="live-session-discard" disabled={finishing} onclick={onDiscard}>
+			{translate(lang, 'live.discard')}
+		</AppButton>
+	{/if}
+{/snippet}
+
+{#snippet actionPair()}
+	{#if nextIsPrimary}
+		{@render discardAction()}
+		{@render nextButton(true)}
+	{:else if hasNextExercise}
+		{@render discardAction()}
+		{@render nextButton(false)}
+	{:else}
+		{@render discardAction()}
+		{@render finishPrimary()}
+	{/if}
 {/snippet}
 
 {#snippet restStrip()}
@@ -142,16 +167,7 @@
 		{#if showRest}
 			{@render restStrip()}
 		{/if}
-		{#if nextIsPrimary}
-			{@render nextButton(true)}
-			{@render discardLink()}
-		{:else if hasNextExercise}
-			{@render nextButton(false)}
-			{@render discardLink()}
-		{:else}
-			{@render finishPrimary()}
-			{@render discardLink()}
-		{/if}
+		{@render actionPair()}
 	</footer>
 {:else}
 	<div
@@ -162,17 +178,8 @@
 		{#if showRest}
 			{@render restStrip()}
 		{/if}
-		<div class="sticky-actions__inner">
-			{#if nextIsPrimary}
-				{@render nextButton(true)}
-				{@render discardLink()}
-			{:else if hasNextExercise}
-				{@render nextButton(false)}
-				{@render discardLink()}
-			{:else}
-				{@render finishPrimary()}
-				{@render discardLink()}
-			{/if}
+		<div class="sticky-actions__inner live-session-pair">
+			{@render actionPair()}
 		</div>
 	</div>
 {/if}
