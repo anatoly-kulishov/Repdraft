@@ -5,6 +5,8 @@
 		type RepdraftExportPayload
 	} from '$lib/domain/exportData';
 	import { translate, translateError } from '$lib/i18n/messages';
+	import { isCloudMode } from '$lib/storage/dataAccess';
+	import { syncImportedPayloadToCloud } from '$lib/stores/cloudLocal';
 	import { localRecordRepository } from '$lib/storage/localRecordRepository';
 	import { localSessionRepository } from '$lib/storage/localSessionRepository';
 	import { localWorkoutRepository } from '$lib/storage/localWorkoutRepository';
@@ -82,9 +84,10 @@
 	async function commitImport() {
 		if (!pendingPayload || busy) return;
 		busy = true;
+		const payload = pendingPayload;
 		try {
 			const current = await loadLocalBundle();
-			const merged = mergeLocalWithImport(current, pendingPayload);
+			const merged = mergeLocalWithImport(current, payload);
 
 			await Promise.all([
 				...merged.plans.map((plan) => localWorkoutRepository.save(plan)),
@@ -92,13 +95,20 @@
 				...merged.records.map((record) => localRecordRepository.save(record))
 			]);
 
+			const cloudSynced = await syncImportedPayloadToCloud(payload);
+
+			const useCloud = isCloudMode();
 			await Promise.all([
-				plans.refresh({ cloud: false, force: true }),
-				records.refresh({ cloud: false, force: true }),
+				plans.refresh({ cloud: useCloud, force: true }),
+				records.refresh({ cloud: useCloud, force: true }),
 				live.refreshHistory()
 			]);
 
-			toasts.show(translate(lang, 'settings.importDone'), 'success');
+			if (useCloud && !cloudSynced) {
+				toasts.show(translate(lang, 'settings.importCloudPending'), 'info');
+			} else {
+				toasts.show(translate(lang, 'settings.importDone'), 'success');
+			}
 			importOfferOpen = false;
 			pendingPayload = null;
 		} catch (err) {

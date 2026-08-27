@@ -5,7 +5,6 @@
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import BackupImportAction from '$lib/components/BackupImportAction.svelte';
-	import SegmentControl from '$lib/components/SegmentControl.svelte';
 	import WorkoutsPageSkeleton from '$lib/components/WorkoutsPageSkeleton.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -13,7 +12,7 @@
 	import AppFab from '$lib/components/AppFab.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
+	import { Copy, ArrowLeft, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
@@ -74,10 +73,10 @@
 
 	let confirmOffer = $state<ConfirmOffer | null>(null);
 
-	const tabOptions = $derived([
-		{ id: 'plans', label: translate(lang, 'workouts.tabPlans') },
-		{ id: 'history', label: translate(lang, 'workouts.tabHistory') }
-	]);
+	let pageTitle = $derived(
+		translate(lang, activeTab === 'history' ? 'workouts.tabHistory' : 'workouts.title')
+	);
+	let showPlansLead = $derived(activeTab === 'plans');
 
 	onMount(() => {
 		void loadExerciseIndex()
@@ -211,38 +210,69 @@
 </script>
 
 <svelte:head>
-	<title>{translate(lang, 'workouts.title')} · Repdraft</title>
+	<title>{pageTitle} · Repdraft</title>
 </svelte:head>
 
 <section class="workouts-page content-page content-page--narrow">
 	<div class="page-header workouts-page__header">
-		<div class="workouts-page__intro min-w-0">
-			<h1 class="page-title">{translate(lang, 'workouts.title')}</h1>
-			<p class="page-lead workouts-page-lead">
-				{#if !$auth.ready || !$auth.dataBootstrap}
-					<span
-						class="inline-block h-4 w-48 max-w-full animate-pulse rounded bg-[var(--color-surface-muted)]"
-						aria-hidden="true"
-					></span>
-				{:else if $auth.user}
-					{#if $plansSync === 'stale'}
-						{translate(lang, 'sync.cloudLoading')}
-					{:else if $plansSync === 'error'}
-						{translate(lang, 'workouts.local')}
-					{:else}
-						{translate(lang, 'workouts.cloud')}
-					{/if}
-				{:else}
-					{translate(lang, 'workouts.local')}
-				{/if}
-			</p>
-		</div>
-		<AppButton
-			href={BUILDER_NEW_HREF}
-			class={cn('workouts-page__create shrink-0', activeTab === 'history' && 'workouts-page__create--hidden')}
+		<div
+			class="workouts-page__toolbar"
+			class:workouts-page__toolbar--history={activeTab === 'history'}
 		>
-			{translate(lang, 'workouts.newWorkout')}
-		</AppButton>
+			{#if activeTab === 'history'}
+				<AppButton
+					variant="secondary"
+					class="workouts-page__toolbar-icon-btn workouts-page__nav-btn workouts-page__nav-btn--back"
+					onclick={() => setTab('plans')}
+					aria-label={translate(lang, 'builder.backWorkouts')}
+					title={translate(lang, 'builder.backWorkouts')}
+				>
+					<LucideIcon icon={ArrowLeft} size={ICON_SMALL} />
+				</AppButton>
+			{/if}
+			<div class="workouts-page__intro min-w-0">
+				<h1 class="page-title">{pageTitle}</h1>
+				{#if showPlansLead}
+					<p class="page-lead workouts-page-lead">
+						{#if !$auth.ready || !$auth.dataBootstrap}
+							<span
+								class="inline-block h-4 w-48 max-w-full animate-pulse rounded bg-[var(--color-surface-muted)]"
+								aria-hidden="true"
+							></span>
+						{:else if $auth.user}
+							{#if $plansSync === 'stale'}
+								{translate(lang, 'sync.cloudLoading')}
+							{:else if $plansSync === 'error'}
+								{translate(lang, 'workouts.local')}
+							{:else}
+								{translate(lang, 'workouts.cloud')}
+							{/if}
+						{:else}
+							{translate(lang, 'workouts.local')}
+						{/if}
+					</p>
+				{/if}
+			</div>
+			<div class="workouts-page__toolbar-actions">
+				{#if activeTab === 'plans'}
+					<AppButton
+						variant="secondary"
+						class="workouts-page__toolbar-icon-btn workouts-page__history-btn"
+						onclick={() => setTab('history')}
+						aria-label={translate(lang, 'workouts.openHistory')}
+						title={translate(lang, 'workouts.openHistory')}
+					>
+						<LucideIcon icon={Clock} size={ICON_SMALL} />
+					</AppButton>
+				{/if}
+				<AppButton
+					href={BUILDER_NEW_HREF}
+					class={cn('workouts-page__create shrink-0', activeTab === 'history' && 'workouts-page__create--hidden')}
+				>
+					{translate(lang, 'workouts.newWorkout')}
+				</AppButton>
+			</div>
+		</div>
 	</div>
 
 	<CloudSyncBanner
@@ -255,15 +285,6 @@
 	{#if !pageReady}
 		<WorkoutsPageSkeleton label={translate(lang, 'common.loading')} />
 	{:else}
-		<div class="workouts-page__tabs">
-			<SegmentControl
-				options={tabOptions}
-				value={activeTab}
-				ariaLabel={translate(lang, 'workouts.tabsAria')}
-				onchange={(id) => setTab(parseWorkoutsTab(id))}
-			/>
-		</div>
-
 		{#if activeTab === 'plans'}
 			{#if $plans.length === 0}
 				<EmptyState
@@ -297,7 +318,7 @@
 									actions={[
 										{
 											label: translate(lang, 'home.setNextPlan'),
-											icon: Play,
+											icon: Flag,
 											variant: 'accent',
 											onAction: () => pinNextPlan(plan.id, plan.name)
 										},
