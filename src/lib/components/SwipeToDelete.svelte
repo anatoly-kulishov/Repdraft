@@ -1,3 +1,13 @@
+<script lang="ts" module>
+	export type SwipeRowAction = {
+		label: string;
+		icon: typeof import('@lucide/svelte').Trash2;
+		variant: 'danger' | 'accent';
+		onAction: () => void;
+		busy?: boolean;
+	};
+</script>
+
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -6,22 +16,39 @@
 	import { Trash2 } from '@lucide/svelte';
 	import { onMount, type Snippet } from 'svelte';
 
+	const ACTION_WIDTH = 76;
+
 	let {
 		label,
 		disabled = false,
 		busy = false,
 		onDelete,
+		actions = null,
 		children
 	}: {
-		label: string;
+		label?: string;
 		disabled?: boolean;
 		busy?: boolean;
-		onDelete: () => void;
+		onDelete?: () => void;
+		actions?: SwipeRowAction[] | null;
 		children: Snippet;
 	} = $props();
 
-	const REVEAL = 76;
-	const OPEN_AT = 40;
+	let railActions = $derived.by((): SwipeRowAction[] => {
+		if (actions && actions.length > 0) return actions;
+		return [
+			{
+				label: label ?? '',
+				icon: Trash2,
+				variant: 'danger',
+				onAction: onDelete ?? (() => {}),
+				busy
+			}
+		];
+	});
+
+	let reveal = $derived(railActions.length * ACTION_WIDTH);
+	let openAt = $derived(Math.max(40, reveal * 0.52));
 
 	let swipeOk = $state(false);
 	let offset = $state(0);
@@ -70,7 +97,7 @@
 	});
 
 	function onPointerDown(event: PointerEvent) {
-		if (!swipeOk || disabled || busy) return;
+		if (!swipeOk || disabled) return;
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
 		claim();
 		dragging = true;
@@ -78,7 +105,7 @@
 		axis = 'undecided';
 		startX = event.clientX;
 		startY = event.clientY;
-		startOffset = open ? -REVEAL : 0;
+		startOffset = open ? -reveal : 0;
 		sheetEl?.setPointerCapture(event.pointerId);
 	}
 
@@ -96,7 +123,7 @@
 			}
 		}
 		moved = true;
-		offset = Math.min(0, Math.max(-REVEAL, startOffset + dx));
+		offset = Math.min(0, Math.max(-reveal, startOffset + dx));
 	}
 
 	function onPointerUp() {
@@ -106,8 +133,8 @@
 		}
 		dragging = false;
 		if (axis === 'h') {
-			open = offset <= -OPEN_AT;
-			offset = open ? -REVEAL : 0;
+			open = offset <= -openAt;
+			offset = open ? -reveal : 0;
 		}
 		axis = 'undecided';
 	}
@@ -127,11 +154,12 @@
 		}
 	}
 
-	function onDeleteClick(event: MouseEvent) {
+	function onActionClick(event: MouseEvent, action: SwipeRowAction) {
 		event.stopPropagation();
 		close();
-		onDelete();
+		action.onAction();
 	}
+
 	let showRail = $derived(swipeOk && (open || dragging || offset < 0));
 </script>
 
@@ -141,27 +169,31 @@
 	class:is-open={open}
 	class:is-dragging={dragging}
 	class:is-revealed={showRail}
+	class:swipe-to-delete--multi={railActions.length > 1}
+	style:--swipe-rail-width="{reveal}px"
 >
 	{#if showRail}
 		<div class="swipe-to-delete__rail" aria-hidden={!open}>
-			<AppButton
-				variant="ghost"
-				class="swipe-to-delete__delete !min-h-0 !min-w-0 !h-full !w-full !rounded-none p-0"
-				disabled={disabled}
-				aria-busy={busy}
-				aria-label={label}
-				title={label}
-				onclick={onDeleteClick}
-			>
-				{#if busy}
-					<Spinner size="sm" block={false} />
-				{:else}
-					<LucideIcon icon={Trash2} size={ICON_BUTTON} />
-				{/if}
-			</AppButton>
+			{#each railActions as action (action.label)}
+				<AppButton
+					variant="ghost"
+					class={`swipe-to-delete__action swipe-to-delete__action--${action.variant} !min-h-0 !min-w-0 !h-full !w-full !rounded-none p-0`}
+					disabled={disabled || action.busy}
+					aria-busy={action.busy}
+					aria-label={action.label}
+					title={action.label}
+					onclick={(event) => onActionClick(event, action)}
+				>
+					{#if action.busy}
+						<Spinner size="sm" block={false} />
+					{:else}
+						<LucideIcon icon={action.icon} size={ICON_BUTTON} />
+					{/if}
+				</AppButton>
+			{/each}
 		</div>
 	{/if}
-	<!-- Gesture sheet: pointer handlers are intentional; keyboard users keep the trash button. -->
+	<!-- Gesture sheet: pointer handlers are intentional; keyboard users keep row actions. -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
