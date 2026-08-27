@@ -1,5 +1,8 @@
 <script lang="ts">
+	import AppInput from '$lib/components/AppInput.svelte';
+	import AppIconButton from '$lib/components/AppIconButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { cn } from '$lib/utils.js';
 	import { ICON_INPUT } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -54,11 +57,10 @@
 		<LucideIcon icon={Search} size={ICON_INPUT} />
 	</span>
 	<span class="sr-only">{placeholder}</span>
-	<input
+	<AppInput
 		type="text"
 		inputmode="search"
-		class="field search-field w-full search-field-with-icon"
-		class:has-clear={canClear}
+		class={cn('search-field w-full search-field-with-icon', canClear && 'has-clear')}
 		{placeholder}
 		autocomplete="off"
 		autocapitalize="off"
@@ -69,31 +71,30 @@
 		oninput={onInput}
 	/>
 	{#if canClear}
-		<button
-			type="button"
-			class="clear-btn"
+		<AppIconButton
+			class="clear-btn !min-h-0 !min-w-0 size-auto p-0"
 			onclick={clear}
 			aria-label={translate(lang, 'a11y.clearSearch')}
 			title={translate(lang, 'a11y.clearSearch')}
 		>
 			<LucideIcon icon={X} size={ICON_INPUT} />
-		</button>
+		</AppIconButton>
 	{/if}
 </label>
 
 <style>
-	.search-field::-webkit-search-cancel-button {
+	:global(.search-field)::-webkit-search-cancel-button {
 		-webkit-appearance: none;
 		appearance: none;
 	}
 
-	/* Beat .field { padding: … } so text never sits under the × */
-	.search-field.has-clear {
-		padding-right: 2.5rem;
+	/* Beat `input[data-slot='input'] { padding: … }` so the icon never covers text. */
+	:global(input[data-slot='input'].search-field-with-icon) {
+		padding-left: 2.65rem;
 	}
 
-	.search-field-with-icon {
-		padding-left: 2.65rem;
+	:global(input[data-slot='input'].search-field.has-clear) {
+		padding-right: 2.5rem;
 	}
 
 	.search-input-icon {
@@ -106,7 +107,7 @@
 		pointer-events: none;
 	}
 
-	.clear-btn {
+	:global(.clear-btn) {
 		position: absolute;
 		top: 0;
 		bottom: 0;
@@ -129,13 +130,13 @@
 	}
 
 	/* Keep ≥44px tap without making the visible disc taller than the field. */
-	.clear-btn::before {
+	:global(.clear-btn::before) {
 		content: '';
 		position: absolute;
 		inset: -0.55rem;
 	}
 
-	.clear-btn:hover {
+	:global(.clear-btn:hover) {
 		background: var(--color-surface-muted);
 		color: var(--color-ink);
 	}

@@ -1,0 +1,15 @@
+---
+description: Tech debt backlog pointer — exercise technique sheet / row head refactor and related polish. Read when user mentions tech debt, рефактор КТ, technique row, or returning to deferred polish.
+alwaysApply: false
+---
+
+# Tech debt pointer
+
+Canonical list: [`.cursor/product/tech-debt.md`](../product/tech-debt.md).
+
+When the user says to pick up tech debt / «вернёмся к рефактору» / technique row cleanup:
+
+1. Read that file first.
+2. Prefer one focused patch (extract shared exercise row head + drop `display: contents` hack) over drive-by polish.
+3. Do not expand into charts/AI/social; stay on sacred-loop surfaces (preview, history, builder, live).
+4. After shipping an item, mark it done or delete the bullet in `tech-debt.md`.

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import AppInput from '$lib/components/AppInput.svelte';
+	import AppLabel from '$lib/components/AppLabel.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_INPUT } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
@@ -29,13 +31,12 @@
 	let lang = $derived($resolvedLocale);
 </script>
 
-<label class="field-label">
+<AppLabel>
 	{label}
-	<div class="relative mt-1">
-		<input
-			class="field w-full pr-11"
-			class:is-invalid={invalid}
-			aria-invalid={invalid}
+	<div class="password-field relative">
+		<AppInput
+			class="password-field__input w-full !pr-12"
+			aria-invalid={invalid || undefined}
 			type={visible ? 'text' : 'password'}
 			{required}
 			{minlength}
@@ -46,7 +47,7 @@
 		/>
 		<button
 			type="button"
-			class="absolute inset-y-0 right-0 grid w-11 place-items-center text-[var(--color-muted)]"
+			class="password-field__toggle"
 			onclick={() => (visible = !visible)}
 			aria-pressed={visible}
 			aria-label={translate(lang, visible ? 'auth.hidePassword' : 'auth.showPassword')}
@@ -58,4 +59,4 @@
 			{/if}
 		</button>
 	</div>
-</label>
+</AppLabel>

@@ -99,8 +99,8 @@
 | Hero GIF + meta (мышца, оборудование) | ✅ | |
 | Техника сообщества (clips) | ✅ | |
 | Личный рекорд | ✅ | `PersonalRecordPanel` |
-| **Tabbed layout:** Описание / История / Рекорд / Мышцы | ⬜ | **Главный хвост по референсам** |
-| Session history на detail (P1 в mvp-spec) | ⬜ | Связано с tab «История» |
+| **Tabbed layout:** Описание / История / Рекорд / Мышцы | ✅ | `src/routes/exercise/[id]/+page.svelte`, через `SegmentControl` |
+| Session history на detail (P1 в mvp-spec) | ✅ | Вкладка «История» переиспользует `ExerciseSessionHistory` |
 
 ### Прочее
 
@@ -124,7 +124,7 @@
 
 ### P1 — главный референсный хвост
 
-4. **`/exercise/[id]` tabbed detail**
+4. **`/exercise/[id]` tabbed detail** ✅
    - Tabs: Описание · История · Рекорд · Мышцы (i18n).
    - Описание: GIF, шаги, equipment/target.
    - История: последние сессии из `live` / session repo (read-only).

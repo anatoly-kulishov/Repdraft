@@ -1,9 +1,11 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
 	import CloudSyncBanner from '$lib/components/CloudSyncBanner.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import RecordsListSkeleton from '$lib/components/RecordsListSkeleton.svelte';
+	import RecordsNoteChip from '$lib/components/RecordsNoteChip.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
@@ -16,8 +18,9 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { records, recordsReady, recordsSync } from '$lib/stores/records';
 	import { isCloudListUncertain } from '$lib/domain/cloudSync';
+	import { linkWithFrom } from '$lib/domain/navigation';
 	import { toasts } from '$lib/stores/toasts';
-	import { ArrowLeft, ChevronDown, Trophy, Trash2 } from '@lucide/svelte';
+	import { ArrowLeft, Trophy, Trash2 } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
@@ -36,6 +39,10 @@
 	);
 	let listUncertain = $derived(isCloudListUncertain($recordsSync));
 	let displayRecords = $derived($records.filter(hasLiftData));
+
+	function exerciseHref(exerciseId: string): string {
+		return linkWithFrom(`/exercise/${exerciseId}`, '/records');
+	}
 
 	onMount(() => {
 		void records.refresh();
@@ -103,7 +110,7 @@
 				{:else}
 					{translate(lang, 'records.local')}
 					{' '}
-					<a class="font-semibold text-[var(--color-accent)] underline" href="/auth?next=%2Frecords"
+					<a class="font-semibold text-[var(--color-accent-text)] underline" href="/auth?next=%2Frecords"
 						>{translate(lang, 'records.signIn')}</a
 					>{translate(lang, 'records.syncSuffix')}
 				{/if}
@@ -152,7 +159,7 @@
 							>
 								<a
 									class="records-list-thumb"
-									href={`/exercise/${record.exerciseId}`}
+									href={exerciseHref(record.exerciseId)}
 									tabindex="-1"
 									aria-hidden="true"
 								>
@@ -168,7 +175,7 @@
 									{/if}
 								</a>
 								<div class="records-list-content">
-									<a class="records-list-text" href={`/exercise/${record.exerciseId}`}>
+									<a class="records-list-text" href={exerciseHref(record.exerciseId)}>
 										<span class="records-preview__name">{recordTitle}</span>
 										<span class="records-list-meta">
 											{#if liftChip}
@@ -180,28 +187,20 @@
 										</span>
 									</a>
 									{#if noteChip}
-										<button
-											type="button"
-											class="records-note-chip"
-											class:is-open={noteOpen}
-											aria-expanded={noteOpen}
-											aria-label={translate(lang, noteOpen ? 'pr.nowCollapse' : 'pr.nowExpand')}
-											title={translate(lang, noteOpen ? 'pr.nowCollapse' : 'pr.nowExpand')}
-											onclick={() => {
+										<RecordsNoteChip
+											text={noteChip}
+											{lang}
+											open={noteOpen}
+											onToggle={() => {
 												expandedNoteId = noteOpen ? null : record.exerciseId;
 											}}
-										>
-											<span class="records-note-chip__text">{noteChip}</span>
-											<span class="records-note-chip__chevron" aria-hidden="true">
-												<LucideIcon icon={ChevronDown} size={ICON_SMALL} />
-											</span>
-										</button>
+										/>
 									{/if}
 								</div>
 							</div>
-							<button
-								type="button"
-								class="btn-ghost is-danger records-list-delete"
+							<AppButton
+								variant="danger"
+								class="records-list-delete"
 								aria-label={translate(lang, 'records.delete')}
 								title={translate(lang, 'records.delete')}
 								disabled={busyId !== null}
@@ -213,7 +212,7 @@
 								{:else}
 									<LucideIcon icon={Trash2} size={ICON_SMALL} />
 								{/if}
-							</button>
+							</AppButton>
 						</div>
 					</SwipeToDelete>
 				</li>

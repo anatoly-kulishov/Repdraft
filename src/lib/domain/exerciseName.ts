@@ -121,6 +121,7 @@ function replacePhrasePreserveCap(hay: string, from: string, to: string): string
 
 function polishRuDisplayName(ruName: string, englishRaw: string): string {
 	let normalized = ruName
+		.replace(/_/g, ' ')
 		.replace(/\s*\(вариант 2\)/gi, ' (другой ракурс)')
 		.replace(/\bвариант 2\b/gi, '(другой ракурс)')
 		.replace(/вверх лицом собака/gi, 'Собака мордой вверх')
@@ -154,6 +155,7 @@ function withTechniqueQualifier(ruName: string, englishRaw: string): string {
 
 function titleCaseExerciseName(raw: string): string {
 	return raw
+		.replace(/_/g, ' ')
 		.trim()
 		.split(/\s+/)
 		.map((part) => (part ? part[0]!.toUpperCase() + part.slice(1) : part))

@@ -40,5 +40,6 @@
 		totalCount={data.totalCount}
 		indexError={data.indexError}
 		savedOnly
+		gridOnDesktop
 	/>
 </div>

@@ -1,12 +1,15 @@
 <script lang="ts">
 	import CatalogExerciseList from '$lib/components/CatalogExerciseList.svelte';
 	import CatalogTargetGrid from '$lib/components/CatalogTargetGrid.svelte';
+	import CatalogCategoryGridSkeleton from '$lib/components/CatalogCategoryGridSkeleton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import { catalogZonePath, isBuilderReturnPath, labelCatalogZone, withFromParam } from '$lib/domain/catalogLinks';
+	import { resolveBackFrom } from '$lib/domain/navigation';
 	import { labelTarget } from '$lib/domain/labels.ru';
 	import { translate } from '$lib/i18n/messages';
+	import { backLabelForHref } from '$lib/i18n/backLabel';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { ArrowLeft } from '@lucide/svelte';
 	import { page } from '$app/stores';
@@ -44,8 +47,8 @@
 			if (showTargetBrowse || data.bodyPart === 'all') return hubHref;
 			return hubHref;
 		}
-		if (inTargetList) return catalogZonePath(data.bodyPart);
-		return '/exercises';
+		if (inTargetList) return withFromParam(catalogZonePath(data.bodyPart), fromParam);
+		return resolveBackFrom(fromParam, '/exercises');
 	});
 	let backLabel = $derived.by(() => {
 		if (fromBuilder) {
@@ -53,7 +56,7 @@
 			return translate(lang, 'catalog.hubTitle');
 		}
 		if (inTargetList) return title;
-		return translate(lang, 'catalog.hubTitle');
+		return backLabelForHref(backHref, lang);
 	});
 	let headerTitle = $derived(
 		showExerciseList && data.initialTarget
@@ -62,6 +65,9 @@
 				? translate(lang, 'catalog.allExercises')
 				: title
 	);
+	/** Dev/QA: ?skeleton=1 — preview category grid placeholders on target browse. */
+	let forceSkeleton = $derived($page.url.searchParams.get('skeleton') === '1');
+	let showTargetSkeleton = $derived(showTargetBrowse && forceSkeleton);
 </script>
 
 <svelte:head>
@@ -86,7 +92,9 @@
 			</div>
 		</div>
 
-		{#if showTargetBrowse}
+		{#if showTargetSkeleton}
+			<CatalogCategoryGridSkeleton label={translate(lang, 'common.loading')} rows={6} />
+		{:else if showTargetBrowse}
 			<CatalogTargetGrid
 				bodyPart={data.bodyPart}
 				chips={data.targetChips}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
@@ -52,15 +53,15 @@
 			{/if}
 		</div>
 		{#if sync === 'error'}
-			<button
-				type="button"
-				class="btn-ghost cloud-sync-banner__retry"
+			<AppButton
+				variant="ghost"
+				class="cloud-sync-banner__retry"
 				onclick={onRetry}
 				aria-label={translate(lang, 'sync.retry')}
 				title={translate(lang, 'sync.retry')}
 			>
 				<LucideIcon icon={RefreshCw} size={ICON_BUTTON} />
-			</button>
+			</AppButton>
 		{/if}
 	</div>
 {/if}

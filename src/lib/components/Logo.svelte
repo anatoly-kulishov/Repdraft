@@ -1,7 +1,7 @@
 <script lang="ts">
+	import BrandMark from '$lib/components/BrandMark.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import markUrl from '$lib/assets/brand/mark.svg?url';
 
 	let {
 		size = 'md',
@@ -21,6 +21,12 @@
 		if (size === 'sm') return 'logo-mark logo-mark--sm';
 		return 'logo-mark logo-mark--md';
 	});
+
+	let px = $derived.by(() => {
+		if (variant === 'sidebar' || size === 'lg') return 44;
+		if (size === 'sm') return 36;
+		return 40;
+	});
 </script>
 
 <a
@@ -28,40 +34,5 @@
 	class="logo-link group inline-flex min-h-[48px] min-w-[48px] items-center text-[var(--color-ink)] no-underline"
 	aria-label={translate(lang, 'nav.home')}
 >
-	<img
-		class="{markClass} shrink-0 transition-opacity duration-200 group-hover:opacity-90"
-		src={markUrl}
-		alt=""
-		width="49"
-		height="40"
-		decoding="async"
-	/>
+	<BrandMark class="{markClass} shrink-0" size={px} intensity="calm" />
 </a>
-
-<style>
-	/*
-	  Mark SVG is crop-tight to the RP glyph. Heights map ~1:1 to visual size.
-	  Mobile header is h-14; sidebar brand can take a bit more presence.
-	*/
-	.logo-mark {
-		display: block;
-		width: auto;
-		height: 2.5rem;
-	}
-
-	.logo-mark--sidebar {
-		height: 2.75rem;
-	}
-
-	.logo-mark--sm {
-		height: 2.25rem;
-	}
-
-	.logo-mark--md {
-		height: 2.5rem;
-	}
-
-	.logo-mark--lg {
-		height: 2.75rem;
-	}
-</style>

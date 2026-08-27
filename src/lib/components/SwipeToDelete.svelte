@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
@@ -49,7 +50,7 @@
 	}
 
 	onMount(() => {
-		const mq = window.matchMedia('(max-width: 639px)');
+		const mq = window.matchMedia('(max-width: 1023px)');
 		const sync = () => {
 			swipeOk = mq.matches;
 			if (!swipeOk) close();
@@ -143,9 +144,9 @@
 >
 	{#if showRail}
 		<div class="swipe-to-delete__rail" aria-hidden={!open}>
-			<button
-				type="button"
-				class="swipe-to-delete__delete"
+			<AppButton
+				variant="ghost"
+				class="swipe-to-delete__delete !min-h-0 !min-w-0 !h-full !w-full !rounded-none p-0"
 				disabled={disabled}
 				aria-busy={busy}
 				aria-label={label}
@@ -157,7 +158,7 @@
 				{:else}
 					<LucideIcon icon={Trash2} size={ICON_BUTTON} />
 				{/if}
-			</button>
+			</AppButton>
 		</div>
 	{/if}
 	<!-- Gesture sheet: pointer handlers are intentional; keyboard users keep the trash button. -->

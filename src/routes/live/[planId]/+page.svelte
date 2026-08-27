@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import LiveAltPicker from '$lib/components/live/LiveAltPicker.svelte';
@@ -473,16 +474,12 @@
 		</p>
 		<p class="bottom-sheet__hint">{translate(lang, 'live.switchOfferHint')}</p>
 		{#snippet actions()}
-			<button type="button" class="btn-secondary" onclick={keepCurrentLiveSession}>
+			<AppButton variant="secondary" onclick={keepCurrentLiveSession}>
 				{translate(lang, 'live.switchKeepCurrent')}
-			</button>
-			<button
-				type="button"
-				class="btn-danger"
-				onclick={() => void confirmSwitchLivePlan()}
-			>
+			</AppButton>
+			<AppButton variant="danger" onclick={() => void confirmSwitchLivePlan()}>
 				{translate(lang, 'live.switchStartNew')}
-			</button>
+			</AppButton>
 		{/snippet}
 	</BottomSheet>
 {:else if loading && !(session && !session.finishedAt && session.planId === params.planId)}
@@ -496,21 +493,21 @@
 			actionLabel={translate(lang, 'live.backPlans')}
 		/>
 		{#if $live.session && !$live.session.finishedAt}
-			<button
-				type="button"
-				class="btn-danger btn-block"
+			<AppButton
+				block
+				variant="danger"
 				onclick={() => {
 					live.discard();
 					void goto('/workouts');
 				}}
 			>
 				{translate(lang, 'live.discard')}
-			</button>
+			</AppButton>
 		{/if}
 	</div>
 {:else}
-	<section class="live-page lg:pb-4">
-		<div class="lg:hidden">
+	<section class="live-page md:pb-4">
+		<div class="md:hidden">
 			<ScreenHeader
 				fixed
 				class="screen-header--live"
@@ -520,7 +517,7 @@
 			/>
 		</div>
 
-		<div class="live-mobile-meta lg:hidden">
+		<div class="live-mobile-meta md:hidden">
 			<p class="live-progress-pill">
 				{translate(lang, 'live.progress', {
 					done: slotProgress.done,
@@ -534,7 +531,7 @@
 			</p>
 		</div>
 
-		<header class="live-header hidden lg:flex">
+		<header class="live-header hidden md:flex">
 			<div class="live-header-main">
 				<a
 					href="/workouts"
@@ -654,7 +651,7 @@
 				/>
 			</div>
 
-			<div class="live-mobile-actions lg:hidden">
+			<div class="live-mobile-actions md:hidden">
 				<LiveSessionActions
 					{lang}
 					{finishing}
@@ -697,22 +694,12 @@
 				</p>
 				<p class="bottom-sheet__hint">{translate(lang, 'live.skipExerciseHint')}</p>
 				{#snippet actions()}
-					<button
-						type="button"
-						class="btn-secondary"
-						disabled={finishing}
-						onclick={dismissSkipExerciseOffer}
-					>
+					<AppButton variant="secondary" disabled={finishing} onclick={dismissSkipExerciseOffer}>
 						{translate(lang, 'live.finishOfferLater')}
-					</button>
-					<button
-						type="button"
-						class="btn-danger"
-						disabled={finishing}
-						onclick={commitSkipExercise}
-					>
+					</AppButton>
+					<AppButton variant="danger" disabled={finishing} onclick={commitSkipExercise}>
 						{translate(lang, 'live.skipExerciseConfirm')}
-					</button>
+					</AppButton>
 				{/snippet}
 			</BottomSheet>
 		{:else if finishOfferOpen}
@@ -729,23 +716,12 @@
 					<p class="bottom-sheet__hint">{translate(lang, 'live.finishOfferHint')}</p>
 				{/if}
 				{#snippet actions()}
-					<button
-						type="button"
-						class="btn-secondary"
-						disabled={finishing}
-						onclick={dismissFinishOffer}
-					>
+					<AppButton variant="secondary" disabled={finishing} onclick={dismissFinishOffer}>
 						{translate(lang, 'live.finishOfferLater')}
-					</button>
-					<button
-						type="button"
-						class="btn-primary"
-						disabled={finishing}
-						aria-busy={finishing}
-						onclick={() => void commitFinish()}
-					>
+					</AppButton>
+					<AppButton disabled={finishing} aria-busy={finishing} onclick={() => void commitFinish()}>
 						{translate(lang, 'live.finish')}
-					</button>
+					</AppButton>
 				{/snippet}
 			</BottomSheet>
 		{:else if discardOfferOpen}
@@ -759,22 +735,12 @@
 					{translate(lang, 'live.confirmDiscard')}
 				</p>
 				{#snippet actions()}
-					<button
-						type="button"
-						class="btn-secondary"
-						disabled={finishing}
-						onclick={dismissDiscardOffer}
-					>
+					<AppButton variant="secondary" disabled={finishing} onclick={dismissDiscardOffer}>
 						{translate(lang, 'live.finishOfferLater')}
-					</button>
-					<button
-						type="button"
-						class="btn-danger"
-						disabled={finishing}
-						onclick={commitDiscard}
-					>
+					</AppButton>
+					<AppButton variant="danger" disabled={finishing} onclick={commitDiscard}>
 						{translate(lang, 'live.discard')}
-					</button>
+					</AppButton>
 				{/snippet}
 			</BottomSheet>
 		{/if}

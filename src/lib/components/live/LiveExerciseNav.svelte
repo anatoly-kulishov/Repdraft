@@ -1,5 +1,7 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { cn } from '$lib/utils.js';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { visibleSessionExerciseIndices } from '$lib/domain/session';
@@ -79,12 +81,12 @@
 
 {#snippet navButton(ei: number, inGroup: boolean)}
 	{@const ex = session.exercises[ei]!}
-	<button
-		type="button"
-		class="live-nav-item"
-		class:live-nav-item--in-group={inGroup}
+	<AppButton
+		variant="ghost"
+		class={cn('live-nav-item !h-auto !min-h-0 !min-w-0 w-auto p-0', inGroup && 'live-nav-item--in-group')}
 		data-active={ei === selectedExerciseIndex}
 		data-done={exerciseDone(ei)}
+		aria-current={ei === selectedExerciseIndex ? 'true' : undefined}
 		onclick={() => onSelect(ei)}
 	>
 		<span class="live-nav-title">{titleFor(ex.exerciseId)}</span>
@@ -94,7 +96,7 @@
 				<LucideIcon icon={Check} size={ICON_SMALL} />
 			</span>
 		{/if}
-	</button>
+	</AppButton>
 {/snippet}
 
 <nav class="live-nav" aria-label={translate(lang, 'live.title')}>

@@ -11,8 +11,15 @@
 	import { localWorkoutRepository } from '$lib/storage/localWorkoutRepository';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import AppButton from '$lib/components/AppButton.svelte';
 	import BackupImportAction from '$lib/components/BackupImportAction.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+
+	let {
+		embedded = false
+	}: {
+		embedded?: boolean;
+	} = $props();
 
 	let lang = $derived($resolvedLocale);
 	let exportBusy = $state(false);
@@ -49,13 +56,10 @@
 	}
 </script>
 
-<div class="auth-account__section">
-	<p class="auth-prefs__title">{translate(lang, 'settings.exportTitle')}</p>
-	<p class="mt-1 text-sm text-[var(--color-muted)]">{translate(lang, 'settings.exportHint')}</p>
-	<div class="data-export-actions mt-3">
-		<button
-			type="button"
-			class="btn-primary data-export-actions__btn"
+{#if embedded}
+	<div class="data-export-actions data-export-actions--embedded">
+		<AppButton
+			class="data-export-actions__btn"
 			disabled={exportBusy}
 			onclick={() => void exportJson()}
 		>
@@ -67,7 +71,29 @@
 			{:else}
 				{translate(lang, 'settings.exportJson')}
 			{/if}
-		</button>
+		</AppButton>
+		<BackupImportAction block class="data-export-actions__btn" />
+	</div>
+{:else}
+<div class="auth-account__section">
+	<p class="auth-prefs__title">{translate(lang, 'settings.exportTitle')}</p>
+	<p class="mt-1 text-sm text-[var(--color-muted)]">{translate(lang, 'settings.exportHint')}</p>
+	<div class="data-export-actions mt-3">
+		<AppButton
+			class="data-export-actions__btn"
+			disabled={exportBusy}
+			onclick={() => void exportJson()}
+		>
+			{#if exportBusy}
+				<span class="inline-flex items-center gap-2">
+					<Spinner size="sm" block={false} />
+					{translate(lang, 'auth.wait')}
+				</span>
+			{:else}
+				{translate(lang, 'settings.exportJson')}
+			{/if}
+		</AppButton>
 		<BackupImportAction block class="data-export-actions__btn" />
 	</div>
 </div>
+{/if}

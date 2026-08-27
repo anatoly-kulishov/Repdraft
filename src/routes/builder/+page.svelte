@@ -1,4 +1,7 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppInput from '$lib/components/AppInput.svelte';
+	import AppLabel from '$lib/components/AppLabel.svelte';
 	import AppFab from '$lib/components/AppFab.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
@@ -12,6 +15,7 @@
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { BUILDER_ADD_EXERCISE_HREF, WORKOUTS_HREF } from '$lib/domain/catalogLinks';
+	import { PLAN_NAME_MAX } from '$lib/domain/inputLimits';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { altGroupMemberRole, groupMemberRole } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
@@ -30,6 +34,8 @@
 	let saving = $state(false);
 	let clearOfferOpen = $state(false);
 	let freshStartConsumed = $state(false);
+	let reorderFrom = $state<number | null>(null);
+	let reorderOver = $state<number | null>(null);
 	let lang = $derived($resolvedLocale);
 	let selectedCount = $derived(selectedIds.length);
 	let pageReady = $derived(
@@ -47,6 +53,13 @@
 	});
 
 	onMount(() => {
+		const onReorder = (event: Event) => {
+			const detail = (event as CustomEvent<{ from: number | null; over: number | null }>).detail;
+			reorderFrom = detail.from;
+			reorderOver = detail.over;
+		};
+		document.addEventListener('repdraft:builder-reorder', onReorder);
+
 		loadExerciseIndex()
 			.then((items) => {
 				indexById = new Map(items.map((item) => [item.id, item]));
@@ -54,6 +67,10 @@
 			.finally(() => {
 				indexReady = true;
 			});
+
+		return () => {
+			document.removeEventListener('repdraft:builder-reorder', onReorder);
+		};
 	});
 
 	async function save() {
@@ -109,15 +126,15 @@
 
 {#snippet builderClearAction()}
 	{#if $draft.exercises.length > 0}
-		<button
-			type="button"
-			class="btn-ghost is-danger shrink-0"
+		<AppButton
+			variant="ghost"
+			class="is-danger shrink-0"
 			onclick={clearDraft}
 			aria-label={translate(lang, 'builder.clear')}
 			title={translate(lang, 'builder.clear')}
 		>
 			<LucideIcon icon={Trash2} size={ICON_BUTTON} />
-		</button>
+		</AppButton>
 	{/if}
 {/snippet}
 
@@ -145,9 +162,9 @@
 		</div>
 		<div class="flex shrink-0 items-center gap-2">
 			{@render builderClearAction()}
-			<button
-				type="button"
-				class="btn-primary builder-toolbar-save"
+			<AppButton
+				variant="secondary"
+				class="builder-toolbar-save"
 				disabled={!pageReady || saving || $draft.exercises.length === 0}
 				aria-busy={saving}
 				aria-label={translate(lang, 'builder.save')}
@@ -159,7 +176,7 @@
 				{:else}
 					<LucideIcon icon={Save} size={ICON_BUTTON} />
 				{/if}
-			</button>
+			</AppButton>
 		</div>
 	</div>
 
@@ -167,16 +184,17 @@
 		<PageSkeleton variant="builder" rows={3} />
 	{:else}
 		<div class="soft-enter">
-			<label class="field-label mb-5 block max-w-xl">
+			<AppLabel class="mb-5 block max-w-xl">
 				{translate(lang, 'builder.name')}
-				<input
-					class="field mt-1.5 w-full"
+				<AppInput
+					class="mt-1.5 w-full"
 					type="text"
 					placeholder={translate(lang, 'builder.namePh')}
+					maxlength={PLAN_NAME_MAX}
 					value={$draft.name}
 					oninput={(e) => draft.setName((e.currentTarget as HTMLInputElement).value)}
 				/>
-			</label>
+			</AppLabel>
 
 			{#if $draft.exercises.length === 0}
 				<EmptyState
@@ -191,12 +209,12 @@
 					<p class="section-title">{translate(lang, 'builder.exercisesSection')}</p>
 					{#if selectedCount >= 2}
 						<div class="builder-section-head__actions">
-							<button type="button" class="btn-secondary" onclick={makeOrGroup}>
+							<AppButton variant="secondary" onclick={makeOrGroup}>
 								{translate(lang, 'builder.or', { n: selectedCount })}
-							</button>
-							<button type="button" class="btn-secondary" onclick={makeSuperset}>
+							</AppButton>
+							<AppButton variant="secondary" onclick={makeSuperset}>
 								{translate(lang, 'builder.superset')} · {selectedCount}
-							</button>
+							</AppButton>
 						</div>
 					{/if}
 				</div>
@@ -212,6 +230,9 @@
 						<div
 							class="builder-exercise-item"
 							class:builder-exercise-item--or={Boolean(item.altGroupId)}
+							class:builder-exercise-item--reorder-dragging={reorderFrom === index}
+							class:builder-exercise-item--reorder-over={reorderOver === index}
+							data-builder-index={index}
 						>
 							<SwipeToDelete
 								label={translate(lang, 'builder.remove')}
@@ -223,13 +244,12 @@
 								<WorkoutExerciseRow
 									{item}
 									{index}
-									total={$draft.exercises.length}
 									{meta}
 									selected={selectedIds.includes(item.exerciseId)}
 									groupRole={role}
 									{altRole}
 									onupdate={(patch) => draft.updateExercise(item.exerciseId, patch)}
-									onmove={(from, to) => draft.moveByArrow(from, to > from ? 1 : -1)}
+									onreorder={(from, to) => draft.moveExercise(from, to)}
 									onremove={() => {
 										draft.removeFromDraft(item.exerciseId);
 										selectedIds = selectedIds.filter((id) => id !== item.exerciseId);
@@ -251,19 +271,28 @@
 					{/each}
 				</div>
 
-				<a
-					class="builder-add-link btn-secondary mt-4 w-full items-center justify-center gap-2"
+				<AppButton
+					variant="secondary"
 					href={BUILDER_ADD_EXERCISE_HREF}
+					class="builder-add-link mt-4 w-full items-center justify-center gap-2"
 				>
 					<LucideIcon icon={Plus} size={ICON_BUTTON} />
 					{translate(lang, 'builder.addExercise')}
-				</a>
+				</AppButton>
 
 				<div class="sticky-actions lg:hidden">
-					<div class="sticky-actions__inner flex flex-col gap-1">
-						<button
-							type="button"
-							class="btn-primary btn-block"
+					<div class="sticky-actions__inner builder-sticky-actions">
+						<AppButton
+							variant="secondary"
+							href={BUILDER_ADD_EXERCISE_HREF}
+							class="builder-sticky-actions__btn gap-1.5"
+							aria-label={translate(lang, 'builder.addExercise')}
+						>
+							<LucideIcon icon={Plus} size={ICON_BUTTON} />
+							{translate(lang, 'builder.addExerciseShort')}
+						</AppButton>
+						<AppButton
+							class="builder-sticky-actions__btn"
 							disabled={saving}
 							aria-busy={saving}
 							onclick={() => void save()}
@@ -276,19 +305,19 @@
 							{:else}
 								{translate(lang, 'builder.save')}
 							{/if}
-						</button>
+						</AppButton>
 					</div>
 				</div>
 			{/if}
 		</div>
 	{/if}
 
-	{#if pageReady}
+	{#if pageReady && $draft.exercises.length === 0}
 		<AppFab
 			class="lg:hidden"
 			href={BUILDER_ADD_EXERCISE_HREF}
 			label={translate(lang, 'builder.addExercise')}
-			placement={$draft.exercises.length > 0 ? 'sticky' : 'tabbar'}
+			placement="tabbar"
 		/>
 	{/if}
 </section>
@@ -302,11 +331,11 @@
 		{translate(lang, 'builder.confirmClear')}
 	</p>
 	{#snippet actions()}
-		<button type="button" class="btn-secondary" onclick={dismissClearOffer}>
+		<AppButton variant="secondary" onclick={dismissClearOffer}>
 			{translate(lang, 'common.cancel')}
-		</button>
-		<button type="button" class="btn-danger" onclick={commitClearDraft}>
+		</AppButton>
+		<AppButton variant="danger" onclick={commitClearDraft}>
 			{translate(lang, 'common.clear')}
-		</button>
+		</AppButton>
 	{/snippet}
 </BottomSheet>

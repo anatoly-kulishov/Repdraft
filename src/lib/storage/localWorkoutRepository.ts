@@ -17,9 +17,35 @@ function readPlans(): WorkoutPlan[] {
 	}
 }
 
+/** Sync peek for Home boot skeleton (create vs start). */
+export function peekHasLocalPlans(): boolean {
+	return readPlans().length > 0;
+}
+
+/** Keep SSR cookie in sync so `/` boots the matching skeleton. */
+export function syncHomePlansBootCookie(hasPlans: boolean): void {
+	if (typeof document === 'undefined') return;
+	try {
+		if (hasPlans) {
+			document.cookie = 'repdraft_home_has_plans=1; path=/; Max-Age=31536000; SameSite=Lax';
+			document.documentElement.dataset.homeBoot = 'start';
+		} else {
+			document.cookie = 'repdraft_home_has_plans=; path=/; Max-Age=0; SameSite=Lax';
+			if (document.documentElement.dataset.authBoot !== 'account') {
+				document.documentElement.dataset.homeBoot = 'create';
+			} else {
+				document.documentElement.dataset.homeBoot = 'start';
+			}
+		}
+	} catch {
+		/* ignore */
+	}
+}
+
 function writePlans(plans: WorkoutPlan[]): void {
 	if (typeof localStorage === 'undefined') return;
 	localStorage.setItem(PLANS_STORAGE_KEY, JSON.stringify(plans));
+	syncHomePlansBootCookie(plans.length > 0);
 }
 
 export function readDraft(): WorkoutPlan | null {

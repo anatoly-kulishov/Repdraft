@@ -1,4 +1,6 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
+	import AppPanel from '$lib/components/AppPanel.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
@@ -67,8 +69,10 @@
 	let volumeKg = $derived(session ? sessionVolumeKg(session) : 0);
 
 	function formatSet(set: LoggedSet): string {
-		if (set.weightKg != null) return `${set.weightKg} kg × ${set.reps ?? '—'}`;
-		return `${set.reps ?? '—'} ${translate(lang, 'live.reps').toLowerCase()}`;
+		if (set.weightKg != null) {
+			return `${set.weightKg} ${translate(lang, 'pr.kg')} × ${set.reps ?? '—'}`;
+		}
+		return `× ${set.reps ?? '—'}`;
 	}
 
 	let authNextHref = $derived(
@@ -171,78 +175,99 @@
 						{@const meta = indexById.get(item.ex.exerciseId) ?? null}
 						{@const ex = item.ex}
 						<div class="summary-exercises-preview__item">
+							{#if meta}
+								<div class="summary-exercises-preview__thumb media-well" aria-hidden="true">
+									<img
+										src={`/${meta.image}`}
+										alt=""
+										width="48"
+										height="48"
+										loading="lazy"
+										decoding="async"
+									/>
+								</div>
+							{:else}
+								<div
+									class="summary-exercises-preview__thumb media-well is-placeholder"
+									aria-hidden="true"
+								></div>
+							{/if}
 							<p class="summary-exercises-preview__name">
 								{meta ? exerciseName(meta, lang) : ex.exerciseId}
 							</p>
-							<p class="summary-exercises-preview__meta">
+							<ul class="summary-exercises-preview__sets">
 								{#each item.completed as set, si (si)}
-									{#if si > 0}<span aria-hidden="true"> · </span>{/if}
-									<span class="tabular-nums">{formatSet(set)}</span>
+									<li class="summary-exercises-preview__set">
+										<span class="summary-exercises-preview__set-i tabular-nums" aria-hidden="true"
+											>{si + 1}</span
+										>
+										<span class="summary-exercises-preview__set-val tabular-nums"
+											>{formatSet(set)}</span
+										>
+									</li>
 								{/each}
-							</p>
+							</ul>
 						</div>
 					{/each}
 				</div>
 				{#if moreCount > 0}
-					<button
-						type="button"
-						class="summary-exercises-preview__more"
+					<AppButton
+						variant="link"
+						class="summary-exercises-preview__more !h-auto !min-h-0 !min-w-0 w-auto p-0"
 						onclick={() => (showAllExercises = true)}
 					>
 						{translate(lang, 'summary.moreExercises', { n: moreCount })}
-					</button>
+					</AppButton>
 				{:else if loggedExercises.length > PREVIEW_LIMIT}
-					<button
-						type="button"
-						class="summary-exercises-preview__more"
+					<AppButton
+						variant="link"
+						class="summary-exercises-preview__more !h-auto !min-h-0 !min-w-0 w-auto p-0"
 						onclick={() => (showAllExercises = false)}
 					>
 						{translate(lang, 'summary.showLess')}
-					</button>
+					</AppButton>
 				{/if}
 			</div>
 		{/if}
 
 		{#if showGuestSyncHint}
-			<div
-				class="summary-guest-hint panel text-left"
+			<AppPanel
+				class="summary-guest-hint text-left"
 				role="region"
 				aria-label={translate(lang, 'summary.guestSyncTitle')}
 			>
 				<p class="summary-guest-hint__title">{translate(lang, 'summary.guestSyncTitle')}</p>
 				<p class="summary-guest-hint__lead">{translate(lang, 'summary.guestSyncLead')}</p>
 				<div class="summary-guest-hint__actions">
-					<a class="btn-secondary px-4" href={authNextHref}
-						>{translate(lang, 'summary.guestSyncCta')}</a
-					>
-					<button
-						type="button"
-						class="btn-link px-3"
-						onclick={dismissGuestHint}
-					>
+					<AppButton variant="secondary" href={authNextHref} class="px-4">
+						{translate(lang, 'summary.guestSyncCta')}
+					</AppButton>
+					<AppButton variant="link" class="px-3" onclick={dismissGuestHint}>
 						{translate(lang, 'summary.guestSyncDismiss')}
-					</button>
+					</AppButton>
 				</div>
-			</div>
+			</AppPanel>
 		{/if}
 
 		<div class="summary-actions summary-page__done-inline">
-			<a
-				class="btn-primary btn-block"
+			<AppButton
+				block
 				href={`/workouts/history/${session.id}`}
 				data-sveltekit-replacestate
-				>{translate(lang, 'summary.done')}</a
 			>
+				{translate(lang, 'summary.done')}
+			</AppButton>
 		</div>
 
 		<div class="sticky-actions summary-page__done-sticky lg:hidden">
 			<div class="sticky-actions__inner summary-actions">
-				<a
-					class="btn-primary btn-block"
+				<AppButton
+					block
 					href={`/workouts/history/${session.id}`}
 					data-sveltekit-replacestate
-					>{translate(lang, 'summary.done')}</a
 				>
+					{translate(lang, 'summary.done')}
+				</AppButton>
 			</div>
 		</div>
 	</section>
