@@ -1,6 +1,7 @@
 <script lang="ts">
 	import CatalogExerciseList from '$lib/components/CatalogExerciseList.svelte';
 	import CatalogTargetGrid from '$lib/components/CatalogTargetGrid.svelte';
+	import CatalogCategoryGridSkeleton from '$lib/components/CatalogCategoryGridSkeleton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
@@ -64,6 +65,9 @@
 				? translate(lang, 'catalog.allExercises')
 				: title
 	);
+	/** Dev/QA: ?skeleton=1 — preview category grid placeholders on target browse. */
+	let forceSkeleton = $derived($page.url.searchParams.get('skeleton') === '1');
+	let showTargetSkeleton = $derived(showTargetBrowse && forceSkeleton);
 </script>
 
 <svelte:head>
@@ -88,7 +92,9 @@
 			</div>
 		</div>
 
-		{#if showTargetBrowse}
+		{#if showTargetSkeleton}
+			<CatalogCategoryGridSkeleton label={translate(lang, 'common.loading')} rows={6} />
+		{:else if showTargetBrowse}
 			<CatalogTargetGrid
 				bodyPart={data.bodyPart}
 				chips={data.targetChips}

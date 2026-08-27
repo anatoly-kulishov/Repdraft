@@ -39,6 +39,16 @@
 {#if editing}
 	<AppButton
 		variant="ghost"
+		class="history-detail__icon-btn"
+		disabled={savingEdit || deleting}
+		aria-label={translate(lang, 'workouts.cancelEdit')}
+		title={translate(lang, 'workouts.cancelEdit')}
+		onclick={onCancel}
+	>
+		<LucideIcon icon={X} size={ICON_BUTTON} />
+	</AppButton>
+	<AppButton
+		variant="ghost"
 		class="history-detail__icon-btn history-detail__icon-btn--save"
 		disabled={savingEdit || deleting}
 		aria-busy={savingEdit}
@@ -51,16 +61,6 @@
 		{:else}
 			<LucideIcon icon={Check} size={ICON_BUTTON} />
 		{/if}
-	</AppButton>
-	<AppButton
-		variant="ghost"
-		class="history-detail__icon-btn"
-		disabled={savingEdit || deleting}
-		aria-label={translate(lang, 'workouts.cancelEdit')}
-		title={translate(lang, 'workouts.cancelEdit')}
-		onclick={onCancel}
-	>
-		<LucideIcon icon={X} size={ICON_BUTTON} />
 	</AppButton>
 {:else}
 	<AppButton

@@ -67,13 +67,19 @@
 {/snippet}
 
 {#snippet nextButton(primary: boolean)}
+	{@const nextLocked = !currentExerciseComplete}
 	<AppButton
 		variant={primary ? 'primary' : 'secondary'}
 		block={layout === 'mobile'}
 		class="{layout === 'mobile' ? '' : 'inline-flex'} items-center justify-center gap-2 {primary
 			? ''
-			: 'live-session-next--demoted'}"
-		disabled={finishing}
+			: 'live-session-next--demoted'}{nextLocked ? ' live-session-next--locked' : ''}"
+		disabled={finishing || nextLocked}
+		aria-disabled={finishing || nextLocked}
+		aria-label={nextLocked
+			? translate(lang, 'live.nextLockedAria')
+			: translate(lang, 'live.nextExercise')}
+		title={nextLocked ? translate(lang, 'live.nextLockedHint') : undefined}
 		onclick={onNext}
 	>
 		{translate(lang, 'live.nextExercise')}

@@ -470,11 +470,14 @@ import {
 		</AppPanel>
 	{:else if !$auth.user}
 		<AppPanel dashed class="mb-3 text-sm text-[var(--color-muted)] md:mb-4">
-			<a
-				class="font-semibold text-[var(--color-accent-text)] underline"
-				href={`/auth?next=${encodeURIComponent(`/exercise/${exerciseId}`)}`}
-				>{translate(lang, 'clips.signInPublish')}</a
-			>{translate(lang, 'clips.signInSuffix')}
+			<!-- Card is flex-col: keep link + suffix in one block so they wrap as inline text. -->
+			<p class="m-0 text-pretty">
+				<a
+					class="font-semibold text-[var(--color-accent-text)] underline"
+					href={`/auth?next=${encodeURIComponent(`/exercise/${exerciseId}`)}`}
+					>{translate(lang, 'clips.signInPublish')}</a
+				>{translate(lang, 'clips.signInSuffix')}
+			</p>
 		</AppPanel>
 	{:else if composerOpen}
 		<ClipComposer

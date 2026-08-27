@@ -384,7 +384,6 @@
 			<div class="auth-page__heading">
 				<h1 class="page-title auth-page__title hidden lg:block">{translate(lang, 'auth.title')}</h1>
 			</div>
-			<p class="page-lead auth-page__lead">{translate(lang, 'auth.lead')}</p>
 			{#if guestExtrasMode}
 				<BrandTagline class="brand-tagline--auth" />
 			{/if}

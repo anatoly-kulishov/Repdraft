@@ -37,7 +37,7 @@ async function assertFile(rel) {
 for (const rel of [
 	'src/lib/components/SubrouteBack.svelte',
 	'src/lib/components/ScreenHeader.svelte',
-	'src/lib/components/CatalogZoneCard.svelte'
+	'src/lib/components/CatalogCategoryCard.svelte'
 ]) {
 	await assertFile(rel);
 }

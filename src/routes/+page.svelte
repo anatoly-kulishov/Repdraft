@@ -28,7 +28,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { ChevronRight, LogIn, Plus } from '@lucide/svelte';
+	import { ChevronRight, LogIn, NotebookPen, Plus, Smartphone, UserRound } from '@lucide/svelte';
 
 	let { data }: { data: { bootStart: boolean } } = $props();
 
@@ -125,6 +125,12 @@
 				: translate(lang, 'home.noPlansLead')
 	);
 
+	const guestHeroPoints = [
+		{ icon: NotebookPen, key: 'home.guestPointLog' as const },
+		{ icon: Smartphone, key: 'home.guestPointLocal' as const },
+		{ icon: UserRound, key: 'home.guestPointSync' as const }
+	];
+
 	let firstName = $derived(greetingFirstName($greetingName, $auth.user));
 	let showGreeting = $derived($auth.ready && !isGuest);
 	let greetingText = $derived.by(() => {
@@ -172,7 +178,7 @@
 			label={translate(lang, 'common.loading')}
 			variant={bootSkeletonVariant}
 		/>
-	{:else if showReadyHeader}
+	{:else if showReadyHeader && !hasActive}
 		<header class="home-header home-header--mockup">
 			<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
 			<div class="home-header__copy">
@@ -188,12 +194,12 @@
 					<p class="home-header__subtitle">{translate(lang, 'home.readyTitle')}</p>
 				{/if}
 			</div>
-			{#if !hasActive}
-				<AppButton href={mockupCtaHref} class="home-header__cta">
-					{mockupCtaLabel}
-				</AppButton>
-			{/if}
+			<AppButton href={mockupCtaHref} class="home-header__cta">
+				{mockupCtaLabel}
+			</AppButton>
 		</header>
+	{:else if showReadyHeader && hasActive}
+		<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
 	{:else if showGuestCreateHero}
 		<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
 	{:else}
@@ -213,7 +219,7 @@
 					<p class="home-continue-card__meta">{continueRemaining}</p>
 				</div>
 				<span
-					class="inline-flex min-h-12 items-center rounded-md bg-primary px-3.5 text-sm font-semibold text-primary-foreground home-continue-card__cta"
+					class="btn-primary home-continue-card__cta"
 					>{translate(lang, 'home.continue')}</span
 				>
 			</a>
@@ -221,9 +227,20 @@
 		<div class="home-dashboard">
 			{#if showGuestCreateHero}
 				<div class="home-dashboard-top">
-					<div class="home-hero">
+					<div class="home-hero home-hero--guest">
+						<p class="home-hero-kicker">{translate(lang, 'home.guestTrainKicker')}</p>
 						<h2 class="home-hero-title">{createHeroTitle}</h2>
 						<p class="home-hero-meta">{createHeroLead}</p>
+						<ul class="home-hero-points">
+							{#each guestHeroPoints as point (point.key)}
+								<li class="home-hero-point">
+									<span class="home-hero-point__icon" aria-hidden="true">
+										<LucideIcon icon={point.icon} size={ICON_SMALL} />
+									</span>
+									<span class="home-hero-point__text">{translate(lang, point.key)}</span>
+								</li>
+							{/each}
+						</ul>
 						{#if isFirstTimeHome}
 							<BrandTagline class="brand-tagline--hero" />
 						{/if}
@@ -245,23 +262,6 @@
 							</AppButton>
 						</div>
 					</div>
-					{#if !hasSessionHistory}
-						<nav class="home-guest-next">
-							<AppButton
-								variant="ghost"
-								class="panel home-guest-next__card h-auto flex-col items-start gap-1 text-left"
-								href="/exercises"
-							>
-								<span class="home-guest-next__title">{translate(lang, 'nav.exercises')}</span>
-								<span class="home-guest-next__hint">{translate(lang, 'home.guestBrowseHint')}</span>
-								<LucideIcon
-									icon={ChevronRight}
-									size={ICON_SMALL}
-									class="home-guest-next__chevron"
-								/>
-							</AppButton>
-						</nav>
-					{/if}
 				</div>
 			{/if}
 
@@ -272,12 +272,10 @@
 							<div class="home-section home-dashboard-plans">
 								<div class="home-section-head">
 									<h2 class="section-title">{translate(lang, 'home.plansTitle')}</h2>
-									{#if $plans.length > homePlans.length}
-										<a class="home-section-link" href="/workouts">
-											{translate(lang, 'home.viewAllWorkouts')}
-											<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
-										</a>
-									{/if}
+									<a class="home-section-link" href="/workouts">
+										{translate(lang, 'nav.workouts')}
+										<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
+									</a>
 								</div>
 								<ul class="entity-list">
 									{#each homePlans as plan (plan.id)}

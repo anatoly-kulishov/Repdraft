@@ -26,9 +26,15 @@
 		bind:files
 		bind:value
 		type="file"
-		class={cn('h-12 min-h-12 text-base', className)}
+		class={cn('h-12 min-h-12 px-3.5 py-3 text-base leading-normal', className)}
 		{...rest}
 	/>
 {:else}
-	<Input bind:ref bind:value {type} class={cn('h-12 min-h-12 text-base', className)} {...rest} />
+	<Input
+		bind:ref
+		bind:value
+		{type}
+		class={cn('h-12 min-h-12 px-3.5 py-3 text-base leading-normal', className)}
+		{...rest}
+	/>
 {/if}

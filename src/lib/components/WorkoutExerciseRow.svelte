@@ -3,12 +3,14 @@
 	import AppCheckbox from '$lib/components/AppCheckbox.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
 	import ExerciseReorderHandle from '$lib/components/ExerciseReorderHandle.svelte';
+	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import type { WorkoutExercise } from '$lib/domain/types';
 	import { coerceReps, coerceRestSec, coerceSets, REPS } from '$lib/domain/inputLimits';
 	import { exerciseName } from '$lib/domain/exerciseName';
+	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { linkWithFrom, currentReturnPath } from '$lib/domain/navigation';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -48,14 +50,15 @@
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
+	let techniqueOpen = $state(false);
 	let inGroup = $derived(Boolean(item.groupId));
 	let inOrGroup = $derived(Boolean(item.altGroupId));
 	const chipInputClass =
-		'workout-ex-chip__input !h-[2.15rem] !min-h-0 w-[2.85rem] min-w-[2.85rem] max-w-[2.85rem] sm:w-[3.5rem] sm:min-w-[3.5rem] sm:max-w-[3.5rem] shrink-0 px-1.5 text-center text-base tabular-nums';
+		'workout-ex-chip__input !h-[2.5rem] !min-h-0 w-[2.85rem] min-w-[2.85rem] max-w-[2.85rem] sm:w-[3.5rem] sm:min-w-[3.5rem] sm:max-w-[3.5rem] shrink-0 px-1.5 text-center text-base tabular-nums';
 	const chipInputRestClass =
-		'workout-ex-chip__input workout-ex-chip__input--rest !h-[2.15rem] !min-h-0 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem] sm:w-[4rem] sm:min-w-[4rem] sm:max-w-[4rem] shrink-0 px-1.5 text-center text-base tabular-nums';
+		'workout-ex-chip__input workout-ex-chip__input--rest !h-[2.5rem] !min-h-0 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem] sm:w-[4rem] sm:min-w-[4rem] sm:max-w-[4rem] shrink-0 px-1.5 text-center text-base tabular-nums';
 	const supersetInputClass =
-		'workout-ex-chip__input !h-[1.9rem] !min-h-0 w-[2.85rem] min-w-[2.85rem] max-w-[2.85rem] shrink-0 px-1.5 text-center text-base tabular-nums';
+		'workout-ex-chip__input !h-[2.15rem] !min-h-0 w-[2.85rem] min-w-[2.85rem] max-w-[2.85rem] shrink-0 px-1.5 text-center text-base tabular-nums';
 </script>
 
 <article
@@ -144,7 +147,7 @@
 		{#if ontoggleSelect}
 			<label class="workout-ex-head__check">
 				<AppCheckbox
-					class="size-5"
+					class="workout-ex-head__checkbox size-6"
 					checked={selected}
 					onCheckedChange={() => ontoggleSelect?.()}
 					aria-label={translate(lang, 'builder.selectExercise')}
@@ -152,18 +155,24 @@
 			</label>
 		{/if}
 		{#if meta}
-			<span class="media-well workout-ex-head__media">
+			{@const title = exerciseName(meta, lang)}
+			{@const detailHref = linkWithFrom(
+				`/exercise/${item.exerciseId}`,
+				currentReturnPath($page.url.pathname, $page.url.searchParams)
+			)}
+			<AppButton
+				variant="ghost"
+				class="workout-ex-head__media-btn media-well workout-ex-head__media !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+				aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+				onclick={() => {
+					techniqueOpen = true;
+				}}
+			>
 				<img src={`/${meta.image}`} alt="" width="120" height="120" />
-			</span>
+			</AppButton>
 			<div class="workout-ex-head__copy">
-				<a
-					class="workout-ex-head__title"
-					href={linkWithFrom(
-						`/exercise/${item.exerciseId}`,
-						currentReturnPath($page.url.pathname, $page.url.searchParams)
-					)}
-				>
-					{exerciseName(meta, lang)}
+				<a class="workout-ex-head__title" href={detailHref}>
+					{title}
 				</a>
 				{#if inGroup}
 					<label class="workout-ex-chip">
@@ -249,3 +258,20 @@
 		</div>
 	</div>
 </article>
+
+{#if meta && techniqueOpen}
+	<ExerciseTechniqueSheet
+		open={techniqueOpen}
+		titleId={`builder-technique-${item.exerciseId}`}
+		title={exerciseName(meta, lang)}
+		hint={`${labelTarget(meta.target, lang)} · ${labelEquipment(meta.equipment, lang)}`}
+		imagePath={meta.image}
+		detailHref={linkWithFrom(
+			`/exercise/${item.exerciseId}`,
+			currentReturnPath($page.url.pathname, $page.url.searchParams)
+		)}
+		onDismiss={() => {
+			techniqueOpen = false;
+		}}
+	/>
+{/if}

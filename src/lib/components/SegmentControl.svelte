@@ -30,6 +30,7 @@
 			class:is-active={value === option.id}
 			role="tab"
 			aria-selected={value === option.id}
+			aria-label={option.label}
 			onclick={() => onchange(option.id)}
 		>
 			{option.label}

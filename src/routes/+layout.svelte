@@ -77,11 +77,16 @@
 		void techniqueClipHints.refresh();
 		void auth.init();
 
-		/* Belt-and-suspenders: dismiss boot splash if font/preload hang blocked window.load. */
-		const boot = document.getElementById('pwa-boot');
-		if (boot) {
-			boot.classList.add('is-done');
-			window.setTimeout(() => boot.remove(), 220);
+		/* Belt-and-suspenders: same hide path as app.html (respects min splash time). */
+		const hideBoot = (window as Window & { __repdraftHideBoot?: () => void }).__repdraftHideBoot;
+		if (typeof hideBoot === 'function') {
+			hideBoot();
+		} else {
+			const boot = document.getElementById('pwa-boot');
+			if (boot) {
+				boot.classList.add('is-done');
+				window.setTimeout(() => boot.remove(), 220);
+			}
 		}
 
 		const onOnline = () => {
@@ -242,10 +247,9 @@
 >
 	<div class="shell-nav-tabbar__inner">
 		<div class="shell-nav-tabbar__grid">
-		<AppButton
-			variant="ghost"
+		<a
 			href="/"
-			class="tab-link !h-auto !min-h-0 !min-w-0 w-auto p-0"
+			class="tab-link"
 			data-active={isActive('/')}
 			aria-current={isActive('/') ? 'page' : undefined}
 		>
@@ -259,11 +263,10 @@
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.tabHome')}</span>
 			</span>
-		</AppButton>
-		<AppButton
-			variant="ghost"
+		</a>
+		<a
 			href="/workouts"
-			class="tab-link !h-auto !min-h-0 !min-w-0 w-auto p-0"
+			class="tab-link"
 			data-active={isActive('/workouts')}
 			aria-current={isActive('/workouts') ? 'page' : undefined}
 			aria-label={hasActiveSession
@@ -283,11 +286,10 @@
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.workouts')}</span>
 			</span>
-		</AppButton>
-		<AppButton
-			variant="ghost"
+		</a>
+		<a
 			href="/exercises"
-			class="tab-link !h-auto !min-h-0 !min-w-0 w-auto p-0"
+			class="tab-link"
 			data-active={isActive('/exercises')}
 			aria-current={isActive('/exercises') ? 'page' : undefined}
 		>
@@ -301,7 +303,7 @@
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.exercises')}</span>
 			</span>
-		</AppButton>
+		</a>
 		</div>
 	</div>
 </nav>

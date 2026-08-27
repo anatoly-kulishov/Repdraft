@@ -1,8 +1,7 @@
 <script lang="ts">
-	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { List } from '@lucide/svelte';
 
 	let {
 		label,
@@ -15,13 +14,15 @@
 		href: string;
 		count?: number;
 		coverImage?: string | null;
-		/** Hub LCP candidate: eager + high fetch priority. */
 		priority?: boolean;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
 	let loaded = $state(false);
 	let imgEl = $state<HTMLImageElement | null>(null);
+	let countLabel = $derived(
+		count > 0 ? translate(lang, 'catalog.zoneCountShort', { n: count }) : ''
+	);
 
 	$effect(() => {
 		const img = imgEl;
@@ -33,34 +34,36 @@
 	}
 </script>
 
-<a {href} class="zone-card zone-card--grid">
-	<div class="zone-card__media zone-card__media--grid media-well relative aspect-square min-w-0 overflow-hidden">
+<a
+	{href}
+	class="zone-card zone-card--grid"
+	aria-label={countLabel ? `${label}, ${countLabel}` : label}
+>
+	<div class="zone-card__media zone-card__media--grid media-well relative min-w-0 overflow-hidden">
+		{#if coverImage && !loaded}
+			<AppSkeleton class="zone-card__media-skel absolute inset-0 rounded-none" aria-hidden="true" />
+		{/if}
 		{#if coverImage}
 			<img
 				bind:this={imgEl}
-				class={`zone-card__img block h-full w-full object-contain ${loaded ? 'is-loaded' : ''}`}
+				class={`zone-card__img block h-full w-full ${loaded ? 'is-loaded' : ''}`}
 				src={`/${coverImage}`}
 				alt=""
 				width="180"
 				height="180"
-				sizes="(min-width: 1024px) 180px, (min-width: 768px) 33vw, 45vw"
+				sizes="(min-width: 1024px) 180px, (min-width: 768px) 25vw, 45vw"
 				loading={priority ? 'eager' : 'lazy'}
 				fetchpriority={priority ? 'high' : 'auto'}
 				decoding="async"
 				onload={onImgLoad}
 			/>
 		{/if}
-	</div>
-
-	<div class="zone-card__body zone-card__body--grid flex min-w-0 flex-1 flex-col gap-1">
-		<h2 class="zone-card__grid-title line-clamp-2">{label}</h2>
-		{#if count > 0}
-			<div class="zone-card__grid-meta">
-				<span class="zone-card__grid-meta-item" title={translate(lang, 'catalog.zoneCount', { n: count })}>
-					<LucideIcon icon={List} size={12} class="zone-card__grid-meta-icon" />
-					<span class="truncate">{translate(lang, 'catalog.zoneCount', { n: count })}</span>
-				</span>
-			</div>
-		{/if}
+		<div class="zone-card__scrim" aria-hidden="true"></div>
+		<div class="zone-card__caption">
+			<h2 class="zone-card__grid-title line-clamp-2">{label}</h2>
+			{#if countLabel}
+				<p class="zone-card__grid-count truncate">{countLabel}</p>
+			{/if}
+		</div>
 	</div>
 </a>

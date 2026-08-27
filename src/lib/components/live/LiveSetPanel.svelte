@@ -2,8 +2,7 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
 	import { cn } from '$lib/utils.js';
-	import BottomSheet from '$lib/components/BottomSheet.svelte';
-	import CloseIconButton from '$lib/components/CloseIconButton.svelte';
+	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { exerciseName } from '$lib/domain/exerciseName';
@@ -62,7 +61,6 @@
 	} = $props();
 
 	let techniqueOpen = $state(false);
-	let techniqueSrc = $state('');
 
 	function titleFor(id: string): string {
 		const item = names.get(id);
@@ -105,27 +103,13 @@
 		});
 	}
 
-	function techniqueMediaSrc(imagePath: string): string {
-		return `/${imagePath.replace(/^images\//, 'videos/').replace(/\.jpe?g$/i, '.gif')}`;
-	}
-
 	function openTechnique() {
-		const meta = names.get(exercise.exerciseId);
-		if (!meta) return;
-		techniqueSrc = techniqueMediaSrc(meta.image);
+		if (!names.get(exercise.exerciseId)) return;
 		techniqueOpen = true;
 	}
 
 	function dismissTechnique() {
 		techniqueOpen = false;
-	}
-
-	function onTechniqueImgError(e: Event) {
-		const img = e.currentTarget as HTMLImageElement;
-		const meta = names.get(exercise.exerciseId);
-		if (meta && img.src.includes('/videos/')) {
-			img.src = `/${meta.image}`;
-		}
 	}
 
 	let canRemoveSet = $derived(exercise.sets.length > 1);
@@ -291,7 +275,7 @@
 			{#if canApplyLast}
 				<AppButton
 					variant="ghost"
-					class="live-last-chip live-last-chip--tap !h-auto !min-w-0 w-auto"
+					class="live-last-chip live-last-chip--tap"
 					aria-label={translate(lang, 'live.lastApplyAria', { value: lastFormatted })}
 					onclick={applyLastPerformance}
 				>
@@ -310,7 +294,7 @@
 		{#if canFillWeightAll && fillWeightKg != null}
 			<AppButton
 				variant="ghost"
-				class="live-last-chip live-last-chip--tap !h-auto !min-h-0 !min-w-0 w-auto p-0"
+				class="live-last-chip live-last-chip--tap"
 				aria-label={fillWeightAllLabel}
 				onclick={applyWeightToAllSets}
 			>
@@ -334,7 +318,7 @@
 			<span class="live-set-head__reps">{translate(lang, 'live.reps')}</span>
 			<AppButton
 				variant="ghost"
-				class={cn('live-set-head-done !min-h-0 !min-w-0 size-auto p-0', allSetsDone && 'live-set-head-done--all')}
+				class={cn('live-set-head-done', allSetsDone && 'live-set-head-done--all')}
 				aria-label={toggleAllLabel}
 				title={toggleAllLabel}
 				onclick={onToggleAllComplete}
@@ -441,27 +425,12 @@
 </div>
 
 {#if techniqueOpen && exerciseMeta}
-	<BottomSheet
+	<ExerciseTechniqueSheet
 		open={techniqueOpen}
-		raised
 		titleId={`live-technique-${exercise.exerciseId}`}
+		{title}
+		hint={labelTarget(exerciseMeta.target, lang)}
+		imagePath={exerciseMeta.image}
 		onDismiss={dismissTechnique}
-	>
-		<div class="bottom-sheet__head">
-			<p id={`live-technique-${exercise.exerciseId}`} class="bottom-sheet__title">{title}</p>
-		</div>
-		<p class="bottom-sheet__hint">{labelTarget(exerciseMeta.target, lang)}</p>
-		<div class="exercise-technique-sheet__media media-well">
-			<CloseIconButton class="exercise-technique-sheet__close" onclick={dismissTechnique} />
-			<img
-				src={techniqueSrc}
-				alt=""
-				width="180"
-				height="180"
-				decoding="async"
-				class="exercise-technique-sheet__img"
-				onerror={onTechniqueImgError}
-			/>
-		</div>
-	</BottomSheet>
+	/>
 {/if}

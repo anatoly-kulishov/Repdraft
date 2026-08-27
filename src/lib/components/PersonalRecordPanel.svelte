@@ -315,19 +315,24 @@
 		</AppLabel>
 	</div>
 
-	<div class="mt-3 flex flex-wrap items-center gap-2">
-		<AppButton disabled={busy} aria-busy={busy} onclick={() => void onSave()}>
+	<div class="pr-actions">
+		<AppButton
+			variant="secondary"
+			class="pr-actions__btn"
+			disabled={busy}
+			onclick={() => void onClear()}
+		>
+			{hasStoredEntry ? translate(lang, 'pr.delete') : translate(lang, 'pr.clear')}
+		</AppButton>
+		<AppButton class="pr-actions__btn" disabled={busy} aria-busy={busy} onclick={() => void onSave()}>
 			{#if busy}
-				<span class="inline-flex items-center gap-2">
+				<span class="inline-flex items-center justify-center gap-2">
 					<Spinner size="sm" block={false} />
 					{translate(lang, 'auth.wait')}
 				</span>
 			{:else}
 				{translate(lang, 'pr.save')}
 			{/if}
-		</AppButton>
-		<AppButton variant="link" class="text-sm" disabled={busy} onclick={() => void onClear()}>
-			{hasStoredEntry ? translate(lang, 'pr.delete') : translate(lang, 'pr.clear')}
 		</AppButton>
 	</div>
 </AppPanel>

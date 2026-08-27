@@ -220,11 +220,3 @@
 		</ul>
 	{/if}
 </section>
-
-<style>
-	@media (max-width: 639px) {
-		:global(.swipe-to-delete.is-enabled .records-list-delete) {
-			display: none;
-		}
-	}
-</style>

@@ -33,9 +33,9 @@
 
 <AppLabel>
 	{label}
-	<div class="password-field relative mt-1">
+	<div class="password-field relative">
 		<AppInput
-			class="password-field__input w-full pr-12"
+			class="password-field__input w-full !pr-12"
 			aria-invalid={invalid || undefined}
 			type={visible ? 'text' : 'password'}
 			{required}
