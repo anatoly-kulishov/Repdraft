@@ -15,7 +15,7 @@
 		sessionDurationMs,
 		totalSetCount
 	} from '$lib/domain/session';
-	import { planExerciseSlotCount, planTargetSummary, suggestNextPlan } from '$lib/domain/workout';
+	import { planExerciseSlotCount, planTargetSummary, resolveHomeNextPlan } from '$lib/domain/workout';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
 	import { greetingFirstName } from '$lib/domain/greetingName';
@@ -23,12 +23,13 @@
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { greetingName } from '$lib/stores/greetingName';
+	import { homeNextPlan } from '$lib/stores/homeNextPlan';
 	import { live } from '$lib/stores/live';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { ChevronRight, LogIn, NotebookPen, Plus, Smartphone, UserRound } from '@lucide/svelte';
+	import { ChevronRight, LogIn, NotebookPen, Play, Plus, Smartphone, UserRound } from '@lucide/svelte';
 
 	let { data }: { data: { bootStart: boolean } } = $props();
 
@@ -74,8 +75,10 @@
 	let showReadyHeader = $derived(
 		pageReady && !showGuestCreateHero && (hasPlans || !isGuest)
 	);
-	/** Next in list after last finished — split rotation, not the same workout again. */
-	let nextPlan = $derived.by(() => suggestNextPlan($plans, recent[0]?.planId));
+	/** Pinned plan wins; else split rotation after last finished. */
+	let nextPlan = $derived.by(() =>
+		resolveHomeNextPlan($plans, recent[0]?.planId, $homeNextPlan)
+	);
 
 	let mockupSubtitle = $derived.by(() => {
 		if (hasActive) return translate(lang, 'home.readyTitle');
@@ -178,33 +181,39 @@
 	{:else if showReadyHeader && !hasActive}
 		<header class="home-header home-header--mockup">
 			<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
-			<div class="home-header__copy">
-				{#if showGreeting}
-					<p class="home-header__greeting home-header__greeting--desktop">{greetingText}</p>
-				{/if}
-				{#if !isGuest}
-					<p class="home-header__subtitle">{mockupSubtitle}</p>
-					{#if nextPlan}
-						<p class="home-header__plan">{nextPlan.name}</p>
+			<div class="home-header__row">
+				<div class="home-header__copy">
+					{#if showGreeting}
+						<p class="home-header__greeting home-header__greeting--desktop">{greetingText}</p>
 					{/if}
-					{#if isFirstTimeHome}
-						<BrandTagline class="brand-tagline--home-header" />
+					{#if !isGuest}
+						<p class="home-header__subtitle">{mockupSubtitle}</p>
+						{#if nextPlan}
+							<p class="home-header__plan">{nextPlan.name}</p>
+						{/if}
+						{#if isFirstTimeHome}
+							<BrandTagline class="brand-tagline--home-header" />
+						{/if}
+					{:else}
+						<p class="home-header__subtitle">{translate(lang, 'home.readyTitle')}</p>
+						{#if nextPlan}
+							<p class="home-header__plan">{nextPlan.name}</p>
+						{/if}
 					{/if}
-				{:else}
-					<p class="home-header__subtitle">{translate(lang, 'home.readyTitle')}</p>
-					{#if nextPlan}
-						<p class="home-header__plan">{nextPlan.name}</p>
-					{/if}
-				{/if}
+				</div>
+				<AppButton
+					href={mockupCtaHref}
+					class="home-header__cta home-header__cta--compact"
+					aria-label={mockupCtaAria}
+					title={nextPlan ? translate(lang, 'home.nextPlanHint') : undefined}
+				>
+					<LucideIcon icon={Play} size={ICON_PRIMARY} class="home-header__cta-icon" />
+					<span class="home-header__cta-text home-header__cta-text--short"
+						>{translate(lang, 'home.startWorkoutShort')}</span
+					>
+					<span class="home-header__cta-text home-header__cta-text--full">{mockupCtaLabel}</span>
+				</AppButton>
 			</div>
-			<AppButton
-				href={mockupCtaHref}
-				class="home-header__cta"
-				aria-label={mockupCtaAria}
-				title={nextPlan ? translate(lang, 'home.nextPlanHint') : undefined}
-			>
-				{mockupCtaLabel}
-			</AppButton>
 		</header>
 	{:else if showReadyHeader && hasActive}
 		<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
