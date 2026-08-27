@@ -461,9 +461,17 @@
 										>
 											<LucideIcon icon={Trash2} size={ICON_SMALL} />
 										</AppButton>
-									{:else}
-										<span class="history-exercise__set-weight">{item.set.weightKg ?? '—'} kg</span>
+									{:else if item.set.weightKg != null}
+										<span class="history-exercise__set-weight"
+											>{item.set.weightKg} {translate(lang, 'pr.kg')}</span
+										>
 										<span class="history-exercise__set-reps">× {item.set.reps ?? '—'}</span>
+									{:else}
+										<span class="history-exercise__set-reps">
+											{item.set.reps != null
+												? `${item.set.reps} ${translate(lang, 'pr.repsShort')}`
+												: '—'}
+										</span>
 									{/if}
 								</li>
 							{/each}

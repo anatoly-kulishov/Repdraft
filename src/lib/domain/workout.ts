@@ -551,6 +551,21 @@ export function mergeWorkoutPlans(local: WorkoutPlan[], cloud: WorkoutPlan[]): W
 	return [...map.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
+/**
+ * Home CTA: next plan in list order after the last finished one (split rotation).
+ * Falls back to the first plan when there is no history or the last plan was deleted.
+ */
+export function suggestNextPlan<T extends { id: string }>(
+	plans: readonly T[],
+	lastFinishedPlanId: string | null | undefined
+): T | null {
+	if (plans.length === 0) return null;
+	if (!lastFinishedPlanId) return plans[0]!;
+	const idx = plans.findIndex((p) => p.id === lastFinishedPlanId);
+	if (idx < 0) return plans[0]!;
+	return plans[(idx + 1) % plans.length]!;
+}
+
 /** Throws if draft / superset / arrow-move invariants regress. */
 export function runWorkoutSelfCheck(): void {
 	if (defaultRestSecForExercise() !== DEFAULT_REST_SEC) {
@@ -682,4 +697,21 @@ export function runWorkoutSelfCheck(): void {
 		throw new Error('removeExercise failed');
 	}
 	if (plan.exercises.length !== 2) throw new Error(`expected 2 left, got ${plan.exercises.length}`);
+
+	const rotation = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+	if (suggestNextPlan(rotation, null)?.id !== 'a') {
+		throw new Error('suggestNextPlan without history should return first');
+	}
+	if (suggestNextPlan(rotation, 'a')?.id !== 'b') {
+		throw new Error('suggestNextPlan should advance after last finished');
+	}
+	if (suggestNextPlan(rotation, 'c')?.id !== 'a') {
+		throw new Error('suggestNextPlan should wrap to first');
+	}
+	if (suggestNextPlan(rotation, 'gone')?.id !== 'a') {
+		throw new Error('suggestNextPlan with deleted last should return first');
+	}
+	if (suggestNextPlan([{ id: 'solo' }], 'solo')?.id !== 'solo') {
+		throw new Error('suggestNextPlan with one plan should stay on it');
+	}
 }
