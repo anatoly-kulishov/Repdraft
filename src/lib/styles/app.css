@@ -1972,9 +1972,10 @@ a.entity-row--link:hover,
 }
 
 .entity-row__actions .entity-row__pin.is-pinned {
-	color: var(--color-accent) !important;
-	border-color: color-mix(in srgb, var(--color-accent) 32%, var(--color-border)) !important;
-	background: color-mix(in srgb, var(--color-accent-muted) 45%, var(--color-surface)) !important;
+	color: var(--color-accent-text) !important;
+	border-color: color-mix(in srgb, var(--color-accent) 52%, var(--color-border)) !important;
+	background: color-mix(in srgb, var(--color-accent-muted) 88%, var(--color-surface)) !important;
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 22%, transparent);
 }
 
 @media (max-width: 767px) {
@@ -6776,17 +6777,7 @@ html[data-theme='dark'] .zone-card__media {
 	list-style: none;
 }
 
-/* Workouts page skeleton — mirror tabs, search, entity-list--cards. */
-.workouts-skeleton-tabs {
-	display: block;
-	width: 100%;
-	height: 3.5rem;
-	margin-bottom: 1.1rem;
-	border-radius: calc(var(--radius-control) + 2px);
-	border: none;
-	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-accent) 70%, transparent);
-}
-
+/* Workouts page skeleton — mirror search + entity-list--cards. */
 .workouts-skeleton-search {
 	display: block;
 	width: 100%;
@@ -11419,20 +11410,78 @@ html.is-builder-reorder-active .exercise-reorder-handle {
 }
 
 .workouts-page__header {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: 0.75rem 1rem;
 	margin-bottom: 0.35rem;
 }
 
-.workouts-page__tabs {
-	margin-bottom: 1.1rem;
+.workouts-page__toolbar {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+	width: 100%;
+	min-width: 0;
 }
 
-.workouts-page__tabs .segment-control {
-	width: 100%;
+.workouts-page__toolbar-actions {
+	display: flex;
+	flex: 0 0 auto;
+	align-items: flex-start;
+	gap: 0.5rem;
+	margin-left: auto;
+}
+
+.workouts-page__toolbar--history {
+	align-items: center;
+}
+
+.workouts-page__toolbar--history .workouts-page__toolbar-icon-btn {
+	align-self: center;
+	margin-top: 0;
+}
+
+.workouts-page__toolbar-icon-btn {
+	flex: 0 0 auto;
+	align-self: flex-start;
+	min-width: var(--control-min-width);
+	min-height: var(--control-height);
+	padding: 0;
+	border-radius: var(--radius-control);
+	box-shadow: var(--shadow-field);
+}
+
+.workouts-page__nav-btn {
+	margin-top: 0.05rem;
+}
+
+.workouts-page__nav-btn--back {
+	margin-left: 0;
+}
+
+.workouts-page__history-btn {
+	border-color: color-mix(in srgb, var(--color-accent) 34%, var(--color-border)) !important;
+	background: color-mix(in srgb, var(--color-accent-muted) 72%, var(--color-surface)) !important;
+	color: var(--color-accent-text) !important;
+	box-shadow:
+		var(--shadow-field),
+		inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+.workouts-page__history-btn:hover:not(:disabled),
+.workouts-page__history-btn:active:not(:disabled) {
+	border-color: color-mix(in srgb, var(--color-accent) 48%, var(--color-border)) !important;
+	background: color-mix(in srgb, var(--color-accent-muted) 92%, var(--color-surface)) !important;
+	color: var(--color-accent-text) !important;
+}
+
+.workouts-page__intro {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.workouts-page__create {
+	display: none;
+	flex: 0 0 auto;
+	align-self: flex-start;
+	padding-inline: 1rem;
 }
 
 .segment-control {
@@ -11496,11 +11545,6 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 	box-shadow:
 		0 1px 2px rgb(0 0 0 / 0.35),
 		0 0 0 1px color-mix(in srgb, var(--color-border) 80%, transparent);
-}
-
-.workouts-page__create {
-	display: none;
-	padding-inline: 1rem;
 }
 
 .workouts-page__create--hidden {
@@ -11577,10 +11621,15 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 
 @media (max-width: 767px) {
 	.workouts-page__header {
-		flex-direction: column;
-		align-items: stretch;
-		gap: 0.35rem;
 		margin-bottom: 0.85rem;
+	}
+
+	.workouts-page__toolbar {
+		align-items: flex-start;
+	}
+
+	.workouts-page__toolbar--history {
+		align-items: center;
 	}
 
 	.workouts-page__header .page-title {
@@ -11632,6 +11681,10 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 		text-overflow: unset;
 		white-space: normal;
 		text-wrap: pretty;
+	}
+
+	.workouts-page .entity-row__badge {
+		display: none;
 	}
 
 	.app-fab,
