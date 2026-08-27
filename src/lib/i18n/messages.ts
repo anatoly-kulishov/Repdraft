@@ -43,6 +43,8 @@ const ru: Dict = {
 		'Добавим данные из файла. Текущие на телефоне не удалим — при совпадении останется более новая версия.',
 	'settings.importConfirmTitle': 'Восстановить из копии?',
 	'settings.importDone': 'Данные восстановлены',
+	'settings.importCloudPending':
+		'Восстановлено на этом устройстве. Синхронизация с облаком отложена — проверьте интернет.',
 	'settings.importFail': 'Не удалось восстановить из файла',
 	'settings.importInvalidJson': 'Не удалось прочитать файл',
 	'settings.importInvalidShape': 'Это не файл резервной копии Repdraft',
@@ -269,6 +271,7 @@ const ru: Dict = {
 	'workouts.newWorkout': 'Новая тренировка',
 	'workouts.tabsAria': 'Раздел тренировок',
 	'workouts.tabPlans': 'Тренировки',
+	'workouts.openHistory': 'История',
 	'workouts.tabHistory': 'История',
 	'workouts.historyEmptyTitle': 'Пока нет записей',
 	'workouts.historyEmptyDesc':
@@ -743,6 +746,8 @@ const en: Dict = {
 		'We will add data from this file. What is on your phone stays — if the same item exists in both, the newer one wins.',
 	'settings.importConfirmTitle': 'Restore from backup?',
 	'settings.importDone': 'Data restored',
+	'settings.importCloudPending':
+		'Restored on this device. Cloud sync is pending — check your connection.',
 	'settings.importFail': 'Could not restore from file',
 	'settings.importInvalidJson': 'Could not read this file',
 	'settings.importInvalidShape': 'This is not a Repdraft backup file',
@@ -969,6 +974,7 @@ const en: Dict = {
 	'workouts.newWorkout': 'New workout',
 	'workouts.tabsAria': 'Workouts section',
 	'workouts.tabPlans': 'Workouts',
+	'workouts.openHistory': 'History',
 	'workouts.tabHistory': 'History',
 	'workouts.historyEmptyTitle': 'No entries yet',
 	'workouts.historyEmptyDesc':

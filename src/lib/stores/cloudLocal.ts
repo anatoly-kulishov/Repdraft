@@ -1,9 +1,13 @@
 import { isCloudFresh, type SyncListKey } from '$lib/domain/cacheFreshness';
 import type { CloudListRefreshResult } from '$lib/domain/cloudSync';
+import type { RepdraftExportPayload } from '$lib/domain/exportData';
 import { withTimeout } from '$lib/domain/withTimeout';
-import { isCloudMode } from '$lib/storage/dataAccess';
+import { isCloudMode, isSessionsCloudAvailable } from '$lib/storage/dataAccess';
 import { readLastSyncedAt, writeLastSyncedAt } from '$lib/storage/syncMeta';
 import { enqueueOutbox, type SyncOutboxEntry } from '$lib/storage/syncOutbox';
+import { supabaseRecordRepository } from '$lib/storage/supabaseRecordRepository';
+import { supabaseSessionRepository } from '$lib/storage/supabaseSessionRepository';
+import { supabaseWorkoutRepository } from '$lib/storage/supabaseWorkoutRepository';
 
 export type { CloudListRefreshResult, CloudSyncState } from '$lib/domain/cloudSync';
 export { isCloudListUncertain } from '$lib/domain/cloudSync';
@@ -91,4 +95,46 @@ export async function mirrorCloudWrite(opts: {
 		if (opts.outboxOnFail) enqueueOutbox(opts.outboxOnFail);
 		return false;
 	}
+}
+
+/** Upsert backup rows to cloud after JSON import (local is already saved). */
+export async function syncImportedPayloadToCloud(payload: RepdraftExportPayload): Promise<boolean> {
+	if (!isCloudMode()) return true;
+
+	let allOk = true;
+	const noop = async () => {};
+
+	for (const plan of payload.plans) {
+		const ok = await mirrorCloudWrite({
+			localWrite: noop,
+			cloudWrite: () => supabaseWorkoutRepository.save(plan),
+			label: 'import.plan',
+			outboxOnFail: { kind: 'plan.save', id: plan.id }
+		});
+		if (!ok) allOk = false;
+	}
+
+	for (const record of payload.records) {
+		const ok = await mirrorCloudWrite({
+			localWrite: noop,
+			cloudWrite: () => supabaseRecordRepository.save(record),
+			label: 'import.record',
+			outboxOnFail: { kind: 'record.save', exerciseId: record.exerciseId }
+		});
+		if (!ok) allOk = false;
+	}
+
+	if (isSessionsCloudAvailable()) {
+		for (const session of payload.sessions) {
+			const ok = await mirrorCloudWrite({
+				localWrite: noop,
+				cloudWrite: () => supabaseSessionRepository.save(session),
+				label: 'import.session',
+				outboxOnFail: { kind: 'session.save', id: session.id }
+			});
+			if (!ok) allOk = false;
+		}
+	}
+
+	return allOk;
 }
