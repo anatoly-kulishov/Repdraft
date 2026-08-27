@@ -150,7 +150,7 @@
 				{translate(lang, 'common.cancel')}
 			</AppButton>
 			<AppButton disabled={busy} aria-busy={busy} onclick={() => void commitImport()}>
-				{translate(lang, 'settings.importJson')}
+				{translate(lang, 'settings.importConfirmCta')}
 			</AppButton>
 		{/snippet}
 	</BottomSheet>

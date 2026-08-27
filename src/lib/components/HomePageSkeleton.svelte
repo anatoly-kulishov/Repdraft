@@ -74,10 +74,12 @@
 		</div>
 	{:else}
 		<header class="home-header home-header--mockup home-skeleton-mockup" aria-hidden="true">
-			<div class="home-header__copy">
-				<AppSkeleton class="home-skeleton-mockup-title" />
+			<div class="home-header__row">
+				<div class="home-header__copy">
+					<AppSkeleton class="home-skeleton-mockup-title" />
+				</div>
+				<AppSkeleton class="home-skeleton-mockup-cta" />
 			</div>
-			<AppSkeleton class="home-skeleton-mockup-cta" />
 		</header>
 
 		<div class="home-dashboard-mid" aria-hidden="true">

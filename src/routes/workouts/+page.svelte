@@ -13,15 +13,16 @@
 	import AppFab from '$lib/components/AppFab.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, ClipboardList, Clock, Play, Plus, Trash2 } from '@lucide/svelte';
+	import { Copy, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
-	import { planExerciseSlotCount, planTargetSummary } from '$lib/domain/workout';
+	import { planExerciseSlotCount, planTargetSummary, resolveHomeNextPlan } from '$lib/domain/workout';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
+	import { homeNextPlan } from '$lib/stores/homeNextPlan';
 	import { live } from '$lib/stores/live';
 	import { plans, plansReady, plansSync } from '$lib/stores/plans';
 	import { isCloudListUncertain } from '$lib/domain/cloudSync';
@@ -60,6 +61,9 @@
 	});
 
 	let history = $derived($live.history);
+	let nextPlan = $derived.by(() =>
+		resolveHomeNextPlan($plans, history[0]?.planId, $homeNextPlan)
+	);
 	let historyBusyId = $state<string | null>(null);
 	let planBusyId = $state<string | null>(null);
 	let planBusyOp = $state<'copy' | 'delete' | null>(null);
@@ -143,6 +147,11 @@
 
 	function onOpen(planId: string) {
 		void goto(`/workouts/${planId}`);
+	}
+
+	function pinNextPlan(planId: string, planName: string) {
+		homeNextPlan.pin(planId);
+		toasts.show(translate(lang, 'home.setNextPlanDone', { name: planName }), 'success');
 	}
 
 	async function onRemoveSession(session: (typeof history)[number]) {
@@ -281,12 +290,25 @@
 					<ul class="entity-list entity-list--cards" class:cloud-sync-list--uncertain={listUncertain}>
 						{#each filteredPlans as plan (plan.id)}
 							{@const muscles = planTargetSummary(plan, indexById, lang)}
+							{@const isNext = nextPlan?.id === plan.id}
 							<li>
 								<SwipeToDelete
-									label={translate(lang, 'workouts.delete')}
 									disabled={planBusyId !== null}
-									busy={planBusyId === plan.id && planBusyOp === 'delete'}
-									onDelete={() => void onRemove(plan.id, plan.name)}
+									actions={[
+										{
+											label: translate(lang, 'home.setNextPlan'),
+											icon: Play,
+											variant: 'accent',
+											onAction: () => pinNextPlan(plan.id, plan.name)
+										},
+										{
+											label: translate(lang, 'workouts.delete'),
+											icon: Trash2,
+											variant: 'danger',
+											onAction: () => void onRemove(plan.id, plan.name),
+											busy: planBusyId === plan.id && planBusyOp === 'delete'
+										}
+									]}
 								>
 									<div class="entity-row">
 										<a class="entity-row__main" href={`/workouts/${plan.id}`}>
@@ -296,11 +318,36 @@
 											{:else}
 												<span class="entity-row__meta" aria-hidden="true">&nbsp;</span>
 											{/if}
-											<span class="entity-row__meta">
-												{translate(lang, 'workouts.exCount', { n: planExerciseSlotCount(plan) })}
+											<span class="entity-row__meta-row">
+												<span class="entity-row__meta">
+													{translate(lang, 'workouts.exCount', {
+														n: planExerciseSlotCount(plan)
+													})}
+												</span>
+												{#if isNext}
+													<span class="entity-row__badge"
+														>{translate(lang, 'home.nextPlanBadge')}</span
+													>
+												{/if}
 											</span>
 										</a>
 										<div class="entity-row__actions">
+											<AppButton
+												variant="ghost"
+												class={cn(
+													'entity-row__pin entity-row__pin--desktop',
+													isNext && 'is-pinned'
+												)}
+												onclick={() => pinNextPlan(plan.id, plan.name)}
+												disabled={planBusyId !== null || isNext}
+												aria-label={translate(lang, 'home.setNextPlan')}
+												title={translate(
+													lang,
+													isNext ? 'home.nextPlanBadge' : 'home.setNextPlan'
+												)}
+											>
+												<LucideIcon icon={Flag} size={ICON_SMALL} />
+											</AppButton>
 											<AppButton
 												variant="ghost"
 												class="entity-row__start entity-row__start--desktop"
