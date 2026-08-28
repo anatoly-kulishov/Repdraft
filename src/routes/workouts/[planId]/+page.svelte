@@ -113,7 +113,13 @@
 {:else}
 	<section class="workout-preview content-page content-page--narrow pb-mobile-actions lg:pb-8">
 		<div class="lg:hidden">
-			<ScreenHeader fixed title={plan.name} backHref="/workouts" actions={headerActions} />
+			<ScreenHeader
+				fixed
+				class="workout-preview-header"
+				title={plan.name}
+				backHref="/workouts"
+				actions={headerActions}
+			/>
 		</div>
 		<div class="subroute-desktop-head">
 			<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />

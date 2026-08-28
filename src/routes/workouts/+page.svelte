@@ -4,15 +4,16 @@
 	import CloudSyncBanner from '$lib/components/CloudSyncBanner.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import ExerciseReorderHandle from '$lib/components/ExerciseReorderHandle.svelte';
 	import BackupImportAction from '$lib/components/BackupImportAction.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
-	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
+	import SwipeToDelete, { type SwipeRowAction } from '$lib/components/SwipeToDelete.svelte';
 	import AppFab from '$lib/components/AppFab.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, ArrowLeft, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
+	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
+	import { Copy, ArrowLeft, ClipboardList, Clock, Flag, GripVertical, Play, Plus, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
@@ -27,7 +28,7 @@
 	import { isCloudListUncertain } from '$lib/domain/cloudSync';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
-	import { goto } from '$app/navigation';
+	import { goto, beforeNavigate } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { cn } from '$lib/utils.js';
 	import { onMount } from 'svelte';
@@ -59,26 +60,88 @@
 		return $plans.filter((p) => p.name.toLowerCase().includes(q));
 	});
 
+	let canReorderPlans = $derived(!searchQuery.trim() && $plans.length > 1);
+	let planReorderMode = $state(false);
+	let showPlanReorderHandles = $derived(planReorderMode && canReorderPlans);
+	let reorderFrom = $state<number | null>(null);
+	let reorderOver = $state<number | null>(null);
+
+	function exitPlanReorderMode() {
+		planReorderMode = false;
+		reorderFrom = null;
+		reorderOver = null;
+	}
+
+	function togglePlanReorderMode() {
+		if (!canReorderPlans) return;
+		if (planReorderMode) {
+			exitPlanReorderMode();
+			return;
+		}
+		document.dispatchEvent(new CustomEvent('repdraft:swipe-close', { detail: null }));
+		planReorderMode = true;
+	}
+
+	function reorderPlan(from: number, to: number) {
+		if (!showPlanReorderHandles || planBusyId !== null) return;
+		plans.reorderInOrder(from, to);
+	}
+
+	function planSwipeActions(plan: (typeof $plans)[number]): SwipeRowAction[] {
+		return [
+			{
+				label: translate(lang, 'home.setNextPlan'),
+				icon: Flag,
+				variant: 'accent',
+				onAction: () => pinNextPlan(plan.id, plan.name)
+			},
+			{
+				label: translate(lang, 'workouts.delete'),
+				icon: Trash2,
+				variant: 'danger',
+				onAction: () => void onRemove(plan.id, plan.name),
+				busy: planBusyId === plan.id && planBusyOp === 'delete'
+			}
+		];
+	}
+
 	let history = $derived($live.history);
 	let nextPlan = $derived.by(() =>
 		resolveHomeNextPlan($plans, history[0]?.planId, $homeNextPlan)
 	);
 	let historyBusyId = $state<string | null>(null);
+	let historyClearBusy = $state(false);
 	let planBusyId = $state<string | null>(null);
 	let planBusyOp = $state<'copy' | 'delete' | null>(null);
 
 	type ConfirmOffer =
 		| { kind: 'delete-plan'; id: string; name: string }
-		| { kind: 'delete-session'; id: string; name: string };
+		| { kind: 'delete-session'; id: string; name: string }
+		| { kind: 'clear-history' };
 
 	let confirmOffer = $state<ConfirmOffer | null>(null);
 
 	let pageTitle = $derived(
 		translate(lang, activeTab === 'history' ? 'workouts.tabHistory' : 'workouts.title')
 	);
-	let showPlansLead = $derived(activeTab === 'plans');
+	let showPlansLead = $derived(activeTab === 'plans' && !planReorderMode);
+
+	$effect(() => {
+		if (planReorderMode && !canReorderPlans) exitPlanReorderMode();
+	});
+
+	beforeNavigate(() => {
+		exitPlanReorderMode();
+	});
 
 	onMount(() => {
+		const onReorder = (event: Event) => {
+			const detail = (event as CustomEvent<{ from: number | null; over: number | null }>).detail;
+			reorderFrom = detail.from;
+			reorderOver = detail.over;
+		};
+		document.addEventListener('repdraft:plan-reorder', onReorder);
+
 		void loadExerciseIndex()
 			.then((items) => {
 				indexById = new Map(items.map((item) => [item.id, item]));
@@ -89,9 +152,14 @@
 		if (!get(live).historyHydrated) {
 			void live.refreshHistory();
 		}
+
+		return () => {
+			document.removeEventListener('repdraft:plan-reorder', onReorder);
+		};
 	});
 
 	function setTab(tab: WorkoutsTab) {
+		if (tab === 'history') exitPlanReorderMode();
 		const url = new URL($page.url);
 		if (tab === 'plans') url.searchParams.delete('tab');
 		else url.searchParams.set('tab', tab);
@@ -153,6 +221,25 @@
 		toasts.show(translate(lang, 'home.setNextPlanDone', { name: planName }), 'success');
 	}
 
+	function offerClearHistory() {
+		if (history.length === 0 || historyClearBusy) return;
+		confirmOffer = { kind: 'clear-history' };
+	}
+
+	async function commitClearHistory() {
+		confirmOffer = null;
+		if (historyClearBusy) return;
+		historyClearBusy = true;
+		try {
+			await live.clearHistory();
+			toasts.show(translate(lang, 'workouts.historyCleared'), 'info');
+		} catch (err) {
+			toasts.show(translateError(lang, err, 'workouts.historyClearFail'), 'error');
+		} finally {
+			historyClearBusy = false;
+		}
+	}
+
 	async function onRemoveSession(session: (typeof history)[number]) {
 		confirmOffer = { kind: 'delete-session', id: session.id, name: session.planName };
 	}
@@ -183,6 +270,8 @@
 				return translate(lang, 'common.delete');
 			case 'delete-session':
 				return translate(lang, 'workouts.deleteSession');
+			case 'clear-history':
+				return translate(lang, 'workouts.clearHistory');
 			default: {
 				const _exhaustive: never = confirmOffer;
 				return _exhaustive;
@@ -190,7 +279,11 @@
 		}
 	});
 
-	let confirmPrimaryLabel = $derived(translate(lang, 'common.delete'));
+	let confirmPrimaryLabel = $derived(
+		confirmOffer?.kind === 'clear-history'
+			? translate(lang, 'common.clear')
+			: translate(lang, 'common.delete')
+	);
 
 	function commitConfirmOffer() {
 		if (!confirmOffer) return;
@@ -201,6 +294,9 @@
 			case 'delete-session':
 				void commitRemoveSession();
 				return;
+			case 'clear-history':
+				void commitClearHistory();
+				return;
 			default: {
 				const _exhaustive: never = confirmOffer;
 				return _exhaustive;
@@ -208,6 +304,22 @@
 		}
 	}
 </script>
+
+{#snippet historyClearAction()}
+	{#if history.length > 0}
+		<AppButton
+			variant="ghost"
+			class="is-danger shrink-0"
+			disabled={historyClearBusy || historyBusyId !== null}
+			aria-busy={historyClearBusy}
+			onclick={offerClearHistory}
+			aria-label={translate(lang, 'workouts.clearHistory')}
+			title={translate(lang, 'workouts.clearHistory')}
+		>
+			<LucideIcon icon={Trash2} size={ICON_BUTTON} />
+		</AppButton>
+	{/if}
+{/snippet}
 
 <svelte:head>
 	<title>{pageTitle} · Repdraft</title>
@@ -218,7 +330,12 @@
 	class:workouts-page--history-tab={activeTab === 'history'}
 >
 	{#if activeTab === 'history'}
-		<ScreenHeader class="lg:hidden" title={pageTitle} backHref="/workouts" />
+		<ScreenHeader
+			class="lg:hidden"
+			title={pageTitle}
+			backHref="/workouts"
+			actions={historyClearAction}
+		/>
 	{/if}
 	<div class="page-header workouts-page__header">
 		<div
@@ -257,10 +374,35 @@
 							{translate(lang, 'workouts.local')}
 						{/if}
 					</p>
+				{:else if activeTab === 'plans' && planReorderMode}
+					<p class="page-lead workouts-page-lead">{translate(lang, 'workouts.reorderModeHint')}</p>
 				{/if}
 			</div>
 			<div class="workouts-page__toolbar-actions">
-				{#if activeTab === 'plans'}
+				{#if activeTab === 'history'}
+					{@render historyClearAction()}
+				{:else if activeTab === 'plans'}
+					{#if canReorderPlans}
+						<AppButton
+							variant="secondary"
+							class={cn(
+								'workouts-page__toolbar-icon-btn workouts-page__reorder-btn',
+								planReorderMode && 'is-active'
+							)}
+							onclick={togglePlanReorderMode}
+							aria-pressed={planReorderMode}
+							aria-label={translate(
+								lang,
+								planReorderMode ? 'workouts.reorderModeOff' : 'workouts.reorderMode'
+							)}
+							title={translate(
+								lang,
+								planReorderMode ? 'workouts.reorderModeOff' : 'workouts.reorderMode'
+							)}
+						>
+							<LucideIcon icon={GripVertical} size={ICON_SMALL} />
+						</AppButton>
+					{/if}
 					<AppButton
 						variant="secondary"
 						class="workouts-page__toolbar-icon-btn workouts-page__history-btn"
@@ -311,28 +453,23 @@
 						{translate(lang, 'catalog.emptyTitle')}
 					</AppPanel>
 				{:else}
-					<ul class="entity-list entity-list--cards" class:cloud-sync-list--uncertain={listUncertain}>
-						{#each filteredPlans as plan (plan.id)}
+					<ul
+						class="entity-list entity-list--cards"
+						class:cloud-sync-list--uncertain={listUncertain}
+						class:workouts-page__list--reorder-mode={planReorderMode}
+					>
+						{#each filteredPlans as plan, index (plan.id)}
 							{@const muscles = planTargetSummary(plan, indexById, lang)}
 							{@const isNext = nextPlan?.id === plan.id}
-							<li>
+							<li
+								class="plan-list-item"
+								class:plan-list-item--reorder-dragging={reorderFrom === index}
+								class:plan-list-item--reorder-over={reorderOver === index}
+								data-plan-index={index}
+							>
 								<SwipeToDelete
-									disabled={planBusyId !== null}
-									actions={[
-										{
-											label: translate(lang, 'home.setNextPlan'),
-											icon: Flag,
-											variant: 'accent',
-											onAction: () => pinNextPlan(plan.id, plan.name)
-										},
-										{
-											label: translate(lang, 'workouts.delete'),
-											icon: Trash2,
-											variant: 'danger',
-											onAction: () => void onRemove(plan.id, plan.name),
-											busy: planBusyId === plan.id && planBusyOp === 'delete'
-										}
-									]}
+									disabled={planReorderMode || planBusyId !== null || reorderFrom !== null}
+									actions={planSwipeActions(plan)}
 								>
 									<div class="entity-row">
 										<a class="entity-row__main" href={`/workouts/${plan.id}`}>
@@ -412,6 +549,18 @@
 												{/if}
 											</AppButton>
 										</div>
+										{#if showPlanReorderHandles}
+											<ExerciseReorderHandle
+												{index}
+												holdMs={0}
+												label={translate(lang, 'builder.reorder')}
+												onreorder={reorderPlan}
+												targetSelector="[data-plan-index]"
+												indexAttribute="data-plan-index"
+												rootActiveClass="is-plan-reorder-active"
+												eventName="repdraft:plan-reorder"
+											/>
+										{/if}
 									</div>
 								</SwipeToDelete>
 							</li>
@@ -490,13 +639,17 @@
 >
 	{#if confirmOffer}
 		<p id="workouts-confirm-title" class="bottom-sheet__title">{confirmHeading}</p>
-		<p class="bottom-sheet__hint workouts-confirm-offer__name">«{confirmOffer.name}»?</p>
+		{#if confirmOffer.kind === 'clear-history'}
+			<p class="bottom-sheet__hint">{translate(lang, 'workouts.confirmClearHistory')}</p>
+		{:else}
+			<p class="bottom-sheet__hint workouts-confirm-offer__name">«{confirmOffer.name}»?</p>
+		{/if}
 	{/if}
 	{#snippet actions()}
 		<AppButton variant="secondary" onclick={dismissConfirmOffer}>
 			{translate(lang, 'common.cancel')}
 		</AppButton>
-		<AppButton variant="danger" onclick={commitConfirmOffer}>
+		<AppButton variant="danger" onclick={commitConfirmOffer} disabled={historyClearBusy}>
 			{confirmPrimaryLabel}
 		</AppButton>
 	{/snippet}

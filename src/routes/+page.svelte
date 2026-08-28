@@ -196,15 +196,6 @@
 					<span class="home-header__cta-text home-header__cta-text--full">{mockupCtaLabel}</span>
 				</AppButton>
 			</div>
-			{#if nextPlan}
-				<div class="home-header__footer">
-					<p class="home-header__preview-hint">{translate(lang, 'home.previewBeforeStart')}</p>
-					<a class="home-section-link home-header__all-workouts" href="/workouts">
-						{translate(lang, 'home.allWorkouts')}
-						<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
-					</a>
-				</div>
-			{/if}
 		</header>
 	{:else if showReadyHeader && hasActive}
 		<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>

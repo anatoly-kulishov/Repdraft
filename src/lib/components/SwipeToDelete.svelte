@@ -99,6 +99,7 @@
 	function onPointerDown(event: PointerEvent) {
 		if (!swipeOk || disabled) return;
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
+		if (event.target instanceof Element && event.target.closest('[data-swipe-pass]')) return;
 		claim();
 		dragging = true;
 		moved = false;
