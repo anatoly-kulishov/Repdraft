@@ -4,7 +4,7 @@
 		<meta charset="utf-8" />
 		<meta
 			name="viewport"
-			content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content, maximum-scale=5"
+			content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual, maximum-scale=5"
 		/>
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -37,7 +37,8 @@
 			html,
 			body {
 				margin: 0;
-				min-height: 100%;
+				min-height: var(--app-vh, 100dvh);
+				min-height: -webkit-fill-available;
 				background-color: #f2f2f7;
 			}
 			html[data-theme='dark'],
@@ -185,6 +186,41 @@
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
+		<script>
+			(function () {
+				var KEYBOARD_LIFT_PX = 100;
+				function syncVvChrome() {
+					var vv = window.visualViewport;
+					var root = document.documentElement;
+					var layoutH = window.innerHeight;
+					if (!vv) {
+						root.style.setProperty('--vv-fixed-bottom', '0px');
+						root.style.setProperty('--vv-keyboard-lift', '0px');
+						root.style.setProperty('--vv-keyboard-inset', '0px');
+						root.style.setProperty('--app-vh', layoutH + 'px');
+						root.style.removeProperty('--vv-bottom-pad');
+						return;
+					}
+					var visualBottom = Math.round(vv.height + vv.offsetTop);
+					root.style.setProperty('--app-vh', Math.max(layoutH, visualBottom) + 'px');
+					var bottomInset = Math.max(0, Math.round(layoutH - visualBottom));
+					root.style.setProperty('--vv-fixed-bottom', bottomInset + 'px');
+					var keyboardInset = bottomInset > KEYBOARD_LIFT_PX ? bottomInset : 0;
+					root.style.setProperty('--vv-keyboard-inset', keyboardInset + 'px');
+					root.style.setProperty('--vv-keyboard-lift', keyboardInset + 'px');
+					if (keyboardInset > 0) root.style.setProperty('--vv-bottom-pad', '0px');
+					else root.style.removeProperty('--vv-bottom-pad');
+				}
+				syncVvChrome();
+				if (window.visualViewport) {
+					window.visualViewport.addEventListener('resize', syncVvChrome);
+					window.visualViewport.addEventListener('scroll', syncVvChrome);
+				}
+				window.addEventListener('orientationchange', syncVvChrome);
+				window.addEventListener('pageshow', syncVvChrome);
+				window.__repdraftSyncVvChrome = syncVvChrome;
+			})();
+		</script>
 		<div id="pwa-boot" aria-hidden="true">
 			<div class="pwa-boot-icon-wrap">
 				<svg
@@ -259,6 +295,11 @@
 						boot.classList.add('is-done');
 						window.setTimeout(function () {
 							if (boot && boot.parentNode) boot.remove();
+							if (typeof window.__repdraftSyncVvChrome === 'function') {
+								window.__repdraftSyncVvChrome();
+								window.setTimeout(window.__repdraftSyncVvChrome, 50);
+								window.setTimeout(window.__repdraftSyncVvChrome, 200);
+							}
 						}, 220);
 					}, wait);
 				};
