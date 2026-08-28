@@ -506,8 +506,8 @@
 		{/if}
 	</div>
 {:else}
-	<section class="live-page md:pb-4">
-		<div class="md:hidden">
+	<section class="live-page lg:pb-4">
+		<div class="lg:hidden">
 			<ScreenHeader
 				fixed
 				class="screen-header--live"
@@ -517,7 +517,7 @@
 			/>
 		</div>
 
-		<div class="live-mobile-meta md:hidden">
+		<div class="live-mobile-meta lg:hidden">
 			<p class="live-progress-pill">
 				{translate(lang, 'live.progress', {
 					done: slotProgress.done,
@@ -531,7 +531,7 @@
 			</p>
 		</div>
 
-		<header class="live-header hidden md:flex">
+		<header class="live-header hidden lg:flex">
 			<div class="live-header-main">
 				<a
 					href="/workouts"
@@ -651,7 +651,7 @@
 				/>
 			</div>
 
-			<div class="live-mobile-actions md:hidden">
+			<div class="live-mobile-actions lg:hidden">
 				<LiveSessionActions
 					{lang}
 					{finishing}

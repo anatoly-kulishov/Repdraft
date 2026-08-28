@@ -64,10 +64,14 @@
 	{:else if variant === 'auth'}
 		<!-- Logged-in /auth: hero + 6 settings cards (2-col from tablet). -->
 		<div class="page-skeleton-auth" aria-hidden="true">
-			<header class="page-skeleton-auth-hero">
-				<div class="page-skeleton-auth-hero__toolbar">
-					<AppSkeleton class="page-skeleton-auth-back" />
+			<div class="page-skeleton-auth-guest__chrome lg:hidden">
+				<div class="page-skeleton-auth-guest__back-slot">
+					<AppSkeleton class="page-skeleton-auth-guest__back-icon" />
 				</div>
+				<AppSkeleton class="page-skeleton-auth-guest__title" />
+			</div>
+
+			<header class="page-skeleton-auth-hero">
 				<div class="page-skeleton-auth-hero__stage">
 					<AppSkeleton class="page-skeleton-auth-avatar" />
 				</div>
@@ -118,6 +122,14 @@
 					</div>
 				</div>
 
+				<div class="page-skeleton-card page-skeleton-card--auth page-skeleton-card--auth-danger">
+					<AppSkeleton class="page-skeleton-auth-danger-eyebrow" />
+					<AppSkeleton class="page-skeleton-auth-danger-title" />
+					<AppSkeleton class="page-skeleton-auth-hint page-skeleton-auth-hint--lead" />
+					<AppSkeleton class="page-skeleton-auth-danger-list" />
+					<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
+				</div>
+
 				<div class="page-skeleton-card page-skeleton-card--auth">
 					<AppSkeleton class="page-skeleton-auth-group-title" />
 					<div class="page-skeleton-auth-pref-row">
@@ -128,14 +140,6 @@
 						<AppSkeleton class="page-skeleton-auth-pref-icon" />
 						<AppSkeleton class="page-skeleton-auth-pref-label" />
 					</div>
-				</div>
-
-				<div class="page-skeleton-card page-skeleton-card--auth page-skeleton-card--auth-danger">
-					<AppSkeleton class="page-skeleton-auth-danger-eyebrow" />
-					<AppSkeleton class="page-skeleton-auth-danger-title" />
-					<AppSkeleton class="page-skeleton-auth-hint page-skeleton-auth-hint--lead" />
-					<AppSkeleton class="page-skeleton-auth-danger-list" />
-					<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
 				</div>
 			</div>
 		</div>

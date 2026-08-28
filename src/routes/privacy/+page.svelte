@@ -2,6 +2,8 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
+	import { APP_VERSION_LABEL } from '$lib/appVersion';
+	import { GYM_VISUAL_ATTRIBUTION, GYM_VISUAL_URL } from '$lib/data/attribution';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 
@@ -57,6 +59,23 @@
 		{/each}
 	</div>
 
+	<section class="privacy-page__media panel" aria-labelledby="privacy-media-title">
+		<h2 id="privacy-media-title" class="section-title">{translate(lang, 'privacy.s10Title')}</h2>
+		<p>{translate(lang, 'privacy.s10Body')}</p>
+		<p class="privacy-page__media-attribution">
+			{translate(lang, 'attr.media')}
+			<a
+				class="privacy-page__media-link"
+				href={GYM_VISUAL_URL}
+				target="_blank"
+				rel="noreferrer"
+			>
+				{GYM_VISUAL_ATTRIBUTION}
+			</a>
+		</p>
+		<p class="privacy-page__media-terms">{translate(lang, 'privacy.s10Terms')}</p>
+	</section>
+
 	<section class="privacy-page__checklist panel" aria-labelledby="privacy-checklist-title">
 		<h2 id="privacy-checklist-title" class="section-title">
 			{translate(lang, 'privacy.checklistTitle')}
@@ -68,4 +87,8 @@
 			{/each}
 		</ul>
 	</section>
+
+	<p class="privacy-page__version" aria-label={translate(lang, 'attr.versionAria', { version: APP_VERSION_LABEL })}>
+		{APP_VERSION_LABEL}
+	</p>
 </div>
