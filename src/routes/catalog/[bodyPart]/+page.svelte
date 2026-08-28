@@ -77,7 +77,13 @@
 <div
 	class={`content-page content-page--catalog ${showTargetBrowse ? 'catalog-page--browse' : 'catalog-page--list'}`}
 >
-	<ScreenHeader class="lg:hidden" fixed title={headerTitle} {backHref} />
+	<ScreenHeader
+		class="lg:hidden"
+		fixed={showExerciseList}
+		title={headerTitle}
+		{backHref}
+		{backLabel}
+	/>
 
 	<section
 		class={`catalog-zone-shell ${showTargetBrowse ? 'catalog-zone-shell--browse' : 'catalog-zone-shell--list'}`}

@@ -29,6 +29,7 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import DataExportSection from '$lib/components/DataExportSection.svelte';
+	import { APP_VERSION_LABEL } from '$lib/appVersion';
 	import { GREETING_NAME_MAX } from '$lib/domain/greetingName';
 	import { isIosDevice } from '$lib/domain/pwaInstall';
 	import { restSoundEnabled } from '$lib/stores/prefs';
@@ -372,8 +373,17 @@
 	class:auth-page--booting-guest={showGuestSkeleton}
 >
 	<div class="lg:hidden">
-		{#if $auth.ready && !accountMode && !showBootSkeleton}
-			<ScreenHeader title={translate(lang, 'auth.title')} backHref={nextPath} />
+		{#if $auth.ready && !showBootSkeleton}
+			{#if accountMode}
+				<ScreenHeader
+					fixed
+					title={translate(lang, 'auth.title')}
+					backHref={nextPath}
+					backLabel={backLabel}
+				/>
+			{:else if !recoveryMode}
+				<ScreenHeader title={translate(lang, 'auth.title')} backHref={nextPath} />
+			{/if}
 		{/if}
 	</div>
 	{#if $auth.ready && !accountMode && !showBootSkeleton}
@@ -442,11 +452,14 @@
 		</div>
 	{:else if $auth.user}
 		<div class="auth-account">
-			<header class="profile-hero">
-				<div class="profile-hero__toolbar">
+			<div class="auth-account__desktop-head hidden lg:block">
+				<div class="subroute-desktop-head">
 					<SubrouteBack href={nextPath} label={backLabel} />
 				</div>
+				<h1 class="page-title auth-page__title">{translate(lang, 'auth.title')}</h1>
+			</div>
 
+			<header class="profile-hero">
 				<div class="profile-hero__stage">
 					<div class="profile-hero__glow" aria-hidden="true"></div>
 					{#if showProfilePhoto && profileAvatar}
@@ -471,7 +484,7 @@
 					{/if}
 				</div>
 
-				<h1 class="profile-hero__name">{profileName || $auth.user.email}</h1>
+				<h2 class="profile-hero__name">{profileName || $auth.user.email}</h2>
 				{#if profileName && $auth.user.email}
 					<p class="profile-hero__meta">{$auth.user.email}</p>
 				{/if}
@@ -567,24 +580,6 @@
 					<DataExportSection embedded />
 				</div>
 
-				<div class="profile-settings-group panel">
-					<p class="profile-settings-group__title">{translate(lang, 'settings.accountTitle')}</p>
-					<ProfileSettingsRow
-						icon={Shield}
-						label={translate(lang, 'privacy.link')}
-						href="/privacy"
-					/>
-					<ProfileSettingsRow
-						icon={LogOut}
-						iconTone="accent"
-						label={loading ? translate(lang, 'auth.wait') : translate(lang, 'auth.logout')}
-						ariaLabel={translate(lang, 'auth.logout')}
-						onclick={() => {
-							void logout();
-						}}
-					/>
-				</div>
-
 				<div class="auth-danger-zone" aria-labelledby="auth-danger-title">
 					<p class="auth-danger-zone__eyebrow">{translate(lang, 'auth.deleteZoneLabel')}</p>
 					<p id="auth-danger-title" class="auth-danger-zone__title">{translate(lang, 'auth.deleteTitle')}</p>
@@ -653,7 +648,31 @@
 						</div>
 					{/if}
 				</div>
+
+				<div class="profile-settings-group panel">
+					<p class="profile-settings-group__title">{translate(lang, 'settings.accountTitle')}</p>
+					<ProfileSettingsRow
+						icon={Shield}
+						label={translate(lang, 'privacy.link')}
+						href="/privacy"
+					/>
+					<ProfileSettingsRow
+						icon={LogOut}
+						iconTone="accent"
+						label={loading ? translate(lang, 'auth.wait') : translate(lang, 'auth.logout')}
+						ariaLabel={translate(lang, 'auth.logout')}
+						onclick={() => {
+							void logout();
+						}}
+					/>
+				</div>
 			</div>
+			<p
+				class="auth-account__version"
+				aria-label={translate(lang, 'attr.versionAria', { version: APP_VERSION_LABEL })}
+			>
+				{APP_VERSION_LABEL}
+			</p>
 		</div>
 	{:else if panel === 'check-email'}
 		<div class="auth-guest-stack">
@@ -897,6 +916,12 @@
 		<p class="auth-account__legal">
 			<span class="auth-account__legal-label">{translate(lang, 'auth.privacyHint')}</span>
 			<a class="auth-account__legal-link" href="/privacy">{translate(lang, 'privacy.link')}</a>
+		</p>
+		<p
+			class="auth-account__version auth-account__version--guest"
+			aria-label={translate(lang, 'attr.versionAria', { version: APP_VERSION_LABEL })}
+		>
+			{APP_VERSION_LABEL}
 		</p>
 	</div>
 {/snippet}

@@ -6,8 +6,6 @@
 	import HomePageSkeleton from '$lib/components/HomePageSkeleton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
-	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import {
 		completedExerciseCount,
 		completedSetCount,
@@ -15,7 +13,9 @@
 		sessionDurationMs,
 		totalSetCount
 	} from '$lib/domain/session';
-	import { planExerciseSlotCount, planTargetSummary, resolveHomeNextPlan } from '$lib/domain/workout';
+	import { resolveHomeNextPlan, planExerciseSlotCount, planTargetSummary } from '$lib/domain/workout';
+	import type { ExerciseIndexItem } from '$lib/domain/types';
+	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
 	import { greetingFirstName } from '$lib/domain/greetingName';
@@ -35,13 +35,12 @@
 
 	let lang = $derived($resolvedLocale);
 	let active = $derived($live.session);
-	let recent = $derived($live.history.slice(0, 6));
-	let homePlans = $derived($plans.slice(0, 8));
-	const peeked = peekExerciseIndex();
+	let recent = $derived($live.history.slice(0, 3));
+	const peekedIndex = peekExerciseIndex();
 	let indexById = $state<Map<string, ExerciseIndexItem>>(
-		peeked ? new Map(peeked.map((item) => [item.id, item])) : new Map()
+		peekedIndex ? new Map(peekedIndex.map((item) => [item.id, item])) : new Map()
 	);
-	let indexReady = $state(peeked != null);
+	let indexReady = $state(peekedIndex != null);
 
 	let hasActive = $derived(Boolean(active && !active.finishedAt));
 	let hasPlans = $derived($plans.length > 0);
@@ -50,7 +49,7 @@
 	let isGuest = $derived($auth.ready && $auth.configured && !$auth.user);
 	let authHref = '/auth?next=%2F';
 	let pageReady = $derived(
-		$auth.ready && $auth.dataBootstrap && $live.ready && $live.historyHydrated && indexReady
+		$auth.ready && $auth.dataBootstrap && $live.ready && $live.historyHydrated
 	);
 
 	/** Dev/QA: ?skeleton=create|start */
@@ -78,6 +77,12 @@
 	/** Pinned plan wins; else split rotation after last finished. */
 	let nextPlan = $derived.by(() =>
 		resolveHomeNextPlan($plans, recent[0]?.planId, $homeNextPlan)
+	);
+	let nextPlanMuscles = $derived.by(() =>
+		nextPlan && indexReady ? planTargetSummary(nextPlan, indexById, lang) : ''
+	);
+	let nextPlanExCount = $derived.by(() =>
+		nextPlan ? translate(lang, 'workouts.exCount', { n: planExerciseSlotCount(nextPlan) }) : ''
 	);
 
 	let mockupSubtitle = $derived.by(() => {
@@ -138,22 +143,24 @@
 		const key = homeGreetingMessageKey(period, Boolean(firstName));
 		return firstName ? translate(lang, key, { name: firstName }) : translate(lang, key);
 	});
+	let showHomeMid = $derived(
+		!showGuestCreateHero &&
+			(recent.length > 0 || !hasPlans || (hasPlans && !hasSessionHistory))
+	);
 
 	onMount(() => {
 		void (async () => {
 			while (!$auth.ready || !$auth.dataBootstrap) {
 				await new Promise((r) => setTimeout(r, 20));
 			}
-			await Promise.all([
-				loadExerciseIndex()
-					.then((items) => {
-						indexById = new Map(items.map((item) => [item.id, item]));
-					})
-					.finally(() => {
-						indexReady = true;
-					}),
-				get(live).historyHydrated ? Promise.resolve() : live.refreshHistory()
-			]);
+			if (!get(live).historyHydrated) {
+				await live.refreshHistory();
+			}
+			if (!indexReady) {
+				const index = await loadExerciseIndex();
+				indexById = new Map(index.map((item) => [item.id, item]));
+				indexReady = true;
+			}
 		})();
 	});
 </script>
@@ -190,6 +197,12 @@
 						<p class="home-header__subtitle">{mockupSubtitle}</p>
 						{#if nextPlan}
 							<p class="home-header__plan">{nextPlan.name}</p>
+							{#if indexReady}
+								{#if nextPlanMuscles}
+									<p class="home-header__meta">{nextPlanMuscles}</p>
+								{/if}
+								<p class="home-header__meta">{nextPlanExCount}</p>
+							{/if}
 						{/if}
 						{#if isFirstTimeHome}
 							<BrandTagline class="brand-tagline--home-header" />
@@ -198,6 +211,12 @@
 						<p class="home-header__subtitle">{translate(lang, 'home.readyTitle')}</p>
 						{#if nextPlan}
 							<p class="home-header__plan">{nextPlan.name}</p>
+							{#if indexReady}
+								{#if nextPlanMuscles}
+									<p class="home-header__meta">{nextPlanMuscles}</p>
+								{/if}
+								<p class="home-header__meta">{nextPlanExCount}</p>
+							{/if}
 						{/if}
 					{/if}
 				</div>
@@ -205,7 +224,6 @@
 					href={mockupCtaHref}
 					class="home-header__cta home-header__cta--compact"
 					aria-label={mockupCtaAria}
-					title={nextPlan ? translate(lang, 'home.nextPlanHint') : undefined}
 				>
 					<LucideIcon icon={Play} size={ICON_PRIMARY} class="home-header__cta-icon" />
 					<span class="home-header__cta-text home-header__cta-text--short"
@@ -214,6 +232,15 @@
 					<span class="home-header__cta-text home-header__cta-text--full">{mockupCtaLabel}</span>
 				</AppButton>
 			</div>
+			{#if nextPlan}
+				<div class="home-header__footer">
+					<p class="home-header__preview-hint">{translate(lang, 'home.previewBeforeStart')}</p>
+					<a class="home-section-link home-header__all-workouts" href="/workouts">
+						{translate(lang, 'home.allWorkouts')}
+						<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
+					</a>
+				</div>
+			{/if}
 		</header>
 	{:else if showReadyHeader && hasActive}
 		<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
@@ -282,52 +309,10 @@
 				</div>
 			{/if}
 
-			<div class="home-dashboard-mid">
-				{#if hasPlans || (!isGuest && !hasPlans)}
-					<div class="home-dashboard-row">
-						{#if hasPlans}
-							<div class="home-section home-dashboard-plans">
-								<div class="home-section-head">
-									<h2 class="section-title">{translate(lang, 'home.plansTitle')}</h2>
-									<a class="home-section-link" href="/workouts">
-										{translate(lang, 'nav.workouts')}
-										<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
-									</a>
-								</div>
-								<ul class="entity-list">
-									{#each homePlans as plan (plan.id)}
-										{@const muscles = planTargetSummary(plan, indexById, lang)}
-										<li class="entity-row">
-											<a class="entity-row__main" href={`/workouts/${plan.id}`}>
-												<span class="entity-row__title">{plan.name}</span>
-												{#if muscles}
-													<span class="entity-row__meta">{muscles}</span>
-												{/if}
-												<span class="entity-row__meta">
-													{translate(lang, 'workouts.exCount', { n: planExerciseSlotCount(plan) })}
-												</span>
-											</a>
-											<LucideIcon
-												icon={ChevronRight}
-												size={ICON_SMALL}
-												class="entity-row__chevron shrink-0"
-											/>
-										</li>
-									{/each}
-									{#if homePlans.length < 4}
-										<li class="entity-row entity-row--create">
-											<a class="entity-row__main" href={BUILDER_NEW_HREF}>
-												<span class="entity-row__title entity-row__title--create">
-													<LucideIcon icon={Plus} size={ICON_SMALL} />
-													{translate(lang, 'home.plansCreateTitle')}
-												</span>
-												<span class="entity-row__meta">{translate(lang, 'home.plansCreateHint')}</span>
-											</a>
-										</li>
-									{/if}
-								</ul>
-							</div>
-						{:else if !isGuest}
+			{#if showHomeMid}
+				<div class="home-dashboard-mid">
+					{#if !hasPlans && !isGuest}
+						<div class="home-dashboard-row">
 							<div class="home-section home-dashboard-plans">
 								<div class="home-section-head">
 									<h2 class="section-title">{translate(lang, 'home.plansTitle')}</h2>
@@ -344,11 +329,9 @@
 									</li>
 								</ul>
 							</div>
-						{/if}
-					</div>
-				{/if}
+						</div>
+					{/if}
 
-				{#if recent.length > 0 || (!isGuest && !hasPlans)}
 					<div class="home-dashboard-aside">
 						{#if recent.length > 0}
 							<div class="home-section">
@@ -389,7 +372,18 @@
 									{/each}
 								</ul>
 							</div>
-						{:else}
+						{:else if hasPlans}
+							<div class="home-section">
+								<div class="home-section-head">
+									<h2 class="section-title">{translate(lang, 'home.firstWorkoutTitle')}</h2>
+								</div>
+								<AppPanel class="home-aside-card home-aside-card--compact">
+									<p class="home-aside-card__hint">
+										{translate(lang, 'home.firstWorkoutHint')}
+									</p>
+								</AppPanel>
+							</div>
+						{:else if !isGuest}
 							<div class="home-section">
 								<div class="home-section-head">
 									<h2 class="section-title">{translate(lang, 'home.recentPlaceholderTitle')}</h2>
@@ -402,8 +396,8 @@
 							</div>
 						{/if}
 					</div>
-				{/if}
-			</div>
+				</div>
+			{/if}
 		</div>
 	{/if}
 </section>
