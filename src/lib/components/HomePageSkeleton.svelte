@@ -77,32 +77,11 @@
 			<div class="home-header__row">
 				<div class="home-header__copy">
 					<AppSkeleton class="home-skeleton-mockup-title" />
+					<AppSkeleton class="home-skeleton-mockup-meta" />
+					<AppSkeleton class="home-skeleton-mockup-meta home-skeleton-mockup-meta--short" />
 				</div>
 				<AppSkeleton class="home-skeleton-mockup-cta" />
 			</div>
 		</header>
-
-		<div class="home-dashboard-mid" aria-hidden="true">
-			<div class="home-section home-dashboard-plans">
-				<AppSkeleton class="home-skeleton-heading" />
-				<ul class="entity-list">
-					<li><AppSkeleton class="home-skeleton-row" /></li>
-					<li><AppSkeleton class="home-skeleton-row" /></li>
-					<li><AppSkeleton class="home-skeleton-row" /></li>
-					<li><AppSkeleton class="home-skeleton-row" /></li>
-				</ul>
-			</div>
-
-			<div class="home-dashboard-aside">
-				<div class="home-section">
-					<AppSkeleton class="home-skeleton-heading" />
-					<ul class="entity-list">
-						<li><AppSkeleton class="home-skeleton-row" /></li>
-						<li><AppSkeleton class="home-skeleton-row" /></li>
-						<li><AppSkeleton class="home-skeleton-row" /></li>
-					</ul>
-				</div>
-			</div>
-		</div>
 	{/if}
 </div>

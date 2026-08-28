@@ -9,8 +9,7 @@ property of **Gym visual**.
 ## Terms
 
 - **Resolution:** distributed and displayed at **180×180** only.
-- **Attribution:** every use must carry the copyright indication
-  **© Gym visual — https://gymvisual.com/**.
+- **Attribution:** show **© Gym visual — https://gymvisual.com/** on routes that display exercise media (`/exercises`, `/catalog/*`, `/exercise/*`) and in the Privacy page (`/privacy`).
 
 Review Gym visual's Terms & Conditions:
 https://gymvisual.com/content/3-terms-and-conditions-of-use

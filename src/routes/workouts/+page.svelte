@@ -6,6 +6,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import BackupImportAction from '$lib/components/BackupImportAction.svelte';
 	import WorkoutsPageSkeleton from '$lib/components/WorkoutsPageSkeleton.svelte';
+	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
@@ -213,7 +214,13 @@
 	<title>{pageTitle} · Repdraft</title>
 </svelte:head>
 
-<section class="workouts-page content-page content-page--narrow">
+<section
+	class="workouts-page content-page content-page--narrow"
+	class:workouts-page--history-tab={activeTab === 'history'}
+>
+	{#if activeTab === 'history'}
+		<ScreenHeader class="lg:hidden" title={pageTitle} backHref="/workouts" />
+	{/if}
 	<div class="page-header workouts-page__header">
 		<div
 			class="workouts-page__toolbar"
@@ -221,8 +228,8 @@
 		>
 			{#if activeTab === 'history'}
 				<AppButton
-					variant="secondary"
-					class="workouts-page__toolbar-icon-btn workouts-page__nav-btn workouts-page__nav-btn--back"
+					variant="ghost"
+					class="workouts-page__nav-btn workouts-page__nav-btn--back hidden lg:inline-flex"
 					onclick={() => setTab('plans')}
 					aria-label={translate(lang, 'builder.backWorkouts')}
 					title={translate(lang, 'builder.backWorkouts')}

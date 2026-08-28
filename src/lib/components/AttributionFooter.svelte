@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { APP_VERSION_LABEL } from '$lib/appVersion';
 	import { GYM_VISUAL_ATTRIBUTION, GYM_VISUAL_URL } from '$lib/data/attribution';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -19,9 +18,6 @@
 			rel="noreferrer"
 		>
 			{GYM_VISUAL_ATTRIBUTION}
-		</a><span
-			class="shell-footer-version"
-			aria-label={translate(lang, 'attr.versionAria', { version: APP_VERSION_LABEL })}
-		><span aria-hidden="true"> · </span>{APP_VERSION_LABEL}</span>
+		</a>
 	</p>
 </footer>

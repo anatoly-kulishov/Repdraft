@@ -2,7 +2,6 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
-	import AppFab from '$lib/components/AppFab.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
@@ -151,6 +150,8 @@
 			fixed
 			title={translate(lang, 'builder.createTitle')}
 			backHref="/workouts"
+			backLabel={translate(lang, 'builder.backWorkouts')}
+			backLabelVisible
 			actions={builderClearAction}
 		/>
 	</div>
@@ -198,6 +199,7 @@
 
 			{#if $draft.exercises.length === 0}
 				<EmptyState
+					centered
 					class="builder-empty-state"
 					title={translate(lang, 'builder.emptyTitle')}
 					description={translate(lang, 'builder.emptyDesc')}
@@ -310,15 +312,6 @@
 				</div>
 			{/if}
 		</div>
-	{/if}
-
-	{#if pageReady && $draft.exercises.length === 0}
-		<AppFab
-			class="lg:hidden"
-			href={BUILDER_ADD_EXERCISE_HREF}
-			label={translate(lang, 'builder.addExercise')}
-			placement="tabbar"
-		/>
 	{/if}
 </section>
 
