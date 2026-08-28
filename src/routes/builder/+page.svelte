@@ -4,13 +4,12 @@
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
-	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
 	import WorkoutExerciseRow from '$lib/components/WorkoutExerciseRow.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_BUTTON } from '$lib/components/icons/sizes';
+	import { ICON_BUTTON, ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { BUILDER_ADD_EXERCISE_HREF, WORKOUTS_HREF } from '$lib/domain/catalogLinks';
 	import { PLAN_NAME_MAX } from '$lib/domain/inputLimits';
@@ -24,7 +23,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { Plus, Save, Trash2 } from '@lucide/svelte';
+	import { Plus, Save, Trash2, ArrowLeft, Layers, ListTree } from '@lucide/svelte';
 
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let indexReady = $state(false);
@@ -120,7 +119,28 @@
 		draft.formOrGroup(selectedIds);
 		selectedIds = [];
 	}
+
+	function convertAltGroup(altGroupId: string) {
+		const memberIds = new Set(
+			$draft.exercises.filter((ex) => ex.altGroupId === altGroupId).map((ex) => ex.exerciseId)
+		);
+		draft.convertAltToSuperset(altGroupId);
+		selectedIds = selectedIds.filter((id) => !memberIds.has(id));
+	}
+
+	let headerTitle = $derived($draft.name.trim() || translate(lang, 'builder.namePh'));
 </script>
+
+{#snippet builderGroupButtons()}
+	<AppButton variant="secondary" class="builder-group-bar__btn" onclick={makeSuperset}>
+		<LucideIcon icon={Layers} size={ICON_SMALL} />
+		{translate(lang, 'builder.superset')}
+	</AppButton>
+	<AppButton variant="secondary" class="builder-group-bar__btn" onclick={makeOrGroup}>
+		<LucideIcon icon={ListTree} size={ICON_SMALL} />
+		{translate(lang, 'builder.or', { n: selectedCount })}
+	</AppButton>
+{/snippet}
 
 {#snippet builderClearAction()}
 	{#if $draft.exercises.length > 0}
@@ -137,28 +157,59 @@
 {/snippet}
 
 <svelte:head>
-	<title>{translate(lang, 'builder.createTitle')} · Repdraft</title>
+	<title>{headerTitle} · Repdraft</title>
 </svelte:head>
 
 <section
 	class="builder-page content-page md:pb-0"
-	class:pb-mobile-actions={pageReady && $draft.exercises.length > 0}
+	class:pb-mobile-actions={$draftHydrated && pageReady}
 >
-	<div class="lg:hidden">
-		<ScreenHeader
-			fixed
-			title={translate(lang, 'builder.createTitle')}
-			backHref="/workouts"
-			backLabel={translate(lang, 'builder.backWorkouts')}
-			backLabelVisible
-			actions={builderClearAction}
-		/>
+	<div class="builder-chrome lg:hidden">
+		<div class="builder-chrome__head">
+			<a
+				href="/workouts"
+				class="builder-chrome__back"
+				aria-label={`${translate(lang, 'a11y.back')}: ${translate(lang, 'builder.backWorkouts')}`}
+			>
+				<LucideIcon icon={ArrowLeft} size={ICON_PRIMARY} />
+			</a>
+			{#if $draftHydrated}
+				<AppInput
+					class="builder-chrome__name"
+					type="text"
+					placeholder={translate(lang, 'builder.namePh')}
+					maxlength={PLAN_NAME_MAX}
+					value={$draft.name}
+					aria-label={translate(lang, 'builder.name')}
+					oninput={(e) => draft.setName((e.currentTarget as HTMLInputElement).value)}
+				/>
+				<div class="builder-chrome__actions">
+					{@render builderClearAction()}
+				</div>
+			{:else}
+				<div class="builder-chrome__name-skel" aria-hidden="true"></div>
+			{/if}
+		</div>
+		{#if $draftHydrated && selectedCount >= 2}
+			<div
+				class="builder-group-bar"
+				role="toolbar"
+				aria-label={translate(lang, 'builder.groupToolbarAria')}
+			>
+				<p class="builder-group-bar__label">
+					{translate(lang, 'builder.groupSelected', { n: selectedCount })}
+				</p>
+				<div class="builder-group-bar__actions">
+					{@render builderGroupButtons()}
+				</div>
+			</div>
+		{/if}
 	</div>
 
 	<div class="builder-toolbar mb-5 hidden flex-wrap items-center justify-between gap-3 lg:flex">
 		<div class="min-w-0">
 			<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />
-			<h1 class="page-title mt-1">{translate(lang, 'builder.createTitle')}</h1>
+			<h1 class="page-title mt-1">{headerTitle}</h1>
 		</div>
 		<div class="flex shrink-0 items-center gap-2">
 			{@render builderClearAction()}
@@ -182,17 +233,19 @@
 
 	{#if $draftHydrated}
 		<div class="soft-enter">
-			<AppLabel class="mb-5 block max-w-xl">
-				{translate(lang, 'builder.name')}
-				<AppInput
-					class="mt-1.5 w-full"
-					type="text"
-					placeholder={translate(lang, 'builder.namePh')}
-					maxlength={PLAN_NAME_MAX}
-					value={$draft.name}
-					oninput={(e) => draft.setName((e.currentTarget as HTMLInputElement).value)}
-				/>
-			</AppLabel>
+			<div class="builder-name-desktop mb-5 max-w-xl">
+				<AppLabel>
+					{translate(lang, 'builder.name')}
+					<AppInput
+						class="mt-1.5 w-full"
+						type="text"
+						placeholder={translate(lang, 'builder.namePh')}
+						maxlength={PLAN_NAME_MAX}
+						value={$draft.name}
+						oninput={(e) => draft.setName((e.currentTarget as HTMLInputElement).value)}
+					/>
+				</AppLabel>
+			</div>
 
 			{#if $draft.exercises.length === 0}
 				<EmptyState
@@ -200,26 +253,30 @@
 					class="builder-empty-state"
 					title={translate(lang, 'builder.emptyTitle')}
 					description={translate(lang, 'builder.emptyDesc')}
-					actionHref={BUILDER_ADD_EXERCISE_HREF}
-					actionLabel={translate(lang, 'builder.addExercise')}
 				/>
+
+				<div class="sticky-actions lg:hidden">
+					<div class="sticky-actions__inner">
+						<AppButton block href={BUILDER_ADD_EXERCISE_HREF} class="gap-2">
+							<LucideIcon icon={Plus} size={ICON_BUTTON} />
+							{translate(lang, 'builder.addExerciseShort')}
+						</AppButton>
+					</div>
+				</div>
 			{:else}
-				<div class="builder-section-head">
+				<div class="builder-section-head hidden lg:flex">
 					<p class="section-title">{translate(lang, 'builder.exercisesSection')}</p>
 					{#if selectedCount >= 2}
-						<div class="builder-section-head__actions">
-							<AppButton variant="secondary" onclick={makeOrGroup}>
-								{translate(lang, 'builder.or', { n: selectedCount })}
-							</AppButton>
-							<AppButton variant="secondary" onclick={makeSuperset}>
-								{translate(lang, 'builder.superset')} · {selectedCount}
-							</AppButton>
+						<div class="builder-group-bar builder-group-bar--inline">
+							<p class="builder-group-bar__label">
+								{translate(lang, 'builder.groupSelected', { n: selectedCount })}
+							</p>
+							<div class="builder-group-bar__actions">
+								{@render builderGroupButtons()}
+							</div>
 						</div>
 					{/if}
 				</div>
-				{#if selectedCount < 2}
-					<p class="builder-select-hint">{translate(lang, 'builder.selectHint')}</p>
-				{/if}
 
 				<div class="builder-exercise-list">
 					{#each $draft.exercises as item, index (item.exerciseId)}
@@ -257,6 +314,9 @@
 									ondissolve={item.groupId ? () => draft.dissolveSuperset(item.groupId!) : undefined}
 									ondissolveOr={item.altGroupId
 										? () => draft.dissolveOrGroup(item.altGroupId!)
+										: undefined}
+									onConvertToSuperset={item.altGroupId
+										? () => convertAltGroup(item.altGroupId!)
 										: undefined}
 									ongroupSets={item.groupId
 										? (sets) => draft.updateGroupSets(item.groupId!, sets)

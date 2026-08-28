@@ -79,9 +79,7 @@
 	}
 
 	let authNextHref = $derived(
-		session
-			? `/auth?next=${encodeURIComponent(`/workouts/history/${session.id}`)}`
-			: '/auth?next=%2F'
+		session ? `/auth?next=${encodeURIComponent('/')}` : '/auth?next=%2F'
 	);
 
 	function dismissGuestHint() {
@@ -253,23 +251,29 @@
 		{/if}
 
 		<div class="summary-actions summary-page__done-inline">
-			<AppButton
-				block
-				href={`/workouts/history/${session.id}`}
-				data-sveltekit-replacestate
-			>
+			<AppButton block href="/" data-sveltekit-replacestate>
 				{translate(lang, 'summary.done')}
+			</AppButton>
+			<AppButton
+				variant="link"
+				class="summary-actions__details !h-auto !min-h-[48px] !min-w-[48px]"
+				href={`/workouts/history/${session.id}`}
+			>
+				{translate(lang, 'summary.openSession')}
 			</AppButton>
 		</div>
 
 		<div class="sticky-actions summary-page__done-sticky lg:hidden">
-			<div class="sticky-actions__inner summary-actions">
-				<AppButton
-					block
-					href={`/workouts/history/${session.id}`}
-					data-sveltekit-replacestate
-				>
+			<div class="sticky-actions__inner summary-actions summary-actions--stack">
+				<AppButton block href="/" data-sveltekit-replacestate>
 					{translate(lang, 'summary.done')}
+				</AppButton>
+				<AppButton
+					variant="link"
+					class="summary-actions__details !h-auto !min-h-[48px]"
+					href={`/workouts/history/${session.id}`}
+				>
+					{translate(lang, 'summary.openSession')}
 				</AppButton>
 			</div>
 		</div>

@@ -31,6 +31,8 @@ import {
 	clearFinishedSessionHistory
 } from '$lib/storage/dataAccess';
 import { exerciseStats } from '$lib/stores/exerciseStats';
+import { homeNextPlan } from '$lib/stores/homeNextPlan';
+import { plans } from '$lib/stores/plans';
 import {
 	localSessionRepository,
 	readActiveSession,
@@ -339,8 +341,20 @@ function createLiveStore() {
 			exerciseStats.recordUses(usedIds);
 			await persistSession(done);
 			persistActive(null, null);
+			store.update((s) => ({
+				...s,
+				session: null,
+				restUntil: null,
+				history: mergeWorkoutSessions(
+					[done, ...s.history.filter((x) => x.id !== done.id)],
+					[],
+					[]
+				)
+			}));
+			if (done.planId) {
+				homeNextPlan.advanceAfterFinish(done.planId, get(plans));
+			}
 			await refreshHistory();
-			store.update((s) => ({ ...s, session: null, restUntil: null }));
 			return done;
 		},
 		discard() {
