@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { duplicatePlan, mergeWorkoutPlans, withSavedName } from '$lib/domain/workout';
+import { duplicatePlan, mergeWorkoutPlans, sortPlansByUserOrder, withSavedName } from '$lib/domain/workout';
 import type { WorkoutPlan } from '$lib/domain/types';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { translate } from '$lib/i18n/messages';
@@ -18,11 +18,17 @@ import {
 } from '$lib/stores/cloudLocal';
 import { writable, get } from 'svelte/store';
 import { draft } from './draft';
+import { planOrder } from './planOrder';
 import { resolvedLocale } from './locale';
 
-const CLOUD_MS = 4000;
+	const CLOUD_MS = 4000;
 
-function createPlansStore() {
+	function applyUserOrder(items: WorkoutPlan[]): WorkoutPlan[] {
+		const order = planOrder.syncWithPlanIds(items.map((p) => p.id));
+		return sortPlansByUserOrder(items, order);
+	}
+
+	function createPlansStore() {
 	const store = writable<WorkoutPlan[]>([]);
 	const ready = writable(false);
 	const sync = writable<CloudSyncState>('idle');
@@ -61,7 +67,7 @@ function createPlansStore() {
 					previousItems: get(store),
 					label: 'plans',
 					onUpdate: (update) => {
-						store.set(update.items);
+						store.set(applyUserOrder(update.items));
 						sync.set(update.state);
 						if (update.state !== 'loading') ready.set(true);
 						if (browser) {
@@ -94,12 +100,16 @@ function createPlansStore() {
 		async saveCurrent(): Promise<WorkoutPlan> {
 			const lang = get(resolvedLocale);
 			const current = withSavedName(get(draft), translate(lang, 'builder.untitled'));
+			const isNew =
+				!get(store).some((p) => p.id === current.id) &&
+				!(await localWorkoutRepository.get(current.id));
 			const cloudOk = await mirrorCloudWrite({
 				localWrite: () => localWorkoutRepository.save(current),
 				cloudWrite: () => supabaseWorkoutRepository.save(current),
 				label: 'plans.saveCurrent',
 				outboxOnFail: { kind: 'plan.save', id: current.id }
 			});
+			if (isNew) planOrder.prepend(current.id);
 			await refresh({ cloud: cloudOk && isCloudMode() });
 			return current;
 		},
@@ -125,6 +135,7 @@ function createPlansStore() {
 				label: 'plans.duplicate',
 				outboxOnFail: { kind: 'plan.save', id: copy.id }
 			});
+			planOrder.prepend(copy.id);
 			await refresh({ cloud: synced && isCloudMode() });
 			return { plan: copy, synced: synced || !isCloudMode() };
 		},
@@ -138,6 +149,10 @@ function createPlansStore() {
 			} catch {
 				return null;
 			}
+		},
+		reorderInOrder(fromIndex: number, toIndex: number) {
+			planOrder.reorder(fromIndex, toIndex);
+			store.update((items) => sortPlansByUserOrder(items, get(planOrder)));
 		}
 	};
 }

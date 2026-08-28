@@ -188,16 +188,22 @@ function nextVisibleAfterGroupEnd(session: WorkoutSession, groupEnd: number): nu
 	return nextVisibleAfterIndex(session, groupEnd) ?? groupEnd;
 }
 
+function isVisibleSessionExercise(session: WorkoutSession, index: number): boolean {
+	return visibleSessionExerciseIndices(session).includes(index);
+}
+
 function nextIncompleteInGroup(
 	session: WorkoutSession,
 	bounds: { start: number; end: number },
 	fromIndex: number
 ): number | null {
 	for (let i = fromIndex + 1; i <= bounds.end; i++) {
+		if (!isVisibleSessionExercise(session, i)) continue;
 		const ex = session.exercises[i];
 		if (ex?.sets.some((s) => !s.completed)) return i;
 	}
 	for (let i = bounds.start; i < fromIndex; i++) {
+		if (!isVisibleSessionExercise(session, i)) continue;
 		const ex = session.exercises[i];
 		if (ex?.sets.some((s) => !s.completed)) return i;
 	}
@@ -233,16 +239,19 @@ export function nextFocusAfterSetComplete(
 	const bounds = groupBounds(session.exercises, exerciseIndex);
 	if (bounds && bounds.start !== bounds.end) {
 		for (let i = exerciseIndex + 1; i <= bounds.end; i++) {
+			if (!isVisibleSessionExercise(session, i)) continue;
 			const set = session.exercises[i]?.sets[setIndex];
 			if (set && !set.completed) return i;
 		}
 		for (let i = bounds.start; i < exerciseIndex; i++) {
+			if (!isVisibleSessionExercise(session, i)) continue;
 			const set = session.exercises[i]?.sets[setIndex];
 			if (set && !set.completed) return i;
 		}
 		for (let s = setIndex + 1; ; s++) {
 			let sawSlot = false;
 			for (let i = bounds.start; i <= bounds.end; i++) {
+				if (!isVisibleSessionExercise(session, i)) continue;
 				const set = session.exercises[i]?.sets[s];
 				if (!set) continue;
 				sawSlot = true;
