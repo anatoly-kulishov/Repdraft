@@ -17,7 +17,7 @@
 		ICON_TAB_STROKE,
 		ICON_TAB_STROKE_ACTIVE
 	} from '$lib/components/icons/sizes';
-	import { Dumbbell, House, Library, Moon, Sun } from '@lucide/svelte';
+	import { BookOpen, ClipboardList, Dumbbell, House, Moon, Sun } from '@lucide/svelte';
 	import { isBuilderReturnPath } from '$lib/domain/catalogLinks';
 	import { showsExerciseMediaAttribution } from '$lib/domain/mediaAttribution';
 	import { translate } from '$lib/i18n/messages';
@@ -100,52 +100,34 @@
 		window.addEventListener('online', onOnline);
 		if (navigator.onLine) void flushSyncOutbox();
 
-		const syncKeyboardInset = () => {
-			const root = document.documentElement;
-			const vv = window.visualViewport;
-			if (!vv) {
-				root.style.setProperty('--vv-keyboard-inset', '0px');
-				root.style.removeProperty('--vv-bottom-pad');
-				return;
-			}
-			const inset = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
-			root.style.setProperty('--vv-keyboard-inset', `${inset}px`);
-			if (inset > 48) root.style.setProperty('--vv-bottom-pad', '0px');
-			else root.style.removeProperty('--vv-bottom-pad');
-		};
-		syncKeyboardInset();
-		window.visualViewport?.addEventListener('resize', syncKeyboardInset);
-		window.visualViewport?.addEventListener('scroll', syncKeyboardInset);
+		const syncVvChrome = (window as Window & { __repdraftSyncVvChrome?: () => void })
+			.__repdraftSyncVvChrome;
+		syncVvChrome?.();
 
-		const recoverFixedChrome = () => {
+		const recoverOverflow = () => {
 			if (
 				document.body.style.overflow === 'hidden' &&
 				!document.querySelector('[aria-modal="true"]')
 			) {
 				document.body.style.overflow = '';
 			}
-			const y = window.scrollY;
-			window.scrollTo(0, y === 0 ? 1 : y - 1);
-			window.scrollTo(0, y);
-			syncKeyboardInset();
 		};
 
 		const onVisible = () => {
-			if (document.visibilityState === 'visible') recoverFixedChrome();
+			if (document.visibilityState === 'visible') {
+				syncVvChrome?.();
+				recoverOverflow();
+			}
 		};
 		document.addEventListener('visibilitychange', onVisible);
-		window.addEventListener('pageshow', recoverFixedChrome);
-		window.visualViewport?.addEventListener('resize', recoverFixedChrome);
+		window.addEventListener('pageshow', () => {
+			syncVvChrome?.();
+			recoverOverflow();
+		});
 
 		return () => {
 			window.removeEventListener('online', onOnline);
 			document.removeEventListener('visibilitychange', onVisible);
-			window.removeEventListener('pageshow', recoverFixedChrome);
-			window.visualViewport?.removeEventListener('resize', recoverFixedChrome);
-			window.visualViewport?.removeEventListener('resize', syncKeyboardInset);
-			window.visualViewport?.removeEventListener('scroll', syncKeyboardInset);
-			document.documentElement.style.removeProperty('--vv-keyboard-inset');
-			document.documentElement.style.removeProperty('--vv-bottom-pad');
 		};
 	});
 
@@ -247,7 +229,7 @@
 </div>
 
 <nav
-	class="shell-nav-tabbar fixed inset-x-0 bottom-0 z-40"
+	class="shell-nav-tabbar fixed inset-x-0 z-40"
 	class:shell-nav-tabbar-hidden={hideMobileHeader}
 	aria-label={translate(lang, 'nav.main')}
 >
@@ -302,7 +284,7 @@
 			<span class="tab-link__inner">
 				<span class="tab-link-icon">
 					<LucideIcon
-						icon={Library}
+						icon={BookOpen}
 						size={ICON_TAB}
 						strokeWidth={isActive('/exercises') ? ICON_TAB_STROKE_ACTIVE : ICON_TAB_STROKE}
 					/>

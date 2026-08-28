@@ -4,7 +4,6 @@
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
-	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -181,9 +180,7 @@
 		</div>
 	</div>
 
-	{#if !pageReady}
-		<PageSkeleton variant="builder" rows={3} />
-	{:else}
+	{#if $draftHydrated}
 		<div class="soft-enter">
 			<AppLabel class="mb-5 block max-w-xl">
 				{translate(lang, 'builder.name')}

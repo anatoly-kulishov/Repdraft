@@ -86,7 +86,7 @@
 	/* Sit just above tabbar — default mobile. Enter: kineticsToastIn in layout.css */
 	.toast-stack {
 		left: 50%;
-		bottom: calc(var(--mobile-chrome-bottom) + 0.65rem);
+		bottom: calc(var(--mobile-chrome-bottom) + 0.65rem + var(--vv-fixed-bottom, 0px));
 		width: min(20.5rem, calc(100vw - 2rem));
 		transform: translateX(-50%);
 	}
