@@ -60,9 +60,13 @@
 		var(--screen-header-stacked-h) + 2 * var(--screen-header-pad-block) + var(--safe-top)
 	);
 	--tabbar-h: 3.625rem;
+	--tabbar-inset: 0.1875rem;
+	--tabbar-segment-r: 0.6875rem;
+	/* Concentric end-cap radius: outer pill minus inset track. */
+	--tabbar-end-r: calc(var(--tabbar-h) / 2);
 	--tabbar-float-gap: 0.5rem;
 	/* Pill border (1px top + bottom) — keeps FAB / draft dock above the real tabbar box. */
-	--tabbar-chrome-h: calc(var(--tabbar-h) + 2px);
+	--tabbar-chrome-h: calc(var(--tabbar-h) + 2 * var(--tabbar-inset) + 2px);
 	--fab-above-tabbar: 1rem;
 	--fab-size: 3.5rem;
 	--shell-footer-chrome-h: 3.25rem;
@@ -73,6 +77,8 @@
 	--safe-top: env(safe-area-inset-top, 0px);
 	--safe-left: env(safe-area-inset-left, 0px);
 	--safe-right: env(safe-area-inset-right, 0px);
+	/* iOS: layout vs visual viewport gap (URL bar / first paint). Set in app.html. */
+	--vv-fixed-bottom: 0px;
 	--page-gap: 1.25rem;
 	--page-pad-x: 1.125rem;
 	--page-pad-y: 1rem;
@@ -283,7 +289,7 @@ html[data-theme='light'] .pr-now-chip {
 	background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-muted));
 }
 
-html[data-theme='light'] .shell-header-mobile,
+html[data-theme='light'] .shell-header-mobile:not(.shell-header-mobile--home),
 html[data-theme='light'] .shell-main--subroute .screen-header {
 	background: color-mix(in srgb, var(--color-surface) 94%, var(--color-bg));
 }
@@ -315,7 +321,7 @@ html[data-theme='light'] .shell-main--subroute .screen-header {
 }
 
 .shell-header-mobile--home {
-	border-bottom-color: transparent;
+	border-bottom: none;
 	background: var(--color-bg);
 }
 
@@ -4989,8 +4995,8 @@ html[data-theme='light'] .exercise-card-bookmark.is-active:not(.exercise-card-bo
 .sticky-actions {
 	position: fixed;
 	inset-inline: 0;
-	/* Sit above OS keyboard when visualViewport reports an inset (see +layout.svelte). */
-	bottom: var(--vv-keyboard-inset, 0px);
+	/* Visual viewport bottom — keyboard and iOS chrome (see app.html). */
+	bottom: var(--vv-fixed-bottom, 0px);
 	z-index: 30;
 	border-top: 1px solid var(--color-border);
 	background: var(--color-surface);
@@ -5002,7 +5008,6 @@ html[data-theme='light'] .exercise-card-bookmark.is-active:not(.exercise-card-bo
 	/* Own layer — reduces iOS “fixed stuck mid-scroll” after resume */
 	transform: translateZ(0);
 	-webkit-backface-visibility: hidden;
-	transition: bottom 120ms ease-out;
 }
 
 /**
@@ -5010,7 +5015,7 @@ html[data-theme='light'] .exercise-card-bookmark.is-active:not(.exercise-card-bo
  * tabbar (z-40). Lift above --mobile-chrome-bottom so the primary CTA is visible.
  */
 .sticky-actions--above-tabbar {
-	bottom: calc(var(--mobile-chrome-bottom) + var(--vv-keyboard-inset, 0px));
+	bottom: calc(var(--mobile-chrome-bottom) + var(--vv-fixed-bottom, 0px));
 	padding-bottom: 0.65rem;
 	background: color-mix(in srgb, var(--color-bg) 72%, transparent);
 	border-top-color: transparent;
@@ -5066,7 +5071,7 @@ body:has(.live-sticky-actions--end) {
 	position: fixed;
 	z-index: 39;
 	left: 50%;
-	bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar));
+	bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--vv-fixed-bottom, 0px));
 	transform: translateX(-50%) translateZ(0);
 	display: inline-flex;
 	align-items: center;
@@ -5112,7 +5117,7 @@ body:has(.live-sticky-actions--end) {
 }
 
 body:has(.sticky-actions) .draft-dock {
-	bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.55rem);
+	bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.55rem + var(--vv-fixed-bottom, 0px));
 }
 
 /* Phones + tablet (< sidebar): icon FAB + count badge — stays clear of titles / tabbar. */
@@ -5120,7 +5125,7 @@ body:has(.sticky-actions) .draft-dock {
 	.draft-dock {
 		left: auto;
 		right: max(0.75rem, var(--safe-right));
-		bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar));
+		bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--vv-fixed-bottom, 0px));
 		transform: translateZ(0);
 		width: 3rem;
 		height: 3rem;
@@ -5160,12 +5165,13 @@ body:has(.sticky-actions) .draft-dock {
 	body:has(.workouts-fab:not(.workouts-fab--hidden)) .draft-dock {
 		/* Stack above Create FAB — vertical offset (both are bottom-right). */
 		right: max(1rem, var(--safe-right));
-		bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + 3.5rem + 0.75rem);
+		bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + 3.5rem + 0.75rem + var(--vv-fixed-bottom, 0px));
 	}
 
 	body:has(.sticky-actions):has(.app-fab.app-fab--sticky:not(.app-fab--hidden)):has(.draft-dock) .draft-dock {
 		bottom: calc(
-			var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.85rem + 3.5rem + 0.75rem
+			var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.85rem + 3.5rem + 0.75rem +
+				var(--vv-fixed-bottom, 0px)
 		);
 	}
 }
@@ -5178,7 +5184,8 @@ body:has(.sticky-actions) .draft-dock {
 }
 
 .shell-nav-tabbar {
-	/* Own layer; keep bottom pinned to the visual viewport */
+	/* Own layer; pin to visual viewport bottom (see --vv-fixed-bottom in app.html). */
+	bottom: var(--vv-fixed-bottom, 0px);
 	transform: translateZ(0);
 	-webkit-backface-visibility: hidden;
 	padding-left: max(0.625rem, var(--safe-left));
@@ -5194,20 +5201,21 @@ body:has(.sticky-actions) .draft-dock {
 	width: 100%;
 	max-width: min(24rem, calc(100% - 1.25rem));
 	margin-inline: auto;
-	padding: 0;
+	padding: var(--tabbar-inset);
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-button);
 	background: var(--color-surface);
 	box-shadow: var(--shadow-float);
+	overflow: hidden;
 }
 
 .shell-nav-tabbar__grid {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	align-items: stretch;
-	gap: 0;
+	gap: var(--tabbar-inset);
 	height: var(--tabbar-h);
-	padding: 0.1875rem;
+	padding: 0;
 }
 
 .shell-nav-tabbar__grid > .tab-link {
@@ -5227,18 +5235,17 @@ body:has(.sticky-actions) .draft-dock {
 	border: none;
 	box-shadow: none;
 	transform: none;
+	border-radius: var(--tabbar-segment-r);
 }
 
 .shell-nav-tabbar__grid > .tab-link:first-child {
-	border-radius: 999px 0.75rem 0.75rem 999px;
+	border-radius: var(--tabbar-end-r) var(--tabbar-segment-r) var(--tabbar-segment-r)
+		var(--tabbar-end-r);
 }
 
 .shell-nav-tabbar__grid > .tab-link:last-child {
-	border-radius: 0.75rem 999px 999px 0.75rem;
-}
-
-.shell-nav-tabbar__grid > .tab-link:not(:first-child):not(:last-child) {
-	border-radius: 0.75rem;
+	border-radius: var(--tabbar-segment-r) var(--tabbar-end-r) var(--tabbar-end-r)
+		var(--tabbar-segment-r);
 }
 
 .shell-nav-tabbar__grid > .tab-link:hover {
@@ -5962,34 +5969,47 @@ html[data-theme='dark'] .zone-card__media {
 
 @media (min-width: 1024px) {
 	.home-header--mockup {
-		flex-direction: row;
-		align-items: center;
-		justify-content: flex-start;
-		gap: 1.5rem;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0;
 		margin-bottom: 1.5rem;
-		padding: 1.25rem 1.35rem;
+		padding: 1.25rem 1.35rem 1.15rem;
 	}
 
 	.home-header--mockup .home-header__row {
 		flex: 1 1 auto;
 		flex-direction: row;
 		align-items: center;
-		gap: 1rem;
+		gap: 1.25rem;
 		min-width: 0;
 	}
 
 	.home-header--mockup .home-header__copy {
 		flex: 1 1 auto;
-		flex-direction: row;
-		flex-wrap: wrap;
-		align-items: baseline;
-		column-gap: 0.65rem;
-		row-gap: 0.25rem;
+		flex-direction: column;
+		flex-wrap: nowrap;
+		align-items: flex-start;
+		gap: 0.3rem;
 	}
 
 	.home-header--mockup .home-header__greeting {
-		flex: 0 1 auto;
+		flex: none;
 		max-width: 100%;
+		font-size: clamp(1.35rem, 2vw, 1.65rem);
+		font-weight: 700;
+		line-height: 1.15;
+		letter-spacing: -0.03em;
+		white-space: normal;
+		overflow: visible;
+		text-overflow: unset;
+	}
+
+	.home-header--mockup .home-header__subtitle {
+		font-size: 0.875rem;
+	}
+
+	.home-header--mockup .home-header__plan {
+		font-size: 1.125rem;
 	}
 
 	.home-header--mockup .home-header__cta.home-header__cta--compact {
@@ -6013,6 +6033,10 @@ html[data-theme='dark'] .zone-card__media {
 	.home-header__cta-icon,
 	.home-header__cta-text--short {
 		display: none;
+	}
+
+	.home-header__footer {
+		margin-top: 0.85rem;
 	}
 
 	.home-dashboard-teaser,
@@ -7980,7 +8004,7 @@ html[data-theme='light'] .catalog-hub-chip:hover {
 		inset-inline: 0;
 		left: 0;
 		right: 0;
-		bottom: calc(var(--safe-bottom) + var(--vv-keyboard-inset, 0px));
+		bottom: calc(var(--safe-bottom) + var(--vv-fixed-bottom, 0px));
 		margin-top: 0;
 		margin-inline: calc(-1 * var(--page-pad-x));
 		width: auto;
@@ -11653,7 +11677,7 @@ html[data-theme='dark'] .segment-control__tab.is-active {
 
 .app-fab--tabbar,
 .workouts-fab {
-	bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar));
+	bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--vv-fixed-bottom, 0px));
 }
 
 .app-fab--sticky {

@@ -27,9 +27,7 @@
 	);
 	/** Dev/QA: ?skeleton=1 — preview category grid placeholders. */
 	let forceSkeleton = $derived($page.url.searchParams.get('skeleton') === '1');
-	let showCategorySkeleton = $derived(
-		forceSkeleton || (!error && data.hubZones.length === 0)
-	);
+	let showCategorySkeleton = $derived(forceSkeleton);
 
 	onMount(() => {
 		/* Fresh hub visit: drop leftover list facets before search / browse-all. */

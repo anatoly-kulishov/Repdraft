@@ -5,7 +5,6 @@
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import BackupImportAction from '$lib/components/BackupImportAction.svelte';
-	import WorkoutsPageSkeleton from '$lib/components/WorkoutsPageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -289,10 +288,7 @@
 		onRetry={() => void plans.refresh({ force: true })}
 	/>
 
-	{#if !pageReady}
-		<WorkoutsPageSkeleton label={translate(lang, 'common.loading')} />
-	{:else}
-		{#if activeTab === 'plans'}
+	{#if activeTab === 'plans'}
 			{#if $plans.length === 0}
 				<EmptyState
 					centered
@@ -478,7 +474,6 @@
 				{/each}
 			</ul>
 		{/if}
-	{/if}
 
 	<AppFab
 		class="lg:hidden"
