@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
-import { writable } from 'svelte/store';
+import { advanceHomeNextPlanId } from '$lib/domain/workout';
+import { get, writable } from 'svelte/store';
 
 export const HOME_NEXT_PLAN_STORAGE_KEY = 'repdraft:home-next-plan-id';
 
@@ -24,7 +25,8 @@ function writePinnedPlanId(planId: string | null) {
 }
 
 function createHomeNextPlanStore() {
-	const { subscribe, set } = writable<string | null>(readPinnedPlanId());
+	const store = writable<string | null>(readPinnedPlanId());
+	const { subscribe, set } = store;
 
 	return {
 		subscribe,
@@ -35,6 +37,16 @@ function createHomeNextPlanStore() {
 		clear() {
 			set(null);
 			writePinnedPlanId(null);
+		},
+		advanceAfterFinish(finishedPlanId: string, plans: { id: string }[]) {
+			const nextId = advanceHomeNextPlanId(plans, finishedPlanId, get(store));
+			if (nextId) {
+				set(nextId);
+				writePinnedPlanId(nextId);
+			} else {
+				set(null);
+				writePinnedPlanId(null);
+			}
 		}
 	};
 }

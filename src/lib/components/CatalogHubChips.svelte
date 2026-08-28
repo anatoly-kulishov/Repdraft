@@ -11,10 +11,13 @@
 
 	let {
 		class: className = '',
-		from = null as string | null
+		from = null as string | null,
+		/** Builder pick-flow: only browse-all + saved — skip records/articles detours. */
+		pickMode = false
 	}: {
 		class?: string;
 		from?: string | null;
+		pickMode?: boolean;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
@@ -32,15 +35,17 @@
 		<LucideIcon icon={Bookmark} size={ICON_BUTTON} />
 		<span>{translate(lang, 'bookmarks.title')}</span>
 	</AppBadge>
-	<AppBadge href="/records" variant="outline" class="catalog-hub-chip">
-		<LucideIcon icon={Trophy} size={ICON_BUTTON} />
-		<span>{translate(lang, 'records.title')}</span>
-		{#if $recordsReady && recordCount > 0}
-			<span class="catalog-hub-nav-count">{recordCount}</span>
-		{/if}
-	</AppBadge>
-	<AppBadge href="/articles" variant="outline" class="catalog-hub-chip">
-		<LucideIcon icon={BookOpen} size={ICON_BUTTON} />
-		<span>{translate(lang, 'articles.title')}</span>
-	</AppBadge>
+	{#if !pickMode}
+		<AppBadge href={withFromParam('/records', from)} variant="outline" class="catalog-hub-chip">
+			<LucideIcon icon={Trophy} size={ICON_BUTTON} />
+			<span>{translate(lang, 'records.title')}</span>
+			{#if $recordsReady && recordCount > 0}
+				<span class="catalog-hub-nav-count">{recordCount}</span>
+			{/if}
+		</AppBadge>
+		<AppBadge href={withFromParam('/articles', from)} variant="outline" class="catalog-hub-chip">
+			<LucideIcon icon={BookOpen} size={ICON_BUTTON} />
+			<span>{translate(lang, 'articles.title')}</span>
+		</AppBadge>
+	{/if}
 </nav>

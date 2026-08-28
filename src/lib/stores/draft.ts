@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import {
 	addExercise,
 	createEmptyDraft,
+	convertAltGroupToSuperset as convertAltGroupToSupersetInPlan,
 	dissolveOrGroup as dissolveOrGroupInPlan,
 	dissolveSuperset as dissolveSupersetInPlan,
 	formOrGroup as formOrGroupInPlan,
@@ -91,6 +92,9 @@ function createDraftStore() {
 		},
 		dissolveOrGroup(altGroupId: string) {
 			update((plan) => dissolveOrGroupInPlan(plan, altGroupId));
+		},
+		convertAltToSuperset(altGroupId: string) {
+			update((plan) => convertAltGroupToSupersetInPlan(plan, altGroupId));
 		},
 		updateGroupSets(groupId: string, sets: number) {
 			update((plan) => updateGroupSetsInPlan(plan, groupId, sets));

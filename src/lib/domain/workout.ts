@@ -201,6 +201,30 @@ export function altGroupBounds(
 	return { start, end, altGroupId };
 }
 
+/** When grouping, include all mates of any selected “or” block. */
+function expandSelectionWithAltGroups(plan: WorkoutPlan, exerciseIds: readonly string[]): Set<string> {
+	const set = new Set(exerciseIds);
+	let grew = true;
+	while (grew) {
+		grew = false;
+		for (const ex of plan.exercises) {
+			if (!set.has(ex.exerciseId) || !ex.altGroupId) continue;
+			for (const mate of plan.exercises) {
+				if (mate.altGroupId === ex.altGroupId && !set.has(mate.exerciseId)) {
+					set.add(mate.exerciseId);
+					grew = true;
+				}
+			}
+		}
+	}
+	return set;
+}
+
+function sharedGroupIdInSelection(selected: WorkoutExercise[]): string | null {
+	const ids = [...new Set(selected.map((ex) => ex.groupId).filter((g): g is string => Boolean(g)))];
+	return ids.length === 1 ? ids[0]! : null;
+}
+
 /** Contiguous block for reorder: superset or “or” group (2+ members). */
 export function blockBounds(
 	exercises: { groupId?: string | null; altGroupId?: string | null }[],
@@ -325,21 +349,18 @@ function moveWithinBlock(plan: WorkoutPlan, fromIndex: number, toIndex: number):
 }
 
 export function formSuperset(plan: WorkoutPlan, exerciseIds: string[]): WorkoutPlan {
-	const unique = [...new Set(exerciseIds)];
-	if (unique.length < 2) return plan;
+	const selectedSet = expandSelectionWithAltGroups(plan, exerciseIds);
+	if (selectedSet.size < 2) return plan;
 
-	const selected = unique
-		.map((id) => plan.exercises.find((ex) => ex.exerciseId === id))
-		.filter((ex): ex is WorkoutExercise => Boolean(ex));
+	const selected = plan.exercises.filter((ex) => selectedSet.has(ex.exerciseId));
 	if (selected.length < 2) return plan;
 
-	const selectedSet = new Set(selected.map((ex) => ex.exerciseId));
 	const rest = plan.exercises.filter((ex) => !selectedSet.has(ex.exerciseId));
 	const insertAt = Math.min(
 		...selected.map((ex) => plan.exercises.findIndex((e) => e.exerciseId === ex.exerciseId))
 	);
 
-	const groupId = newId();
+	const groupId = sharedGroupIdInSelection(selected) ?? newId();
 	const sharedSets = selected[0]!.sets;
 	const lastRest =
 		selected[selected.length - 1]!.restSec > 0
@@ -350,7 +371,6 @@ export function formSuperset(plan: WorkoutPlan, exerciseIds: string[]): WorkoutP
 		selected.map((ex, i) => ({
 			...ex,
 			groupId,
-			altGroupId: null,
 			sets: sharedSets,
 			restSec: i === selected.length - 1 ? lastRest : 0
 		}))
@@ -393,9 +413,10 @@ export function formOrGroup(plan: WorkoutPlan, exerciseIds: string[]): WorkoutPl
 	);
 
 	const altGroupId = newId();
+	const groupId = sharedGroupIdInSelection(selected);
 	const grouped = selected.map((ex) => ({
 		...ex,
-		groupId: null,
+		groupId,
 		altGroupId,
 		restSec: ex.restSec > 0 ? ex.restSec : DEFAULT_REST_SEC
 	}));
@@ -409,6 +430,21 @@ export function dissolveOrGroup(plan: WorkoutPlan, altGroupId: string): WorkoutP
 	return withUpdated(
 		plan,
 		plan.exercises.map((ex) =>
+			ex.altGroupId === altGroupId ? { ...ex, altGroupId: null } : ex
+		)
+	);
+}
+
+/** Turn an “or” block into sequential superset members (do all variants, not pick-one). */
+export function convertAltGroupToSuperset(plan: WorkoutPlan, altGroupId: string): WorkoutPlan {
+	const ids = plan.exercises
+		.filter((ex) => ex.altGroupId === altGroupId)
+		.map((ex) => ex.exerciseId);
+	if (ids.length < 2) return plan;
+	const grouped = formSuperset(plan, ids);
+	return withUpdated(
+		grouped,
+		grouped.exercises.map((ex) =>
 			ex.altGroupId === altGroupId ? { ...ex, altGroupId: null } : ex
 		)
 	);
@@ -580,6 +616,79 @@ export function resolveHomeNextPlan<T extends { id: string }>(
 	return suggestNextPlan(plans, lastFinishedPlanId);
 }
 
+/** After finishing `finishedPlanId`, advance pin unless user pinned a different plan. */
+export function advanceHomeNextPlanId(
+	plans: readonly { id: string }[],
+	finishedPlanId: string,
+	pinnedPlanId: string | null | undefined
+): string | null {
+	if (pinnedPlanId && pinnedPlanId !== finishedPlanId) return pinnedPlanId;
+	return suggestNextPlan(plans, finishedPlanId)?.id ?? null;
+}
+
+/** User-defined plan list order (localStorage ids). Unknown ids append at end (e.g. cloud sync). */
+export function syncPlanOrderIds(orderIds: readonly string[], planIds: readonly string[]): string[] {
+	const set = new Set(planIds);
+	const kept = orderIds.filter((id) => set.has(id));
+	for (const id of planIds) {
+		if (!kept.includes(id)) kept.push(id);
+	}
+	return kept;
+}
+
+export function sortPlansByUserOrder<T extends { id: string; updatedAt?: string }>(
+	plans: readonly T[],
+	orderIds: readonly string[] | null | undefined
+): T[] {
+	if (!orderIds || orderIds.length === 0) {
+		return [...plans].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''));
+	}
+	const index = new Map(orderIds.map((id, i) => [id, i]));
+	return [...plans].sort((a, b) => {
+		const ai = index.get(a.id);
+		const bi = index.get(b.id);
+		if (ai != null && bi != null) return ai - bi;
+		if (ai != null) return -1;
+		if (bi != null) return 1;
+		return (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '');
+	});
+}
+
+export function reorderPlanOrderIds(
+	orderIds: readonly string[],
+	planId: string,
+	direction: -1 | 1
+): string[] {
+	const idx = orderIds.indexOf(planId);
+	if (idx < 0) return [...orderIds];
+	const target = idx + direction;
+	if (target < 0 || target >= orderIds.length) return [...orderIds];
+	const out = [...orderIds];
+	[out[idx], out[target]] = [out[target]!, out[idx]!];
+	return out;
+}
+
+/** Move one id from `fromIndex` to `toIndex` (splice semantics, like drag-and-drop). */
+export function moveOrderIds(
+	orderIds: readonly string[],
+	fromIndex: number,
+	toIndex: number
+): string[] {
+	if (fromIndex === toIndex) return [...orderIds];
+	if (
+		fromIndex < 0 ||
+		toIndex < 0 ||
+		fromIndex >= orderIds.length ||
+		toIndex >= orderIds.length
+	) {
+		return [...orderIds];
+	}
+	const out = [...orderIds];
+	const [item] = out.splice(fromIndex, 1);
+	out.splice(toIndex, 0, item!);
+	return out;
+}
+
 /** Throws if draft / superset / arrow-move invariants regress. */
 export function runWorkoutSelfCheck(): void {
 	if (defaultRestSecForExercise() !== DEFAULT_REST_SEC) {
@@ -692,7 +801,7 @@ export function runWorkoutSelfCheck(): void {
 		throw new Error('formOrGroup should share altGroupId');
 	}
 	if (plan.exercises.some((ex) => ex.groupId)) {
-		throw new Error('formOrGroup should clear groupId');
+		throw new Error('formOrGroup should clear groupId when selection spans groups');
 	}
 	if (planExerciseSlotCount(plan) !== 1) {
 		throw new Error('or-group should count as one slot');
@@ -706,11 +815,45 @@ export function runWorkoutSelfCheck(): void {
 		throw new Error('dissolved or-group should count as three slots');
 	}
 
+	plan = formOrGroup(plan, ['ex-a', 'ex-b']);
+	const altPair = plan.exercises[0]?.altGroupId;
+	if (!altPair || plan.exercises[0]?.altGroupId !== plan.exercises[1]?.altGroupId) {
+		throw new Error('formOrGroup pair should share altGroupId');
+	}
+	plan = addExercise(plan, 'ex-d').plan;
+	plan = formSuperset(plan, ['ex-a', 'ex-d']);
+	const comboG = plan.exercises[0]?.groupId;
+	if (
+		!comboG ||
+		plan.exercises[0]?.groupId !== plan.exercises[1]?.groupId ||
+		plan.exercises[1]?.groupId !== plan.exercises[2]?.groupId
+	) {
+		throw new Error('superset should share groupId across A, alt pair, and D');
+	}
+	if (plan.exercises[1]?.altGroupId !== plan.exercises[0]?.altGroupId) {
+		throw new Error('alt pair should keep altGroupId inside superset');
+	}
+	if (plan.exercises[2]?.altGroupId) {
+		throw new Error('solo superset member D should not have altGroupId');
+	}
+	if (planExerciseSlotCount(plan) !== 3) {
+		throw new Error('combined superset+alt should count as three slots');
+	}
+
+	plan = convertAltGroupToSuperset(plan, altPair);
+	if (plan.exercises.some((ex) => ex.altGroupId === altPair)) {
+		throw new Error('convertAltGroupToSuperset should clear altGroupId');
+	}
+	if (plan.exercises[0]?.groupId !== plan.exercises[1]?.groupId) {
+		throw new Error('convertAltGroupToSuperset should set groupId');
+	}
+	plan = dissolveSuperset(plan, plan.exercises[0]!.groupId!);
+
 	plan = removeExercise(plan, 'ex-b');
 	if (plan.exercises.some((ex) => ex.exerciseId === 'ex-b')) {
 		throw new Error('removeExercise failed');
 	}
-	if (plan.exercises.length !== 2) throw new Error(`expected 2 left, got ${plan.exercises.length}`);
+	if (plan.exercises.length !== 3) throw new Error(`expected 3 left, got ${plan.exercises.length}`);
 
 	const rotation = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
 	if (suggestNextPlan(rotation, null)?.id !== 'a') {
@@ -733,5 +876,28 @@ export function runWorkoutSelfCheck(): void {
 	}
 	if (resolveHomeNextPlan(rotation, 'a', 'gone')?.id !== 'b') {
 		throw new Error('resolveHomeNextPlan should fall back when pin missing');
+	}
+	if (advanceHomeNextPlanId(rotation, 'a', 'a') !== 'b') {
+		throw new Error('advanceHomeNextPlanId should advance pinned finished plan');
+	}
+	if (advanceHomeNextPlanId(rotation, 'b', 'a') !== 'a') {
+		throw new Error('advanceHomeNextPlanId should keep unrelated pin');
+	}
+	const ordered = sortPlansByUserOrder(
+		[
+			{ id: 'c', updatedAt: '2026-01-03' },
+			{ id: 'a', updatedAt: '2026-01-01' },
+			{ id: 'b', updatedAt: '2026-01-02' }
+		],
+		['a', 'b', 'c']
+	);
+	if (ordered.map((p) => p.id).join(',') !== 'a,b,c') {
+		throw new Error('sortPlansByUserOrder should follow order ids');
+	}
+	if (reorderPlanOrderIds(['a', 'b', 'c'], 'c', -1).join(',') !== 'a,c,b') {
+		throw new Error('reorderPlanOrderIds should swap neighbors');
+	}
+	if (moveOrderIds(['a', 'b', 'c'], 0, 2).join(',') !== 'b,c,a') {
+		throw new Error('moveOrderIds should move item to target index');
 	}
 }

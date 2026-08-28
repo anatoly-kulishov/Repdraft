@@ -5,6 +5,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
+	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { isBuilderReturnPath, labelCatalogZone, withFromParam } from '$lib/domain/catalogLinks';
 	import { translate } from '$lib/i18n/messages';
 	import { catalogUi } from '$lib/stores/catalogUi';
@@ -52,34 +53,30 @@
 	<title>{headerTitle} · Repdraft</title>
 </svelte:head>
 
-{#if fromBuilder}
-	<div class="lg:hidden">
-		<!-- sticky (not fixed): avoids phantom spacer when shell chrome is still visible -->
-		<ScreenHeader title={headerTitle} backHref="/builder" />
-	</div>
-{/if}
-
 <section
 	class="catalog-hub content-page content-page--catalog"
 	class:catalog-hub--from-builder={fromBuilder}
-	aria-labelledby="catalog-hub-heading"
+	aria-label={fromBuilder ? headerTitle : undefined}
+	aria-labelledby={fromBuilder ? undefined : 'catalog-hub-heading'}
 >
-	<header class="page-header catalog-hub-intro">
-		<h1
-			id="catalog-hub-heading"
-			class="page-title"
-			class:catalog-hub-intro__title--chrome={fromBuilder}
-		>
-			{hubTitle}
-		</h1>
-		<p class="page-lead catalog-hub-intro__lead">{translate(lang, 'catalog.hubLead')}</p>
-	</header>
+	{#if fromBuilder}
+		<ScreenHeader class="catalog-pick-header lg:hidden" title={headerTitle} backHref="/builder" />
+		<header class="page-header page-header--compact catalog-hub-pick-head hidden lg:block">
+			<SubrouteBack href="/builder" label={translate(lang, 'builder.title')} />
+			<h1 class="page-title">{headerTitle}</h1>
+		</header>
+	{:else}
+		<header class="page-header catalog-hub-intro">
+			<h1 id="catalog-hub-heading" class="page-title">{hubTitle}</h1>
+			<p class="page-lead catalog-hub-intro__lead">{translate(lang, 'catalog.hubLead')}</p>
+		</header>
+	{/if}
 
 	<div class="catalog-hub-toolbar">
 		<form class="catalog-hub-toolbar__search" onsubmit={onSearchSubmit}>
 			<SearchInput bind:value={searchQuery} placeholder={translate(lang, 'catalog.search')} />
 		</form>
-		<CatalogHubChips from={fromParam} />
+		<CatalogHubChips from={fromParam} pickMode={fromBuilder} />
 	</div>
 
 	{#if error}

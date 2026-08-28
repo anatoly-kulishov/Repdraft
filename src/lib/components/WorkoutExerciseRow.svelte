@@ -30,6 +30,7 @@
 		ontoggleSelect,
 		ondissolve,
 		ondissolveOr,
+		onConvertToSuperset,
 		ongroupSets,
 		ongroupRest
 	}: {
@@ -45,6 +46,7 @@
 		ontoggleSelect?: () => void;
 		ondissolve?: () => void;
 		ondissolveOr?: () => void;
+		onConvertToSuperset?: () => void;
 		ongroupSets?: (sets: number) => void;
 		ongroupRest?: (restSec: number) => void;
 	} = $props();
@@ -124,17 +126,33 @@
 		<div class="or-bar">
 			<div class="or-bar__head">
 				<span class="or-bar__badge">{translate(lang, 'builder.orBadge')}</span>
-				{#if ondissolveOr}
-					<AppButton
-						variant="ghost"
-						class="or-bar__dissolve"
-						onclick={ondissolveOr}
-						aria-label={translate(lang, 'builder.dissolve')}
-						title={translate(lang, 'builder.dissolve')}
-					>
-						<LucideIcon icon={Unlink} size={ICON_SMALL} />
-					</AppButton>
-				{/if}
+				<div class="or-bar__actions">
+					{#if onConvertToSuperset}
+						<AppButton
+							variant="ghost"
+							class="or-bar__convert"
+							onclick={onConvertToSuperset}
+							aria-label={translate(
+								lang,
+								inGroup ? 'builder.altDoAll' : 'builder.convertToSuperset'
+							)}
+							title={translate(lang, inGroup ? 'builder.altDoAll' : 'builder.convertToSuperset')}
+						>
+							{translate(lang, inGroup ? 'builder.altDoAll' : 'builder.convertToSuperset')}
+						</AppButton>
+					{/if}
+					{#if ondissolveOr}
+						<AppButton
+							variant="ghost"
+							class="or-bar__dissolve"
+							onclick={ondissolveOr}
+							aria-label={translate(lang, 'builder.dissolve')}
+							title={translate(lang, 'builder.dissolve')}
+						>
+							<LucideIcon icon={Unlink} size={ICON_SMALL} />
+						</AppButton>
+					{/if}
+				</div>
 			</div>
 		</div>
 	{/if}
@@ -241,11 +259,6 @@
 		{/if}
 
 		<div class="workout-ex-head__actions">
-			<ExerciseReorderHandle
-				{index}
-				label={translate(lang, 'builder.reorder')}
-				onreorder={onreorder}
-			/>
 			<AppButton
 				variant="ghost"
 				class="is-danger workout-ex-head__delete"
@@ -255,6 +268,11 @@
 			>
 				<LucideIcon icon={Trash2} size={ICON_SMALL} />
 			</AppButton>
+			<ExerciseReorderHandle
+				{index}
+				label={translate(lang, 'builder.reorderHold')}
+				onreorder={onreorder}
+			/>
 		</div>
 	</div>
 </article>
