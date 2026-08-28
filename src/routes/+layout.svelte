@@ -19,6 +19,7 @@
 	} from '$lib/components/icons/sizes';
 	import { Dumbbell, House, Library, Moon, Sun } from '@lucide/svelte';
 	import { isBuilderReturnPath } from '$lib/domain/catalogLinks';
+	import { showsExerciseMediaAttribution } from '$lib/domain/mediaAttribution';
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { draft } from '$lib/stores/draft';
@@ -38,7 +39,7 @@
 	let lang = $derived($resolvedLocale);
 	let isLight = $derived($appTheme === 'light');
 	let hasActiveSession = $derived(Boolean($live.ready && $live.session && !$live.session.finishedAt));
-	function mobileFlowChrome(pathname: string, from: string | null): boolean {
+	function mobileFlowChrome(pathname: string, from: string | null, tab: string | null): boolean {
 		if (pathname.startsWith('/live/')) return true;
 		if (pathname.startsWith('/builder')) return true;
 		if (pathname.startsWith('/exercise/')) return true;
@@ -51,13 +52,16 @@
 		if (pathname === '/exercises' && isBuilderReturnPath(from)) return true;
 		if (pathname === '/records') return true;
 		if (pathname === '/workouts/summary') return true;
+		if (pathname === '/workouts' && tab === 'history') return true;
 		if (pathname.startsWith('/workouts/history/')) return true;
 		if (/^\/workouts\/[^/]+$/.test(pathname)) return true;
 		return false;
 	}
 
-	let hideMobileHeader = $derived(mobileFlowChrome(path, fromParam));
+	let workoutsTab = $derived($page.url.searchParams.get('tab'));
+	let hideMobileHeader = $derived(mobileFlowChrome(path, fromParam, workoutsTab));
 	let showHomeShellHeader = $derived(path === '/' && !hideMobileHeader);
+	let showMediaAttribution = $derived(showsExerciseMediaAttribution(path));
 
 	onNavigate((navigation) => {
 		if (typeof document === 'undefined' || !document.startViewTransition) return;
@@ -188,7 +192,7 @@
 			class:shell-header-mobile-hidden={hideMobileHeader}
 			class:shell-header-mobile--home={showHomeShellHeader}
 		>
-			<div class="shell-header-mobile__bar mx-auto flex h-14 w-full max-w-[var(--page-content-max)] items-center justify-between gap-3 shell-header-pad">
+			<div class="shell-header-mobile__bar flex h-14 w-full items-center justify-between gap-3 shell-header-pad">
 				{#if showHomeShellHeader}
 					<ShellHomeGreeting />
 				{:else}
@@ -234,9 +238,11 @@
 			{/if}
 		</main>
 
-		<div class="shell-footer-pad">
-			<AttributionFooter />
-		</div>
+		{#if showMediaAttribution}
+			<div class="shell-footer-pad">
+				<AttributionFooter />
+			</div>
+		{/if}
 	</div>
 </div>
 

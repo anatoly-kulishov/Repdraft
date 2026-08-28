@@ -61,6 +61,8 @@ const ru: Dict = {
 	'home.startWorkoutShort': 'Старт',
 	'home.startWorkoutNamed': 'Начать · {name}',
 	'home.nextPlanHint': 'Откроется превью этой тренировки',
+	'home.previewBeforeStart': 'Превью перед стартом',
+	'home.allWorkouts': 'Все тренировки',
 	'home.setNextPlan': 'Сделать следующей',
 	'home.setNextPlanDone': 'Следующая: {name}',
 	'home.nextPlanBadge': 'Следующая',
@@ -122,6 +124,9 @@ const ru: Dict = {
 	'home.dashboardAsideAria': 'Сводка и аналитика (в разработке)',
 	'home.recentPlaceholderTitle': 'Недавние тренировки',
 	'home.recentPlaceholderHint': 'После первой завершённой тренировки история появится здесь.',
+	'home.firstWorkoutTitle': 'Первая тренировка',
+	'home.firstWorkoutHint':
+		'Нажмите «Старт» в карточке выше — откроется превью. Запишите подходы, и сессия появится в истории.',
 	'home.recordsTitle': 'Рекорды',
 	'home.recordsAll': 'Все',
 	'home.recordsHint': 'Откройте упражнение и укажите личный рекорд. Он появится здесь.',
@@ -692,6 +697,11 @@ const ru: Dict = {
 	'privacy.s8Title': 'Контакт',
 	'privacy.s8Body':
 		'Замените на рабочий email оператора (например, privacy@your-domain). Пока контакт не указан, запросы субъектов обрабатывайте через канал поддержки продукта.',
+	'privacy.s10Title': 'Медиа упражнений (Gym visual)',
+	'privacy.s10Body':
+		'Иллюстрации и GIF упражнений в каталоге — © Gym visual. Мы показываем их только на экранах каталога и карточки упражнения, не больше 180×180 px.',
+	'privacy.s10Terms':
+		'Условия Gym visual: https://gymvisual.com/content/3-terms-and-conditions-of-use. Клонирование репозитория Repdraft не даёт прав на медиа.',
 	'privacy.checklistTitle': 'Чеклист для юриста / оператора',
 	'privacy.checklistLead':
 		'Не показывать пользователям как «юридически утверждено», пока пункты не закрыты.',
@@ -764,6 +774,8 @@ const en: Dict = {
 	'home.startWorkoutShort': 'Start',
 	'home.startWorkoutNamed': 'Start · {name}',
 	'home.nextPlanHint': 'Opens this workout’s preview',
+	'home.previewBeforeStart': 'Preview before you start',
+	'home.allWorkouts': 'All workouts',
 	'home.setNextPlan': 'Set as next',
 	'home.setNextPlanDone': 'Next: {name}',
 	'home.nextPlanBadge': 'Next',
@@ -825,6 +837,9 @@ const en: Dict = {
 	'home.dashboardAsideAria': 'Summary and insights (coming soon)',
 	'home.recentPlaceholderTitle': 'Recent workouts',
 	'home.recentPlaceholderHint': 'Finish your first workout and history will appear here.',
+	'home.firstWorkoutTitle': 'First workout',
+	'home.firstWorkoutHint':
+		'Tap Start in the card above to open the preview. Log your sets and the session will show up in history.',
 	'home.recordsTitle': 'Records',
 	'home.recordsAll': 'All',
 	'home.recordsHint': 'Open an exercise and set a personal record. It will show up here.',
@@ -1393,6 +1408,11 @@ const en: Dict = {
 	'privacy.s8Title': 'Contact',
 	'privacy.s8Body':
 		'Replace with the operator’s working email (e.g. privacy@your-domain). Until set, handle data-subject requests via your product support channel.',
+	'privacy.s10Title': 'Exercise media (Gym visual)',
+	'privacy.s10Body':
+		'Exercise illustrations and GIFs in the catalog are © Gym visual. We display them only on catalog and exercise detail screens, at 180×180 px max.',
+	'privacy.s10Terms':
+		'Gym visual terms: https://gymvisual.com/content/3-terms-and-conditions-of-use. Cloning the Repdraft repo does not grant media rights.',
 	'privacy.checklistTitle': 'Checklist for counsel / operator',
 	'privacy.checklistLead':
 		'Do not present this page as legally approved until the items below are closed.',
