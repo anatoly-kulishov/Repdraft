@@ -1,7 +1,6 @@
 <script lang="ts">
 	import './layout.css';
 	import { appTheme } from '$lib/stores/theme';
-	import AppButton from '$lib/components/AppButton.svelte';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import AttributionFooter from '$lib/components/AttributionFooter.svelte';
 	import AccountChip from '$lib/components/AccountChip.svelte';
@@ -10,6 +9,7 @@
 	import ShellHomeGreeting from '$lib/components/ShellHomeGreeting.svelte';
 	import PwaInstallHint from '$lib/components/PwaInstallHint.svelte';
 	import ToastStack from '$lib/components/ToastStack.svelte';
+	import ThemeToggleIcon from '$lib/components/ThemeToggleIcon.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import {
 		ICON_SIDEBAR,
@@ -17,7 +17,7 @@
 		ICON_TAB_STROKE,
 		ICON_TAB_STROKE_ACTIVE
 	} from '$lib/components/icons/sizes';
-	import { BookOpen, ClipboardList, Dumbbell, House, Moon, Sun } from '@lucide/svelte';
+	import { BookOpen, ClipboardList, Dumbbell, House } from '@lucide/svelte';
 	import { isBuilderReturnPath } from '$lib/domain/catalogLinks';
 	import { showsExerciseMediaAttribution } from '$lib/domain/mediaAttribution';
 	import { translate } from '$lib/i18n/messages';
@@ -181,19 +181,15 @@
 					<Logo compact />
 				{/if}
 				<div class="shell-header-actions flex items-center">
-					<AppButton
-						variant="ghost"
+					<button
+						type="button"
 						class="shell-theme-toggle"
 						onclick={() => appTheme.toggle()}
 						aria-label={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
 						title={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
 					>
-						{#if isLight}
-							<Moon size={ICON_SIDEBAR} strokeWidth={1.75} aria-hidden="true" />
-						{:else}
-							<Sun size={ICON_SIDEBAR} strokeWidth={1.75} aria-hidden="true" />
-						{/if}
-					</AppButton>
+						<ThemeToggleIcon isLight={isLight} size={ICON_SIDEBAR} strokeWidth={1.75} />
+					</button>
 					{#if !showHomeShellHeader}
 						<AccountChip active={isActive('/auth')} />
 					{/if}

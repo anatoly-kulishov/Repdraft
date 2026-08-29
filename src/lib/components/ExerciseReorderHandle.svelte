@@ -6,7 +6,6 @@
 	import { GripVertical } from '@lucide/svelte';
 
 	const HOLD_MS_DEFAULT = 360;
-	const HOLD_CANCEL_PX = 14;
 
 	let {
 		index,
@@ -132,11 +131,17 @@
 	}
 
 	function onPressMove(event: PointerEvent) {
-		if (active || pressTimer === null) return;
+		if (active || handleNode === null) return;
 		const dx = event.clientX - pressOrigin.x;
 		const dy = event.clientY - pressOrigin.y;
-		// ponytail: horizontal move before hold = scroll/s swipe; vertical = prep for reorder.
-		if (Math.abs(dx) >= HOLD_CANCEL_PX && Math.abs(dx) > Math.abs(dy)) cancelPress();
+		if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+		// Horizontal first — sheet SwipeToDelete owns the gesture; do not capture pointer.
+		if (Math.abs(dx) >= Math.abs(dy)) {
+			cancelPress();
+			return;
+		}
+		if (pressTimer !== null) clearPressTimer();
+		startDrag();
 	}
 
 	function onPressEnd() {
@@ -145,18 +150,14 @@
 
 	function onPointerDown(event: PointerEvent) {
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
-		event.stopPropagation();
-		event.preventDefault();
 		cancelPress();
 		handleNode = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
 		activePointerId = event.pointerId;
-		if (holdMs <= 0) {
-			startDrag();
-			return;
-		}
-		pressing = true;
 		pressOrigin = { x: event.clientX, y: event.clientY };
-		pressTimer = setTimeout(startDrag, holdMs);
+		pressing = holdMs > 0;
+		if (holdMs > 0) {
+			pressTimer = setTimeout(startDrag, holdMs);
+		}
 		window.addEventListener('pointermove', onPressMove);
 		window.addEventListener('pointerup', onPressEnd);
 		window.addEventListener('pointercancel', onPressEnd);
@@ -166,7 +167,6 @@
 <AppIconButton
 	class={cn('reorder-handle exercise-reorder-handle', pressing && 'reorder-handle--pressing')}
 	type="button"
-	data-swipe-pass=""
 	aria-label={label}
 	title={label}
 	onpointerdown={onPointerDown}
