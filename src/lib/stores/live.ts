@@ -6,6 +6,7 @@ import {
 	completedSetCount,
 	finishSession,
 	lastPerformance,
+	previousSetAtIndex,
 	mergeWorkoutSessions,
 	removeLoggedSet,
 	restSecAfterSet,
@@ -417,6 +418,9 @@ function createLiveStore() {
 		},
 		lastFor(exerciseId: string): LastPerformance | null {
 			return lastPerformance(get(store).history, exerciseId);
+		},
+		previousSetFor(exerciseId: string, setIndex: number) {
+			return previousSetAtIndex(get(store).history, exerciseId, setIndex);
 		},
 		async getFinishedSession(id: string): Promise<WorkoutSession | null> {
 			if (listSessionTombstones().includes(id)) return null;
