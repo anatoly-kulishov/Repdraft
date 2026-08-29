@@ -466,9 +466,34 @@ export function restSecAfterSet(
 }
 
 /**
- * Latest finished session’s completed sets for an exercise.
- * Prefers the most recent finished session that has ≥1 completed set.
+ * Per-set hint from the latest finished session that logged this exercise
+ * (Strong/Hevy “Previous” column). Uses one reference session only — no fallback
+ * to older workouts for missing set indices.
  */
+export function previousSetAtIndex(
+	sessions: WorkoutSession[],
+	exerciseId: string,
+	setIndex: number
+): Pick<LastPerformance, 'weightKg' | 'reps'> | null {
+	const finished = sessions
+		.filter((s) => s.finishedAt)
+		.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''));
+
+	for (const session of finished) {
+		const ex = session.exercises.find((e) => e.exerciseId === exerciseId);
+		if (!ex) continue;
+		const hasProgress = ex.sets.some((s) => s.completed && isProgressSet(s));
+		if (!hasProgress) continue;
+
+		if (setIndex >= ex.sets.length) return null;
+		const set = ex.sets[setIndex];
+		if (!set?.completed || !isProgressSet(set)) return null;
+		if (set.weightKg == null && set.reps == null) return null;
+		return { weightKg: set.weightKg, reps: set.reps };
+	}
+	return null;
+}
+
 export function lastPerformance(
 	sessions: WorkoutSession[],
 	exerciseId: string
@@ -709,6 +734,27 @@ export function runSessionSelfCheck(): void {
 	const last = lastPerformance([session], 'ex-a');
 	if (!last || last.weightKg !== 40 || last.reps !== 8 || last.sets !== 1) {
 		throw new Error(`lastPerformance unexpected ${JSON.stringify(last)}`);
+	}
+
+	const prevSet0 = previousSetAtIndex([session], 'ex-a', 0);
+	if (!prevSet0 || prevSet0.weightKg !== 40 || prevSet0.reps !== 8) {
+		throw new Error(`previousSetAtIndex unexpected ${JSON.stringify(prevSet0)}`);
+	}
+	if (previousSetAtIndex([session], 'ex-a', 1) !== null) {
+		throw new Error('previousSetAtIndex should be null for incomplete set index');
+	}
+
+	const olderFull = startSessionFromPlan(plan);
+	let olderDone = olderFull;
+	for (let si = 0; si < olderFull.exercises[0]!.sets.length; si++) {
+		olderDone = updateLoggedSet(olderDone, 0, si, { weightKg: 30 + si, reps: 8, completed: true });
+	}
+	olderDone = finishSession(olderDone);
+	const newerPartial = finishSession(
+		updateLoggedSet(startSessionFromPlan(plan), 0, 0, { weightKg: 40, reps: 8, completed: true })
+	);
+	if (previousSetAtIndex([newerPartial, olderDone], 'ex-a', 1) !== null) {
+		throw new Error('previousSetAtIndex must not fall back to older session for missing set');
 	}
 
 	const seeded = seedOpenSetsFromLastPerformance(startSessionFromPlan(plan), (id) =>
