@@ -6,7 +6,7 @@
 	import { GripVertical } from '@lucide/svelte';
 
 	const HOLD_MS_DEFAULT = 360;
-	const MOVE_CANCEL_PX = 12;
+	const HOLD_CANCEL_PX = 14;
 
 	let {
 		index,
@@ -33,6 +33,8 @@
 	let fromIndex = $state<number | null>(null);
 	let pressTimer: ReturnType<typeof setTimeout> | null = null;
 	let pressOrigin = { x: 0, y: 0 };
+	let handleNode: HTMLElement | null = null;
+	let activePointerId: number | null = null;
 
 	function rowCount(): number {
 		return document.querySelectorAll(targetSelector).length;
@@ -73,10 +75,19 @@
 		}
 	}
 
+	function releaseCapture(pointerId: number) {
+		if (handleNode?.hasPointerCapture(pointerId)) {
+			handleNode.releasePointerCapture(pointerId);
+		}
+	}
+
 	function cancelPress() {
 		clearPressTimer();
 		pressing = false;
 		clearPressListeners();
+		if (activePointerId !== null) releaseCapture(activePointerId);
+		handleNode = null;
+		activePointerId = null;
 	}
 
 	function onWindowMove(event: PointerEvent) {
@@ -93,29 +104,39 @@
 		window.removeEventListener('pointercancel', endDrag);
 		document.documentElement.classList.remove(rootActiveClass);
 		emitPhase(null, null);
+		if (activePointerId !== null) releaseCapture(activePointerId);
 		if (to !== null && to !== from) onreorder(from, to);
 		active = false;
 		fromIndex = null;
+		handleNode = null;
+		activePointerId = null;
 	}
 
-	function beginDrag() {
+	function startDrag() {
 		clearPressTimer();
 		pressing = false;
 		clearPressListeners();
+		if (handleNode === null || activePointerId === null) return;
 		active = true;
 		fromIndex = index;
 		document.documentElement.classList.add(rootActiveClass);
 		emitPhase(index, index);
+		try {
+			handleNode.setPointerCapture(activePointerId);
+		} catch {
+			/* noop */
+		}
 		window.addEventListener('pointermove', onWindowMove);
 		window.addEventListener('pointerup', endDrag);
 		window.addEventListener('pointercancel', endDrag);
 	}
 
 	function onPressMove(event: PointerEvent) {
-		if (active) return;
+		if (active || pressTimer === null) return;
 		const dx = event.clientX - pressOrigin.x;
 		const dy = event.clientY - pressOrigin.y;
-		if (Math.hypot(dx, dy) >= MOVE_CANCEL_PX) cancelPress();
+		// ponytail: horizontal move before hold = scroll/s swipe; vertical = prep for reorder.
+		if (Math.abs(dx) >= HOLD_CANCEL_PX && Math.abs(dx) > Math.abs(dy)) cancelPress();
 	}
 
 	function onPressEnd() {
@@ -125,14 +146,17 @@
 	function onPointerDown(event: PointerEvent) {
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
 		event.stopPropagation();
+		event.preventDefault();
 		cancelPress();
+		handleNode = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+		activePointerId = event.pointerId;
 		if (holdMs <= 0) {
-			beginDrag();
+			startDrag();
 			return;
 		}
 		pressing = true;
 		pressOrigin = { x: event.clientX, y: event.clientY };
-		pressTimer = setTimeout(beginDrag, holdMs);
+		pressTimer = setTimeout(startDrag, holdMs);
 		window.addEventListener('pointermove', onPressMove);
 		window.addEventListener('pointerup', onPressEnd);
 		window.addEventListener('pointercancel', onPressEnd);
