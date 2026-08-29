@@ -29,6 +29,7 @@
 	import { createLiveSetActions } from '$lib/live/liveSetActions';
 	import { pickDefaultExerciseIndex } from '$lib/live/sessionUi';
 	import { translate, translateError } from '$lib/i18n/messages';
+	import { navigateBack } from '$lib/navigation/back';
 	import { live } from '$lib/stores/live';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -387,11 +388,9 @@
 			const done = await live.finish();
 			toasts.show(translate(lang, 'live.saved'), 'success');
 			if (done?.id) {
-				await goto(`/workouts/summary?id=${encodeURIComponent(done.id)}`, {
-					replaceState: true
-				});
+				await goto(`/workouts/summary?id=${encodeURIComponent(done.id)}`);
 			} else {
-				await goto('/workouts?tab=history', { replaceState: true });
+				await goto('/workouts?tab=history');
 			}
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'live.saveFail'), 'error');
@@ -533,14 +532,15 @@
 
 		<header class="live-header hidden lg:flex">
 			<div class="live-header-main">
-				<a
-					href="/workouts"
+				<button
+					type="button"
 					class="live-back"
 					aria-label={translate(lang, 'live.backPlans')}
 					title={translate(lang, 'live.backPlans')}
+					onclick={() => navigateBack('/workouts')}
 				>
 					<LucideIcon icon={ArrowLeft} size={ICON_BUTTON} />
-				</a>
+				</button>
 				<h1 class="live-plan-title">{session.planName}</h1>
 			</div>
 			<div class="live-header-meta">

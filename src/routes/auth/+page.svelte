@@ -917,11 +917,11 @@
 			<span class="auth-account__legal-label">{translate(lang, 'auth.privacyHint')}</span>
 			<a class="auth-account__legal-link" href="/privacy">{translate(lang, 'privacy.link')}</a>
 		</p>
-		<p
-			class="auth-account__version auth-account__version--guest"
-			aria-label={translate(lang, 'attr.versionAria', { version: APP_VERSION_LABEL })}
-		>
-			{APP_VERSION_LABEL}
-		</p>
 	</div>
+	<p
+		class="auth-account__version"
+		aria-label={translate(lang, 'attr.versionAria', { version: APP_VERSION_LABEL })}
+	>
+		{APP_VERSION_LABEL}
+	</p>
 {/snippet}

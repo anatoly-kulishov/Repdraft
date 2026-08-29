@@ -79,6 +79,12 @@
 			? translate(lang, 'home.startWorkoutNamed', { name: nextPlan.name })
 			: mockupCtaLabel
 	);
+	let mockupCardAria = $derived.by(() => {
+		if (nextPlan) {
+			return `${nextPlan.name}. ${translate(lang, 'home.nextPlanHint')}`;
+		}
+		return mockupCtaAria;
+	});
 	let continueRemaining = $derived.by(() => {
 		if (!active) return '';
 		if (isSessionFullyLogged(active)) {
@@ -152,7 +158,7 @@
 	{#if showReadyHeader && !hasActive}
 		<header class="home-header home-header--mockup">
 			<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
-			<div class="home-header__row">
+			<a class="home-header__row home-header__row--link" href={mockupCtaHref} aria-label={mockupCardAria}>
 				<div class="home-header__copy">
 					{#if showGreeting}
 						<p class="home-header__greeting home-header__greeting--desktop">{greetingText}</p>
@@ -184,18 +190,14 @@
 						{/if}
 					{/if}
 				</div>
-				<AppButton
-					href={mockupCtaHref}
-					class="home-header__cta home-header__cta--compact"
-					aria-label={mockupCtaAria}
-				>
+				<span class="btn-primary home-header__cta home-header__cta--compact" aria-hidden="true">
 					<LucideIcon icon={Play} size={ICON_PRIMARY} class="home-header__cta-icon" />
 					<span class="home-header__cta-text home-header__cta-text--short"
 						>{translate(lang, 'home.startWorkoutShort')}</span
 					>
 					<span class="home-header__cta-text home-header__cta-text--full">{mockupCtaLabel}</span>
-				</AppButton>
-			</div>
+				</span>
+			</a>
 		</header>
 	{:else if showReadyHeader && hasActive}
 		<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
