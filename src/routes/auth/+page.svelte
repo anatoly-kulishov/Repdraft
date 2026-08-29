@@ -36,7 +36,8 @@
 	import { get } from 'svelte/store';
 	import { tick } from 'svelte';
 	import { appTheme } from '$lib/stores/theme';
-	import { Globe, LogOut, Moon, Timer, Shield, Sun } from '@lucide/svelte';
+	import { themeToggleStateIcon } from '$lib/components/icons/themeToggle';
+	import { Globe, LogOut, Timer, Shield } from '@lucide/svelte';
 
 	let { data }: { data: { bootLikelyAccount: boolean } } = $props();
 
@@ -545,7 +546,7 @@
 						onclick={() => resolvedLocale.set(nextLang)}
 					/>
 					<ProfileSettingsRow
-						icon={theme === 'light' ? Sun : Moon}
+						icon={themeToggleStateIcon(theme === 'light')}
 						label={translate(lang, 'settings.theme')}
 						value={translate(lang, theme === 'light' ? 'settings.themeLight' : 'settings.themeDark')}
 						ariaLabel={translate(lang, 'settings.cycleHint', {

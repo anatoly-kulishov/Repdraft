@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Logo from '$lib/components/Logo.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import ThemeToggleIcon from '$lib/components/ThemeToggleIcon.svelte';
 	import { ICON_SIDEBAR } from '$lib/components/icons/sizes';
 	import { userAvatarUrl, userInitials } from '$lib/domain/authFlow';
 	import { translate } from '$lib/i18n/messages';
@@ -8,7 +9,7 @@
 	import { draft, draftHydrated } from '$lib/stores/draft';
 	import { appTheme } from '$lib/stores/theme';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { BookOpen, ClipboardList, Dumbbell, House, Moon, Sun, UserRound } from '@lucide/svelte';
+	import { BookOpen, ClipboardList, Dumbbell, House, UserRound } from '@lucide/svelte';
 
 	let {
 		path,
@@ -102,11 +103,7 @@
 			aria-label={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
 		>
 			<span class="sidebar-link-icon" aria-hidden="true">
-				{#if isLight}
-					<Moon size={ICON_SIDEBAR} strokeWidth={1.75} />
-				{:else}
-					<Sun size={ICON_SIDEBAR} strokeWidth={1.75} />
-				{/if}
+				<ThemeToggleIcon isLight={isLight} size={ICON_SIDEBAR} strokeWidth={1.75} />
 			</span>
 			<span>{translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}</span>
 		</button>

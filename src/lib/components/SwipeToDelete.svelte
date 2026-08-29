@@ -83,6 +83,7 @@
 			if (!swipeOk) close();
 		};
 		const onScroll = () => {
+			if (dragging) return;
 			if (open || offset < 0) close();
 		};
 		sync();
@@ -116,7 +117,7 @@
 		const dy = event.clientY - startY;
 		if (axis === 'undecided') {
 			if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-			axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+			axis = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
 			if (axis === 'v') {
 				dragging = false;
 				offset = startOffset;
