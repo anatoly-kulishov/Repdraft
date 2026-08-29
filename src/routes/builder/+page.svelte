@@ -16,6 +16,7 @@
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { altGroupMemberRole, groupMemberRole } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
+	import { navigateBack } from '$lib/navigation/back';
 	import { draft, draftHydrated } from '$lib/stores/draft';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -78,7 +79,7 @@
 			draft.resetDraft();
 			selectedIds = [];
 			toasts.show(translate(lang, 'builder.savedToast'), 'success');
-			await goto(WORKOUTS_HREF, { replaceState: true });
+			await goto(WORKOUTS_HREF);
 		} catch (err) {
 			toasts.show(err instanceof Error ? err.message : translate(lang, 'builder.saveFail'), 'error');
 		} finally {
@@ -166,13 +167,14 @@
 >
 	<div class="builder-chrome lg:hidden">
 		<div class="builder-chrome__head">
-			<a
-				href="/workouts"
+			<button
+				type="button"
 				class="builder-chrome__back"
 				aria-label={`${translate(lang, 'a11y.back')}: ${translate(lang, 'builder.backWorkouts')}`}
+				onclick={() => navigateBack('/workouts')}
 			>
 				<LucideIcon icon={ArrowLeft} size={ICON_PRIMARY} />
-			</a>
+			</button>
 			{#if $draftHydrated}
 				<AppInput
 					class="builder-chrome__name"

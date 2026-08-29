@@ -281,7 +281,8 @@ const ru: Dict = {
 	'workouts.openHistory': 'История',
 	'workouts.reorderMode': 'Изменить порядок',
 	'workouts.reorderModeOff': 'Готово',
-	'workouts.reorderModeHint': 'Перетащите тренировки за ⋮⋮. Свайп временно отключён.',
+	'workouts.reorderModeHintLead': 'Перетащите тренировки за ⋮⋮',
+	'workouts.reorderModeHintSwipe': 'Свайп временно отключён',
 	'workouts.tabHistory': 'История',
 	'workouts.historyEmptyTitle': 'Пока нет записей',
 	'workouts.historyEmptyDesc':
@@ -999,7 +1000,8 @@ const en: Dict = {
 	'workouts.openHistory': 'History',
 	'workouts.reorderMode': 'Reorder',
 	'workouts.reorderModeOff': 'Done',
-	'workouts.reorderModeHint': 'Drag workouts by ⋮⋮. Swipe actions are off while reordering.',
+	'workouts.reorderModeHintLead': 'Drag workouts by ⋮⋮',
+	'workouts.reorderModeHintSwipe': 'Swipe actions are off while reordering',
 	'workouts.tabHistory': 'History',
 	'workouts.historyEmptyTitle': 'No entries yet',
 	'workouts.historyEmptyDesc':

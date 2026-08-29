@@ -21,6 +21,7 @@
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
+	import { navigateBack } from '$lib/navigation/back';
 	import { auth } from '$lib/stores/auth';
 	import { homeNextPlan } from '$lib/stores/homeNextPlan';
 	import { live } from '$lib/stores/live';
@@ -125,6 +126,7 @@
 		translate(lang, activeTab === 'history' ? 'workouts.tabHistory' : 'workouts.title')
 	);
 	let showPlansLead = $derived(activeTab === 'plans' && !planReorderMode);
+	let showPlansLeadSlot = $derived(activeTab === 'plans');
 
 	$effect(() => {
 		if (planReorderMode && !canReorderPlans) exitPlanReorderMode();
@@ -164,7 +166,7 @@
 		if (tab === 'plans') url.searchParams.delete('tab');
 		else url.searchParams.set('tab', tab);
 		const next = `${url.pathname}${url.search}${url.hash}`;
-		void goto(next, { replaceState: true, keepFocus: true, noScroll: true });
+		void goto(next, { keepFocus: true, noScroll: true });
 	}
 
 	async function onDuplicate(id: string) {
@@ -346,7 +348,7 @@
 				<AppButton
 					variant="ghost"
 					class="workouts-page__nav-btn workouts-page__nav-btn--back hidden lg:inline-flex"
-					onclick={() => setTab('plans')}
+					onclick={() => navigateBack('/workouts')}
 					aria-label={translate(lang, 'builder.backWorkouts')}
 					title={translate(lang, 'builder.backWorkouts')}
 				>
@@ -355,27 +357,32 @@
 			{/if}
 			<div class="workouts-page__intro min-w-0">
 				<h1 class="page-title">{pageTitle}</h1>
-				{#if showPlansLead}
+				{#if showPlansLeadSlot}
 					<p class="page-lead workouts-page-lead">
-						{#if !$auth.ready || !$auth.dataBootstrap}
-							<span
-								class="inline-block h-4 w-48 max-w-full animate-pulse rounded bg-[var(--color-surface-muted)]"
-								aria-hidden="true"
-							></span>
-						{:else if $auth.user}
-							{#if $plansSync === 'stale'}
-								{translate(lang, 'sync.cloudLoading')}
-							{:else if $plansSync === 'error'}
-								{translate(lang, 'workouts.local')}
+						{#if planReorderMode}
+							<span class="workouts-page-lead__stack">
+								<span>{translate(lang, 'workouts.reorderModeHintLead')}</span>
+								<span>{translate(lang, 'workouts.reorderModeHintSwipe')}</span>
+							</span>
+						{:else if showPlansLead}
+							{#if !$auth.ready || !$auth.dataBootstrap}
+								<span
+									class="inline-block h-4 w-48 max-w-full animate-pulse rounded bg-[var(--color-surface-muted)]"
+									aria-hidden="true"
+								></span>
+							{:else if $auth.user}
+								{#if $plansSync === 'stale'}
+									{translate(lang, 'sync.cloudLoading')}
+								{:else if $plansSync === 'error'}
+									{translate(lang, 'workouts.local')}
+								{:else}
+									{translate(lang, 'workouts.cloud')}
+								{/if}
 							{:else}
-								{translate(lang, 'workouts.cloud')}
+								{translate(lang, 'workouts.local')}
 							{/if}
-						{:else}
-							{translate(lang, 'workouts.local')}
 						{/if}
 					</p>
-				{:else if activeTab === 'plans' && planReorderMode}
-					<p class="page-lead workouts-page-lead">{translate(lang, 'workouts.reorderModeHint')}</p>
 				{/if}
 			</div>
 			<div class="workouts-page__toolbar-actions">
@@ -386,7 +393,7 @@
 						<AppButton
 							variant="secondary"
 							class={cn(
-								'workouts-page__toolbar-icon-btn workouts-page__reorder-btn',
+								'workouts-page__toolbar-icon-btn workouts-page__icon-btn',
 								planReorderMode && 'is-active'
 							)}
 							onclick={togglePlanReorderMode}
@@ -405,7 +412,7 @@
 					{/if}
 					<AppButton
 						variant="secondary"
-						class="workouts-page__toolbar-icon-btn workouts-page__history-btn"
+						class="workouts-page__toolbar-icon-btn workouts-page__icon-btn"
 						onclick={() => setTab('history')}
 						aria-label={translate(lang, 'workouts.openHistory')}
 						title={translate(lang, 'workouts.openHistory')}
@@ -549,17 +556,21 @@
 												{/if}
 											</AppButton>
 										</div>
-										{#if showPlanReorderHandles}
-											<ExerciseReorderHandle
-												{index}
-												holdMs={0}
-												label={translate(lang, 'builder.reorder')}
-												onreorder={reorderPlan}
-												targetSelector="[data-plan-index]"
-												indexAttribute="data-plan-index"
-												rootActiveClass="is-plan-reorder-active"
-												eventName="repdraft:plan-reorder"
-											/>
+										{#if canReorderPlans}
+											{#if showPlanReorderHandles}
+												<ExerciseReorderHandle
+													{index}
+													holdMs={0}
+													label={translate(lang, 'builder.reorder')}
+													onreorder={reorderPlan}
+													targetSelector="[data-plan-index]"
+													indexAttribute="data-plan-index"
+													rootActiveClass="is-plan-reorder-active"
+													eventName="repdraft:plan-reorder"
+												/>
+											{:else}
+												<span class="entity-row__reorder-slot" aria-hidden="true"></span>
+											{/if}
 										{/if}
 									</div>
 								</SwipeToDelete>

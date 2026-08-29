@@ -270,7 +270,8 @@
 			</AppButton>
 			<ExerciseReorderHandle
 				{index}
-				label={translate(lang, 'builder.reorderHold')}
+				holdMs={0}
+				label={translate(lang, 'builder.reorder')}
 				onreorder={onreorder}
 			/>
 		</div>
