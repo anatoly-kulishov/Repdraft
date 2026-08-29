@@ -169,7 +169,7 @@
 							<p class="home-header__plan">{nextPlan.name}</p>
 							{#if indexReady}
 								{#if nextPlanMuscles}
-									<p class="home-header__meta">{nextPlanMuscles}</p>
+									<p class="home-header__meta home-header__meta--muscles">{nextPlanMuscles}</p>
 								{/if}
 								<p class="home-header__meta">{nextPlanExCount}</p>
 							{/if}
@@ -183,7 +183,7 @@
 							<p class="home-header__plan">{nextPlan.name}</p>
 							{#if indexReady}
 								{#if nextPlanMuscles}
-									<p class="home-header__meta">{nextPlanMuscles}</p>
+									<p class="home-header__meta home-header__meta--muscles">{nextPlanMuscles}</p>
 								{/if}
 								<p class="home-header__meta">{nextPlanExCount}</p>
 							{/if}

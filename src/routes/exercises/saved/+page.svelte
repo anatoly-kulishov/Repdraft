@@ -17,7 +17,7 @@
 	<title>{title} · Repdraft</title>
 </svelte:head>
 
-<div class="content-page content-page--catalog catalog-page--list catalog-saved-page">
+<div class="content-page content-page--catalog catalog-page--list catalog-saved-page records-page">
 	<ScreenHeader class="lg:hidden" fixed {title} backHref="/exercises" />
 
 	<div class="catalog-subroute-header">
@@ -40,6 +40,5 @@
 		totalCount={data.totalCount}
 		indexError={data.indexError}
 		savedOnly
-		gridOnDesktop
 	/>
 </div>

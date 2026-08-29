@@ -750,32 +750,60 @@ button.sidebar-link {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	flex-shrink: 0;
 	min-height: var(--control-height);
 	min-width: var(--control-min-width);
 	padding: 0.25rem;
-	border: 0;
+	border: 1px solid transparent;
 	border-radius: 999px;
 	background: transparent;
 	color: var(--color-muted);
+	cursor: pointer;
 	box-shadow: none;
+	font: inherit;
+	transition:
+		background 160ms ease,
+		color 160ms ease,
+		transform 120ms ease;
 }
 
-.shell-header-actions {
-	gap: 0.125rem;
-	flex-shrink: 0;
-}
-
-.shell-theme-toggle :global(svg) {
+.shell-theme-toggle svg {
 	display: block;
 	width: 1.25rem;
 	height: 1.25rem;
+	stroke: currentColor;
+	fill: none;
 	stroke-width: 1.85;
+	stroke-linecap: round;
+	stroke-linejoin: round;
 }
 
-.shell-theme-toggle:hover {
+@media (hover: hover) and (pointer: fine) {
+	.shell-theme-toggle:hover {
+		color: var(--color-ink);
+		background: color-mix(in srgb, var(--color-surface-muted) 85%, var(--color-accent));
+	}
+}
+
+.shell-theme-toggle:active {
+	transform: scale(0.97);
+}
+
+.shell-theme-toggle:focus {
+	outline: none;
+}
+
+.shell-theme-toggle:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 2px;
+	background: transparent;
 	color: var(--color-ink);
-	border-color: transparent;
-	background: color-mix(in srgb, var(--color-surface-muted) 85%, var(--color-accent));
+}
+
+.shell-header-actions {
+	gap: 0.35rem;
+	flex-shrink: 0;
+	align-items: center;
 }
 
 .sidebar-link svg {
@@ -1858,10 +1886,6 @@ a.entity-row--link:hover,
 	touch-action: pan-y;
 	background: var(--color-bg);
 	transition: transform 160ms ease;
-}
-
-.swipe-to-delete.is-enabled:has(.reorder-handle) .swipe-to-delete__sheet {
-	touch-action: pan-y pinch-zoom;
 }
 
 .swipe-to-delete.is-enabled .swipe-to-delete__sheet {
@@ -5851,6 +5875,11 @@ html[data-theme='dark'] .zone-card__media {
 	color: var(--color-muted);
 	overflow-wrap: anywhere;
 	word-break: break-word;
+}
+
+.home-header__meta--muscles {
+	font-size: 0.8125rem;
+	line-height: 1.35;
 }
 
 .home-header--mockup {
@@ -11835,14 +11864,24 @@ html.is-builder-reorder-active .exercise-reorder-handle {
 }
 
 @media (max-width: 1023px) {
-	.workouts-page .entity-list--cards .swipe-to-delete.is-enabled {
+	/* Reorder-mode min height — plans tab only; history rows stay compact. */
+	.workouts-page:not(.workouts-page--history-tab) .entity-list--cards .swipe-to-delete.is-enabled {
 		min-height: 5.625rem;
 	}
 
-	.workouts-page .entity-list--cards .entity-row {
+	.workouts-page:not(.workouts-page--history-tab) .entity-list--cards .entity-row {
 		align-items: flex-start;
 		min-height: 5.625rem;
 		box-sizing: border-box;
+	}
+
+	.workouts-page--history-tab .entity-list--cards .swipe-to-delete.is-enabled,
+	.workouts-page--history-tab .entity-list--cards .entity-row {
+		min-height: 0;
+	}
+
+	.workouts-page--history-tab .entity-list--cards .entity-row {
+		align-items: center;
 	}
 
 	.workouts-page .entity-row__meta-row {
@@ -12463,6 +12502,12 @@ html[data-theme='light'] .catalog-empty-state--saved.empty-state {
 
 .catalog-empty-state--saved .empty-state__action {
 	min-width: 8.5rem;
+}
+
+.catalog-saved-page .catalog-saved-row__meta {
+	font-size: 0.8125rem;
+	line-height: 1.35;
+	color: var(--color-muted);
 }
 
 .records-page .records-list-thumb {

@@ -3,7 +3,8 @@
 	import { translate } from '$lib/i18n/messages';
 	import { appTheme } from '$lib/stores/theme';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { Globe, Moon, Sun } from '@lucide/svelte';
+	import { themeToggleStateIcon } from '$lib/components/icons/themeToggle';
+	import { Globe } from '@lucide/svelte';
 
 	let lang = $derived($resolvedLocale);
 	let nextLang = $derived(lang === 'ru' ? ('en' as const) : ('ru' as const));
@@ -26,7 +27,7 @@
 			onclick={() => resolvedLocale.set(nextLang)}
 		/>
 		<ProfileSettingsRow
-			icon={theme === 'light' ? Sun : Moon}
+			icon={themeToggleStateIcon(theme === 'light')}
 			label={translate(lang, 'settings.theme')}
 			value={translate(lang, theme === 'light' ? 'settings.themeLight' : 'settings.themeDark')}
 			ariaLabel={translate(lang, 'settings.cycleHint', {

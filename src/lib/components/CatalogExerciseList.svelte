@@ -5,11 +5,16 @@
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
+	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { filterCatalogWithFacets, isBodyPart, isFilterConflict } from '$lib/domain/filters';
+	import { exerciseName } from '$lib/domain/exerciseName';
 	import { pickFrequent, pickPopular, sortByScore } from '$lib/domain/exerciseScore';
 	import { catalogZoneBodyParts, isCatalogZone } from '$lib/domain/catalogLinks';
-	import { currentReturnPath } from '$lib/domain/navigation';
+	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
+	import { currentReturnPath, linkWithFrom } from '$lib/domain/navigation';
 	import type { ExerciseFilters, ExerciseIndexItem } from '$lib/domain/types';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { translate } from '$lib/i18n/messages';
@@ -22,7 +27,7 @@
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, untrack } from 'svelte';
-	import { Bookmark } from '@lucide/svelte';
+	import { Bookmark, Trash2 } from '@lucide/svelte';
 
 	let {
 		equipment: equipmentFacets,
@@ -152,7 +157,11 @@
 	);
 	let bookmarksLoaded = $state(false);
 	let cardVariant = $derived(
-		!listOnMobile || gridOnDesktop ? ('grid' as const) : ('list' as const)
+		savedOnly
+			? ('list' as const)
+			: !listOnMobile || gridOnDesktop
+				? ('grid' as const)
+				: ('list' as const)
 	);
 	let listClass = $derived(
 		cardVariant === 'grid'
@@ -485,31 +494,75 @@
 				aria-hidden="true"
 			></div>
 		{/if}
-	{:else}
-		<div class={listClass}>
+	{:else if savedOnly}
+		<ul class="records-list">
 			{#each shownFlat as exercise, i (exercise.id)}
-				{#if savedOnly}
+				{@const title = exerciseName(exercise, lang)}
+				{@const href = linkWithFrom(`/exercise/${exercise.id}`, detailFrom)}
+				<li>
 					<SwipeToDelete
 						label={translate(lang, 'bookmarks.remove')}
 						busy={unbookmarkBusyId === exercise.id}
 						disabled={unbookmarkBusyId !== null && unbookmarkBusyId !== exercise.id}
 						onDelete={() => void unbookmark(exercise.id)}
 					>
-						<ExerciseCard
-							{exercise}
-							priority={i < 4}
-							variant={cardVariant}
-							{detailFrom}
-						/>
+						<div class="records-list-card">
+							<div class="records-list-body">
+								<a
+									class="records-list-thumb"
+									{href}
+									tabindex="-1"
+									aria-hidden="true"
+								>
+									<span class="media-well records-preview__thumb">
+										<img
+											src={`/${exercise.image}`}
+											alt=""
+											width="120"
+											height="120"
+											loading={i < 6 ? 'eager' : 'lazy'}
+											decoding="async"
+										/>
+									</span>
+								</a>
+								<div class="records-list-content">
+									<a class="records-list-text" {href}>
+										<span class="records-preview__name">{title}</span>
+										<span class="records-list-meta">
+											<span class="catalog-saved-row__meta">
+												{labelTarget(exercise.target, lang)} · {labelEquipment(
+													exercise.equipment,
+													lang
+												)}
+											</span>
+										</span>
+									</a>
+								</div>
+							</div>
+							<AppButton
+								variant="danger"
+								class="records-list-delete"
+								disabled={unbookmarkBusyId !== null}
+								aria-busy={unbookmarkBusyId === exercise.id}
+								aria-label={translate(lang, 'bookmarks.remove')}
+								title={translate(lang, 'bookmarks.remove')}
+								onclick={() => void unbookmark(exercise.id)}
+							>
+								{#if unbookmarkBusyId === exercise.id}
+									<Spinner size="sm" block={false} />
+								{:else}
+									<LucideIcon icon={Trash2} size={ICON_SMALL} />
+								{/if}
+							</AppButton>
+						</div>
 					</SwipeToDelete>
-				{:else}
-					<ExerciseCard
-						{exercise}
-						priority={i < 4}
-						variant={cardVariant}
-						{detailFrom}
-					/>
-				{/if}
+				</li>
+			{/each}
+		</ul>
+	{:else}
+		<div class={listClass}>
+			{#each shownFlat as exercise, i (exercise.id)}
+				<ExerciseCard {exercise} priority={i < 4} variant={cardVariant} {detailFrom} />
 			{/each}
 		</div>
 		{#if hasMore}
