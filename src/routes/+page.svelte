@@ -168,10 +168,11 @@
 						{#if nextPlan}
 							<p class="home-header__plan">{nextPlan.name}</p>
 							{#if indexReady}
-								{#if nextPlanMuscles}
-									<p class="home-header__meta home-header__meta--muscles">{nextPlanMuscles}</p>
-								{/if}
-								<p class="home-header__meta">{nextPlanExCount}</p>
+								<p class="home-header__meta">
+									{nextPlanExCount}{#if nextPlanMuscles}
+										<span class="home-header__meta-sep" aria-hidden="true"> · </span
+										>{nextPlanMuscles}{/if}
+								</p>
 							{/if}
 						{/if}
 						{#if isFirstTimeHome}
@@ -182,10 +183,11 @@
 						{#if nextPlan}
 							<p class="home-header__plan">{nextPlan.name}</p>
 							{#if indexReady}
-								{#if nextPlanMuscles}
-									<p class="home-header__meta home-header__meta--muscles">{nextPlanMuscles}</p>
-								{/if}
-								<p class="home-header__meta">{nextPlanExCount}</p>
+								<p class="home-header__meta">
+									{nextPlanExCount}{#if nextPlanMuscles}
+										<span class="home-header__meta-sep" aria-hidden="true"> · </span
+										>{nextPlanMuscles}{/if}
+								</p>
 							{/if}
 						{/if}
 					{/if}
