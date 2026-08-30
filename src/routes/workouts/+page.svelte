@@ -9,6 +9,7 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import WorkoutsPageSkeleton from '$lib/components/WorkoutsPageSkeleton.svelte';
 	import SwipeToDelete, { type SwipeRowAction } from '$lib/components/SwipeToDelete.svelte';
 	import AppFab from '$lib/components/AppFab.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -53,6 +54,11 @@
 	let pageReady = $derived(
 		$auth.ready && $auth.dataBootstrap && $plansReady && indexReady && $live.historyHydrated
 	);
+	let skeletonRows = $derived.by(() => {
+		if (!$plansReady) return 4;
+		if ($plans.length === 0) return 2;
+		return Math.min(Math.max($plans.length, 1), 4);
+	});
 	let listUncertain = $derived(isCloudListUncertain($plansSync));
 
 	let filteredPlans = $derived.by(() => {
@@ -437,6 +443,9 @@
 		onRetry={() => void plans.refresh({ force: true })}
 	/>
 
+	{#if !pageReady}
+		<WorkoutsPageSkeleton label={translate(lang, 'common.loading')} rows={skeletonRows} />
+	{:else}
 	{#if activeTab === 'plans'}
 			{#if $plans.length === 0}
 				<EmptyState
@@ -635,6 +644,7 @@
 				{/each}
 			</ul>
 		{/if}
+	{/if}
 
 	<AppFab
 		class="lg:hidden"

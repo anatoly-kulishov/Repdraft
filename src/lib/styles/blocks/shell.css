@@ -19,17 +19,13 @@
 }
 .shell-header-mobile {
 	display: block;
-	background: var(--color-surface);
+	background: var(--chrome-header-bg);
 	/* Keep page titles from painting through while sticky. */
 	isolation: isolate;
 }
 
 .shell-header-mobile--home {
 	border-bottom: none;
-	background: var(--color-bg);
-}
-
-html[data-theme='light'] .shell-header-mobile--home {
 	background: var(--color-bg);
 }
 
@@ -92,30 +88,15 @@ html[data-theme='light'] .shell-header-mobile--home {
 	min-width: 2.75rem;
 	min-height: 2.75rem;
 	border-radius: 0.8rem;
-	border: 1px solid color-mix(in srgb, var(--color-border) 92%, var(--color-accent));
-	background: var(--color-surface-elevated);
+	border: 1px solid var(--icon-plate-border);
+	background: var(--icon-plate-bg);
 	color: var(--color-ink);
-	box-shadow:
-		inset 0 1px 0 rgb(255 255 255 / 0.06),
-		0 1px 2px rgb(0 0 0 / 0.14);
-}
-
-html[data-theme='light'] .icon-plate {
-	background: var(--color-surface-muted);
-	border-color: color-mix(in srgb, var(--color-border) 88%, var(--color-accent));
-	box-shadow:
-		inset 0 1px 0 rgb(255 255 255 / 0.72),
-		0 1px 2px rgb(18 20 26 / 0.05);
+	box-shadow: var(--icon-plate-shadow);
 }
 
 .icon-plate--accent {
 	border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-border));
-	background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface-elevated));
-	color: var(--color-accent-text);
-}
-
-html[data-theme='light'] .icon-plate--accent {
-	background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-muted));
+	background: var(--icon-plate-accent-bg);
 	color: var(--color-accent-text);
 }
 
@@ -672,4 +653,65 @@ a,
 input,
 select {
 	touch-action: manipulation;
+}
+
+/* — moved from builder.css (P5) — */
+.workouts-fab,
+.app-fab {
+	position: fixed;
+	right: max(1rem, var(--safe-right));
+	z-index: 35;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	width: var(--fab-size);
+	height: var(--fab-size);
+	min-width: var(--fab-size);
+	min-height: var(--fab-size);
+	padding: 0;
+	border-radius: 999px;
+	background: var(--color-accent-fill);
+	color: var(--color-accent-ink);
+	-webkit-text-fill-color: var(--color-accent-ink);
+	box-shadow: var(--shadow-float);
+	text-decoration: none;
+	transition:
+		background 140ms ease,
+		transform 140ms ease;
+}
+
+.app-fab :global(.lucide-icon-wrap),
+.workouts-fab :global(.lucide-icon-wrap) {
+	line-height: 0;
+}
+
+.app-fab :global(svg),
+.workouts-fab :global(svg) {
+	display: block;
+	stroke: currentColor;
+}
+
+.workouts-fab:hover,
+.app-fab:hover {
+	background: var(--color-accent-hover);
+}
+
+.workouts-fab:active,
+.app-fab:active {
+	transform: scale(0.96);
+}
+
+.app-fab--tabbar,
+.workouts-fab {
+	bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--vv-fixed-bottom, 0px));
+}
+
+.app-fab--sticky {
+	bottom: calc(var(--sticky-actions-h) + var(--safe-bottom) + 0.85rem);
+}
+
+.app-fab--hidden,
+.workouts-fab--hidden {
+	display: none !important;
 }

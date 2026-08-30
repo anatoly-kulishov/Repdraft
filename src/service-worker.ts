@@ -100,8 +100,6 @@ self.addEventListener('install', (event) => {
 		(async () => {
 			const cache = await caches.open(CACHE);
 			await precacheAll(cache, PRECACHE);
-			const mediaCache = await caches.open(MEDIA_CACHE);
-			await precacheInBatches(mediaCache, IMAGE_PRECACHE);
 			try {
 				await cache.add(APP_SHELL);
 			} catch {
@@ -114,12 +112,16 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
 	event.waitUntil(
-		caches.keys().then(async (keys) => {
+		(async () => {
+			const keys = await caches.keys();
 			for (const key of keys) {
 				if (key !== CACHE && key !== MEDIA_CACHE) await caches.delete(key);
 			}
 			await self.clients.claim();
-		})
+			// ponytail: ~1300 thumbs after shell — faster SW install / first paint
+			const mediaCache = await caches.open(MEDIA_CACHE);
+			void precacheInBatches(mediaCache, IMAGE_PRECACHE);
+		})()
 	);
 });
 

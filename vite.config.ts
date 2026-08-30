@@ -10,9 +10,25 @@ const pkg = JSON.parse(
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
+	build: {
+		target: 'es2020',
+		cssMinify: 'lightningcss'
+	},
 	define: {
 		// Keep footer / build in sync with package.json (release tags = v{version}).
-		'import.meta.env.PUBLIC_APP_VERSION': JSON.stringify(pkg.version)
+		'import.meta.env.PUBLIC_APP_VERSION': JSON.stringify(pkg.version),
+		'import.meta.env.PUBLIC_PRIVACY_CONTACT_EMAIL': JSON.stringify(
+			process.env.PUBLIC_PRIVACY_CONTACT_EMAIL ?? ''
+		),
+		'import.meta.env.PUBLIC_PRIVACY_OPERATOR_NAME': JSON.stringify(
+			process.env.PUBLIC_PRIVACY_OPERATOR_NAME ?? ''
+		),
+		'import.meta.env.PUBLIC_PRIVACY_OPERATOR_INN': JSON.stringify(
+			process.env.PUBLIC_PRIVACY_OPERATOR_INN ?? ''
+		),
+		'import.meta.env.PUBLIC_PRIVACY_OPERATOR_ADDRESS': JSON.stringify(
+			process.env.PUBLIC_PRIVACY_OPERATOR_ADDRESS ?? ''
+		)
 	},
 	server: {
 		host: true, // LAN: phone can open http://<your-ip>:5173

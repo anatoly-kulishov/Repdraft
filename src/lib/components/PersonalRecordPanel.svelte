@@ -21,6 +21,7 @@
 		createEmptyRecord,
 		formatPersonalRecord,
 		hasLiftData,
+		personalRecordContentEqual,
 		sanitizePersonalRecord
 	} from '$lib/domain/records';
 	import type { PersonalRecord } from '$lib/domain/types';
@@ -145,6 +146,12 @@
 			if (result.errorKey === 'pr.invalidWeight') void flashFields(true, false);
 			else if (result.errorKey === 'pr.invalidReps') void flashFields(false, true);
 			else if (result.errorKey !== 'pr.needLift') void flashFields(true, true);
+			return;
+		}
+
+		const existing = records.get(exerciseId);
+		if (existing && personalRecordContentEqual(existing, result.record)) {
+			dirty = false;
 			return;
 		}
 
@@ -324,7 +331,7 @@
 		>
 			{hasStoredEntry ? translate(lang, 'pr.delete') : translate(lang, 'pr.clear')}
 		</AppButton>
-		<AppButton class="pr-actions__btn" disabled={busy} aria-busy={busy} onclick={() => void onSave()}>
+		<AppButton class="pr-actions__btn" disabled={busy || (!dirty && hasStoredEntry)} aria-busy={busy} onclick={() => void onSave()}>
 			{#if busy}
 				<span class="inline-flex items-center justify-center gap-2">
 					<Spinner size="sm" block={false} />

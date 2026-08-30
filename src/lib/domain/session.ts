@@ -634,6 +634,33 @@ export function isSessionFullyLogged(session: WorkoutSession): boolean {
 	return total > 0 && completedSetCount(session) === total;
 }
 
+/** Logged payload only — ignores ids, timestamps, plan metadata. */
+export function finishedSessionLogEqual(a: WorkoutSession, b: WorkoutSession): boolean {
+	if (JSON.stringify(a.altChoices ?? {}) !== JSON.stringify(b.altChoices ?? {})) {
+		return false;
+	}
+	if (a.exercises.length !== b.exercises.length) return false;
+	return a.exercises.every((ex, index) => {
+		const other = b.exercises[index];
+		if (!other) return false;
+		if (ex.exerciseId !== other.exerciseId) return false;
+		if ((ex.groupId ?? null) !== (other.groupId ?? null)) return false;
+		if ((ex.altGroupId ?? null) !== (other.altGroupId ?? null)) return false;
+		if ((ex.skipped ?? false) !== (other.skipped ?? false)) return false;
+		if (ex.sets.length !== other.sets.length) return false;
+		return ex.sets.every((set, setIndex) => {
+			const otherSet = other.sets[setIndex];
+			if (!otherSet) return false;
+			return (
+				set.weightKg === otherSet.weightKg &&
+				set.reps === otherSet.reps &&
+				set.completed === otherSet.completed &&
+				loggedSetKind(set) === loggedSetKind(otherSet)
+			);
+		});
+	});
+}
+
 function clampInt(n: number, min: number, max: number): number {
 	if (!Number.isFinite(n)) return min;
 	return Math.min(max, Math.max(min, Math.round(n)));

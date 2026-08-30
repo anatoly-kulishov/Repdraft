@@ -1,34 +1,30 @@
 <script lang="ts">
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import AppPanel from '$lib/components/AppPanel.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { APP_VERSION_LABEL } from '$lib/appVersion';
-	import { GYM_VISUAL_ATTRIBUTION, GYM_VISUAL_URL } from '$lib/data/attribution';
+	import { GYM_VISUAL_TERMS_URL, GYM_VISUAL_URL } from '$lib/data/attribution';
+	import { privacyPolicyVars } from '$lib/legal/privacyOperator';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 
 	let lang = $derived($resolvedLocale);
 	let title = $derived(translate(lang, 'privacy.title'));
+	let policyVars = $derived(privacyPolicyVars());
 
 	const sections = [
+		['privacy.s0Title', 'privacy.s0Body'],
 		['privacy.s1Title', 'privacy.s1Body'],
 		['privacy.s2Title', 'privacy.s2Body'],
 		['privacy.s3Title', 'privacy.s3Body'],
 		['privacy.s4Title', 'privacy.s4Body'],
-		['privacy.s9Title', 'privacy.s9Body'],
 		['privacy.s5Title', 'privacy.s5Body'],
 		['privacy.s6Title', 'privacy.s6Body'],
 		['privacy.s7Title', 'privacy.s7Body'],
-		['privacy.s8Title', 'privacy.s8Body']
-	] as const;
-
-	const checks = [
-		'privacy.check1',
-		'privacy.check2',
-		'privacy.check3',
-		'privacy.check4',
-		'privacy.check5',
-		'privacy.check6'
+		['privacy.s8Title', 'privacy.s8Body'],
+		['privacy.s9Title', 'privacy.s9Body'],
+		['privacy.s10Title', 'privacy.s10Body'],
+		['privacy.s11Title', 'privacy.s11Body'],
+		['privacy.s12Title', 'privacy.s12Body']
 	] as const;
 </script>
 
@@ -45,48 +41,38 @@
 		<h1 class="page-title">{title}</h1>
 	</div>
 
-	<AppPanel dashed class="privacy-page__draft">
-		{translate(lang, 'privacy.draftNote')}
-	</AppPanel>
+	<p class="privacy-page__lead">{translate(lang, 'privacy.lead')}</p>
 	<p class="privacy-page__updated">{translate(lang, 'privacy.updated')}</p>
 
 	<div class="privacy-page__body panel">
 		{#each sections as [headingKey, bodyKey] (headingKey)}
 			<section class="privacy-page__section">
 				<h2 class="section-title">{translate(lang, headingKey)}</h2>
-				<p>{translate(lang, bodyKey)}</p>
+				<p>{translate(lang, bodyKey, policyVars)}</p>
 			</section>
 		{/each}
+
+		<section class="privacy-page__section" aria-labelledby="privacy-media-title">
+			<h2 id="privacy-media-title" class="section-title">
+				{translate(lang, 'privacy.s13Title')}
+			</h2>
+			<p>{translate(lang, 'privacy.s13Body')}</p>
+			<p class="privacy-page__media-links">
+				<a class="privacy-page__media-link" href={GYM_VISUAL_URL} target="_blank" rel="noreferrer">
+					gymvisual.com
+				</a>
+				<span aria-hidden="true"> · </span>
+				<a
+					class="privacy-page__media-link"
+					href={GYM_VISUAL_TERMS_URL}
+					target="_blank"
+					rel="noreferrer"
+				>
+					{translate(lang, 'privacy.s13TermsLink')}
+				</a>
+			</p>
+		</section>
 	</div>
-
-	<section class="privacy-page__media panel" aria-labelledby="privacy-media-title">
-		<h2 id="privacy-media-title" class="section-title">{translate(lang, 'privacy.s10Title')}</h2>
-		<p>{translate(lang, 'privacy.s10Body')}</p>
-		<p class="privacy-page__media-attribution">
-			{translate(lang, 'attr.media')}
-			<a
-				class="privacy-page__media-link"
-				href={GYM_VISUAL_URL}
-				target="_blank"
-				rel="noreferrer"
-			>
-				{GYM_VISUAL_ATTRIBUTION}
-			</a>
-		</p>
-		<p class="privacy-page__media-terms">{translate(lang, 'privacy.s10Terms')}</p>
-	</section>
-
-	<section class="privacy-page__checklist panel" aria-labelledby="privacy-checklist-title">
-		<h2 id="privacy-checklist-title" class="section-title">
-			{translate(lang, 'privacy.checklistTitle')}
-		</h2>
-		<p class="privacy-page__checklist-lead">{translate(lang, 'privacy.checklistLead')}</p>
-		<ul class="privacy-page__checklist-list">
-			{#each checks as key (key)}
-				<li>{translate(lang, key)}</li>
-			{/each}
-		</ul>
-	</section>
 
 	<p class="privacy-page__version" aria-label={translate(lang, 'attr.versionAria', { version: APP_VERSION_LABEL })}>
 		{APP_VERSION_LABEL}

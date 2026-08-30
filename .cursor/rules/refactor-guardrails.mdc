@@ -41,11 +41,15 @@ Monolith split in **v0.14.6** — cascade order preserved (contiguous line chunk
 | `styles/blocks/catalog.css` | Catalog grid, exercise cards, zones |
 | `styles/blocks/home.css` | Home page |
 | `styles/blocks/live.css` | Active workout / live log |
-| `styles/blocks/builder.css` | Workout builder |
+| `styles/blocks/builder.css` | Workout builder — import in `builder/+layout` |
+| `styles/blocks/workouts.css` | Workouts list/history — global import (after `controls`; route bundle order broke `.btn-*` overrides) |
 | `styles/blocks/screen-misc.css` | ScreenHeader, auth layout, records, settings |
 | `styles/blocks/error-articles.css` | 404, articles / prose |
 | `styles/blocks/utilities.css` | `html.e2e-stable` (tests) |
-| `styles/app.css` | `@import` aggregator only |
+| `styles/app.css` | Core `@import` aggregator (always-on blocks) |
+| `styles/blocks/home.css` | Home only — import in `routes/+page.svelte` |
+| `styles/blocks/live.css` | Live + workout preview/history — `live/+layout`, `workouts/+layout` |
+| `styles/blocks/error-articles.css` | Articles + `+error` — route layouts |
 
 Regenerate from monolith backup: `node scripts/split-app-css.mjs` (needs `scripts/app.css.monolith.bak` — gitignored).
 
@@ -60,8 +64,10 @@ Regenerate from monolith backup: `node scripts/split-app-css.mjs` (needs `script
 
 1. **P0** — Visual + e2e baseline ✅ (`v0.14.5`)
 2. **P1–P3** — CSS split into blocks ✅ (`cursor/v0.14.6-css-split`)
-3. **P4** — Incremental: move repeated `html[data-theme='light']` overrides into tokens (per block, with `test:e2e`)
-4. **Defer** — Domain/store renames, folder FSD migration, dependency adds
+3. **P4** — Tokenize `html[data-theme='light']` overrides ✅ (`cursor/v0.14.7-css-p4`; light rules only in `tokens.css`)
+4. **P4b** — Tokenize `html[data-theme='dark']` component overrides ✅ (dark = `:root`, light = `html[data-theme='light']`; only `color-scheme` on `html[data-theme='dark']` remains)
+5. **P5** — Route-scoped CSS (incremental) 🔄 — home, error-articles, live, **builder** done; filters/records/subroute → catalog/screen-misc; `workouts.css` split out (global import); `catalog.css` still global
+6. **Defer** — Domain/store renames, folder FSD migration, dependency adds, route-split `catalog.css`, bottom-sheet base out of `live.css`
 
 ## Sacred loop
 

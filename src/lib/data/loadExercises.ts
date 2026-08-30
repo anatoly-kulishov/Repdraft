@@ -3,7 +3,7 @@ import type { ExerciseIndexItem } from '$lib/domain/types';
 let indexPromise: Promise<ExerciseIndexItem[]> | null = null;
 let cachedIndex: ExerciseIndexItem[] | null = null;
 
-/** Catalog metadata only (~380KB). Full exercise payloads stay on the server. */
+/** Catalog metadata only (~380KB). Full payloads load on demand via `loadExerciseCatalog`. */
 export function loadExerciseIndex(): Promise<ExerciseIndexItem[]> {
 	if (!indexPromise) {
 		indexPromise = fetch('/data/exercises.index.json')

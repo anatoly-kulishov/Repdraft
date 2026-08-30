@@ -335,8 +335,8 @@ async function runViewport(browser, vp, payload) {
 			timeout: 30_000
 		});
 		await page.waitForTimeout(500);
-		const weight = page.locator('input.live-set-weight').first();
-		const reps = page.locator('input.live-set-reps').first();
+		const weight = page.locator('.live-set-row.is-current input.live-set-weight').first();
+		const reps = page.locator('.live-set-row.is-current input.live-set-reps').first();
 		if ((await weight.count()) > 0) {
 			await weight.fill('9999.999');
 			await reps.fill('9999');

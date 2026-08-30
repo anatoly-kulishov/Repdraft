@@ -14,6 +14,7 @@
 		loading = false,
 		canEdit = false,
 		sendingToBuilder = false,
+		saveDisabled = false,
 		onSave,
 		onCancel,
 		onEdit,
@@ -26,6 +27,7 @@
 		loading?: boolean;
 		canEdit?: boolean;
 		sendingToBuilder?: boolean;
+		saveDisabled?: boolean;
 		onSave: () => void | Promise<void>;
 		onCancel: () => void;
 		onEdit: () => void;
@@ -50,7 +52,7 @@
 	<AppButton
 		variant="ghost"
 		class="history-detail__icon-btn history-detail__icon-btn--save"
-		disabled={savingEdit || deleting}
+		disabled={savingEdit || deleting || saveDisabled}
 		aria-busy={savingEdit}
 		aria-label={translate(lang, 'workouts.saveEdit')}
 		title={translate(lang, 'workouts.saveEdit')}

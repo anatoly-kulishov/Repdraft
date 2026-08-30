@@ -4,21 +4,33 @@
 	let {
 		rows = 4,
 		showField = false,
+		previewRows = 0,
+		showVolumeStat = false,
+		showGuestHint = false,
+		setRows = 3,
+		hideHeader = false,
 		variant = 'default'
 	}: {
 		rows?: number;
 		showField?: boolean;
+		previewRows?: number;
+		showVolumeStat?: boolean;
+		showGuestHint?: boolean;
+		setRows?: number;
+		hideHeader?: boolean;
 		variant?: 'default' | 'history' | 'live' | 'builder' | 'auth' | 'auth-guest' | 'summary';
 	} = $props();
 </script>
 
 <div class={`page-skeleton page-skeleton--${variant}`} aria-busy="true" aria-live="polite">
 	{#if variant === 'history'}
-		<div class="page-skeleton-header" aria-hidden="true">
-			<AppSkeleton class="page-skeleton-title page-skeleton-title--lg" />
-			<AppSkeleton class="page-skeleton-toolbar" />
-		</div>
-		<AppSkeleton class="page-skeleton-meta" aria-hidden="true" />
+		{#if !hideHeader}
+			<div class="page-skeleton-header" aria-hidden="true">
+				<AppSkeleton class="page-skeleton-title page-skeleton-title--lg" />
+				<AppSkeleton class="page-skeleton-toolbar" />
+			</div>
+			<AppSkeleton class="page-skeleton-meta" aria-hidden="true" />
+		{/if}
 		{#each Array.from({ length: Math.max(2, rows - 1) }, (_, i) => i) as i (i)}
 			<div class="page-skeleton-card" aria-hidden="true">
 				<div class="page-skeleton-card__head">
@@ -29,9 +41,9 @@
 					</div>
 				</div>
 				<div class="page-skeleton-sets">
-					<AppSkeleton class="page-skeleton-set" />
-					<AppSkeleton class="page-skeleton-set" />
-					<AppSkeleton class="page-skeleton-set" />
+					{#each Array.from({ length: Math.max(1, setRows) }, (_, si) => si) as si (si)}
+						<AppSkeleton class="page-skeleton-set" />
+					{/each}
 				</div>
 			</div>
 		{/each}
@@ -207,6 +219,13 @@
 			</div>
 		</div>
 	{:else if variant === 'summary'}
+		<div class="page-skeleton-summary-mobile-head lg:hidden" aria-hidden="true">
+			<AppSkeleton class="page-skeleton-toolbar page-skeleton-toolbar--summary-head" />
+		</div>
+		<div class="page-skeleton-summary-desktop-head hidden lg:block" aria-hidden="true">
+			<AppSkeleton class="page-skeleton-toolbar page-skeleton-toolbar--summary-head" />
+			<AppSkeleton class="page-skeleton-title page-skeleton-title--lg" />
+		</div>
 		<div class="page-skeleton-header" aria-hidden="true">
 			<AppSkeleton class="page-skeleton-title" />
 		</div>
@@ -219,9 +238,22 @@
 			<AppSkeleton class="page-skeleton-stat" />
 			<AppSkeleton class="page-skeleton-stat" />
 			<AppSkeleton class="page-skeleton-stat" />
+			{#if showVolumeStat}
+				<AppSkeleton class="page-skeleton-stat" />
+			{/if}
 		</div>
+		{#if previewRows > 0}
+			<AppSkeleton class="page-skeleton-label page-skeleton-label--summary-preview" aria-hidden="true" />
+			{#each Array.from({ length: previewRows }, (_, i) => i) as i (i)}
+				<AppSkeleton class="page-skeleton-row page-skeleton-row--summary-preview" aria-hidden="true" />
+			{/each}
+		{/if}
+		{#if showGuestHint}
+			<AppSkeleton class="page-skeleton-row page-skeleton-row--summary-guest" aria-hidden="true" />
+		{/if}
 		<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
 		<AppSkeleton class="page-skeleton-row page-skeleton-row--secondary" />
+		<AppSkeleton class="page-skeleton-row page-skeleton-row--summary-sticky" aria-hidden="true" />
 	{:else}
 		{#if showField}
 			<AppSkeleton class="page-skeleton-field" aria-hidden="true" />
