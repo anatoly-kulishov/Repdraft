@@ -1,7 +1,6 @@
 <script lang="ts">
 	import AppTextarea from '$lib/components/AppTextarea.svelte';
 	import AppButton from '$lib/components/AppButton.svelte';
-	import AppIconButton from '$lib/components/AppIconButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
@@ -12,6 +11,8 @@
 		filterWeightInput,
 		NOTE_MAX,
 		REPS,
+		REPS_INPUT_MAX_LEN,
+		WEIGHT_INPUT_MAX_LEN,
 		WEIGHT_KG
 	} from '$lib/domain/inputLimits';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -48,7 +49,7 @@
 	let syncedKey = '';
 	let boundId = '';
 	/** User edited fields - don't clobber with late store hydration / cloud refresh. */
-	let dirty = false;
+	let dirty = $state(false);
 	let invalidWeight = $state(false);
 	let invalidReps = $state(false);
 	let notePreviewOpen = $state(false);
@@ -188,7 +189,8 @@
 			syncedKey = `${exerciseId}:empty`;
 			return;
 		}
-		if (!confirm(translate(lang, 'pr.confirmDelete'))) return;
+		const snapshot = records.get(exerciseId);
+		if (!snapshot) return;
 		busy = true;
 		try {
 			await records.remove(exerciseId);
@@ -200,7 +202,7 @@
 			hasSaved = false;
 			dirty = false;
 			syncedKey = `${exerciseId}:empty`;
-			toasts.show(translate(lang, 'pr.deleted'), 'info');
+			toasts.showUndo(translate(lang, 'pr.deleted'), () => void records.save(snapshot), 'info');
 		} catch (err) {
 			toasts.show(err instanceof Error ? err.message : translate(lang, 'pr.deleteFail'), 'error');
 		} finally {
@@ -224,13 +226,39 @@
 			lang
 		)
 	);
+	function buildDraftRecord(): PersonalRecord | null {
+		let weightKg = weightText.trim() ? coerceWeightKg(weightText) : null;
+		let reps = repsText.trim() ? coerceReps(repsText, REPS) : null;
+		if (weightText.trim() && weightKg == null) weightKg = null;
+		if (repsText.trim() && reps == null) reps = null;
+		const result = sanitizePersonalRecord({
+			exerciseId,
+			weightKg,
+			reps,
+			note: noteText,
+			updatedAt: form.updatedAt || new Date().toISOString()
+		});
+		return result.ok ? result.record : null;
+	}
+
+	let saveDisabled = $derived.by(() => {
+		if (busy) return true;
+		if (!hasStoredEntry) return !dirty;
+		$records;
+		const existing = records.get(exerciseId);
+		if (!existing) return !dirty;
+		const draft = buildDraftRecord();
+		if (!draft) return false;
+		return personalRecordContentEqual(existing, draft);
+	});
+
 	let savedNotePreview = $derived(noteText.trim());
 </script>
 
 <AppPanel>
-	<div class="mb-3 flex min-w-0 flex-wrap items-baseline justify-between gap-2">
+	<div class="pr-panel-head">
 		<h2 class="section-title">{translate(lang, 'pr.title')}</h2>
-		<p class="shrink-0 text-xs text-[var(--color-muted)]">{translate(lang, 'pr.hint')}</p>
+		<p class="pr-panel-hint">{translate(lang, 'pr.hint')}</p>
 	</div>
 
 	{#if hasSaved && liftPreview}
@@ -261,6 +289,7 @@
 					inputmode="decimal"
 					autocomplete="off"
 					placeholder="—"
+					maxlength={WEIGHT_INPUT_MAX_LEN}
 					aria-describedby="pr-weight-hint"
 					value={weightText}
 					oninput={onWeightInput}
@@ -280,6 +309,7 @@
 					inputmode="numeric"
 					autocomplete="off"
 					placeholder="—"
+					maxlength={REPS_INPUT_MAX_LEN}
 					aria-describedby="pr-reps-hint"
 					value={repsText}
 					oninput={onRepsInput}
@@ -289,36 +319,37 @@
 				{REPS.min}-{REPS.max}
 			</span>
 		</AppLabel>
-		<AppLabel class="pr-note-group col-span-2 min-w-0">
+		<AppLabel class="pr-note-block col-span-2 min-w-0">
 			{translate(lang, 'pr.note')}
 			<span class="field-shell pr-note-shell mt-1">
 				<AppTextarea
 					class={cn('pr-note-field', noteText.length > 0 && 'pr-note-field--has-clear')}
-					rows={2}
+					rows={1}
 					maxlength={NOTE_MAX}
 					placeholder={translate(lang, 'pr.notePh')}
 					aria-describedby="pr-note-count"
-					value={noteText}
+					bind:value={noteText}
 					oninput={onNoteInput}
 				/>
 				{#if noteText.length > 0}
-					<AppIconButton
+					<button
+						type="button"
 						class="pr-note-clear"
 						aria-label={translate(lang, 'a11y.clearField')}
 						title={translate(lang, 'a11y.clearField')}
 						onclick={clearNote}
 					>
 						<LucideIcon icon={X} size={ICON_SMALL} />
-					</AppIconButton>
+					</button>
 				{/if}
-				<span
-					id="pr-note-count"
-					class="pr-note-count"
-					class:pr-note-count--limit={noteText.length >= NOTE_MAX}
-					aria-live="polite"
-				>
-					{noteText.length}/{NOTE_MAX}
-				</span>
+			</span>
+			<span
+				id="pr-note-count"
+				class="pr-note-count"
+				class:pr-note-count--limit={noteText.length >= NOTE_MAX}
+				aria-live="polite"
+			>
+				{noteText.length}/{NOTE_MAX}
 			</span>
 		</AppLabel>
 	</div>
@@ -332,7 +363,7 @@
 		>
 			{hasStoredEntry ? translate(lang, 'pr.delete') : translate(lang, 'pr.clear')}
 		</AppButton>
-		<AppButton class="pr-actions__btn" disabled={busy || (!dirty && hasStoredEntry)} aria-busy={busy} onclick={() => void onSave()}>
+		<AppButton class="pr-actions__btn" disabled={saveDisabled} aria-busy={busy} onclick={() => void onSave()}>
 			{#if busy}
 				<span class="inline-flex items-center justify-center gap-2">
 					<Spinner size="sm" block={false} />

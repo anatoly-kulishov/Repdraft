@@ -17,7 +17,8 @@ export const CLIP_MODERATION = {
 	reportsToHide: 3
 } as const;
 
-export const CLIP_TITLE_MAX = 80;
+/** Short caption under a technique GIF — not a description (see NOTE_MAX for PR notes). */
+export const CLIP_TITLE_MAX = 48;
 export const CLIP_AUTHOR_MAX = 32;
 /** Reject absurd / bomb-ish logical sizes even if file is small. */
 export const CLIP_GIF_MAX_EDGE = 1280;
@@ -79,6 +80,11 @@ export function titleLooksProfane(raw: string): boolean {
 		return true;
 	}
 	return TITLE_PROFANITY_RU.some((stem) => scanned.includes(stem));
+}
+
+/** While typing: strip control chars and hard-cap length (no trim — keeps caret stable). */
+export function clampClipTitle(raw: string, maxLen = CLIP_TITLE_MAX): string {
+	return raw.replace(/[\u0000-\u001F\u007F]/g, '').slice(0, maxLen);
 }
 
 /** Strip controls / collapse spaces / hard cap — safe for display without {@html}. */
@@ -166,6 +172,17 @@ export function runClipsSelfCheck(): void {
 
 	const clean = assertCleanClipTitle('  Pause reps  ');
 	if (clean !== 'Pause reps') throw new Error(`unexpected clean title ${clean}`);
+
+	const long = 'а'.repeat(CLIP_TITLE_MAX + 12);
+	if (sanitizeClipTitle(long).length !== CLIP_TITLE_MAX) {
+		throw new Error('sanitizeClipTitle should hard-cap at CLIP_TITLE_MAX');
+	}
+	if (clampClipTitle('a\u0007b').length !== 2) {
+		throw new Error('clampClipTitle should strip control chars');
+	}
+	if (clampClipTitle('x'.repeat(CLIP_TITLE_MAX + 5)).length !== CLIP_TITLE_MAX) {
+		throw new Error('clampClipTitle should hard-cap at CLIP_TITLE_MAX');
+	}
 
 	if (sanitizeAuthorLabel('user.name') !== 'user.name') {
 		throw new Error('author should keep dots');

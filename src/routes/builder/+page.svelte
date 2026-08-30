@@ -259,8 +259,17 @@
 						placeholder={translate(lang, 'builder.namePh')}
 						maxlength={PLAN_NAME_MAX}
 						value={$draft.name}
+						aria-describedby="builder-name-count"
 						oninput={(e) => draft.setName((e.currentTarget as HTMLInputElement).value)}
 					/>
+					<span
+						id="builder-name-count"
+						class="pr-note-count"
+						class:pr-note-count--limit={$draft.name.length >= PLAN_NAME_MAX}
+						aria-live="polite"
+					>
+						{$draft.name.length}/{PLAN_NAME_MAX}
+					</span>
 				</AppLabel>
 			</div>
 

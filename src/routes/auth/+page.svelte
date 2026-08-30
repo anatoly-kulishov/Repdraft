@@ -30,7 +30,7 @@
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import DataExportSection from '$lib/components/DataExportSection.svelte';
 	import { APP_VERSION_LABEL } from '$lib/appVersion';
-	import { GREETING_NAME_MAX, greetingNameMatchesStored } from '$lib/domain/greetingName';
+	import { GREETING_NAME_MAX, clampGreetingName, greetingNameMatchesStored } from '$lib/domain/greetingName';
 	import { isIosDevice } from '$lib/domain/pwaInstall';
 	import { restSoundEnabled } from '$lib/stores/prefs';
 	import { get } from 'svelte/store';
@@ -517,8 +517,14 @@
 						autocomplete="nickname"
 						maxlength={GREETING_NAME_MAX}
 						placeholder={translate(lang, 'auth.greetingNamePh')}
-						bind:value={greetingNameInput}
+						value={greetingNameInput}
 						aria-label={translate(lang, 'auth.greetingNameLabel')}
+						oninput={(e) => {
+							const el = e.currentTarget as HTMLInputElement;
+							const next = clampGreetingName(el.value);
+							greetingNameInput = next;
+							if (el.value !== next) el.value = next;
+						}}
 					/>
 					<p class="profile-settings-group__hint">{translate(lang, 'auth.greetingNameHint')}</p>
 					<AppButton

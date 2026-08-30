@@ -27,6 +27,7 @@
 	import { homeNextPlan } from '$lib/stores/homeNextPlan';
 	import { live } from '$lib/stores/live';
 	import { plans, plansReady, plansSync } from '$lib/stores/plans';
+	import { planOrder } from '$lib/stores/planOrder';
 	import { isCloudListUncertain } from '$lib/domain/cloudSync';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
@@ -121,12 +122,7 @@
 	let planBusyId = $state<string | null>(null);
 	let planBusyOp = $state<'copy' | 'delete' | null>(null);
 
-	type ConfirmOffer =
-		| { kind: 'delete-plan'; id: string; name: string }
-		| { kind: 'delete-session'; id: string; name: string }
-		| { kind: 'clear-history' };
-
-	let confirmOffer = $state<ConfirmOffer | null>(null);
+	let clearHistoryOfferOpen = $state(false);
 
 	let pageTitle = $derived(
 		translate(lang, activeTab === 'history' ? 'workouts.tabHistory' : 'workouts.title')
@@ -197,21 +193,21 @@
 		}
 	}
 
-	async function onRemove(id: string, name: string) {
+	async function onRemove(id: string, _name: string) {
 		if (planBusyId) return;
-		confirmOffer = { kind: 'delete-plan', id, name };
-	}
+		const plan = get(plans).find((p) => p.id === id) ?? (await plans.getPlan(id));
+		if (!plan) return;
+		const orderIndex = get(planOrder).indexOf(id);
 
-	async function commitRemovePlan() {
-		if (!confirmOffer || confirmOffer.kind !== 'delete-plan') return;
-		const { id } = confirmOffer;
-		confirmOffer = null;
-		if (planBusyId) return;
 		planBusyId = id;
 		planBusyOp = 'delete';
 		try {
 			await plans.removePlan(id);
-			toasts.show(translate(lang, 'workouts.deleted'), 'info');
+			toasts.showUndo(
+				translate(lang, 'workouts.deleted'),
+				() => plans.restorePlan(plan, orderIndex),
+				'info'
+			);
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'workouts.deleteFail'), 'error');
 		} finally {
@@ -231,11 +227,11 @@
 
 	function offerClearHistory() {
 		if (history.length === 0 || historyClearBusy) return;
-		confirmOffer = { kind: 'clear-history' };
+		clearHistoryOfferOpen = true;
 	}
 
 	async function commitClearHistory() {
-		confirmOffer = null;
+		clearHistoryOfferOpen = false;
 		if (historyClearBusy) return;
 		historyClearBusy = true;
 		try {
@@ -249,17 +245,16 @@
 	}
 
 	async function onRemoveSession(session: (typeof history)[number]) {
-		confirmOffer = { kind: 'delete-session', id: session.id, name: session.planName };
-	}
-
-	async function commitRemoveSession() {
-		if (!confirmOffer || confirmOffer.kind !== 'delete-session') return;
-		const { id } = confirmOffer;
-		confirmOffer = null;
-		historyBusyId = id;
+		if (historyBusyId) return;
+		const snapshot = structuredClone(session);
+		historyBusyId = session.id;
 		try {
-			await live.removeFromHistory(id);
-			toasts.show(translate(lang, 'workouts.sessionDeleted'), 'info');
+			await live.removeFromHistory(session.id);
+			toasts.showUndo(
+				translate(lang, 'workouts.sessionDeleted'),
+				() => live.restoreSession(snapshot),
+				'info'
+			);
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'workouts.sessionDeleteFail'), 'error');
 		} finally {
@@ -267,49 +262,8 @@
 		}
 	}
 
-	function dismissConfirmOffer() {
-		confirmOffer = null;
-	}
-
-	let confirmHeading = $derived.by(() => {
-		if (!confirmOffer) return '';
-		switch (confirmOffer.kind) {
-			case 'delete-plan':
-				return translate(lang, 'common.delete');
-			case 'delete-session':
-				return translate(lang, 'workouts.deleteSession');
-			case 'clear-history':
-				return translate(lang, 'workouts.clearHistory');
-			default: {
-				const _exhaustive: never = confirmOffer;
-				return _exhaustive;
-			}
-		}
-	});
-
-	let confirmPrimaryLabel = $derived(
-		confirmOffer?.kind === 'clear-history'
-			? translate(lang, 'common.clear')
-			: translate(lang, 'common.delete')
-	);
-
-	function commitConfirmOffer() {
-		if (!confirmOffer) return;
-		switch (confirmOffer.kind) {
-			case 'delete-plan':
-				void commitRemovePlan();
-				return;
-			case 'delete-session':
-				void commitRemoveSession();
-				return;
-			case 'clear-history':
-				void commitClearHistory();
-				return;
-			default: {
-				const _exhaustive: never = confirmOffer;
-				return _exhaustive;
-			}
-		}
+	function dismissClearHistoryOffer() {
+		clearHistoryOfferOpen = false;
 	}
 </script>
 
@@ -655,24 +609,20 @@
 </section>
 
 <BottomSheet
-	open={confirmOffer != null}
-	titleId="workouts-confirm-title"
-	onDismiss={dismissConfirmOffer}
+	open={clearHistoryOfferOpen}
+	titleId="workouts-clear-history-title"
+	onDismiss={dismissClearHistoryOffer}
 >
-	{#if confirmOffer}
-		<p id="workouts-confirm-title" class="bottom-sheet__title">{confirmHeading}</p>
-		{#if confirmOffer.kind === 'clear-history'}
-			<p class="bottom-sheet__hint">{translate(lang, 'workouts.confirmClearHistory')}</p>
-		{:else}
-			<p class="bottom-sheet__hint workouts-confirm-offer__name">«{confirmOffer.name}»?</p>
-		{/if}
-	{/if}
+	<p id="workouts-clear-history-title" class="bottom-sheet__title">
+		{translate(lang, 'workouts.clearHistory')}
+	</p>
+	<p class="bottom-sheet__hint">{translate(lang, 'workouts.confirmClearHistory')}</p>
 	{#snippet actions()}
-		<AppButton variant="secondary" onclick={dismissConfirmOffer}>
+		<AppButton variant="secondary" onclick={dismissClearHistoryOffer}>
 			{translate(lang, 'common.cancel')}
 		</AppButton>
-		<AppButton variant="danger" onclick={commitConfirmOffer} disabled={historyClearBusy}>
-			{confirmPrimaryLabel}
+		<AppButton variant="danger" onclick={commitClearHistory} disabled={historyClearBusy}>
+			{translate(lang, 'common.clear')}
 		</AppButton>
 	{/snippet}
 </BottomSheet>

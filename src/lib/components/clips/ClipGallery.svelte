@@ -75,7 +75,7 @@
 			</AppButton>
 			<div class="space-y-1.5 px-3 pb-2.5 pt-2.5">
 				<div>
-					<p class="font-semibold leading-snug">{titleFor(clip)}</p>
+					<p class="clip-card-title font-semibold leading-snug">{titleFor(clip)}</p>
 					<p class="text-xs text-[var(--color-muted)]">
 						{clip.authorLabel} · {clip.createdAt.slice(0, 10)}
 					</p>
