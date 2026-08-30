@@ -25,18 +25,13 @@ select.field {
 	appearance: none;
 	-webkit-appearance: none;
 	background-color: var(--color-field);
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238e8e96' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+	background-image: var(--field-select-chevron);
 	background-repeat: no-repeat;
 	background-position: right 0.7rem center;
 	background-size: 1rem;
 	padding-right: 2.35rem;
 	line-height: 1.25;
 }
-
-html[data-theme='light'] select.field {
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-}
-
 .field::placeholder {
 	color: var(--color-placeholder);
 	opacity: 1;
@@ -74,6 +69,15 @@ input[data-slot='input']:not([type='file'])::placeholder,
 textarea[data-slot='textarea']::placeholder {
 	color: var(--color-placeholder);
 	opacity: 1;
+}
+
+/* SearchInput: icon inset + optional clear — must beat generic input padding shorthand above. */
+input[data-slot='input'].search-field-with-icon:not([type='file']) {
+	padding-left: 2.65rem;
+}
+
+input[data-slot='input'].search-field.has-clear:not([type='file']) {
+	padding-right: 2.5rem;
 }
 
 .pr-now-preview {
@@ -118,7 +122,7 @@ textarea[data-slot='textarea']::placeholder {
 	padding: 0.5rem 0.65rem;
 	border: 0;
 	border-radius: var(--radius-control);
-	background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
+	background: var(--pr-now-chip-bg);
 	color: var(--color-accent-text);
 	font: inherit;
 	font-size: 0.875rem;
@@ -126,11 +130,6 @@ textarea[data-slot='textarea']::placeholder {
 	line-height: 1.35;
 	text-align: left;
 }
-
-html[data-theme='dark'] .pr-now-chip {
-	background: color-mix(in srgb, var(--color-accent) 16%, var(--color-surface));
-}
-
 .pr-now-chip__text {
 	flex: 1;
 	min-width: 0;
@@ -312,17 +311,10 @@ button:focus-visible {
 
 .btn-secondary,
 [data-slot='button'].btn-secondary {
-	background: var(--color-surface);
+	background: var(--btn-secondary-bg);
 	color: var(--color-ink);
-	border: 1px solid var(--color-field-border);
-	box-shadow: var(--shadow-field);
-}
-
-html[data-theme='dark'] .btn-secondary,
-html[data-theme='dark'] [data-slot='button'].btn-secondary {
-	background: var(--color-surface-elevated);
-	border-color: var(--color-border);
-	box-shadow: none;
+	border: 1px solid var(--btn-secondary-border);
+	box-shadow: var(--btn-secondary-shadow);
 }
 
 .btn-secondary:hover,
@@ -330,17 +322,6 @@ html[data-theme='dark'] [data-slot='button'].btn-secondary {
 [data-slot='button'].btn-secondary[aria-expanded='true'] {
 	border-color: color-mix(in srgb, var(--color-border) 55%, var(--color-ink));
 	color: var(--color-ink);
-}
-
-html[data-theme='dark'] .btn-secondary:hover,
-html[data-theme='dark'] [data-slot='button'].btn-secondary:hover,
-html[data-theme='dark'] [data-slot='button'].btn-secondary[aria-expanded='true'] {
-	background: var(--color-surface-muted);
-}
-
-html[data-theme='light'] .btn-secondary:hover,
-html[data-theme='light'] [data-slot='button'].btn-secondary:hover,
-html[data-theme='light'] [data-slot='button'].btn-secondary[aria-expanded='true'] {
 	background: var(--color-surface-muted);
 }
 

@@ -19,6 +19,14 @@ export function sanitizeGreetingName(raw: string): string {
 	);
 }
 
+/** True when sanitized input matches stored custom name (empty = no custom name). */
+export function greetingNameMatchesStored(
+	stored: string | null | undefined,
+	raw: string
+): boolean {
+	return sanitizeGreetingName(stored ?? '') === sanitizeGreetingName(raw);
+}
+
 /** Truncate a single display token without mid-word junk when short enough. */
 export function truncateGreetingToken(raw: string, max = GREETING_DISPLAY_MAX): string {
 	const token = raw.trim();
@@ -56,6 +64,9 @@ export function runGreetingNameSelfCheck(): void {
 	}
 	if (sanitizeGreetingName('x'.repeat(40)).length !== GREETING_NAME_MAX) {
 		throw new Error('sanitizeGreetingName should cap length');
+	}
+	if (!greetingNameMatchesStored('Ada', '  Ada  ')) {
+		throw new Error('greetingNameMatchesStored should compare sanitized values');
 	}
 	if (
 		greetingFirstName('Маша', { user_metadata: { full_name: 'Google Name' } }) !== 'Маша'

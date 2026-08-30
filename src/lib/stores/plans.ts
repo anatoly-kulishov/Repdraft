@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
-import { duplicatePlan, mergeWorkoutPlans, sortPlansByUserOrder, withSavedName } from '$lib/domain/workout';
+import { duplicatePlan, mergeWorkoutPlans, sortPlansByUserOrder, withSavedName, workoutPlanContentEqual } from '$lib/domain/workout';
 import type { WorkoutPlan } from '$lib/domain/types';
+import { clampPlanName } from '$lib/domain/inputLimits';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { translate } from '$lib/i18n/messages';
 import { getWorkoutRepo, isCloudMode } from '$lib/storage/dataAccess';
@@ -99,7 +100,21 @@ import { resolvedLocale } from './locale';
 		refresh,
 		async saveCurrent(): Promise<WorkoutPlan> {
 			const lang = get(resolvedLocale);
-			const current = withSavedName(get(draft), translate(lang, 'builder.untitled'));
+			const draftPlan = get(draft);
+			const untitled = translate(lang, 'builder.untitled');
+			const existing =
+				get(store).find((p) => p.id === draftPlan.id) ??
+				(await localWorkoutRepository.get(draftPlan.id));
+			if (existing) {
+				const namedDraft = {
+					...draftPlan,
+					name: clampPlanName(draftPlan.name.replace(/\s+/g, ' ').trim()) || untitled
+				};
+				if (workoutPlanContentEqual(existing, namedDraft)) {
+					return existing;
+				}
+			}
+			const current = withSavedName(draftPlan, untitled);
 			const isNew =
 				!get(store).some((p) => p.id === current.id) &&
 				!(await localWorkoutRepository.get(current.id));

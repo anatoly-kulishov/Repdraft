@@ -19,6 +19,7 @@
 	import type { ExerciseIndexItem, LoggedSet, WorkoutSession } from '$lib/domain/types';
 	import { formatDurationMs } from '$lib/i18n/format';
 	import { translate } from '$lib/i18n/messages';
+	import { peekLocalSession } from '$lib/storage/localSessionRepository';
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { live } from '$lib/stores/live';
@@ -67,6 +68,21 @@
 	);
 
 	let volumeKg = $derived(session ? sessionVolumeKg(session) : 0);
+	let skeletonPreviewRows = $derived.by(() => {
+		const id = $page.url.searchParams.get('id');
+		if (!id) return 1;
+		const peeked = peekLocalSession(id);
+		if (!peeked) return 1;
+		const logged = peeked.exercises.filter((ex) => ex.sets.some((set) => set.completed)).length;
+		return Math.min(Math.max(logged, 1), PREVIEW_LIMIT);
+	});
+	let skeletonHasVolume = $derived.by(() => {
+		const id = $page.url.searchParams.get('id');
+		if (!id) return false;
+		const peeked = peekLocalSession(id);
+		return peeked ? sessionVolumeKg(peeked) > 0 : false;
+	});
+	let skeletonGuestHint = $derived(!$auth.user);
 
 	function formatSet(set: LoggedSet): string {
 		if (set.weightKg != null) {
@@ -118,7 +134,14 @@
 </svelte:head>
 
 {#if loading}
-	<PageSkeleton variant="summary" rows={3} />
+	<div class="content-page content-page--narrow pb-mobile-actions">
+		<PageSkeleton
+			variant="summary"
+			previewRows={skeletonPreviewRows}
+			showVolumeStat={skeletonHasVolume}
+			showGuestHint={skeletonGuestHint}
+		/>
+	</div>
 {:else if missing || !session}
 	<EmptyState
 		title={translate(lang, 'live.noPlan')}

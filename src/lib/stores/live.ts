@@ -5,6 +5,7 @@ import {
 	chooseAltExercise,
 	completedSetCount,
 	finishSession,
+	finishedSessionLogEqual,
 	lastPerformance,
 	previousSetAtIndex,
 	mergeWorkoutSessions,
@@ -406,6 +407,8 @@ function createLiveStore() {
 				startedAt: session.startedAt,
 				finishedAt: session.finishedAt
 			};
+
+			if (finishedSessionLogEqual(session, patched)) return true;
 
 			await persistSession(patched);
 			await refreshHistory();

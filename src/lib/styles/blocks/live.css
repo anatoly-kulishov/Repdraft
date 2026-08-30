@@ -1424,6 +1424,45 @@ button.live-panel-thumb {
 	color: var(--color-danger) !important;
 }
 
+.history-detail-skeleton-head {
+	margin: 0 0 0.85rem;
+}
+
+.history-detail-skeleton-head__bar {
+	height: var(--screen-header-min-h, 3rem);
+	border-radius: var(--radius-control);
+	border: 1px solid var(--color-border);
+	background-color: var(--skeleton-base);
+	background-image: linear-gradient(
+		90deg,
+		var(--skeleton-base) 0%,
+		var(--skeleton-shine) 50%,
+		var(--skeleton-base) 100%
+	);
+	background-size: 200% 100%;
+	animation: skeletonShimmer 1.25s ease-in-out infinite;
+}
+
+.history-detail-skeleton-desktop-head {
+	display: grid;
+	gap: 0.65rem;
+	margin-bottom: 0.85rem;
+}
+
+.history-detail-skeleton-head__bar--back {
+	width: 42%;
+	height: 1rem;
+}
+
+.history-detail-skeleton-head__bar--title {
+	width: min(52%, 18rem);
+	height: 2rem;
+}
+
+.history-detail-skeleton-meta {
+	margin-bottom: 0.85rem;
+}
+
 @media (max-width: 1023px) {
 	.history-detail {
 		min-width: 0;
@@ -1460,12 +1499,8 @@ button.live-panel-thumb {
 
 	.history-exercise__head .workout-preview-chevron {
 		flex-shrink: 0;
-		color: color-mix(in srgb, var(--color-muted) 88%, var(--color-ink));
+		color: var(--history-chevron-color);
 	}
-}
-
-html[data-theme='light'] .history-exercise__head .workout-preview-chevron {
-	color: #475569;
 }
 
 @media (min-width: 768px) {
@@ -1744,6 +1779,41 @@ html[data-theme='light'] .history-exercise__head .workout-preview-chevron {
 		line-height: 1.3;
 		letter-spacing: normal;
 	}
+}
+
+.workout-preview-skeleton-head {
+	margin: 0 0 0.85rem;
+}
+
+.workout-preview-skeleton-head__bar {
+	height: 3rem;
+	border-radius: var(--radius-control);
+	border: 1px solid var(--color-border);
+	background-color: var(--skeleton-base);
+	background-image: linear-gradient(
+		90deg,
+		var(--skeleton-base) 0%,
+		var(--skeleton-shine) 50%,
+		var(--skeleton-base) 100%
+	);
+	background-size: 200% 100%;
+	animation: skeletonShimmer 1.25s ease-in-out infinite;
+}
+
+.workout-preview-skeleton-desktop-head {
+	display: grid;
+	gap: 0.65rem;
+	margin-bottom: 1rem;
+}
+
+.workout-preview-skeleton-head__bar--back {
+	width: 42%;
+	height: 1rem;
+}
+
+.workout-preview-skeleton-head__bar--title {
+	width: min(52%, 18rem);
+	height: 2rem;
 }
 
 .workout-preview-skeleton-summary {
@@ -2610,9 +2680,9 @@ html[data-theme='light'] .history-exercise__head .workout-preview-chevron {
 .clip-composer__drop {
 	position: relative;
 	padding: 0.875rem;
-	border: 2px dashed color-mix(in srgb, var(--color-muted) 55%, var(--color-border));
+	border: 2px dashed var(--clip-composer-drop-border);
 	border-radius: var(--radius-lg);
-	background: var(--color-surface);
+	background: var(--clip-composer-drop-bg);
 	text-align: center;
 	transition:
 		border-color 160ms ease,
@@ -2664,11 +2734,11 @@ button.clip-composer__pick,
 	min-width: 3rem;
 	min-height: 3rem;
 	padding: 0;
-	border: 1.5px solid color-mix(in srgb, var(--color-muted) 42%, var(--color-border));
+	border: 1.5px solid var(--clip-composer-pick-border);
 	border-radius: var(--radius-control);
-	background: var(--color-surface-muted);
+	background: var(--clip-composer-pick-bg);
 	color: var(--color-ink);
-	box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+	box-shadow: var(--clip-composer-pick-shadow);
 }
 
 .clip-composer__pick.btn-ghost:hover:not(:disabled),
@@ -2678,23 +2748,110 @@ button.clip-composer__pick:hover:not(:disabled),
 	background: color-mix(in srgb, var(--color-accent-muted) 45%, var(--color-surface));
 	color: var(--color-accent-text);
 }
-
-html[data-theme='light'] .clip-composer__drop {
-	border-color: color-mix(in srgb, var(--color-muted) 35%, var(--color-border));
-	background: color-mix(in srgb, var(--color-surface-muted) 55%, var(--color-surface));
-}
-
-html[data-theme='light'] .clip-composer__pick.btn-ghost,
-html[data-theme='light'] button.clip-composer__pick,
-html[data-theme='light'] [data-slot='button'].clip-composer__pick {
-	border-color: color-mix(in srgb, var(--color-muted) 28%, var(--color-border));
-	background: var(--color-surface);
-	box-shadow: var(--shadow-field);
-}
-
 .pr-note-clear {
 	min-width: 2rem;
 	min-height: 2rem;
 	padding: 0;
 	color: var(--color-muted);
+}
+
+/* — moved from builder.css (P5) — */
+@media (min-width: 768px) {
+	.live-desktop-actions .live-session-secondary {
+		width: auto;
+	}
+
+	.live-desktop-actions .live-session-secondary--pair {
+		grid-template-columns: auto auto;
+	}
+
+	.live-desktop-actions .live-session-secondary__btn {
+		width: auto;
+		min-width: 7.5rem;
+	}
+}
+
+.live-panel .field {
+	min-height: 3rem;
+	padding-block: 0.65rem;
+	background: var(--color-field);
+	border-color: var(--color-field-border);
+	box-shadow: var(--shadow-field);
+}
+
+.live-desktop-actions {
+	/* Tablet+ — under the active exercise panel (not under nav). */
+	display: none;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 0.75rem;
+	margin-top: 0.85rem;
+	padding-top: 0.15rem;
+}
+
+@media (min-width: 768px) {
+	.live-desktop-actions {
+		display: flex;
+	}
+
+	.live-desktop-actions .btn-primary,
+	.live-desktop-actions .btn-secondary {
+		padding-inline: 1.125rem;
+	}
+}
+
+@media (min-width: 768px) {
+	.live-workspace {
+		display: grid;
+		grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr);
+		gap: 0.85rem;
+		align-items: start;
+	}
+
+	.live-nav {
+		position: sticky;
+		top: 1rem;
+		padding: 0.35rem;
+		border-radius: var(--radius-panel);
+		background: color-mix(in srgb, var(--color-surface-muted) 40%, var(--color-surface));
+		border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+	}
+
+	.live-nav-list {
+		flex-direction: column;
+		align-items: stretch;
+		overflow-x: visible;
+		gap: 0.35rem;
+		padding: 0;
+	}
+
+	.live-nav-li {
+		width: 100%;
+	}
+
+	.live-nav-chain {
+		width: 100%;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+
+	.live-nav-chain__link {
+		width: 100%;
+		height: 0.85rem;
+		transform: rotate(90deg);
+	}
+
+	.live-nav-item,
+	[data-slot='button'].live-nav-item {
+		width: 100%;
+		min-width: 0;
+		max-width: none;
+	}
+}
+
+@media (min-width: 1024px) {
+	.live-workspace {
+		grid-template-columns: minmax(11rem, 16rem) minmax(0, 1fr);
+		gap: 1rem;
+	}
 }

@@ -1,13 +1,11 @@
 /* Aggregator — blocks in ./blocks/ (scripts/split-app-css.mjs). Tokens → layout.css. */
+/* Core bundle — route-specific blocks imported in nested layouts / pages (P5). */
 @import './blocks/shell.css';
 @import './blocks/typography.css';
 @import './blocks/surfaces.css';
 @import './blocks/shared-lists.css';
 @import './blocks/controls.css';
 @import './blocks/catalog.css';
-@import './blocks/home.css';
-@import './blocks/live.css';
-@import './blocks/builder.css';
+@import './blocks/workouts.css';
 @import './blocks/screen-misc.css';
-@import './blocks/error-articles.css';
 @import './blocks/utilities.css';

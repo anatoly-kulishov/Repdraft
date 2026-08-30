@@ -1,4 +1,5 @@
 <script lang="ts">
+	import '$lib/styles/blocks/error-articles.css';
 	import { page } from '$app/stores';
 	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';

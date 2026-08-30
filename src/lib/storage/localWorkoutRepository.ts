@@ -22,6 +22,11 @@ export function peekHasLocalPlans(): boolean {
 	return readPlans().length > 0;
 }
 
+/** Sync peek for loading skeletons (preview, row counts). */
+export function peekLocalPlan(id: string): WorkoutPlan | null {
+	return readPlans().find((plan) => plan.id === id) ?? null;
+}
+
 /** Keep SSR cookie in sync so `/` boots the matching skeleton. */
 export function syncHomePlansBootCookie(hasPlans: boolean): void {
 	if (typeof document === 'undefined') return;

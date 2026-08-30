@@ -30,7 +30,7 @@
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import DataExportSection from '$lib/components/DataExportSection.svelte';
 	import { APP_VERSION_LABEL } from '$lib/appVersion';
-	import { GREETING_NAME_MAX } from '$lib/domain/greetingName';
+	import { GREETING_NAME_MAX, greetingNameMatchesStored } from '$lib/domain/greetingName';
 	import { isIosDevice } from '$lib/domain/pwaInstall';
 	import { restSoundEnabled } from '$lib/stores/prefs';
 	import { get } from 'svelte/store';
@@ -39,7 +39,6 @@
 	import { themeToggleStateIcon } from '$lib/components/icons/themeToggle';
 	import { Globe, LogOut, Timer, Shield } from '@lucide/svelte';
 
-	let { data }: { data: { bootLikelyAccount: boolean } } = $props();
 
 	type Panel = 'signin' | 'signup' | 'magic' | 'forgot' | 'check-email';
 
@@ -316,10 +315,11 @@
 	let accountMode = $derived($auth.ready && Boolean($auth.user) && !recoveryMode);
 	/**
 	 * Boot skeleton: prefer account grid when a signed-in session is likely.
-	 * SSR reads `repdraft_auth_boot` cookie (set in auth store + app.html peek).
-	 * Client keeps the same flag for hydration, then live UI replaces when auth is ready.
+	 * app.html peek sets `dataset.authBoot` before Svelte mounts (offline-safe, no server load).
 	 */
-	let bootLikelyAccount = $derived(data.bootLikelyAccount);
+	let bootLikelyAccount = $derived(
+		browser && document.documentElement.dataset.authBoot === 'account'
+	);
 	/** Dev/QA: force boot skeleton via ?skeleton=account|guest */
 	let skeletonForce = $derived(
 		$page.url.searchParams.get('skeleton') === 'account'
@@ -347,12 +347,18 @@
 		if (accountMode) greetingNameInput = get(greetingName);
 	});
 
+	let greetingNameDirty = $derived(
+		!greetingNameMatchesStored($greetingName, greetingNameInput)
+	);
+
 	async function saveGreetingName() {
-		if (greetingNameSaving || !$auth.user) return;
+		if (greetingNameSaving || !$auth.user || !greetingNameDirty) return;
 		greetingNameSaving = true;
 		try {
-			await greetingName.save(greetingNameInput, $auth.user.id);
-			toasts.show(translate(lang, 'auth.greetingNameSaved'), 'success');
+			const saved = await greetingName.save(greetingNameInput, $auth.user.id);
+			if (saved) {
+				toasts.show(translate(lang, 'auth.greetingNameSaved'), 'success');
+			}
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'auth.greetingNameSaveFail'), 'error');
 		} finally {
@@ -519,7 +525,7 @@
 						type="submit"
 						variant="secondary"
 						class="profile-settings-group__action"
-						disabled={greetingNameSaving}
+						disabled={greetingNameSaving || !greetingNameDirty}
 					>
 						{#if greetingNameSaving}
 							<span class="inline-flex items-center gap-2">
