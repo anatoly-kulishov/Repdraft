@@ -5,6 +5,9 @@ export const DEFAULT_APP_THEME: AppTheme = 'light';
 
 export const THEME_STORAGE_KEY = 'repdraft.theme';
 
+/** Cookie mirror for SSR — kept in sync with localStorage in applyAppTheme + app.html boot. */
+export const THEME_COOKIE = THEME_STORAGE_KEY;
+
 export const THEME_META_COLORS: Record<AppTheme, string> = {
 	dark: '#0B0B0C',
 	light: '#F2F2F7'
