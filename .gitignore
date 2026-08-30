@@ -32,3 +32,4 @@ vite.config.ts.timestamp-*
 design-audit/
 test-results/
 playwright-report/
+scripts/app.css.monolith.bak
