@@ -76,6 +76,18 @@ input[data-slot='input'].search-field-with-icon:not([type='file']) {
 	padding-left: 2.65rem;
 }
 
+/* Builder prescription chips — beat generic control padding; width tracks digit count. */
+input[data-slot='input'].workout-ex-chip__input:not([type='file']) {
+	padding: 0.3rem 0.45rem;
+	height: auto;
+	min-height: 0;
+	max-height: none;
+}
+
+input[data-slot='input'].workout-ex-chip__input--superset:not([type='file']) {
+	padding: 0.15rem 0.4rem;
+}
+
 input[data-slot='input'].search-field.has-clear:not([type='file']) {
 	padding-right: 2.5rem;
 }
@@ -138,14 +150,82 @@ input[data-slot='input'].search-field.has-clear:not([type='file']) {
 	white-space: nowrap;
 }
 
-/* PR note: grow with content up to ~6 lines, then scroll.
-   Keep width capped — field-sizing:content can otherwise inflate page min-width. */
+/* PR note: same label → field → hint rhythm as weight/reps. */
+.pr-note-block {
+	margin-top: 0.125rem;
+}
+
+.pr-note-shell {
+	position: relative;
+}
+
 textarea.pr-note-field {
+	display: block;
+	box-sizing: border-box;
 	field-sizing: content;
 	width: 100%;
 	min-width: 0;
 	max-width: 100%;
+	min-height: var(--control-height);
 	max-height: 8.75rem;
+	padding: 0.75rem 0.875rem;
+	border-radius: var(--radius-control);
+	font-size: 1rem;
+	line-height: 1.5;
+	resize: none;
+	overflow-y: auto;
+}
+
+textarea.pr-note-field.pr-note-field--has-clear {
+	padding-right: 2.75rem;
+}
+
+.pr-note-shell .pr-note-clear {
+	position: absolute;
+	top: 50%;
+	right: 0.35rem;
+	z-index: 1;
+	transform: translateY(-50%);
+	display: grid;
+	place-items: center;
+	width: 1.85rem;
+	height: 1.85rem;
+	min-width: 1.85rem;
+	min-height: 1.85rem;
+	padding: 0;
+	border: 0;
+	border-radius: 9999px;
+	background: transparent;
+	color: var(--color-muted);
+	line-height: 0;
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+}
+
+.pr-note-shell .pr-note-clear::before {
+	content: '';
+	position: absolute;
+	inset: -0.55rem;
+}
+
+.pr-note-shell .pr-note-clear:hover {
+	background: var(--color-surface-muted);
+	color: var(--color-ink);
+}
+
+.pr-note-count {
+	display: block;
+	margin-top: 0.25rem;
+	text-align: right;
+	font-size: 0.6875rem;
+	line-height: 1.2;
+	color: var(--color-muted);
+}
+
+.pr-note-count--limit {
+	color: var(--color-danger);
+	font-weight: 600;
 }
 
 .field-shell {

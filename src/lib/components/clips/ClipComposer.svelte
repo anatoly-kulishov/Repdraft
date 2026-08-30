@@ -5,7 +5,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import Spinner from '$lib/components/Spinner.svelte';
-	import { CLIP_TITLE_MAX } from '$lib/domain/clips';
+	import { CLIP_TITLE_MAX, clampClipTitle } from '$lib/domain/clips';
 	import { clipEncodeDurationSec } from '$lib/media/videoToGif';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -110,7 +110,20 @@
 				placeholder={translate(lang, 'clips.captionPh')}
 				bind:value={title}
 				disabled={busy}
+				oninput={(event) => {
+					const el = event.currentTarget as HTMLInputElement;
+					const next = clampClipTitle(el.value);
+					title = next;
+					if (el.value !== next) el.value = next;
+				}}
 			/>
+			<span
+				class="clip-composer__caption-count"
+				class:clip-composer__caption-count--limit={title.length >= CLIP_TITLE_MAX}
+				aria-live="polite"
+			>
+				{title.length}/{CLIP_TITLE_MAX}
+			</span>
 		</label>
 
 		{#if busy || progress}

@@ -8,6 +8,7 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, SessionExercise, WorkoutSession } from '$lib/domain/types';
+	import { REPS_INPUT_MAX_LEN, WEIGHT_INPUT_MAX_LEN } from '$lib/domain/inputLimits';
 	import { isBodyweightEquipment } from '$lib/domain/workout';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
@@ -390,6 +391,7 @@
 						type="text"
 						inputmode="decimal"
 						autocomplete="off"
+						maxlength={WEIGHT_INPUT_MAX_LEN}
 						enterkeyhint="next"
 						placeholder={weightPlaceholder}
 						aria-label={`${weightLabel} ${si + 1}`}
@@ -417,6 +419,7 @@
 						type="text"
 						inputmode="numeric"
 						autocomplete="off"
+						maxlength={REPS_INPUT_MAX_LEN}
 						enterkeyhint="done"
 						aria-label={`${translate(lang, 'live.reps')} ${si + 1}`}
 						value={set.reps ?? ''}
