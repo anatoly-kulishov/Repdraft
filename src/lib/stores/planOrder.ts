@@ -86,6 +86,15 @@ function createPlanOrderStore() {
 				writeOrder(out);
 				return out;
 			});
+		},
+		insertAt(planId: string, index: number) {
+			update((order) => {
+				const out = order.filter((id) => id !== planId);
+				const idx = Math.max(0, Math.min(index, out.length));
+				out.splice(idx, 0, planId);
+				writeOrder(out);
+				return out;
+			});
 		}
 	};
 }

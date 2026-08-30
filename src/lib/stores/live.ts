@@ -371,6 +371,11 @@ function createLiveStore() {
 			await deleteSession(id);
 			await refreshHistory();
 		},
+		async restoreSession(session: WorkoutSession) {
+			clearSessionTombstone(session.id);
+			await persistSession(session);
+			await refreshHistory();
+		},
 		/**
 		 * Patch a finished (history) session and persist changes locally + mirror to cloud.
 		 * Used for “edit history” UI.

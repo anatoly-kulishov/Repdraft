@@ -8,7 +8,18 @@
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import type { WorkoutExercise } from '$lib/domain/types';
-	import { coerceReps, coerceRestSec, coerceSets, REPS } from '$lib/domain/inputLimits';
+	import {
+		coerceReps,
+		coerceRestSec,
+		coerceSets,
+		filterRestSecInput,
+		filterRepsInput,
+		filterSetsInput,
+		REPS,
+		REPS_INPUT_MAX_LEN,
+		REST_INPUT_MAX_LEN,
+		SETS_INPUT_MAX_LEN
+	} from '$lib/domain/inputLimits';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { linkWithFrom, currentReturnPath } from '$lib/domain/navigation';
@@ -56,11 +67,29 @@
 	let inGroup = $derived(Boolean(item.groupId));
 	let inOrGroup = $derived(Boolean(item.altGroupId));
 	const chipInputClass =
-		'workout-ex-chip__input !h-[2.5rem] !min-h-0 w-[2.85rem] min-w-[2.85rem] max-w-[2.85rem] sm:w-[3.5rem] sm:min-w-[3.5rem] sm:max-w-[3.5rem] shrink-0 px-1.5 text-center text-base tabular-nums';
+		'workout-ex-chip__input !h-[2.5rem] !min-h-0 shrink-0 text-center text-base tabular-nums';
 	const chipInputRestClass =
-		'workout-ex-chip__input workout-ex-chip__input--rest !h-[2.5rem] !min-h-0 w-[3.5rem] min-w-[3.5rem] max-w-[3.5rem] sm:w-[4rem] sm:min-w-[4rem] sm:max-w-[4rem] shrink-0 px-1.5 text-center text-base tabular-nums';
+		'workout-ex-chip__input workout-ex-chip__input--rest !h-[2.5rem] !min-h-0 shrink-0 text-center text-base tabular-nums';
 	const supersetInputClass =
-		'workout-ex-chip__input !h-[2.15rem] !min-h-0 w-[2.85rem] min-w-[2.85rem] max-w-[2.85rem] shrink-0 px-1.5 text-center text-base tabular-nums';
+		'workout-ex-chip__input workout-ex-chip__input--superset !h-[2.15rem] !min-h-0 shrink-0 text-center text-base tabular-nums';
+
+	function applySets(el: HTMLInputElement, apply: (sets: number) => void) {
+		const shaped = filterSetsInput(el.value, String(item.sets));
+		if (el.value !== shaped) el.value = shaped;
+		apply(coerceSets(shaped));
+	}
+
+	function applyReps(el: HTMLInputElement) {
+		const shaped = filterRepsInput(el.value, REPS, String(item.reps));
+		if (el.value !== shaped) el.value = shaped;
+		onupdate({ reps: coerceReps(shaped, REPS) ?? REPS.min });
+	}
+
+	function applyRest(el: HTMLInputElement, apply: (restSec: number) => void) {
+		const shaped = filterRestSecInput(el.value, String(item.restSec));
+		if (el.value !== shaped) el.value = shaped;
+		apply(coerceRestSec(shaped));
+	}
 </script>
 
 <article
@@ -95,11 +124,12 @@
 						type="text"
 						inputmode="numeric"
 						autocomplete="off"
+						maxlength={SETS_INPUT_MAX_LEN}
 						value={item.sets}
-						onchange={(e) => {
-							const sets = coerceSets((e.currentTarget as HTMLInputElement).value);
-							if (ongroupSets) ongroupSets(sets);
-							else onupdate({ sets });
+						oninput={(e) => {
+							const el = e.currentTarget as HTMLInputElement;
+							if (ongroupSets) applySets(el, ongroupSets);
+							else applySets(el, (sets) => onupdate({ sets }));
 						}}
 					/>
 				</label>
@@ -110,11 +140,12 @@
 						type="text"
 						inputmode="numeric"
 						autocomplete="off"
+						maxlength={REST_INPUT_MAX_LEN}
 						value={item.restSec}
-						onchange={(e) => {
-							const restSec = coerceRestSec((e.currentTarget as HTMLInputElement).value);
-							if (ongroupRest) ongroupRest(restSec);
-							else onupdate({ restSec });
+						oninput={(e) => {
+							const el = e.currentTarget as HTMLInputElement;
+							if (ongroupRest) applyRest(el, ongroupRest);
+							else applyRest(el, (restSec) => onupdate({ restSec }));
 						}}
 					/>
 				</label>
@@ -200,11 +231,9 @@
 							type="text"
 							inputmode="numeric"
 							autocomplete="off"
+							maxlength={REPS_INPUT_MAX_LEN}
 							value={item.reps}
-							onchange={(e) =>
-								onupdate({
-									reps: coerceReps((e.currentTarget as HTMLInputElement).value, REPS) ?? REPS.min
-								})}
+							oninput={(e) => applyReps(e.currentTarget as HTMLInputElement)}
 						/>
 					</label>
 				{:else}
@@ -216,8 +245,10 @@
 								type="text"
 								inputmode="numeric"
 								autocomplete="off"
+								maxlength={SETS_INPUT_MAX_LEN}
 								value={item.sets}
-								onchange={(e) => onupdate({ sets: coerceSets((e.currentTarget as HTMLInputElement).value) })}
+								oninput={(e) =>
+									applySets(e.currentTarget as HTMLInputElement, (sets) => onupdate({ sets }))}
 							/>
 						</label>
 						<span class="workout-ex-fields__times" aria-hidden="true">×</span>
@@ -228,11 +259,9 @@
 								type="text"
 								inputmode="numeric"
 								autocomplete="off"
+								maxlength={REPS_INPUT_MAX_LEN}
 								value={item.reps}
-								onchange={(e) =>
-									onupdate({
-										reps: coerceReps((e.currentTarget as HTMLInputElement).value, REPS) ?? REPS.min
-									})}
+								oninput={(e) => applyReps(e.currentTarget as HTMLInputElement)}
 							/>
 						</label>
 						<label class="workout-ex-chip workout-ex-chip--rest">
@@ -242,9 +271,10 @@
 								type="text"
 								inputmode="numeric"
 								autocomplete="off"
+								maxlength={REST_INPUT_MAX_LEN}
 								value={item.restSec}
-								onchange={(e) =>
-									onupdate({ restSec: coerceRestSec((e.currentTarget as HTMLInputElement).value) })}
+								oninput={(e) =>
+									applyRest(e.currentTarget as HTMLInputElement, (restSec) => onupdate({ restSec }))}
 							/>
 						</label>
 					</div>

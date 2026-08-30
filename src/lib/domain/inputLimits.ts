@@ -8,6 +8,14 @@ export const REST_SEC = { min: 0, max: 600 } as const;
 export const NOTE_MAX = 100;
 /** Builder / plan title — keeps cards and headers from overflowing. */
 export const PLAN_NAME_MAX = 48;
+/** Catalog / workouts / articles search — soft cap while typing. */
+export const SEARCH_QUERY_MAX = 80;
+
+/** Max digits while typing (derived from bounds — fits chip inputs without overflow). */
+export const SETS_INPUT_MAX_LEN = String(SETS.max).length;
+export const REPS_INPUT_MAX_LEN = String(REPS.max).length;
+export const REST_INPUT_MAX_LEN = String(REST_SEC.max).length;
+export const WEIGHT_INPUT_MAX_LEN = 6;
 
 /** Digits + optional one decimal; empty crumbs → ''. Does not clamp to max. */
 function shapeWeight(raw: string): string {
@@ -87,6 +95,16 @@ export function filterRepsInput(
 	return longestValidReps(candidate, bounds.max, allowZero);
 }
 
+/** Builder sets chip — digits only, reject overflow instead of snapping to max. */
+export function filterSetsInput(raw: string, previous = ''): string {
+	return filterRepsInput(raw, SETS, previous);
+}
+
+/** Builder rest chip — allows 0, caps at REST_SEC.max (600 s). */
+export function filterRestSecInput(raw: string, previous = ''): string {
+	return filterRepsInput(raw, REST_SEC, previous);
+}
+
 /** Empty → null. Out of range / junk → null. */
 export function coerceWeightKg(raw: string): number | null {
 	const trimmed = raw.trim().replace(',', '.');
@@ -131,6 +149,11 @@ export function sanitizeNote(raw: string, maxLen = NOTE_MAX): string {
 
 /** While typing: strip control chars and hard-cap length (no trim — keeps caret stable). */
 export function clampPlanName(raw: string, maxLen = PLAN_NAME_MAX): string {
+	return raw.replace(/[\u0000-\u001F\u007F]/g, '').slice(0, maxLen);
+}
+
+/** Search fields: strip control chars, soft-cap length (no trim while typing). */
+export function clampSearchQuery(raw: string, maxLen = SEARCH_QUERY_MAX): string {
 	return raw.replace(/[\u0000-\u001F\u007F]/g, '').slice(0, maxLen);
 }
 
@@ -192,6 +215,15 @@ export function runInputLimitsSelfCheck(): void {
 	if (filterRepsInput('501', LIVE_REPS, '') !== '50') {
 		throw new Error('filterRepsInput longest valid prefix');
 	}
+	if (filterSetsInput('21', '20') !== '20') {
+		throw new Error('filterSetsInput reject extra digit');
+	}
+	if (filterRestSecInput('601', '600') !== '600') {
+		throw new Error('filterRestSecInput reject extra digit');
+	}
+	if (filterRestSecInput('0', '') !== '0') {
+		throw new Error('filterRestSecInput allow zero');
+	}
 
 	if (coerceWeightKg('-11') !== null) throw new Error('coerceWeightKg rejects negative');
 	if (filterWeightInput('-11', '') !== '11') {
@@ -206,5 +238,11 @@ export function runInputLimitsSelfCheck(): void {
 	}
 	if (clampPlanName('  ab  ') !== '  ab  ') {
 		throw new Error('clampPlanName keeps spaces while typing');
+	}
+	if (clampSearchQuery('x'.repeat(120)).length !== SEARCH_QUERY_MAX) {
+		throw new Error('clampSearchQuery max length');
+	}
+	if (clampSearchQuery('a\u0007b').length !== 2) {
+		throw new Error('clampSearchQuery strips controls');
 	}
 }

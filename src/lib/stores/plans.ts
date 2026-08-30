@@ -137,6 +137,17 @@ import { resolvedLocale } from './locale';
 			});
 			await refresh({ cloud: cloudOk && isCloudMode() });
 		},
+		async restorePlan(plan: WorkoutPlan, orderIndex = -1) {
+			const cloudOk = await mirrorCloudWrite({
+				localWrite: () => localWorkoutRepository.save(plan),
+				cloudWrite: () => supabaseWorkoutRepository.save(plan),
+				label: 'plans.restorePlan',
+				outboxOnFail: { kind: 'plan.save', id: plan.id }
+			});
+			if (orderIndex >= 0) planOrder.insertAt(plan.id, orderIndex);
+			else planOrder.prepend(plan.id);
+			await refresh({ cloud: cloudOk && isCloudMode() });
+		},
 		async duplicate(id: string): Promise<{ plan: WorkoutPlan; synced: boolean } | null> {
 			const plan =
 				get(store).find((p) => p.id === id) ??

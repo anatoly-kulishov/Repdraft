@@ -19,6 +19,11 @@ export function sanitizeGreetingName(raw: string): string {
 	);
 }
 
+/** While typing: strip format/control chars, hard-cap length (no trim — keeps caret stable). */
+export function clampGreetingName(raw: string, maxLen = GREETING_NAME_MAX): string {
+	return raw.replace(/\p{Cf}+/gu, '').replace(/\p{Cc}+/gu, ' ').slice(0, maxLen);
+}
+
 /** True when sanitized input matches stored custom name (empty = no custom name). */
 export function greetingNameMatchesStored(
 	stored: string | null | undefined,
@@ -67,6 +72,12 @@ export function runGreetingNameSelfCheck(): void {
 	}
 	if (!greetingNameMatchesStored('Ada', '  Ada  ')) {
 		throw new Error('greetingNameMatchesStored should compare sanitized values');
+	}
+	if (clampGreetingName('  Ada  ').length !== 6) {
+		throw new Error('clampGreetingName keeps spaces while typing');
+	}
+	if (clampGreetingName(`Ada\u200BLovelace`).length !== 11) {
+		throw new Error('clampGreetingName strips zero-width chars');
 	}
 	if (
 		greetingFirstName('Маша', { user_metadata: { full_name: 'Google Name' } }) !== 'Маша'
