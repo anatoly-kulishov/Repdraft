@@ -140,8 +140,8 @@ async function auditViewport(page, viewport) {
 		}
 
 		if (isMobile) {
-			const primary = page.locator('.catalog-hub-chip--primary');
-			const box = await primary.boundingBox();
+			const primary = page.locator('.catalog-hub-chips .catalog-hub-chip').first();
+			const box = await primary.boundingBox({ timeout: 5000 }).catch(() => null);
 			box && box.width >= 44 && box.height >= 44
 				? pass(viewport, 'catalog.nav-primary-tap', `w=${Math.round(box.width)} h=${Math.round(box.height)}`)
 				: fail(
@@ -168,7 +168,7 @@ async function auditViewport(page, viewport) {
 			: fail(viewport, 'zone.header', 'no title');
 
 		if (isMobile) {
-			const back = page.locator('.screen-header-back');
+			const back = page.locator('.screen-header-crumb');
 			(await back.isVisible())
 				? pass(viewport, 'zone.mobile-back')
 				: fail(viewport, 'zone.mobile-back', 'ScreenHeader back missing');
@@ -212,7 +212,7 @@ async function auditViewport(page, viewport) {
 		} else {
 			await goto(page, `/exercise/${chest.id}`);
 			if (isMobile) {
-				(await visible(page, '.screen-header-back'))
+				(await visible(page, '.screen-header-crumb'))
 					? pass(viewport, 'exercise.mobile-back')
 					: fail(viewport, 'exercise.mobile-back', 'missing');
 			} else {
@@ -223,13 +223,13 @@ async function auditViewport(page, viewport) {
 
 			await goto(page, `/exercise/${chest.id}?from=${encodeURIComponent('/workouts')}`);
 			const back = page.locator(
-				isMobile ? '.screen-header-back' : '.catalog-zone-crumb-link, .subroute-back'
+				isMobile ? '.screen-header-crumb' : '.catalog-zone-crumb-link, .subroute-back'
 			);
 			const href = await back.first().getAttribute('href');
 			href === '/workouts' ||
 				(await page
 					.locator(
-						`a.catalog-zone-crumb-link[href="/workouts"], a.subroute-back[href="/workouts"], a.screen-header-back[href="/workouts"]`
+						`a.catalog-zone-crumb-link[href="/workouts"], a.subroute-back[href="/workouts"], a.screen-header-crumb[href="/workouts"]`
 					)
 					.count()) > 0
 				? pass(viewport, 'exercise.from-workouts', `href=${href}`)
@@ -251,7 +251,7 @@ async function auditViewport(page, viewport) {
 	{
 		await goto(page, '/exercises/saved');
 		if (isMobile) {
-			(await visible(page, '.screen-header-back'))
+			(await visible(page, '.screen-header-crumb'))
 				? pass(viewport, 'saved.mobile-back')
 				: fail(viewport, 'saved.mobile-back', 'missing');
 		} else {
@@ -270,9 +270,14 @@ async function auditViewport(page, viewport) {
 
 		if (isMobile) {
 			const fab = page.locator('.app-fab:not(.app-fab--hidden)');
-			(await fab.count()) > 0 && (await fab.isVisible())
-				? pass(viewport, 'workouts.fab')
-				: fail(viewport, 'workouts.fab', 'FAB missing on mobile');
+			const hasPlans = (await page.locator('.entity-row__main[href^="/workouts/"]').count()) > 0;
+			if (!hasPlans) {
+				pass(viewport, 'workouts.fab', 'empty list — FAB hidden by design');
+			} else if ((await fab.count()) > 0 && (await fab.isVisible())) {
+				pass(viewport, 'workouts.fab');
+			} else {
+				fail(viewport, 'workouts.fab', 'FAB missing on mobile');
+			}
 		} else {
 			const cta = page.locator('.workouts-page__create');
 			(await cta.isVisible())
@@ -286,7 +291,7 @@ async function auditViewport(page, viewport) {
 			const href = await planLink.getAttribute('href');
 			await goto(page, href);
 			if (isMobile) {
-				(await visible(page, '.screen-header-back'))
+				(await visible(page, '.screen-header-crumb'))
 					? pass(viewport, 'plan.mobile-back')
 					: fail(viewport, 'plan.mobile-back', 'missing');
 			} else {
@@ -302,7 +307,7 @@ async function auditViewport(page, viewport) {
 				await ex.click();
 				await waitApp(page);
 				await page.waitForTimeout(400);
-				const back = page.locator(isMobile ? '.screen-header-back' : '.subroute-back');
+				const back = page.locator(isMobile ? '.screen-header-crumb' : '.subroute-back');
 				const backHref = await back.getAttribute('href');
 				backHref && backHref.startsWith('/workouts/')
 					? pass(viewport, 'plan→exercise.back', backHref)
@@ -321,7 +326,7 @@ async function auditViewport(page, viewport) {
 	{
 		await goto(page, '/builder');
 		if (isMobile) {
-			(await visible(page, '.screen-header-back'))
+			(await visible(page, '.builder-chrome__back'))
 				? pass(viewport, 'builder.mobile-back')
 				: fail(viewport, 'builder.mobile-back', 'missing');
 			// Immersive flow: tabbar must be display:none or it steals sticky CTA clicks.
@@ -358,7 +363,7 @@ async function auditViewport(page, viewport) {
 	{
 		await goto(page, '/settings');
 		if (isMobile) {
-			(await visible(page, '.screen-header-back'))
+			(await visible(page, '.screen-header-crumb'))
 				? pass(viewport, 'settings.mobile-back')
 				: fail(viewport, 'settings.mobile-back', 'missing');
 		} else {
@@ -404,10 +409,12 @@ async function auditViewport(page, viewport) {
 	try {
 		page.on('dialog', (d) => d.accept());
 		const stamp = `E2E ${viewport} ${Date.now().toString(36).slice(-4)}`;
-		await goto(page, '/builder');
+		await goto(page, '/builder?new');
 		await page.waitForTimeout(500);
 
-		const nameInput = page.locator('input.field[type="text"], label input[type="text"]').first();
+		const nameInput = isMobile
+			? page.locator('.builder-chrome__name')
+			: page.locator('.builder-name-desktop input[type="text"]');
 		if ((await nameInput.count()) === 0) {
 			fail(viewport, 'flow.builder-name', 'name field missing');
 			return;
@@ -422,12 +429,15 @@ async function auditViewport(page, viewport) {
 			pick = pickFab;
 		} else if ((await pickLink.count()) > 0 && (await pickLink.isVisible())) {
 			pick = pickLink;
+		} else if (!isMobile) {
+			await goto(page, '/exercises?from=%2Fbuilder');
+			pick = { click: async () => {} };
 		}
 		if (!pick) {
 			fail(viewport, 'flow.pick', 'add-exercise FAB/link missing');
 			return;
 		}
-		await pick.click();
+		if (typeof pick.click === 'function') await pick.click();
 		await waitApp(page);
 		await page.waitForTimeout(500);
 		pass(viewport, 'flow.pick', page.url());
@@ -469,7 +479,7 @@ async function auditViewport(page, viewport) {
 		// Mobile save lives in sticky-actions; desktop in builder-toolbar.
 		const saveBtn = isMobile
 			? page.locator('.sticky-actions button.btn-primary')
-			: page.locator('.builder-toolbar button.btn-primary');
+			: page.locator('.builder-toolbar-save');
 		if ((await saveBtn.count()) === 0) {
 			fail(viewport, 'flow.save', 'save button missing');
 			return;

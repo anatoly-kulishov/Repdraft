@@ -16105,3 +16105,12 @@ html[data-theme='dark'] .auth-segment--sub.is-active {
 	line-height: 1.4;
 	color: var(--color-muted);
 }
+
+/* Playwright visual baseline — disable motion for stable screenshots. */
+html.e2e-stable *,
+html.e2e-stable *::before,
+html.e2e-stable *::after {
+	animation-duration: 0.001ms !important;
+	animation-delay: 0s !important;
+	transition-duration: 0.001ms !important;
+}
