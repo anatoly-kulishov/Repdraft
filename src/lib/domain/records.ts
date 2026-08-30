@@ -55,6 +55,16 @@ export function isRecordEmpty(record: PersonalRecord): boolean {
 	return !hasLiftData(record) && record.note.trim().length === 0;
 }
 
+/** Compare lift + note only — ignores updatedAt. */
+export function personalRecordContentEqual(a: PersonalRecord, b: PersonalRecord): boolean {
+	return (
+		a.exerciseId === b.exerciseId &&
+		a.weightKg === b.weightKg &&
+		a.reps === b.reps &&
+		a.note === b.note
+	);
+}
+
 export type RecordSanitizeResult =
 	| { ok: true; record: PersonalRecord }
 	| { ok: false; errorKey: string };
@@ -173,5 +183,8 @@ export function runRecordsSelfCheck(): void {
 	if (!ex1 || ex1.weightKg !== 100) throw new Error('cloud newer should win for ex-1');
 	if (!merged.some((r) => r.exerciseId === 'ex-2')) {
 		throw new Error('local-only PR must survive empty cloud overlap');
+	}
+	if (!personalRecordContentEqual(newer, { ...newer, updatedAt: '2099-01-01T00:00:00.000Z' })) {
+		throw new Error('personalRecordContentEqual should ignore updatedAt');
 	}
 }

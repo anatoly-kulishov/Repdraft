@@ -4,6 +4,7 @@
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
+	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
@@ -12,9 +13,9 @@
 	import { ICON_BUTTON, ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { BUILDER_ADD_EXERCISE_HREF, WORKOUTS_HREF } from '$lib/domain/catalogLinks';
-	import { PLAN_NAME_MAX } from '$lib/domain/inputLimits';
+	import { PLAN_NAME_MAX, clampPlanName } from '$lib/domain/inputLimits';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
-	import { altGroupMemberRole, groupMemberRole } from '$lib/domain/workout';
+	import { altGroupMemberRole, groupMemberRole, workoutPlanContentEqual } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
 	import { navigateBack } from '$lib/navigation/back';
 	import { draft, draftHydrated } from '$lib/stores/draft';
@@ -23,6 +24,7 @@
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
 	import { Plus, Save, Trash2, ArrowLeft, Layers, ListTree } from '@lucide/svelte';
 
@@ -39,6 +41,17 @@
 	let pageReady = $derived(
 		$draftHydrated && ($draft.exercises.length === 0 || indexReady)
 	);
+	let draftUnchanged = $derived.by(() => {
+		const draftPlan = $draft;
+		const existing = $plans.find((plan) => plan.id === draftPlan.id);
+		if (!existing) return false;
+		const untitled = translate(lang, 'builder.untitled');
+		const namedDraft = {
+			...draftPlan,
+			name: clampPlanName(draftPlan.name.replace(/\s+/g, ' ').trim()) || untitled
+		};
+		return workoutPlanContentEqual(existing, namedDraft);
+	});
 
 	/** After hydrate — otherwise localStorage would resurrect the previous draft name. */
 	$effect(() => {
@@ -72,7 +85,7 @@
 	});
 
 	async function save() {
-		if (saving) return;
+		if (saving || draftUnchanged) return;
 		saving = true;
 		try {
 			await plans.saveCurrent();
@@ -218,7 +231,7 @@
 			<AppButton
 				variant="secondary"
 				class="builder-toolbar-save"
-				disabled={!pageReady || saving || $draft.exercises.length === 0}
+				disabled={!pageReady || saving || $draft.exercises.length === 0 || draftUnchanged}
 				aria-busy={saving}
 				aria-label={translate(lang, 'builder.save')}
 				title={translate(lang, 'builder.save')}
@@ -233,7 +246,9 @@
 		</div>
 	</div>
 
-	{#if $draftHydrated}
+	{#if !pageReady}
+		<PageSkeleton variant="builder" rows={3} />
+	{:else if $draftHydrated}
 		<div class="soft-enter">
 			<div class="builder-name-desktop mb-5 max-w-xl">
 				<AppLabel>
@@ -354,7 +369,7 @@
 						</AppButton>
 						<AppButton
 							class="builder-sticky-actions__btn"
-							disabled={saving}
+							disabled={!pageReady || saving || $draft.exercises.length === 0 || draftUnchanged}
 							aria-busy={saving}
 							onclick={() => void save()}
 						>

@@ -2,6 +2,7 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
@@ -13,6 +14,7 @@
 	import {
 		addCompletedLoggedSet,
 		completedSetCount,
+		finishedSessionLogEqual,
 		removeLoggedExercise,
 		removeLoggedSet,
 		sessionDurationMs,
@@ -22,6 +24,7 @@
 	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
 	import { formatDurationMs, formatLongDate } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
+	import { peekLocalSession } from '$lib/storage/localSessionRepository';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { draft } from '$lib/stores/draft';
 	import { live } from '$lib/stores/live';
@@ -53,9 +56,14 @@
 	let savingEdit = $state(false);
 	let sendingToBuilder = $state(false);
 	let editSession = $state<WorkoutSession | null>(null);
+	let editBaseline = $state<WorkoutSession | null>(null);
 	let editDraft = $state<Record<string, { w: string; r: string }>>({});
 	let fromPath = $derived($page.url.pathname);
 	let viewSession = $derived(editing && editSession ? editSession : session);
+	let editUnchanged = $derived.by(() => {
+		if (!editing || !editSession || !editBaseline) return true;
+		return finishedSessionLogEqual(applyDraft(editSession), editBaseline);
+	});
 	let historyVolumeKg = $derived(viewSession ? sessionVolumeKg(viewSession) : 0);
 	let technique = $state<{
 		id: string;
@@ -63,6 +71,24 @@
 		hint: string;
 		image: string;
 	} | null>(null);
+	let skeletonRows = $derived.by(() => {
+		const id = $page.params.id;
+		if (!id) return 3;
+		const peeked = peekLocalSession(id);
+		const n = peeked?.exercises.length ?? 1;
+		return Math.min(Math.max(n, 1), 4) + 1;
+	});
+	let skeletonSetRows = $derived.by(() => {
+		const id = $page.params.id;
+		if (!id) return 1;
+		const peeked = peekLocalSession(id);
+		if (!peeked) return 1;
+		const maxSets = Math.max(
+			1,
+			...peeked.exercises.map((ex) => ex.sets.filter((set) => set.completed).length)
+		);
+		return Math.min(maxSets, 3);
+	});
 
 	onMount(() => {
 		void (async () => {
@@ -154,6 +180,7 @@
 					return;
 				}
 				const next = cloneForEdit(current);
+				editBaseline = structuredClone(next);
 				editSession = next;
 				editDraft = draftFromSession(next);
 				editing = true;
@@ -166,6 +193,7 @@
 	function cancelEdit() {
 		editing = false;
 		editSession = null;
+		editBaseline = null;
 		editDraft = {};
 	}
 
@@ -203,9 +231,13 @@
 		if (!editSession) return;
 		const id = $page.params.id;
 		if (!id) return;
+		const patched = applyDraft(editSession);
+		if (editBaseline && finishedSessionLogEqual(patched, editBaseline)) {
+			cancelEdit();
+			return;
+		}
 		savingEdit = true;
 		try {
-			const patched = applyDraft(editSession);
 			const ok = await live.patchFinishedSession(id, () => patched);
 
 			if (!ok) {
@@ -250,6 +282,7 @@
 		{deleting}
 		{loading}
 		{sendingToBuilder}
+		saveDisabled={editUnchanged}
 		canEdit={!!session}
 		onSave={onSaveEdit}
 		onCancel={cancelEdit}
@@ -266,7 +299,15 @@
 </svelte:head>
 
 {#if loading}
-	<PageSkeleton variant="history" rows={4} />
+	<div class="history-detail-skeleton-head lg:hidden" aria-hidden="true">
+		<div class="history-detail-skeleton-head__bar"></div>
+	</div>
+	<div class="history-detail-skeleton-desktop-head hidden lg:block" aria-hidden="true">
+		<div class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--back"></div>
+		<div class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--title"></div>
+	</div>
+	<AppSkeleton class="page-skeleton-meta history-detail-skeleton-meta" aria-hidden="true" />
+	<PageSkeleton variant="history" rows={skeletonRows} setRows={skeletonSetRows} hideHeader />
 {:else if missing || !session}
 	<EmptyState
 		title={translate(lang, 'live.noPlan')}

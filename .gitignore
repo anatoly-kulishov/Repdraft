@@ -30,6 +30,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .tmp/
 design-audit/
+static/data/exercises.full.json
 test-results/
 playwright-report/
 scripts/app.css.monolith.bak

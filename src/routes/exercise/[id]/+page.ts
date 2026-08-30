@@ -1,15 +1,14 @@
 import { articlesForExercise } from '$lib/domain/articles';
 import { loadArticles } from '$lib/data/loadArticles';
-import { getExerciseById } from '$lib/server/exerciseCatalog';
-import type { PageServerLoad } from './$types';
+import { getExerciseById } from '$lib/data/loadExerciseCatalog';
+import type { PageLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params, fetch }) => {
-	const exercise = getExerciseById(params.id);
+export const load: PageLoad = async ({ params, fetch }) => {
+	const exercise = await getExerciseById(params.id, fetch);
 	if (!exercise) {
 		return { exercise: null, relatedArticles: [] };
 	}
 
-	// Vercel serverless has no `static/` on disk — use SvelteKit fetch (CDN/static assets).
 	let relatedArticles: Awaited<ReturnType<typeof articlesForExercise>> = [];
 	try {
 		const articles = await loadArticles(fetch);

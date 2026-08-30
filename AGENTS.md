@@ -67,9 +67,10 @@ npm run build
 
 ## Релизы
 
-- Ветка: `cursor/vX.Y.Z-short-slug`  
-- patch = фиксы/polish, minor = фича  
-- После merge в `main` - GitHub Release с тем же тегом  
+- Ветка: `cursor/vX.Y.Z-short-slug` 
+- patch = фиксы/polish, minor = фича 
+- После merge в `main` - GitHub Release с **тем же** тегом 
+- **`package.json` `version`** — поднимать в том же PR, что релиз; из неё в профиле (`/auth`) и privacy показывается `v{version}` (`src/lib/appVersion.ts` ← `vite.config.ts`)
 - Идеи и приоритеты: `.cursor/product/market-roadmap.md`
 - **MVP scope / UI/UX (главный):** `.cursor/product/mvp-spec.md`  
 

@@ -1,9 +1,5 @@
 <script lang="ts">
-import {
-	assertCleanClipTitle,
-	assertValidGifBlob,
-	type TechniqueClip
-} from '$lib/domain/clips';
+	import { assertCleanClipTitle, assertValidGifBlob, type TechniqueClip } from '$lib/domain/clips';
 import {
 	CLIP_LIMITS,
 	clipEncodeDurationSec,
@@ -383,6 +379,7 @@ import {
 		if (next === null) return;
 		try {
 			const cleaned = assertCleanClipTitle(next);
+			if (cleaned === assertCleanClipTitle(clip.title || '')) return;
 			const renamed = await renameTechniqueClip(clip.id, cleaned);
 			clips = clips.map((c) => (c.id === clip.id ? { ...c, title: renamed } : c));
 			if (lightbox?.id === clip.id) lightbox = { ...lightbox, title: renamed };

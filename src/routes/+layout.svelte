@@ -28,6 +28,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { flushSyncOutbox } from '$lib/storage/flushSyncOutbox';
+	import { whenIdle } from '$lib/browser/idle';
 	import { page } from '$app/stores';
 	import { onNavigate } from '$app/navigation';
 	import { onMount } from 'svelte';
@@ -78,7 +79,7 @@
 		draft.hydrate();
 		live.hydrate();
 		techniqueClipHints.hydrate();
-		void techniqueClipHints.refresh();
+		whenIdle(() => void techniqueClipHints.refresh());
 		void auth.init();
 
 		/* Belt-and-suspenders: same hide path as app.html (respects min splash time). */
@@ -161,6 +162,7 @@
 <svelte:head>
 	<link rel="manifest" href="/manifest.webmanifest" />
 	<meta name="apple-mobile-web-app-title" content="Repdraft" />
+	<meta name="description" content={translate(lang, 'app.metaDescription')} />
 	<title>Repdraft</title>
 </svelte:head>
 

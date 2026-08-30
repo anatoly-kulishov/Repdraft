@@ -1,8 +1,8 @@
 import { browser } from '$app/environment';
-import { sanitizeGreetingName } from '$lib/domain/greetingName';
+import { greetingNameMatchesStored, sanitizeGreetingName } from '$lib/domain/greetingName';
 import { getSupabase } from '$lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 
 function metaGreetingName(user: User | null | undefined): string | null {
 	const raw = user?.user_metadata?.greeting_name;
@@ -12,7 +12,8 @@ function metaGreetingName(user: User | null | undefined): string | null {
 }
 
 function createGreetingNameStore() {
-	const { subscribe, set } = writable('');
+	const store = writable('');
+	const { subscribe, set } = store;
 
 	return {
 		subscribe,
@@ -23,9 +24,11 @@ function createGreetingNameStore() {
 			}
 			set(metaGreetingName(user) ?? '');
 		},
-		async save(raw: string, userId: string): Promise<void> {
-			if (!browser || !userId) return;
+		/** Returns false when value is unchanged (no network). */
+		async save(raw: string, userId: string): Promise<boolean> {
+			if (!browser || !userId) return false;
 			const sanitized = sanitizeGreetingName(raw);
+			if (greetingNameMatchesStored(get(store), raw)) return false;
 			const supabase = getSupabase();
 			if (!supabase) throw new Error('errors.cloudOff');
 			const { data, error } = await supabase.auth.updateUser({
@@ -33,6 +36,7 @@ function createGreetingNameStore() {
 			});
 			if (error) throw error;
 			set(metaGreetingName(data.user) ?? sanitized);
+			return true;
 		}
 	};
 }

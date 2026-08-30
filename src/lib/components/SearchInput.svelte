@@ -88,15 +88,6 @@
 		appearance: none;
 	}
 
-	/* Beat `input[data-slot='input'] { padding: … }` so the icon never covers text. */
-	:global(input[data-slot='input'].search-field-with-icon) {
-		padding-left: 2.65rem;
-	}
-
-	:global(input[data-slot='input'].search-field.has-clear) {
-		padding-right: 2.5rem;
-	}
-
 	.search-input-icon {
 		position: absolute;
 		left: 0.85rem;

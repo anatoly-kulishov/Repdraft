@@ -22,6 +22,11 @@ function writeSessions(sessions: WorkoutSession[]): void {
 	localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(sessions));
 }
 
+/** Sync peek for loading skeleton row counts. */
+export function peekLocalSession(id: string): WorkoutSession | null {
+	return readSessions().find((session) => session.id === id) ?? null;
+}
+
 export function readActiveSession(): WorkoutSession | null {
 	if (typeof localStorage === 'undefined') return null;
 	try {

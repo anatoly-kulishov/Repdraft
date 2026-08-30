@@ -16,6 +16,8 @@ const ru: Dict = {
 	'nav.main': 'Основная навигация',
 	'nav.home': 'Repdraft: на главную',
 	'brand.tagline': 'ЗАПИСЬ. ПОДХОД. ГОТОВО.',
+	'app.metaDescription':
+		'Repdraft — дневник тренировок в зале: планы, запись подходов и каталог упражнений. Работает офлайн на телефоне.',
 	'nav.tabHome': 'Главная',
 	'nav.exercises': 'Упражнения',
 	'nav.liveActive': 'Есть незавершённая тренировка',
@@ -678,50 +680,52 @@ const ru: Dict = {
 	'privacy.title': 'Конфиденциальность',
 	'privacy.back': 'Аккаунт',
 	'privacy.link': 'Конфиденциальность',
-	'privacy.draftNote':
-		'Черновик для пользователей и оператора. Это не готовый юридический документ: формулировки должен проверить юрист под ваше юрлицо и 152‑ФЗ / GDPR.',
-	'privacy.updated': 'Обновлено: август 2026',
-	'privacy.s1Title': 'Кто обрабатывает данные',
+	'privacy.lead':
+		'Настоящая политика описывает, какие данные обрабатывает веб-приложение Repdraft и на каких условиях.',
+	'privacy.updated': 'Дата публикации: 30 августа 2026 г.',
+	'privacy.s0Title': '1. Общие положения',
+	'privacy.s0Body':
+		'Политика действует для сайта и PWA Repdraft. Используя сервис, вы соглашаетесь с обработкой данных в объёме, необходимом для его работы. Обработка персональных данных выполняется в соответствии с Федеральным законом № 152-ФЗ «О персональных данных».',
+	'privacy.s1Title': '2. Оператор и контакты',
 	'privacy.s1Body':
-		'Оператор сервиса Repdraft (укажите юрлицо / ИП и контакты перед публикацией). Обработка облачных данных выполняется с помощью инфраструктурного провайдера Supabase.',
-	'privacy.s2Title': 'Какие данные мы обрабатываем',
+		'Оператор персональных данных: {operator}. Запросы по персональным данным, отзыв согласия и обращения субъектов данных направляйте на {email}.',
+	'privacy.s2Title': '3. Какие данные мы обрабатываем',
 	'privacy.s2Body':
-		'При регистрации и использовании аккаунта: email, данные входа (в т.ч. через провайдера, если включён), имя для приветствия. В продукте: сохранённые тренировки, личные рекорды, история завершённых тренировок, публичные клипы техники (анимация и подпись автора). На устройстве также хранятся черновик, закладки, тема, язык и незавершённая тренировка.',
-	'privacy.s3Title': 'Зачем',
+		'При регистрации и входе: адрес электронной почты и данные аутентификации (в том числе через Google, если включён такой способ входа). В профиле: имя для приветствия по вашему выбору. В приложении: планы тренировок, личные рекорды, история завершённых тренировок, а также опубликованные вами клипы техники (анимация и подпись). На устройстве локально: черновик тренировки, закладки, тема оформления, язык интерфейса и незавершённая активная тренировка. Мы не собираем рекламные идентификаторы и не используем стороннюю маркетинговую аналитику.',
+	'privacy.s3Title': '4. Цели и правовые основания',
 	'privacy.s3Body':
-		'Чтобы предоставить аккаунт, синхронизировать тренировки и рекорды между устройствами, показывать историю и (по желанию пользователя) публиковать клипы техники в ленте.',
-	'privacy.s4Title': 'Где хранятся данные',
+		'Данные обрабатываются для регистрации и входа, синхронизации тренировок и рекордов между устройствами, отображения истории, работы приложения без постоянного подключения к сети и (если вы сами публикуете клип) показа клипа другим пользователям. Правовые основания: исполнение пользовательского соглашения (п. 5 ч. 1 ст. 6 152-ФЗ) и ваше согласие при публикации клипов и отдельных настройках (п. 1 ч. 1 ст. 6 152-ФЗ).',
+	'privacy.s4Title': '5. Хранение данных',
 	'privacy.s4Body':
-		'Данные в аккаунте хранятся у инфраструктурного провайдера (регион задаётся оператором). Данные на телефоне хранятся в памяти приложения. Незавершённая тренировка пока не синхронизируется между устройствами.',
-	'privacy.s9Title': 'Cookies и память приложения',
-	'privacy.s9Body':
-		'Сторонних рекламных и аналитических cookies нет. Состояние приложения (тренировки, настройки, черновик, закладки, активная тренировка) и вход в аккаунт хранятся в памяти приложения на телефоне. Это нужно для работы сервиса. Баннер согласия на cookies не показываем, пока нет маркетинговых трекеров; при их появлении политика и UI будут обновлены.',
-	'privacy.s5Title': 'Публичные клипы',
+		'Данные аккаунта размещаются у инфраструктурного провайдера Supabase. Копия данных также хранится в памяти браузера на вашем устройстве для быстрого доступа и работы без сети. Незавершённая активная тренировка хранится только на устройстве и не синхронизируется между устройствами.',
+	'privacy.s5Title': '6. Cookie и локальное хранилище',
 	'privacy.s5Body':
-		'Опубликованный GIF и подпись автора видны другим пользователям. Жалобы могут скрыть клип из ленты. Не публикуйте персональные данные третьих лиц без оснований.',
-	'privacy.s6Title': 'Ваши права',
+		'Repdraft не использует сторонние рекламные или аналитические cookie. Для входа в аккаунт и сохранения тренировок, настроек и черновика используются cookie и localStorage браузера. Это технически необходимо для работы сервиса. Отключение хранилища в браузере может ограничить функции приложения.',
+	'privacy.s6Title': '7. Публичные клипы техники',
 	'privacy.s6Body':
-		'Вы можете уточнить имя в профиле, выйти из аккаунта и запросить удаление аккаунта в разделе «Опасная зона» на странице аккаунта. Резервную копию тренировок, истории и рекордов можно скачать или восстановить в разделе аккаунта. По вопросам обработки пишите на контакт оператора.',
-	'privacy.s7Title': 'Хранение и удаление',
+		'Если вы публикуете клип, GIF и указанная вами подпись становятся доступны другим пользователям сервиса. Пользователи могут пожаловаться на клип; при подтверждении нарушения клип скрывается из общей ленты. Не размещайте персональные данные других людей без их согласия и законного основания.',
+	'privacy.s7Title': '8. Передача третьим лицам',
 	'privacy.s7Body':
-		'Пока аккаунт активен, данные тренировок и рекордов хранятся для синхронизации. При удалении аккаунта приложение стремится стереть связанные записи, файлы клипов и учётную запись; данные на телефоне очищаются. Сроки бэкапов у провайдера и окончательные формулировки определяет оператор или юрист.',
-	'privacy.s8Title': 'Контакт',
+		'Для облачного хранения и входа мы привлекаем Supabase (supabase.com). При входе через Google обработку выполняет Google в рамках его политики конфиденциальности. Мы не продаём персональные данные и не передаём их рекламным сетям. Передача возможна по требованию закона или для защиты прав пользователей и сервиса.',
+	'privacy.s8Title': '9. Ваши права',
 	'privacy.s8Body':
-		'Замените на рабочий email оператора (например, privacy@your-domain). Пока контакт не указан, запросы субъектов обрабатывайте через канал поддержки продукта.',
-	'privacy.s10Title': 'Медиа упражнений (Gym visual)',
+		'Вы вправе получить сведения об обработке, потребовать уточнения, блокирования или удаления данных, отозвать согласие, если обработка основана на согласии. В приложении доступны: изменение имени для приветствия, выход из аккаунта, удаление аккаунта (раздел «Опасная зона»), экспорт и восстановление резервной копии тренировок, истории и рекордов. Запросы также можно направить на {email}. Мы ответим в сроки, установленные законом.',
+	'privacy.s9Title': '10. Сроки хранения и удаление',
+	'privacy.s9Body':
+		'Пока аккаунт активен, данные хранятся для синхронизации и отображения истории. При удалении аккаунта приложение удаляет связанные записи в облаке, размещённые вами клипы и учётную запись входа, а также очищает локальные данные на устройстве. Отдельные резервные копии у провайдера могут сохраняться ограниченное время по правилам инфраструктуры и законодательства.',
+	'privacy.s10Title': '11. Трансграничная передача',
 	'privacy.s10Body':
-		'Иллюстрации и GIF упражнений в каталоге — © Gym visual. Мы показываем их только на экранах каталога и карточки упражнения, не больше 180×180 px.',
-	'privacy.s10Terms':
-		'Условия Gym visual: https://gymvisual.com/content/3-terms-and-conditions-of-use. Клонирование репозитория Repdraft не даёт прав на медиа.',
-	'privacy.checklistTitle': 'Чеклист для юриста / оператора',
-	'privacy.checklistLead':
-		'Не показывать пользователям как «юридически утверждено», пока пункты не закрыты.',
-	'privacy.check1': 'Юрлицо / ИП, ИНН, адрес и privacy-email в тексте политики',
-	'privacy.check2': 'Уведомление Роскомнадзора (если нет исключения) и внутренний порядок ответов субъекту',
-	'privacy.check3': 'DPA / договор с Supabase, регион проекта, трансграничная передача',
-	'privacy.check4': 'Отдельное согласие / дисклеймер на публикацию клипов; notice guest→cloud уже в продукте',
-	'privacy.check5': 'Сроки хранения, бэкапы после erase, возраст 18+',
-	'privacy.check6': 'Форма согласия при регистрации (если требуется); экспорт уже в продукте',
+		'Supabase может обрабатывать данные на серверах за пределами Российской Федерации. Такая передача выполняется для целей, указанных в политике, с соблюдением требований 152-ФЗ о трансграничной передаче персональных данных.',
+	'privacy.s11Title': '12. Изменения политики',
+	'privacy.s11Body':
+		'Мы можем обновлять политику при изменении функций сервиса или требований закона. Актуальная версия всегда доступна на этой странице; дата публикации указана выше. Продолжение использования сервиса после обновления означает согласие с новой редакцией, если иное не требуется законом.',
+	'privacy.s12Title': '13. Возраст пользователей',
+	'privacy.s12Body':
+		'Сервис предназначен для пользователей от 18 лет. Мы сознательно не собираем персональные данные лиц младше 18 лет. Если вам стало известно о такой обработке, напишите на {email}.',
+	'privacy.s13Title': '14. Медиа упражнений Gym Visual',
+	'privacy.s13Body':
+		'Иллюстрации и GIF упражнений в каталоге принадлежат Gym Visual и используются в соответствии с их условиями. Мы показываем медиа только на экранах каталога и карточки упражнения, в размере не более 180×180 px. Копирование медиа из Repdraft или репозитория проекта не передаёт вам права на контент Gym Visual.',
+	'privacy.s13TermsLink': 'Условия использования Gym Visual',
 	'auth.privacyHint': 'Подробнее о данных:',
 	'attr.media': 'Медиа упражнений',
 	'attr.versionAria': 'Версия приложения {version}'
@@ -740,6 +744,8 @@ const en: Dict = {
 	'nav.main': 'Main navigation',
 	'nav.home': 'Repdraft: home',
 	'brand.tagline': 'LOG. SET. CONQUER.',
+	'app.metaDescription':
+		'Repdraft — a calm gym workout log: plans, set tracking, and exercise catalog. Works offline on your phone.',
 	'nav.tabHome': 'Home',
 	'nav.exercises': 'Exercises',
 	'nav.liveActive': 'Active workout in progress',
@@ -1400,50 +1406,52 @@ const en: Dict = {
 	'privacy.title': 'Privacy',
 	'privacy.back': 'Account',
 	'privacy.link': 'Privacy',
-	'privacy.draftNote':
-		'Draft for users and the operator. Not a finished legal document: have counsel review wording for your entity and 152-FZ / GDPR.',
-	'privacy.updated': 'Updated: August 2026',
-	'privacy.s1Title': 'Who processes data',
+	'privacy.lead':
+		'This policy explains what data the Repdraft web app processes and on what terms.',
+	'privacy.updated': 'Published: 30 August 2026',
+	'privacy.s0Title': '1. General',
+	'privacy.s0Body':
+		'This policy applies to the Repdraft website and PWA. By using the service, you agree to data processing to the extent required for the app to work. Personal data is processed in line with applicable privacy laws, including GDPR where it applies.',
+	'privacy.s1Title': '2. Controller and contact',
 	'privacy.s1Body':
-		'The Repdraft service operator (add legal entity / sole proprietor and contacts before publishing). Cloud processing uses Supabase as infrastructure.',
-	'privacy.s2Title': 'What we process',
+		'Data controller: {operator}. For privacy requests, consent withdrawal, and data-subject enquiries, email {email}.',
+	'privacy.s2Title': '3. What we process',
 	'privacy.s2Body':
-		'On sign-up and account use: email, auth data (including a provider if enabled), greeting name. In-product: workout plans, personal records, finished session history (always local; cloud when the table exists), public technique clips (GIF and author label). The device also stores draft, bookmarks, theme, locale, and an unfinished active session.',
-	'privacy.s3Title': 'Why',
+		'On sign-up and sign-in: email address and authentication data (including Google sign-in when enabled). In your profile: a greeting name you choose. In the app: workout plans, personal records, finished session history, and technique clips you publish (GIF and label). On your device locally: workout draft, bookmarks, theme, interface language, and an unfinished active session. We do not collect ad identifiers or use third-party marketing analytics.',
+	'privacy.s3Title': '4. Purposes and legal bases',
 	'privacy.s3Body':
-		'To provide the account, sync plans and records across devices, show history, and (if you choose) publish technique clips to the feed.',
-	'privacy.s4Title': 'Where data lives',
+		'We process data to register and sign you in, sync plans and records across devices, show history, run the app offline, and (if you publish a clip) show that clip to other users. Legal bases: performance of the user agreement and, where required, your consent for clip publishing and specific settings.',
+	'privacy.s4Title': '5. Storage',
 	'privacy.s4Body':
-		'Cloud data is hosted by Supabase (project region is set by the operator). Local data is in the browser (localStorage). An unfinished live session is not synced across devices yet.',
-	'privacy.s9Title': 'Cookies and localStorage',
-	'privacy.s9Body':
-		'We do not use third-party advertising or analytics cookies. App state (plans, prefs, draft, bookmarks, active session) and the sign-in session (via Supabase Auth) live in browser localStorage - required for the product to work. We do not show a cookie consent banner while there are no marketing trackers; if that changes, this policy and the UI will be updated.',
-	'privacy.s5Title': 'Public clips',
+		'Account data is hosted by Supabase. A copy is also stored in your browser for fast access and offline use. An unfinished active session stays on the device only and is not synced across devices.',
+	'privacy.s5Title': '6. Cookies and local storage',
 	'privacy.s5Body':
-		'Published GIFs and author labels are visible to other users. Reports may hide a clip from the feed. Do not publish other people’s personal data without a lawful basis.',
-	'privacy.s6Title': 'Your rights',
+		'Repdraft does not use third-party advertising or analytics cookies. Sign-in and saving workouts, settings, and drafts rely on browser cookies and localStorage. This is technically required for the service. Disabling browser storage may limit app features.',
+	'privacy.s6Title': '7. Public technique clips',
 	'privacy.s6Body':
-		'You can update your greeting name, sign out, and request account deletion in the Danger zone on the account page. You can download or restore a backup of workouts, history, and records from the account page. For processing questions, contact the operator.',
-	'privacy.s7Title': 'Retention and deletion',
+		'If you publish a clip, the GIF and label you provide are visible to other users. Users may report a clip; if a violation is confirmed, the clip is hidden from the shared feed. Do not post other people’s personal data without their consent and a lawful basis.',
+	'privacy.s7Title': '8. Third parties',
 	'privacy.s7Body':
-		'While the account is active, cloud plans and records are kept for sync. On account deletion the app aims to erase related cloud rows, clip files, and the Auth user; local cache on the device is cleared. Provider backup windows and final retention wording are for the operator / counsel.',
-	'privacy.s8Title': 'Contact',
+		'We use Supabase (supabase.com) for cloud storage and authentication. Google sign-in is processed by Google under its privacy policy. We do not sell personal data or share it with ad networks. Disclosure may occur when required by law or to protect users and the service.',
+	'privacy.s8Title': '9. Your rights',
 	'privacy.s8Body':
-		'Replace with the operator’s working email (e.g. privacy@your-domain). Until set, handle data-subject requests via your product support channel.',
-	'privacy.s10Title': 'Exercise media (Gym visual)',
+		'You may request access, rectification, erasure, restriction, or portability where applicable, and withdraw consent where processing is consent-based. In the app you can update your greeting name, sign out, delete your account (Danger zone), and export or restore a backup of workouts, history, and records. You may also email {email}. We respond within applicable legal time limits.',
+	'privacy.s9Title': '10. Retention and deletion',
+	'privacy.s9Body':
+		'While your account is active, data is kept for sync and history. When you delete your account, the app removes related cloud records, clips you uploaded, and the sign-in account, and clears local data on the device. Provider backups may be retained for a limited time under infrastructure and legal rules.',
+	'privacy.s10Title': '11. International transfers',
 	'privacy.s10Body':
-		'Exercise illustrations and GIFs in the catalog are © Gym visual. We display them only on catalog and exercise detail screens, at 180×180 px max.',
-	'privacy.s10Terms':
-		'Gym visual terms: https://gymvisual.com/content/3-terms-and-conditions-of-use. Cloning the Repdraft repo does not grant media rights.',
-	'privacy.checklistTitle': 'Checklist for counsel / operator',
-	'privacy.checklistLead':
-		'Do not present this page as legally approved until the items below are closed.',
-	'privacy.check1': 'Legal entity, tax ID, address, and privacy email in the policy text',
-	'privacy.check2': 'Roskomnadzor notice (if required) and internal subject-request process',
-	'privacy.check3': 'DPA with Supabase, project region, cross-border transfer wording',
-	'privacy.check4': 'Separate clip-publish disclosure; guest→cloud migrate notice is in the product',
-	'privacy.check5': 'Retention periods, post-erase backups, 18+ age gate if needed',
-	'privacy.check6': 'Sign-up consent form (if required); export is already in the product',
+		'Supabase may process data on servers outside your country. Such transfers are made for the purposes described in this policy and with appropriate safeguards where required by law.',
+	'privacy.s11Title': '12. Policy updates',
+	'privacy.s11Body':
+		'We may update this policy when the service or legal requirements change. The current version is always on this page; the publication date is shown above. Continued use after an update means you accept the new version where the law allows.',
+	'privacy.s12Title': '13. Age',
+	'privacy.s12Body':
+		'The service is intended for users aged 18 and over. We do not knowingly collect personal data from anyone under 18. If you believe we have, contact {email}.',
+	'privacy.s13Title': '14. Exercise media (Gym Visual)',
+	'privacy.s13Body':
+		'Exercise illustrations and GIFs in the catalog belong to Gym Visual and are used under their terms. We display them only on catalog and exercise detail screens, at 180×180 px maximum. Copying media from Repdraft or its repository does not grant you rights to Gym Visual content.',
+	'privacy.s13TermsLink': 'Gym Visual terms of use',
 	'auth.privacyHint': 'About your data:',
 	'attr.media': 'Exercise media',
 	'attr.versionAria': 'App version {version}'
