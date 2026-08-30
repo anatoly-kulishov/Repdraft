@@ -1,0 +1,60 @@
+---
+description: Guardrails before CSS/architecture refactors — visual baseline, codestyle, phased migration
+alwaysApply: false
+---
+
+# Refactor guardrails (read before large diffs)
+
+## Gate: tests first
+
+Do **not** start CSS split / architecture refactors until:
+
+1. `npm run test:e2e:update` — visual snapshots committed on `main`
+2. `npm run e2e:ui` — functional audit green (mobile + desktop)
+3. `npm run check:domain` + `npm run check` — green
+
+After each refactor phase: `npm run test:e2e` (compare snapshots) + sacred loop spec.
+
+## Codestyle (TS / Svelte)
+
+- **Layers:** routes/components → stores/domain → storage (see `architecture.mdc`). No Supabase in components except established panel paths.
+- **No `any`.** Exhaustive switches on unions (`never` default).
+- **Imports** at top of file only.
+- **Touch targets** ≥ 48×48px for interactive controls.
+- **i18n:** user strings via `translate()` only.
+- **One primary CTA** per viewport block (MVP).
+- Prefer **extend** existing components/stores over parallel abstractions.
+
+## CSS codestyle (target state)
+
+Current: `src/lib/styles/app.css` (~16k lines) — monolith. Migrate incrementally:
+
+| Target file | Contents |
+|-------------|----------|
+| `layout.css` (routes) | Design tokens, `:root`, `[data-theme]` |
+| `styles/shell.css` | App shell, sidebar, tabbar, header |
+| `styles/components/*.css` | One file per block: `.panel`, `.btn-*`, `.entity-row`, `.live-*`, `.builder-*` |
+| `styles/utilities.css` | Rare shared helpers only |
+
+**Selector rules:**
+
+- Max **2–3** levels of nesting; avoid `html[data-theme='light'] .a .b .c .d`.
+- Prefer **BEM-ish blocks**: `.block`, `.block__el`, `.block--mod` — match existing names (`.live-set-row`, `.entity-row`).
+- No new `!important` unless documenting why (PWA safe-area edge cases).
+- Component-specific overrides live **next to the block**, not scattered.
+- Tailwind in Svelte for one-offs; tokens from `layout.css` for colors/spacing.
+
+**Do not** rename classes in bulk without snapshot update in the same PR.
+
+## Phased refactor order (backlog)
+
+1. **P0** — Visual + e2e baseline (this release)
+2. **P1** — Extract tokens + shell CSS from `app.css` (no class renames)
+3. **P2** — Split live + builder blocks (~3k lines each)
+4. **P3** — Split catalog + workouts + home
+5. **P4** — Dedupe duplicate selectors; reduce `html[data-theme='light']` repetition via custom properties
+6. **Defer** — Domain/store renames, folder FSD migration, dependency adds
+
+## Sacred loop
+
+Any refactor that touches live/builder/workouts must keep the loop in `GOAL.md` faster or neutral — not slower.
