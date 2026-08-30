@@ -25,35 +25,43 @@ After each refactor phase: `npm run test:e2e` (compare snapshots) + sacred loop 
 - **One primary CTA** per viewport block (MVP).
 - Prefer **extend** existing components/stores over parallel abstractions.
 
-## CSS codestyle (target state)
+## CSS layout (current)
 
-Current: `src/lib/styles/app.css` (~16k lines) — monolith. Migrate incrementally:
+Monolith split in **v0.14.6** — cascade order preserved (contiguous line chunks).
 
-| Target file | Contents |
-|-------------|----------|
-| `layout.css` (routes) | Design tokens, `:root`, `[data-theme]` |
-| `styles/shell.css` | App shell, sidebar, tabbar, header |
-| `styles/components/*.css` | One file per block: `.panel`, `.btn-*`, `.entity-row`, `.live-*`, `.builder-*` |
-| `styles/utilities.css` | Rare shared helpers only |
+| File | Contents |
+|------|----------|
+| `routes/layout.css` | Imports shadcn + **tokens** + app aggregator |
+| `styles/blocks/tokens.css` | `:root`, `[data-theme='light']` token overrides |
+| `styles/blocks/shell.css` | App shell, sidebar, tabbar, header |
+| `styles/blocks/typography.css` | `.page-title`, `.page-lead`, … |
+| `styles/blocks/surfaces.css` | `.panel`, `.media-well`, … |
+| `styles/blocks/shared-lists.css` | `.entity-row`, swipe rows, card lists |
+| `styles/blocks/controls.css` | `.btn-*`, fields, kinetics keyframes |
+| `styles/blocks/catalog.css` | Catalog grid, exercise cards, zones |
+| `styles/blocks/home.css` | Home page |
+| `styles/blocks/live.css` | Active workout / live log |
+| `styles/blocks/builder.css` | Workout builder |
+| `styles/blocks/screen-misc.css` | ScreenHeader, auth layout, records, settings |
+| `styles/blocks/error-articles.css` | 404, articles / prose |
+| `styles/blocks/utilities.css` | `html.e2e-stable` (tests) |
+| `styles/app.css` | `@import` aggregator only |
+
+Regenerate from monolith backup: `node scripts/split-app-css.mjs` (needs `scripts/app.css.monolith.bak` — gitignored).
 
 **Selector rules:**
 
 - Max **2–3** levels of nesting; avoid `html[data-theme='light'] .a .b .c .d`.
-- Prefer **BEM-ish blocks**: `.block`, `.block__el`, `.block--mod` — match existing names (`.live-set-row`, `.entity-row`).
+- Prefer **BEM-ish blocks**: `.block`, `.block__el`, `.block--mod` — match existing names.
 - No new `!important` unless documenting why (PWA safe-area edge cases).
-- Component-specific overrides live **next to the block**, not scattered.
-- Tailwind in Svelte for one-offs; tokens from `layout.css` for colors/spacing.
+- **Do not** rename classes in bulk without snapshot update in the same PR.
 
-**Do not** rename classes in bulk without snapshot update in the same PR.
+## Phased refactor status
 
-## Phased refactor order (backlog)
-
-1. **P0** — Visual + e2e baseline (this release)
-2. **P1** — Extract tokens + shell CSS from `app.css` (no class renames)
-3. **P2** — Split live + builder blocks (~3k lines each)
-4. **P3** — Split catalog + workouts + home
-5. **P4** — Dedupe duplicate selectors; reduce `html[data-theme='light']` repetition via custom properties
-6. **Defer** — Domain/store renames, folder FSD migration, dependency adds
+1. **P0** — Visual + e2e baseline ✅ (`v0.14.5`)
+2. **P1–P3** — CSS split into blocks ✅ (`cursor/v0.14.6-css-split`)
+3. **P4** — Incremental: move repeated `html[data-theme='light']` overrides into tokens (per block, with `test:e2e`)
+4. **Defer** — Domain/store renames, folder FSD migration, dependency adds
 
 ## Sacred loop
 
