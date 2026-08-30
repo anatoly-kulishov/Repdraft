@@ -30,3 +30,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .tmp/
 design-audit/
+test-results/
+playwright-report/
