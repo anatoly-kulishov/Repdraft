@@ -546,6 +546,26 @@ export function withSavedName(plan: WorkoutPlan, untitledFallback = 'Untitled wo
 	};
 }
 
+/** Prescription + title only — ignores createdAt/updatedAt. */
+export function workoutPlanContentEqual(a: WorkoutPlan, b: WorkoutPlan): boolean {
+	const nameA = clampPlanName(a.name.replace(/\s+/g, ' ').trim());
+	const nameB = clampPlanName(b.name.replace(/\s+/g, ' ').trim());
+	if (nameA !== nameB) return false;
+	if (a.exercises.length !== b.exercises.length) return false;
+	return a.exercises.every((ex, index) => {
+		const other = b.exercises[index];
+		if (!other) return false;
+		return (
+			ex.exerciseId === other.exerciseId &&
+			ex.sets === other.sets &&
+			ex.reps === other.reps &&
+			ex.restSec === other.restSec &&
+			(ex.groupId ?? null) === (other.groupId ?? null) &&
+			(ex.altGroupId ?? null) === (other.altGroupId ?? null)
+		);
+	});
+}
+
 /** Unique target muscle labels for plan cards (order preserved, capped). */
 export function planTargetSummary(
 	plan: WorkoutPlan,

@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import {
 	createEmptyRecord,
 	mergePersonalRecords,
+	personalRecordContentEqual,
 	sanitizePersonalRecord
 } from '$lib/domain/records';
 import type { PersonalRecord } from '$lib/domain/types';
@@ -95,6 +96,8 @@ function createRecordsStore() {
 			});
 			if (!sanitized.ok) return false;
 			const next = sanitized.record;
+			const existing = get(store).find((r) => r.exerciseId === next.exerciseId);
+			if (existing && personalRecordContentEqual(existing, next)) return true;
 			const cloudOk = await mirrorCloudWrite({
 				localWrite: () => localRecordRepository.save(next),
 				cloudWrite: () => supabaseRecordRepository.save(next),

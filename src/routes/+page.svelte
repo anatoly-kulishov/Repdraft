@@ -1,7 +1,10 @@
 <script lang="ts">
+	import '$lib/styles/blocks/home.css';
+	import { page } from '$app/stores';
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import BrandTagline from '$lib/components/BrandTagline.svelte';
+	import HomePageSkeleton from '$lib/components/HomePageSkeleton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import {
@@ -25,6 +28,7 @@
 	import { live } from '$lib/stores/live';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { ChevronRight, LogIn, NotebookPen, Play, Plus, Smartphone, UserRound } from '@lucide/svelte';
@@ -44,12 +48,43 @@
 	let isFirstTimeHome = $derived(!hasPlans && !hasSessionHistory);
 	let isGuest = $derived($auth.ready && $auth.configured && !$auth.user);
 	let authHref = '/auth?next=%2F';
+	let pageReady = $derived(
+		$auth.ready && $auth.dataBootstrap && $live.ready && $live.historyHydrated
+	);
+
+	/** Dev/QA: ?skeleton=create|start */
+	let skeletonForce = $derived(
+		$page.url.searchParams.get('skeleton') === 'create'
+			? ('create' as const)
+			: $page.url.searchParams.get('skeleton') === 'start'
+				? ('start' as const)
+				: null
+	);
+	/** app.html peek: signed-in session or saved plans before Svelte mounts (offline-safe). */
+	let bootLikelyStart = $derived(
+		browser &&
+			(document.documentElement.dataset.authBoot === 'account' ||
+				document.documentElement.dataset.homeBoot === 'start')
+	);
+	let showBootSkeleton = $derived(!pageReady || skeletonForce !== null);
+	/**
+	 * Guest create skeleton only when auth confirmed guest with no plans.
+	 * While auth bootstraps or SSR, prefer start — never flash guest UI to signed-in users.
+	 */
+	let bootSkeletonVariant = $derived.by((): 'start' | 'create' => {
+		if (skeletonForce) return skeletonForce;
+		if (!browser) return 'start';
+		if (bootLikelyStart) return 'start';
+		if ($auth.ready && $auth.user) return 'start';
+		if ($auth.ready && isGuest && !hasPlans) return 'create';
+		return 'start';
+	});
 
 	let isCreateHome = $derived(!hasPlans);
-	let showGuestCreateHero = $derived($auth.ready && isGuest && isCreateHome);
+	let showGuestCreateHero = $derived(pageReady && isGuest && isCreateHome);
 	/** Signed-in home, or guest who already has plans (needs Start, not only a list). */
 	let showReadyHeader = $derived(
-		!showGuestCreateHero && (hasPlans || ($auth.ready && !isGuest))
+		pageReady && !showGuestCreateHero && (hasPlans || !isGuest)
 	);
 	/** Pinned plan wins; else split rotation after last finished. */
 	let nextPlan = $derived.by(() =>
@@ -58,9 +93,15 @@
 	let nextPlanMuscles = $derived.by(() =>
 		nextPlan && indexReady ? planTargetSummary(nextPlan, indexById, lang) : ''
 	);
-	let nextPlanExCount = $derived.by(() =>
-		nextPlan ? translate(lang, 'workouts.exCount', { n: planExerciseSlotCount(nextPlan) }) : ''
-	);
+	/** One meta line: drop abbr. period before middot so we never get «упражн.·». */
+	let nextPlanMeta = $derived.by(() => {
+		if (!nextPlan || !indexReady) return '';
+		const exCount = translate(lang, 'workouts.exCount', { n: planExerciseSlotCount(nextPlan) });
+		const muscles = nextPlanMuscles;
+		if (!muscles) return exCount;
+		const exLabel = exCount.replace(/\.$/, '');
+		return `${exLabel} · ${muscles}`;
+	});
 
 	let mockupSubtitle = $derived.by(() => {
 		if (hasActive) return translate(lang, 'home.readyTitle');
@@ -132,15 +173,19 @@
 	);
 
 	onMount(() => {
-		if (!get(live).historyHydrated) {
-			void live.refreshHistory();
-		}
-		if (!indexReady) {
-			void loadExerciseIndex().then((index) => {
+		void (async () => {
+			while (!$auth.ready || !$auth.dataBootstrap) {
+				await new Promise((r) => setTimeout(r, 20));
+			}
+			if (!get(live).historyHydrated) {
+				await live.refreshHistory();
+			}
+			if (!indexReady) {
+				const index = await loadExerciseIndex();
 				indexById = new Map(index.map((item) => [item.id, item]));
 				indexReady = true;
-			});
-		}
+			}
+		})();
 	});
 </script>
 
@@ -150,12 +195,21 @@
 
 <section
 	class="home-page content-page"
-	class:home-page--start={hasPlans}
-	class:home-page--create={isCreateHome}
-	class:home-page--guest={$auth.ready && isGuest}
+	class:home-page--start={pageReady && hasPlans}
+	class:home-page--create={pageReady && isCreateHome}
+	class:home-page--guest={pageReady && isGuest}
+	class:home-page--booting={showBootSkeleton}
+	class:home-page--booting-start={showBootSkeleton && bootSkeletonVariant === 'start'}
+	class:home-page--booting-create={showBootSkeleton && bootSkeletonVariant === 'create'}
 	aria-labelledby="home-heading"
 >
-	{#if showReadyHeader && !hasActive}
+	{#if showBootSkeleton}
+		<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
+		<HomePageSkeleton
+			label={translate(lang, 'common.loading')}
+			variant={bootSkeletonVariant}
+		/>
+	{:else if showReadyHeader && !hasActive}
 		<header class="home-header home-header--mockup">
 			<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
 			<a class="home-header__row home-header__row--link" href={mockupCtaHref} aria-label={mockupCardAria}>
@@ -168,11 +222,7 @@
 						{#if nextPlan}
 							<p class="home-header__plan">{nextPlan.name}</p>
 							{#if indexReady}
-								<p class="home-header__meta">
-									{nextPlanExCount}{#if nextPlanMuscles}
-										<span class="home-header__meta-sep" aria-hidden="true"> · </span
-										>{nextPlanMuscles}{/if}
-								</p>
+								<p class="home-header__meta">{nextPlanMeta}</p>
 							{/if}
 						{/if}
 						{#if isFirstTimeHome}
@@ -183,11 +233,7 @@
 						{#if nextPlan}
 							<p class="home-header__plan">{nextPlan.name}</p>
 							{#if indexReady}
-								<p class="home-header__meta">
-									{nextPlanExCount}{#if nextPlanMuscles}
-										<span class="home-header__meta-sep" aria-hidden="true"> · </span
-										>{nextPlanMuscles}{/if}
-								</p>
+								<p class="home-header__meta">{nextPlanMeta}</p>
 							{/if}
 						{/if}
 					{/if}
@@ -213,6 +259,7 @@
 		</header>
 	{/if}
 
+	{#if !showBootSkeleton}
 	{#if hasActive && active}
 		<a class="home-continue-card panel" href={`/live/${active.planId}`}>
 			<div class="home-continue-card__copy">
@@ -354,4 +401,5 @@
 			</div>
 		{/if}
 	</div>
+	{/if}
 </section>

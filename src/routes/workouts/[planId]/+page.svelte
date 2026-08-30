@@ -12,6 +12,7 @@
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
 	import { altGroupMemberRole, groupMemberRole, planExerciseSlotCount, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
+	import { peekLocalPlan } from '$lib/storage/localWorkoutRepository';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { goto } from '$app/navigation';
@@ -37,6 +38,11 @@
 
 	let muscles = $derived(plan ? planTargetSummary(plan, indexById, lang) : '');
 	let totalSets = $derived(plan ? planPrescribedSetCount(plan) : 0);
+	let skeletonExerciseRows = $derived.by(() => {
+		const peeked = peekLocalPlan(params.planId);
+		const n = peeked?.exercises.length ?? 0;
+		return Math.min(Math.max(n, 1), 6);
+	});
 
 	onMount(() => {
 		void (async () => {
@@ -86,12 +92,19 @@
 
 {#if loading}
 	<section class="workout-preview content-page content-page--narrow pb-mobile-actions" aria-busy="true">
+		<div class="workout-preview-skeleton-head lg:hidden" aria-hidden="true">
+			<div class="workout-preview-skeleton-head__bar"></div>
+		</div>
+		<div class="workout-preview-skeleton-desktop-head hidden lg:block" aria-hidden="true">
+			<div class="workout-preview-skeleton-head__bar workout-preview-skeleton-head__bar--back"></div>
+			<div class="workout-preview-skeleton-head__bar workout-preview-skeleton-head__bar--title"></div>
+		</div>
 		<div class="workout-preview-skeleton-summary" aria-hidden="true">
 			<div class="workout-preview-skeleton-summary__line workout-preview-skeleton-summary__line--lead"></div>
 			<div class="workout-preview-skeleton-summary__line workout-preview-skeleton-summary__line--meta"></div>
 		</div>
 		<ul class="workout-preview-skeleton-list" aria-hidden="true">
-			{#each Array.from({ length: 4 }, (_, i) => i) as i (i)}
+			{#each Array.from({ length: skeletonExerciseRows }, (_, i) => i) as i (i)}
 				<li class="workout-preview-skeleton-row">
 					<div class="workout-preview-skeleton-row__thumb"></div>
 					<div class="workout-preview-skeleton-row__body">

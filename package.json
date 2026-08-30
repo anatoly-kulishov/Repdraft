@@ -1,12 +1,14 @@
 {
 	"name": "repdraft",
 	"private": true,
-	"version": "0.14.4",
+	"version": "0.14.7",
 	"description": "Каталог упражнений и конструктор тренировок",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev --host",
+		"prebuild": "node ./scripts/copy-catalog-full.mjs",
 		"build": "vite build",
+		"lighthouse:mobile": "node ./scripts/lighthouse.mjs",
 		"preview": "vite preview --host",
 		"prepare": "svelte-kit sync || echo ''",
 		"build:data": "node scripts/build-exercise-data.mjs",

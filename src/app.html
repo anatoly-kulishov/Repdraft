@@ -11,13 +11,13 @@
 		<link
 			rel="preload"
 			as="style"
-			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
 			onload="this.onload=null;this.rel='stylesheet'"
 		/>
 		<noscript>
 			<link
 				rel="stylesheet"
-				href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+				href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
 			/>
 		</noscript>
 		<meta name="theme-color" content="#F2F2F7" />
@@ -189,7 +189,7 @@
 		</script>
 		%sveltekit.head%
 	</head>
-	<body data-sveltekit-preload-data="hover">
+	<body data-sveltekit-preload-data="tap">
 		<script>
 			(function () {
 				var KEYBOARD_LIFT_PX = 100;
@@ -288,8 +288,8 @@
 				var shownAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
 				/* Keep logo splash readable; still escape font/preload hangs via MAX. */
 				/* Long enough to catch a beat of the violet shimmer; escape hangs via MAX. */
-				var MIN_MS = 640;
-				var MAX_MS = 1400;
+				var MIN_MS = 280;
+				var MAX_MS = 900;
 				var hide = function () {
 					if (done) return;
 					done = true;
