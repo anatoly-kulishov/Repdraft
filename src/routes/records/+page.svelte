@@ -22,6 +22,7 @@
 	import { toasts } from '$lib/stores/toasts';
 	import { ArrowLeft, Trophy, Trash2 } from '@lucide/svelte';
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let indexReady = $state(false);
@@ -68,11 +69,16 @@
 
 	async function onRemove(exerciseId: string, name: string) {
 		if (busyId) return;
-		if (!confirm(translate(lang, 'records.confirmDelete', { name }))) return;
+		const snapshot = get(records).find((r) => r.exerciseId === exerciseId);
+		if (!snapshot) return;
 		busyId = exerciseId;
 		try {
 			await records.remove(exerciseId);
-			toasts.show(translate(lang, 'records.deleted'), 'info');
+			toasts.showUndo(
+				translate(lang, 'records.deleted'),
+				() => void records.save(snapshot),
+				'info'
+			);
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'records.deleteFail'), 'error');
 		} finally {

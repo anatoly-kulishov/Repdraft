@@ -194,29 +194,6 @@
 							</AppButton>
 						</div>
 
-						<div class="exercise-detail-page__summary">
-							<a
-								class="exercise-detail-page__summary-link"
-								href={withFromParam(catalogTargetPath(exercise.target, exercise.body_part), returnPath)}
-							>
-								{labelTarget(exercise.target, lang)}
-							</a>
-							<span class="exercise-detail-page__summary-sep">·</span>
-							<a
-								class="exercise-detail-page__summary-link"
-								href={withFromParam(catalogEquipmentPath(exercise.body_part, exercise.equipment), returnPath)}
-							>
-								{labelEquipment(exercise.equipment, lang)}
-							</a>
-							<span class="exercise-detail-page__summary-sep">·</span>
-							<a
-								class="exercise-detail-page__summary-link"
-								href={withFromParam(catalogZonePath(exercise.body_part), returnPath)}
-							>
-								{labelBodyPart(exercise.body_part, lang)}
-							</a>
-						</div>
-
 						<div class="actions-inline" class:actions-inline--pair={inDraft}>
 							{#if inDraft}
 								<AppButton

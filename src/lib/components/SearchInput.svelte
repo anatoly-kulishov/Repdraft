@@ -6,6 +6,7 @@
 	import { ICON_INPUT } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { clampSearchQuery, SEARCH_QUERY_MAX } from '$lib/domain/inputLimits';
 	import { Search, X } from '@lucide/svelte';
 
 	let {
@@ -39,7 +40,9 @@
 	}
 
 	function onInput(event: Event) {
-		const next = (event.currentTarget as HTMLInputElement).value;
+		const el = event.currentTarget as HTMLInputElement;
+		const next = clampSearchQuery(el.value);
+		if (el.value !== next) el.value = next;
 		local = next;
 		clearTimeout(timer);
 		timer = setTimeout(() => commit(next), debounceMs);
@@ -62,6 +65,7 @@
 		inputmode="search"
 		class={cn('search-field w-full search-field-with-icon', canClear && 'has-clear')}
 		{placeholder}
+		maxlength={SEARCH_QUERY_MAX}
 		autocomplete="off"
 		autocapitalize="off"
 		autocorrect="off"

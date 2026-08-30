@@ -43,7 +43,9 @@
 		filterRepsInput,
 		filterWeightInput,
 		LIVE_REPS,
-		SETS
+		REPS_INPUT_MAX_LEN,
+		SETS,
+		WEIGHT_INPUT_MAX_LEN
 	} from '$lib/domain/inputLimits';
 
 	let lang = $derived($resolvedLocale);
@@ -112,13 +114,18 @@
 		if (!id) return;
 		const current = session ?? (await live.getFinishedSession(id));
 		if (!current) return;
-		if (!confirm(translate(lang, 'workouts.confirmDeleteSession', { name: current.planName }))) {
-			return;
-		}
+		const snapshot = structuredClone(current);
 		deleting = true;
 		try {
 			await live.removeFromHistory(id);
-			toasts.show(translate(lang, 'workouts.sessionDeleted'), 'info');
+			toasts.showUndo(
+				translate(lang, 'workouts.sessionDeleted'),
+				async () => {
+					await live.restoreSession(snapshot);
+					void goto(`/workouts/history/${encodeURIComponent(id)}`, { replaceState: true });
+				},
+				'info'
+			);
 			void goto(WORKOUTS_HISTORY_HREF, { replaceState: true });
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'workouts.sessionDeleteFail'), 'error');
@@ -221,10 +228,18 @@
 	function removeHistoryExercise(exIndex: number, label: string) {
 		if (!editSession) return;
 		if (editSession.exercises.length <= 1) return;
-		if (!confirm(translate(lang, 'workouts.confirmRemoveExercise', { name: label }))) return;
+		const snapshot = structuredClone(editSession);
 		const next = removeLoggedExercise(applyDraft(editSession), exIndex);
 		editSession = next;
 		editDraft = draftFromSession(next);
+		toasts.showUndo(
+			translate(lang, 'workouts.exerciseRemoved', { name: label }),
+			() => {
+				editSession = snapshot;
+				editDraft = draftFromSession(snapshot);
+			},
+			'info'
+		);
 	}
 
 	async function onSaveEdit() {
@@ -469,6 +484,7 @@
 											type="text"
 											inputmode="decimal"
 											autocomplete="off"
+											maxlength={WEIGHT_INPUT_MAX_LEN}
 											value={editDraft[key]?.w ?? ''}
 											aria-label={translate(lang, 'live.weight')}
 											oninput={(e) => {
@@ -484,6 +500,7 @@
 											type="text"
 											inputmode="numeric"
 											autocomplete="off"
+											maxlength={REPS_INPUT_MAX_LEN}
 											value={editDraft[key]?.r ?? ''}
 											aria-label={translate(lang, 'live.reps')}
 											oninput={(e) => {

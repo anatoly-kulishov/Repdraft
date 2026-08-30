@@ -93,7 +93,7 @@
 		</div>
 		<div class="space-y-3 p-4">
 			<div>
-				<p class="font-semibold">{title}</p>
+				<p class="clip-card-title font-semibold">{title}</p>
 				<p class="text-xs text-[var(--color-muted)]">
 					{clip.authorLabel} · {clip.createdAt.slice(0, 10)}
 				</p>

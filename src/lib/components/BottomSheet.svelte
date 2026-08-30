@@ -6,7 +6,7 @@
 	import type { Snippet } from 'svelte';
 
 	let {
-		open = false,
+		open = $bindable(false),
 		titleId,
 		labelledBy = null,
 		label = null,
@@ -30,6 +30,7 @@
 	let lang = $derived($resolvedLocale);
 
 	function onOpenChange(next: boolean) {
+		open = next;
 		if (!next && dismissible) onDismiss?.();
 	}
 

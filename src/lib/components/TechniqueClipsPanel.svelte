@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { assertCleanClipTitle, assertValidGifBlob, type TechniqueClip } from '$lib/domain/clips';
+	import { assertCleanClipTitle, assertValidGifBlob, clampClipTitle, CLIP_TITLE_MAX, sanitizeClipTitle, type TechniqueClip } from '$lib/domain/clips';
 import {
 	CLIP_LIMITS,
 	clipEncodeDurationSec,
@@ -17,7 +17,9 @@ import {
 	} from '$lib/storage/techniqueClipsRepository';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import AppButton from '$lib/components/AppButton.svelte';
+	import AppInput from '$lib/components/AppInput.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import ClipGallery from '$lib/components/clips/ClipGallery.svelte';
@@ -61,6 +63,10 @@ import {
 	let sectionEl = $state<HTMLElement | null>(null);
 	/** Native `capture` only helps on phones; desktop ignores it → same file picker as gallery. */
 	let showNativeCamera = $state(false);
+	let renameOpen = $state(false);
+	let renameTarget = $state<TechniqueClip | null>(null);
+	let renameTitle = $state('');
+	let renameBusy = $state(false);
 
 	let currentUserId = $derived($auth.user?.id ?? null);
 	let cloudReady = $derived(isSupabaseConfigured());
@@ -72,6 +78,15 @@ import {
 	let canShareNative = $derived(
 		typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 	);
+	let renameUnchanged = $derived.by(() => {
+		if (!renameTarget) return true;
+		try {
+			return assertCleanClipTitle(renameTitle) === assertCleanClipTitle(renameTarget.title || '');
+		} catch {
+			return false;
+		}
+	});
+	let renameSaveDisabled = $derived(renameBusy || renameUnchanged || !renameTitle.trim());
 
 	async function refresh(id: string) {
 		const gen = ++refreshGen;
@@ -374,23 +389,50 @@ import {
 		}
 	}
 
-	async function renameClip(clip: TechniqueClip) {
-		const next = prompt(translate(lang, 'clips.renamePrompt'), clip.title || '');
-		if (next === null) return;
+	function openRenameSheet(clip: TechniqueClip) {
+		renameTarget = clip;
+		renameTitle = sanitizeClipTitle(clip.title || '');
+		renameOpen = true;
+	}
+
+	function dismissRenameSheet() {
+		renameOpen = false;
+		renameTarget = null;
+		renameTitle = '';
+	}
+
+	function onRenameTitleInput(event: Event) {
+		const el = event.currentTarget as HTMLInputElement;
+		const next = clampClipTitle(el.value);
+		renameTitle = next;
+		if (el.value !== next) el.value = next;
+	}
+
+	async function commitRename() {
+		if (!renameTarget || renameSaveDisabled) return;
+		renameBusy = true;
 		try {
-			const cleaned = assertCleanClipTitle(next);
-			if (cleaned === assertCleanClipTitle(clip.title || '')) return;
+			const cleaned = assertCleanClipTitle(renameTitle);
+			const clip = renameTarget;
+			if (cleaned === assertCleanClipTitle(clip.title || '')) {
+				dismissRenameSheet();
+				return;
+			}
 			const renamed = await renameTechniqueClip(clip.id, cleaned);
 			clips = clips.map((c) => (c.id === clip.id ? { ...c, title: renamed } : c));
 			if (lightbox?.id === clip.id) lightbox = { ...lightbox, title: renamed };
 			toasts.show(translate(lang, 'clips.renamed'), 'success');
+			dismissRenameSheet();
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'clips.renameFail'), 'error');
+		} finally {
+			renameBusy = false;
 		}
 	}
 
 	function clipTitle(clip: TechniqueClip): string {
-		return clip.title || translate(lang, 'clips.technique');
+		const fallback = translate(lang, 'clips.technique');
+		return sanitizeClipTitle(clip.title, fallback) || fallback;
 	}
 
 	function markThumbReady(id: string) {
@@ -527,7 +569,7 @@ import {
 			onThumbReady={markThumbReady}
 			onShare={shareClip}
 			onCopyGif={copyGifUrl}
-			onRename={renameClip}
+			onRename={openRenameSheet}
 			onRemove={removeClip}
 			onReport={reportClip}
 		/>
@@ -545,7 +587,46 @@ import {
 		bind:failed={lightboxFailed}
 		onClose={() => (lightbox = null)}
 		onShare={() => void shareClip(lightbox!)}
-		onRename={() => void renameClip(lightbox!)}
+		onRename={() => openRenameSheet(lightbox!)}
 		onReport={() => void reportClip(lightbox!)}
 	/>
 {/if}
+
+<BottomSheet open={renameOpen} titleId="clip-rename-title" dismissible={!renameBusy} onDismiss={dismissRenameSheet}>
+	<p id="clip-rename-title" class="bottom-sheet__title">{translate(lang, 'clips.rename')}</p>
+	<label class="mt-3 block text-sm font-medium text-[var(--color-ink)]">
+		{translate(lang, 'clips.caption')}
+		<AppInput
+			class="mt-1.5"
+			type="text"
+			maxlength={CLIP_TITLE_MAX}
+			value={renameTitle}
+			disabled={renameBusy}
+			aria-describedby="clip-rename-count"
+			oninput={onRenameTitleInput}
+		/>
+		<span
+			id="clip-rename-count"
+			class="clip-composer__caption-count"
+			class:clip-composer__caption-count--limit={renameTitle.length >= CLIP_TITLE_MAX}
+			aria-live="polite"
+		>
+			{renameTitle.length}/{CLIP_TITLE_MAX}
+		</span>
+	</label>
+	{#snippet actions()}
+		<AppButton variant="secondary" disabled={renameBusy} onclick={dismissRenameSheet}>
+			{translate(lang, 'common.cancel')}
+		</AppButton>
+		<AppButton disabled={renameSaveDisabled} aria-busy={renameBusy} onclick={() => void commitRename()}>
+			{#if renameBusy}
+				<span class="inline-flex items-center gap-2">
+					<Spinner size="sm" block={false} />
+					{translate(lang, 'auth.wait')}
+				</span>
+			{:else}
+				{translate(lang, 'clips.rename')}
+			{/if}
+		</AppButton>
+	{/snippet}
+</BottomSheet>
