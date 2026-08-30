@@ -8,5 +8,8 @@ export const ICON_BUTTON = 18;
 export const ICON_INPUT = 18;
 export const ICON_SMALL = 16;
 export const ICON_PRIMARY = 20;
+/** Floating action button — larger glyph in 3.5rem circle. */
+export const ICON_FAB = 26;
+export const ICON_FAB_STROKE = 2.375;
 
 export const ICON_STROKE = 1.75;

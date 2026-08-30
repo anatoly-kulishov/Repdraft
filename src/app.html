@@ -110,6 +110,10 @@
 					document.documentElement.style.backgroundColor = bg;
 					var meta = document.querySelector('meta[name="theme-color"]');
 					if (meta) meta.setAttribute('content', bg);
+					try {
+						document.cookie =
+							themeKey + '=' + theme + '; path=/; Max-Age=31536000; SameSite=Lax';
+					} catch (cookieThemeErr) {}
 					var bar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
 					if (bar) bar.setAttribute('content', 'black-translucent');
 					var localeKey = 'repdraft.locale';
