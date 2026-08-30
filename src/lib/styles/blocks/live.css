@@ -2748,13 +2748,6 @@ button.clip-composer__pick:hover:not(:disabled),
 	background: color-mix(in srgb, var(--color-accent-muted) 45%, var(--color-surface));
 	color: var(--color-accent-text);
 }
-.pr-note-clear {
-	min-width: 2rem;
-	min-height: 2rem;
-	padding: 0;
-	color: var(--color-muted);
-}
-
 /* — moved from builder.css (P5) — */
 @media (min-width: 768px) {
 	.live-desktop-actions .live-session-secondary {

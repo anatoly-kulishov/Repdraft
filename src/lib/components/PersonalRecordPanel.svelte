@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AppTextarea from '$lib/components/AppTextarea.svelte';
 	import AppButton from '$lib/components/AppButton.svelte';
+	import AppIconButton from '$lib/components/AppIconButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
@@ -25,6 +26,7 @@
 		sanitizePersonalRecord
 	} from '$lib/domain/records';
 	import type { PersonalRecord } from '$lib/domain/types';
+	import { cn } from '$lib/utils.js';
 	import { translate } from '$lib/i18n/messages';
 	import { records, recordsReady } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -287,37 +289,36 @@
 				{REPS.min}-{REPS.max}
 			</span>
 		</AppLabel>
-		<AppLabel class="col-span-2 min-w-0">
-			<span class="flex items-center justify-between gap-2">
-				{translate(lang, 'pr.note')}
+		<AppLabel class="pr-note-group col-span-2 min-w-0">
+			{translate(lang, 'pr.note')}
+			<span class="field-shell pr-note-shell mt-1">
+				<AppTextarea
+					class={cn('pr-note-field', noteText.length > 0 && 'pr-note-field--has-clear')}
+					rows={2}
+					maxlength={NOTE_MAX}
+					placeholder={translate(lang, 'pr.notePh')}
+					aria-describedby="pr-note-count"
+					value={noteText}
+					oninput={onNoteInput}
+				/>
 				{#if noteText.length > 0}
-					<AppButton
-						variant="ghost"
+					<AppIconButton
 						class="pr-note-clear"
 						aria-label={translate(lang, 'a11y.clearField')}
 						title={translate(lang, 'a11y.clearField')}
 						onclick={clearNote}
 					>
 						<LucideIcon icon={X} size={ICON_SMALL} />
-					</AppButton>
+					</AppIconButton>
 				{/if}
-			</span>
-			<span class="field-shell mt-1">
-				<AppTextarea
-					class="pr-note-field"
-					rows={3}
-					maxlength={NOTE_MAX}
-					placeholder={translate(lang, 'pr.notePh')}
-					value={noteText}
-					oninput={onNoteInput}
-				/>
-			</span>
-			<span
-				class="mt-1 block text-right text-[11px]"
-				class:text-[var(--color-muted)]={noteText.length < NOTE_MAX}
-				class:text-[var(--color-danger)]={noteText.length >= NOTE_MAX}
-			>
-				{noteText.length}/{NOTE_MAX}
+				<span
+					id="pr-note-count"
+					class="pr-note-count"
+					class:pr-note-count--limit={noteText.length >= NOTE_MAX}
+					aria-live="polite"
+				>
+					{noteText.length}/{NOTE_MAX}
+				</span>
 			</span>
 		</AppLabel>
 	</div>

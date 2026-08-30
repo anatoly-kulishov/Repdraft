@@ -140,12 +140,61 @@ input[data-slot='input'].search-field.has-clear:not([type='file']) {
 
 /* PR note: grow with content up to ~6 lines, then scroll.
    Keep width capped — field-sizing:content can otherwise inflate page min-width. */
+.pr-note-group {
+	margin-top: 0.125rem;
+	padding-top: 0.75rem;
+	border-top: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
+}
+
+.pr-note-shell {
+	position: relative;
+}
+
 textarea.pr-note-field {
 	field-sizing: content;
 	width: 100%;
 	min-width: 0;
 	max-width: 100%;
+	min-height: 3rem;
 	max-height: 8.75rem;
+	padding: 0.75rem 0.875rem 1.625rem;
+	border-radius: var(--radius-control);
+}
+
+textarea.pr-note-field.pr-note-field--has-clear {
+	padding-right: 2.75rem;
+}
+
+.pr-note-shell .pr-note-clear {
+	position: absolute;
+	top: 0.125rem;
+	right: 0.125rem;
+	z-index: 1;
+	min-width: 3rem;
+	min-height: 3rem;
+	width: 3rem;
+	height: 3rem;
+	padding: 0;
+	color: var(--color-muted);
+}
+
+.pr-note-shell .pr-note-clear:hover:not(:disabled) {
+	color: var(--color-ink);
+}
+
+.pr-note-count {
+	position: absolute;
+	right: 0.75rem;
+	bottom: 0.45rem;
+	pointer-events: none;
+	font-size: 0.6875rem;
+	line-height: 1;
+	color: var(--color-muted);
+}
+
+.pr-note-count--limit {
+	color: var(--color-danger);
+	font-weight: 600;
 }
 
 .field-shell {
