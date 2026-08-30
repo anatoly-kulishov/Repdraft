@@ -280,7 +280,7 @@
 					{/if}
 				</div>
 
-				<div class="builder-exercise-list">
+				<div class="builder-exercise-list" data-reorder-list>
 					{#each $draft.exercises as item, index (item.exerciseId)}
 						{@const role = groupMemberRole($draft.exercises, index)}
 						{@const altRole = altGroupMemberRole($draft.exercises, index)}

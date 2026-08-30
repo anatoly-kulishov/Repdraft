@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import {
 	parseAppTheme,
 	systemPreferredTheme,
+	THEME_COOKIE,
 	THEME_META_COLORS,
 	THEME_STORAGE_KEY,
 	type AppTheme
@@ -41,6 +42,11 @@ export function applyAppTheme(theme: AppTheme) {
 	writeMeta('apple-mobile-web-app-status-bar-style', 'black-translucent');
 	const boot = document.getElementById('pwa-boot');
 	if (boot) boot.style.background = bg;
+	try {
+		document.cookie = `${THEME_COOKIE}=${theme}; path=/; Max-Age=31536000; SameSite=Lax`;
+	} catch {
+		/* ignore */
+	}
 }
 
 function createThemeStore() {

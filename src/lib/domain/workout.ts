@@ -261,6 +261,32 @@ export function altGroupMemberRole(
 	return 'middle';
 }
 
+/** Snap drag destination so items do not land inside group/or interiors. */
+function clampDragMoveIndex(
+	exercises: { groupId?: string | null; altGroupId?: string | null }[],
+	fromIndex: number,
+	toIndex: number
+): number {
+	const n = exercises.length;
+	if (fromIndex < 0 || fromIndex >= n || toIndex < 0 || toIndex >= n) return toIndex;
+	if (fromIndex === toIndex) return toIndex;
+
+	const fromBlock = blockBounds(exercises, fromIndex);
+	if (fromBlock && toIndex >= fromBlock.start && toIndex <= fromBlock.end) {
+		return fromIndex;
+	}
+
+	const destBlock = blockBounds(exercises, toIndex);
+	if (!destBlock) return toIndex;
+	if (toIndex === destBlock.start) return toIndex;
+
+	if (toIndex > destBlock.start && toIndex <= destBlock.end) {
+		return fromIndex < toIndex ? destBlock.end : destBlock.start;
+	}
+
+	return toIndex;
+}
+
 /**
  * Move a single exercise, or the whole contiguous group when the item is grouped.
  * Destination is clamped so a group stays intact.
@@ -271,11 +297,13 @@ export function moveExercise(plan: WorkoutPlan, fromIndex: number, toIndex: numb
 		fromIndex < 0 ||
 		toIndex < 0 ||
 		fromIndex >= exercises.length ||
-		toIndex >= exercises.length ||
-		fromIndex === toIndex
+		toIndex >= exercises.length
 	) {
 		return plan;
 	}
+
+	toIndex = clampDragMoveIndex(exercises, fromIndex, toIndex);
+	if (fromIndex === toIndex) return plan;
 
 	const bounds = blockBounds(exercises, fromIndex);
 	if (!bounds) {
@@ -899,5 +927,48 @@ export function runWorkoutSelfCheck(): void {
 	}
 	if (moveOrderIds(['a', 'b', 'c'], 0, 2).join(',') !== 'b,c,a') {
 		throw new Error('moveOrderIds should move item to target index');
+	}
+
+	let movePlan = createEmptyDraft('Move');
+	for (const id of ['ex-a', 'ex-b', 'ex-c', 'ex-d']) {
+		movePlan = addExercise(movePlan, id).plan;
+	}
+	if (movePlan.exercises.map((ex) => ex.exerciseId).join(',') !== 'ex-a,ex-b,ex-c,ex-d') {
+		throw new Error('movePlan seed failed');
+	}
+	const toStart = moveExercise(movePlan, 3, 0);
+	if (toStart.exercises.map((ex) => ex.exerciseId).join(',') !== 'ex-d,ex-a,ex-b,ex-c') {
+		throw new Error(`moveExercise to start unexpected ${toStart.exercises.map((ex) => ex.exerciseId).join(',')}`);
+	}
+	const toEnd = moveExercise(movePlan, 0, 3);
+	if (toEnd.exercises.map((ex) => ex.exerciseId).join(',') !== 'ex-b,ex-c,ex-d,ex-a') {
+		throw new Error(`moveExercise to end unexpected ${toEnd.exercises.map((ex) => ex.exerciseId).join(',')}`);
+	}
+
+	let groupedPlan = createEmptyDraft('Move');
+	for (const id of ['ex-a', 'ex-b', 'ex-c', 'ex-d']) {
+		groupedPlan = addExercise(groupedPlan, id).plan;
+	}
+	groupedPlan = formSuperset(groupedPlan, ['ex-b', 'ex-c']);
+	if (groupedPlan.exercises.filter((ex) => ex.groupId).length !== 2) {
+		throw new Error('movePlan group seed failed');
+	}
+	const blockToStart = moveExercise(groupedPlan, 2, 0);
+	if (blockToStart.exercises.map((ex) => ex.exerciseId).join(',') !== 'ex-b,ex-c,ex-a,ex-d') {
+		throw new Error(
+			`moveExercise block to start unexpected ${blockToStart.exercises.map((ex) => ex.exerciseId).join(',')}`
+		);
+	}
+	const blockToEnd = moveExercise(groupedPlan, 1, 3);
+	if (blockToEnd.exercises.map((ex) => ex.exerciseId).join(',') !== 'ex-a,ex-d,ex-b,ex-c') {
+		throw new Error(
+			`moveExercise block to end unexpected ${blockToEnd.exercises.map((ex) => ex.exerciseId).join(',')}`
+		);
+	}
+	const soloPastGroup = moveExercise(groupedPlan, 3, 2);
+	if (soloPastGroup.exercises.map((ex) => ex.exerciseId).join(',') !== 'ex-a,ex-d,ex-b,ex-c') {
+		throw new Error(
+			`moveExercise solo past group unexpected ${soloPastGroup.exercises.map((ex) => ex.exerciseId).join(',')}`
+		);
 	}
 }

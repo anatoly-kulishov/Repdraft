@@ -14,6 +14,7 @@
 		holdMs = HOLD_MS_DEFAULT,
 		targetSelector = '[data-builder-index]',
 		indexAttribute = 'data-builder-index',
+		listSelector = '[data-reorder-list]',
 		rootActiveClass = 'is-builder-reorder-active',
 		eventName = 'repdraft:builder-reorder'
 	}: {
@@ -23,6 +24,7 @@
 		holdMs?: number;
 		targetSelector?: string;
 		indexAttribute?: string;
+		listSelector?: string;
 		rootActiveClass?: string;
 		eventName?: string;
 	} = $props();
@@ -35,22 +37,58 @@
 	let handleNode: HTMLElement | null = null;
 	let activePointerId: number | null = null;
 
-	function rowCount(): number {
-		return document.querySelectorAll(targetSelector).length;
+	function queryRows(): Element[] {
+		return [...document.querySelectorAll(targetSelector)];
 	}
 
-	function resolveTarget(clientY: number): number | null {
-		const el = document.elementFromPoint(window.innerWidth / 2, clientY);
-		const row = el?.closest(targetSelector);
-		if (!row) return null;
-		const raw = row.getAttribute(indexAttribute);
-		if (raw === null || raw === '') return null;
-		const rowIndex = Number(raw);
-		if (Number.isNaN(rowIndex)) return null;
-		const rect = row.getBoundingClientRect();
+	function listRect(): DOMRect | null {
+		return document.querySelector(listSelector)?.getBoundingClientRect() ?? null;
+	}
+
+	function clampInsertIndex(insertIndex: number, maxIndex: number): number {
+		return Math.max(0, Math.min(insertIndex, maxIndex));
+	}
+
+	function insertIndexForRow(rowIndex: number, rect: DOMRect, clientY: number, maxIndex: number): number {
 		const mid = rect.top + rect.height / 2;
-		const max = Math.max(0, rowCount() - 1);
-		return clientY >= mid ? Math.min(rowIndex + 1, max) : rowIndex;
+		const insertIndex = clientY >= mid ? rowIndex + 1 : rowIndex;
+		return clampInsertIndex(insertIndex, maxIndex);
+	}
+
+	function resolveTargetFromY(clientY: number, rows: Element[], maxIndex: number): number {
+		for (let i = 0; i < rows.length; i++) {
+			const rect = rows[i]!.getBoundingClientRect();
+			if (clientY < rect.top) return clampInsertIndex(i, maxIndex);
+			if (clientY <= rect.bottom) return insertIndexForRow(i, rect, clientY, maxIndex);
+		}
+		return maxIndex;
+	}
+
+	function resolveTarget(clientX: number, clientY: number): number | null {
+		const rows = queryRows();
+		const count = rows.length;
+		if (count === 0) return null;
+		const maxIndex = count - 1;
+
+		const bounds = listRect();
+		if (bounds) {
+			if (clientY <= bounds.top) return 0;
+			if (clientY >= bounds.bottom) return maxIndex;
+		}
+
+		const el = document.elementFromPoint(clientX, clientY);
+		const row = el?.closest(targetSelector);
+		if (row) {
+			const raw = row.getAttribute(indexAttribute);
+			if (raw !== null && raw !== '') {
+				const rowIndex = Number(raw);
+				if (!Number.isNaN(rowIndex)) {
+					return insertIndexForRow(rowIndex, row.getBoundingClientRect(), clientY, maxIndex);
+				}
+			}
+		}
+
+		return resolveTargetFromY(clientY, rows, maxIndex);
 	}
 
 	function emitPhase(from: number | null, over: number | null) {
@@ -91,13 +129,13 @@
 
 	function onWindowMove(event: PointerEvent) {
 		if (!active || fromIndex === null) return;
-		emitPhase(fromIndex, resolveTarget(event.clientY));
+		emitPhase(fromIndex, resolveTarget(event.clientX, event.clientY));
 	}
 
 	function endDrag(event: PointerEvent) {
 		if (!active || fromIndex === null) return;
 		const from = fromIndex;
-		const to = resolveTarget(event.clientY);
+		const to = resolveTarget(event.clientX, event.clientY);
 		window.removeEventListener('pointermove', onWindowMove);
 		window.removeEventListener('pointerup', endDrag);
 		window.removeEventListener('pointercancel', endDrag);
@@ -167,6 +205,7 @@
 <AppIconButton
 	class={cn('reorder-handle exercise-reorder-handle', pressing && 'reorder-handle--pressing')}
 	type="button"
+	data-swipe-pass=""
 	aria-label={label}
 	title={label}
 	onpointerdown={onPointerDown}

@@ -464,6 +464,7 @@
 						class="entity-list entity-list--cards"
 						class:cloud-sync-list--uncertain={listUncertain}
 						class:workouts-page__list--reorder-mode={planReorderMode}
+						data-reorder-list
 					>
 						{#each filteredPlans as plan, index (plan.id)}
 							{@const muscles = planTargetSummary(plan, indexById, lang)}

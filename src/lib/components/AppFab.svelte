@@ -1,7 +1,7 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_PRIMARY } from '$lib/components/icons/sizes';
+	import { ICON_FAB, ICON_FAB_STROKE } from '$lib/components/icons/sizes';
 	import { cn } from '$lib/utils.js';
 	import { Plus } from '@lucide/svelte';
 	import type { Component } from 'svelte';
@@ -29,5 +29,5 @@
 	aria-label={label}
 	title={label}
 >
-	<LucideIcon {icon} size={ICON_PRIMARY} />
+	<LucideIcon {icon} size={ICON_FAB} strokeWidth={ICON_FAB_STROKE} />
 </AppButton>
