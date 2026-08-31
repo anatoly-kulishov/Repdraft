@@ -714,10 +714,6 @@
 	}
 }
 
-.auth-account__legal-sep {
-	color: var(--color-muted);
-}
-
 .article-page__cta {
 	margin-top: 0.75rem;
 }
