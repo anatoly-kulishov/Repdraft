@@ -266,7 +266,7 @@
 		font-size: 0.9375rem;
 		font-weight: 400;
 		line-height: 1.25;
-		animation: kineticsToastIn 0.4s var(--ease-toast) both;
+		animation: kineticsSnackbarIn 0.28s var(--ease-snackbar) both;
 		transform-origin: center bottom;
 	}
 

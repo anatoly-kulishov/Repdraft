@@ -9,6 +9,7 @@
 </script>
 
 <script lang="ts">
+	import { vibrateUndoTap } from '$lib/domain/prefs';
 	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -125,7 +126,12 @@
 			}
 		}
 		moved = true;
-		offset = Math.min(0, Math.max(-reveal, startOffset + dx));
+		const raw = Math.min(0, Math.max(-reveal, startOffset + dx));
+		if (raw < -reveal) {
+			offset = -reveal + (raw + reveal) * 0.35;
+		} else {
+			offset = raw;
+		}
 	}
 
 	function onPointerUp() {
@@ -135,8 +141,10 @@
 		}
 		dragging = false;
 		if (axis === 'h') {
+			const wasOpen = open;
 			open = offset <= -openAt;
 			offset = open ? -reveal : 0;
+			if (!wasOpen && open) vibrateUndoTap();
 		}
 		axis = 'undecided';
 	}

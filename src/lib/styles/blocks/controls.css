@@ -708,6 +708,17 @@ button:focus-visible {
 	}
 }
 
+@keyframes kineticsSnackbarIn {
+	from {
+		opacity: 0;
+		transform: translateY(0.75rem);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
 @keyframes kineticsToastInTop {
 	from {
 		opacity: 0;
