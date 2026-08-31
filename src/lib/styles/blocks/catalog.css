@@ -2064,6 +2064,11 @@
 	background: var(--tab-link-active-bg);
 }
 
+.tab-link[data-active='true'] .tab-link-icon {
+	color: var(--color-accent-text);
+	filter: none;
+}
+
 .tab-link[data-active='true'] .tab-link__inner {
 	background: transparent;
 	box-shadow: none;
@@ -2584,7 +2589,11 @@ body:has(.sticky-actions) .draft-dock {
 }
 
 .shell-nav-tabbar__grid > .tab-link[data-active='true']:hover {
-	background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface));
+	background: var(--tab-link-active-bg);
+	color: var(--color-accent-text);
+}
+
+.shell-nav-tabbar__grid > .tab-link[data-active='true'] .tab-link-icon {
 	color: var(--color-accent-text);
 }
 

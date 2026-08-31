@@ -1,6 +1,6 @@
 # Telegram UI/UX — что одолжить (v0.15.1 backlog)
 
-Исследование для patch-релиза **v0.15.1** (`cursor/v0.15.1-telegram-patterns`).  
+Исследование для patch-релизов **v0.15.2+** (`cursor/v0.15.2-telegram-patterns`).  
 Не копируем мессенджер — берём **паттерны**, которые ускоряют священный цикл и снижают тревожность при деструктивных действиях.
 
 **Северная звезда:** [`GOAL.md`](../../GOAL.md).  
@@ -18,68 +18,70 @@
 
 ---
 
-## P0 — borrow next (v0.15.1)
+## P0 — borrow (v0.15.2 shipped)
 
 ### 1. Snackbar polish (дожать до «как в TG»)
 
-- [ ] Haptic tap на Undo (iOS PWA `navigator.vibrate(10)` если доступно)
-- [ ] Slide-up spring чуть короче (250–320 ms), без bounce на dismiss
-- [ ] Одна snackbar за раз при undo (replace, не stack)
-- [ ] Light theme: лёгкая border + shadow-float (сделано частично)
+- [x] Haptic tap на Undo (iOS PWA `navigator.vibrate(10)` если доступно)
+- [x] Slide-up spring чуть короче (280 ms), без bounce на dismiss
+- [x] Одна snackbar за раз при undo (`TOAST_UNDO_GROUP` / replaceGroup)
+- [x] Light theme: border + shadow-float
 
 ### 2. List cells / density
 
 Telegram: одна строка = одно действие, chevron справа, subtitle muted, 48px min height.
 
-- [ ] Workout plan rows: единый vertical rhythm с exercise rows
-- [ ] History rows: дата muted сверху, название ink, chevron без лишнего padding
-- [ ] Settings: value справа + chevron, как TG «Settings → Privacy»
+- [x] Workout plan rows: chevron nav, compact 48px rhythm
+- [x] History rows: дата muted сверху (eyebrow), название ink, chevron
+- [ ] Settings: value справа + chevron на других list screens (profile уже ок)
 
 ### 3. Destructive flow
 
 TG: swipe → confirm sheet → undo snackbar. Мы близко; не хватает:
 
-- [ ] Swipe delete на history row с тем же undo toast (если ещё не везде)
-- [ ] Clear history: sheet + undo уже есть — проверить copy и timing
+- [x] Swipe delete на history row с undo toast
+- [x] Clear history: sheet + undo — copy и timing проверены
+- [x] Swipe rubber-band + haptic on reveal
 
 ### 4. Search / filter bar
 
 TG global search: sticky field, instant filter, empty «Nothing found».
 
-- [ ] `/exercises` catalog: search focus не прыгает при coachmark dismiss
-- [ ] Empty search: одна строка + CTA «Сбросить фильтр» (не простыня текста)
+- [x] `/exercises` catalog hub: coachmark dismiss не крадёт focus (blur)
+- [x] Empty search: EmptyState + CTA «Сбросить фильтр» (catalog + workouts plans)
 
 ---
 
-## P1 — структура и navigation
+## P1 — структура и navigation (v0.15.2 shipped)
 
 ### 5. Tab bar clarity
 
 TG: 4–5 tabs, active = filled icon + label. Repdraft tabbar уже минимален.
 
-- [ ] Active tab: чуть сильнее contrast (не glow)
-- [ ] Badge на tab только для actionable (draft count → dock, не tab)
+- [x] Active tab: сильнее contrast (`--tab-link-active-bg`)
+- [x] Badge на tab только для actionable (draft count → dock, не tab)
 
 ### 6. «Пустые» экраны
 
 TG channels empty: иллюстрация + одна primary + secondary link.
 
-- [ ] Builder empty / workouts empty / history empty — один шаблон `EmptyState` (icon + title + desc + 1 CTA)
-- [ ] Убрать дубли hint + coachmark на одном экране
+- [x] Builder empty: icon + 1 CTA через `EmptyState`
+- [x] Workouts / catalog empty search через `EmptyState` + reset
+- [ ] Убрать дубли hint + coachmark на одном экране (backlog)
 
 ### 7. Inline context actions
 
 TG long-press menu. У нас swipe — ок для gym.
 
-- [ ] Swipe threshold и rubber-band как iOS/TG (уже частично в `SwipeToDelete`)
-- [ ] Haptic on swipe reveal (optional)
+- [x] Swipe threshold и rubber-band в `SwipeToDelete`
+- [x] Haptic on swipe reveal
 
 ### 8. Typography rhythm
 
 TG: 17px body, 13px secondary, semibold titles.
 
-- [ ] Audit: `page-title` / `section-title` / muted hints — один scale token
-- [ ] Coachmark / checklist: vertical center (v0.15.0 fix)
+- [x] Tokens `--type-body` / `--type-secondary` + entity rows / empty states
+- [x] Coachmark / checklist: vertical center (v0.15.0 fix)
 
 ---
 
@@ -92,7 +94,7 @@ TG: 17px body, 13px secondary, semibold titles.
 
 ---
 
-## Метрики успеха v0.15.1
+## Метрики успеха v0.15.2
 
 1. Undo toast не перекрывает sheet / coachmark (lift) — **done v0.15.0**
 2. Manual QA: §12 onboarding + §3 sacred loop из [`/scenarios`](/scenarios) без визуальных «кривых» gap
@@ -115,7 +117,8 @@ TG: 17px body, 13px secondary, semibold titles.
 | Версия | Scope |
 |--------|--------|
 | **v0.15.0** | Onboarding + undo snackbar + QA `/scenarios` |
-| **v0.15.1** | Telegram-pattern polish (этот doc), patch only |
+| **v0.15.1** | Post-onboarding polish (scenarios fix, builder counter) |
+| **v0.15.2** | Telegram-pattern P0 + P1 (этот doc) |
 | **v0.16.0** | Следующая user-facing minor из roadmap P1 |
 
 Обновлять статусы чеклистов здесь после каждого shipped patch.

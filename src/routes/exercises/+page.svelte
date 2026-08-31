@@ -7,6 +7,7 @@
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { isBuilderReturnPath, labelCatalogZone, withFromParam } from '$lib/domain/catalogLinks';
+	import { blurActiveElement } from '$lib/dom/blurActiveElement';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { catalogUi } from '$lib/stores/catalogUi';
@@ -52,6 +53,16 @@
 		event.preventDefault();
 		openSearch(searchQuery);
 	}
+
+	function dismissExercisesPickerCoachmark() {
+		onboarding.dismissCoachmark('exercises.picker');
+		blurActiveElement();
+	}
+
+	function dismissExercisesSearchCoachmark() {
+		onboarding.dismissCoachmark('exercises.search');
+		blurActiveElement();
+	}
 </script>
 
 <svelte:head>
@@ -84,12 +95,12 @@
 		{#if fromBuilder && showExercisesPickerCoachmark}
 			<Coachmark
 				message={translate(lang, 'onboarding.coachPickerReturn')}
-				onDismiss={() => onboarding.dismissCoachmark('exercises.picker')}
+				onDismiss={dismissExercisesPickerCoachmark}
 			/>
 		{:else if !fromBuilder && showExercisesSearchCoachmark}
 			<Coachmark
 				message={translate(lang, 'onboarding.coachExercisesSearch')}
-				onDismiss={() => onboarding.dismissCoachmark('exercises.search')}
+				onDismiss={dismissExercisesSearchCoachmark}
 			/>
 		{/if}
 		<CatalogHubChips from={fromParam} pickMode={fromBuilder} />
