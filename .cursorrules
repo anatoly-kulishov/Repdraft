@@ -27,6 +27,7 @@ If that loop is not excellent, ignore charts, AI, social, and other extras. Nati
 6. **TYPE SAFETY:** Do not use `any`. Prefer strict TypeScript types/interfaces. Exhaustive `switch` on unions (`never` in default).
 7. **NO BREAKING CHANGES:** Do not refactor unrelated files or change working database/storage schemas unless explicitly instructed.
 8. Respect layers: `domain` stays pure; UI does not talk to Supabase/storage directly except established panel/repo paths.
+9. **USER-FACING COPY:** No em-dash (`—`) or en-dash (`–`) as punctuation in UI strings, meta, or docs shown to users. Use a period, comma, colon, or hyphen (`-`). Empty placeholders: hyphen (`-`), not em-dash. Avoid LLM tells: filler verbs (elevate, seamless, unleash), mock-poetic labels, performative micro-copy.
 
 ## WORKFLOW & VERIFICATION
 

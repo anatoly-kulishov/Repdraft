@@ -239,12 +239,12 @@
 			<div class="pwa-install__copy min-w-0">
 				<p class="pwa-install__title">{translate(lang, 'pwa.installTitle')}</p>
 				<p class="pwa-install__hint">{translate(lang, hintKey)}</p>
+				{#if showInstall}
+					<AppButton variant="link" class="pwa-install__action" onclick={() => void install()}>
+						{translate(lang, 'pwa.installAction')}
+					</AppButton>
+				{/if}
 			</div>
-			{#if showInstall}
-				<AppButton variant="secondary" class="pwa-install__action" onclick={() => void install()}>
-					{translate(lang, 'pwa.installAction')}
-				</AppButton>
-			{/if}
 			<AppButton
 				variant="ghost"
 				class="pwa-install__close"

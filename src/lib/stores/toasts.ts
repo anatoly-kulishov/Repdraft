@@ -79,10 +79,16 @@ function createToastStore() {
 			const ttl = action ? Math.max(ms, 4200) : ms;
 			push({ message, kind, action, replaceGroup }, ttl);
 		},
-		showUndo(message: string, onUndo: () => void | Promise<void>, kind: ToastKind = 'info', ms = UNDO_MS) {
+		showUndo(
+			message: string,
+			onUndo: () => void | Promise<void>,
+			kind: ToastKind = 'info',
+			ms = UNDO_MS,
+			replaceGroup?: string
+		) {
 			const undoDurationMs = ms;
 			const undoExpiresAt = Date.now() + ms;
-			push({ message, kind, onUndo, undoExpiresAt, undoDurationMs }, ms);
+			push({ message, kind, onUndo, undoExpiresAt, undoDurationMs, replaceGroup }, ms);
 		},
 		dismiss(id: number) {
 			clearTimer(id);

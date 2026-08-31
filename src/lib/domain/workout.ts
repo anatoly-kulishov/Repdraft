@@ -151,6 +151,19 @@ export function removeExercise(plan: WorkoutPlan, exerciseId: string): WorkoutPl
 	return withUpdated(plan, exercises);
 }
 
+/** Undo remove: re-insert the full row (sets, groups) at its prior index. */
+export function insertExerciseAt(
+	plan: WorkoutPlan,
+	exercise: WorkoutExercise,
+	index: number
+): WorkoutPlan {
+	if (plan.exercises.some((ex) => ex.exerciseId === exercise.exerciseId)) return plan;
+	const exercises = [...plan.exercises];
+	const at = Math.min(Math.max(0, index), exercises.length);
+	exercises.splice(at, 0, { ...exercise });
+	return withUpdated(plan, normalizePlanExercises(exercises));
+}
+
 export function updateExercise(
 	plan: WorkoutPlan,
 	exerciseId: string,
@@ -702,6 +715,18 @@ export function sortPlansByUserOrder<T extends { id: string; updatedAt?: string 
 	});
 }
 
+/** Display-only: surface the “next” plan first without changing stored order. */
+export function promotePlanToFront<T extends { id: string }>(
+	plans: readonly T[],
+	planId: string | null | undefined
+): T[] {
+	if (!planId || plans.length < 2) return [...plans];
+	const idx = plans.findIndex((p) => p.id === planId);
+	if (idx <= 0) return [...plans];
+	const promoted = plans[idx]!;
+	return [promoted, ...plans.slice(0, idx), ...plans.slice(idx + 1)];
+}
+
 export function reorderPlanOrderIds(
 	orderIds: readonly string[],
 	planId: string,
@@ -896,12 +921,22 @@ export function runWorkoutSelfCheck(): void {
 		throw new Error('convertAltGroupToSuperset should set groupId');
 	}
 	plan = dissolveSuperset(plan, plan.exercises[0]!.groupId!);
-
-	plan = removeExercise(plan, 'ex-b');
-	if (plan.exercises.some((ex) => ex.exerciseId === 'ex-b')) {
-		throw new Error('removeExercise failed');
+	if (plan.exercises.length !== 4) {
+		throw new Error(`expected 4 exercises after superset flow, got ${plan.exercises.length}`);
 	}
-	if (plan.exercises.length !== 3) throw new Error(`expected 3 left, got ${plan.exercises.length}`);
+
+	{
+		let undoPlan = createEmptyDraft();
+		for (const id of ['ex-a', 'ex-b', 'ex-c']) undoPlan = addExercise(undoPlan, id).plan;
+		undoPlan = removeExercise(undoPlan, 'ex-b');
+		undoPlan = insertExerciseAt(undoPlan, { exerciseId: 'ex-b', sets: 2, reps: 8, restSec: 60 }, 1);
+		if (undoPlan.exercises.map((ex) => ex.exerciseId).join(',') !== 'ex-a,ex-b,ex-c') {
+			throw new Error('insertExerciseAt should restore at index');
+		}
+		if (undoPlan.exercises.length !== 3) {
+			throw new Error(`insertExerciseAt expected 3 exercises, got ${undoPlan.exercises.length}`);
+		}
+	}
 
 	const rotation = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
 	if (suggestNextPlan(rotation, null)?.id !== 'a') {
@@ -941,6 +976,12 @@ export function runWorkoutSelfCheck(): void {
 	);
 	if (ordered.map((p) => p.id).join(',') !== 'a,b,c') {
 		throw new Error('sortPlansByUserOrder should follow order ids');
+	}
+	if (promotePlanToFront(ordered, 'c').map((p) => p.id).join(',') !== 'c,a,b') {
+		throw new Error('promotePlanToFront should move plan to index 0');
+	}
+	if (promotePlanToFront(ordered, 'a').map((p) => p.id).join(',') !== 'a,b,c') {
+		throw new Error('promotePlanToFront should no-op when already first');
 	}
 	if (reorderPlanOrderIds(['a', 'b', 'c'], 'c', -1).join(',') !== 'a,c,b') {
 		throw new Error('reorderPlanOrderIds should swap neighbors');

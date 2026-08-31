@@ -84,10 +84,6 @@ input[data-slot='input'].workout-ex-chip__input:not([type='file']) {
 	max-height: none;
 }
 
-input[data-slot='input'].workout-ex-chip__input--superset:not([type='file']) {
-	padding: 0.15rem 0.4rem;
-}
-
 input[data-slot='input'].search-field.has-clear:not([type='file']) {
 	padding-right: 2.5rem;
 }

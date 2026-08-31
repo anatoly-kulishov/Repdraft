@@ -523,12 +523,12 @@
 										<span class="history-exercise__set-weight"
 											>{item.set.weightKg} {translate(lang, 'pr.kg')}</span
 										>
-										<span class="history-exercise__set-reps">× {item.set.reps ?? '—'}</span>
+										<span class="history-exercise__set-reps">× {item.set.reps ?? '-'}</span>
 									{:else}
 										<span class="history-exercise__set-reps">
 											{item.set.reps != null
 												? `${item.set.reps} ${translate(lang, 'pr.repsShort')}`
-												: '—'}
+												: '-'}
 										</span>
 									{/if}
 								</li>

@@ -73,7 +73,7 @@ export function runGreetingNameSelfCheck(): void {
 	if (!greetingNameMatchesStored('Ada', '  Ada  ')) {
 		throw new Error('greetingNameMatchesStored should compare sanitized values');
 	}
-	if (clampGreetingName('  Ada  ').length !== 6) {
+	if (clampGreetingName('  Ada  ') !== '  Ada  ') {
 		throw new Error('clampGreetingName keeps spaces while typing');
 	}
 	if (clampGreetingName(`Ada\u200BLovelace`).length !== 11) {

@@ -51,12 +51,13 @@
 	<div class="toast-stack pointer-events-none fixed z-[60] flex flex-col-reverse gap-2" aria-live="polite">
 		{#each items as toast (toast.id)}
 			<div
-				class="toast-item pointer-events-auto flex min-h-12 w-full items-start gap-1 rounded-2xl py-2 pl-3.5 pr-1.5 text-sm font-medium leading-snug"
+				class="toast-item pointer-events-auto relative w-full rounded-2xl py-2 pl-3.5 pr-11 text-sm font-medium leading-snug"
 				class:toast-item--accent={toast.kind === 'success' || toast.kind === 'info'}
 				class:toast-item--error={toast.kind === 'error'}
+				class:toast-item--undo={Boolean(toast.onUndo)}
 				role="status"
 			>
-				<div class="toast-item__body min-w-0 flex-1 py-0.5">
+				<div class="toast-item__body min-w-0">
 					<span class="block max-w-full text-left">{toast.message}</span>
 					{#if toast.onUndo}
 						{@const tick = undoTicks[toast.id]}
@@ -83,7 +84,7 @@
 				</div>
 				<button
 					type="button"
-					class="toast-item__close shrink-0"
+					class="toast-item__close"
 					onclick={() => toasts.dismiss(toast.id)}
 					aria-label={translate(lang, 'a11y.close')}
 				>
@@ -102,6 +103,16 @@
 		box-shadow: var(--shadow-float);
 	}
 
+	.toast-item {
+		flex: 0 0 auto;
+		align-self: stretch;
+		min-height: 2.5rem;
+	}
+
+	.toast-item--undo {
+		padding-bottom: 0.35rem;
+	}
+
 	.toast-item--error {
 		background: var(--color-danger);
 		color: #fcfcfc;
@@ -112,13 +123,16 @@
 	}
 
 	.toast-item__close {
-		position: relative;
+		position: absolute;
+		top: 50%;
+		right: 0.125rem;
+		transform: translateY(-50%);
 		display: grid;
 		place-items: center;
-		width: 3rem;
-		height: 3rem;
-		min-width: 3rem;
-		min-height: 3rem;
+		width: 2.75rem;
+		height: 2.75rem;
+		min-width: 2.75rem;
+		min-height: 2.75rem;
 		margin: 0;
 		padding: 0;
 		border: 0;
@@ -242,6 +256,8 @@
 
 	/* Sit just above tabbar — default mobile. Enter: kineticsToastIn in layout.css */
 	.toast-stack {
+		top: auto;
+		height: auto;
 		left: 50%;
 		bottom: calc(var(--mobile-chrome-bottom) + 0.65rem + var(--vv-fixed-bottom, 0px));
 		width: min(20.5rem, calc(100vw - 2rem));
