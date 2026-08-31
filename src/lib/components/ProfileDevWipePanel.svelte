@@ -25,7 +25,7 @@
 		loading = true;
 		try {
 			await auth.wipeLocalProfileForTesting();
-			window.location.assign('/');
+			window.location.reload();
 		} catch (err) {
 			console.error('dev wipe failed', err);
 			toasts.show(translate(lang, 'settings.devWipeFail'), 'error');
