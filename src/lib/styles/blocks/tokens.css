@@ -47,8 +47,10 @@
 	--control-padding-x: 0.9rem;
 	--control-padding-y: 0.5rem;
 	--control-font-size: 0.875rem;
-	--font-display: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-	--font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	/* 14px body copy — one knob for paragraph readability (controls override locally). */
+	--text-sm-line-height: 1.55;
+	--font-display: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--font-body: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 	--header-h: 3.5rem;
 	--screen-header-min-h: 2.75rem;
 	--screen-header-stacked-h: 5.35rem;

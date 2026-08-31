@@ -132,6 +132,7 @@ const TARGET_COVER_OVERRIDES: Partial<Record<string, string>> = {
 };
 
 const ZONE_COVER_OVERRIDES: Partial<Record<string, string>> = {
+	chest: '0047',
 	neck: '1403'
 };
 

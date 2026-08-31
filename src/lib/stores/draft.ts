@@ -10,6 +10,7 @@ import {
 	moveExercise as moveExerciseInPlan,
 	moveByArrow as moveByArrowInPlan,
 	moveWithinGroup as moveWithinGroupInPlan,
+	insertExerciseAt as insertExerciseAtInPlan,
 	removeExercise as removeExerciseFromPlan,
 	updateExercise as updateExerciseInPlan,
 	updateGroupRest as updateGroupRestInPlan,
@@ -68,6 +69,9 @@ function createDraftStore() {
 		},
 		removeFromDraft(exerciseId: string) {
 			update((plan) => removeExerciseFromPlan(plan, exerciseId));
+		},
+		restoreExerciseToDraft(exercise: WorkoutExercise, index: number) {
+			update((plan) => insertExerciseAtInPlan(plan, exercise, index));
 		},
 		updateExercise(exerciseId: string, patch: Partial<Omit<WorkoutExercise, 'exerciseId'>>) {
 			update((plan) => updateExerciseInPlan(plan, exerciseId, patch));

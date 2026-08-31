@@ -2,6 +2,7 @@ import type { AppLocale } from '$lib/i18n/locale';
 import { exerciseName, exerciseNameSortLocale } from './exerciseName';
 import { BODY_PART_LABELS, EQUIPMENT_LABELS, TARGET_LABELS } from './labels.ru';
 import { SEARCH_SYNONYMS } from './searchSynonyms';
+import { catalogTargetPrimaryZone } from './catalogLinks';
 import type { BodyPart, ExerciseFilters, ExerciseIndexItem } from './types';
 import type { UserExerciseStatsMap } from './exerciseScore';
 import { getScore } from './exerciseScore';
@@ -455,6 +456,14 @@ export function targetCountsForZone(items: ExerciseIndexItem[], bodyParts: strin
 		.sort((a, b) => b.count - a.count || a.target.localeCompare(b.target, 'en'));
 }
 
+/** Browse grid: drop #1 chip when it repeats the zone (Грудь → Грудные). */
+export function targetChipsForZoneBrowse(chips: TargetChip[], zoneSlug: string): TargetChip[] {
+	if (chips.length < 2) return chips;
+	const top = chips[0]!;
+	if (catalogTargetPrimaryZone(top.target) === zoneSlug) return chips.slice(1);
+	return chips;
+}
+
 /**
  * True when body part + muscle (and optionally equipment) AND to empty,
  * but each of body/muscle alone still has hits — classic hierarchy clash.
@@ -564,6 +573,27 @@ export function runFiltersSelfCheck(): void {
 	if (targets.includes('pectorals')) throw new Error('pectorals must not appear under upper legs');
 	if (!targets.includes('quads') || !targets.includes('glutes')) {
 		throw new Error(`expected quads/glutes, got ${targets.join(',')}`);
+	}
+
+	const chestBrowseChips = targetChipsForZoneBrowse(
+		[
+			{ target: 'pectorals', count: 158 },
+			{ target: 'serratus anterior', count: 5 }
+		],
+		'chest'
+	);
+	if (chestBrowseChips.length !== 1 || chestBrowseChips[0]!.target !== 'serratus anterior') {
+		throw new Error('chest browse should drop redundant pectorals chip');
+	}
+	const legBrowseChips = targetChipsForZoneBrowse(
+		[
+			{ target: 'quads', count: 120 },
+			{ target: 'calves', count: 30 }
+		],
+		'legs'
+	);
+	if (legBrowseChips[0]!.target !== 'calves') {
+		throw new Error('legs browse should drop redundant quads chip');
 	}
 
 	const upperLegChips = targetCountsForZone(catalog, ['upper legs']);

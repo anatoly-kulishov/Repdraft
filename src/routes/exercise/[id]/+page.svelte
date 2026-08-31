@@ -74,7 +74,17 @@
 		void bookmarks
 			.toggle(exercise.id)
 			.then((saved) => {
-				toasts.show(translate(lang, saved ? 'bookmarks.saved' : 'bookmarks.removed'), 'info', 2600, undefined, 'bookmark');
+				if (saved) {
+					toasts.show(translate(lang, 'bookmarks.saved'), 'info', 2600, undefined, 'bookmark');
+					return;
+				}
+				toasts.showUndo(
+					translate(lang, 'bookmarks.removed'),
+					() => void bookmarks.toggle(exercise.id),
+					'info',
+					undefined,
+					'bookmark'
+				);
 			})
 			.finally(() => {
 				bookmarkBusy = false;
@@ -237,14 +247,16 @@
 
 					{#if activeTab === 'description'}
 						<div class="exercise-detail-tab-panel">
-							<section class="min-w-0 max-w-full">
+							<AppPanel class="exercise-detail-steps min-w-0 max-w-full">
 								<h2 class="section-title mb-2">{translate(lang, 'exercise.howTo')}</h2>
-								<ol class="list-decimal space-y-2.5 pl-5 text-sm leading-relaxed break-words text-[var(--color-ink)] lg:columns-2 lg:gap-x-8 xl:columns-1">
+								<ol
+									class="exercise-detail-steps__list list-decimal space-y-2.5 pl-5 text-sm break-words text-[var(--color-ink)] lg:columns-2 lg:gap-x-8 xl:columns-1"
+								>
 									{#each steps as step, i (i)}
 										<li class="min-w-0 break-inside-avoid">{step}</li>
 									{/each}
 								</ol>
-							</section>
+							</AppPanel>
 
 							{#if relatedArticles.length > 0}
 								<section class="exercise-related-articles">
@@ -273,7 +285,7 @@
 						</div>
 					{:else if activeTab === 'record'}
 						<div class="exercise-detail-tab-panel">
-							<PersonalRecordPanel exerciseId={exercise.id} />
+							<PersonalRecordPanel exerciseId={exercise.id} embedded />
 						</div>
 					{:else}
 						<div class="exercise-detail-tab-panel">

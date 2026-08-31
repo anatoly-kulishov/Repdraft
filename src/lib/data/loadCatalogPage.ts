@@ -4,7 +4,12 @@ import {
 	type CatalogZoneSlug
 } from '$lib/domain/catalogLinks';
 import { pickCatalogCoverImage, pickZoneCoverImage } from '$lib/domain/catalogCover';
-import { targetCountsForZone, uniqueSorted, type TargetChip } from '$lib/domain/filters';
+import {
+	targetChipsForZoneBrowse,
+	targetCountsForZone,
+	uniqueSorted,
+	type TargetChip
+} from '$lib/domain/filters';
 import type { ExerciseIndexItem } from '$lib/domain/types';
 
 export type CatalogIndexPayload = {
@@ -107,10 +112,10 @@ export async function loadCatalogZone(
 		};
 	}
 	const inZone = exercises.filter((ex) => parts.includes(ex.body_part));
-	const targetChips = targetCountsForZone(exercises, parts);
+	const targetChips = targetChipsForZoneBrowse(targetCountsForZone(exercises, parts), bodyPart);
 	const zoneCount = inZone.length;
 	const targetCovers = targetCoversForZone(exercises, parts);
-	/** Avoid same plate as the top target chip («Грудные» vs «Все упражнения»). */
+	/** Avoid same plate as the first visible target chip. */
 	const avoidZoneDup = new Set<string>();
 	const topTarget = targetChips[0]?.target;
 	if (topTarget) {

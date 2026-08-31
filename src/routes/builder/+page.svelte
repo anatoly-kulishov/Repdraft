@@ -14,7 +14,7 @@
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { BUILDER_ADD_EXERCISE_HREF, WORKOUTS_HREF } from '$lib/domain/catalogLinks';
 	import { PLAN_NAME_MAX, clampPlanName } from '$lib/domain/inputLimits';
-	import type { ExerciseIndexItem } from '$lib/domain/types';
+	import type { ExerciseIndexItem, WorkoutExercise } from '$lib/domain/types';
 	import { altGroupMemberRole, groupMemberRole, workoutPlanContentEqual } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
 	import { navigateBack } from '$lib/navigation/back';
@@ -120,6 +120,25 @@
 		} else {
 			selectedIds = [...selectedIds, exerciseId];
 		}
+	}
+
+	function removeExerciseFromBuilder(item: WorkoutExercise, index: number) {
+		const snapshot = structuredClone(item);
+		const wasSelected = selectedIds.includes(item.exerciseId);
+		draft.removeFromDraft(item.exerciseId);
+		selectedIds = selectedIds.filter((id) => id !== item.exerciseId);
+		toasts.showUndo(
+			translate(lang, 'exercise.removed'),
+			() => {
+				draft.restoreExerciseToDraft(snapshot, index);
+				if (wasSelected && !selectedIds.includes(item.exerciseId)) {
+					selectedIds = [...selectedIds, item.exerciseId];
+				}
+			},
+			'info',
+			undefined,
+			'draft'
+		);
 	}
 
 	function makeSuperset() {
@@ -304,6 +323,10 @@
 					{/if}
 				</div>
 
+				{#if $draft.exercises.length >= 2 && selectedCount < 2}
+					<p class="builder-group-hint">{translate(lang, 'builder.groupHint')}</p>
+				{/if}
+
 				<div class="builder-exercise-list" data-reorder-list>
 					{#each $draft.exercises as item, index (item.exerciseId)}
 						{@const role = groupMemberRole($draft.exercises, index)}
@@ -318,10 +341,7 @@
 						>
 							<SwipeToDelete
 								label={translate(lang, 'builder.remove')}
-								onDelete={() => {
-									draft.removeFromDraft(item.exerciseId);
-									selectedIds = selectedIds.filter((id) => id !== item.exerciseId);
-								}}
+								onDelete={() => removeExerciseFromBuilder(item, index)}
 							>
 								<WorkoutExerciseRow
 									{item}
@@ -332,10 +352,7 @@
 									{altRole}
 									onupdate={(patch) => draft.updateExercise(item.exerciseId, patch)}
 									onreorder={(from, to) => draft.moveExercise(from, to)}
-									onremove={() => {
-										draft.removeFromDraft(item.exerciseId);
-										selectedIds = selectedIds.filter((id) => id !== item.exerciseId);
-									}}
+									onremove={() => removeExerciseFromBuilder(item, index)}
 									ontoggleSelect={() => toggleSelect(item.exerciseId)}
 									ondissolve={item.groupId ? () => draft.dissolveSuperset(item.groupId!) : undefined}
 									ondissolveOr={item.altGroupId
@@ -356,14 +373,17 @@
 					{/each}
 				</div>
 
-				<AppButton
-					variant="secondary"
-					href={BUILDER_ADD_EXERCISE_HREF}
-					class="builder-add-link mt-4 w-full items-center justify-center gap-2"
-				>
-					<LucideIcon icon={Plus} size={ICON_BUTTON} />
-					{translate(lang, 'builder.addExercise')}
-				</AppButton>
+				<div class="mt-4 hidden lg:block">
+					<AppButton
+						variant="secondary"
+						href={BUILDER_ADD_EXERCISE_HREF}
+						block
+						class="items-center justify-center gap-2"
+					>
+						<LucideIcon icon={Plus} size={ICON_BUTTON} />
+						{translate(lang, 'builder.addExercise')}
+					</AppButton>
+				</div>
 
 				<div class="sticky-actions lg:hidden">
 					<div class="sticky-actions__inner builder-sticky-actions">

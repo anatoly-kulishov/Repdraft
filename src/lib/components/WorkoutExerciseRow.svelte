@@ -64,32 +64,58 @@
 
 	let lang = $derived($resolvedLocale);
 	let techniqueOpen = $state(false);
+	/** Local chip text while focused — empty allowed until blur (coerce runs on commit). */
+	let setsDraft = $state<string | null>(null);
+	let repsDraft = $state<string | null>(null);
+	let restDraft = $state<string | null>(null);
 	let inGroup = $derived(Boolean(item.groupId));
 	let inOrGroup = $derived(Boolean(item.altGroupId));
 	const chipInputClass =
-		'workout-ex-chip__input !h-[2.5rem] !min-h-0 shrink-0 text-center text-base tabular-nums';
+		'workout-ex-chip__input !w-auto !min-w-0 shrink-0 text-center text-base tabular-nums';
 	const chipInputRestClass =
-		'workout-ex-chip__input workout-ex-chip__input--rest !h-[2.5rem] !min-h-0 shrink-0 text-center text-base tabular-nums';
-	const supersetInputClass =
-		'workout-ex-chip__input workout-ex-chip__input--superset !h-[2.15rem] !min-h-0 shrink-0 text-center text-base tabular-nums';
+		'workout-ex-chip__input workout-ex-chip__input--rest !w-auto !min-w-0 shrink-0 text-center text-base tabular-nums';
 
-	function applySets(el: HTMLInputElement, apply: (sets: number) => void) {
-		const shaped = filterSetsInput(el.value, String(item.sets));
-		if (el.value !== shaped) el.value = shaped;
-		apply(coerceSets(shaped));
+	type ChipDraft = { draft: string | null; stored: () => number };
+
+	function chipValue({ draft, stored }: ChipDraft): string {
+		return draft ?? String(stored());
 	}
 
-	function applyReps(el: HTMLInputElement) {
-		const shaped = filterRepsInput(el.value, REPS, String(item.reps));
-		if (el.value !== shaped) el.value = shaped;
-		onupdate({ reps: coerceReps(shaped, REPS) ?? REPS.min });
+	function onChipFocus(setDraft: (v: string) => void, stored: () => number) {
+		setDraft(String(stored()));
 	}
 
-	function applyRest(el: HTMLInputElement, apply: (restSec: number) => void) {
-		const shaped = filterRestSecInput(el.value, String(item.restSec));
+	function onChipInput(
+		el: HTMLInputElement,
+		{ draft, stored }: ChipDraft,
+		setDraft: (v: string) => void,
+		filter: (raw: string, prev: string) => string
+	) {
+		const prev = draft ?? String(stored());
+		const shaped = filter(el.value, prev);
+		setDraft(shaped);
 		if (el.value !== shaped) el.value = shaped;
-		apply(coerceRestSec(shaped));
 	}
+
+	function onChipBlur(
+		el: HTMLInputElement,
+		{ draft, stored }: ChipDraft,
+		setDraft: (v: string | null) => void,
+		filter: (raw: string, prev: string) => string,
+		coerce: (raw: string) => number,
+		apply: (value: number) => void
+	) {
+		const prev = draft ?? String(stored());
+		const shaped = filter(el.value, prev);
+		const next = coerce(shaped);
+		setDraft(null);
+		apply(next);
+		el.value = String(next);
+	}
+
+	const setsChip = (): ChipDraft => ({ draft: setsDraft, stored: () => item.sets });
+	const repsChip = (): ChipDraft => ({ draft: repsDraft, stored: () => item.reps });
+	const restChip = (): ChipDraft => ({ draft: restDraft, stored: () => item.restSec });
 </script>
 
 <article
@@ -117,35 +143,53 @@
 				{/if}
 			</div>
 			<div class="superset-bar__fields">
-				<label class="superset-chip">
+				<label class="workout-ex-chip">
 					<span>{translate(lang, 'builder.rounds')}</span>
 					<AppInput
-						class={supersetInputClass}
+						class={chipInputClass}
 						type="text"
 						inputmode="numeric"
 						autocomplete="off"
 						maxlength={SETS_INPUT_MAX_LEN}
-						value={item.sets}
+						value={chipValue(setsChip())}
+						onfocus={() => onChipFocus((v) => (setsDraft = v), () => item.sets)}
 						oninput={(e) => {
 							const el = e.currentTarget as HTMLInputElement;
-							if (ongroupSets) applySets(el, ongroupSets);
-							else applySets(el, (sets) => onupdate({ sets }));
+							onChipInput(el, setsChip(), (v) => (setsDraft = v), filterSetsInput);
+						}}
+						onblur={(e) => {
+							const el = e.currentTarget as HTMLInputElement;
+							if (ongroupSets) {
+								onChipBlur(el, setsChip(), (v) => (setsDraft = v), filterSetsInput, coerceSets, ongroupSets);
+							} else {
+								onChipBlur(el, setsChip(), (v) => (setsDraft = v), filterSetsInput, coerceSets, (sets) =>
+									onupdate({ sets }));
+							}
 						}}
 					/>
 				</label>
-				<label class="superset-chip">
+				<label class="workout-ex-chip">
 					<span>{translate(lang, 'builder.rest')}</span>
 					<AppInput
-						class={supersetInputClass}
+						class={chipInputClass}
 						type="text"
 						inputmode="numeric"
 						autocomplete="off"
 						maxlength={REST_INPUT_MAX_LEN}
-						value={item.restSec}
+						value={chipValue(restChip())}
+						onfocus={() => onChipFocus((v) => (restDraft = v), () => item.restSec)}
 						oninput={(e) => {
 							const el = e.currentTarget as HTMLInputElement;
-							if (ongroupRest) applyRest(el, ongroupRest);
-							else applyRest(el, (restSec) => onupdate({ restSec }));
+							onChipInput(el, restChip(), (v) => (restDraft = v), filterRestSecInput);
+						}}
+						onblur={(e) => {
+							const el = e.currentTarget as HTMLInputElement;
+							if (ongroupRest) {
+								onChipBlur(el, restChip(), (v) => (restDraft = v), filterRestSecInput, coerceRestSec, ongroupRest);
+							} else {
+								onChipBlur(el, restChip(), (v) => (restDraft = v), filterRestSecInput, coerceRestSec, (restSec) =>
+									onupdate({ restSec }));
+							}
 						}}
 					/>
 				</label>
@@ -232,8 +276,20 @@
 							inputmode="numeric"
 							autocomplete="off"
 							maxlength={REPS_INPUT_MAX_LEN}
-							value={item.reps}
-							oninput={(e) => applyReps(e.currentTarget as HTMLInputElement)}
+							value={chipValue(repsChip())}
+							onfocus={() => onChipFocus((v) => (repsDraft = v), () => item.reps)}
+							oninput={(e) =>
+								onChipInput(e.currentTarget as HTMLInputElement, repsChip(), (v) => (repsDraft = v), (raw, prev) =>
+									filterRepsInput(raw, REPS, prev))}
+							onblur={(e) =>
+								onChipBlur(
+									e.currentTarget as HTMLInputElement,
+									repsChip(),
+									(v) => (repsDraft = v),
+									(raw, prev) => filterRepsInput(raw, REPS, prev),
+									(raw) => coerceReps(raw, REPS) ?? REPS.min,
+									(reps) => onupdate({ reps })
+								)}
 						/>
 					</label>
 				{:else}
@@ -246,9 +302,19 @@
 								inputmode="numeric"
 								autocomplete="off"
 								maxlength={SETS_INPUT_MAX_LEN}
-								value={item.sets}
+								value={chipValue(setsChip())}
+								onfocus={() => onChipFocus((v) => (setsDraft = v), () => item.sets)}
 								oninput={(e) =>
-									applySets(e.currentTarget as HTMLInputElement, (sets) => onupdate({ sets }))}
+									onChipInput(e.currentTarget as HTMLInputElement, setsChip(), (v) => (setsDraft = v), filterSetsInput)}
+								onblur={(e) =>
+									onChipBlur(
+										e.currentTarget as HTMLInputElement,
+										setsChip(),
+										(v) => (setsDraft = v),
+										filterSetsInput,
+										coerceSets,
+										(sets) => onupdate({ sets })
+									)}
 							/>
 						</label>
 						<span class="workout-ex-fields__times" aria-hidden="true">×</span>
@@ -260,8 +326,20 @@
 								inputmode="numeric"
 								autocomplete="off"
 								maxlength={REPS_INPUT_MAX_LEN}
-								value={item.reps}
-								oninput={(e) => applyReps(e.currentTarget as HTMLInputElement)}
+								value={chipValue(repsChip())}
+								onfocus={() => onChipFocus((v) => (repsDraft = v), () => item.reps)}
+								oninput={(e) =>
+									onChipInput(e.currentTarget as HTMLInputElement, repsChip(), (v) => (repsDraft = v), (raw, prev) =>
+										filterRepsInput(raw, REPS, prev))}
+								onblur={(e) =>
+									onChipBlur(
+										e.currentTarget as HTMLInputElement,
+										repsChip(),
+										(v) => (repsDraft = v),
+										(raw, prev) => filterRepsInput(raw, REPS, prev),
+										(raw) => coerceReps(raw, REPS) ?? REPS.min,
+										(reps) => onupdate({ reps })
+									)}
 							/>
 						</label>
 						<label class="workout-ex-chip workout-ex-chip--rest">
@@ -272,9 +350,19 @@
 								inputmode="numeric"
 								autocomplete="off"
 								maxlength={REST_INPUT_MAX_LEN}
-								value={item.restSec}
+								value={chipValue(restChip())}
+								onfocus={() => onChipFocus((v) => (restDraft = v), () => item.restSec)}
 								oninput={(e) =>
-									applyRest(e.currentTarget as HTMLInputElement, (restSec) => onupdate({ restSec }))}
+									onChipInput(e.currentTarget as HTMLInputElement, restChip(), (v) => (restDraft = v), filterRestSecInput)}
+								onblur={(e) =>
+									onChipBlur(
+										e.currentTarget as HTMLInputElement,
+										restChip(),
+										(v) => (restDraft = v),
+										filterRestSecInput,
+										coerceRestSec,
+										(restSec) => onupdate({ restSec })
+									)}
 							/>
 						</label>
 					</div>

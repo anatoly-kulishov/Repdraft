@@ -261,13 +261,20 @@
 
 	{#if !showBootSkeleton}
 	{#if hasActive && active}
-		<a class="home-continue-card panel" href={`/live/${active.planId}`}>
+		<a
+			class="home-continue-card panel"
+			href={`/live/${active.planId}`}
+			aria-label={translate(lang, 'home.continueWorkout')}
+		>
 			<div class="home-continue-card__copy">
 				<p class="home-continue-card__eyebrow">{translate(lang, 'home.workoutInProgress')}</p>
 				<p class="home-continue-card__title">{active.planName}</p>
 				<p class="home-continue-card__meta">{continueRemaining}</p>
 			</div>
-			<span class="btn-primary home-continue-card__cta">{translate(lang, 'home.continue')}</span>
+			<span class="btn-primary home-continue-card__cta home-continue-card__cta--compact" aria-hidden="true">
+				<LucideIcon icon={Play} size={ICON_PRIMARY} class="home-continue-card__cta-icon" />
+				<span class="home-continue-card__cta-text">{translate(lang, 'home.continue')}</span>
+			</span>
 		</a>
 	{/if}
 	<div class="home-dashboard">
@@ -359,7 +366,7 @@
 															session.finishedAt ?? session.startedAt,
 															lang
 														),
-														min: formatDurationMinutes(sessionDurationMs(session)) ?? '—',
+														min: formatDurationMinutes(sessionDurationMs(session)) ?? '-',
 														sets: completedSetCount(session)
 													})}
 												</span>

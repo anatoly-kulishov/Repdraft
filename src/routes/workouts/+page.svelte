@@ -18,7 +18,7 @@
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
-	import { planExerciseSlotCount, planTargetSummary, resolveHomeNextPlan } from '$lib/domain/workout';
+	import { planExerciseSlotCount, planTargetSummary, promotePlanToFront, resolveHomeNextPlan } from '$lib/domain/workout';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
@@ -68,6 +68,16 @@
 		return $plans.filter((p) => p.name.toLowerCase().includes(q));
 	});
 
+	let history = $derived($live.history);
+	let nextPlan = $derived.by(() =>
+		resolveHomeNextPlan($plans, history[0]?.planId, $homeNextPlan)
+	);
+
+	let displayedPlans = $derived.by(() => {
+		if (planReorderMode) return filteredPlans;
+		return promotePlanToFront(filteredPlans, nextPlan?.id);
+	});
+
 	let canReorderPlans = $derived(!searchQuery.trim() && $plans.length > 1);
 	let planReorderMode = $state(false);
 	let showPlanReorderHandles = $derived(planReorderMode && canReorderPlans);
@@ -113,10 +123,6 @@
 		];
 	}
 
-	let history = $derived($live.history);
-	let nextPlan = $derived.by(() =>
-		resolveHomeNextPlan($plans, history[0]?.planId, $homeNextPlan)
-	);
 	let historyBusyId = $state<string | null>(null);
 	let historyClearBusy = $state(false);
 	let planBusyId = $state<string | null>(null);
@@ -233,10 +239,22 @@
 	async function commitClearHistory() {
 		clearHistoryOfferOpen = false;
 		if (historyClearBusy) return;
+		const snapshot = structuredClone(get(live).history);
+		if (snapshot.length === 0) return;
 		historyClearBusy = true;
 		try {
 			await live.clearHistory();
-			toasts.show(translate(lang, 'workouts.historyCleared'), 'info');
+			toasts.showUndo(
+				translate(lang, 'workouts.historyCleared'),
+				async () => {
+					try {
+						await live.restoreHistory(snapshot);
+					} catch (err) {
+						toasts.show(translateError(lang, err, 'workouts.historyRestoreFail'), 'error');
+					}
+				},
+				'info'
+			);
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'workouts.historyClearFail'), 'error');
 		} finally {
@@ -429,7 +447,7 @@
 						class:workouts-page__list--reorder-mode={planReorderMode}
 						data-reorder-list
 					>
-						{#each filteredPlans as plan, index (plan.id)}
+						{#each displayedPlans as plan, index (plan.id)}
 							{@const muscles = planTargetSummary(plan, indexById, lang)}
 							{@const isNext = nextPlan?.id === plan.id}
 							<li
@@ -570,7 +588,7 @@
 									<span class="entity-row__meta">
 										{translate(lang, 'home.recentMeta', {
 											when: formatRelativeDay(session.finishedAt ?? session.startedAt, lang),
-											min: formatDurationMinutes(sessionDurationMs(session)) ?? '—',
+											min: formatDurationMinutes(sessionDurationMs(session)) ?? '-',
 											sets: completedSetCount(session)
 										})}
 									</span>
