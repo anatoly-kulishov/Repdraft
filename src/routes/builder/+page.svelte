@@ -282,11 +282,21 @@
 		<PageSkeleton variant="builder" rows={3} />
 	{:else if $draftHydrated}
 		<div class="soft-enter">
-			<div class="builder-name-desktop mb-5 max-w-xl">
+			<div class="builder-name-desktop mb-4 max-w-xl">
 				<AppLabel>
-					{translate(lang, 'builder.name')}
+					<span class="builder-name-label-row">
+						<span>{translate(lang, 'builder.name')}</span>
+						<span
+							id="builder-name-count"
+							class="pr-note-count builder-name-count"
+							class:pr-note-count--limit={$draft.name.length >= PLAN_NAME_MAX}
+							aria-live="polite"
+						>
+							{$draft.name.length}/{PLAN_NAME_MAX}
+						</span>
+					</span>
 					<AppInput
-						class="mt-1.5 w-full"
+						class="mt-1 w-full"
 						type="text"
 						placeholder={translate(lang, 'builder.namePh')}
 						maxlength={PLAN_NAME_MAX}
@@ -294,14 +304,6 @@
 						aria-describedby="builder-name-count"
 						oninput={(e) => draft.setName((e.currentTarget as HTMLInputElement).value)}
 					/>
-					<span
-						id="builder-name-count"
-						class="pr-note-count"
-						class:pr-note-count--limit={$draft.name.length >= PLAN_NAME_MAX}
-						aria-live="polite"
-					>
-						{$draft.name.length}/{PLAN_NAME_MAX}
-					</span>
 				</AppLabel>
 			</div>
 

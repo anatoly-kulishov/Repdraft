@@ -84,8 +84,8 @@ Semver: patch = polish/багфиксы; minor = пользовательска�
 4. **Усилить technique wedge** - клипы в live-сессии, модерация; не копия Hevy social.
 5. **Сквозной онбординг (v0.15.0)** - **shipped**  
    Progressive disclosure: checklist, coachmarks, demo path, guest journey, undo snackbar. QA: [`/scenarios`](/scenarios). План: [onboarding-v0.15.0-plan.md](onboarding-v0.15.0-plan.md).
-6. **Telegram UX borrow (v0.15.1)** - **planned (patch)**  
-   Snackbar/list/settings polish по паттернам Telegram без копирования мессенджера. Спека: [telegram-ux-borrow-v0.15.1.md](telegram-ux-borrow-v0.15.1.md).
+6. **Telegram UX borrow (v0.15.1)** - **shipped (patch)**  
+   Post-onboarding polish: `/scenarios` load fix, builder name counter, exercise detail desktop CTA row. Snackbar/list backlog: [telegram-ux-borrow-v0.15.1.md](telegram-ux-borrow-v0.15.1.md).
 
 ### P2
 

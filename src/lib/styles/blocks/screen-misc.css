@@ -2203,20 +2203,24 @@
 	.exercise-detail-page__intro {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;
-		align-items: start;
-		column-gap: 0.15rem;
-		row-gap: 1.25rem;
+		align-items: center;
+		column-gap: 0.65rem;
+		row-gap: 0;
 	}
 
 	.exercise-detail-page__intro > .actions-inline {
-		grid-column: 1 / -1;
+		grid-column: 1;
+		grid-row: 1;
+		align-self: center;
+		min-width: 0;
 	}
 
 	.exercise-detail-page__toolbar {
 		display: block;
 		grid-column: 2;
 		grid-row: 1;
-		margin-top: -0.2rem;
+		align-self: center;
+		margin-top: 0;
 	}
 
 	.exercise-detail-bookmark--page {
@@ -2250,7 +2254,6 @@
 
 	.exercise-detail-page__intro {
 		flex: 1 1 auto;
-		gap: 1.25rem;
 	}
 
 	.exercise-media-frame {
