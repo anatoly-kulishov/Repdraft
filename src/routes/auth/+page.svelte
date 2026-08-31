@@ -29,6 +29,8 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import DataExportSection from '$lib/components/DataExportSection.svelte';
+	import ProfileDevWipePanel from '$lib/components/ProfileDevWipePanel.svelte';
+	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
 	import { APP_VERSION_LABEL } from '$lib/appVersion';
 	import { GREETING_NAME_MAX, clampGreetingName, greetingNameMatchesStored } from '$lib/domain/greetingName';
 	import { isIosDevice } from '$lib/domain/pwaInstall';
@@ -37,7 +39,7 @@
 	import { tick } from 'svelte';
 	import { appTheme } from '$lib/stores/theme';
 	import { themeToggleStateIcon } from '$lib/components/icons/themeToggle';
-	import { Globe, LogOut, Timer, Shield } from '@lucide/svelte';
+	import { Globe, LogOut, Timer, Shield, ClipboardList } from '@lucide/svelte';
 
 
 	type Panel = 'signin' | 'signup' | 'magic' | 'forgot' | 'check-email';
@@ -501,6 +503,8 @@
 			</header>
 
 			<div class="profile-settings-stack">
+				{@render onboardingHelpPanel()}
+
 				<form
 					id="auth-greeting-panel"
 					class="profile-settings-group panel"
@@ -593,6 +597,8 @@
 					<DataExportSection embedded />
 				</div>
 
+				<ProfileDevWipePanel />
+
 				<div class="auth-danger-zone" aria-labelledby="auth-danger-title">
 					<p class="auth-danger-zone__eyebrow">{translate(lang, 'auth.deleteZoneLabel')}</p>
 					<p id="auth-danger-title" class="auth-danger-zone__title">{translate(lang, 'auth.deleteTitle')}</p>
@@ -664,6 +670,11 @@
 
 				<div class="profile-settings-group panel">
 					<p class="profile-settings-group__title">{translate(lang, 'settings.accountTitle')}</p>
+					<ProfileSettingsRow
+						icon={ClipboardList}
+						label={translate(lang, 'scenarios.link')}
+						href="/scenarios"
+					/>
 					<ProfileSettingsRow
 						icon={Shield}
 						label={translate(lang, 'privacy.link')}
@@ -924,11 +935,15 @@
 
 {#snippet guestSettingsPanel()}
 	<div class="auth-settings panel">
+		{@render onboardingHelpPanel()}
 		<AuthInterfacePrefs />
 		<DataExportSection />
+		<ProfileDevWipePanel />
 		<p class="auth-account__legal">
 			<span class="auth-account__legal-label">{translate(lang, 'auth.privacyHint')}</span>
 			<a class="auth-account__legal-link" href="/privacy">{translate(lang, 'privacy.link')}</a>
+			<span class="auth-account__legal-sep" aria-hidden="true">·</span>
+			<a class="auth-account__legal-link" href="/scenarios">{translate(lang, 'scenarios.link')}</a>
 		</p>
 	</div>
 	<p
@@ -937,4 +952,20 @@
 	>
 		{APP_VERSION_LABEL}
 	</p>
+{/snippet}
+
+{#snippet onboardingHelpPanel()}
+	<div class="onboarding-profile-block">
+		<div class="profile-settings-group panel onboarding-auth-help">
+			<p class="profile-settings-group__title">{translate(lang, 'onboarding.authHelp')}</p>
+			<p class="profile-settings-group__hint">{translate(lang, 'onboarding.authHelpLead')}</p>
+			<AppButton variant="secondary" block href="/articles">
+				{translate(lang, 'articles.viewAll')}
+			</AppButton>
+			<AppButton variant="ghost" block href="/scenarios" class="onboarding-auth-help__scenarios">
+				{translate(lang, 'scenarios.link')}
+			</AppButton>
+		</div>
+		<OnboardingChecklist readonly onTryDemo={() => {}} />
+	</div>
 {/snippet}

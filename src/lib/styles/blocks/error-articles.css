@@ -492,6 +492,88 @@
 	text-underline-offset: 2px;
 }
 
+.prose-doc h1 {
+	margin: 0 0 0.85rem;
+	font-size: 1.25rem;
+	font-weight: 700;
+	line-height: 1.25;
+	color: var(--color-ink);
+}
+
+.prose-doc h3 {
+	margin: 1rem 0 0.45rem;
+	font-size: 0.9375rem;
+	font-weight: 650;
+	line-height: 1.3;
+	color: var(--color-ink);
+}
+
+.prose-doc hr {
+	margin: 1rem 0;
+	border: 0;
+	border-top: 1px solid var(--color-border);
+}
+
+.prose-doc pre {
+	margin: 0.65rem 0;
+	padding: 0.75rem 0.85rem;
+	overflow-x: auto;
+	border-radius: var(--radius-control);
+	border: 1px solid var(--color-border);
+	background: var(--color-surface-muted);
+	font-size: 0.8125rem;
+	line-height: 1.45;
+}
+
+.prose-doc code {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.85em;
+}
+
+.prose-doc table {
+	width: 100%;
+	margin: 0.65rem 0 0.85rem;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	line-height: 1.4;
+}
+
+.prose-doc th,
+.prose-doc td {
+	padding: 0.45rem 0.55rem;
+	border: 1px solid var(--color-border);
+	text-align: left;
+	vertical-align: top;
+}
+
+.prose-doc th {
+	font-weight: 650;
+	background: var(--color-surface-muted);
+	color: var(--color-ink);
+}
+
+.scenarios-page {
+	display: flex;
+	flex-direction: column;
+	gap: 0.85rem;
+	padding-bottom: 1.5rem;
+}
+
+.scenarios-page__lead {
+	margin: 0;
+	font-size: 0.875rem;
+	line-height: 1.45;
+	color: var(--color-muted);
+}
+
+.scenarios-page__body {
+	padding: 1rem 1.05rem 1.15rem;
+}
+
+.auth-account__legal-sep {
+	color: var(--color-muted);
+}
+
 .article-page__cta {
 	margin-top: 0.75rem;
 }

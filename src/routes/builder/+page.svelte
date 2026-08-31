@@ -9,6 +9,7 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
 	import WorkoutExerciseRow from '$lib/components/WorkoutExerciseRow.svelte';
+	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
@@ -22,6 +23,8 @@
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import { onboarding } from '$lib/stores/onboarding';
+	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
@@ -33,10 +36,12 @@
 	let selectedIds = $state<string[]>([]);
 	let saving = $state(false);
 	let clearOfferOpen = $state(false);
+	let introOfferOpen = $state(false);
 	let freshStartConsumed = $state(false);
 	let reorderFrom = $state<number | null>(null);
 	let reorderOver = $state<number | null>(null);
 	let lang = $derived($resolvedLocale);
+	let showBuilderSupersetCoachmark = $derived(shouldShowCoachmark($onboarding, 'builder.superset'));
 	let selectedCount = $derived(selectedIds.length);
 	let pageReady = $derived(
 		$draftHydrated && ($draft.exercises.length === 0 || indexReady)
@@ -61,6 +66,13 @@
 		draft.resetDraft();
 		selectedIds = [];
 		void goto('/builder', { replaceState: true, noScroll: true, keepFocus: true });
+	});
+
+	$effect(() => {
+		if (!pageReady || $draft.exercises.length > 0 || introOfferOpen) return;
+		if (shouldShowCoachmark($onboarding, 'builder.intro')) {
+			introOfferOpen = true;
+		}
 	});
 
 	onMount(() => {
@@ -89,6 +101,7 @@
 		saving = true;
 		try {
 			await plans.saveCurrent();
+			onboarding.markChecklist('planReady');
 			draft.resetDraft();
 			selectedIds = [];
 			toasts.show(translate(lang, 'builder.savedToast'), 'success');
@@ -269,11 +282,21 @@
 		<PageSkeleton variant="builder" rows={3} />
 	{:else if $draftHydrated}
 		<div class="soft-enter">
-			<div class="builder-name-desktop mb-5 max-w-xl">
+			<div class="builder-name-desktop mb-4 max-w-xl">
 				<AppLabel>
-					{translate(lang, 'builder.name')}
+					<span class="builder-name-label-row">
+						<span>{translate(lang, 'builder.name')}</span>
+						<span
+							id="builder-name-count"
+							class="pr-note-count builder-name-count"
+							class:pr-note-count--limit={$draft.name.length >= PLAN_NAME_MAX}
+							aria-live="polite"
+						>
+							{$draft.name.length}/{PLAN_NAME_MAX}
+						</span>
+					</span>
 					<AppInput
-						class="mt-1.5 w-full"
+						class="mt-1 w-full"
 						type="text"
 						placeholder={translate(lang, 'builder.namePh')}
 						maxlength={PLAN_NAME_MAX}
@@ -281,14 +304,6 @@
 						aria-describedby="builder-name-count"
 						oninput={(e) => draft.setName((e.currentTarget as HTMLInputElement).value)}
 					/>
-					<span
-						id="builder-name-count"
-						class="pr-note-count"
-						class:pr-note-count--limit={$draft.name.length >= PLAN_NAME_MAX}
-						aria-live="polite"
-					>
-						{$draft.name.length}/{PLAN_NAME_MAX}
-					</span>
 				</AppLabel>
 			</div>
 
@@ -324,7 +339,14 @@
 				</div>
 
 				{#if $draft.exercises.length >= 2 && selectedCount < 2}
-					<p class="builder-group-hint">{translate(lang, 'builder.groupHint')}</p>
+					{#if showBuilderSupersetCoachmark}
+						<Coachmark
+							message={translate(lang, 'onboarding.coachBuilderSuperset')}
+							onDismiss={() => onboarding.dismissCoachmark('builder.superset')}
+						/>
+					{:else}
+						<p class="builder-group-hint">{translate(lang, 'builder.groupHint')}</p>
+					{/if}
 				{/if}
 
 				<div class="builder-exercise-list" data-reorder-list>
@@ -432,6 +454,31 @@
 		</AppButton>
 		<AppButton variant="danger" onclick={commitClearDraft}>
 			{translate(lang, 'common.clear')}
+		</AppButton>
+	{/snippet}
+</BottomSheet>
+
+<BottomSheet
+	open={introOfferOpen}
+	titleId="builder-intro-title"
+	onDismiss={() => {
+		introOfferOpen = false;
+		onboarding.dismissCoachmark('builder.intro');
+	}}
+>
+	<p id="builder-intro-title" class="bottom-sheet__title">
+		{translate(lang, 'builder.title')}
+	</p>
+	<p class="bottom-sheet__lead">{translate(lang, 'onboarding.coachBuilderIntro')}</p>
+	{#snippet actions()}
+		<AppButton
+			block
+			onclick={() => {
+				introOfferOpen = false;
+				onboarding.dismissCoachmark('builder.intro');
+			}}
+		>
+			{translate(lang, 'onboarding.gotIt')}
 		</AppButton>
 	{/snippet}
 </BottomSheet>

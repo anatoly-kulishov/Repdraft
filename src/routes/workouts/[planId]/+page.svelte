@@ -20,10 +20,14 @@
 	import { onMount } from 'svelte';
 	import { ChevronRight, Pencil, Play } from '@lucide/svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
+	import { onboarding } from '$lib/stores/onboarding';
+	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 
 	let { params } = $props();
 
 	let lang = $derived($resolvedLocale);
+	let showPreviewStartCoachmark = $derived(shouldShowCoachmark($onboarding, 'preview.start'));
 	let plan = $state<WorkoutPlan | null>(null);
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let loading = $state(true);
@@ -238,6 +242,13 @@
 				</li>
 			{/each}
 		</ul>
+
+		{#if showPreviewStartCoachmark}
+			<Coachmark
+				message={translate(lang, 'onboarding.coachPreviewStart')}
+				onDismiss={() => onboarding.dismissCoachmark('preview.start')}
+			/>
+		{/if}
 
 		<div class="workout-preview-actions-desktop hidden flex-wrap gap-2 lg:flex">
 			<AppButton class="inline-flex items-center gap-2 px-6" onclick={onStart}>

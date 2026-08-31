@@ -5,6 +5,7 @@
 	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
+	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
@@ -28,6 +29,8 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { draft } from '$lib/stores/draft';
 	import { live } from '$lib/stores/live';
+	import { onboarding } from '$lib/stores/onboarding';
+	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { toasts } from '$lib/stores/toasts';
 	import { get } from 'svelte/store';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -49,6 +52,7 @@
 	} from '$lib/domain/inputLimits';
 
 	let lang = $derived($resolvedLocale);
+	let showHistoryDetailCoachmark = $derived(shouldShowCoachmark($onboarding, 'history.detail'));
 	let session = $state<WorkoutSession | null>(null);
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let missing = $state(false);
@@ -358,6 +362,14 @@
 			})}{#if historyVolumeKg > 0}
 				{' '}· {Math.round(historyVolumeKg)} kg{/if}
 		</p>
+
+		{#if showHistoryDetailCoachmark}
+			<Coachmark
+				class="mt-3"
+				message={translate(lang, 'onboarding.coachHistoryDetail')}
+				onDismiss={() => onboarding.dismissCoachmark('history.detail')}
+			/>
+		{/if}
 
 		<ul class="history-exercise-list">
 			{#each (viewSession ?? session).exercises as ex, exIndex (ex.exerciseId)}

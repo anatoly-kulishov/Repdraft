@@ -17,6 +17,7 @@
 	} from '$lib/domain/prefs';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { onboarding } from '$lib/stores/onboarding';
 	import {
 		ChevronDown,
 		ChevronRight,
@@ -84,6 +85,7 @@
 	}
 
 	function applyBip(ev: BeforeInstallPromptEvent) {
+		if (onboarding.deferPwaHint()) return;
 		deferred = ev;
 		mode = 'prompt';
 	}
@@ -176,6 +178,7 @@
 
 			revealTimer = setTimeout(() => {
 				if (cancelled || deferred || isPwaInstalledPref() || isInstallHintDismissed()) return;
+				if (onboarding.deferPwaHint()) return;
 				mode = manual ?? 'desktop';
 			}, 500);
 		})();

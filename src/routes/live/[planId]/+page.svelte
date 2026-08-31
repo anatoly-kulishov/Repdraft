@@ -34,6 +34,9 @@
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import { onboarding } from '$lib/stores/onboarding';
+	import { shouldShowCoachmark } from '$lib/domain/onboarding';
+	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import { goto } from '$app/navigation';
 	import { get } from 'svelte/store';
 	import { onDestroy, onMount, tick as nextFrame } from 'svelte';
@@ -42,6 +45,8 @@
 	let { params } = $props();
 
 	let lang = $derived($resolvedLocale);
+	let showLiveLoggingCoachmark = $derived(shouldShowCoachmark($onboarding, 'live.logging'));
+	let showLiveFinishCoachmark = $derived(shouldShowCoachmark($onboarding, 'live.finish'));
 	let session = $derived($live.session);
 	let restUntil = $derived($live.restUntil);
 	let loading = $state(true);
@@ -161,7 +166,14 @@
 		}
 	});
 
+	$effect(() => {
+		if (session && completedSetCount(session) > 0) {
+			onboarding.markChecklist('setLogged');
+		}
+	});
+
 	onMount(() => {
+		onboarding.markChecklist('liveEntered');
 		void acquireScreenWakeLock();
 
 		restTicker = startLiveRestTicker({
@@ -578,6 +590,12 @@
 						onConfirm={onChooseAlt}
 					/>
 				{:else}
+					{#if showLiveLoggingCoachmark}
+						<Coachmark
+							message={translate(lang, 'onboarding.coachLiveLogging')}
+							onDismiss={() => onboarding.dismissCoachmark('live.logging')}
+						/>
+					{/if}
 					{#each session.exercises as ex, ei (ex.exerciseId + '-' + ei)}
 						{#if ei === selectedExerciseIndex}
 							<LiveSetPanel
@@ -622,6 +640,13 @@
 							/>
 						{/if}
 					{/each}
+				{/if}
+
+				{#if showLiveFinishCoachmark}
+					<Coachmark
+						message={translate(lang, 'onboarding.coachLiveFinish')}
+						onDismiss={() => onboarding.dismissCoachmark('live.finish')}
+					/>
 				{/if}
 
 				<LiveSessionActions
