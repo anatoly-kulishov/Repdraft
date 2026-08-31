@@ -266,9 +266,6 @@
 						size={ICON_TAB}
 						strokeWidth={isActive('/workouts') ? ICON_TAB_STROKE_ACTIVE : ICON_TAB_STROKE}
 					/>
-					{#if hasActiveSession}
-						<span class="tab-link-live-dot" aria-hidden="true"></span>
-					{/if}
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.workouts')}</span>
 			</span>

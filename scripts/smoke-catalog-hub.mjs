@@ -163,7 +163,7 @@ assert(
 	assert(!text.includes('href="/catalog/lower%20legs"'), 'hub must merge lower legs into legs');
 }
 
-// ——— Zone with target browse (default landing) ———
+// ——— Zone default landing (chest: one browse chip → list; back/legs: target grid) ———
 {
 	const { status, text } = await get('/catalog/chest');
 	assert(status === 200, `GET /catalog/chest → ${status}`);
@@ -173,11 +173,16 @@ assert(
 			'screen-header',
 			'catalog-subroute-header',
 			'catalog-zone-crumb-link',
-			'class="catalog-target-grid catalog-hub-grid"',
-			'target=pectorals',
+			'catalog-page--list',
+			'catalog-zone-shell--list',
+			'catalog-filters',
 			'href="/exercises"'
 		],
-		'catalog zone browse'
+		'catalog chest list'
+	);
+	assert(
+		!text.includes('class="catalog-target-grid catalog-hub-grid"'),
+		'chest with one browse chip must skip target grid and open list'
 	);
 }
 
@@ -187,8 +192,8 @@ assert(
 	assert(status === 200, `GET /catalog/chest?target=pectorals → ${status}`);
 	assertIncludes(
 		text,
-		['catalog-filters', 'href="/catalog/chest"'],
-		'catalog zone list'
+		['catalog-filters', 'catalog-page--list', 'href="/exercises"'],
+		'catalog chest target list'
 	);
 }
 
@@ -214,7 +219,12 @@ assert(
 	assert(status === 200, `GET /catalog/legs → ${status}`);
 	assertIncludes(
 		text,
-		['class="catalog-target-grid catalog-hub-grid"', 'target=calves', 'target=glutes', 'browse=all'],
+		[
+			'class="catalog-target-grid catalog-hub-grid"',
+			'target=calves',
+			'target=quads',
+			'browse=all'
+		],
 		'merged legs target browse'
 	);
 }

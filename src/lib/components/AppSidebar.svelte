@@ -70,9 +70,6 @@
 			>
 				<span class="sidebar-link-icon" class:is-active={isActive(item.href)}>
 					<LucideIcon icon={item.icon} size={ICON_SIDEBAR} />
-					{#if showLiveDot}
-						<span class="sidebar-link-live-dot" aria-hidden="true"></span>
-					{/if}
 				</span>
 				<span>{translate(lang, item.labelKey)}</span>
 			</a>

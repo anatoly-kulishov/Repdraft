@@ -90,6 +90,11 @@ export function catalogEquipmentPath(bodyPart: string, equipment: string): strin
 	return catalogZonePath(bodyPart, { equipment });
 }
 
+/** Target muscle whose home hub zone is `slug` (e.g. pectorals → chest). */
+export function catalogTargetPrimaryZone(target: string): CatalogZoneSlug | undefined {
+	return TARGET_PRIMARY_ZONE[target];
+}
+
 export function catalogTargetPath(target: string, bodyPartHint?: string): string {
 	const zone =
 		bodyPartHint && isCatalogZone(bodyPartHint)

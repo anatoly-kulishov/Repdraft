@@ -346,218 +346,6 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	padding: 0;
 }
 
-.pwa-install {
-	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-	gap: 0.45rem;
-	margin: 0 0 0.85rem;
-	padding: 0.65rem 0.7rem 0.7rem 0.85rem;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-panel);
-	background: var(--color-surface);
-}
-
-/* Don’t pop install under the home boot skeleton (CLS). */
-.shell-main:has(.home-page--booting) .pwa-install {
-	display: none;
-}
-
-.pwa-install__row {
-	display: flex;
-	align-items: flex-start;
-	gap: 0.35rem;
-}
-
-.pwa-install__copy {
-	flex: 1;
-	min-width: 0;
-}
-
-.pwa-install__title {
-	margin: 0;
-	font-size: 0.875rem;
-	font-weight: 650;
-	line-height: 1.3;
-	color: var(--color-ink);
-}
-
-.pwa-install__hint {
-	margin: 0.15rem 0 0;
-	font-size: 0.75rem;
-	line-height: 1.4;
-	color: var(--color-muted);
-}
-
-.pwa-install__action {
-	flex-shrink: 0;
-	width: 100%;
-	margin-top: 0.15rem;
-	order: 3;
-}
-
-.pwa-install__close {
-	flex-shrink: 0;
-	margin: -0.2rem -0.15rem 0 0;
-	padding: 0;
-	color: var(--color-muted);
-	order: 2;
-}
-
-.pwa-install__close:hover {
-	color: var(--color-ink);
-}
-
-.pwa-install--prompt .pwa-install__row {
-	flex-wrap: wrap;
-	align-items: center;
-}
-
-.pwa-install__fallback {
-	margin: 0;
-	font-size: 0.6875rem;
-	font-weight: 600;
-	letter-spacing: 0.01em;
-	line-height: 1.3;
-	color: var(--color-muted);
-}
-
-.pwa-install__steps {
-	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-	gap: 0.1rem;
-	width: 100%;
-	max-width: 100%;
-	margin: 0;
-	padding: 0.3rem 0.35rem;
-	list-style: none;
-	border-radius: calc(var(--radius-control) + 2px);
-	background: var(--color-surface-muted);
-	border: 1px solid var(--color-border);
-}
-
-.pwa-install__step {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-	gap: 0.4rem;
-	width: 100%;
-	min-width: 0;
-	padding: 0.28rem 0.4rem 0.28rem 0.25rem;
-	border-radius: var(--radius-control);
-	text-align: left;
-}
-
-.pwa-install__step-icon {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 1.5rem;
-	height: 1.5rem;
-	border-radius: 999px;
-	color: var(--color-accent-text);
-	background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
-}
-
-.pwa-install__step-label {
-	min-width: 0;
-	font-size: 0.6875rem;
-	font-weight: 650;
-	line-height: 1.2;
-	color: var(--color-ink);
-}
-
-.pwa-install__step-sep {
-	display: none;
-}
-
-@media (min-width: 1024px) {
-	.shell-main > .pwa-install {
-		box-sizing: border-box;
-		width: 100%;
-		max-width: var(--page-content-max);
-		margin-inline: auto;
-	}
-
-	.shell-main:has(.content-page--narrow) > .pwa-install {
-		max-width: var(--page-content-narrow);
-	}
-
-	.shell-main:has(.content-page--catalog) > .pwa-install {
-		max-width: var(--page-content-catalog);
-	}
-
-	.pwa-install--prompt,
-	.pwa-install--guide {
-		max-width: none;
-	}
-
-	.pwa-install--prompt .pwa-install__row {
-		flex-wrap: nowrap;
-		gap: 0.65rem;
-	}
-
-	.pwa-install__action {
-		width: auto;
-		min-width: 7.75rem;
-		margin-top: 0;
-		order: 2;
-		padding-inline: 1rem;
-	}
-
-	.pwa-install__close {
-		order: 3;
-	}
-
-	.pwa-install__steps {
-		flex-direction: row;
-		flex-wrap: nowrap;
-		align-items: center;
-		gap: 0.15rem 0.2rem;
-		width: fit-content;
-		max-width: 100%;
-		padding: 0.35rem 0.4rem;
-	}
-
-	.pwa-install__step {
-		width: auto;
-		padding: 0.2rem 0.4rem 0.2rem 0.25rem;
-		border-radius: 999px;
-	}
-
-	.pwa-install__step-label {
-		white-space: nowrap;
-	}
-
-	.pwa-install__step-sep {
-		flex: 0 0 auto;
-		display: flex;
-		align-items: center;
-		color: var(--color-muted);
-		opacity: 0.55;
-		margin: 0;
-	}
-}
-
-@media (min-width: 1024px) {
-	.shell-main:has(.home-page) > .pwa-install {
-		max-width: var(--page-content-home);
-	}
-}
-
-@media (min-width: 1024px) and (min-height: 560px) {
-	.shell-main > .pwa-install {
-		margin-inline: 0 auto;
-	}
-}
-
-@media (display-mode: standalone) {
-	.pwa-install {
-		display: none !important;
-	}
-}
-
 @property --rest-pct {
 	syntax: "<number>";
 	inherits: true;
@@ -735,7 +523,9 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	color: var(--color-muted);
 }
 
-.live-nav-item {
+.live-nav-item,
+[data-slot='button'].btn-ghost.live-nav-item,
+.btn-ghost.live-nav-item {
 	position: relative;
 	display: flex;
 	box-sizing: border-box;
@@ -784,13 +574,18 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	overflow: hidden;
 }
 
-.live-nav-item:hover {
+.live-nav-item:hover,
+[data-slot='button'].btn-ghost.live-nav-item:hover,
+.btn-ghost.live-nav-item:hover {
 	opacity: 1;
+	border-color: var(--color-field-border);
 	background: color-mix(in srgb, var(--color-bg) 28%, var(--color-surface));
 	color: var(--color-ink);
 }
 
-.live-nav-item[data-active='true'] {
+.live-nav-item[data-active='true'],
+[data-slot='button'].btn-ghost.live-nav-item[data-active='true'],
+.btn-ghost.live-nav-item[data-active='true'] {
 	opacity: 1;
 	background: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface));
 	border: 1.5px solid color-mix(in srgb, var(--color-accent) 78%, var(--color-border));
@@ -945,18 +740,33 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	text-wrap: pretty;
 }
 
+.live-quick-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.live-quick-actions .live-last-chip,
+.live-quick-actions [data-slot='button'].live-last-chip {
+	flex: 1 1 0;
+	width: auto;
+	min-width: min(100%, 9.5rem);
+	max-width: 100%;
+}
+
 .live-last-chip {
 	box-sizing: border-box;
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	align-items: center;
 	justify-content: flex-start;
-	gap: 0.25rem 0.45rem;
+	gap: 0.25rem 0.35rem;
 	width: 100%;
 	max-width: 100%;
 	min-width: 0;
 	min-height: var(--control-height);
-	padding: 0.45rem 0.6rem;
+	padding: 0.35rem 0.5rem;
 	border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
 	border-radius: var(--radius-control);
 	background: var(--color-surface);
@@ -969,16 +779,16 @@ button.live-last-chip,
 [data-slot='button'].live-last-chip {
 	display: flex;
 	flex-shrink: 1;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	justify-content: flex-start;
 	align-items: center;
 	width: 100%;
 	max-width: 100%;
 	min-width: 0;
 	height: auto;
-	min-height: 3rem;
-	padding: 0.45rem 0.6rem;
-	white-space: normal;
+	min-height: var(--control-height);
+	padding: 0.35rem 0.5rem;
+	white-space: nowrap;
 	text-align: left;
 	overflow: hidden;
 }
@@ -998,15 +808,15 @@ button.live-last-chip,
 .live-last-chip__label {
 	flex: 0 1 auto;
 	min-width: 0;
-	font-size: 0.75rem;
+	font-size: 0.6875rem;
 	font-weight: 500;
 	color: var(--color-muted);
 }
 
 .live-last-chip__value {
-	flex: 1 1 auto;
+	flex: 0 1 auto;
 	min-width: 0;
-	font-size: 0.9375rem;
+	font-size: 0.8125rem;
 	font-weight: 700;
 	color: var(--color-ink);
 	overflow: hidden;
@@ -1015,10 +825,10 @@ button.live-last-chip,
 }
 
 .live-last-chip__action {
-	flex: 1 0 100%;
-	margin-left: 0;
+	flex: 0 0 auto;
+	margin-left: auto;
 	min-width: 0;
-	font-size: 0.8125rem;
+	font-size: 0.75rem;
 	font-weight: 650;
 	color: var(--color-accent-text);
 	overflow: hidden;
@@ -2357,10 +2167,6 @@ button.live-panel-thumb {
 		min-height: 2.85rem;
 	}
 
-	.live-last-chip__action {
-		width: 100%;
-		margin-left: 0;
-	}
 }
 
 @media (min-width: 1024px) {
@@ -2491,155 +2297,6 @@ button.live-panel-thumb {
 	font-weight: 650;
 }
 
-.bottom-sheet,
-.live-finish-offer {
-	position: fixed;
-	inset: 0;
-	z-index: var(--z-overlay);
-	display: flex;
-	align-items: flex-end;
-	justify-content: center;
-	padding: 1rem;
-	padding-bottom: calc(var(--mobile-chrome-bottom, 0px) + 1rem);
-	background: color-mix(in srgb, var(--color-bg) 55%, transparent);
-	backdrop-filter: blur(2px);
-}
-
-.bottom-sheet__card,
-.live-finish-offer__card {
-	width: min(100%, 24rem);
-	padding: 1.1rem 1.05rem 1.15rem;
-	box-shadow: var(--shadow-overlay);
-	animation: kineticsToastIn 0.35s var(--ease-toast) both;
-}
-
-/* shadcn Sheet bottom — tabbar clearance + brand overlay */
-[data-slot='sheet-overlay'] {
-	background: color-mix(in srgb, var(--color-bg) 55%, transparent);
-	backdrop-filter: blur(2px);
-}
-
-/* shadcn Sheet bottom — full-viewport flex host; card lives in .bottom-sheet__card */
-[data-slot='sheet-content'][data-side='bottom'].bottom-sheet {
-	inset: 0;
-	top: 0;
-	bottom: 0;
-	height: 100%;
-	max-height: none;
-	width: 100%;
-	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-	justify-content: flex-end;
-	padding: 0;
-	border: none;
-	background: transparent;
-	box-shadow: none;
-	pointer-events: auto;
-}
-
-.bottom-sheet__host {
-	position: relative;
-	display: flex;
-	flex: 1 1 auto;
-	align-items: flex-end;
-	justify-content: center;
-	width: 100%;
-	min-height: 100%;
-	padding: 1rem;
-	padding-bottom: calc(var(--mobile-chrome-bottom, 0px) + 1rem);
-}
-
-.bottom-sheet__backdrop {
-	position: absolute;
-	inset: 0;
-	z-index: 0;
-	margin: 0;
-	padding: 0;
-	border: 0;
-	background: transparent;
-	cursor: default;
-	appearance: none;
-	-webkit-appearance: none;
-}
-
-[data-slot='sheet-content'][data-side='bottom'].bottom-sheet .bottom-sheet__card {
-	background-color: var(--color-surface);
-	background-image: var(--surface-sheen);
-	position: relative;
-	z-index: 1;
-	pointer-events: auto;
-	/* Beat .panel padding/overflow so sheet content owns spacing. */
-	padding: 1.1rem 1.05rem 1.15rem;
-	overflow-x: hidden;
-	min-width: 0;
-}
-
-[data-slot='sheet-content'][data-side='bottom'].bottom-sheet.bottom-sheet--raised .bottom-sheet__host {
-	align-items: center;
-	padding-top: max(1rem, var(--safe-top));
-	padding-bottom: calc(var(--mobile-chrome-bottom, 0px) + 1rem);
-}
-
-.bottom-sheet__title,
-.live-finish-offer__title {
-	margin: 0;
-	min-width: 0;
-	max-width: 100%;
-	font-size: 1.125rem;
-	font-weight: 650;
-	line-height: 1.3;
-	color: var(--color-ink);
-	overflow-wrap: anywhere;
-	word-break: break-word;
-}
-
-.bottom-sheet__head {
-	position: relative;
-	padding-right: calc(var(--control-min-width) + 0.15rem);
-}
-
-.bottom-sheet__close {
-	position: absolute;
-	top: 0.5rem;
-	right: 0.5rem;
-	z-index: 2;
-	margin: 0;
-}
-
-.bottom-sheet__head .bottom-sheet__title {
-	flex: 1 1 auto;
-	min-width: 0;
-}
-
-.btn-icon-close {
-	box-sizing: border-box;
-	display: inline-grid;
-	place-items: center;
-	flex-shrink: 0;
-	min-width: var(--control-min-width);
-	min-height: var(--control-height);
-	margin: 0;
-	padding: 0;
-	border: none;
-	border-radius: var(--radius-control);
-	background: transparent;
-	color: var(--color-muted);
-	cursor: pointer;
-}
-
-.btn-icon-close:hover:not(:disabled) {
-	color: var(--color-ink);
-	background: color-mix(in srgb, var(--color-surface-muted) 85%, transparent);
-}
-
-.btn-icon-close:disabled {
-	opacity: 0.45;
-	cursor: not-allowed;
-}
-
-/* clip-composer + clip-lightbox__close → screen-misc.css (exercise / catalog) */
-/* — moved from builder.css (P5) — */
 @media (min-width: 768px) {
 	.live-desktop-actions .live-session-secondary {
 		width: auto;
