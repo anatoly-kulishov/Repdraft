@@ -17,10 +17,13 @@
 	import { draft } from '$lib/stores/draft';
 	import { bookmarks } from '$lib/stores/bookmarks';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { onboarding } from '$lib/stores/onboarding';
+	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { toasts } from '$lib/stores/toasts';
 	import PersonalRecordPanel from '$lib/components/PersonalRecordPanel.svelte';
 	import ExerciseSessionHistory from '$lib/components/ExerciseSessionHistory.svelte';
 	import TechniqueClipsPanel from '$lib/components/TechniqueClipsPanel.svelte';
+	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -35,6 +38,7 @@
 
 	let exercise = $derived(data.exercise);
 	let lang = $derived($resolvedLocale);
+	let showExerciseTabsCoachmark = $derived(shouldShowCoachmark($onboarding, 'exercise.tabs'));
 	let relatedArticles = $derived.by(() => {
 		const forLocale = data.relatedArticles.filter((a) => a.locale === lang);
 		return forLocale.length > 0
@@ -244,6 +248,13 @@
 							ariaLabel={translate(lang, 'exercise.tabsAria')}
 						/>
 					</div>
+					{#if showExerciseTabsCoachmark}
+						<Coachmark
+							class="mt-3"
+							message={translate(lang, 'onboarding.coachExerciseTabs')}
+							onDismiss={() => onboarding.dismissCoachmark('exercise.tabs')}
+						/>
+					{/if}
 
 					{#if activeTab === 'description'}
 						<div class="exercise-detail-tab-panel">

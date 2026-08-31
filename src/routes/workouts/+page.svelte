@@ -12,13 +12,14 @@
 	import WorkoutsPageSkeleton from '$lib/components/WorkoutsPageSkeleton.svelte';
 	import SwipeToDelete, { type SwipeRowAction } from '$lib/components/SwipeToDelete.svelte';
 	import AppFab from '$lib/components/AppFab.svelte';
+	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, ArrowLeft, ClipboardList, Clock, Flag, GripVertical, Play, Plus, Trash2 } from '@lucide/svelte';
+	import { Copy, ArrowLeft, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
-	import { planExerciseSlotCount, planTargetSummary, promotePlanToFront, resolveHomeNextPlan } from '$lib/domain/workout';
+	import { planExerciseSlotCount, planTargetSummary, resolveHomeNextPlan } from '$lib/domain/workout';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
@@ -31,7 +32,9 @@
 	import { isCloudListUncertain } from '$lib/domain/cloudSync';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
-	import { goto, beforeNavigate } from '$app/navigation';
+	import { onboarding } from '$lib/stores/onboarding';
+	import { shouldShowCoachmark } from '$lib/domain/onboarding';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { cn } from '$lib/utils.js';
 	import { onMount } from 'svelte';
@@ -44,6 +47,7 @@
 	}
 
 	let lang = $derived($resolvedLocale);
+	let showWorkoutsPreviewCoachmark = $derived(shouldShowCoachmark($onboarding, 'workouts.preview'));
 	let activeTab = $derived(parseWorkoutsTab($page.url.searchParams.get('tab')));
 	let searchQuery = $state('');
 	const peeked = peekExerciseIndex();
@@ -73,35 +77,14 @@
 		resolveHomeNextPlan($plans, history[0]?.planId, $homeNextPlan)
 	);
 
-	let displayedPlans = $derived.by(() => {
-		if (planReorderMode) return filteredPlans;
-		return promotePlanToFront(filteredPlans, nextPlan?.id);
-	});
+	let displayedPlans = $derived(filteredPlans);
 
 	let canReorderPlans = $derived(!searchQuery.trim() && $plans.length > 1);
-	let planReorderMode = $state(false);
-	let showPlanReorderHandles = $derived(planReorderMode && canReorderPlans);
 	let reorderFrom = $state<number | null>(null);
 	let reorderOver = $state<number | null>(null);
 
-	function exitPlanReorderMode() {
-		planReorderMode = false;
-		reorderFrom = null;
-		reorderOver = null;
-	}
-
-	function togglePlanReorderMode() {
-		if (!canReorderPlans) return;
-		if (planReorderMode) {
-			exitPlanReorderMode();
-			return;
-		}
-		document.dispatchEvent(new CustomEvent('repdraft:swipe-close', { detail: null }));
-		planReorderMode = true;
-	}
-
 	function reorderPlan(from: number, to: number) {
-		if (!showPlanReorderHandles || planBusyId !== null) return;
+		if (!canReorderPlans || planBusyId !== null) return;
 		plans.reorderInOrder(from, to);
 	}
 
@@ -129,20 +112,26 @@
 	let planBusyOp = $state<'copy' | 'delete' | null>(null);
 
 	let clearHistoryOfferOpen = $state(false);
+	let demoBusy = $state(false);
+
+	async function onTryDemoPlan() {
+		if (demoBusy) return;
+		demoBusy = true;
+		try {
+			const planId = await onboarding.installDemoPlan();
+			await goto(`/workouts/${planId}`);
+		} catch (err) {
+			toasts.show(translateError(lang, err, 'onboarding.demoFail'), 'error');
+		} finally {
+			demoBusy = false;
+		}
+	}
 
 	let pageTitle = $derived(
 		translate(lang, activeTab === 'history' ? 'workouts.tabHistory' : 'workouts.title')
 	);
-	let showPlansLead = $derived(activeTab === 'plans' && !planReorderMode);
+	let showPlansLead = $derived(activeTab === 'plans');
 	let showPlansLeadSlot = $derived(activeTab === 'plans');
-
-	$effect(() => {
-		if (planReorderMode && !canReorderPlans) exitPlanReorderMode();
-	});
-
-	beforeNavigate(() => {
-		exitPlanReorderMode();
-	});
 
 	onMount(() => {
 		const onReorder = (event: Event) => {
@@ -169,7 +158,6 @@
 	});
 
 	function setTab(tab: WorkoutsTab) {
-		if (tab === 'history') exitPlanReorderMode();
 		const url = new URL($page.url);
 		if (tab === 'plans') url.searchParams.delete('tab');
 		else url.searchParams.set('tab', tab);
@@ -211,7 +199,9 @@
 			await plans.removePlan(id);
 			toasts.showUndo(
 				translate(lang, 'workouts.deleted'),
-				() => plans.restorePlan(plan, orderIndex),
+				async () => {
+					await plans.restorePlan(plan, orderIndex);
+				},
 				'info'
 			);
 		} catch (err) {
@@ -270,7 +260,9 @@
 			await live.removeFromHistory(session.id);
 			toasts.showUndo(
 				translate(lang, 'workouts.sessionDeleted'),
-				() => live.restoreSession(snapshot),
+				async () => {
+					await live.restoreSession(snapshot);
+				},
 				'info'
 			);
 		} catch (err) {
@@ -337,12 +329,7 @@
 				<h1 class="page-title">{pageTitle}</h1>
 				{#if showPlansLeadSlot}
 					<p class="page-lead workouts-page-lead">
-						{#if planReorderMode}
-							<span class="workouts-page-lead__stack">
-								<span>{translate(lang, 'workouts.reorderModeHintLead')}</span>
-								<span>{translate(lang, 'workouts.reorderModeHintSwipe')}</span>
-							</span>
-						{:else if showPlansLead}
+						{#if showPlansLead}
 							{#if !$auth.ready || !$auth.dataBootstrap}
 								<span
 									class="inline-block h-4 w-48 max-w-full animate-pulse rounded bg-[var(--color-surface-muted)]"
@@ -367,27 +354,6 @@
 				{#if activeTab === 'history'}
 					{@render historyClearAction()}
 				{:else if activeTab === 'plans'}
-					{#if canReorderPlans}
-						<AppButton
-							variant="secondary"
-							class={cn(
-								'workouts-page__toolbar-icon-btn workouts-page__icon-btn',
-								planReorderMode && 'is-active'
-							)}
-							onclick={togglePlanReorderMode}
-							aria-pressed={planReorderMode}
-							aria-label={translate(
-								lang,
-								planReorderMode ? 'workouts.reorderModeOff' : 'workouts.reorderMode'
-							)}
-							title={translate(
-								lang,
-								planReorderMode ? 'workouts.reorderModeOff' : 'workouts.reorderMode'
-							)}
-						>
-							<LucideIcon icon={GripVertical} size={ICON_SMALL} />
-						</AppButton>
-					{/if}
 					<AppButton
 						variant="secondary"
 						class="workouts-page__toolbar-icon-btn workouts-page__icon-btn"
@@ -430,6 +396,16 @@
 				>
 					{#snippet actions()}
 						<BackupImportAction variant="secondary" block />
+						<AppButton
+							variant="link"
+							block
+							class="mt-2"
+							disabled={demoBusy}
+							aria-busy={demoBusy}
+							onclick={() => void onTryDemoPlan()}
+						>
+							{translate(lang, 'onboarding.emptyPlansDemo')}
+						</AppButton>
 					{/snippet}
 				</EmptyState>
 			{:else}
@@ -441,10 +417,16 @@
 						{translate(lang, 'catalog.emptyTitle')}
 					</AppPanel>
 				{:else}
+					{#if showWorkoutsPreviewCoachmark}
+						<Coachmark
+							message={translate(lang, 'onboarding.coachWorkoutsPreview')}
+							onDismiss={() => onboarding.dismissCoachmark('workouts.preview')}
+						/>
+					{/if}
 					<ul
 						class="entity-list entity-list--cards"
 						class:cloud-sync-list--uncertain={listUncertain}
-						class:workouts-page__list--reorder-mode={planReorderMode}
+						class:workouts-page__list--reorder-mode={canReorderPlans}
 						data-reorder-list
 					>
 						{#each displayedPlans as plan, index (plan.id)}
@@ -457,7 +439,7 @@
 								data-plan-index={index}
 							>
 								<SwipeToDelete
-									disabled={planReorderMode || planBusyId !== null || reorderFrom !== null}
+									disabled={planBusyId !== null || reorderFrom !== null}
 									actions={planSwipeActions(plan)}
 								>
 									<div class="entity-row">
@@ -539,20 +521,16 @@
 											</AppButton>
 										</div>
 										{#if canReorderPlans}
-											{#if showPlanReorderHandles}
-												<ExerciseReorderHandle
-													{index}
-													holdMs={0}
-													label={translate(lang, 'builder.reorder')}
-													onreorder={reorderPlan}
-													targetSelector="[data-plan-index]"
-													indexAttribute="data-plan-index"
-													rootActiveClass="is-plan-reorder-active"
-													eventName="repdraft:plan-reorder"
-												/>
-											{:else}
-												<span class="entity-row__reorder-slot" aria-hidden="true"></span>
-											{/if}
+											<ExerciseReorderHandle
+												{index}
+												holdMs={0}
+												label={translate(lang, 'builder.reorder')}
+												onreorder={reorderPlan}
+												targetSelector="[data-plan-index]"
+												indexAttribute="data-plan-index"
+												rootActiveClass="is-plan-reorder-active"
+												eventName="repdraft:plan-reorder"
+											/>
 										{/if}
 									</div>
 								</SwipeToDelete>
@@ -564,11 +542,35 @@
 		{:else if history.length === 0}
 			<EmptyState
 				centered
+				class="empty-state--history"
 				icon={Clock}
 				title={translate(lang, 'workouts.historyEmptyTitle')}
-				description={translate(lang, 'workouts.historyEmptyDesc')}
+				description={translate(lang, 'onboarding.historyEmptyLead')}
 			>
 				{#snippet actions()}
+					<div class="workouts-history-mock entity-row" aria-hidden="true">
+						<div class="entity-row__main">
+							<span class="workouts-history-mock__label">
+								{translate(lang, 'onboarding.historyMockEyebrow')}
+							</span>
+							<span class="entity-row__title">{translate(lang, 'onboarding.historyMockTitle')}</span>
+							<span class="entity-row__meta">{translate(lang, 'onboarding.historyMockMeta')}</span>
+						</div>
+					</div>
+					{#if $plans.length > 0 && nextPlan}
+						<AppButton href={`/workouts/${nextPlan.id}`} block>
+							{translate(lang, 'workouts.start')}
+						</AppButton>
+					{:else}
+						<AppButton
+							variant="secondary"
+							block
+							disabled={demoBusy}
+							onclick={() => void onTryDemoPlan()}
+						>
+							{translate(lang, 'onboarding.tryDemo')}
+						</AppButton>
+					{/if}
 					<BackupImportAction variant="secondary" block />
 				{/snippet}
 			</EmptyState>

@@ -15,6 +15,13 @@
 	let lang = $derived($resolvedLocale);
 	let query = $state('');
 	let filtered = $derived(filterArticles(data.articles, query, lang));
+	let gettingStarted = $derived(
+		filtered.filter((article) => article.tags.includes('getting-started'))
+	);
+	let otherArticles = $derived(
+		filtered.filter((article) => !article.tags.includes('getting-started'))
+	);
+	let showGettingStartedSection = $derived(!query.trim() && gettingStarted.length > 0);
 	let title = $derived(translate(lang, 'articles.title'));
 </script>
 
@@ -49,11 +56,32 @@
 				description={translate(lang, 'articles.emptyDesc')}
 			/>
 		{:else}
-			<div class="articles-hub__grid">
-				{#each filtered as article (`${article.slug}:${article.locale}`)}
-					<ArticleCard {article} />
-				{/each}
-			</div>
+			{#if showGettingStartedSection}
+				<h2 class="section-title articles-hub__section-title">
+					{translate(lang, 'articles.homeTeaserTitle')}
+				</h2>
+				<div class="articles-hub__grid">
+					{#each gettingStarted as article (`${article.slug}:${article.locale}`)}
+						<ArticleCard {article} />
+					{/each}
+				</div>
+				{#if otherArticles.length > 0}
+					<h2 class="section-title articles-hub__section-title articles-hub__section-title--more">
+						{translate(lang, 'articles.teaserTitle')}
+					</h2>
+					<div class="articles-hub__grid">
+						{#each otherArticles as article (`${article.slug}:${article.locale}`)}
+							<ArticleCard {article} />
+						{/each}
+					</div>
+				{/if}
+			{:else}
+				<div class="articles-hub__grid">
+					{#each filtered as article (`${article.slug}:${article.locale}`)}
+						<ArticleCard {article} />
+					{/each}
+				</div>
+			{/if}
 		{/if}
 	</section>
 </div>

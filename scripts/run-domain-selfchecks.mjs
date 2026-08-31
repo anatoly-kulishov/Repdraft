@@ -27,7 +27,9 @@ const checks = [
 	'prefs',
 	'exportData',
 	'pwaInstall',
-	'exerciseScore'
+	'exerciseScore',
+	'onboarding',
+	'docMarkdown'
 ];
 
 for (const name of checks) {

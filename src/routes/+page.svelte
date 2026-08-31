@@ -20,14 +20,19 @@
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
 	import { greetingFirstName } from '$lib/domain/greetingName';
+	import { shouldShowChecklist } from '$lib/domain/onboarding';
 	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
-	import { translate } from '$lib/i18n/messages';
+	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
 	import { greetingName } from '$lib/stores/greetingName';
 	import { homeNextPlan } from '$lib/stores/homeNextPlan';
 	import { live } from '$lib/stores/live';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { onboarding } from '$lib/stores/onboarding';
+	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
+	import { toasts } from '$lib/stores/toasts';
+	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
@@ -172,6 +177,32 @@
 			(recent.length > 0 || !hasPlans || (hasPlans && !hasSessionHistory))
 	);
 
+	let showOnboardingChecklist = $derived(
+		pageReady && shouldShowChecklist($onboarding) && (isCreateHome || isFirstTimeHome)
+	);
+	let demoBusy = $state(false);
+
+	$effect(() => {
+		if (pageReady) onboarding.markChecklist('homeSeen');
+	});
+
+	$effect(() => {
+		if (hasPlans) onboarding.markChecklist('planReady');
+	});
+
+	async function onTryDemoPlan() {
+		if (demoBusy) return;
+		demoBusy = true;
+		try {
+			const planId = await onboarding.installDemoPlan();
+			await goto(`/workouts/${planId}`);
+		} catch (err) {
+			toasts.show(translateError(lang, err, 'onboarding.demoFail'), 'error');
+		} finally {
+			demoBusy = false;
+		}
+	}
+
 	onMount(() => {
 		void (async () => {
 			while (!$auth.ready || !$auth.dataBootstrap) {
@@ -278,6 +309,11 @@
 		</a>
 	{/if}
 	<div class="home-dashboard">
+		{#if showOnboardingChecklist}
+			<div class="home-dashboard-top home-dashboard-top--onboarding">
+				<OnboardingChecklist onTryDemo={onTryDemoPlan} {demoBusy} articlesHref="/articles" />
+			</div>
+		{/if}
 		{#if showGuestCreateHero}
 			<div class="home-dashboard-top">
 				<div class="home-hero home-hero--guest">

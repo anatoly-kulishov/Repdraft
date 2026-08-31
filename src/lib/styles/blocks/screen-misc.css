@@ -791,12 +791,15 @@
 	min-width: 0;
 	flex-shrink: 1;
 	justify-content: center;
+	align-items: center;
 	/* Beat shadcn whitespace-nowrap + shrink-0 so RU labels stay inside the chrome. */
 	white-space: normal;
 	height: auto;
 	min-height: var(--control-height, 48px);
+	padding-block: 0.5rem;
 	text-wrap: balance;
 	line-height: 1.25;
+	text-align: center;
 }
 
 /* Standalone backup card (guest / cloud-off): panel already separates, no extra rule. */
@@ -943,11 +946,98 @@
 	display: grid;
 	grid-template-columns: 1fr 1fr;
 	gap: 0.5rem;
+	align-items: stretch;
+}
+
+.auth-danger-zone__confirm-actions :is([data-slot='button'], .btn-secondary, .btn-danger) {
+	width: 100%;
+	min-width: 0;
+	height: auto;
+	min-height: var(--control-height);
+	padding-block: 0.5rem;
+	padding-inline: 0.65rem;
+	line-height: 1.25;
+	text-align: center;
+	text-wrap: balance;
+	white-space: normal;
+	align-items: center;
+	justify-content: center;
 }
 
 .auth-danger-zone__confirm-actions .btn-danger:not(:disabled) {
 	border-color: var(--color-danger);
 	background: color-mix(in srgb, var(--color-danger) 14%, var(--color-surface));
+}
+
+.profile-dev-wipe {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 1rem 1.05rem;
+	border-style: dashed;
+	border-color: color-mix(in srgb, var(--color-muted) 40%, var(--color-border));
+	background: color-mix(in srgb, var(--color-surface-muted) 28%, var(--color-surface));
+}
+
+.profile-dev-wipe__head {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.65rem;
+}
+
+.profile-dev-wipe__icon {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--color-muted) 12%, var(--color-surface));
+	color: var(--color-muted);
+}
+
+.profile-dev-wipe__title {
+	margin: 0;
+}
+
+.profile-dev-wipe__lead {
+	margin: 0.25rem 0 0;
+}
+
+.profile-dev-wipe__confirm {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.profile-dev-wipe__confirm-text {
+	margin: 0;
+	font-size: 0.8125rem;
+	line-height: 1.45;
+	color: var(--color-ink);
+}
+
+.profile-dev-wipe__confirm-actions {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.5rem;
+	align-items: stretch;
+}
+
+.profile-dev-wipe__confirm-actions :is([data-slot='button'], .btn-secondary, .btn-danger) {
+	width: 100%;
+	min-width: 0;
+	height: auto;
+	min-height: var(--control-height);
+	padding-block: 0.5rem;
+	padding-inline: 0.65rem;
+	line-height: 1.25;
+	text-align: center;
+	text-wrap: balance;
+	white-space: normal;
+	align-items: center;
+	justify-content: center;
 }
 
 .auth-account {
@@ -1077,6 +1167,10 @@
 	padding: 1.05rem 1.1rem;
 	overflow: hidden;
 	container-type: inline-size;
+}
+
+.profile-settings-group.panel[data-slot='card'] {
+	padding: 1.05rem 1.1rem !important;
 }
 
 .profile-settings-group__title {
@@ -2618,10 +2712,13 @@ button.clip-composer__pick:hover:not(:disabled),
 	grid-template-columns: 1fr;
 }
 
-.bottom-sheet__actions .btn-primary,
-.bottom-sheet__actions .btn-secondary,
-.bottom-sheet__actions [data-slot='button'].btn-primary,
-.bottom-sheet__actions [data-slot='button'].btn-secondary {
+.bottom-sheet__actions :is(
+	.btn-primary,
+	.btn-action,
+	.btn-secondary,
+	.btn-danger,
+	[data-slot='button']
+) {
 	width: 100%;
 	min-width: 0;
 	min-height: 3rem;

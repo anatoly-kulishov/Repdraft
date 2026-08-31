@@ -39,6 +39,7 @@
 | Community technique GIF | есть | частично | нет | частично | Сильная уникальность |
 | Cloud sync + web/PWA | есть | есть | частично | частично | PWA-first |
 | RU-first UX | есть | частично | частично | частично | Локальный wedge |
+| Onboarding / first-run | частично | есть | частично | есть | Empty states + hints; **v0.15.0** progressive onboarding **shipped** |
 | Watch / wearable | нет | есть | есть | есть | После стабильного web-лога |
 | CSV export / backup | есть | есть | есть | частично | JSON + CSV сессий с /auth |
 
@@ -81,6 +82,10 @@ Semver: patch = polish/багфиксы; minor = пользовательска�
 3. **Мини-аналитика** - **shipped in v0.5.0 (local sessions)**  
    Недельный объём, частота, лучшие веса из сессий на `/workouts`.
 4. **Усилить technique wedge** - клипы в live-сессии, модерация; не копия Hevy social.
+5. **Сквозной онбординг (v0.15.0)** - **shipped**  
+   Progressive disclosure: checklist, coachmarks, demo path, guest journey, undo snackbar. QA: [`/scenarios`](/scenarios). План: [onboarding-v0.15.0-plan.md](onboarding-v0.15.0-plan.md).
+6. **Telegram UX borrow (v0.15.1)** - **planned (patch)**  
+   Snackbar/list/settings polish по паттернам Telegram без копирования мессенджера. Спека: [telegram-ux-borrow-v0.15.1.md](telegram-ux-borrow-v0.15.1.md).
 
 ### P2
 
