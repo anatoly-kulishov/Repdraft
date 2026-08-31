@@ -191,8 +191,18 @@
 	let exerciseMeta = $derived(names.get(exercise.exerciseId) ?? null);
 	let title = $derived(titleFor(exercise.exerciseId));
 	let lastFormatted = $derived(formatLast(exercise.exerciseId));
-	let hasPreviousColumn = $derived(
-		exercise.sets.some((_, si) => previousForSet(si) != null)
+	let hasPreviousColumn = $derived.by(() => {
+		if (!exercise.sets.some((_, si) => previousForSet(si) != null)) return false;
+		const noPrev = translate(lang, 'live.noPrevious');
+		const labels = exercise.sets
+			.map((_, si) => previousLabel(si))
+			.filter((label) => label !== noPrev);
+		if (labels.length === 0) return false;
+		return new Set(labels).size > 1;
+	});
+	let showQuickActions = $derived(
+		(lastCopy != null && lastFormatted != null && canApplyLast) ||
+			(canFillWeightAll && fillWeightKg != null)
 	);
 
 	function showRemove(setIndex: number): boolean {
@@ -305,32 +315,36 @@
 	</header>
 
 	<section class="live-panel__log" aria-label={translate(lang, 'live.setLogAria')}>
-		{#if lastCopy && lastFormatted && canApplyLast}
-			<AppButton
-				variant="ghost"
-				class="live-last-chip live-last-chip--tap"
-				aria-label={translate(lang, 'live.lastApplyAria', { value: lastFormatted })}
-				onclick={applyLastPerformance}
-			>
-				<span class="live-last-chip__label">{translate(lang, 'live.last')}</span>
-				<span class="live-last-chip__value tabular-nums">{lastFormatted}</span>
-				<span class="live-last-chip__action">{translate(lang, 'live.applyLast')}</span>
-			</AppButton>
-		{/if}
+		{#if showQuickActions}
+			<div class="live-quick-actions">
+				{#if lastCopy && lastFormatted && canApplyLast}
+					<AppButton
+						variant="ghost"
+						class="live-last-chip live-last-chip--tap"
+						aria-label={translate(lang, 'live.lastApplyAria', { value: lastFormatted })}
+						onclick={applyLastPerformance}
+					>
+						<span class="live-last-chip__label">{translate(lang, 'live.last')}</span>
+						<span class="live-last-chip__value tabular-nums">{lastFormatted}</span>
+						<span class="live-last-chip__action">{translate(lang, 'live.applyLast')}</span>
+					</AppButton>
+				{/if}
 
-		{#if canFillWeightAll && fillWeightKg != null}
-			<AppButton
-				variant="ghost"
-				class="live-last-chip live-last-chip--tap"
-				aria-label={fillWeightAllLabel}
-				onclick={applyWeightToAllSets}
-			>
-				<span class="live-last-chip__label">{translate(lang, 'live.weightFillChip')}</span>
-				<span class="live-last-chip__value tabular-nums">
-					{fillWeightKg} {translate(lang, 'pr.kg')}
-				</span>
-				<span class="live-last-chip__action">{translate(lang, 'live.weightFillAll')}</span>
-			</AppButton>
+				{#if canFillWeightAll && fillWeightKg != null}
+					<AppButton
+						variant="ghost"
+						class="live-last-chip live-last-chip--tap"
+						aria-label={fillWeightAllLabel}
+						onclick={applyWeightToAllSets}
+					>
+						<span class="live-last-chip__label">{translate(lang, 'live.weightFillChip')}</span>
+						<span class="live-last-chip__value tabular-nums">
+							{fillWeightKg} {translate(lang, 'pr.kg')}
+						</span>
+						<span class="live-last-chip__action">{translate(lang, 'live.weightFillAll')}</span>
+					</AppButton>
+				{/if}
+			</div>
 		{/if}
 
 		{#if bodyweight}

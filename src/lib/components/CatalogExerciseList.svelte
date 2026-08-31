@@ -297,7 +297,13 @@
 		unbookmarkBusyId = exerciseId;
 		try {
 			await bookmarks.toggle(exerciseId);
-			toasts.show(translate(lang, 'bookmarks.removed'), 'info', 2600, undefined, 'bookmark');
+			toasts.showUndo(
+				translate(lang, 'bookmarks.removed'),
+				() => void bookmarks.toggle(exerciseId),
+				'info',
+				undefined,
+				'bookmark'
+			);
 		} catch {
 			toasts.show(translate(lang, 'errors.generic'), 'error');
 		} finally {

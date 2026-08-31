@@ -86,12 +86,12 @@
 
 	function formatSet(set: LoggedSet): string {
 		if (set.weightKg != null) {
-			return `${set.weightKg} ${translate(lang, 'pr.kg')} × ${set.reps ?? '—'}`;
+			return `${set.weightKg} ${translate(lang, 'pr.kg')} × ${set.reps ?? '-'}`;
 		}
 		if (set.reps != null) {
 			return `${set.reps} ${translate(lang, 'pr.repsShort')}`;
 		}
-		return '—';
+		return '-';
 	}
 
 	let authNextHref = $derived(
@@ -263,10 +263,10 @@
 				<p class="summary-guest-hint__title">{translate(lang, 'summary.guestSyncTitle')}</p>
 				<p class="summary-guest-hint__lead">{translate(lang, 'summary.guestSyncLead')}</p>
 				<div class="summary-guest-hint__actions">
-					<AppButton variant="secondary" href={authNextHref} class="px-4">
+					<AppButton variant="secondary" href={authNextHref}>
 						{translate(lang, 'summary.guestSyncCta')}
 					</AppButton>
-					<AppButton variant="link" class="px-3" onclick={dismissGuestHint}>
+					<AppButton variant="ghost" onclick={dismissGuestHint}>
 						{translate(lang, 'summary.guestSyncDismiss')}
 					</AppButton>
 				</div>

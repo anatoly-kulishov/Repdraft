@@ -92,7 +92,17 @@
 		void bookmarks
 			.toggle(exercise.id)
 			.then((saved) => {
-				toasts.show(translate(lang, saved ? 'bookmarks.saved' : 'bookmarks.removed'), 'info', 2600, undefined, 'bookmark');
+				if (saved) {
+					toasts.show(translate(lang, 'bookmarks.saved'), 'info', 2600, undefined, 'bookmark');
+					return;
+				}
+				toasts.showUndo(
+					translate(lang, 'bookmarks.removed'),
+					() => void bookmarks.toggle(exercise.id),
+					'info',
+					undefined,
+					'bookmark'
+				);
 			})
 			.finally(() => {
 				bookmarkBusy = false;

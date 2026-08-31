@@ -22,14 +22,13 @@
 	});
 
 	function formatSet(weightKg: number | null, reps: number | null): string {
-		const w = weightKg != null ? String(weightKg) : '—';
-		const r = reps != null ? String(reps) : '—';
+		const w = weightKg != null ? String(weightKg) : '-';
+		const r = reps != null ? String(reps) : '-';
 		return `${w}×${r}`;
 	}
 </script>
 
 <section class="exercise-history panel">
-	<h2 class="section-title mb-2">{translate(lang, 'exercise.historyTitle')}</h2>
 	{#if !historyReady}
 		<div class="exercise-history__hint">
 			<Spinner label={translate(lang, 'common.loading')} size="sm" />

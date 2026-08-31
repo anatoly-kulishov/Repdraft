@@ -66,9 +66,7 @@
 				tabindex="-1"
 				onclick={dismissBackdrop}
 			></button>
-			<div
-				class="bottom-sheet__card panel mx-auto w-full max-w-sm gap-0 border-0 shadow-[var(--shadow-overlay)]"
-			>
+			<div class="bottom-sheet__card mx-auto w-full max-w-sm">
 				{@render children()}
 				{#if actions}
 					<div class="bottom-sheet__actions">

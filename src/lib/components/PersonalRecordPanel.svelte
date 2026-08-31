@@ -35,7 +35,7 @@
 	import { X } from '@lucide/svelte';
 	import { tick } from 'svelte';
 
-	let { exerciseId }: { exerciseId: string } = $props();
+	let { exerciseId, embedded = false }: { exerciseId: string; embedded?: boolean } = $props();
 
 	let form = $state<PersonalRecord>(createEmptyRecord(''));
 	let hasSaved = $state(false);
@@ -255,9 +255,11 @@
 	let savedNotePreview = $derived(noteText.trim());
 </script>
 
-<AppPanel>
+<AppPanel class={embedded ? 'pr-panel--embedded' : undefined}>
 	<div class="pr-panel-head">
-		<h2 class="section-title">{translate(lang, 'pr.title')}</h2>
+		{#if !embedded}
+			<h2 class="section-title">{translate(lang, 'pr.title')}</h2>
+		{/if}
 		<p class="pr-panel-hint">{translate(lang, 'pr.hint')}</p>
 	</div>
 
@@ -288,7 +290,7 @@
 					type="text"
 					inputmode="decimal"
 					autocomplete="off"
-					placeholder="—"
+					placeholder="-"
 					maxlength={WEIGHT_INPUT_MAX_LEN}
 					aria-describedby="pr-weight-hint"
 					value={weightText}
@@ -308,7 +310,7 @@
 					type="text"
 					inputmode="numeric"
 					autocomplete="off"
-					placeholder="—"
+					placeholder="-"
 					maxlength={REPS_INPUT_MAX_LEN}
 					aria-describedby="pr-reps-hint"
 					value={repsText}

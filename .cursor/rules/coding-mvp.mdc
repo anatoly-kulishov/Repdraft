@@ -19,6 +19,7 @@ Full text also in [`.cursorrules`](../../.cursorrules). North star: [`GOAL.md`](
 6. **No `any`.** Strict TypeScript; exhaustive switches on unions.
 7. **No drive-by refactors** or schema changes unless explicitly instructed.
 8. Keep `domain` pure; follow `architecture.mdc` layer direction.
+9. **User-facing copy:** no em-dash (`—`) or en-dash (`–`) as punctuation; use `.`, `,`, `:`, or `-`. Empty UI placeholders use `-`. No LLM filler copy.
 
 ## Verification
 
