@@ -6,6 +6,7 @@ import {
 	LOCAL_CACHE_USER_KEY,
 	syncLocalCacheUser
 } from '$lib/storage/localUserCache';
+import { wipeAllAppStorage } from '$lib/storage/wipeAppStorage';
 import { localRecordRepository } from '$lib/storage/localRecordRepository';
 import { localSessionRepository } from '$lib/storage/localSessionRepository';
 import { localWorkoutRepository } from '$lib/storage/localWorkoutRepository';
@@ -322,6 +323,25 @@ function createAuthStore() {
 				localStorage.removeItem(LOCAL_CACHE_USER_KEY);
 			}
 			await supabase.auth.signOut({ scope: 'local' });
+			await applySession(null, { force: true, passwordRecovery: false });
+		},
+		/** QA: wipe on-device storage and sign out locally. Cloud account stays. */
+		async wipeLocalProfileForTesting(): Promise<void> {
+			const supabase = getSupabase();
+			if (supabase) {
+				try {
+					await supabase.auth.signOut({ scope: 'local' });
+				} catch {
+					/* offline ok */
+				}
+			}
+			await wipeAllAppStorage();
+			setCloudMode(false);
+			draft.resetDraft();
+			live.resetHistoryHydration();
+			plans.invalidate();
+			records.invalidate();
+			bookmarks.invalidate();
 			await applySession(null, { force: true, passwordRecovery: false });
 		}
 	};

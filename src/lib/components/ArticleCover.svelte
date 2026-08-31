@@ -3,7 +3,7 @@
 	import type { Article } from '$lib/domain/articles';
 	import { resolveArticleCoverIcon } from '$lib/domain/articles';
 	import type { Component } from 'svelte';
-	import { BookOpen, ClipboardList, Dumbbell, Flame, Library, Play, Timer } from '@lucide/svelte';
+	import { BookOpen, ClipboardList, Dumbbell, Flame, History, Library, Play, Timer } from '@lucide/svelte';
 
 	const COVER_ICONS = {
 		'book-open': BookOpen,
@@ -12,7 +12,8 @@
 		play: Play,
 		'clipboard-list': ClipboardList,
 		library: Library,
-		flame: Flame
+		flame: Flame,
+		history: History
 	} satisfies Record<string, Component<{ size?: number | string; strokeWidth?: number | string }>>;
 
 	let {

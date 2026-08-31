@@ -1,4 +1,6 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
+import { translate } from '$lib/i18n/messages';
+import { resolvedLocale } from './locale';
 
 export type ToastKind = 'success' | 'info' | 'error';
 
@@ -16,13 +18,15 @@ export type Toast = {
 	/** Wall-clock expiry for undo countdown UI. */
 	undoExpiresAt?: number;
 	undoDurationMs?: number;
+	/** Undo action in flight — show spinner, keep toast visible. */
+	undoBusy?: boolean;
 	/** When set, a new toast evicts others in the same group (toggle feedback). */
 	replaceGroup?: string;
 };
 
 const MAX_TOASTS = 2;
 const DEFAULT_MS = 2600;
-export const UNDO_MS = 3000;
+export const UNDO_MS = 5000;
 
 function createToastStore() {
 	const { subscribe, update } = writable<Toast[]>([]);
@@ -96,10 +100,26 @@ function createToastStore() {
 		},
 		undo(id: number, onUndo: () => void | Promise<void>) {
 			clearTimer(id);
-			update((list) => list.filter((t) => t.id !== id));
-			void Promise.resolve(onUndo()).catch((err) => {
-				console.error('toast undo failed', err);
-			});
+			update((list) =>
+				list.map((t) =>
+					t.id === id ? { ...t, undoBusy: true, undoExpiresAt: undefined } : t
+				)
+			);
+			void Promise.resolve(onUndo())
+				.then(() => {
+					clearTimer(id);
+					update((list) => list.filter((t) => t.id !== id));
+				})
+				.catch((err) => {
+					console.error('toast undo failed', err);
+					clearTimer(id);
+					update((list) => list.filter((t) => t.id !== id));
+					const lang = get(resolvedLocale);
+					push(
+						{ message: translate(lang, 'toast.undoFail'), kind: 'error' },
+						DEFAULT_MS
+					);
+				});
 		}
 	};
 }

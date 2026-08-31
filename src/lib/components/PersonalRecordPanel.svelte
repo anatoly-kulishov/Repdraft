@@ -202,7 +202,9 @@
 			hasSaved = false;
 			dirty = false;
 			syncedKey = `${exerciseId}:empty`;
-			toasts.showUndo(translate(lang, 'pr.deleted'), () => void records.save(snapshot), 'info');
+			toasts.showUndo(translate(lang, 'pr.deleted'), async () => {
+				await records.save(snapshot);
+			}, 'info');
 		} catch (err) {
 			toasts.show(err instanceof Error ? err.message : translate(lang, 'pr.deleteFail'), 'error');
 		} finally {

@@ -6,6 +6,7 @@
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import RecordsListSkeleton from '$lib/components/RecordsListSkeleton.svelte';
 	import RecordsNoteChip from '$lib/components/RecordsNoteChip.svelte';
+	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
@@ -19,6 +20,8 @@
 	import { records, recordsReady, recordsSync } from '$lib/stores/records';
 	import { isCloudListUncertain } from '$lib/domain/cloudSync';
 	import { linkWithFrom } from '$lib/domain/navigation';
+	import { onboarding } from '$lib/stores/onboarding';
+	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { toasts } from '$lib/stores/toasts';
 	import { ArrowLeft, Trophy, Trash2 } from '@lucide/svelte';
 	import { onMount } from 'svelte';
@@ -29,6 +32,7 @@
 	let busyId = $state<string | null>(null);
 	let expandedNoteId = $state<string | null>(null);
 	let lang = $derived($resolvedLocale);
+	let showRecordsEmptyCoachmark = $derived(shouldShowCoachmark($onboarding, 'records.empty'));
 	let title = $derived(translate(lang, 'records.title'));
 	/** Avoid empty-state flash while cloud merge is still in flight (local may be []). */
 	let showSkeleton = $derived(
@@ -76,7 +80,9 @@
 			await records.remove(exerciseId);
 			toasts.showUndo(
 				translate(lang, 'records.deleted'),
-				() => void records.save(snapshot),
+				async () => {
+					await records.save(snapshot);
+				},
 				'info'
 			);
 		} catch (err) {
@@ -139,7 +145,16 @@
 			icon={Trophy}
 			title={translate(lang, 'records.emptyTitle')}
 			description={translate(lang, 'records.emptyDesc')}
-		/>
+		>
+			{#snippet actions()}
+				{#if showRecordsEmptyCoachmark}
+					<Coachmark
+						message={translate(lang, 'onboarding.coachRecordsEmpty')}
+						onDismiss={() => onboarding.dismissCoachmark('records.empty')}
+					/>
+				{/if}
+			{/snippet}
+		</EmptyState>
 	{:else}
 		<ul class="records-list soft-enter" class:cloud-sync-list--uncertain={listUncertain}>
 			{#each displayRecords as record (record.exerciseId)}

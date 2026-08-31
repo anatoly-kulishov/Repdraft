@@ -7,7 +7,8 @@ export type ArticleCoverIcon =
 	| 'play'
 	| 'clipboard-list'
 	| 'library'
-	| 'flame';
+	| 'flame'
+	| 'history';
 
 export type Article = {
 	slug: string;
@@ -116,7 +117,8 @@ const SLUG_COVER_ICONS: Partial<Record<string, ArticleCoverIcon>> = {
 	'rest-between-sets': 'timer',
 	'technique-clips': 'library',
 	'legs-split': 'dumbbell',
-	'first-session': 'play'
+	'first-session': 'history',
+	'getting-started-quick-demo': 'play'
 };
 
 export function resolveArticleCoverIcon(article: Article): ArticleCoverIcon {
@@ -133,13 +135,25 @@ export function filterArticles(
 	const forLocale = articles.filter((a) => a.locale === locale);
 	// Fallback keeps Guide usable if a locale pack is missing or still loading.
 	const pool = forLocale.length > 0 ? forLocale : articles.filter((a) => a.locale === 'ru');
-	if (!q) return pool;
-	return pool.filter(
-		(a) =>
-			a.title.toLowerCase().includes(q) ||
-			a.excerpt.toLowerCase().includes(q) ||
-			a.tags.some((t) => t.toLowerCase().includes(q))
-	);
+	const filtered = !q
+		? pool
+		: pool.filter(
+				(a) =>
+					a.title.toLowerCase().includes(q) ||
+					a.excerpt.toLowerCase().includes(q) ||
+					a.tags.some((t) => t.toLowerCase().includes(q))
+			);
+	return sortArticlesForHub(filtered);
+}
+
+/** Pinned «getting-started» articles first in the hub grid. */
+export function sortArticlesForHub(articles: Article[]): Article[] {
+	return [...articles].sort((a, b) => {
+		const aStart = a.tags.includes('getting-started') ? 0 : 1;
+		const bStart = b.tags.includes('getting-started') ? 0 : 1;
+		if (aStart !== bStart) return aStart - bStart;
+		return a.title.localeCompare(b.title, 'ru');
+	});
 }
 
 export function runArticlesSelfCheck(): void {

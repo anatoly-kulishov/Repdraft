@@ -38,5 +38,8 @@
 			onclick={() => appTheme.set(nextTheme)}
 		/>
 	</div>
-	<p class="mt-2 text-xs text-[var(--color-muted)]">{translate(lang, 'settings.themeHint')}</p>
+	<p class="mt-2 text-xs text-[var(--color-muted)]">
+		{translate(lang, 'settings.themeHint')}
+	</p>
+	<p class="mt-1 text-xs text-[var(--color-muted)]">{translate(lang, 'lang.hint')}</p>
 </div>
