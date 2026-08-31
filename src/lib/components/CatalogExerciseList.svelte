@@ -172,6 +172,16 @@
 		`catalog-empty-state${savedOnly ? ' catalog-empty-state--saved' : ''}`
 	);
 
+	function resetCatalogFilters() {
+		filters = {
+			...filters,
+			query: '',
+			bodyPart: zoneLocked ? filters.bodyPart : 'all',
+			equipment: 'all',
+			target: 'all'
+		};
+	}
+
 	$effect(() => {
 		if (!zoneLocked || !isCatalogZone(presetBodyPart)) return;
 		if (filters.bodyPart === presetBodyPart) return;
@@ -432,7 +442,14 @@
 				title={translate(lang, savedOnly ? 'bookmarks.emptyTitle' : 'catalog.emptyTitle')}
 				description={translate(lang, savedOnly ? 'bookmarks.emptyDesc' : 'catalog.emptyDesc')}
 				actionHref={savedOnly ? '/exercises' : undefined}
-				actionLabel={savedOnly ? translate(lang, 'bookmarks.browse') : undefined}
+				actionLabel={
+					savedOnly
+						? translate(lang, 'bookmarks.browse')
+						: filtersActive
+							? translate(lang, 'catalog.reset')
+							: undefined
+				}
+				actionOnclick={savedOnly ? undefined : filtersActive ? resetCatalogFilters : undefined}
 			/>
 		{/if}
 	{:else if useSections}
@@ -476,9 +493,12 @@
 					{translate(lang, 'catalog.sectionAll')}
 				</h2>
 				{#if shownAll.length === 0}
-					<p class="catalog-section__empty text-sm text-[var(--color-muted)]">
-						{translate(lang, 'catalog.emptyDesc')}
-					</p>
+					<EmptyState
+						title={translate(lang, 'catalog.emptyTitle')}
+						description={translate(lang, 'catalog.emptyDesc')}
+						actionLabel={filtersActive ? translate(lang, 'catalog.reset') : undefined}
+						actionOnclick={filtersActive ? resetCatalogFilters : undefined}
+					/>
 				{:else}
 					<div class={listClass}>
 						{#each shownAll as exercise, i (exercise.id)}

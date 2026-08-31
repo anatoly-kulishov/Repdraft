@@ -15,7 +15,7 @@
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, ArrowLeft, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
+	import { Copy, ArrowLeft, ChevronRight, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
@@ -413,9 +413,14 @@
 					<SearchInput bind:value={searchQuery} placeholder={translate(lang, 'workouts.searchPh')} />
 				</div>
 				{#if filteredPlans.length === 0}
-					<AppPanel dashed class="text-sm text-[var(--color-muted)]">
-						{translate(lang, 'catalog.emptyTitle')}
-					</AppPanel>
+					<EmptyState
+						title={translate(lang, 'catalog.emptyTitle')}
+						description={translate(lang, 'catalog.emptyDesc')}
+						actionLabel={translate(lang, 'catalog.reset')}
+						actionOnclick={() => {
+							searchQuery = '';
+						}}
+					/>
 				{:else}
 					{#if showWorkoutsPreviewCoachmark}
 						<Coachmark
@@ -443,8 +448,15 @@
 									actions={planSwipeActions(plan)}
 								>
 									<div class="entity-row">
-										<a class="entity-row__main" href={`/workouts/${plan.id}`}>
-											<span class="entity-row__title">{plan.name}</span>
+										<a class="entity-row__main entity-row__main--nav" href={`/workouts/${plan.id}`}>
+											<span class="entity-row__title-row">
+												<span class="entity-row__title">{plan.name}</span>
+												<LucideIcon
+													icon={ChevronRight}
+													size={ICON_SMALL}
+													class="entity-row__chevron entity-row__chevron--nav"
+												/>
+											</span>
 											{#if muscles}
 												<span class="entity-row__meta">{muscles}</span>
 											{:else}
@@ -585,11 +597,23 @@
 							onDelete={() => void onRemoveSession(session)}
 						>
 							<div class="entity-row">
-								<a class="entity-row__main" href={`/workouts/history/${session.id}`}>
-									<span class="entity-row__title">{session.planName}</span>
+								<a
+									class="entity-row__main entity-row__main--nav"
+									href={`/workouts/history/${session.id}`}
+								>
+									<span class="entity-row__eyebrow">
+										{formatRelativeDay(session.finishedAt ?? session.startedAt, lang)}
+									</span>
+									<span class="entity-row__title-row">
+										<span class="entity-row__title">{session.planName}</span>
+										<LucideIcon
+											icon={ChevronRight}
+											size={ICON_SMALL}
+											class="entity-row__chevron entity-row__chevron--nav"
+										/>
+									</span>
 									<span class="entity-row__meta">
-										{translate(lang, 'home.recentMeta', {
-											when: formatRelativeDay(session.finishedAt ?? session.startedAt, lang),
+										{translate(lang, 'workouts.historyMeta', {
 											min: formatDurationMinutes(sessionDurationMs(session)) ?? '-',
 											sets: completedSetCount(session)
 										})}

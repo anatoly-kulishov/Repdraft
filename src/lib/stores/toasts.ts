@@ -1,6 +1,10 @@
+import { vibrateUndoTap } from '$lib/domain/prefs';
 import { writable, get } from 'svelte/store';
 import { translate } from '$lib/i18n/messages';
 import { resolvedLocale } from './locale';
+
+/** One undo snackbar at a time (Telegram delete-chat pattern). */
+export const TOAST_UNDO_GROUP = 'undo';
 
 export type ToastKind = 'success' | 'info' | 'error';
 
@@ -88,7 +92,7 @@ function createToastStore() {
 			onUndo: () => void | Promise<void>,
 			kind: ToastKind = 'info',
 			ms = UNDO_MS,
-			replaceGroup?: string
+			replaceGroup: string = TOAST_UNDO_GROUP
 		) {
 			const undoDurationMs = ms;
 			const undoExpiresAt = Date.now() + ms;
@@ -99,6 +103,7 @@ function createToastStore() {
 			update((list) => list.filter((t) => t.id !== id));
 		},
 		undo(id: number, onUndo: () => void | Promise<void>) {
+			vibrateUndoTap();
 			clearTimer(id);
 			update((list) =>
 				list.map((t) =>
