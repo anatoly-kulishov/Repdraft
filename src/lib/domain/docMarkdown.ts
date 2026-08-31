@@ -1,9 +1,45 @@
+export type DocHeading = {
+	level: 2 | 3;
+	id: string;
+	title: string;
+};
+
+export type DocMarkdownDocument = {
+	html: string;
+	headings: DocHeading[];
+};
+
 function escapeHtml(value: string): string {
 	return value
 		.replace(/&/g, '&amp;')
 		.replace(/</g, '&lt;')
 		.replace(/>/g, '&gt;')
 		.replace(/"/g, '&quot;');
+}
+
+function stripInlineMarkdown(text: string): string {
+	return text
+		.replace(/\*\*([^*]+)\*\*/g, '$1')
+		.replace(/`([^`]+)`/g, '$1')
+		.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+		.trim();
+}
+
+function slugifyHeading(text: string, used: Set<string>): string {
+	const base =
+		stripInlineMarkdown(text)
+			.toLowerCase()
+			.replace(/[^\p{L}\p{N}\s-]/gu, '')
+			.trim()
+			.replace(/\s+/g, '-')
+			.replace(/-+/g, '-') || 'section';
+	let id = base;
+	let suffix = 2;
+	while (used.has(id)) {
+		id = `${base}-${suffix++}`;
+	}
+	used.add(id);
+	return id;
 }
 
 function inlineMarkdown(text: string): string {
@@ -38,10 +74,12 @@ function renderTable(rows: string[][]): string {
 	return `<table><thead><tr>${headHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>`;
 }
 
-/** Docs / QA markdown: headings, lists, tables, fenced code, hr. */
-export function renderDocMarkdown(markdown: string): string {
+/** Docs / QA markdown: headings with ids, lists, tables, fenced code, hr. */
+export function renderDocMarkdownDocument(markdown: string): DocMarkdownDocument {
 	const lines = markdown.replace(/\r\n/g, '\n').split('\n');
 	const out: string[] = [];
+	const headings: DocHeading[] = [];
+	const usedIds = new Set<string>();
 	let listTag: 'ul' | 'ol' | null = null;
 	let tableRows: string[][] = [];
 	let codeLines: string[] = [];
@@ -72,6 +110,14 @@ export function renderDocMarkdown(markdown: string): string {
 		if (codeLines.length === 0) return;
 		out.push(`<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
 		codeLines = [];
+	};
+
+	const pushHeading = (level: 2 | 3, raw: string) => {
+		closeList();
+		const title = stripInlineMarkdown(raw);
+		const id = slugifyHeading(title, usedIds);
+		headings.push({ level, id, title });
+		out.push(`<h${level} id="${id}">${inlineMarkdown(raw)}</h${level}>`);
 	};
 
 	for (const raw of lines) {
@@ -113,13 +159,11 @@ export function renderDocMarkdown(markdown: string): string {
 			continue;
 		}
 		if (line.startsWith('### ')) {
-			closeList();
-			out.push(`<h3>${inlineMarkdown(line.slice(4))}</h3>`);
+			pushHeading(3, line.slice(4));
 			continue;
 		}
 		if (line.startsWith('## ')) {
-			closeList();
-			out.push(`<h2>${inlineMarkdown(line.slice(3))}</h2>`);
+			pushHeading(2, line.slice(3));
 			continue;
 		}
 		if (line.startsWith('# ')) {
@@ -145,5 +189,10 @@ export function renderDocMarkdown(markdown: string): string {
 	closeList();
 	flushTable();
 	if (inCode) flushCode();
-	return out.join('');
+	return { html: out.join(''), headings };
+}
+
+/** Docs / QA markdown HTML only. */
+export function renderDocMarkdown(markdown: string): string {
+	return renderDocMarkdownDocument(markdown).html;
 }

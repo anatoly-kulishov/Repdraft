@@ -1,6 +1,8 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
@@ -12,6 +14,11 @@
 	let confirmOpen = $state(false);
 
 	let lang = $derived($resolvedLocale);
+
+	function dismissConfirm() {
+		if (loading) return;
+		confirmOpen = false;
+	}
 
 	async function wipeAll() {
 		if (loading) return;
@@ -42,35 +49,42 @@
 		</div>
 	</div>
 
-	{#if !confirmOpen}
-		<AppButton
-			variant="danger"
-			block
-			class="profile-dev-wipe__trigger"
-			disabled={loading}
-			onclick={() => {
-				confirmOpen = true;
-			}}
-		>
-			{translate(lang, 'settings.devWipeButton')}
-		</AppButton>
-	{:else}
-		<div class="profile-dev-wipe__confirm" role="group" aria-label={translate(lang, 'settings.devWipeConfirm')}>
-			<p class="profile-dev-wipe__confirm-text">{translate(lang, 'settings.devWipeConfirm')}</p>
-			<div class="profile-dev-wipe__confirm-actions">
-				<AppButton
-					variant="secondary"
-					disabled={loading}
-					onclick={() => {
-						confirmOpen = false;
-					}}
-				>
-					{translate(lang, 'settings.devWipeCancel')}
-				</AppButton>
-				<AppButton variant="danger" disabled={loading} onclick={() => void wipeAll()}>
-					{translate(lang, 'settings.devWipeButton')}
-				</AppButton>
-			</div>
-		</div>
-	{/if}
+	<AppButton
+		variant="danger"
+		block
+		class="profile-dev-wipe__trigger"
+		disabled={loading}
+		onclick={() => {
+			confirmOpen = true;
+		}}
+	>
+		{translate(lang, 'settings.devWipeButton')}
+	</AppButton>
 </div>
+
+<BottomSheet
+	bind:open={confirmOpen}
+	titleId="dev-wipe-confirm-title"
+	dismissible={!loading}
+	onDismiss={dismissConfirm}
+>
+	<p id="dev-wipe-confirm-title" class="bottom-sheet__title">
+		{translate(lang, 'settings.devWipeConfirmTitle')}
+	</p>
+	<p class="bottom-sheet__hint">{translate(lang, 'settings.devWipeConfirmHint')}</p>
+	{#snippet actions()}
+		<AppButton variant="secondary" disabled={loading} onclick={dismissConfirm}>
+			{translate(lang, 'settings.devWipeCancel')}
+		</AppButton>
+		<AppButton variant="danger" disabled={loading} aria-busy={loading} onclick={() => void wipeAll()}>
+			{#if loading}
+				<span class="inline-flex items-center gap-2">
+					<Spinner size="sm" block={false} />
+					{translate(lang, 'auth.wait')}
+				</span>
+			{:else}
+				{translate(lang, 'settings.devWipeButton')}
+			{/if}
+		</AppButton>
+	{/snippet}
+</BottomSheet>

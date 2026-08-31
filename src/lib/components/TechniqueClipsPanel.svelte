@@ -493,6 +493,7 @@ import {
 		</div>
 		{#if canUpload && !composerOpen && clips.length > 0}
 			<AppButton
+				variant="secondary"
 				class="clip-section-add shrink-0"
 				onclick={openComposer}
 				aria-label={translate(lang, 'clips.add')}
@@ -550,7 +551,7 @@ import {
 					{translate(lang, 'clips.emptyDesc')}
 				</p>
 				{#if canUpload}
-					<AppButton class="mt-3 text-sm md:mt-4" onclick={openComposer}>
+					<AppButton variant="secondary" class="mt-3 text-sm md:mt-4" onclick={openComposer}>
 						{translate(lang, 'clips.add')}
 					</AppButton>
 				{/if}

@@ -385,11 +385,6 @@ body:has(.workouts-fab:not(.workouts-fab--hidden)):has(.draft-dock-wrap__hint) {
 	line-height: 1.2;
 }
 
-.onboarding-auth-help__scenarios {
-	min-height: var(--control-height);
-	font-weight: 600;
-}
-
 .auth-settings.panel > .onboarding-profile-block + .auth-account__section {
 	padding-top: 0.75rem;
 }
