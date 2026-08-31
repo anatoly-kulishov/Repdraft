@@ -27,11 +27,13 @@
 	import { techniqueClipHints } from '$lib/stores/techniqueClipHints';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import { onboarding } from '$lib/stores/onboarding';
 	import { flushSyncOutbox } from '$lib/storage/flushSyncOutbox';
 	import { whenIdle } from '$lib/browser/idle';
 	import { page } from '$app/stores';
 	import { onNavigate } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 
 	let { children } = $props();
 
@@ -76,6 +78,7 @@
 	});
 
 	onMount(() => {
+		onboarding.init(get(page).url.searchParams);
 		draft.hydrate();
 		live.hydrate();
 		techniqueClipHints.hydrate();

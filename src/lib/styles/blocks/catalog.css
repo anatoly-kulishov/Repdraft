@@ -2389,6 +2389,38 @@ body:has(.live-sticky-actions--end) {
 	background-image: var(--color-accent-gradient-hover);
 }
 
+/* Stack hint + dock; positioning lives on the wrap, not the pill. */
+.draft-dock-wrap {
+	position: fixed;
+	z-index: 39;
+	left: 50%;
+	bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--vv-fixed-bottom, 0px));
+	transform: translateX(-50%) translateZ(0);
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 0.55rem;
+	max-width: min(18rem, calc(100% - 1.5rem));
+	pointer-events: none;
+}
+
+.draft-dock-wrap > * {
+	pointer-events: auto;
+}
+
+.draft-dock-wrap .draft-dock {
+	position: relative !important;
+	left: auto !important;
+	right: auto !important;
+	bottom: auto !important;
+	transform: none !important;
+	z-index: auto;
+}
+
+body:has(.sticky-actions) .draft-dock-wrap {
+	bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.55rem + var(--vv-fixed-bottom, 0px));
+}
+
 body:has(.sticky-actions) .draft-dock {
 	bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.55rem + var(--vv-fixed-bottom, 0px));
 }
@@ -2434,11 +2466,34 @@ body:has(.sticky-actions) .draft-dock {
 			0 1px 3px rgb(18 20 26 / 0.14);
 	}
 
+	.draft-dock-wrap {
+		left: auto;
+		right: max(0.75rem, var(--safe-right));
+		transform: translateZ(0);
+	}
+
+	body:has(.app-fab:not(.app-fab--hidden)):has(.draft-dock-wrap) .draft-dock-wrap,
+	body:has(.workouts-fab:not(.workouts-fab--hidden)):has(.draft-dock-wrap) .draft-dock-wrap {
+		right: max(1rem, var(--safe-right));
+		bottom: calc(
+			var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + 3.5rem + 0.75rem +
+				var(--vv-fixed-bottom, 0px)
+		);
+	}
+
 	body:has(.app-fab:not(.app-fab--hidden)):has(.draft-dock) .draft-dock,
 	body:has(.workouts-fab:not(.workouts-fab--hidden)) .draft-dock {
 		/* Stack above Create FAB — vertical offset (both are bottom-right). */
 		right: max(1rem, var(--safe-right));
 		bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + 3.5rem + 0.75rem + var(--vv-fixed-bottom, 0px));
+	}
+
+	body:has(.sticky-actions):has(.app-fab.app-fab--sticky:not(.app-fab--hidden)):has(.draft-dock-wrap)
+		.draft-dock-wrap {
+		bottom: calc(
+			var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.85rem + 3.5rem + 0.75rem +
+				var(--vv-fixed-bottom, 0px)
+		);
 	}
 
 	body:has(.sticky-actions):has(.app-fab.app-fab--sticky:not(.app-fab--hidden)):has(.draft-dock) .draft-dock {
@@ -2451,7 +2506,8 @@ body:has(.sticky-actions) .draft-dock {
 
 @media (min-width: 1024px) {
 	.draft-dock,
-	body:has(.sticky-actions) .draft-dock {
+	body:has(.sticky-actions) .draft-dock,
+	.draft-dock-wrap {
 		display: none;
 	}
 }
@@ -3555,6 +3611,10 @@ body:has(.sticky-actions) .draft-dock {
 
 .catalog-empty-state--saved.empty-state--centered .empty-state__title {
 	margin-top: 0.1rem;
+}
+
+.catalog-empty-state--saved.empty-state--centered .empty-state__copy {
+	gap: 0.35rem;
 }
 
 .catalog-empty-state--saved.empty-state--centered .empty-state__desc {

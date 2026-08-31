@@ -7,8 +7,11 @@
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { isBuilderReturnPath, labelCatalogZone, withFromParam } from '$lib/domain/catalogLinks';
+	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { catalogUi } from '$lib/stores/catalogUi';
+	import { onboarding } from '$lib/stores/onboarding';
+	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { records } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { goto } from '$app/navigation';
@@ -18,6 +21,8 @@
 	let { data } = $props();
 
 	let lang = $derived($resolvedLocale);
+	let showExercisesSearchCoachmark = $derived(shouldShowCoachmark($onboarding, 'exercises.search'));
+	let showExercisesPickerCoachmark = $derived(shouldShowCoachmark($onboarding, 'exercises.picker'));
 	let searchQuery = $state('');
 	let error = $derived(data.indexError);
 	let fromParam = $derived($page.url.searchParams.get('from'));
@@ -76,6 +81,17 @@
 		<form class="catalog-hub-toolbar__search" onsubmit={onSearchSubmit}>
 			<SearchInput bind:value={searchQuery} placeholder={translate(lang, 'catalog.search')} />
 		</form>
+		{#if fromBuilder && showExercisesPickerCoachmark}
+			<Coachmark
+				message={translate(lang, 'onboarding.coachPickerReturn')}
+				onDismiss={() => onboarding.dismissCoachmark('exercises.picker')}
+			/>
+		{:else if !fromBuilder && showExercisesSearchCoachmark}
+			<Coachmark
+				message={translate(lang, 'onboarding.coachExercisesSearch')}
+				onDismiss={() => onboarding.dismissCoachmark('exercises.search')}
+			/>
+		{/if}
 		<CatalogHubChips from={fromParam} pickMode={fromBuilder} />
 	</div>
 

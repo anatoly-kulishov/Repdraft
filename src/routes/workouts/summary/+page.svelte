@@ -23,6 +23,7 @@
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { live } from '$lib/stores/live';
+	import { onboarding } from '$lib/stores/onboarding';
 	import { CircleCheck } from '@lucide/svelte';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
@@ -36,6 +37,7 @@
 	let loading = $state(true);
 	let showAllExercises = $state(true);
 	let guestHintDismissed = $state(false);
+	let showFirstFinish = $state(false);
 
 	const PREVIEW_LIMIT = 6;
 
@@ -45,7 +47,9 @@
 	};
 
 	let isGuest = $derived($auth.ready && $auth.configured && !$auth.user);
-	let showGuestSyncHint = $derived(isGuest && !guestHintDismissed && !loading && session != null);
+	let showGuestSyncHint = $derived(
+		isGuest && !guestHintDismissed && !loading && session != null && !showFirstFinish
+	);
 
 	let loggedExercises = $derived(
 		!session
@@ -122,7 +126,13 @@
 			}
 			const [found, index] = await Promise.all([live.getFinishedSession(id), loadExerciseIndex()]);
 			if (!found) missing = true;
-			else session = found;
+			else {
+				session = found;
+				if (!onboarding.activated()) {
+					showFirstFinish = true;
+					onboarding.markChecklist('sessionFinished');
+				}
+			}
 			indexById = new Map(index.map((ex) => [ex.id, ex]));
 			loading = false;
 		})();
@@ -165,6 +175,24 @@
 			<h1 class="summary-hero__title">{translate(lang, 'summary.title')}</h1>
 			<p class="summary-hero__plan">{session.planName}</p>
 		</div>
+
+		{#if showFirstFinish}
+			<AppPanel class="onboarding-first-finish" role="status">
+				<div class="onboarding-first-finish__head">
+					<span class="onboarding-first-finish__icon" aria-hidden="true">
+						<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
+					</span>
+					<div class="onboarding-first-finish__copy min-w-0">
+						<p class="onboarding-first-finish__title">
+							{translate(lang, 'onboarding.firstFinishTitle')}
+						</p>
+						<p class="onboarding-first-finish__lead">
+							{translate(lang, 'onboarding.firstFinishLead')}
+						</p>
+					</div>
+				</div>
+			</AppPanel>
+		{/if}
 
 		<dl class="summary-stats" class:summary-stats--with-volume={volumeKg > 0}>
 			<div class="summary-stat">
@@ -263,10 +291,14 @@
 				<p class="summary-guest-hint__title">{translate(lang, 'summary.guestSyncTitle')}</p>
 				<p class="summary-guest-hint__lead">{translate(lang, 'summary.guestSyncLead')}</p>
 				<div class="summary-guest-hint__actions">
-					<AppButton variant="secondary" href={authNextHref}>
+					<AppButton variant="secondary" block href={authNextHref}>
 						{translate(lang, 'summary.guestSyncCta')}
 					</AppButton>
-					<AppButton variant="ghost" onclick={dismissGuestHint}>
+					<AppButton
+						variant="link"
+						class="summary-guest-hint__dismiss"
+						onclick={dismissGuestHint}
+					>
 						{translate(lang, 'summary.guestSyncDismiss')}
 					</AppButton>
 				</div>

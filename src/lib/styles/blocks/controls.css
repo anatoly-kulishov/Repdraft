@@ -420,6 +420,66 @@ button:focus-visible {
 	-webkit-text-fill-color: var(--color-accent-ink) !important;
 }
 
+/* Beat shadcn fixed h-12 + destructive tint on AppButton legacy classes. */
+:is(
+	[data-slot='button'].btn-primary,
+	[data-slot='button'].btn-action,
+	[data-slot='button'].btn-secondary,
+	[data-slot='button'].btn-danger
+) {
+	box-sizing: border-box;
+	height: auto;
+	min-height: var(--control-height);
+	padding: var(--control-padding-y) var(--control-padding-x);
+	font-size: var(--control-font-size);
+	line-height: 1.25;
+	text-align: center;
+	text-wrap: balance;
+	white-space: normal;
+	align-items: center;
+	justify-content: center;
+	border-radius: var(--radius-button) !important;
+}
+
+[data-slot='button'].btn-secondary {
+	background: var(--btn-secondary-bg) !important;
+	color: var(--color-ink) !important;
+	-webkit-text-fill-color: var(--color-ink) !important;
+	border: 1px solid var(--btn-secondary-border) !important;
+	box-shadow: var(--btn-secondary-shadow) !important;
+}
+
+[data-slot='button'].btn-secondary:hover:not(:disabled),
+[data-slot='button'].btn-secondary[aria-expanded='true'] {
+	border-color: color-mix(in srgb, var(--color-border) 55%, var(--color-ink)) !important;
+	color: var(--color-ink) !important;
+	-webkit-text-fill-color: var(--color-ink) !important;
+	background: var(--color-surface-muted) !important;
+}
+
+[data-slot='button'].btn-danger {
+	background: var(--color-surface) !important;
+	color: var(--color-danger) !important;
+	-webkit-text-fill-color: var(--color-danger) !important;
+	border: 1px solid var(--color-border) !important;
+	box-shadow: none !important;
+}
+
+[data-slot='button'].btn-danger:hover:not(:disabled) {
+	border-color: var(--color-danger) !important;
+	background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface)) !important;
+	color: var(--color-danger) !important;
+	-webkit-text-fill-color: var(--color-danger) !important;
+}
+
+:is([data-slot='button'].btn-primary, [data-slot='button'].btn-action):active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+:is([data-slot='button'].btn-secondary, [data-slot='button'].btn-danger):active:not(:disabled) {
+	transform: scale(0.97);
+}
+
 .btn-danger {
 	background: var(--color-surface);
 	color: var(--color-danger);

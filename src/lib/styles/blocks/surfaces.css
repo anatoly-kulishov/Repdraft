@@ -14,8 +14,9 @@
 
 /* AppPanel = shadcn Card + .panel: align clip radius; kill Card ring (lime --ring). */
 .panel[data-slot='card'] {
-	/* Card adds py-only spacing(6); .panel is 1rem — without this, top/bottom read heavier. */
-	padding: 1rem;
+	/* Neutralize Card py/gap tokens so .panel padding is the only inset. */
+	--card-spacing: 0;
+	padding: 1rem !important;
 	border-radius: var(--radius-panel) !important;
 	overflow: hidden;
 	box-shadow: var(--shadow-panel) !important;
@@ -23,6 +24,10 @@
 	--tw-ring-offset-shadow: 0 0 #0000;
 	--tw-inset-ring-shadow: 0 0 #0000;
 	outline: none;
+}
+
+.panel.onboarding-checklist[data-slot='card'] {
+	padding: 1.05rem 1.1rem !important;
 }
 
 .panel-inset {
@@ -155,6 +160,26 @@ button.exercise-card-media {
 	border-style: solid;
 	border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
 	padding: 2.5rem 1.25rem;
+}
+
+.empty-state__copy {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.empty-state--centered .empty-state__copy {
+	align-items: center;
+	text-align: center;
+}
+
+.empty-state__title {
+	margin: 0;
+}
+
+.empty-state__desc {
+	margin: 0;
 }
 
 .empty-state__icon {

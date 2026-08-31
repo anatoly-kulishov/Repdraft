@@ -43,12 +43,14 @@
 			<LucideIcon {icon} size={28} />
 		</div>
 	{/if}
-	<h2 class="section-title empty-state__title">{title}</h2>
-	{#if description}
-		<p class="empty-state__desc max-w-md text-sm leading-relaxed text-[var(--color-muted)]">
-			{description}
-		</p>
-	{/if}
+	<div class="empty-state__copy">
+		<h2 class="section-title empty-state__title">{title}</h2>
+		{#if description}
+			<p class="empty-state__desc max-w-md text-sm leading-relaxed text-[var(--color-muted)]">
+				{description}
+			</p>
+		{/if}
+	</div>
 	{#if (actionHref && actionLabel) || actions}
 		<div class="empty-state__actions mt-1 flex w-full flex-col gap-2 items-stretch">
 			{#if actionHref && actionLabel}
