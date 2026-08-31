@@ -503,8 +503,6 @@
 			</header>
 
 			<div class="profile-settings-stack">
-				{@render onboardingHelpPanel()}
-
 				<form
 					id="auth-greeting-panel"
 					class="profile-settings-group panel"
@@ -547,6 +545,8 @@
 						{/if}
 					</AppButton>
 				</form>
+
+				{@render onboardingHelpPanel()}
 
 				<div class="profile-settings-group panel">
 					<p class="profile-settings-group__title">{translate(lang, 'settings.interfaceTitle')}</p>
@@ -961,9 +961,6 @@
 			<p class="profile-settings-group__hint">{translate(lang, 'onboarding.authHelpLead')}</p>
 			<AppButton variant="secondary" block href="/articles">
 				{translate(lang, 'articles.viewAll')}
-			</AppButton>
-			<AppButton variant="ghost" block href="/scenarios" class="onboarding-auth-help__scenarios">
-				{translate(lang, 'scenarios.link')}
 			</AppButton>
 		</div>
 		<OnboardingChecklist readonly onTryDemo={() => {}} />
