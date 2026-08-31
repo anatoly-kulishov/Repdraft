@@ -238,15 +238,13 @@
 		role="region"
 		aria-label={translate(lang, 'pwa.installTitle')}
 	>
-		<div class="pwa-install__row">
+		<div class="pwa-install__head">
+			<span class="pwa-install__icon" aria-hidden="true">
+				<LucideIcon icon={showInstall ? Download : HousePlus} size={ICON_SMALL} />
+			</span>
 			<div class="pwa-install__copy min-w-0">
 				<p class="pwa-install__title">{translate(lang, 'pwa.installTitle')}</p>
 				<p class="pwa-install__hint">{translate(lang, hintKey)}</p>
-				{#if showInstall}
-					<AppButton variant="link" class="pwa-install__action" onclick={() => void install()}>
-						{translate(lang, 'pwa.installAction')}
-					</AppButton>
-				{/if}
 			</div>
 			<AppButton
 				variant="ghost"
@@ -257,6 +255,15 @@
 				<LucideIcon icon={X} size={ICON_SMALL} />
 			</AppButton>
 		</div>
+
+		{#if showInstall}
+			<div class="pwa-install__actions">
+				<AppButton variant="primary" class="pwa-install__install" onclick={() => void install()}>
+					<LucideIcon icon={Download} size={ICON_SMALL} />
+					{translate(lang, 'pwa.installAction')}
+				</AppButton>
+			</div>
+		{/if}
 
 		{#if showGuide}
 			{#if mode === 'desktop'}

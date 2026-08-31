@@ -53,10 +53,11 @@ const ru: Dict = {
 	'settings.importUnsupported': 'Версия файла не поддерживается',
 	'settings.devWipeTitle': 'Сброс для тестирования',
 	'settings.devWipeLead':
-		'Удалит все данные на этом устройстве: планы, историю, рекорды, черновик, онбординг, вход. Очищает localStorage, sessionStorage, cookie и IndexedDB. Облачный аккаунт не удаляется.',
+		'Удалит все данные на этом устройстве: планы, историю, рекорды, черновик, онбординг, вход. Очищает localStorage, sessionStorage, cookie, IndexedDB, офлайн-кэш и service worker. Облачный аккаунт не удаляется.',
 	'settings.devWipeButton': 'Сбросить',
 	'settings.devWipeConfirmTitle': 'Сбросить все локальные данные?',
-	'settings.devWipeConfirmHint': 'Отменить будет нельзя.',
+	'settings.devWipeConfirmHint':
+		'Страница перезагрузится. Иконку на Home Screen удалите вручную и установите PWA снова. Отменить будет нельзя.',
 	'settings.devWipeCancel': 'Отмена',
 	'settings.devWipeFail': 'Не удалось сбросить данные',
 	'settings.restSound': 'Звук отдыха',
@@ -840,10 +841,11 @@ const en: Dict = {
 	'settings.importUnsupported': 'Backup version is not supported',
 	'settings.devWipeTitle': 'Testing reset',
 	'settings.devWipeLead':
-		'Removes all data on this device: plans, history, records, draft, onboarding, sign-in. Clears localStorage, sessionStorage, cookies, and IndexedDB. Your cloud account is not deleted.',
+		'Removes all data on this device: plans, history, records, draft, onboarding, sign-in. Clears localStorage, sessionStorage, cookies, IndexedDB, offline cache, and the service worker. Your cloud account is not deleted.',
 	'settings.devWipeButton': 'Reset',
 	'settings.devWipeConfirmTitle': 'Wipe all local data?',
-	'settings.devWipeConfirmHint': 'This cannot be undone.',
+	'settings.devWipeConfirmHint':
+		'The page will reload. Remove the Home Screen shortcut manually and install the PWA again. This cannot be undone.',
 	'settings.devWipeCancel': 'Cancel',
 	'settings.devWipeFail': 'Could not wipe local data',
 	'settings.restSound': 'Rest timer sound',

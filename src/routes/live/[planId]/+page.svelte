@@ -644,6 +644,7 @@
 
 				{#if showLiveFinishCoachmark}
 					<Coachmark
+						class="live-finish-coachmark live-finish-coachmark--desktop"
 						message={translate(lang, 'onboarding.coachLiveFinish')}
 						onDismiss={() => onboarding.dismissCoachmark('live.finish')}
 					/>
@@ -677,6 +678,13 @@
 			</div>
 
 			<div class="live-mobile-actions lg:hidden">
+				{#if showLiveFinishCoachmark}
+					<Coachmark
+						class="live-finish-coachmark live-finish-coachmark--mobile"
+						message={translate(lang, 'onboarding.coachLiveFinish')}
+						onDismiss={() => onboarding.dismissCoachmark('live.finish')}
+					/>
+				{/if}
 				<LiveSessionActions
 					{lang}
 					{finishing}

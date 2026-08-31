@@ -14,12 +14,16 @@
 	.shell-main:has(> .live-page) {
 		display: flex;
 		flex-direction: column;
-		padding-bottom: 0.25rem;
+		padding-bottom: calc(var(--safe-bottom) + 0.5rem);
 	}
 
 	.app-shell--immersive:has(.live-sticky-actions) .shell-main:has(> .live-page),
 	.app-shell--immersive:has(.sticky-actions) .shell-main:has(> .live-page) {
-		padding-bottom: 0.25rem;
+		padding-bottom: calc(var(--safe-bottom) + 0.5rem);
+	}
+
+	body:has(.live-finish-coachmark--mobile) .shell-main:has(> .live-page) {
+		padding-bottom: calc(var(--safe-bottom) + 0.75rem);
 	}
 
 	body:has(.live-page) .shell-footer-pad {
@@ -48,8 +52,15 @@
 	}
 
 	.live-mobile-actions {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 		margin-top: auto;
 		flex-shrink: 0;
+	}
+
+	.live-mobile-actions .live-finish-coachmark {
+		margin-bottom: 0;
 	}
 
 	.live-sticky-actions.sticky-actions {
@@ -57,7 +68,7 @@
 		inset-inline: 0;
 		left: 0;
 		right: 0;
-		bottom: calc(var(--safe-bottom) + var(--vv-fixed-bottom, 0px));
+		bottom: var(--vv-fixed-bottom, 0px);
 		margin-top: 0;
 		margin-inline: calc(-1 * var(--page-pad-x));
 		width: auto;
@@ -256,11 +267,11 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 		align-items: stretch;
 		gap: 0.35rem;
 		padding-top: 0.55rem;
-		padding-bottom: calc(0.9rem + var(--vv-bottom-pad, var(--safe-bottom)));
+		padding-bottom: calc(1rem + var(--vv-bottom-pad, var(--safe-bottom)));
 	}
 
 	.live-sticky-actions.sticky-actions:not(.live-sticky-actions--rest) {
-		padding-bottom: calc(0.85rem + var(--vv-bottom-pad, var(--safe-bottom)));
+		padding-bottom: calc(1rem + var(--vv-bottom-pad, var(--safe-bottom)));
 	}
 }
 
@@ -647,6 +658,18 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 
 .live-panel-wrap {
 	min-width: 0;
+}
+
+@media (max-width: 1023px) {
+	.onboarding-coachmark.live-finish-coachmark--desktop {
+		display: none;
+	}
+}
+
+@media (min-width: 1024px) {
+	.onboarding-coachmark.live-finish-coachmark--mobile {
+		display: none;
+	}
 }
 
 .live-panel {

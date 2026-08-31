@@ -286,7 +286,7 @@
 			{@render clipBadge('grid')}
 			<AppIconButton
 				class={cn(
-					'exercise-card-add !min-h-0 !min-w-0 size-auto p-0',
+					'exercise-card-add p-0',
 					inDraft && 'is-in-draft',
 					justAdded && 'is-just-added'
 				)}

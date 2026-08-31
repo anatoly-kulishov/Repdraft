@@ -691,6 +691,19 @@ select {
 	transform: scale(0.96);
 }
 
+[data-slot='button'].app-fab,
+[data-slot='button'].workouts-fab {
+	width: var(--fab-size);
+	height: var(--fab-size);
+	min-width: var(--fab-size);
+	min-height: var(--fab-size);
+	max-width: var(--fab-size);
+	max-height: var(--fab-size);
+	padding: 0;
+	aspect-ratio: 1;
+	border-radius: 999px;
+}
+
 .app-fab--tabbar,
 .workouts-fab {
 	bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--vv-fixed-bottom, 0px));
@@ -710,17 +723,25 @@ select {
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
-	gap: 0.45rem;
+	gap: 0.65rem;
 	margin: 0;
 	padding: 0.75rem 0.85rem;
-	border: 1px solid var(--color-border);
+	border: 1px solid color-mix(in srgb, var(--color-accent) 28%, var(--color-border));
 	border-radius: var(--radius-panel);
-	background: var(--color-surface);
-	box-shadow: var(--shadow-panel);
+	background:
+		linear-gradient(
+			145deg,
+			color-mix(in srgb, var(--color-accent) 8%, var(--color-surface)) 0%,
+			var(--color-surface) 58%
+		);
+	box-shadow:
+		var(--shadow-panel),
+		inset 3px 0 0 color-mix(in srgb, var(--color-accent) 62%, transparent);
+	animation: kineticsSlideIn 0.35s var(--ease-toast, ease) both;
 }
 
 .shell-main > .pwa-install {
-	margin-bottom: 0.85rem;
+	margin-bottom: 0.65rem;
 }
 
 .shell-main > .pwa-install:not(:first-child) {
@@ -729,58 +750,88 @@ select {
 
 /* Home footer slot: lighter than hero, still readable on page bg. */
 .home-page + .pwa-install {
-	background: var(--color-surface);
-	box-shadow: none;
-	border-color: var(--color-border);
+	background:
+		linear-gradient(
+			145deg,
+			color-mix(in srgb, var(--color-accent) 8%, var(--color-surface)) 0%,
+			var(--color-surface) 58%
+		);
+	box-shadow:
+		var(--shadow-panel),
+		inset 3px 0 0 color-mix(in srgb, var(--color-accent) 62%, transparent);
 }
 
 .pwa-install__hint {
-	margin: 0.2rem 0 0;
+	margin: 0.25rem 0 0;
 	font-size: 0.8125rem;
-	line-height: var(--text-sm-line-height, 1.55);
-	color: color-mix(in srgb, var(--color-muted) 45%, var(--color-ink));
+	line-height: 1.45;
+	color: var(--color-muted);
 }
 
 .shell-main:has(.home-page--booting) .pwa-install {
 	display: none;
 }
 
-.pwa-install__row {
+.pwa-install__head {
 	display: flex;
 	align-items: flex-start;
-	gap: 0.5rem;
+	gap: 0.65rem;
+	min-width: 0;
+}
+
+.pwa-install__icon {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	margin-top: 0.05rem;
+	border-radius: 999px;
+	background: var(--color-accent-muted);
+	color: var(--color-accent-text);
 }
 
 .pwa-install__copy {
-	flex: 1;
+	flex: 1 1 auto;
 	min-width: 0;
+	padding-right: 0.15rem;
 }
 
 .pwa-install__title {
 	margin: 0;
 	font-size: 0.875rem;
-	font-weight: 650;
+	font-weight: 700;
 	line-height: 1.3;
 	color: var(--color-ink);
 }
 
-.pwa-install__action {
-	align-self: flex-start;
-	width: auto;
-	min-width: 0;
+.pwa-install__actions {
+	display: flex;
+	align-items: stretch;
+	width: 100%;
+}
+
+.pwa-install__install {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	width: 100%;
 	min-height: var(--control-height);
-	margin: 0.35rem 0 0;
-	padding: 0;
-	justify-content: flex-start;
-	font-size: 0.8125rem;
+	margin: 0;
+	padding-inline: 1rem;
+	font-size: 0.875rem;
 	font-weight: 650;
 }
 
 .pwa-install__close {
-	flex-shrink: 0;
-	margin: -0.15rem -0.1rem 0 0;
+	flex: 0 0 auto;
+	min-width: var(--control-height);
+	min-height: var(--control-height);
+	margin: -0.35rem -0.35rem 0 0;
 	padding: 0;
-	color: color-mix(in srgb, var(--color-muted) 55%, var(--color-ink));
+	color: var(--color-muted);
 }
 
 .pwa-install__close:hover {
@@ -867,13 +918,27 @@ select {
 		max-width: none;
 	}
 
-	.pwa-install__row {
+	.pwa-install--prompt {
+		flex-direction: row;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.65rem;
+		column-gap: 0.75rem;
+		row-gap: 0.5rem;
 	}
 
-	.pwa-install__action {
-		margin-top: 0.25rem;
+	.pwa-install--prompt .pwa-install__head {
+		flex: 1 1 14rem;
+		min-width: min(100%, 14rem);
+	}
+
+	.pwa-install--prompt .pwa-install__actions {
+		flex: 0 0 auto;
+		padding-left: 0;
+	}
+
+	.pwa-install--prompt .pwa-install__install {
+		width: auto;
+		min-width: 8.5rem;
 	}
 
 	.pwa-install__steps {
@@ -919,5 +984,11 @@ select {
 @media (display-mode: standalone) {
 	.pwa-install {
 		display: none !important;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pwa-install {
+		animation: none;
 	}
 }

@@ -163,6 +163,9 @@
 .content-page--catalog .catalog-grid .exercise-card-bookmark:not(.exercise-card-bookmark--inline) {
 	background: var(--exercise-card-bookmark-grid-bg);
 	color: var(--exercise-card-bookmark-grid-color);
+	filter: none;
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
 	box-shadow: var(--exercise-card-bookmark-grid-shadow);
 }
 
@@ -613,6 +616,15 @@
 	transform: scale(0.96);
 }
 
+/* AppIconButton inherits btn-icon-close min 3rem; keep overlay chip square. */
+.exercise-card-add:not(.exercise-card-add--inline)[data-slot='button'] {
+	box-sizing: border-box;
+	padding: 0;
+	aspect-ratio: 1;
+	min-width: unset;
+	min-height: unset;
+}
+
 .exercise-card-add:focus-visible {
 	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
 	outline-offset: 1px;
@@ -809,7 +821,7 @@
 	box-shadow: var(--exercise-card-add-grid-shadow);
 }
 
-.exercise-card-bookmark:not(.exercise-card-bookmark--inline) {
+.exercise-card-bookmark-slot .exercise-card-bookmark {
 	color: var(--exercise-card-bookmark-thumb-color);
 	filter: var(--exercise-card-bookmark-thumb-filter);
 	box-shadow: var(--exercise-card-bookmark-thumb-shadow);
@@ -2332,11 +2344,15 @@ body:has(.summary-page__done-sticky) {
  * Keep --sticky-actions-h ≥ measured bar so content clears the CTA.
  */
 body:has(.live-sticky-actions) {
-	--sticky-actions-h: 5.5rem;
+	--sticky-actions-h: 5.75rem;
 }
 
 body:has(.live-sticky-actions--end) {
-	--sticky-actions-h: 5.5rem;
+	--sticky-actions-h: 5.75rem;
+}
+
+body:has(.live-finish-coachmark--mobile) {
+	--sticky-actions-h: 9.5rem;
 }
 
 .sticky-actions--stack {

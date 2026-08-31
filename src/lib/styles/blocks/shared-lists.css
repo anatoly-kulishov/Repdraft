@@ -231,10 +231,6 @@
 	.entity-list--cards > *:not(:last-child)::after {
 		content: none;
 	}
-
-	.entity-list--cards .entity-row__title-row .entity-row__chevron--nav {
-		display: inline-flex;
-	}
 }
 
 .entity-row {
@@ -338,14 +334,6 @@ a.entity-row--link:hover,
 	font-size: var(--type-secondary, 0.8125rem);
 	line-height: 1.35;
 	color: var(--color-muted);
-}
-
-.entity-row__chevron--nav {
-	display: none;
-	flex-shrink: 0;
-	margin-left: auto;
-	color: var(--color-muted);
-	opacity: 0.72;
 }
 
 .entity-row__chevron {

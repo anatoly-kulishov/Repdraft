@@ -939,12 +939,21 @@
 		<AuthInterfacePrefs />
 		<DataExportSection />
 		<ProfileDevWipePanel />
-		<p class="auth-account__legal">
-			<span class="auth-account__legal-label">{translate(lang, 'auth.privacyHint')}</span>
-			<a class="auth-account__legal-link" href="/privacy">{translate(lang, 'privacy.link')}</a>
-			<span class="auth-account__legal-sep" aria-hidden="true">·</span>
-			<a class="auth-account__legal-link" href="/scenarios">{translate(lang, 'scenarios.link')}</a>
-		</p>
+		<div class="auth-account__section auth-account__section--legal">
+			<p class="auth-prefs__title">{translate(lang, 'auth.privacyHint')}</p>
+			<div class="auth-prefs__stack">
+				<ProfileSettingsRow
+					icon={ClipboardList}
+					label={translate(lang, 'scenarios.link')}
+					href="/scenarios"
+				/>
+				<ProfileSettingsRow
+					icon={Shield}
+					label={translate(lang, 'privacy.link')}
+					href="/privacy"
+				/>
+			</div>
+		</div>
 	</div>
 	<p
 		class="auth-account__version"

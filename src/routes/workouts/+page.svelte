@@ -15,7 +15,7 @@
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, ArrowLeft, ChevronRight, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
+	import { Copy, ArrowLeft, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
@@ -448,15 +448,8 @@
 									actions={planSwipeActions(plan)}
 								>
 									<div class="entity-row">
-										<a class="entity-row__main entity-row__main--nav" href={`/workouts/${plan.id}`}>
-											<span class="entity-row__title-row">
-												<span class="entity-row__title">{plan.name}</span>
-												<LucideIcon
-													icon={ChevronRight}
-													size={ICON_SMALL}
-													class="entity-row__chevron entity-row__chevron--nav"
-												/>
-											</span>
+										<a class="entity-row__main" href={`/workouts/${plan.id}`}>
+											<span class="entity-row__title">{plan.name}</span>
 											{#if muscles}
 												<span class="entity-row__meta">{muscles}</span>
 											{:else}
@@ -597,21 +590,11 @@
 							onDelete={() => void onRemoveSession(session)}
 						>
 							<div class="entity-row">
-								<a
-									class="entity-row__main entity-row__main--nav"
-									href={`/workouts/history/${session.id}`}
-								>
+								<a class="entity-row__main" href={`/workouts/history/${session.id}`}>
 									<span class="entity-row__eyebrow">
 										{formatRelativeDay(session.finishedAt ?? session.startedAt, lang)}
 									</span>
-									<span class="entity-row__title-row">
-										<span class="entity-row__title">{session.planName}</span>
-										<LucideIcon
-											icon={ChevronRight}
-											size={ICON_SMALL}
-											class="entity-row__chevron entity-row__chevron--nav"
-										/>
-									</span>
+									<span class="entity-row__title">{session.planName}</span>
 									<span class="entity-row__meta">
 										{translate(lang, 'workouts.historyMeta', {
 											min: formatDurationMinutes(sessionDurationMs(session)) ?? '-',

@@ -59,10 +59,32 @@ export async function wipeBrowserIndexedDatabases(): Promise<void> {
 	}
 }
 
-/** Full on-device wipe for QA: localStorage, sessionStorage, cookies, IndexedDB. */
+export async function wipeBrowserCaches(): Promise<void> {
+	if (typeof caches === 'undefined') return;
+	try {
+		const keys = await caches.keys();
+		await Promise.all(keys.map((key) => caches.delete(key)));
+	} catch {
+		/* private mode / older browsers */
+	}
+}
+
+export async function wipeServiceWorkerRegistrations(): Promise<void> {
+	if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+	try {
+		const registrations = await navigator.serviceWorker.getRegistrations();
+		await Promise.all(registrations.map((registration) => registration.unregister()));
+	} catch {
+		/* blocked or unavailable */
+	}
+}
+
+/** Full on-device wipe for QA: storage, cookies, IndexedDB, Cache API, service workers. */
 export async function wipeAllAppStorage(): Promise<void> {
 	wipeRepdraftLocalStorage();
 	wipeBrowserSessionStorage();
 	wipeRepdraftCookies();
 	await wipeBrowserIndexedDatabases();
+	await wipeBrowserCaches();
+	await wipeServiceWorkerRegistrations();
 }
