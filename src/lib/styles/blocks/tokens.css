@@ -118,6 +118,9 @@
 	/* Kinetics-inspired springs (CSS cubic-bezier stand-ins, no deps). */
 	--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 	--ease-toast: cubic-bezier(0.18, 1.25, 0.4, 1);
+	--ease-snackbar: cubic-bezier(0.22, 1, 0.36, 1);
+	--type-body: 1.0625rem;
+	--type-secondary: 0.8125rem;
 	/* Floating undo snackbar — theme-aware pill. */
 	--toast-snackbar-bg: color-mix(in srgb, var(--color-surface-elevated) 92%, transparent);
 	--toast-snackbar-fg: var(--color-ink);
@@ -144,7 +147,7 @@
 	--icon-plate-border: color-mix(in srgb, var(--color-border) 92%, var(--color-accent));
 	--icon-plate-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.14);
 	--icon-plate-accent-bg: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface-elevated));
-	--tab-link-active-bg: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface));
+	--tab-link-active-bg: color-mix(in srgb, var(--color-accent) 18%, var(--color-surface));
 	--sticky-actions-above-bg: color-mix(in srgb, var(--color-bg) 72%, transparent);
 	--sticky-actions-above-border-top: transparent;
 	--pr-now-chip-bg: color-mix(in srgb, var(--color-accent) 16%, var(--color-surface));
@@ -361,7 +364,7 @@ html[data-theme='light'] {
 	--icon-plate-border: color-mix(in srgb, var(--color-border) 88%, var(--color-accent));
 	--icon-plate-shadow: inset 0 1px 0 rgb(255 255 255 / 0.72), 0 1px 2px rgb(18 20 26 / 0.05);
 	--icon-plate-accent-bg: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-muted));
-	--tab-link-active-bg: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
+	--tab-link-active-bg: color-mix(in srgb, var(--color-accent) 16%, var(--color-surface));
 	--sticky-actions-above-bg: color-mix(in srgb, var(--color-surface) 90%, transparent);
 	--sticky-actions-above-border-top: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
 	--pr-now-chip-bg: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-muted));

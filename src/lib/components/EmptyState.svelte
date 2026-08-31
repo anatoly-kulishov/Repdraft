@@ -16,6 +16,7 @@
 		description,
 		actionHref,
 		actionLabel,
+		actionOnclick,
 		icon = null as EmptyStateIcon | null,
 		centered = false,
 		class: className = '',
@@ -25,6 +26,7 @@
 		description?: string;
 		actionHref?: string;
 		actionLabel?: string;
+		actionOnclick?: () => void;
 		icon?: EmptyStateIcon | null;
 		centered?: boolean;
 		class?: string;
@@ -46,15 +48,17 @@
 	<div class="empty-state__copy">
 		<h2 class="section-title empty-state__title">{title}</h2>
 		{#if description}
-			<p class="empty-state__desc max-w-md text-sm leading-relaxed text-[var(--color-muted)]">
+			<p class="empty-state__desc max-w-md leading-relaxed text-[var(--color-muted)]">
 				{description}
 			</p>
 		{/if}
 	</div>
-	{#if (actionHref && actionLabel) || actions}
+	{#if (actionHref && actionLabel) || (actionLabel && actionOnclick) || actions}
 		<div class="empty-state__actions mt-1 flex w-full flex-col gap-2 items-stretch">
 			{#if actionHref && actionLabel}
 				<AppButton block href={actionHref} class="empty-state__action">{actionLabel}</AppButton>
+			{:else if actionLabel && actionOnclick}
+				<AppButton block class="empty-state__action" onclick={actionOnclick}>{actionLabel}</AppButton>
 			{/if}
 			{#if actions}
 				{@render actions()}

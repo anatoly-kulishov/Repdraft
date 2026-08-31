@@ -99,6 +99,16 @@ export function playRestDoneChime(): void {
 	});
 }
 
+/** Light haptic on undo snackbar tap (Telegram-style, no-op if unsupported). */
+export function vibrateUndoTap(): void {
+	if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
+	try {
+		navigator.vibrate(10);
+	} catch {
+		/* ignore */
+	}
+}
+
 /** Short haptic when a set is marked done (no-op if unsupported / iOS). */
 export function vibrateSetDone(): void {
 	if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;

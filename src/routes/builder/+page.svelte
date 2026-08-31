@@ -311,18 +311,12 @@
 				<EmptyState
 					centered
 					class="builder-empty-state"
+					icon={Plus}
 					title={translate(lang, 'builder.emptyTitle')}
 					description={translate(lang, 'builder.emptyDesc')}
+					actionHref={BUILDER_ADD_EXERCISE_HREF}
+					actionLabel={translate(lang, 'builder.addExerciseShort')}
 				/>
-
-				<div class="sticky-actions lg:hidden">
-					<div class="sticky-actions__inner">
-						<AppButton block href={BUILDER_ADD_EXERCISE_HREF} class="gap-2">
-							<LucideIcon icon={Plus} size={ICON_BUTTON} />
-							{translate(lang, 'builder.addExerciseShort')}
-						</AppButton>
-					</div>
-				</div>
 			{:else}
 				<div class="builder-section-head hidden lg:flex">
 					<p class="section-title">{translate(lang, 'builder.exercisesSection')}</p>
