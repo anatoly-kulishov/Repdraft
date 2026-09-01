@@ -35,6 +35,11 @@
 	import { onNavigate } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
+	import { browser } from '$app/environment';
+
+	if (browser) {
+		onboarding.init(new URLSearchParams(window.location.search));
+	}
 
 	let { children } = $props();
 
