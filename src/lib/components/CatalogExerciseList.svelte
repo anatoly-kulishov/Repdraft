@@ -16,7 +16,7 @@
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { currentReturnPath, linkWithFrom } from '$lib/domain/navigation';
 	import type { ExerciseFilters, ExerciseIndexItem } from '$lib/domain/types';
-	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { translate } from '$lib/i18n/messages';
 	import { CATALOG_PAGE_SIZE } from '$lib/stores/catalogUi';
 	import { bookmarks } from '$lib/stores/bookmarks';
@@ -98,8 +98,9 @@
 		);
 	}
 
-	let items = $state<ExerciseIndexItem[]>([]);
-	let indexReady = $state(false);
+	const peekedCatalogIndex = peekExerciseIndex();
+	let items = $state<ExerciseIndexItem[]>(peekedCatalogIndex ?? []);
+	let indexReady = $state(peekedCatalogIndex != null);
 	let visibleLimit = $state(CATALOG_PAGE_SIZE);
 	let filters = $state<ExerciseFilters>(filtersFromUrl());
 	let filtersHydrated = $state(false);
@@ -157,6 +158,7 @@
 			? frequentItems.length + popularItems.length + shownAll.length
 			: shownFlat.length
 	);
+	let likelySections = $derived(!savedOnly && !filters.query.trim());
 	let filtersActive = $derived(
 		Boolean(filters.query.trim()) ||
 			filters.bodyPart !== 'all' ||
@@ -381,7 +383,8 @@
 {:else if !indexReady || (savedOnly && !bookmarksLoaded)}
 	<CatalogExerciseListSkeleton
 		label={translate(lang, 'catalog.loading')}
-		variant={cardVariant}
+		variant={likelySections ? 'sections' : cardVariant}
+		rows={CATALOG_PAGE_SIZE}
 	/>
 {:else}
 	<p class="catalog-list-count mb-3 text-sm text-[var(--color-muted)]" aria-live="polite">

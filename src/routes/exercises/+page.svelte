@@ -6,7 +6,13 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
-	import { isBuilderReturnPath, labelCatalogZone, withFromParam } from '$lib/domain/catalogLinks';
+	import {
+		CATALOG_HUB_ZONE_COUNT,
+		isBuilderReturnPath,
+		labelCatalogZone,
+		withFromParam
+	} from '$lib/domain/catalogLinks';
+	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { blurActiveElement } from '$lib/dom/blurActiveElement';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import { translate } from '$lib/i18n/messages';
@@ -37,6 +43,7 @@
 	let showCategorySkeleton = $derived(forceSkeleton);
 
 	onMount(() => {
+		void loadExerciseIndex();
 		/* Fresh hub visit: drop leftover list facets before search / browse-all. */
 		catalogUi.reset();
 		void records.refresh();
@@ -112,7 +119,7 @@
 			description={error ? translate(lang, error) : ''}
 		/>
 	{:else if showCategorySkeleton}
-		<CatalogCategoryGridSkeleton label={translate(lang, 'common.loading')} rows={6} />
+		<CatalogCategoryGridSkeleton label={translate(lang, 'common.loading')} rows={CATALOG_HUB_ZONE_COUNT} />
 	{:else}
 		<div class="catalog-hub-grid">
 			{#each data.hubZones as bodyPart, index (bodyPart)}

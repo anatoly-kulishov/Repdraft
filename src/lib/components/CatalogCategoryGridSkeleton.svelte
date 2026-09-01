@@ -1,9 +1,11 @@
 <script lang="ts">
 	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 
+	import { CATALOG_HUB_ZONE_COUNT } from '$lib/domain/catalogLinks';
+
 	let {
 		label,
-		rows = 6
+		rows = CATALOG_HUB_ZONE_COUNT
 	}: {
 		label: string;
 		rows?: number;

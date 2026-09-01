@@ -31,7 +31,7 @@
 			</div>
 			<AppSkeleton class="page-skeleton-meta" aria-hidden="true" />
 		{/if}
-		{#each Array.from({ length: Math.max(2, rows - 1) }, (_, i) => i) as i (i)}
+		{#each Array.from({ length: Math.max(1, rows) }, (_, i) => i) as i (i)}
 			<div class="page-skeleton-card" aria-hidden="true">
 				<div class="page-skeleton-card__head">
 					<AppSkeleton class="page-skeleton-thumb" />
@@ -56,10 +56,22 @@
 			<AppSkeleton class="page-skeleton-pill" />
 			<AppSkeleton class="page-skeleton-pill" />
 		</div>
-		<AppSkeleton class="page-skeleton-card page-skeleton-card--nav block w-full" aria-hidden="true" />
-		<AppSkeleton class="page-skeleton-card page-skeleton-card--panel block w-full" aria-hidden="true" />
+		<div class="page-skeleton-live-workspace" aria-hidden="true">
+			<AppSkeleton class="page-skeleton-card page-skeleton-card--nav block w-full" />
+			<AppSkeleton class="page-skeleton-card page-skeleton-card--panel block w-full" />
+		</div>
 	{:else if variant === 'builder'}
-		<div class="page-skeleton-header" aria-hidden="true">
+		<div class="page-skeleton-builder-desktop-head" aria-hidden="true">
+			<div class="page-skeleton-builder-desktop-head__copy">
+				<AppSkeleton class="page-skeleton-toolbar page-skeleton-toolbar--summary-head" />
+				<AppSkeleton class="page-skeleton-title page-skeleton-title--lg" />
+			</div>
+			<div class="page-skeleton-builder-desktop-head__actions">
+				<AppSkeleton class="page-skeleton-toolbar page-skeleton-toolbar--button" />
+				<AppSkeleton class="page-skeleton-toolbar page-skeleton-toolbar--button" />
+			</div>
+		</div>
+		<div class="page-skeleton-header page-skeleton-header--builder-mobile" aria-hidden="true">
 			<AppSkeleton class="page-skeleton-title page-skeleton-title--lg" />
 			<AppSkeleton class="page-skeleton-toolbar page-skeleton-toolbar--button" />
 		</div>
@@ -81,6 +93,11 @@
 					<AppSkeleton class="page-skeleton-auth-guest__back-icon" />
 				</div>
 				<AppSkeleton class="page-skeleton-auth-guest__title" />
+			</div>
+
+			<div class="page-skeleton-auth__desktop-head hidden lg:block">
+				<AppSkeleton class="page-skeleton-auth-back" />
+				<AppSkeleton class="page-skeleton-title page-skeleton-title--lg page-skeleton-auth__desktop-title" />
 			</div>
 
 			<header class="page-skeleton-auth-hero">
@@ -226,7 +243,7 @@
 			<AppSkeleton class="page-skeleton-toolbar page-skeleton-toolbar--summary-head" />
 			<AppSkeleton class="page-skeleton-title page-skeleton-title--lg" />
 		</div>
-		<div class="page-skeleton-header" aria-hidden="true">
+		<div class="page-skeleton-header page-skeleton-header--summary-mobile lg:hidden" aria-hidden="true">
 			<AppSkeleton class="page-skeleton-title" />
 		</div>
 		<div class="page-skeleton-summary-hero" aria-hidden="true">

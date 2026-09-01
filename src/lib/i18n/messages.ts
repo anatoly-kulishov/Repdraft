@@ -490,7 +490,7 @@ const ru: Dict = {
 	'auth.cloudOffAfter':
 		' пока не настроен. Попробуйте позже или напишите в поддержку.',
 	'auth.signedInAs': 'Вы вошли как',
-	'auth.provider.google': 'Google',
+	'auth.provider.oauth': 'Внешний провайдер',
 	'auth.provider.email': 'Email',
 	'auth.provider.other': '{name}',
 	'auth.syncedHint': 'Тренировки и рекорды сохраняются в аккаунте.',
@@ -498,7 +498,7 @@ const ru: Dict = {
 		'Данные с этого телефона загружены в аккаунт.',
 	'pwa.installTitle': 'Установить Repdraft',
 	'pwa.installHint': 'На экран «Домой», чтобы быстрее открывать в зале.',
-	'pwa.installHintDesktop': 'Иконка на рабочем столе, открывается как приложение.',
+	'pwa.installHintDesktop': 'Иконка на рабочем столе.',
 	'pwa.installHintDesktopMenu': 'Через меню Chrome или Edge:',
 	'pwa.installHintIos': 'Safari: Поделиться → На экран «Домой».',
 	'pwa.installHintChrome': 'Chrome: меню → На экран «Домой».',
@@ -546,8 +546,6 @@ const ru: Dict = {
 	'auth.magicTab': 'Ссылка',
 	'auth.methodAria': 'Способ входа',
 	'auth.modeAria': 'Вход или регистрация',
-	'auth.or': 'или',
-	'auth.google': 'Войти через Google',
 	'auth.magicLead': 'Пришлём одноразовую ссылку для входа. Пароль не нужен.',
 	'auth.useMagicLink': 'Войти по ссылке на email',
 	'auth.backToPassword': 'Войти с паролем',
@@ -755,7 +753,7 @@ const ru: Dict = {
 		'Оператор персональных данных: {operator}. Запросы по персональным данным, отзыв согласия и обращения субъектов данных направляйте на {email}.',
 	'privacy.s2Title': '3. Какие данные мы обрабатываем',
 	'privacy.s2Body':
-		'При регистрации и входе: адрес электронной почты и данные аутентификации (в том числе через Google, если включён такой способ входа). В профиле: имя для приветствия по вашему выбору. В приложении: планы тренировок, личные рекорды, история завершённых тренировок, а также опубликованные вами клипы техники (анимация и подпись). На устройстве локально: черновик тренировки, закладки, тема оформления, язык интерфейса и незавершённая активная тренировка. Мы не собираем рекламные идентификаторы и не используем стороннюю маркетинговую аналитику.',
+		'При регистрации и входе: адрес электронной почты и данные аутентификации. В профиле: имя для приветствия по вашему выбору. В приложении: планы тренировок, личные рекорды, история завершённых тренировок, а также опубликованные вами клипы техники (анимация и подпись). На устройстве локально: черновик тренировки, закладки, тема оформления, язык интерфейса и незавершённая активная тренировка. Мы не собираем рекламные идентификаторы и не используем стороннюю маркетинговую аналитику.',
 	'privacy.s3Title': '4. Цели и правовые основания',
 	'privacy.s3Body':
 		'Данные обрабатываются для регистрации и входа, синхронизации тренировок и рекордов между устройствами, отображения истории, работы приложения без постоянного подключения к сети и (если вы сами публикуете клип) показа клипа другим пользователям. Правовые основания: исполнение пользовательского соглашения (п. 5 ч. 1 ст. 6 152-ФЗ) и ваше согласие при публикации клипов и отдельных настройках (п. 1 ч. 1 ст. 6 152-ФЗ).',
@@ -770,7 +768,7 @@ const ru: Dict = {
 		'Если вы публикуете клип, GIF и указанная вами подпись становятся доступны другим пользователям сервиса. Пользователи могут пожаловаться на клип; при подтверждении нарушения клип скрывается из общей ленты. Не размещайте персональные данные других людей без их согласия и законного основания.',
 	'privacy.s7Title': '8. Передача третьим лицам',
 	'privacy.s7Body':
-		'Для облачного хранения и входа мы привлекаем Supabase (supabase.com). При входе через Google обработку выполняет Google в рамках его политики конфиденциальности. Мы не продаём персональные данные и не передаём их рекламным сетям. Передача возможна по требованию закона или для защиты прав пользователей и сервиса.',
+		'Для облачного хранения и входа мы привлекаем Supabase (supabase.com). Мы не продаём персональные данные и не передаём их рекламным сетям. Передача возможна по требованию закона или для защиты прав пользователей и сервиса.',
 	'privacy.s8Title': '9. Ваши права',
 	'privacy.s8Body':
 		'Вы вправе получить сведения об обработке, потребовать уточнения, блокирования или удаления данных, отозвать согласие, если обработка основана на согласии. В приложении доступны: изменение имени для приветствия, выход из аккаунта, удаление аккаунта (раздел «Опасная зона»), экспорт и восстановление резервной копии тренировок, истории и рекордов. Запросы также можно направить на {email}. Мы ответим в сроки, установленные законом.',
@@ -1282,7 +1280,7 @@ const en: Dict = {
 	'auth.cloudOffAfter':
 		' is not configured yet. Try again later or contact support.',
 	'auth.signedInAs': 'Signed in as',
-	'auth.provider.google': 'Google',
+	'auth.provider.oauth': 'External provider',
 	'auth.provider.email': 'Email',
 	'auth.provider.other': '{name}',
 	'auth.syncedHint': 'Workouts and records are saved to your account.',
@@ -1290,7 +1288,7 @@ const en: Dict = {
 		'Data from this phone was uploaded to your account.',
 	'pwa.installTitle': 'Install Repdraft',
 	'pwa.installHint': 'Add to Home Screen for faster gym access.',
-	'pwa.installHintDesktop': 'A desktop icon opens like a normal app.',
+	'pwa.installHintDesktop': 'Desktop icon, opens like an app.',
 	'pwa.installHintDesktopMenu': 'From the Chrome or Edge menu:',
 	'pwa.installHintIos': 'Safari: Share → Add to Home Screen.',
 	'pwa.installHintChrome': 'Chrome: menu → Add to Home Screen.',
@@ -1337,8 +1335,6 @@ const en: Dict = {
 	'auth.magicTab': 'Email link',
 	'auth.methodAria': 'Sign-in method',
 	'auth.modeAria': 'Sign in or sign up',
-	'auth.or': 'or',
-	'auth.google': 'Continue with Google',
 	'auth.magicLead': 'We’ll email a one-time sign-in link. No password needed.',
 	'auth.useMagicLink': 'Email me a sign-in link',
 	'auth.backToPassword': 'Use password instead',
@@ -1545,7 +1541,7 @@ const en: Dict = {
 		'Data controller: {operator}. For privacy requests, consent withdrawal, and data-subject enquiries, email {email}.',
 	'privacy.s2Title': '3. What we process',
 	'privacy.s2Body':
-		'On sign-up and sign-in: email address and authentication data (including Google sign-in when enabled). In your profile: a greeting name you choose. In the app: workout plans, personal records, finished session history, and technique clips you publish (GIF and label). On your device locally: workout draft, bookmarks, theme, interface language, and an unfinished active session. We do not collect ad identifiers or use third-party marketing analytics.',
+		'On sign-up and sign-in: email address and authentication data. In your profile: a greeting name you choose. In the app: workout plans, personal records, finished session history, and technique clips you publish (GIF and label). On your device locally: workout draft, bookmarks, theme, interface language, and an unfinished active session. We do not collect ad identifiers or use third-party marketing analytics.',
 	'privacy.s3Title': '4. Purposes and legal bases',
 	'privacy.s3Body':
 		'We process data to register and sign you in, sync plans and records across devices, show history, run the app offline, and (if you publish a clip) show that clip to other users. Legal bases: performance of the user agreement and, where required, your consent for clip publishing and specific settings.',
@@ -1560,7 +1556,7 @@ const en: Dict = {
 		'If you publish a clip, the GIF and label you provide are visible to other users. Users may report a clip; if a violation is confirmed, the clip is hidden from the shared feed. Do not post other people’s personal data without their consent and a lawful basis.',
 	'privacy.s7Title': '8. Third parties',
 	'privacy.s7Body':
-		'We use Supabase (supabase.com) for cloud storage and authentication. Google sign-in is processed by Google under its privacy policy. We do not sell personal data or share it with ad networks. Disclosure may occur when required by law or to protect users and the service.',
+		'We use Supabase (supabase.com) for cloud storage and authentication. We do not sell personal data or share it with ad networks. Disclosure may occur when required by law or to protect users and the service.',
 	'privacy.s8Title': '9. Your rights',
 	'privacy.s8Body':
 		'You may request access, rectification, erasure, restriction, or portability where applicable, and withdraw consent where processing is consent-based. In the app you can update your greeting name, sign out, delete your account (Danger zone), and export or restore a backup of workouts, history, and records. You may also email {email}. We respond within applicable legal time limits.',

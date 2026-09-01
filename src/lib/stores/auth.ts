@@ -14,7 +14,7 @@ import { localSessionRepository } from '$lib/storage/localSessionRepository';
 import { localWorkoutRepository } from '$lib/storage/localWorkoutRepository';
 import type { LocalCacheUserAction } from '$lib/domain/localCacheUser';
 import { translate } from '$lib/i18n/messages';
-import type { Provider, Session, User } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 import { get, writable } from 'svelte/store';
 import { draft } from './draft';
 import { greetingName } from './greetingName';
@@ -279,18 +279,6 @@ function createAuthStore() {
 				options: {
 					emailRedirectTo: authCallbackUrl(next),
 					shouldCreateUser: true
-				}
-			});
-			if (error) throw error;
-		},
-		async signInWithOAuth(provider: Provider, next?: string | null) {
-			const supabase = getSupabase();
-			if (!supabase) throw new Error('errors.cloudOff');
-			const { error } = await supabase.auth.signInWithOAuth({
-				provider,
-				options: {
-					redirectTo: authCallbackUrl(next),
-					queryParams: { prompt: 'select_account' }
 				}
 			});
 			if (error) throw error;

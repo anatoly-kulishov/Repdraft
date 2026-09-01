@@ -1282,6 +1282,27 @@ button.live-panel-thumb {
 	margin-bottom: 0.85rem;
 }
 
+.history-detail-skeleton-head__title-row {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1rem;
+	min-width: 0;
+}
+
+.history-detail-skeleton-head__actions {
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+	flex-shrink: 0;
+}
+
+.history-detail-skeleton-head__bar--action {
+	width: var(--control-height);
+	height: var(--control-height);
+	border-radius: var(--radius-control);
+}
+
 .history-detail-skeleton-head__bar--back {
 	width: 42%;
 	height: 1rem;
@@ -1638,6 +1659,27 @@ button.live-panel-thumb {
 	display: grid;
 	gap: 0.65rem;
 	margin-bottom: 1rem;
+}
+
+.workout-preview-skeleton-head__title-row {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1rem;
+	min-width: 0;
+}
+
+.workout-preview-skeleton-head__actions {
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+	flex-shrink: 0;
+}
+
+.workout-preview-skeleton-head__bar--action {
+	width: var(--control-height);
+	height: var(--control-height);
+	border-radius: var(--radius-control);
 }
 
 .workout-preview-skeleton-head__bar--back {

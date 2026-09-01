@@ -1,82 +1,50 @@
-# Repdraft — гайд для людей и агентов
+# Repdraft — guide for humans and agents
 
-Краткий контракт поддержки. Детали для Cursor: `.cursor/rules/`.
+Short contract. Cursor rules: [`.cursor/rules/`](.cursor/rules/). Coding rules: [`.cursorrules`](.cursorrules).
 
-## Главная цель
+## North star
 
-См. **[`GOAL.md`](GOAL.md)** в корне: полировка UI/UX священного цикла (открыть → выбрать → превью → тренировка → вес×повторы → финиш → результат). Не плодить фичи. Native iOS/Android - только после того, как этот цикл ощущается великолепно.
+[`GOAL.md`](GOAL.md) — polish the sacred workout loop (open → pick → preview → train → finish). Not feature count.
 
-Исследование и guardrails: [`.cursor/product/ux-research-mvp-direction.md`](.cursor/product/ux-research-mvp-direction.md).
+## Stack
 
-## Стек
+SvelteKit, TypeScript, Tailwind 4, Supabase (optional), mobile / PWA first.
 
-SvelteKit, TypeScript, Tailwind 4, Supabase (опционально), мобильный / PWA first.
+## Layers
 
-## Слои
+`domain` → `storage` → `stores` → `routes` / `components`. Details: [`.cursor/rules/architecture.mdc`](.cursor/rules/architecture.mdc).
 
-1. **domain** - типы и чистая логика планов/рекордов/фильтров  
-2. **storage** - local + Supabase репозитории  
-3. **stores** - состояние сессии  
-4. **components / routes** - UI  
-
-Новый код клади в существующий слой. Не смешивай fetch/Supabase внутрь `domain`.
-
-## Команды
+## Commands
 
 ```bash
 npm install
-cp .env.example .env   # PUBLIC_SUPABASE_* при необходимости
-npm run dev            # LAN: --host уже в scripts
-npm run check          # typecheck / svelte-check перед завершением задачи
+cp .env.example .env
+npm run dev
+npm run check    # before finishing a task
 npm run build
 ```
 
-Строгие UI/coding-правила MVP: [`.cursorrules`](.cursorrules). Техническое ТЗ (SvelteKit): [`TASK_SPEC.md`](TASK_SPEC.md).
+## Cursor rules map
 
-## Секреты и SQL
+| File | When |
+|------|------|
+| `.cursorrules` | Coding + UX rules (always) |
+| `mvp.mdc` | Scope and north star (always) |
+| `architecture.mdc` | Where code belongs (always) |
+| `release-branches.mdc` | Branches, semver, `package.json` version (always) |
+| `svelte-ts.mdc` | TS/Svelte conventions (`src/**`) |
+| `supabase-auth.mdc` | Auth dashboard checklist (on demand) |
+| `refactor-guardrails.mdc` | Large CSS/architecture refactors (on demand) |
+| `tech-debt.mdc` | Backlog pointer (on demand) |
 
-- Ключи только в `.env` / хостинге.  
-- SQL-схемы и ops-скрипты **не** коммитить в публичный репозиторий (см. `.gitignore`).  
-- Держи копии миграций локально / в приватном месте.
+Product detail: [`.cursor/product/mvp-spec.md`](.cursor/product/mvp-spec.md).
 
-## Supabase Auth (обязательно донастроить для v0.6+)
+## Secrets
 
-Код уже умеет email/password, magic link, Google, reset password. Без dashboard-настроек кнопки упадут с «provider off» / не придёт письмо.
+Keys in `.env` / hosting only. SQL ops scripts stay out of public git (see `.gitignore`).
 
-1. **Authentication → Providers**
-   - Email: включён (magic link / OTP и reset идут через него)
-   - Google: Enable + Client ID/Secret из Google Cloud Console
-2. **Authentication → URL Configuration**
-   - Site URL = прод (`https://YOUR_DOMAIN`)
-   - Redirect URLs allow-list:
-     - `https://YOUR_DOMAIN/auth`
-     - `http://localhost:5173/auth`
-     - `http://127.0.0.1:5173/auth` (и preview-порт при необходимости)
-3. **Google Cloud** (если Google-вход): OAuth client type Web, authorized redirect URI =  
-   `https://YOUR_PROJECT.supabase.co/auth/v1/callback`
-4. Письма (confirm / magic / reset): Templates → убедись, что ссылки ведут на `{{ .RedirectTo }}` / сайт из Site URL.
-5. После деплоя на Vercel: те же `PUBLIC_SUPABASE_*`, плюс redirect URL с прод-доменом уже в allow-list.
-6. **Удаление аккаунта** (`/auth` → Удалить аккаунт): на сервере (Vercel) нужен `SUPABASE_SERVICE_ROLE_KEY` (не `PUBLIC_*`). Endpoint: `POST /api/account/delete`.
+Supabase Auth setup: [`.cursor/rules/supabase-auth.mdc`](.cursor/rules/supabase-auth.mdc).
 
-## UI
+## Releases
 
-- Примитивы: `.panel`, `.btn-primary|secondary|danger|ghost|link`, `.page-title`, `.page-lead`.  
-- Одна primary-задача на блок.  
-- Язык: `/auth` (Профиль).  
-- PWA: `static/manifest.webmanifest`, `static/icon.svg`.
-
-## Релизы
-
-- Ветка: `cursor/vX.Y.Z-short-slug` 
-- patch = фиксы/polish, minor = фича 
-- После merge в `main` - GitHub Release с **тем же** тегом 
-- **`package.json` `version`** — поднимать в том же PR, что релиз; из неё в профиле (`/auth`) и privacy показывается `v{version}` (`src/lib/appVersion.ts` ← `vite.config.ts`)
-- Идеи и приоритеты: `.cursor/product/market-roadmap.md`
-- **MVP scope / UI/UX (главный):** `.cursor/product/mvp-spec.md`  
-
-## Что не делать
-
-- Хардкод Supabase URL/JWT в коде  
-- Дублировать primary CTA в одном вьюпорте  
-- Тяжёлый encode на main thread на телефоне  
-- README-/доки «на вырост» без запроса  
+Branch `cursor/vX.Y.Z-slug`, GitHub Release with same tag, bump `package.json` `version` in the same PR.
