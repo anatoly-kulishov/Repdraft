@@ -146,25 +146,11 @@
 }
 
 .onboarding-checklist__articles {
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
+	margin-inline: -0.35rem;
+	padding: 0.55rem 0.35rem 0;
+	border-top: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
+	border-radius: 0;
 	min-height: var(--control-height);
-	padding: 0.65rem 0.75rem;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-panel);
-	background: color-mix(in srgb, var(--color-surface-muted) 42%, var(--color-surface));
-	text-decoration: none;
-	color: inherit;
-	transition:
-		border-color 0.2s ease,
-		background-color 0.2s ease,
-		transform 0.15s ease;
-}
-
-.onboarding-checklist__articles:hover {
-	border-color: color-mix(in srgb, var(--color-accent) 34%, var(--color-border));
-	background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
 }
 
 .onboarding-checklist__articles:active {
@@ -178,35 +164,21 @@
 	justify-content: center;
 	width: 2.25rem;
 	height: 2.25rem;
-	border-radius: 999px;
-	background: var(--color-accent-muted);
+	min-width: 2.25rem;
 	color: var(--color-accent-text);
 }
 
-.onboarding-checklist__articles-copy {
-	display: flex;
-	flex: 1 1 auto;
-	flex-direction: column;
-	gap: 0.12rem;
-	min-width: 0;
+.onboarding-checklist__articles .entity-row__title {
+	font-size: 0.9375rem;
+	white-space: normal;
 }
 
-.onboarding-checklist__articles-title {
-	font-size: 0.875rem;
-	font-weight: 650;
-	line-height: 1.25;
-	color: var(--color-ink);
-}
-
-.onboarding-checklist__articles-lead {
-	font-size: 0.75rem;
-	line-height: 1.35;
-	color: var(--color-muted);
-}
-
-.onboarding-checklist__articles-chevron {
-	flex: 0 0 auto;
-	color: var(--color-muted);
+.onboarding-checklist__articles .entity-row__meta {
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
 }
 
 .onboarding-coachmark {
@@ -387,17 +359,6 @@ body:has(.workouts-fab:not(.workouts-fab--hidden)):has(.draft-dock-wrap__hint) {
 
 .auth-settings.panel > .onboarding-profile-block + .auth-account__section {
 	padding-top: 0.75rem;
-}
-
-.articles-hub__section-title {
-	margin: 0 0 0.75rem;
-	font-size: 0.9375rem;
-	font-weight: 700;
-	color: var(--color-ink);
-}
-
-.articles-hub__section-title--more {
-	margin-top: 1.35rem;
 }
 
 @media (min-width: 1024px) {

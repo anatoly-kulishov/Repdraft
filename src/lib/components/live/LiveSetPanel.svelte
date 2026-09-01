@@ -183,10 +183,30 @@
 			exercise.sets.length > 1 &&
 			exercise.sets.some((s) => !s.completed && s.weightKg !== fillWeightKg)
 	);
+	let fillReps = $derived.by(() => {
+		if (currentSetIndex >= 0) {
+			const r = exercise.sets[currentSetIndex]?.reps;
+			if (r != null) return r;
+		}
+		for (const s of exercise.sets) {
+			if (!s.completed && s.reps != null) return s.reps;
+		}
+		return null;
+	});
+	let canFillRepsAll = $derived(
+		fillReps != null &&
+			exercise.sets.length > 1 &&
+			exercise.sets.some((s) => !s.completed && s.reps !== fillReps)
+	);
 	let fillWeightAllLabel = $derived(
 		fillWeightKg != null
 			? translate(lang, 'live.weightFillAria', { weight: fillWeightKg })
 			: translate(lang, 'live.weightFillAll')
+	);
+	let fillRepsAllLabel = $derived(
+		fillReps != null
+			? translate(lang, 'live.repsFillAria', { reps: fillReps })
+			: translate(lang, 'live.reps')
 	);
 	let exerciseMeta = $derived(names.get(exercise.exerciseId) ?? null);
 	let title = $derived(titleFor(exercise.exerciseId));
@@ -200,10 +220,7 @@
 		if (labels.length === 0) return false;
 		return new Set(labels).size > 1;
 	});
-	let showQuickActions = $derived(
-		(lastCopy != null && lastFormatted != null && canApplyLast) ||
-			(canFillWeightAll && fillWeightKg != null)
-	);
+	let showQuickActions = $derived(lastCopy != null && lastFormatted != null && canApplyLast);
 
 	function showRemove(setIndex: number): boolean {
 		return canRemoveSet && setIndex === exercise.sets.length - 1;
@@ -218,6 +235,11 @@
 	function applyWeightToAllSets() {
 		if (fillWeightKg == null) return;
 		live.applyWeightToOpenSets(exerciseIndex, fillWeightKg);
+	}
+
+	function applyRepsToAllSets() {
+		if (fillReps == null) return;
+		live.applyRepsToOpenSets(exerciseIndex, fillReps);
 	}
 
 	function onWeightKeydown(e: KeyboardEvent, si: number) {
@@ -329,21 +351,6 @@
 						<span class="live-last-chip__action">{translate(lang, 'live.applyLast')}</span>
 					</AppButton>
 				{/if}
-
-				{#if canFillWeightAll && fillWeightKg != null}
-					<AppButton
-						variant="ghost"
-						class="live-last-chip live-last-chip--tap"
-						aria-label={fillWeightAllLabel}
-						onclick={applyWeightToAllSets}
-					>
-						<span class="live-last-chip__label">{translate(lang, 'live.weightFillChip')}</span>
-						<span class="live-last-chip__value tabular-nums">
-							{fillWeightKg} {translate(lang, 'pr.kg')}
-						</span>
-						<span class="live-last-chip__action">{translate(lang, 'live.weightFillAll')}</span>
-					</AppButton>
-				{/if}
 			</div>
 		{/if}
 
@@ -356,10 +363,43 @@
 			{#if hasPreviousColumn}
 				<span class="live-set-head__prev">{translate(lang, 'live.prev')}</span>
 			{/if}
-			<span class="live-set-head__weight" title={bodyweight ? translate(lang, 'live.weightBwHintShort') : undefined}>
-				{weightLabel}
-			</span>
-			<span class="live-set-head__reps">{translate(lang, 'live.reps')}</span>
+			{#if canFillWeightAll && fillWeightKg != null}
+				<button
+					type="button"
+					class="live-set-head__fill live-set-head__weight"
+					aria-label={fillWeightAllLabel}
+					title={fillWeightAllLabel}
+					onclick={applyWeightToAllSets}
+				>
+					<span class="live-set-head__fill-main">{weightLabel}</span>
+					<span class="live-set-head__fill-hint" aria-hidden="true">
+						{translate(lang, 'live.fillColumnHint')}
+					</span>
+				</button>
+			{:else}
+				<span
+					class="live-set-head__weight"
+					title={bodyweight ? translate(lang, 'live.weightBwHintShort') : undefined}
+				>
+					{weightLabel}
+				</span>
+			{/if}
+			{#if canFillRepsAll && fillReps != null}
+				<button
+					type="button"
+					class="live-set-head__fill live-set-head__reps"
+					aria-label={fillRepsAllLabel}
+					title={fillRepsAllLabel}
+					onclick={applyRepsToAllSets}
+				>
+					<span class="live-set-head__fill-main">{translate(lang, 'live.reps')}</span>
+					<span class="live-set-head__fill-hint" aria-hidden="true">
+						{translate(lang, 'live.fillColumnHint')}
+					</span>
+				</button>
+			{:else}
+				<span class="live-set-head__reps">{translate(lang, 'live.reps')}</span>
+			{/if}
 			<AppButton
 				variant="ghost"
 				class={cn('live-set-head-done', allSetsDone && 'live-set-head-done--all')}

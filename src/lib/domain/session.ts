@@ -301,6 +301,23 @@ export function applyWeightToOpenSets(
 	return next;
 }
 
+/** Copy reps onto every incomplete set that differs (gym: same target all sets). */
+export function applyRepsToOpenSets(
+	session: WorkoutSession,
+	exerciseIndex: number,
+	reps: number
+): WorkoutSession {
+	const ex = session.exercises[exerciseIndex];
+	if (!ex) return session;
+	let next = session;
+	for (let si = 0; si < ex.sets.length; si++) {
+		const set = ex.sets[si]!;
+		if (set.completed || set.reps === reps) continue;
+		next = updateLoggedSet(next, exerciseIndex, si, { reps });
+	}
+	return next;
+}
+
 export function addLoggedSet(
 	session: WorkoutSession,
 	exerciseIndex: number,
@@ -1034,5 +1051,17 @@ export function runSessionSelfCheck(): void {
 	const skipDone = applyWeightToOpenSets(fillPlan, 0, 60);
 	if (skipDone.exercises[0]?.sets[1]?.weightKg !== 12) {
 		throw new Error('applyWeightToOpenSets should not touch completed sets');
+	}
+
+	fillPlan = startSessionFromPlan(plan);
+	fillPlan = updateLoggedSet(fillPlan, 0, 0, { weightKg: 12, reps: 8 });
+	const filledReps = applyRepsToOpenSets(fillPlan, 0, 8);
+	if (filledReps.exercises[0]?.sets.some((s, si) => si > 0 && s.reps !== 8)) {
+		throw new Error('applyRepsToOpenSets should fill open sets');
+	}
+	fillPlan = updateLoggedSet(fillPlan, 0, 1, { weightKg: 12, reps: 8, completed: true });
+	const skipDoneReps = applyRepsToOpenSets(fillPlan, 0, 12);
+	if (skipDoneReps.exercises[0]?.sets[1]?.reps !== 8) {
+		throw new Error('applyRepsToOpenSets should not touch completed sets');
 	}
 }

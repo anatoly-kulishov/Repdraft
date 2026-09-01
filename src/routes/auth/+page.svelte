@@ -548,7 +548,7 @@
 
 				{@render onboardingHelpPanel()}
 
-				<div class="profile-settings-group panel">
+				<div class="profile-settings-group panel profile-settings-group--paired">
 					<p class="profile-settings-group__title">{translate(lang, 'settings.interfaceTitle')}</p>
 					<ProfileSettingsRow
 						icon={Globe}

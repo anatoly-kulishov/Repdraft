@@ -255,6 +255,8 @@
 @media (min-width: 1024px) {
 	.builder-name-desktop {
 		display: block;
+		width: 100%;
+		max-width: none;
 	}
 
 	.builder-page.content-page {

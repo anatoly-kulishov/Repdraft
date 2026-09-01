@@ -258,12 +258,11 @@
 </script>
 
 <AppPanel class={embedded ? 'pr-panel--embedded' : undefined}>
-	<div class="pr-panel-head">
-		{#if !embedded}
+	{#if !embedded}
+		<div class="pr-panel-head">
 			<h2 class="section-title">{translate(lang, 'pr.title')}</h2>
-		{/if}
-		<p class="pr-panel-hint">{translate(lang, 'pr.hint')}</p>
-	</div>
+		</div>
+	{/if}
 
 	{#if hasSaved && liftPreview}
 		<div class="pr-now-preview">
