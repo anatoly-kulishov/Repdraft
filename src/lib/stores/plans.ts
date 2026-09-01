@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import { duplicatePlan, mergeWorkoutPlans, sortPlansByUserOrder, withSavedName, workoutPlanContentEqual } from '$lib/domain/workout';
 import type { WorkoutPlan } from '$lib/domain/types';
 import { clampPlanName } from '$lib/domain/inputLimits';
+import { CLOUD_REQUEST_MS } from '$lib/domain/networkTimeouts';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { translate } from '$lib/i18n/messages';
 import { getWorkoutRepo, isCloudMode } from '$lib/storage/dataAccess';
@@ -22,7 +23,7 @@ import { draft } from './draft';
 import { planOrder } from './planOrder';
 import { resolvedLocale } from './locale';
 
-	const CLOUD_MS = 4000;
+	const CLOUD_MS = CLOUD_REQUEST_MS;
 
 	function applyUserOrder(items: WorkoutPlan[]): WorkoutPlan[] {
 		const order = planOrder.syncWithPlanIds(items.map((p) => p.id));
