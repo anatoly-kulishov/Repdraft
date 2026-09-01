@@ -110,19 +110,19 @@
 				</span>
 			</AppButton>
 			{#if articlesHref}
-				<a class="onboarding-checklist__articles" href={articlesHref}>
+				<a class="onboarding-checklist__articles entity-row entity-row--link" href={articlesHref}>
 					<span class="onboarding-checklist__articles-icon" aria-hidden="true">
 						<LucideIcon icon={BookOpen} size={ICON_SMALL} />
 					</span>
-					<span class="onboarding-checklist__articles-copy min-w-0">
-						<span class="onboarding-checklist__articles-title">
+					<span class="entity-row__main">
+						<span class="entity-row__title">
 							{translate(lang, 'articles.homeTeaserTitle')}
 						</span>
-						<span class="onboarding-checklist__articles-lead">
+						<span class="entity-row__meta">
 							{translate(lang, 'onboarding.gettingStartedLead')}
 						</span>
 					</span>
-					<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="onboarding-checklist__articles-chevron" />
+					<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="entity-row__chevron" />
 				</a>
 			{/if}
 		</div>

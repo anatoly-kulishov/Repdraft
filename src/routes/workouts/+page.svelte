@@ -88,14 +88,21 @@
 		plans.reorderInOrder(from, to);
 	}
 
-	function planSwipeActions(plan: (typeof $plans)[number]): SwipeRowAction[] {
+	function planLeadingSwipeActions(plan: (typeof $plans)[number]): SwipeRowAction[] {
+		if (nextPlan?.id === plan.id) return [];
 		return [
 			{
-				label: translate(lang, 'home.setNextPlan'),
+				label: translate(lang, 'home.nextPlanBadge'),
+				ariaLabel: translate(lang, 'home.setNextPlan'),
 				icon: Flag,
-				variant: 'accent',
+				variant: 'success',
 				onAction: () => pinNextPlan(plan.id, plan.name)
-			},
+			}
+		];
+	}
+
+	function planTrailingSwipeActions(plan: (typeof $plans)[number]): SwipeRowAction[] {
+		return [
 			{
 				label: translate(lang, 'workouts.delete'),
 				icon: Trash2,
@@ -281,7 +288,7 @@
 	{#if history.length > 0}
 		<AppButton
 			variant="ghost"
-			class="is-danger shrink-0"
+			class="workouts-page__clear-history is-danger shrink-0"
 			disabled={historyClearBusy || historyBusyId !== null}
 			aria-busy={historyClearBusy}
 			onclick={offerClearHistory}
@@ -300,6 +307,7 @@
 <section
 	class="workouts-page content-page content-page--narrow"
 	class:workouts-page--history-tab={activeTab === 'history'}
+	class:workouts-page--plans-empty={activeTab === 'plans' && pageReady && $plans.length === 0}
 >
 	{#if activeTab === 'history'}
 		<ScreenHeader
@@ -363,13 +371,15 @@
 					>
 						<LucideIcon icon={Clock} size={ICON_SMALL} />
 					</AppButton>
+					<AppButton
+						href={BUILDER_NEW_HREF}
+						class="workouts-page__toolbar-icon-btn workouts-page__create shrink-0"
+						aria-label={translate(lang, 'workouts.newWorkout')}
+						title={translate(lang, 'workouts.newWorkout')}
+					>
+						<LucideIcon icon={Plus} size={ICON_SMALL} />
+					</AppButton>
 				{/if}
-				<AppButton
-					href={BUILDER_NEW_HREF}
-					class={cn('workouts-page__create shrink-0', activeTab === 'history' && 'workouts-page__create--hidden')}
-				>
-					{translate(lang, 'workouts.newWorkout')}
-				</AppButton>
 			</div>
 		</div>
 	</div>
@@ -445,7 +455,8 @@
 							>
 								<SwipeToDelete
 									disabled={planBusyId !== null || reorderFrom !== null}
-									actions={planSwipeActions(plan)}
+									leadingActions={planLeadingSwipeActions(plan)}
+									actions={planTrailingSwipeActions(plan)}
 								>
 									<div class="entity-row">
 										<a class="entity-row__main" href={`/workouts/${plan.id}`}>
@@ -562,21 +573,21 @@
 							<span class="entity-row__meta">{translate(lang, 'onboarding.historyMockMeta')}</span>
 						</div>
 					</div>
+					<BackupImportAction variant="link" block />
 					{#if $plans.length > 0 && nextPlan}
 						<AppButton href={`/workouts/${nextPlan.id}`} block>
 							{translate(lang, 'workouts.start')}
 						</AppButton>
 					{:else}
 						<AppButton
-							variant="secondary"
 							block
 							disabled={demoBusy}
+							aria-busy={demoBusy}
 							onclick={() => void onTryDemoPlan()}
 						>
 							{translate(lang, 'onboarding.tryDemo')}
 						</AppButton>
 					{/if}
-					<BackupImportAction variant="secondary" block />
 				{/snippet}
 			</EmptyState>
 		{:else}

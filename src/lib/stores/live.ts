@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import {
 	addLoggedSet,
 	applyWeightToOpenSets as fillOpenSetsWeight,
+	applyRepsToOpenSets as fillOpenSetsReps,
 	chooseAltExercise,
 	completedSetCount,
 	finishSession,
@@ -282,6 +283,15 @@ function createLiveStore() {
 			store.update((s) => {
 				if (!s.session) return s;
 				const session = fillOpenSetsWeight(s.session, exerciseIndex, weightKg);
+				if (session === s.session) return s;
+				persistActive(session, s.restUntil);
+				return { ...s, session };
+			});
+		},
+		applyRepsToOpenSets(exerciseIndex: number, reps: number) {
+			store.update((s) => {
+				if (!s.session) return s;
+				const session = fillOpenSetsReps(s.session, exerciseIndex, reps);
 				if (session === s.session) return s;
 				persistActive(session, s.restUntil);
 				return { ...s, session };

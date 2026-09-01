@@ -43,10 +43,12 @@
 	</div>
 
 	<div class="article-page__hero panel" data-tone={tone}>
-		<ArticleCover {article} variant="hero" />
-		<div class="article-page__hero-text">
-			<h1 class="page-title article-page__title hidden lg:block">{article.title}</h1>
-			<p class="article-page__excerpt">{article.excerpt}</p>
+		<div class="article-page__hero-inner">
+			<ArticleCover {article} />
+			<div class="article-page__hero-text">
+				<h1 class="page-title article-page__title hidden lg:block">{article.title}</h1>
+				<p class="article-page__excerpt">{article.excerpt}</p>
+			</div>
 		</div>
 	</div>
 

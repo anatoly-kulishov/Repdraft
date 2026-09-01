@@ -59,28 +59,43 @@
 		savedOnly?: boolean;
 	} = $props();
 
-	function filtersFromUrl(): ExerciseFilters {
-		const urlHasQuery = Boolean(initialQuery.trim());
-		const urlHasEquipment = initialEquipment !== '';
-		const urlHasTarget = initialTarget !== '';
+	function filtersFromSearchParams(searchParams: URLSearchParams): ExerciseFilters {
+		const q = searchParams.get('q') ?? '';
+		const equipmentParam = searchParams.get('equipment') ?? '';
+		const targetParam = searchParams.get('target') ?? '';
+		const bodyPartParam = searchParams.get('bodyPart') ?? '';
+		const urlHasQuery = Boolean(q.trim());
+		const urlHasEquipment = equipmentParam !== '';
+		const urlHasTarget = targetParam !== '';
 		const urlBody =
-			initialBodyPart && isBodyPart(initialBodyPart) ? initialBodyPart : ('all' as const);
+			bodyPartParam && isBodyPart(bodyPartParam) ? bodyPartParam : ('all' as const);
 
 		if (presetBodyPart !== 'all' && isCatalogZone(presetBodyPart)) {
 			return {
-				query: urlHasQuery ? initialQuery : '',
+				query: urlHasQuery ? q : '',
 				bodyPart: presetBodyPart as ExerciseFilters['bodyPart'],
-				equipment: urlHasEquipment ? initialEquipment : 'all',
-				target: urlHasTarget ? initialTarget : 'all'
+				equipment: urlHasEquipment ? equipmentParam : 'all',
+				target: urlHasTarget ? targetParam : 'all'
 			};
 		}
 
 		return {
-			query: urlHasQuery ? initialQuery : '',
+			query: urlHasQuery ? q : '',
 			bodyPart: urlBody,
-			equipment: urlHasEquipment ? initialEquipment : 'all',
-			target: urlHasTarget ? initialTarget : 'all'
+			equipment: urlHasEquipment ? equipmentParam : 'all',
+			target: urlHasTarget ? targetParam : 'all'
 		};
+	}
+
+	function filtersFromUrl(): ExerciseFilters {
+		return filtersFromSearchParams(
+			new URLSearchParams({
+				...(initialQuery.trim() ? { q: initialQuery } : {}),
+				...(initialEquipment ? { equipment: initialEquipment } : {}),
+				...(initialTarget ? { target: initialTarget } : {}),
+				...(initialBodyPart ? { bodyPart: initialBodyPart } : {})
+			})
+		);
 	}
 
 	let items = $state<ExerciseIndexItem[]>([]);
@@ -188,14 +203,11 @@
 		filters = { ...filters, bodyPart: presetBodyPart as ExerciseFilters['bodyPart'] };
 	});
 
-	/** Apply facet props from the route when they change — not when local filters edit. */
+	/** Apply facets from the live URL when navigation changes — not when local filters edit. */
 	$effect(() => {
-		initialQuery;
-		initialEquipment;
-		initialTarget;
-		initialBodyPart;
+		$page.url.searchParams;
 		presetBodyPart;
-		const next = filtersFromUrl();
+		const next = filtersFromSearchParams($page.url.searchParams);
 		// Snapshot must be fully untracked: reading `filters.foo` outside untrack
 		// still subscribes and re-runs this effect on every keystroke, wiping query.
 		const changed = untrack(() =>
@@ -488,18 +500,11 @@
 					</div>
 				</section>
 			{/if}
-			<section class="catalog-section" aria-labelledby="catalog-section-all">
-				<h2 id="catalog-section-all" class="catalog-section__title">
-					{translate(lang, 'catalog.sectionAll')}
-				</h2>
-				{#if shownAll.length === 0}
-					<EmptyState
-						title={translate(lang, 'catalog.emptyTitle')}
-						description={translate(lang, 'catalog.emptyDesc')}
-						actionLabel={filtersActive ? translate(lang, 'catalog.reset') : undefined}
-						actionOnclick={filtersActive ? resetCatalogFilters : undefined}
-					/>
-				{:else}
+			{#if allSectionItems.length > 0}
+				<section class="catalog-section" aria-labelledby="catalog-section-all">
+					<h2 id="catalog-section-all" class="catalog-section__title">
+						{translate(lang, 'catalog.sectionAll')}
+					</h2>
 					<div class={listClass}>
 						{#each shownAll as exercise, i (exercise.id)}
 							<ExerciseCard
@@ -510,8 +515,8 @@
 							/>
 						{/each}
 					</div>
-				{/if}
-			</section>
+				</section>
+			{/if}
 		</div>
 		{#if hasMore}
 			<div

@@ -82,7 +82,7 @@
 			<AppButton
 				variant="secondary"
 				class={cn(
-					'catalog-filter-equipment-trigger !h-auto !min-h-12 w-full justify-start px-[0.9rem] py-[0.55rem] text-left font-[550]',
+					'catalog-filter-equipment-trigger !h-auto !min-h-12 justify-start px-[0.9rem] py-[0.55rem] text-left font-[550]',
 					filters.equipment !== 'all' && 'is-active'
 				)}
 				aria-haspopup="dialog"

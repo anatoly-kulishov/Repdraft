@@ -29,11 +29,11 @@
 	<title>{title} · Repdraft</title>
 </svelte:head>
 
-<div class="content-page content-page--catalog">
-	<ScreenHeader class="lg:hidden" {title} backHref="/exercises" />
-
+<div class="content-page content-page--catalog articles-hub-page">
 	<section class="articles-hub" aria-labelledby="articles-hub-heading">
-		<p class="page-lead lg:hidden">{translate(lang, 'articles.lead')}</p>
+		<ScreenHeader class="lg:hidden" {title} backHref="/exercises" />
+
+		<p class="page-lead lg:hidden articles-hub__lead">{translate(lang, 'articles.lead')}</p>
 
 		<div class="catalog-subroute-header">
 			<a class="catalog-zone-crumb-link" href="/exercises">
@@ -60,26 +60,32 @@
 				<h2 class="section-title articles-hub__section-title">
 					{translate(lang, 'articles.homeTeaserTitle')}
 				</h2>
-				<div class="articles-hub__grid">
-					{#each gettingStarted as article (`${article.slug}:${article.locale}`)}
-						<ArticleCard {article} />
-					{/each}
+				<div class="panel articles-hub__panel">
+					<div class="entity-list">
+						{#each gettingStarted as article (`${article.slug}:${article.locale}`)}
+							<ArticleCard {article} />
+						{/each}
+					</div>
 				</div>
 				{#if otherArticles.length > 0}
 					<h2 class="section-title articles-hub__section-title articles-hub__section-title--more">
 						{translate(lang, 'articles.teaserTitle')}
 					</h2>
-					<div class="articles-hub__grid">
-						{#each otherArticles as article (`${article.slug}:${article.locale}`)}
-							<ArticleCard {article} />
-						{/each}
+					<div class="panel articles-hub__panel">
+						<div class="entity-list">
+							{#each otherArticles as article (`${article.slug}:${article.locale}`)}
+								<ArticleCard {article} />
+							{/each}
+						</div>
 					</div>
 				{/if}
 			{:else}
-				<div class="articles-hub__grid">
-					{#each filtered as article (`${article.slug}:${article.locale}`)}
-						<ArticleCard {article} />
-					{/each}
+				<div class="panel articles-hub__panel">
+					<div class="entity-list">
+						{#each filtered as article (`${article.slug}:${article.locale}`)}
+							<ArticleCard {article} />
+						{/each}
+					</div>
 				</div>
 			{/if}
 		{/if}

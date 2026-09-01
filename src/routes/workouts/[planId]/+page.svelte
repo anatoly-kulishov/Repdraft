@@ -251,13 +251,17 @@
 		{/if}
 
 		<div class="workout-preview-actions-desktop hidden flex-wrap gap-2 lg:flex">
-			<AppButton class="inline-flex items-center gap-2 px-6" onclick={onStart}>
-				<LucideIcon icon={Play} size={ICON_PRIMARY} />
-				{translate(lang, 'workouts.start')}
+			<AppButton
+				class="workout-preview-action-icon"
+				onclick={onStart}
+				aria-label={translate(lang, 'workouts.start')}
+				title={translate(lang, 'workouts.start')}
+			>
+				<LucideIcon icon={Play} size={ICON_BUTTON} />
 			</AppButton>
 			<AppButton
 				variant="ghost"
-				class="workout-preview-edit-link"
+				class="workout-preview-action-icon workout-preview-edit-link"
 				href={`/builder/${plan.id}`}
 				aria-label={translate(lang, 'preview.edit')}
 				title={translate(lang, 'preview.edit')}
