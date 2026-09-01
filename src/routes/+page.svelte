@@ -15,12 +15,13 @@
 		totalSetCount
 	} from '$lib/domain/session';
 	import { resolveHomeNextPlan, planExerciseSlotCount, planTargetSummary } from '$lib/domain/workout';
+	import { HOME_RECENT_ROW_LIMIT } from '$lib/domain/home';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
 	import { greetingFirstName } from '$lib/domain/greetingName';
-	import { shouldShowChecklist } from '$lib/domain/onboarding';
+	import { shouldShowChecklist, peekShouldShowChecklist } from '$lib/domain/onboarding';
 	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { auth } from '$lib/stores/auth';
@@ -34,13 +35,37 @@
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
+	import { readActiveSession, peekLocalHistoryCount } from '$lib/storage/localSessionRepository';
+	import { peekHasLocalPlans } from '$lib/storage/localWorkoutRepository';
+	import { peekLikelySignedInUserId } from '$lib/storage/localUserCache';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { ChevronRight, LogIn, NotebookPen, Play, Plus, Smartphone, UserRound } from '@lucide/svelte';
 
+	let { data } = $props();
+
+	function readBootSkeletonRecentRows(showPlansColumn: boolean): number {
+		if (showPlansColumn || !browser) return 0;
+		const fromDom = document.documentElement.dataset.homeRecentRows;
+		if (fromDom) {
+			const parsed = Number.parseInt(fromDom, 10);
+			if (Number.isFinite(parsed) && parsed > 0) {
+				return Math.min(parsed, HOME_RECENT_ROW_LIMIT);
+			}
+		}
+		try {
+			if (document.cookie.includes('repdraft_home_has_history=1')) {
+				return HOME_RECENT_ROW_LIMIT;
+			}
+		} catch {
+			/* ignore */
+		}
+		return peekLocalHistoryCount() > 0 ? HOME_RECENT_ROW_LIMIT : 0;
+	}
+
 	let lang = $derived($resolvedLocale);
 	let active = $derived($live.session);
-	let recent = $derived($live.history.slice(0, 3));
+	let recent = $derived($live.history.slice(0, HOME_RECENT_ROW_LIMIT));
 	const peekedIndex = peekExerciseIndex();
 	let indexById = $state<Map<string, ExerciseIndexItem>>(
 		peekedIndex ? new Map(peekedIndex.map((item) => [item.id, item])) : new Map()
@@ -66,24 +91,71 @@
 				: null
 	);
 	/** app.html peek: signed-in session or saved plans before Svelte mounts (offline-safe). */
-	let bootLikelyStart = $derived(
-		browser &&
-			(document.documentElement.dataset.authBoot === 'account' ||
-				document.documentElement.dataset.homeBoot === 'start')
-	);
-	let showBootSkeleton = $derived(!pageReady || skeletonForce !== null);
-	/**
-	 * Guest create skeleton only when auth confirmed guest with no plans.
-	 * While auth bootstraps or SSR, prefer start — never flash guest UI to signed-in users.
-	 */
+	let bootHasActiveSession = $derived.by(() => {
+		if (data.bootPeek.activeSession) return true;
+		if (!browser) return false;
+		if (document.documentElement.dataset.homeActiveSession === '1') return true;
+		const session = readActiveSession();
+		return Boolean(session && !session.finishedAt);
+	});
 	let bootSkeletonVariant = $derived.by((): 'start' | 'create' => {
 		if (skeletonForce) return skeletonForce;
+		if (data.bootPeek.homeBoot === 'create' || data.bootPeek.homeBoot === 'start') {
+			return data.bootPeek.homeBoot;
+		}
 		if (!browser) return 'start';
-		if (bootLikelyStart) return 'start';
+		const homeBoot = document.documentElement.dataset.homeBoot;
+		if (homeBoot === 'create' || homeBoot === 'start') return homeBoot;
 		if ($auth.ready && $auth.user) return 'start';
 		if ($auth.ready && isGuest && !hasPlans) return 'create';
 		return 'start';
 	});
+	let bootShowChecklist = $derived.by(() => {
+		if (data.bootPeek.showChecklist) return true;
+		if (!browser) return false;
+		if (document.documentElement.dataset.homeShowChecklist === '1') return true;
+		return peekShouldShowChecklist();
+	});
+	let bootLikelyHasPlans = $derived.by(() => {
+		if ($plans.length > 0) return true;
+		if (!browser) return false;
+		if (peekHasLocalPlans()) return true;
+		if (document.documentElement.dataset.homeBoot === 'start') return true;
+		try {
+			return document.cookie.includes('repdraft_home_has_plans=1');
+		} catch {
+			return false;
+		}
+	});
+	let bootLikelySignedIn = $derived.by(() => {
+		if (!browser) return false;
+		if (document.documentElement.dataset.authBoot === 'account') return true;
+		return peekLikelySignedInUserId() !== null;
+	});
+	/** Plans column only for signed-in user with zero plans — matches live `!hasPlans && !isGuest`. */
+	let bootShowPlansColumn = $derived(
+		bootSkeletonVariant === 'start' &&
+			!bootLikelyHasPlans &&
+			!bootHasActiveSession &&
+			bootLikelySignedIn
+	);
+	let bootRecentRows = $derived.by(() => {
+		if (bootShowPlansColumn) return 0;
+		if (data.bootPeek.hasHistory) return HOME_RECENT_ROW_LIMIT;
+		const fromStore = $live.history.filter((session) => Boolean(session.finishedAt)).length;
+		if (fromStore > 0) return HOME_RECENT_ROW_LIMIT;
+		return readBootSkeletonRecentRows(false);
+	});
+	let showBootSkeleton = $derived(
+		skeletonForce !== null ||
+			!pageReady ||
+			(bootSkeletonVariant === 'start' && !indexReady)
+	);
+
+	/**
+	 * Guest create skeleton only when auth confirmed guest with no plans.
+	 * While auth bootstraps or SSR, prefer start — never flash guest UI to signed-in users.
+	 */
 
 	let isCreateHome = $derived(!hasPlans);
 	let showGuestCreateHero = $derived(pageReady && isGuest && isCreateHome);
@@ -242,6 +314,10 @@
 		<HomePageSkeleton
 			label={translate(lang, 'common.loading')}
 			variant={bootSkeletonVariant}
+			showPlansColumn={bootShowPlansColumn}
+			recentRows={bootRecentRows}
+			hasActiveBoot={bootHasActiveSession}
+			showChecklist={bootShowChecklist}
 		/>
 	{:else if showReadyHeader && !hasActive}
 		<header class="home-header home-header--mockup">
@@ -255,9 +331,9 @@
 						<p class="home-header__subtitle">{mockupSubtitle}</p>
 						{#if nextPlan}
 							<p class="home-header__plan">{nextPlan.name}</p>
-							{#if indexReady}
-								<p class="home-header__meta">{nextPlanMeta}</p>
-							{/if}
+							<p class="home-header__meta" aria-busy={!indexReady}>
+								{indexReady ? nextPlanMeta : '\u00a0'}
+							</p>
 						{/if}
 						{#if isFirstTimeHome}
 							<BrandTagline class="brand-tagline--home-header" />
@@ -266,9 +342,9 @@
 						<p class="home-header__subtitle">{translate(lang, 'home.readyTitle')}</p>
 						{#if nextPlan}
 							<p class="home-header__plan">{nextPlan.name}</p>
-							{#if indexReady}
-								<p class="home-header__meta">{nextPlanMeta}</p>
-							{/if}
+							<p class="home-header__meta" aria-busy={!indexReady}>
+								{indexReady ? nextPlanMeta : '\u00a0'}
+							</p>
 						{/if}
 					{/if}
 				</div>

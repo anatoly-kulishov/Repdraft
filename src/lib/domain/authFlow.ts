@@ -1,6 +1,3 @@
-/** Google OAuth sign-in — disabled while unavailable in RU; re-enable in UI when allowed. */
-export const googleOAuthEnabled = false;
-
 /** Same-origin path for post-login redirect (blocks open redirects). */
 export function safeRedirectPath(raw: string | null | undefined, fallback = '/workouts'): string {
 	if (!raw) return fallback;
@@ -96,7 +93,7 @@ function metaString(meta: Record<string, unknown> | null | undefined, key: strin
 	return value || null;
 }
 
-/** Google / OAuth avatar from `user_metadata.avatar_url` (or `picture`). */
+/** OAuth avatar from `user_metadata.avatar_url` (or `picture`). */
 export function userAvatarUrl(user: AuthUserLike | null | undefined): string | null {
 	if (!user) return null;
 	const meta = user.user_metadata;
@@ -153,7 +150,7 @@ export function userFirstName(user: AuthUserLike | null | undefined): string | n
 	return name.trim().split(/\s+/)[0] || null;
 }
 
-/** Auth provider id: `google`, `email`, … from identities / app_metadata. */
+/** Auth provider id: `email`, `github`, … from identities / app_metadata. */
 export function userAuthProvider(user: AuthUserLike | null | undefined): string | null {
 	if (!user) return null;
 	const identity = user.identities?.find((row) => typeof row.provider === 'string' && row.provider.trim());
@@ -194,8 +191,8 @@ export function runAuthFlowSelfCheck(): void {
 	}
 	if (
 		userAvatarUrl({
-			user_metadata: { avatar_url: 'https://lh3.googleusercontent.com/a/x' }
-		}) !== 'https://lh3.googleusercontent.com/a/x'
+			user_metadata: { avatar_url: 'https://cdn.example.com/avatars/x.jpg' }
+		}) !== 'https://cdn.example.com/avatars/x.jpg'
 	) {
 		throw new Error('userAvatarUrl should read avatar_url');
 	}
@@ -217,7 +214,7 @@ export function runAuthFlowSelfCheck(): void {
 	if (userFirstName({ user_metadata: { full_name: 'Anatoly Kulishov' } }) !== 'Anatoly') {
 		throw new Error('userFirstName should use first token');
 	}
-	if (userAuthProvider({ identities: [{ provider: 'google' }] }) !== 'google') {
+	if (userAuthProvider({ identities: [{ provider: 'github' }] }) !== 'github') {
 		throw new Error('userAuthProvider should read identities');
 	}
 	if (userAuthProvider({ email: 'a@b.c', identities: [] }) !== 'email') {

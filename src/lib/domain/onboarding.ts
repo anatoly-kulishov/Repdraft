@@ -131,6 +131,35 @@ export function shouldShowChecklist(state: OnboardingState): boolean {
 	return true;
 }
 
+/** Sync peek for home boot skeleton before Svelte hydrates onboarding store. */
+export function peekShouldShowChecklist(): boolean {
+	if (typeof localStorage === 'undefined') return false;
+	try {
+		const raw = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+		if (!raw) return true;
+		return shouldShowChecklist(parseOnboardingState(JSON.parse(raw) as unknown));
+	} catch {
+		return true;
+	}
+}
+
+/** Keep SSR cookie in sync so `/` checklist skeleton matches first paint. */
+export function syncOnboardingChecklistBootCookie(state?: OnboardingState): void {
+	if (typeof document === 'undefined') return;
+	try {
+		const show = state ? shouldShowChecklist(state) : peekShouldShowChecklist();
+		document.documentElement.dataset.homeShowChecklist = show ? '1' : '0';
+		if (show) {
+			document.cookie =
+				'repdraft_onboarding_checklist=1; path=/; Max-Age=31536000; SameSite=Lax';
+		} else {
+			document.cookie = 'repdraft_onboarding_checklist=; path=/; Max-Age=0; SameSite=Lax';
+		}
+	} catch {
+		/* ignore */
+	}
+}
+
 export function shouldShowCoachmark(state: OnboardingState, id: CoachmarkId): boolean {
 	if (isOnboardingActivated(state)) return false;
 	return state.coachmarks[id] !== true;

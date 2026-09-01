@@ -352,11 +352,11 @@
 }
 
 @media (min-width: 1024px) {
-	/* 2 → 4 → 6: denser desktop, card shell capped at Gym Visual source. */
+	/* 2 → 4 → 5: desktop hub matches exercise catalog density. */
 	.catalog-hub .catalog-hub-grid,
 	.catalog-zone-shell--browse .catalog-target-grid.catalog-hub-grid {
-		grid-template-columns: repeat(6, minmax(0, var(--media-cap)));
-		justify-content: start;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		justify-content: stretch;
 		gap: 0.85rem;
 	}
 
@@ -375,17 +375,17 @@
 
 @media (min-width: 1024px) {
 	.content-page--catalog .catalog-grid {
-		grid-template-columns: repeat(auto-fill, minmax(var(--media-cap), var(--media-cap)));
-		justify-content: start;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		justify-content: stretch;
 		gap: 1rem;
 	}
 
 	.catalog-grid .exercise-card-media--grid {
 		width: 100%;
-		height: var(--media-cap);
-		min-height: var(--media-cap);
-		max-height: var(--media-cap);
-		aspect-ratio: auto;
+		height: auto;
+		min-height: 0;
+		max-height: none;
+		aspect-ratio: 1;
 	}
 
 	.catalog-grid .exercise-card-media--grid .exercise-card-media-link {
@@ -409,6 +409,14 @@
 	height: 0.875rem;
 	width: 5.5rem;
 	margin-bottom: 0.75rem;
+	border-radius: 0.35rem;
+}
+
+.catalog-exercise-skeleton__section-title {
+	display: block;
+	height: 0.875rem;
+	width: 9rem;
+	margin: 0 0 0.65rem;
 	border-radius: 0.35rem;
 }
 
@@ -538,21 +546,22 @@
 
 @media (min-width: 1024px) {
 	.content-page--catalog .catalog-exercise-skeleton__grid {
-		grid-template-columns: repeat(auto-fill, minmax(var(--media-cap), var(--media-cap)));
-		justify-content: start;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		justify-content: stretch;
 		gap: 1rem;
 	}
 
 	.catalog-exercise-skeleton__card {
 		width: 100%;
-		max-width: var(--media-cap);
+		max-width: none;
 	}
 
 	.catalog-exercise-skeleton__media {
-		height: var(--media-cap);
-		min-height: var(--media-cap);
-		max-height: var(--media-cap);
-		aspect-ratio: auto;
+		width: 100%;
+		height: auto;
+		min-height: 0;
+		max-height: none;
+		aspect-ratio: 1;
 	}
 }
 
@@ -1368,6 +1377,91 @@
 	height: 22rem;
 }
 
+.page-skeleton-live-workspace {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.page-skeleton-builder-desktop-head {
+	display: none;
+}
+
+.page-skeleton-builder-desktop-head__copy {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.page-skeleton-builder-desktop-head__actions {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-shrink: 0;
+}
+
+.page-skeleton-auth__desktop-head {
+	display: none;
+	width: 100%;
+	min-width: 0;
+	padding-inline: var(--auth-account-gutter, 1.25rem);
+	box-sizing: border-box;
+}
+
+.page-skeleton-auth__desktop-title {
+	width: min(52%, 18rem);
+	height: 2rem;
+	margin-top: 0.35rem;
+}
+
+@media (min-width: 768px) {
+	.page-skeleton--live .page-skeleton-live-workspace {
+		display: grid;
+		grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr);
+		gap: 0.85rem;
+		align-items: start;
+	}
+
+	.page-skeleton--live .page-skeleton-card--nav {
+		height: auto;
+		min-height: 14rem;
+	}
+
+	.page-skeleton--history .page-skeleton-card__head {
+		padding: 1rem;
+		gap: 1rem;
+	}
+}
+
+@media (min-width: 1024px) {
+	.page-skeleton--live .page-skeleton-live-workspace {
+		grid-template-columns: minmax(11rem, 16rem) minmax(0, 1fr);
+		gap: 1rem;
+	}
+
+	.page-skeleton--live .page-skeleton-card--nav {
+		min-height: 16rem;
+	}
+
+	.page-skeleton--builder .page-skeleton-builder-desktop-head {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.75rem 1rem;
+		align-items: end;
+		margin-bottom: 1.25rem;
+	}
+
+	.page-skeleton--builder .page-skeleton-header--builder-mobile {
+		display: none;
+	}
+
+	.page-skeleton-auth__desktop-head {
+		display: block;
+		margin-bottom: 0.35rem;
+	}
+}
+
 .page-skeleton-card--form {
 	padding: 0.9rem;
 	display: flex;
@@ -1945,8 +2039,15 @@
 }
 
 .page-skeleton-row--summary-preview {
-	min-height: 7rem;
+	min-height: calc(3rem + 1.5rem);
 	margin-top: 0.5rem;
+	display: grid;
+	grid-template-columns: 3rem minmax(0, 1fr);
+	gap: 0.65rem;
+	align-items: center;
+	padding: 0.75rem 0.85rem;
+	border-radius: var(--radius-panel);
+	border: 1px solid var(--color-border);
 }
 
 .page-skeleton-row--summary-guest {

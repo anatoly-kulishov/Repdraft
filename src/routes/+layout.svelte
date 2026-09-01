@@ -218,15 +218,10 @@
 			class:shell-main--flow={hideMobileHeader}
 			tabindex="-1"
 		>
-			{#if path === '/'}
-				{@render children()}
-				<!-- After Home primary CTA so install does not steal the first viewport. -->
+			{@render children()}
+			{#if path === '/' || !hideMobileHeader}
+				<!-- Footer slot: after page content, above tab bar. -->
 				<PwaInstallHint />
-			{:else}
-				{#if !hideMobileHeader}
-					<PwaInstallHint />
-				{/if}
-				{@render children()}
 			{/if}
 		</main>
 

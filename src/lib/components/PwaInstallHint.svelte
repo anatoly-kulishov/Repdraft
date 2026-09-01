@@ -1,7 +1,7 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_SMALL } from '$lib/components/icons/sizes';
+	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import {
 		isDesktopChromiumInstallSurface,
 		isInstalledDisplayMode,
@@ -238,7 +238,7 @@
 		role="region"
 		aria-label={translate(lang, 'pwa.installTitle')}
 	>
-		<div class="pwa-install__head">
+		<div class="pwa-install__bar">
 			<span class="pwa-install__icon" aria-hidden="true">
 				<LucideIcon icon={showInstall ? Download : HousePlus} size={ICON_SMALL} />
 			</span>
@@ -246,6 +246,17 @@
 				<p class="pwa-install__title">{translate(lang, 'pwa.installTitle')}</p>
 				<p class="pwa-install__hint">{translate(lang, hintKey)}</p>
 			</div>
+			{#if showInstall}
+				<AppButton
+					variant="primary"
+					class="pwa-install__cta"
+					onclick={() => void install()}
+					aria-label={translate(lang, 'pwa.installAction')}
+					title={translate(lang, 'pwa.installAction')}
+				>
+					<LucideIcon icon={Download} size={ICON_BUTTON} />
+				</AppButton>
+			{/if}
 			<AppButton
 				variant="ghost"
 				class="pwa-install__close"
@@ -255,15 +266,6 @@
 				<LucideIcon icon={X} size={ICON_SMALL} />
 			</AppButton>
 		</div>
-
-		{#if showInstall}
-			<div class="pwa-install__actions">
-				<AppButton variant="primary" class="pwa-install__install" onclick={() => void install()}>
-					<LucideIcon icon={Download} size={ICON_SMALL} />
-					{translate(lang, 'pwa.installAction')}
-				</AppButton>
-			</div>
-		{/if}
 
 		{#if showGuide}
 			{#if mode === 'desktop'}

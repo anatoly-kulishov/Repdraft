@@ -17,6 +17,9 @@
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { Copy, ArrowLeft, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
+	import { peekLocalPlanCount } from '$lib/storage/localWorkoutRepository';
+	import { peekLocalHistoryCount } from '$lib/storage/localSessionRepository';
+	import type { WorkoutsSkeletonVariant } from '$lib/components/WorkoutsPageSkeleton.svelte';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
 	import { planExerciseSlotCount, planTargetSummary, resolveHomeNextPlan } from '$lib/domain/workout';
@@ -40,6 +43,8 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 
+	let { data } = $props();
+
 	type WorkoutsTab = 'plans' | 'history';
 
 	function parseWorkoutsTab(value: string | null): WorkoutsTab {
@@ -59,11 +64,40 @@
 	let pageReady = $derived(
 		$auth.ready && $auth.dataBootstrap && $plansReady && indexReady && $live.historyHydrated
 	);
-	let skeletonRows = $derived.by(() => {
-		if (!$plansReady) return 4;
-		if ($plans.length === 0) return 2;
-		return Math.min(Math.max($plans.length, 1), 4);
+	let skeletonVariant = $derived.by((): WorkoutsSkeletonVariant => {
+		if (activeTab === 'history') {
+			if ($live.historyHydrated) {
+				return history.length === 0 ? 'history-empty' : 'history-list';
+			}
+			if (data.bootPeek.historyRows > 0) return 'history-list';
+			if (data.bootPeek.hasHistory) return 'history-list';
+			return peekLocalHistoryCount() > 0 ? 'history-list' : 'history-empty';
+		}
+		if ($plansReady) return $plans.length === 0 ? 'plans-empty' : 'plans-list';
+		if (data.bootPeek.planRows > 0) return 'plans-list';
+		if (data.bootPeek.planRows === 0) return 'plans-empty';
+		return peekLocalPlanCount() === 0 ? 'plans-empty' : 'plans-list';
 	});
+	let skeletonRows = $derived.by(() => {
+		const cap = (n: number) => Math.min(Math.max(n, 1), 4);
+		if (activeTab === 'history') {
+			if ($live.historyHydrated) return cap(history.length);
+			if (data.bootPeek.historyRows > 0) return cap(data.bootPeek.historyRows);
+			const peekedHistory = peekLocalHistoryCount();
+			if (peekedHistory > 0) return cap(peekedHistory);
+			return 1;
+		}
+		if (skeletonVariant === 'plans-empty') return 0;
+		if ($plansReady) return cap($plans.length);
+		if (data.bootPeek.planRows > 0) return cap(data.bootPeek.planRows);
+		const peekedPlans = peekLocalPlanCount();
+		if (peekedPlans === 0) return 0;
+		return cap(peekedPlans);
+	});
+	let plansEmptyLayout = $derived(
+		activeTab === 'plans' &&
+			(skeletonVariant === 'plans-empty' || (pageReady && $plans.length === 0))
+	);
 	let listUncertain = $derived(isCloudListUncertain($plansSync));
 
 	let filteredPlans = $derived.by(() => {
@@ -307,7 +341,7 @@
 <section
 	class="workouts-page content-page content-page--narrow"
 	class:workouts-page--history-tab={activeTab === 'history'}
-	class:workouts-page--plans-empty={activeTab === 'plans' && pageReady && $plans.length === 0}
+	class:workouts-page--plans-empty={plansEmptyLayout}
 >
 	{#if activeTab === 'history'}
 		<ScreenHeader
@@ -337,13 +371,10 @@
 				<h1 class="page-title">{pageTitle}</h1>
 				{#if showPlansLeadSlot}
 					<p class="page-lead workouts-page-lead">
-						{#if showPlansLead}
-							{#if !$auth.ready || !$auth.dataBootstrap}
-								<span
-									class="inline-block h-4 w-48 max-w-full animate-pulse rounded bg-[var(--color-surface-muted)]"
-									aria-hidden="true"
-								></span>
-							{:else if $auth.user}
+						{#if !pageReady}
+							{translate(lang, 'workouts.local')}
+						{:else if showPlansLead}
+							{#if $auth.user}
 								{#if $plansSync === 'stale'}
 									{translate(lang, 'sync.cloudLoading')}
 								{:else if $plansSync === 'error'}
@@ -392,7 +423,11 @@
 	/>
 
 	{#if !pageReady}
-		<WorkoutsPageSkeleton label={translate(lang, 'common.loading')} rows={skeletonRows} />
+		<WorkoutsPageSkeleton
+			label={translate(lang, 'common.loading')}
+			variant={skeletonVariant}
+			rows={skeletonRows}
+		/>
 	{:else}
 	{#if activeTab === 'plans'}
 			{#if $plans.length === 0}

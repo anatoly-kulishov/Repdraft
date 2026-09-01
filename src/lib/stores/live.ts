@@ -40,6 +40,7 @@ import { plans } from '$lib/stores/plans';
 import {
 	localSessionRepository,
 	readActiveSession,
+	syncHomeRecentBootDataset,
 	writeActiveSession
 } from '$lib/storage/localSessionRepository';
 import {
@@ -158,6 +159,7 @@ function createLiveStore() {
 					console.warn('session local mirror failed', err);
 				}
 			}
+			syncHomeRecentBootDataset();
 
 			// Retry cloud deletes; clear tombstone only when cloud list no longer has the id.
 			if (isSessionsCloudAvailable() && (deletedIds.length > 0 || unnamedIds.length > 0)) {
