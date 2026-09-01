@@ -5,7 +5,6 @@
 	border-radius: var(--radius-panel);
 	background-color: var(--color-surface);
 	background-image: none;
-	padding: 1rem;
 	min-width: 0;
 	max-width: 100%;
 	overflow: hidden;

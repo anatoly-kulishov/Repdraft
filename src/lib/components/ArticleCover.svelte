@@ -16,28 +16,13 @@
 		history: History
 	} satisfies Record<string, Component<{ size?: number | string; strokeWidth?: number | string }>>;
 
-	let {
-		article,
-		variant = 'card',
-		compact = false
-	}: {
-		article: Article;
-		variant?: 'card' | 'hero';
-		compact?: boolean;
-	} = $props();
+	let { article }: { article: Article } = $props();
 
 	let tone = $derived(article.coverTone ?? 'lime');
 	let iconKey = $derived(resolveArticleCoverIcon(article));
 	let CoverIcon = $derived(COVER_ICONS[iconKey]);
-	let iconSize = $derived(compact ? 28 : variant === 'hero' ? 44 : 36);
 </script>
 
-<div
-	class="article-cover"
-	class:article-cover--compact={compact}
-	class:article-cover--hero={variant === 'hero'}
-	data-tone={tone}
-	aria-hidden="true"
->
-	<LucideIcon icon={CoverIcon} size={iconSize} class="article-cover__icon" strokeWidth={1.85} />
+<div class="article-cover" data-tone={tone} aria-hidden="true">
+	<LucideIcon icon={CoverIcon} size={22} class="article-cover__icon" strokeWidth={1.85} />
 </div>

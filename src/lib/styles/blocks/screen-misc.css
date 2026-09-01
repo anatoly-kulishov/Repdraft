@@ -1159,6 +1159,10 @@
 	text-wrap: pretty;
 }
 
+.profile-settings-group--paired .profile-settings-group__hint {
+	margin-top: 0.35rem;
+}
+
 .profile-settings-group__field {
 	width: 100%;
 }
@@ -1237,6 +1241,17 @@
 
 .profile-settings-row + .profile-settings-row {
 	border-top: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+}
+
+.profile-settings-group--paired .profile-settings-row + .profile-settings-row,
+.auth-prefs__stack .profile-settings-row + .profile-settings-row {
+	border-top: none;
+}
+
+.profile-settings-group--paired .profile-settings-row,
+.auth-prefs__stack .profile-settings-row {
+	min-height: 3.25rem;
+	padding-block: 0.55rem;
 }
 
 .profile-settings-row__icon {
@@ -2093,14 +2108,6 @@
 	font-variant-numeric: tabular-nums;
 }
 
-.pr-panel--embedded .pr-panel-head {
-	margin-bottom: 0.75rem;
-}
-
-.pr-panel--embedded .pr-panel-hint {
-	margin-top: 0;
-}
-
 /* Phones: one row tabs + clamp long exercise titles in fixed header. */
 @media (max-width: 480px) {
 	.exercise-detail-tabs__nav .segment-control__tab {
@@ -2327,23 +2334,7 @@
 }
 
 .pr-panel-head {
-	display: flex;
-	min-width: 0;
-	flex-wrap: wrap;
-	align-items: baseline;
-	justify-content: space-between;
-	gap: 0.35rem 0.75rem;
 	margin-bottom: 0.75rem;
-}
-
-.pr-panel-hint {
-	flex: 1 1 8rem;
-	min-width: 0;
-	margin: 0;
-	font-size: 0.75rem;
-	line-height: 1.35;
-	text-align: right;
-	color: color-mix(in srgb, var(--color-muted) 82%, var(--color-ink));
 }
 
 .pr-actions {

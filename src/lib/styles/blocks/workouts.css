@@ -67,6 +67,25 @@
 	box-shadow: var(--shadow-field);
 }
 
+@media (min-width: 1024px) {
+	.workouts-page__toolbar-actions .workouts-page__clear-history.is-danger {
+		color: var(--color-muted);
+		-webkit-text-fill-color: var(--color-muted);
+		border-color: transparent;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.workouts-page__toolbar-actions .workouts-page__clear-history.is-danger:hover:not(:disabled),
+	.workouts-page__toolbar-actions .workouts-page__clear-history.is-danger:focus-visible:not(:disabled) {
+		color: var(--color-danger);
+		-webkit-text-fill-color: var(--color-danger);
+		border-color: color-mix(in srgb, var(--color-danger) 35%, var(--color-border));
+		background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
+		box-shadow: var(--shadow-field);
+	}
+}
+
 .workouts-page__icon-btn.is-active {
 	border-color: color-mix(in srgb, var(--color-accent) 52%, var(--color-border)) !important;
 	background: var(--color-accent-fill) !important;
@@ -158,13 +177,7 @@
 .workouts-page .workouts-page__create {
 	display: none;
 	flex: 0 0 auto;
-	align-self: flex-start;
-	padding-inline: 1rem;
-}
-
-
-.workouts-page .workouts-page__create--hidden {
-	display: none !important;
+	align-self: center;
 }
 
 .workouts-page__search {
@@ -255,6 +268,11 @@ html.is-plan-reorder-active .reorder-handle {
 	.workouts-page .workouts-page__create {
 		display: inline-flex;
 		align-items: center;
+		justify-content: center;
+	}
+
+	.workouts-page--plans-empty .workouts-page__create {
+		display: none;
 	}
 
 	.workouts-page .entity-list--cards {
