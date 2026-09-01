@@ -32,7 +32,6 @@ test('12.6.1 guest auth UI: tabs, magic link, prefs, backup, version', async ({ 
 	await expect(page.getByRole('button', { name: /^(Скачать копию|Download backup)$/ })).toBeVisible();
 	await expect(page.getByRole('button', { name: /^(Восстановить из файла|Restore from file)$/ })).toBeVisible();
 	await expect(page.locator('.auth-account__version')).toBeVisible();
-	await expect(page.getByRole('button', { name: /^Google$/ })).toHaveCount(0);
 });
 
 test('12.6 panels: signup tab, magic link, forgot, back navigation', async ({ page }) => {

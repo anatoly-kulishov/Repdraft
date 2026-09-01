@@ -38,11 +38,19 @@
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import { goto } from '$app/navigation';
+	import { browser } from '$app/environment';
 	import { get } from 'svelte/store';
 	import { onDestroy, onMount, tick as nextFrame } from 'svelte';
 	import { ArrowLeft } from '@lucide/svelte';
 
 	let { params } = $props();
+
+	function liveSessionMatchesPlan(planId: string): boolean {
+		if (!browser) return false;
+		live.hydrate();
+		const active = get(live).session;
+		return Boolean(active && !active.finishedAt && active.planId === planId);
+	}
 
 	let lang = $derived($resolvedLocale);
 	let showLiveLoggingCoachmark = $derived(shouldShowCoachmark($onboarding, 'live.logging'));
@@ -50,6 +58,13 @@
 	let session = $derived($live.session);
 	let restUntil = $derived($live.restUntil);
 	let loading = $state(true);
+	let switching = $state(false);
+
+	$effect.pre(() => {
+		if (liveSessionMatchesPlan(params.planId)) {
+			loading = false;
+		}
+	});
 	let finishing = $state(false);
 	let finishOfferOpen = $state(false);
 	let discardOfferOpen = $state(false);
@@ -452,7 +467,7 @@
 		resumeActivePlanId = null;
 		if (!plan) return;
 		live.discard();
-		loading = true;
+		switching = true;
 		try {
 			await live.startFromPlan(plan);
 			const started = get(live).session;
@@ -461,7 +476,7 @@
 			console.error('live switch start failed', err);
 			missing = true;
 		} finally {
-			loading = false;
+			switching = false;
 		}
 	}
 </script>
@@ -517,7 +532,7 @@
 		{/if}
 	</div>
 {:else}
-	<section class="live-page lg:pb-4">
+	<section class="live-page lg:pb-4" aria-busy={switching}>
 		<div class="lg:hidden">
 			<ScreenHeader
 				fixed

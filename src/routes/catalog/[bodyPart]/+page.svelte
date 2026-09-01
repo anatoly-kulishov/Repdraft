@@ -5,7 +5,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import { catalogZonePath, isBuilderReturnPath, labelCatalogZone, withFromParam } from '$lib/domain/catalogLinks';
+	import { catalogZonePath, CATALOG_HUB_ZONE_COUNT, isBuilderReturnPath, labelCatalogZone, withFromParam } from '$lib/domain/catalogLinks';
 	import { resolveBackFrom } from '$lib/domain/navigation';
 	import { labelTarget } from '$lib/domain/labels.ru';
 	import { translate } from '$lib/i18n/messages';
@@ -99,7 +99,7 @@
 		</div>
 
 		{#if showTargetSkeleton}
-			<CatalogCategoryGridSkeleton label={translate(lang, 'common.loading')} rows={6} />
+			<CatalogCategoryGridSkeleton label={translate(lang, 'common.loading')} rows={CATALOG_HUB_ZONE_COUNT} />
 		{:else if showTargetBrowse}
 			<CatalogTargetGrid
 				bodyPart={data.bodyPart}

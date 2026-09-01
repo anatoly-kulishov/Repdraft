@@ -23,8 +23,25 @@ export function peekHasLocalPlans(): boolean {
 }
 
 /** Sync peek for loading skeletons (preview, row counts). */
+export function peekLocalPlanCount(): number {
+	return readPlans().length;
+}
+
+/** Sync peek for loading skeletons (preview, row counts). */
 export function peekLocalPlan(id: string): WorkoutPlan | null {
 	return readPlans().find((plan) => plan.id === id) ?? null;
+}
+
+/** Keep SSR cookie in sync so `/workouts` skeleton row count matches first paint. */
+export function syncWorkoutsPlanRowsCookie(planCount: number): void {
+	if (typeof document === 'undefined') return;
+	try {
+		const capped = Math.min(Math.max(planCount, 0), 4);
+		document.documentElement.dataset.workoutsPlanRows = String(capped);
+		document.cookie = `repdraft_workouts_plan_rows=${capped}; path=/; Max-Age=31536000; SameSite=Lax`;
+	} catch {
+		/* ignore */
+	}
 }
 
 /** Keep SSR cookie in sync so `/` boots the matching skeleton. */
@@ -51,6 +68,7 @@ function writePlans(plans: WorkoutPlan[]): void {
 	if (typeof localStorage === 'undefined') return;
 	localStorage.setItem(PLANS_STORAGE_KEY, JSON.stringify(plans));
 	syncHomePlansBootCookie(plans.length > 0);
+	syncWorkoutsPlanRowsCookie(plans.length);
 }
 
 export function readDraft(): WorkoutPlan | null {
