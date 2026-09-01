@@ -1,3 +1,4 @@
+import { CLOUD_REQUEST_MS } from '$lib/domain/networkTimeouts';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { isCloudMode, isSessionsCloudAvailable } from '$lib/storage/dataAccess';
 import { localRecordRepository } from '$lib/storage/localRecordRepository';
@@ -12,7 +13,7 @@ import { supabaseRecordRepository } from '$lib/storage/supabaseRecordRepository'
 import { supabaseSessionRepository } from '$lib/storage/supabaseSessionRepository';
 import { supabaseWorkoutRepository } from '$lib/storage/supabaseWorkoutRepository';
 
-const FLUSH_MS = 4000;
+const FLUSH_MS = CLOUD_REQUEST_MS;
 
 let inflight: Promise<void> | null = null;
 

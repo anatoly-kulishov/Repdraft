@@ -6,6 +6,7 @@
 	import AccountChip from '$lib/components/AccountChip.svelte';
 	import DraftDock from '$lib/components/DraftDock.svelte';
 	import Logo from '$lib/components/Logo.svelte';
+	import NetworkStatusChip from '$lib/components/NetworkStatusChip.svelte';
 	import ShellHomeGreeting from '$lib/components/ShellHomeGreeting.svelte';
 	import PwaInstallHint from '$lib/components/PwaInstallHint.svelte';
 	import ToastStack from '$lib/components/ToastStack.svelte';
@@ -121,6 +122,8 @@
 			if (document.visibilityState === 'visible') {
 				syncVvChrome?.();
 				recoverOverflow();
+				void flushSyncOutbox();
+				void techniqueClipHints.refresh();
 			}
 		};
 		document.addEventListener('visibilitychange', onVisible);
@@ -234,6 +237,7 @@
 	class:shell-nav-tabbar-hidden={hideMobileHeader}
 	aria-label={translate(lang, 'nav.main')}
 >
+	<NetworkStatusChip />
 	<div class="shell-nav-tabbar__inner">
 		<div class="shell-nav-tabbar__grid">
 		<a

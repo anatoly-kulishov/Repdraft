@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
+import { CLOUD_REQUEST_MS } from '$lib/domain/networkTimeouts';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 let client: SupabaseClient | null = null;
@@ -23,6 +24,17 @@ export function isSupabaseConfigured(): boolean {
 	return url.startsWith('https://') && (key.startsWith('eyJ') || key.startsWith('sb_'));
 }
 
+function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), CLOUD_REQUEST_MS);
+	const onExternalAbort = () => controller.abort();
+	init?.signal?.addEventListener('abort', onExternalAbort);
+	return fetch(input, { ...init, signal: controller.signal }).finally(() => {
+		clearTimeout(timer);
+		init?.signal?.removeEventListener('abort', onExternalAbort);
+	});
+}
+
 export function getSupabase(): SupabaseClient | null {
 	if (!isSupabaseConfigured()) return null;
 	if (!browser) return null;
@@ -32,6 +44,9 @@ export function getSupabase(): SupabaseClient | null {
 				persistSession: true,
 				autoRefreshToken: true,
 				detectSessionInUrl: true
+			},
+			global: {
+				fetch: fetchWithTimeout
 			}
 		});
 	}

@@ -60,9 +60,16 @@ function writeOutbox(entries: SyncOutboxEntry[]): void {
 	try {
 		if (entries.length === 0) localStorage.removeItem(SYNC_OUTBOX_KEY);
 		else localStorage.setItem(SYNC_OUTBOX_KEY, JSON.stringify(entries));
+		if (typeof window !== 'undefined') {
+			window.dispatchEvent(new CustomEvent('repdraft:outbox'));
+		}
 	} catch {
 		/* ignore */
 	}
+}
+
+export function outboxCount(): number {
+	return listOutbox().length;
 }
 
 /** Dedupe by kind+id; newer enqueue replaces older same key. */

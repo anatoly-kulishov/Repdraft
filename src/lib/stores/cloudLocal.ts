@@ -1,6 +1,7 @@
 import { isCloudFresh, type SyncListKey } from '$lib/domain/cacheFreshness';
 import type { CloudListRefreshResult } from '$lib/domain/cloudSync';
 import type { RepdraftExportPayload } from '$lib/domain/exportData';
+import { CLOUD_REQUEST_MS } from '$lib/domain/networkTimeouts';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { isCloudMode, isSessionsCloudAvailable } from '$lib/storage/dataAccess';
 import { readLastSyncedAt, writeLastSyncedAt } from '$lib/storage/syncMeta';
@@ -11,8 +12,6 @@ import { supabaseWorkoutRepository } from '$lib/storage/supabaseWorkoutRepositor
 
 export type { CloudListRefreshResult, CloudSyncState } from '$lib/domain/cloudSync';
 export { isCloudListUncertain } from '$lib/domain/cloudSync';
-
-const CLOUD_MS = 4000;
 
 export async function refreshLocalCloudList<T>(opts: {
 	localList: () => Promise<T[]>;
@@ -60,7 +59,7 @@ export async function refreshLocalCloudList<T>(opts: {
 	emit({ items: local, state: 'stale' });
 
 	try {
-		const cloud = await withTimeout(opts.cloudList(), CLOUD_MS);
+		const cloud = await withTimeout(opts.cloudList(), CLOUD_REQUEST_MS);
 		const result: CloudListRefreshResult<T> = {
 			items: opts.merge(local, cloud),
 			state: 'synced'
@@ -88,7 +87,7 @@ export async function mirrorCloudWrite(opts: {
 	await opts.localWrite();
 	if (!isCloudMode() || !opts.cloudWrite) return true;
 	try {
-		await withTimeout(opts.cloudWrite(), CLOUD_MS);
+		await withTimeout(opts.cloudWrite(), CLOUD_REQUEST_MS);
 		return true;
 	} catch (err) {
 		console.warn(`${opts.label} cloud write failed`, err);

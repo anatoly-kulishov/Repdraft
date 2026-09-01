@@ -32,6 +32,7 @@ import {
 	persistSession,
 	clearFinishedSessionHistory
 } from '$lib/storage/dataAccess';
+import { flushSyncOutbox } from '$lib/storage/flushSyncOutbox';
 import { exerciseStats } from '$lib/stores/exerciseStats';
 import { homeNextPlan } from '$lib/stores/homeNextPlan';
 import { plans } from '$lib/stores/plans';
@@ -357,6 +358,7 @@ function createLiveStore() {
 				homeNextPlan.advanceAfterFinish(done.planId, get(plans));
 			}
 			await refreshHistory();
+			void flushSyncOutbox();
 			return done;
 		},
 		discard() {
