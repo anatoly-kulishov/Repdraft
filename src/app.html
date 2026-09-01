@@ -145,14 +145,106 @@
 					} catch (cookieErr) {}
 					/* Home boot: start skeleton when local plans exist (or signed-in). */
 					var homeBoot = authBoot === 'account' ? 'start' : 'create';
+					var workoutsPlanRows = 0;
 					try {
 						var plansRaw = localStorage.getItem('repdraft:plans');
 						if (plansRaw) {
 							var plansParsed = JSON.parse(plansRaw);
-							if (Array.isArray(plansParsed) && plansParsed.length > 0) homeBoot = 'start';
+							if (Array.isArray(plansParsed)) {
+								workoutsPlanRows = plansParsed.length;
+								if (plansParsed.length > 0) homeBoot = 'start';
+							}
 						}
 					} catch (plansErr) {}
+					document.documentElement.dataset.workoutsPlanRows = String(
+						Math.min(Math.max(workoutsPlanRows, 0), 4)
+					);
+					try {
+						document.cookie =
+							'repdraft_workouts_plan_rows=' +
+							Math.min(Math.max(workoutsPlanRows, 0), 4) +
+							'; path=/; Max-Age=31536000; SameSite=Lax';
+					} catch (workoutsRowsCookieErr) {}
 					document.documentElement.dataset.homeBoot = homeBoot;
+					try {
+						document.cookie =
+							'repdraft_home_boot=' +
+							homeBoot +
+							'; path=/; Max-Age=31536000; SameSite=Lax';
+					} catch (homeBootCookieErr) {}
+					var homeShowChecklist = true;
+					try {
+						var onboardingRaw = localStorage.getItem('repdraft:onboarding');
+						if (onboardingRaw) {
+							var onboardingParsed = JSON.parse(onboardingRaw);
+							if (
+								onboardingParsed &&
+								(onboardingParsed.checklistDismissed === true ||
+									onboardingParsed.activatedAt ||
+									(onboardingParsed.checklist &&
+										onboardingParsed.checklist.sessionFinished === true))
+							) {
+								homeShowChecklist = false;
+							}
+						}
+					} catch (onboardingErr) {}
+					document.documentElement.dataset.homeShowChecklist = homeShowChecklist
+						? '1'
+						: '0';
+					try {
+						if (homeShowChecklist) {
+							document.cookie =
+								'repdraft_onboarding_checklist=1; path=/; Max-Age=31536000; SameSite=Lax';
+						} else {
+							document.cookie =
+								'repdraft_onboarding_checklist=; path=/; Max-Age=0; SameSite=Lax';
+						}
+					} catch (onboardingCookieErr) {}
+					var homeRecentRows = 0;
+					try {
+						var sessionsRaw = localStorage.getItem('repdraft:sessions');
+						if (sessionsRaw) {
+							var sessionsParsed = JSON.parse(sessionsRaw);
+							if (Array.isArray(sessionsParsed)) {
+								homeRecentRows = sessionsParsed.filter(function (s) {
+									return s && s.finishedAt;
+								}).length;
+							}
+						}
+					} catch (sessionsErr) {}
+					document.documentElement.dataset.homeRecentRows = homeRecentRows > 0 ? '3' : '0';
+					document.documentElement.dataset.workoutsHistoryRows = String(
+						Math.min(Math.max(homeRecentRows, 0), 4)
+					);
+					try {
+						if (homeRecentRows > 0) {
+							document.cookie =
+								'repdraft_home_has_history=1; path=/; Max-Age=31536000; SameSite=Lax';
+							document.cookie =
+								'repdraft_workouts_history_rows=' +
+								Math.min(Math.max(homeRecentRows, 0), 4) +
+								'; path=/; Max-Age=31536000; SameSite=Lax';
+						} else {
+							document.cookie = 'repdraft_home_has_history=; path=/; Max-Age=0; SameSite=Lax';
+							document.cookie = 'repdraft_workouts_history_rows=0; path=/; Max-Age=31536000; SameSite=Lax';
+						}
+					} catch (historyCookieErr) {}
+					try {
+						var activeRaw = localStorage.getItem('repdraft:active-session');
+						if (activeRaw) {
+							var activeParsed = JSON.parse(activeRaw);
+							if (activeParsed && !activeParsed.finishedAt) {
+								document.documentElement.dataset.homeActiveSession = '1';
+								document.cookie =
+									'repdraft_home_active=1; path=/; Max-Age=31536000; SameSite=Lax';
+							} else {
+								delete document.documentElement.dataset.homeActiveSession;
+								document.cookie = 'repdraft_home_active=; path=/; Max-Age=0; SameSite=Lax';
+							}
+						} else {
+							delete document.documentElement.dataset.homeActiveSession;
+						}
+					} catch (activeErr) {}
 					try {
 						if (homeBoot === 'start') {
 							document.cookie =

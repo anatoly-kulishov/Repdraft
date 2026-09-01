@@ -18,6 +18,8 @@ export type SkeletonTransitionSpec = {
 	maxHeightDeltaPx?: number | null;
 	/** Delay exercises.index.json to keep skeleton on screen. */
 	indexDelayMs?: number;
+	/** Post-ready settle before height compare (infinite scroll can inflate ready height). */
+	settleMs?: number;
 	setup?: (page: Page) => Promise<void>;
 };
 
@@ -60,6 +62,12 @@ export async function seedMinimalPlan(page: Page): Promise<{ planId: string; exe
 	const planId = 'e2e-skeleton-plan';
 	const now = new Date().toISOString();
 
+	const origin = (process.env.BASE_URL ?? 'http://127.0.0.1:5173').replace(/\/$/, '');
+	await page.context().addCookies([
+		{ name: 'repdraft_workouts_plan_rows', value: '1', url: origin },
+		{ name: 'repdraft_home_has_plans', value: '1', url: origin }
+	]);
+
 	await page.addInitScript(
 		({ planId: id, exerciseId: exId, now: ts }) => {
 			const plan = {
@@ -70,6 +78,9 @@ export async function seedMinimalPlan(page: Page): Promise<{ planId: string; exe
 				exercises: [{ exerciseId: exId, targetSets: 3, targetReps: 8, restSec: 90 }]
 			};
 			localStorage.setItem('repdraft:plans', JSON.stringify([plan]));
+			document.documentElement.dataset.workoutsPlanRows = '1';
+			document.cookie =
+				'repdraft_workouts_plan_rows=1; path=/; Max-Age=31536000; SameSite=Lax';
 			document.cookie = 'repdraft_home_has_plans=1; path=/; Max-Age=31536000; SameSite=Lax';
 		},
 		{ planId, exerciseId, now }
@@ -112,6 +123,69 @@ export async function seedFinishedSession(
 	return sessionId;
 }
 
+/** Seed an in-progress session for home continue-card skeleton parity. */
+export async function seedActiveSession(
+	page: Page,
+	planId: string,
+	exerciseId: string
+): Promise<void> {
+	await page.addInitScript(
+		({ planId: pId, exerciseId: exId }) => {
+			const session = {
+				id: 'e2e-active-session',
+				planId: pId,
+				planName: 'Skeleton E2E',
+				startedAt: new Date().toISOString(),
+				finishedAt: null,
+				exercises: [{ exerciseId: exId, targetSets: 3, targetReps: 8, restSec: 90, sets: [] }]
+			};
+			localStorage.setItem('repdraft:active-session', JSON.stringify(session));
+			document.documentElement.dataset.homeActiveSession = '1';
+			document.cookie = 'repdraft_home_active=1; path=/; Max-Age=31536000; SameSite=Lax';
+		},
+		{ planId, exerciseId }
+	);
+}
+
+/** Seed up to 3 finished sessions for home recent-list skeleton parity. */
+export async function seedHomeRecentSessions(
+	page: Page,
+	planId: string,
+	exerciseId: string,
+	count = 3
+): Promise<void> {
+	await page.addInitScript(
+		({ planId: pId, exerciseId: exId, count: n }) => {
+			const sessions = Array.from({ length: n }, (_, index) => {
+				const ts = new Date(Date.now() - index * 86_400_000).toISOString();
+				return {
+					id: `e2e-skeleton-session-${index}`,
+					planId: pId,
+					planName: 'Skeleton E2E',
+					startedAt: ts,
+					finishedAt: ts,
+					exercises: [
+						{
+							exerciseId: exId,
+							targetSets: 3,
+							targetReps: 8,
+							restSec: 90,
+							sets: [{ weightKg: 40, reps: 8, completed: true, kind: 'work' as const }]
+						}
+					]
+				};
+			});
+			localStorage.setItem('repdraft:sessions', JSON.stringify(sessions));
+			document.documentElement.dataset.homeRecentRows = n > 0 ? '3' : '0';
+			if (n > 0) {
+				document.cookie =
+					'repdraft_home_has_history=1; path=/; Max-Age=31536000; SameSite=Lax';
+			}
+		},
+		{ planId, exerciseId, count }
+	);
+}
+
 async function readCls(page: Page): Promise<number> {
 	return page.evaluate(() => (window as unknown as { __repdraftCls?: number }).__repdraftCls ?? 0);
 }
@@ -120,8 +194,9 @@ async function measureSelectorsHeight(page: Page, selectors: string[]): Promise<
 	return page.evaluate((sels) => {
 		let total = 0;
 		for (const sel of sels) {
-			const el = document.querySelector(sel);
-			if (el) total += el.getBoundingClientRect().height;
+			for (const el of document.querySelectorAll(sel)) {
+				total += el.getBoundingClientRect().height;
+			}
 		}
 		return total;
 	}, selectors);
@@ -163,7 +238,8 @@ export async function assertSkeletonTransition(
 	await ready.waitFor({ state: 'visible', timeout: 20_000 });
 	await expect(skeleton).toHaveCount(0, { timeout: 20_000 });
 
-	await page.waitForTimeout(400);
+	const settleMs = spec.settleMs ?? 400;
+	if (settleMs > 0) await page.waitForTimeout(settleMs);
 
 	let readyHeight: number;
 	if (spec.readyHeightSelectors?.length) {
@@ -191,4 +267,22 @@ export async function assertSkeletonTransition(
 
 export async function seedGuestBoot(page: Page): Promise<void> {
 	await seedGuestStorage(page);
+}
+
+/** Guest with no plans or history — for empty-state skeleton parity on /workouts. */
+export async function seedEmptyWorkoutsBoot(page: Page): Promise<void> {
+	await page.addInitScript(() => {
+		localStorage.removeItem('repdraft:plans');
+		localStorage.removeItem('repdraft:sessions');
+		localStorage.removeItem('repdraft:active-session');
+		document.documentElement.dataset.workoutsPlanRows = '0';
+		document.documentElement.dataset.workoutsHistoryRows = '0';
+		document.documentElement.dataset.homeRecentRows = '0';
+		delete document.documentElement.dataset.homeActiveSession;
+		document.cookie = 'repdraft_workouts_plan_rows=0; path=/; Max-Age=31536000; SameSite=Lax';
+		document.cookie = 'repdraft_workouts_history_rows=0; path=/; Max-Age=31536000; SameSite=Lax';
+		document.cookie = 'repdraft_home_has_history=; path=/; Max-Age=0; SameSite=Lax';
+		document.cookie = 'repdraft_home_has_plans=; path=/; Max-Age=0; SameSite=Lax';
+		document.cookie = 'repdraft_home_active=; path=/; Max-Age=0; SameSite=Lax';
+	});
 }

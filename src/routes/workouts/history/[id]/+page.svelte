@@ -79,10 +79,9 @@
 	} | null>(null);
 	let skeletonRows = $derived.by(() => {
 		const id = $page.params.id;
-		if (!id) return 3;
+		if (!id) return 1;
 		const peeked = peekLocalSession(id);
-		const n = peeked?.exercises.length ?? 1;
-		return Math.min(Math.max(n, 1), 4) + 1;
+		return Math.min(Math.max(peeked?.exercises.length ?? 1, 1), 4);
 	});
 	let skeletonSetRows = $derived.by(() => {
 		const id = $page.params.id;
@@ -323,7 +322,17 @@
 	</div>
 	<div class="history-detail-skeleton-desktop-head hidden lg:block" aria-hidden="true">
 		<div class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--back"></div>
-		<div class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--title"></div>
+		<div class="history-detail-skeleton-head__title-row">
+			<div class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--title"></div>
+			<div class="history-detail-skeleton-head__actions">
+				<div
+					class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--action"
+				></div>
+				<div
+					class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--action"
+				></div>
+			</div>
+		</div>
 	</div>
 	<AppSkeleton class="page-skeleton-meta history-detail-skeleton-meta" aria-hidden="true" />
 	<PageSkeleton variant="history" rows={skeletonRows} setRows={skeletonSetRows} hideHeader />

@@ -11,6 +11,7 @@ import {
 	shouldDeferPwaHint,
 	shouldShowChecklist,
 	shouldShowCoachmark,
+	syncOnboardingChecklistBootCookie,
 	DEMO_PLAN_ID,
 	type CoachmarkId,
 	type OnboardingChecklistStep,
@@ -36,6 +37,7 @@ function writeState(state: OnboardingState) {
 	if (!browser) return;
 	try {
 		localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(state));
+		syncOnboardingChecklistBootCookie(state);
 	} catch {
 		/* ignore */
 	}
@@ -70,7 +72,9 @@ function createOnboardingStore() {
 				store.set(defaultOnboardingState());
 				visitRecorded = false;
 			} else {
-				store.set(readState());
+				const state = readState();
+				store.set(state);
+				syncOnboardingChecklistBootCookie(state);
 			}
 			if (!visitRecorded) {
 				visitRecorded = true;

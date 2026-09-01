@@ -35,4 +35,4 @@ If that loop is not excellent, ignore charts, AI, social, and other extras. Nati
 - Run typecheck with **`npm run check`** before declaring a task finished (not `npm run validate` - that script does not exist here).
 - Do not introduce new console errors or warnings.
 - Follow release branches: `cursor/vX.Y.Z-slug` - see `.cursor/rules/release-branches.mdc`.
-- Product north star: `GOAL.md` + `.cursor/product/mvp-spec.md`.
+- Product north star: `GOAL.md` + `.cursor/rules/mvp.mdc` + `.cursor/product/mvp-spec.md`.

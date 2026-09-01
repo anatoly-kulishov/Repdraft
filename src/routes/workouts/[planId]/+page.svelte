@@ -6,7 +6,7 @@
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_PRIMARY } from '$lib/components/icons/sizes';
-	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
@@ -26,11 +26,26 @@
 
 	let { params } = $props();
 
+	const peekedIndex = peekExerciseIndex();
+
 	let lang = $derived($resolvedLocale);
 	let showPreviewStartCoachmark = $derived(shouldShowCoachmark($onboarding, 'preview.start'));
 	let plan = $state<WorkoutPlan | null>(null);
-	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
+	let indexById = $state<Map<string, ExerciseIndexItem>>(
+		peekedIndex ? new Map(peekedIndex.map((item) => [item.id, item])) : new Map()
+	);
 	let loading = $state(true);
+
+	$effect.pre(() => {
+		const cached = peekLocalPlan(params.planId);
+		if (cached) {
+			plan = cached;
+			loading = false;
+			return;
+		}
+		plan = null;
+		loading = true;
+	});
 	let missing = $state(false);
 	let fromPath = $derived($page.url.pathname);
 	let technique = $state<{
@@ -101,7 +116,17 @@
 		</div>
 		<div class="workout-preview-skeleton-desktop-head hidden lg:block" aria-hidden="true">
 			<div class="workout-preview-skeleton-head__bar workout-preview-skeleton-head__bar--back"></div>
-			<div class="workout-preview-skeleton-head__bar workout-preview-skeleton-head__bar--title"></div>
+			<div class="workout-preview-skeleton-head__title-row">
+				<div class="workout-preview-skeleton-head__bar workout-preview-skeleton-head__bar--title"></div>
+				<div class="workout-preview-skeleton-head__actions">
+					<div
+						class="workout-preview-skeleton-head__bar workout-preview-skeleton-head__bar--action"
+					></div>
+					<div
+						class="workout-preview-skeleton-head__bar workout-preview-skeleton-head__bar--action"
+					></div>
+				</div>
+			</div>
 		</div>
 		<div class="workout-preview-skeleton-summary" aria-hidden="true">
 			<div class="workout-preview-skeleton-summary__line workout-preview-skeleton-summary__line--lead"></div>

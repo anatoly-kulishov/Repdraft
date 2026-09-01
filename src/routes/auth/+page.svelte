@@ -4,7 +4,6 @@
 	import { page } from '$app/stores';
 	import {
 		authErrorMessageKey,
-		googleOAuthEnabled,
 		passwordsMatch,
 		safeRedirectPath,
 		userAvatarUrl,
@@ -92,8 +91,8 @@
 	let profileProviderLabel = $derived.by(() => {
 		const id = profileProvider;
 		if (!id) return null;
-		if (id === 'google') return translate(lang, 'auth.provider.google');
 		if (id === 'email') return translate(lang, 'auth.provider.email');
+		if (id === 'google') return translate(lang, 'auth.provider.oauth');
 		return translate(lang, 'auth.provider.other', {
 			name: id.charAt(0).toUpperCase() + id.slice(1)
 		});
@@ -236,24 +235,6 @@
 			toasts.show(text, 'error');
 			void flashInvalid();
 		} finally {
-			loading = false;
-		}
-	}
-
-	async function google() {
-		if (!$auth.configured) {
-			toasts.show(translate(lang, 'auth.notConfigured'), 'error');
-			return;
-		}
-		loading = true;
-		message = null;
-		fieldsInvalid = false;
-		try {
-			await auth.signInWithOAuth('google', nextPath);
-		} catch (err) {
-			const text = mapErr(err);
-			message = text;
-			toasts.show(text, 'error');
 			loading = false;
 		}
 	}
@@ -892,40 +873,6 @@
 						{translate(lang, 'auth.backToSignIn')}
 					</AppButton>
 				</form>
-			{/if}
-
-			{#if googleOAuthEnabled && (panel === 'signin' || panel === 'signup')}
-				<div class="auth-divider" aria-hidden="true">
-					<span>{translate(lang, 'auth.or')}</span>
-				</div>
-
-				<AppButton
-					variant="secondary"
-					block
-					class="inline-flex items-center justify-center gap-2"
-					disabled={loading}
-					onclick={() => void google()}
-				>
-					<svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0" aria-hidden="true">
-						<path
-							fill="#EA4335"
-							d="M12 10.2v3.6h5.1c-.2 1.2-1.5 3.6-5.1 3.6-3.1 0-5.6-2.5-5.6-5.6S8.9 6.2 12 6.2c1.8 0 3 .7 3.7 1.4l2.5-2.4C16.7 3.7 14.5 2.7 12 2.7 6.9 2.7 2.7 6.9 2.7 12S6.9 21.3 12 21.3c5.2 0 8.6-3.6 8.6-8.7 0-.6-.1-1-.1-1.4H12z"
-						/>
-						<path
-							fill="#34A853"
-							d="M3.8 7.4 6.8 9.6C7.7 7.5 9.6 6.2 12 6.2c1.8 0 3 .7 3.7 1.4l2.5-2.4C16.7 3.7 14.5 2.7 12 2.7 8.4 2.7 5.3 4.7 3.8 7.4z"
-						/>
-						<path
-							fill="#4A90E2"
-							d="M12 21.3c2.4 0 4.5-.8 6-2.2l-2.9-2.2c-.8.5-1.8.9-3.1.9-2.4 0-4.4-1.6-5.1-3.8l-3 2.3c1.5 3 4.5 5 8.1 5z"
-						/>
-						<path
-							fill="#FBBC05"
-							d="M6.9 14c-.2-.5-.3-1.1-.3-1.7s.1-1.2.3-1.7L3.8 8.3C3.1 9.4 2.7 10.7 2.7 12s.4 2.6 1.1 3.7l3.1-1.7z"
-						/>
-					</svg>
-					{translate(lang, 'auth.google')}
-				</AppButton>
 			{/if}
 			</div>
 			{@render guestSettingsPanel()}
