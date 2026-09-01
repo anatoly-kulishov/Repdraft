@@ -9,6 +9,7 @@ import { build, files, version } from '$service-worker';
  * Offline QA: use production build (`npm run preview`), not `npm run dev` —
  * Vite dev serves uncacheable module URLs under /.svelte-kit and /@id.
  */
+const SW_NAVIGATION_MS = 5000;
 const CACHE = `repdraft-shell-${version}`;
 const MEDIA_CACHE = `repdraft-media-${version}`;
 const APP_SHELL = '/';
@@ -156,16 +157,26 @@ async function cacheFirst(request: Request, cacheName: string): Promise<Response
 	}
 }
 
+async function fetchWithTimeout(request: Request, ms: number): Promise<Response> {
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), ms);
+	try {
+		return await fetch(request, { signal: controller.signal });
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
 async function cachedAppShell(): Promise<Response | undefined> {
 	const cache = await caches.open(CACHE);
 	return (await cache.match(APP_SHELL)) ?? undefined;
 }
 
-/** HTML: network-first, cache hit, then app shell. */
+/** HTML: network-first with timeout, cache hit, then app shell. */
 async function navigationNetworkFirst(request: Request): Promise<Response> {
 	const cache = await caches.open(CACHE);
 	try {
-		const response = await fetch(request);
+		const response = await fetchWithTimeout(request, SW_NAVIGATION_MS);
 		if (response.ok) void cache.put(request, response.clone());
 		return response;
 	} catch {

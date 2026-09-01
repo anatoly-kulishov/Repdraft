@@ -1,5 +1,6 @@
 import type { WorkoutRepository } from '$lib/domain/repository';
 import type { WorkoutSession } from '$lib/domain/types';
+import { CLOUD_REQUEST_MS } from '$lib/domain/networkTimeouts';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
 import { localRecordRepository } from './localRecordRepository';
@@ -60,7 +61,7 @@ export async function persistSession(session: WorkoutSession): Promise<void> {
 	await localSessionRepository.save(session);
 	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
 	try {
-		await withTimeout(supabaseSessionRepository.save(session), 4000);
+		await withTimeout(supabaseSessionRepository.save(session), CLOUD_REQUEST_MS);
 	} catch (err) {
 		enqueueOutbox({ kind: 'session.save', id: session.id });
 		const e = err as { code?: string; message?: string } | null;
@@ -79,7 +80,7 @@ export async function deleteSession(id: string): Promise<void> {
 	addSessionTombstone(id);
 	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
 	try {
-		await withTimeout(supabaseSessionRepository.remove(id), 4000);
+		await withTimeout(supabaseSessionRepository.remove(id), CLOUD_REQUEST_MS);
 	} catch (err) {
 		enqueueOutbox({ kind: 'session.delete', id });
 		const e = err as { code?: string; message?: string } | null;
@@ -98,7 +99,7 @@ export async function clearFinishedSessionHistory(): Promise<void> {
 	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
 	for (const s of finished) {
 		try {
-			await withTimeout(supabaseSessionRepository.remove(s.id), 4000);
+			await withTimeout(supabaseSessionRepository.remove(s.id), CLOUD_REQUEST_MS);
 		} catch (err) {
 			markSessionsCloudDown(err);
 			break;
@@ -106,7 +107,7 @@ export async function clearFinishedSessionHistory(): Promise<void> {
 	}
 }
 
-const CLOUD_LIST_MS = 4000;
+const CLOUD_LIST_MS = CLOUD_REQUEST_MS;
 
 /** Upload local-only data to cloud when logging in (merge by id). Never hang the UI. */
 export async function migrateLocalToCloud(): Promise<void> {
@@ -118,8 +119,12 @@ export async function migrateLocalToCloud(): Promise<void> {
 		const cloudPlans = await withTimeout(supabaseWorkoutRepository.list(), CLOUD_LIST_MS);
 		const cloudPlanIds = new Set(cloudPlans.map((p) => p.id));
 		for (const plan of localPlans) {
-			if (!cloudPlanIds.has(plan.id)) {
-				await supabaseWorkoutRepository.save(plan);
+			if (cloudPlanIds.has(plan.id)) continue;
+			try {
+				await withTimeout(supabaseWorkoutRepository.save(plan), CLOUD_REQUEST_MS);
+			} catch (err) {
+				enqueueOutbox({ kind: 'plan.save', id: plan.id });
+				console.warn('plan migrate save failed — queued', err);
 			}
 		}
 	} catch (err) {
@@ -131,8 +136,12 @@ export async function migrateLocalToCloud(): Promise<void> {
 		const cloudRecords = await withTimeout(supabaseRecordRepository.list(), CLOUD_LIST_MS);
 		const cloudRecordIds = new Set(cloudRecords.map((r) => r.exerciseId));
 		for (const record of localRecords) {
-			if (!cloudRecordIds.has(record.exerciseId)) {
-				await supabaseRecordRepository.save(record);
+			if (cloudRecordIds.has(record.exerciseId)) continue;
+			try {
+				await withTimeout(supabaseRecordRepository.save(record), CLOUD_REQUEST_MS);
+			} catch (err) {
+				enqueueOutbox({ kind: 'record.save', exerciseId: record.exerciseId });
+				console.warn('record migrate save failed — queued', err);
 			}
 		}
 	} catch (err) {
@@ -145,7 +154,7 @@ export async function migrateLocalToCloud(): Promise<void> {
 	const localSessions = (await localSessionRepository.list()).filter((s) => !deleted.has(s.id));
 	void (async () => {
 		try {
-			const cloudSessions = await withTimeout(supabaseSessionRepository.list(), 2500);
+			const cloudSessions = await withTimeout(supabaseSessionRepository.list(), CLOUD_LIST_MS);
 			if (isSessionsTableUnavailable()) {
 				sessionsCloudOk = false;
 				return;
@@ -153,7 +162,12 @@ export async function migrateLocalToCloud(): Promise<void> {
 			const cloudSessionIds = new Set(cloudSessions.map((s) => s.id));
 			for (const session of localSessions) {
 				if (deleted.has(session.id) || cloudSessionIds.has(session.id)) continue;
-				await supabaseSessionRepository.save(session);
+				try {
+					await withTimeout(supabaseSessionRepository.save(session), CLOUD_REQUEST_MS);
+				} catch (err) {
+					enqueueOutbox({ kind: 'session.save', id: session.id });
+					console.warn('session migrate save failed — queued', err);
+				}
 			}
 		} catch (err) {
 			markSessionsCloudDown(err);

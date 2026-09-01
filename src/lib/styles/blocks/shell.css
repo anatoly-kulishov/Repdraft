@@ -718,6 +718,25 @@ select {
 	display: none !important;
 }
 
+.network-status-chip {
+	display: block;
+	padding: 0 0.65rem 0.35rem;
+	pointer-events: none;
+}
+
+.network-status-chip__text {
+	margin: 0;
+	padding: 0.35rem 0.65rem;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	line-height: 1.3;
+	text-align: center;
+	color: var(--color-muted);
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--color-surface) 92%, var(--color-accent));
+	border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+}
+
 /* PWA install hint — lives in root layout; must stay in global shell bundle. */
 .pwa-install {
 	display: flex;

@@ -1,4 +1,6 @@
 import { browser } from '$app/environment';
+import { SUPABASE_AUTH_MS } from '$lib/domain/networkTimeouts';
+import { withTimeout } from '$lib/domain/withTimeout';
 import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
 import { migrateLocalToCloud, setCloudMode } from '$lib/storage/dataAccess';
 import {
@@ -26,7 +28,7 @@ import { toasts } from './toasts';
 type AuthState = {
 	configured: boolean;
 	ready: boolean;
-	/** False while initial plans/records refresh (incl. cloud) is in flight. */
+	/** False while initial local plans/records hydrate is in flight. */
 	dataBootstrap: boolean;
 	session: Session | null;
 	user: User | null;
@@ -56,6 +58,34 @@ function createAuthStore() {
 		passwordRecovery: false
 	});
 
+	async function runCloudBootstrap(
+		loggedIn: boolean,
+		opts: { cacheAction: LocalCacheUserAction }
+	) {
+		try {
+			await Promise.all([plans.refresh(), records.refresh(), live.refreshHistory()]);
+			if (loggedIn) {
+				let hadGuestData = false;
+				if (opts.cacheAction === 'bind-first') {
+					const [plansLocal, sessionsLocal, recordsLocal] = await Promise.all([
+						localWorkoutRepository.list(),
+						localSessionRepository.list(),
+						localRecordRepository.list()
+					]);
+					hadGuestData =
+						plansLocal.length > 0 || sessionsLocal.length > 0 || recordsLocal.length > 0;
+				}
+				await migrateLocalToCloud();
+				await Promise.all([plans.refresh(), records.refresh(), live.refreshHistory()]);
+				if (hadGuestData) {
+					toasts.show(translate(get(resolvedLocale), 'auth.migrateLocalHint'), 'info');
+				}
+			}
+		} catch (err) {
+			console.warn('cloud bootstrap failed', err);
+		}
+	}
+
 	async function runDataBootstrap(
 		loggedIn: boolean,
 		opts: { cacheCleared: boolean; cacheAction: LocalCacheUserAction }
@@ -76,29 +106,13 @@ function createAuthStore() {
 				bookmarks.refresh(),
 				live.refreshHistory()
 			]);
-			await Promise.all([plans.refresh(), records.refresh(), live.refreshHistory()]);
-			if (loggedIn) {
-				let hadGuestData = false;
-				if (opts.cacheAction === 'bind-first') {
-					const [plansLocal, sessionsLocal, recordsLocal] = await Promise.all([
-						localWorkoutRepository.list(),
-						localSessionRepository.list(),
-						localRecordRepository.list()
-					]);
-					hadGuestData =
-						plansLocal.length > 0 || sessionsLocal.length > 0 || recordsLocal.length > 0;
-				}
-				await migrateLocalToCloud();
-				await Promise.all([plans.refresh(), records.refresh(), live.refreshHistory()]);
-				if (hadGuestData) {
-					toasts.show(translate(get(resolvedLocale), 'auth.migrateLocalHint'), 'info');
-				}
-			}
 		} catch (err) {
-			console.error('data bootstrap failed', err);
+			console.error('local bootstrap failed', err);
 		} finally {
 			update((s) => ({ ...s, dataBootstrap: true }));
 		}
+
+		void runCloudBootstrap(loggedIn, { cacheAction: opts.cacheAction });
 	}
 
 	/** Skip duplicate INITIAL_SESSION from getSession + onAuthStateChange. */
@@ -203,14 +217,20 @@ function createAuthStore() {
 			return;
 		}
 
-		const { data } = await supabase.auth.getSession();
+		let session: Session | null = null;
+		try {
+			const { data } = await withTimeout(supabase.auth.getSession(), SUPABASE_AUTH_MS);
+			session = data.session;
+		} catch (err) {
+			console.warn('auth getSession timed out — continuing with local data', err);
+		}
 		const hash = window.location.hash;
 		const recoveryHint =
 			hash.includes('type=recovery') ||
 			new URLSearchParams(window.location.search).get('recovery') === '1';
-		await applySession(data.session, {
+		await applySession(session, {
 			force: true,
-			passwordRecovery: Boolean(recoveryHint && data.session)
+			passwordRecovery: Boolean(recoveryHint && session)
 		});
 
 		supabase.auth.onAuthStateChange((event, session) => {
