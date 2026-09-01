@@ -43,6 +43,7 @@ function writeState(state: OnboardingState) {
 
 function createOnboardingStore() {
 	const store = writable<OnboardingState>(defaultOnboardingState());
+	const hydratedStore = writable(false);
 	let visitRecorded = false;
 
 	function patch(mutator: (state: OnboardingState) => OnboardingState) {
@@ -55,6 +56,9 @@ function createOnboardingStore() {
 
 	return {
 		subscribe: store.subscribe,
+		hydrated: {
+			subscribe: hydratedStore.subscribe
+		},
 		init(search: URLSearchParams) {
 			if (!browser) return;
 			if (search.get('onboarding') === 'reset') {
@@ -72,6 +76,7 @@ function createOnboardingStore() {
 				visitRecorded = true;
 				patch((s) => ({ ...s, visitCount: s.visitCount + 1 }));
 			}
+			hydratedStore.set(true);
 		},
 		markChecklist(step: OnboardingChecklistStep) {
 			patch((s) => markChecklistStep(s, step));
@@ -126,3 +131,8 @@ function createOnboardingStore() {
 }
 
 export const onboarding = createOnboardingStore();
+
+/** True after layout `onboarding.init()` reads localStorage — gate coachmarks/checklist to avoid flash. */
+export const onboardingHydrated = {
+	subscribe: onboarding.hydrated.subscribe
+};

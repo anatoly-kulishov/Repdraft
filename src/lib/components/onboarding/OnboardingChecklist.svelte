@@ -10,7 +10,7 @@
 	} from '$lib/domain/onboarding';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { onboarding } from '$lib/stores/onboarding';
+	import { onboarding, onboardingHydrated } from '$lib/stores/onboarding';
 	import { BookOpen, ChevronRight, Circle, CircleCheck, Play, X } from '@lucide/svelte';
 
 	let {
@@ -41,6 +41,7 @@
 	};
 </script>
 
+{#if $onboardingHydrated}
 <AppPanel class="onboarding-checklist">
 	<div class="onboarding-checklist__head">
 		<div class="onboarding-checklist__intro min-w-0">
@@ -128,3 +129,4 @@
 		</div>
 	{/if}
 </AppPanel>
+{/if}

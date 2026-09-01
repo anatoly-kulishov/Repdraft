@@ -23,7 +23,7 @@
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
-	import { onboarding } from '$lib/stores/onboarding';
+	import { onboarding, onboardingHydrated } from '$lib/stores/onboarding';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -69,7 +69,7 @@
 	});
 
 	$effect(() => {
-		if (!pageReady || $draft.exercises.length > 0 || introOfferOpen) return;
+		if (!pageReady || !$onboardingHydrated || $draft.exercises.length > 0 || introOfferOpen) return;
 		if (shouldShowCoachmark($onboarding, 'builder.intro')) {
 			introOfferOpen = true;
 		}
