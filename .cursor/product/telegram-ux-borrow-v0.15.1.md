@@ -4,7 +4,7 @@
 Не копируем мессенджер — берём **паттерны**, которые ускоряют священный цикл и снижают тревожность при деструктивных действиях.
 
 **Северная звезда:** [`GOAL.md`](../../GOAL.md).  
-**QA flows:** [`/scenarios`](/scenarios) в приложении, источник `.cursor/product/user-scenarios.md`.
+**QA flows:** [`/scenarios`](/scenarios) в приложении. Источник: `static/content/user-scenarios.md` (короткие шаги для QA).
 
 ---
 

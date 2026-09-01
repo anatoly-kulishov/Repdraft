@@ -61,7 +61,7 @@
 				<a class="privacy-page__media-link" href={GYM_VISUAL_URL} target="_blank" rel="noreferrer">
 					gymvisual.com
 				</a>
-				<span aria-hidden="true"> · </span>
+				<span class="privacy-page__media-sep" aria-hidden="true">·</span>
 				<a
 					class="privacy-page__media-link"
 					href={GYM_VISUAL_TERMS_URL}

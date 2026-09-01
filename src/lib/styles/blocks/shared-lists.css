@@ -509,10 +509,18 @@ a.entity-row--link:hover,
 	.entity-list--cards .swipe-to-delete.is-enabled {
 		border: 1px solid var(--color-border);
 		height: 100%;
+		background: var(--color-surface);
+		box-shadow: var(--shadow-panel);
+	}
+
+	.entity-list--cards .swipe-to-delete.is-enabled .swipe-to-delete__sheet {
+		background: var(--color-surface);
 	}
 
 	.entity-list--cards .swipe-to-delete.is-enabled .entity-row {
 		border: none;
+		border-radius: 0;
+		background: transparent;
 		height: 100%;
 	}
 
@@ -542,18 +550,24 @@ a.entity-row--link:hover,
 
 .swipe-to-delete__rail {
 	position: absolute;
-	inset: 0 0 0 auto;
+	inset-block: 0;
 	z-index: 0;
 	display: flex;
-	width: var(--swipe-rail-width, 4.75rem);
 	align-items: stretch;
 	justify-content: stretch;
-	background: color-mix(in srgb, var(--color-danger, #ef4444) 88%, #7f1d1d);
+	gap: 0;
+	background: transparent;
 	border-radius: 0;
 }
 
-.swipe-to-delete--multi .swipe-to-delete__rail {
-	background: transparent;
+.swipe-to-delete__rail--leading {
+	inset-inline: 0 auto;
+	width: var(--swipe-leading-width, 4.5rem);
+}
+
+.swipe-to-delete__rail--trailing {
+	inset-inline: auto 0;
+	width: var(--swipe-trailing-width, 4.5rem);
 }
 
 .swipe-to-delete.is-enabled .swipe-to-delete__rail {
@@ -564,48 +578,65 @@ a.entity-row--link:hover,
 .swipe-to-delete__action {
 	display: flex;
 	flex: 1 1 0;
-	align-self: stretch;
 	align-items: center;
 	justify-content: center;
-	width: 100%;
 	min-width: 3rem;
+	min-height: 3rem;
+	width: auto;
+	max-width: none;
 	height: 100%;
-	min-height: 100%;
 	margin: 0;
 	padding: 0;
 	border: none !important;
 	border-radius: 0 !important;
 	box-shadow: none !important;
+	color: #f8fafc !important;
+	-webkit-text-fill-color: currentColor !important;
 	cursor: pointer;
 }
 
 .swipe-to-delete__delete,
 .swipe-to-delete__action--danger {
-	background: color-mix(in srgb, var(--color-danger, #ef4444) 88%, #7f1d1d) !important;
-	color: #fff !important;
-	-webkit-text-fill-color: #fff !important;
+	background: var(--color-danger, #ef4444) !important;
 }
 
 .swipe-to-delete__action--accent {
 	background: color-mix(in srgb, var(--color-accent) 88%, #4c1d95) !important;
 	color: var(--color-accent-ink) !important;
-	-webkit-text-fill-color: var(--color-accent-ink) !important;
+}
+
+.swipe-to-delete__action--success {
+	background: #22a06b !important;
+	color: #f4fdf8 !important;
+}
+
+.swipe-to-delete__action--neutral {
+	background: color-mix(in srgb, var(--color-muted) 72%, var(--color-ink)) !important;
+	color: #f4f4f5 !important;
 }
 
 .swipe-to-delete__delete:is([data-slot='button'], button):hover,
 .swipe-to-delete__delete:is([data-slot='button'], button):active,
-.swipe-to-delete__action--danger:is([data-slot='button'], button):hover,
-.swipe-to-delete__action--danger:is([data-slot='button'], button):active {
-	background: var(--color-danger) !important;
-	color: #fff !important;
-	-webkit-text-fill-color: #fff !important;
+.swipe-to-delete__action:is([data-slot='button'], button):hover,
+.swipe-to-delete__action:is([data-slot='button'], button):active {
+	filter: brightness(0.94);
 }
 
-.swipe-to-delete__action--accent:is([data-slot='button'], button):hover,
+.swipe-to-delete__delete:is([data-slot='button'], button):active,
+.swipe-to-delete__action--danger:is([data-slot='button'], button):active {
+	background: color-mix(in srgb, var(--color-danger, #ef4444) 88%, #000) !important;
+}
+
 .swipe-to-delete__action--accent:is([data-slot='button'], button):active {
 	background: var(--color-accent) !important;
-	color: var(--color-accent-ink) !important;
-	-webkit-text-fill-color: var(--color-accent-ink) !important;
+}
+
+.swipe-to-delete__action--success:is([data-slot='button'], button):active {
+	background: #1d8a5c !important;
+}
+
+.swipe-to-delete__action--neutral:is([data-slot='button'], button):active {
+	background: color-mix(in srgb, var(--color-muted) 55%, var(--color-ink)) !important;
 }
 
 .swipe-to-delete__delete :global(svg),
@@ -628,21 +659,17 @@ a.entity-row--link:hover,
 }
 
 .swipe-to-delete.is-enabled .swipe-to-delete__sheet {
-	/* Square sheet — host clips radius so the red rail never peeks through anti-aliased edges. */
 	background: var(--color-surface);
 	border-radius: 0;
 	overflow: hidden;
 }
 
-.swipe-to-delete.is-enabled .swipe-to-delete__sheet::after {
-	content: '';
-	position: absolute;
-	top: 0;
-	right: 0;
-	bottom: 0;
-	width: 3px;
-	background: var(--color-surface);
-	pointer-events: none;
+.swipe-to-delete.is-enabled.is-revealed-trailing .swipe-to-delete__sheet {
+	box-shadow: -4px 0 14px rgb(15 16 18 / 0.08);
+}
+
+.swipe-to-delete.is-enabled.is-revealed-leading .swipe-to-delete__sheet {
+	box-shadow: 4px 0 14px rgb(15 16 18 / 0.08);
 }
 
 .swipe-to-delete.is-dragging .swipe-to-delete__sheet {

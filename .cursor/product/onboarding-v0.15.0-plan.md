@@ -5,7 +5,7 @@
 **North star:** не «ещё экранов», а **time-to-first-completed-set** и **activation rate** (первая завершённая тренировка за 24 ч)
 
 Сверка с [`GOAL.md`](../../GOAL.md): онбординг ускоряет священный цикл, не отвлекает от него.  
-Сценарии QA: [`.cursor/product/user-scenarios.md`](user-scenarios.md).
+Сценарии QA: [`.cursor/product/user-scenarios.md`](user-scenarios.md) (короткие шаги, sync с `static/content/`).
 
 ---
 
@@ -415,7 +415,7 @@ Open app (guest)
 
 ### Phase E — QA & ship
 
-- [x] Update `user-scenarios.md` § onboarding + §12.7 checklist
+- [x] Update `user-scenarios.md` onboarding + III.1.7 checklist
 - [x] E2E: `onboarding-guest-demo.spec.ts` (demo → live → finish)
 - [x] E2E: coachmark dismiss does not re-show
 - [x] `npm run check` + full e2e

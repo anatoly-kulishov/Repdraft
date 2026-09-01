@@ -282,7 +282,7 @@
 		<PageSkeleton variant="builder" rows={3} />
 	{:else if $draftHydrated}
 		<div class="soft-enter">
-			<div class="builder-name-desktop mb-4 max-w-xl">
+			<div class="builder-name-desktop mb-4 w-full">
 				<AppLabel>
 					<span class="builder-name-label-row">
 						<span>{translate(lang, 'builder.name')}</span>

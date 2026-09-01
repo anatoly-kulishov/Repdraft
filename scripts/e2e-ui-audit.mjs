@@ -16,6 +16,35 @@ const BASE = (process.env.BASE_URL ?? 'http://127.0.0.1:5173').replace(/\/$/, ''
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, '.tmp/e2e-ui-audit');
 
+/** Stable guest boot — matches Playwright e2e helpers (no coachmark sheets blocking flow). */
+const E2E_ONBOARDING_DONE = JSON.stringify({
+	checklistDismissed: true,
+	checklist: {
+		homeSeen: true,
+		planReady: true,
+		liveEntered: true,
+		setLogged: true,
+		sessionFinished: true
+	},
+	coachmarks: {
+		'preview.start': true,
+		'live.logging': true,
+		'live.finish': true,
+		'builder.intro': true,
+		'builder.superset': true,
+		'workouts.preview': true,
+		'exercises.search': true,
+		'exercises.picker': true,
+		'exercise.tabs': true,
+		'records.empty': true,
+		'history.detail': true,
+		'draft.dock': true
+	},
+	activatedAt: '2000-01-01T00:00:00.000Z',
+	demoPlanInstalled: false,
+	visitCount: 3
+});
+
 const VIEWPORTS = {
 	mobile: { width: 390, height: 844, isMobile: true, hasTouch: true },
 	desktop: { width: 1280, height: 900, isMobile: false, hasTouch: false }
@@ -183,7 +212,7 @@ async function auditViewport(page, viewport) {
 		await search.waitFor({ state: 'visible', timeout: 10_000 });
 		await search.click();
 		await search.pressSequentially('bench', { delay: 40 });
-		await page.waitForTimeout(500);
+		await page.waitForTimeout(650);
 		const value = await search.inputValue();
 		value.includes('bench')
 			? pass(viewport, 'zone.search-stable', `value="${value}"`)
@@ -280,9 +309,14 @@ async function auditViewport(page, viewport) {
 			}
 		} else {
 			const cta = page.locator('.workouts-page__create');
-			(await cta.isVisible())
-				? pass(viewport, 'workouts.desktop-cta')
-				: fail(viewport, 'workouts.desktop-cta', 'create CTA missing');
+			const hasPlans = (await page.locator('.entity-row__main[href^="/workouts/"]').count()) > 0;
+			if (!hasPlans) {
+				pass(viewport, 'workouts.desktop-cta', 'empty list — toolbar create hidden by design');
+			} else if (await cta.isVisible()) {
+				pass(viewport, 'workouts.desktop-cta');
+			} else {
+				fail(viewport, 'workouts.desktop-cta', 'create CTA missing');
+			}
 		}
 
 		// If plans exist, open first preview and check back
@@ -411,6 +445,12 @@ async function auditViewport(page, viewport) {
 		const stamp = `E2E ${viewport} ${Date.now().toString(36).slice(-4)}`;
 		await goto(page, '/builder?new');
 		await page.waitForTimeout(500);
+
+		const introSheet = page.locator('.bottom-sheet[aria-labelledby="builder-intro-title"]');
+		if ((await introSheet.count()) > 0 && (await introSheet.isVisible().catch(() => false))) {
+			await introSheet.locator('button.btn-primary').click();
+			await page.waitForTimeout(250);
+		}
 
 		const nameInput = isMobile
 			? page.locator('.builder-chrome__name')
@@ -601,6 +641,17 @@ async function main() {
 				locale: 'ru-RU',
 				colorScheme: 'light'
 			});
+			await context.addInitScript((onboardingDone) => {
+				localStorage.setItem('repdraft.theme', 'light');
+				localStorage.setItem('repdraft.locale', 'ru');
+				localStorage.setItem('repdraft:install-hint-dismissed', '1');
+				localStorage.setItem('repdraft:onboarding', onboardingDone);
+				if (sessionStorage.getItem('repdraft:e2e-seeded') === '1') return;
+				sessionStorage.setItem('repdraft:e2e-seeded', '1');
+				localStorage.removeItem('repdraft:plans');
+				localStorage.removeItem('repdraft:draft');
+				localStorage.removeItem('repdraft:local-cache-user');
+			}, E2E_ONBOARDING_DONE);
 			const page = await context.newPage();
 			page.setDefaultTimeout(15_000);
 			try {

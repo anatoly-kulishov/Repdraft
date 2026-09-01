@@ -51,6 +51,7 @@
 		if (pathname.startsWith('/articles')) return true;
 		if (pathname.startsWith('/auth')) return true;
 		if (pathname === '/privacy') return true;
+		if (pathname === '/scenarios') return true;
 		if (pathname === '/exercises/saved') return true;
 		/* Builder → pick exercise: ScreenHeader only (no logo chrome + phantom spacer). */
 		if (pathname === '/exercises' && isBuilderReturnPath(from)) return true;

@@ -26,11 +26,14 @@
 	} = $props();
 
 	let local = $state(value);
+	let inputRef = $state<HTMLInputElement | null>(null);
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let lang = $derived($resolvedLocale);
 	let canClear = $derived(showClear && local.trim().length > 0);
 
 	$effect(() => {
+		// Parent bind updates after debounce — do not clobber in-flight keystrokes.
+		if (inputRef && document.activeElement === inputRef) return;
 		local = value;
 	});
 
@@ -61,6 +64,7 @@
 	</span>
 	<span class="sr-only">{placeholder}</span>
 	<AppInput
+		bind:ref={inputRef}
 		type="text"
 		inputmode="search"
 		class={cn('search-field w-full search-field-with-icon', canClear && 'has-clear')}

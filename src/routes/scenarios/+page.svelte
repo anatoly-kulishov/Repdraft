@@ -14,7 +14,7 @@
 	let title = $derived(translate(lang, 'scenarios.title'));
 	let doc = $derived(renderDocMarkdownDocument(data.bodyMd));
 	let bodyHtml = $derived(doc.html);
-	let tocHeadings = $derived(doc.headings.filter((h) => h.level === 2 || h.level === 3));
+	let tocSections = $derived(doc.headings.filter((h) => h.level === 2));
 
 	function downloadMarkdown() {
 		const blob = new Blob([data.bodyMd], { type: 'text/markdown;charset=utf-8' });
@@ -41,23 +41,10 @@
 		<h1 class="page-title">{title}</h1>
 	</div>
 
-	<div class="scenarios-page__intro">
-		<p class="scenarios-page__lead">{translate(lang, 'scenarios.lead')}</p>
-		<AppButton
-			variant="secondary"
-			class="scenarios-page__download shrink-0"
-			aria-label={translate(lang, 'scenarios.downloadAria')}
-			onclick={downloadMarkdown}
-		>
-			<span class="inline-flex items-center gap-1.5">
-				<LucideIcon icon={Download} size={ICON_SMALL} />
-				{translate(lang, 'scenarios.download')}
-			</span>
-		</AppButton>
-	</div>
+	<p class="scenarios-page__lead">{translate(lang, 'scenarios.lead')}</p>
 
 	<div class="scenarios-page__layout">
-		{#if tocHeadings.length > 0}
+		{#if tocSections.length > 0}
 			<details class="scenarios-page__toc panel" open>
 				<summary class="scenarios-page__toc-summary">
 					{translate(lang, 'scenarios.toc')}
@@ -65,11 +52,8 @@
 				<nav class="scenarios-page__toc-nav" aria-label={translate(lang, 'scenarios.toc')}>
 					<p class="scenarios-page__toc-heading">{translate(lang, 'scenarios.toc')}</p>
 					<ol class="scenarios-page__toc-list">
-						{#each tocHeadings as heading (heading.id)}
-							<li
-								class="scenarios-page__toc-item"
-								class:scenarios-page__toc-item--h3={heading.level === 3}
-							>
+						{#each tocSections as heading (heading.id)}
+							<li class="scenarios-page__toc-item">
 								<a class="scenarios-page__toc-link" href={`#${heading.id}`}>
 									{heading.title}
 								</a>
@@ -80,8 +64,22 @@
 			</details>
 		{/if}
 
-		<article class="scenarios-page__body panel prose-article prose-doc">
+		<article class="scenarios-page__body panel prose-article prose-doc scenarios-doc">
 			{@html bodyHtml}
 		</article>
+	</div>
+
+	<div class="scenarios-page__footer">
+		<AppButton
+			variant="ghost"
+			class="scenarios-page__download"
+			aria-label={translate(lang, 'scenarios.downloadAria')}
+			onclick={downloadMarkdown}
+		>
+			<span class="inline-flex items-center gap-1.5">
+				<LucideIcon icon={Download} size={ICON_SMALL} />
+				{translate(lang, 'scenarios.download')}
+			</span>
+		</AppButton>
 	</div>
 </div>
