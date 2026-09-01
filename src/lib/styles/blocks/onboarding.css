@@ -197,7 +197,6 @@
 	box-shadow:
 		var(--shadow-panel),
 		inset 3px 0 0 color-mix(in srgb, var(--color-accent) 68%, transparent);
-	animation: kineticsSlideIn 0.35s var(--ease-toast, ease) both;
 }
 
 .onboarding-coachmark__body {

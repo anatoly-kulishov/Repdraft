@@ -29,7 +29,7 @@
 	import { live } from '$lib/stores/live';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { onboarding } from '$lib/stores/onboarding';
+	import { onboarding, onboardingHydrated } from '$lib/stores/onboarding';
 	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
@@ -178,12 +178,15 @@
 	);
 
 	let showOnboardingChecklist = $derived(
-		pageReady && shouldShowChecklist($onboarding) && (isCreateHome || isFirstTimeHome)
+		$onboardingHydrated &&
+			pageReady &&
+			shouldShowChecklist($onboarding) &&
+			(isCreateHome || isFirstTimeHome)
 	);
 	let demoBusy = $state(false);
 
-	$effect(() => {
-		if (pageReady) onboarding.markChecklist('homeSeen');
+	$effect.pre(() => {
+		if (pageReady && $onboardingHydrated) onboarding.markChecklist('homeSeen');
 	});
 
 	$effect(() => {

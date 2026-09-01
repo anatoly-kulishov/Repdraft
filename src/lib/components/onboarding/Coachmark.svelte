@@ -3,6 +3,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
+	import { onboardingHydrated } from '$lib/stores/onboarding';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { Sparkles, X } from '@lucide/svelte';
 
@@ -19,7 +20,8 @@
 	let lang = $derived($resolvedLocale);
 </script>
 
-<div class="onboarding-coachmark panel {className}" role="note">
+{#if $onboardingHydrated}
+	<div class="onboarding-coachmark panel {className}" role="note">
 	<div class="onboarding-coachmark__body">
 		<span class="onboarding-coachmark__icon" aria-hidden="true">
 			<LucideIcon icon={Sparkles} size={ICON_SMALL} />
@@ -34,4 +36,5 @@
 	>
 		<LucideIcon icon={X} size={ICON_SMALL} />
 	</AppButton>
-</div>
+	</div>
+{/if}
