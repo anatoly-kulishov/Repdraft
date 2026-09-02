@@ -5,6 +5,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
+	import BuilderSupersetBannerSkeleton from '$lib/components/builder/BuilderSupersetBannerSkeleton.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
@@ -18,6 +19,7 @@
 	import type { ExerciseIndexItem, WorkoutExercise } from '$lib/domain/types';
 	import { altGroupMemberRole, groupMemberRole, workoutPlanContentEqual } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { navigateBack } from '$lib/navigation/back';
 	import { draft, draftHydrated } from '$lib/stores/draft';
 	import { plans } from '$lib/stores/plans';
@@ -29,7 +31,11 @@
 	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
+	import { readDraft, peekBuilderDraftExerciseCount } from '$lib/storage/localWorkoutRepository';
 	import { Plus, Save, Trash2, ArrowLeft, Layers, ListTree } from '@lucide/svelte';
+
+	let { data } = $props();
 
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let indexReady = $state(false);
@@ -46,6 +52,24 @@
 	let pageReady = $derived(
 		$draftHydrated && ($draft.exercises.length === 0 || indexReady)
 	);
+	let builderSkeletonExerciseCount = $derived.by(() => {
+		if ($draft.exercises.length > 0) return $draft.exercises.length;
+		if (browser) {
+			const peeked = readDraft();
+			if (peeked && peeked.exercises.length > 0) return peeked.exercises.length;
+		}
+		if (data.bootPeek.draftRows > 0) return data.bootPeek.draftRows;
+		return peekBuilderDraftExerciseCount();
+	});
+	let builderSkeletonEmpty = $derived(builderSkeletonExerciseCount === 0);
+	let builderSkeletonRows = $derived(
+		builderSkeletonEmpty ? 0 : Math.min(Math.max(builderSkeletonExerciseCount, 1), 4)
+	);
+	let builderSkeletonGroupBanner = $derived.by((): 'none' | 'hint' | 'coachmark' => {
+		if (builderSkeletonEmpty || builderSkeletonExerciseCount < 2) return 'none';
+		// ponytail: hint bone matches steady-state list layout; coachmark panel is taller and flickers on hydrate
+		return 'hint';
+	});
 	let draftUnchanged = $derived.by(() => {
 		const draftPlan = $draft;
 		const existing = $plans.find((plan) => plan.id === draftPlan.id);
@@ -202,9 +226,7 @@
 	{/if}
 {/snippet}
 
-<svelte:head>
-	<title>{headerTitle} · Repdraft</title>
-</svelte:head>
+<SeoHead title={headerTitle} noindex />
 
 <section
 	class="builder-page content-page md:pb-0"
@@ -279,7 +301,21 @@
 	</div>
 
 	{#if !pageReady}
-		<PageSkeleton variant="builder" rows={3} />
+		<div class="soft-enter">
+			<PageSkeleton
+				variant={builderSkeletonEmpty ? 'builder-empty' : 'builder'}
+				rows={builderSkeletonRows}
+				groupBanner={builderSkeletonGroupBanner}
+			/>
+		</div>
+		{#if !builderSkeletonEmpty}
+			<div class="sticky-actions lg:hidden builder-skeleton-sticky" aria-hidden="true">
+				<div class="sticky-actions__inner builder-sticky-actions">
+					<span class="builder-skeleton-sticky__btn"></span>
+					<span class="builder-skeleton-sticky__btn builder-skeleton-sticky__btn--primary"></span>
+				</div>
+			</div>
+		{/if}
 	{:else if $draftHydrated}
 		<div class="soft-enter">
 			<div class="builder-name-desktop mb-4 w-full">
@@ -334,10 +370,14 @@
 
 				{#if $draft.exercises.length >= 2 && selectedCount < 2}
 					{#if showBuilderSupersetCoachmark}
-						<Coachmark
-							message={translate(lang, 'onboarding.coachBuilderSuperset')}
-							onDismiss={() => onboarding.dismissCoachmark('builder.superset')}
-						/>
+						{#if $onboardingHydrated}
+							<Coachmark
+								message={translate(lang, 'onboarding.coachBuilderSuperset')}
+								onDismiss={() => onboarding.dismissCoachmark('builder.superset')}
+							/>
+						{:else}
+							<BuilderSupersetBannerSkeleton variant="coachmark" />
+						{/if}
 					{:else}
 						<p class="builder-group-hint">{translate(lang, 'builder.groupHint')}</p>
 					{/if}

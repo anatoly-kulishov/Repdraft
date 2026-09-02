@@ -18,6 +18,15 @@ const ru: Dict = {
 	'brand.tagline': 'ЗАПИСЬ. ПОДХОД. ГОТОВО.',
 	'app.metaDescription':
 		'Repdraft: дневник тренировок в зале. Планы, запись подходов и каталог упражнений. Работает офлайн на телефоне.',
+	'seo.exercisesDescription':
+		'Каталог упражнений с GIF и техникой: зоны по группам мышц и поиск по названию на RU и EN.',
+	'seo.catalogZoneDescription':
+		'{zone}: упражнения с GIF, целевые мышцы и добавление в план тренировки.',
+	'seo.exerciseDescription':
+		'{name}: техника, целевые мышцы и запись подходов в Repdraft.',
+	'seo.privacyDescription':
+		'Политика конфиденциальности Repdraft: какие данные хранятся локально и в облаке.',
+	'seo.homeTitle': 'Repdraft - дневник тренировок в зале',
 	'nav.tabHome': 'Главная',
 	'nav.exercises': 'Упражнения',
 	'nav.liveActive': 'Есть незавершённая тренировка',
@@ -443,7 +452,7 @@ const ru: Dict = {
 	'live.setProgress': 'Подход {current} из {total}',
 	'live.noPlan': 'Тренировка не найдена',
 	'live.backPlans': 'К тренировкам',
-	'live.invalidReps': 'Укажите повторы (0-500)',
+	'live.invalidReps': 'Укажите повторы (0-999)',
 	'live.supersetOf': 'Суперсет · {current}/{total}',
 	'live.pickAlternative': 'Какое упражнение доступно?',
 	'live.pickAlternativeHint': 'Выберите одно. Остальные варианты останутся в тренировке на следующий раз.',
@@ -660,8 +669,8 @@ const ru: Dict = {
 	'pr.delete': 'Удалить',
 	'pr.needValue': 'Укажите вес или повторы',
 	'pr.needLift': 'Заметка не заменяет рекорд. Укажите вес или повторы.',
-	'pr.invalidWeight': 'Вес: от 0 до 500 кг',
-	'pr.invalidReps': 'Повторы: целое число от 1 до 500',
+	'pr.invalidWeight': 'Вес: от 0 до 999 кг',
+	'pr.invalidReps': 'Повторы: целое число от 1 до 999',
 	'pr.saved': 'Рекорд сохранён',
 	'pr.deleted': 'Рекорд удалён',
 	'pr.confirmDelete': 'Удалить личный рекорд для этого упражнения?',
@@ -808,6 +817,15 @@ const en: Dict = {
 	'brand.tagline': 'LOG. SET. CONQUER.',
 	'app.metaDescription':
 		'Repdraft: gym workout log. Plans, set tracking, and exercise catalog. Works offline on your phone.',
+	'seo.exercisesDescription':
+		'Exercise catalog with GIF demos and technique: muscle zones and RU/EN search.',
+	'seo.catalogZoneDescription':
+		'{zone}: exercises with GIFs, target muscles, and add-to-plan in Repdraft.',
+	'seo.exerciseDescription':
+		'{name}: technique, target muscles, and set logging in Repdraft.',
+	'seo.privacyDescription':
+		'Repdraft privacy policy: what is stored on your phone and in the cloud.',
+	'seo.homeTitle': 'Repdraft - gym workout log',
 	'nav.tabHome': 'Home',
 	'nav.exercises': 'Exercises',
 	'nav.liveActive': 'Active workout in progress',
@@ -1233,7 +1251,7 @@ const en: Dict = {
 	'live.setProgress': 'Set {current} of {total}',
 	'live.noPlan': 'Workout not found',
 	'live.backPlans': 'Back to workouts',
-	'live.invalidReps': 'Enter reps (0-500)',
+	'live.invalidReps': 'Enter reps (0-999)',
 	'live.supersetOf': 'Superset · {current}/{total}',
 	'live.pickAlternative': 'Which exercise is free?',
 	'live.pickAlternativeHint': 'Pick one for this workout. Alternatives stay in the template for next time.',
@@ -1448,8 +1466,8 @@ const en: Dict = {
 	'pr.delete': 'Delete',
 	'pr.needValue': 'Enter weight or reps',
 	'pr.needLift': 'A note alone is not a record. Enter weight or reps.',
-	'pr.invalidWeight': 'Weight: 0-500 kg',
-	'pr.invalidReps': 'Reps: whole number from 1 to 500',
+	'pr.invalidWeight': 'Weight: 0-999 kg',
+	'pr.invalidReps': 'Reps: whole number from 1 to 999',
 	'pr.saved': 'Record saved',
 	'pr.deleted': 'Record deleted',
 	'pr.confirmDelete': 'Delete personal record for this exercise?',

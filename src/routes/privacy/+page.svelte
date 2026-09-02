@@ -5,6 +5,7 @@
 	import { GYM_VISUAL_TERMS_URL, GYM_VISUAL_URL } from '$lib/data/attribution';
 	import { privacyPolicyVars } from '$lib/legal/privacyOperator';
 	import { translate } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { resolvedLocale } from '$lib/stores/locale';
 
 	let lang = $derived($resolvedLocale);
@@ -28,9 +29,7 @@
 	] as const;
 </script>
 
-<svelte:head>
-	<title>{title} · Repdraft</title>
-</svelte:head>
+<SeoHead titleKey="privacy.title" descriptionKey="seo.privacyDescription" path="/privacy" />
 
 <div class="content-page content-page--narrow privacy-page">
 	<div class="lg:hidden">

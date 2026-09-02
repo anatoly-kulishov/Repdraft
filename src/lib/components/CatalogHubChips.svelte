@@ -36,7 +36,7 @@
 		<span>{translate(lang, 'bookmarks.title')}</span>
 	</AppBadge>
 	{#if !pickMode}
-		<AppBadge href={withFromParam('/records', from)} variant="outline" class="catalog-hub-chip">
+		<AppBadge href={withFromParam('/exercises/records', from)} variant="outline" class="catalog-hub-chip">
 			<LucideIcon icon={Trophy} size={ICON_BUTTON} />
 			<span>{translate(lang, 'records.title')}</span>
 			{#if $recordsReady && recordCount > 0}

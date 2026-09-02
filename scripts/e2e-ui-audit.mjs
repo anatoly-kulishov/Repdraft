@@ -152,7 +152,7 @@ async function auditViewport(page, viewport) {
 		const hub = await visible(page, '.catalog-hub');
 		hub ? pass(viewport, 'catalog.hub') : fail(viewport, 'catalog.hub', 'missing');
 
-		for (const href of ['/catalog/all', '/exercises/saved', '/records']) {
+		for (const href of ['/catalog/all', '/exercises/saved', '/exercises/records']) {
 			const link = page.locator(`.catalog-hub-chips a[href="${href}"]`);
 			(await link.count()) > 0 && (await link.first().isVisible())
 				? pass(viewport, `catalog.nav${href}`)
@@ -270,7 +270,7 @@ async function auditViewport(page, viewport) {
 
 	// ——— Records ———
 	{
-		await goto(page, '/records');
+		await goto(page, '/exercises/records');
 		const ok = (await page.locator('.page-title, .content-page').count()) > 0;
 		ok ? pass(viewport, 'records.page') : fail(viewport, 'records.page', 'missing');
 		await shot(page, viewport, 'records');

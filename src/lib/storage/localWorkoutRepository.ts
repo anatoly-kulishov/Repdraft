@@ -44,24 +44,60 @@ export function syncWorkoutsPlanRowsCookie(planCount: number): void {
 	}
 }
 
+import type { HomeSkeletonVariant } from '$lib/domain/home';
+import { syncHomeBootPeek } from '$lib/storage/homeBootPeek';
+
 /** Keep SSR cookie in sync so `/` boots the matching skeleton. */
 export function syncHomePlansBootCookie(hasPlans: boolean): void {
 	if (typeof document === 'undefined') return;
 	try {
 		if (hasPlans) {
 			document.cookie = 'repdraft_home_has_plans=1; path=/; Max-Age=31536000; SameSite=Lax';
-			document.documentElement.dataset.homeBoot = 'start';
+			syncHomeBootPeek('start');
 		} else {
 			document.cookie = 'repdraft_home_has_plans=; path=/; Max-Age=0; SameSite=Lax';
 			if (document.documentElement.dataset.authBoot !== 'account') {
-				document.documentElement.dataset.homeBoot = 'create';
+				syncHomeBootPeek('create');
 			} else {
-				document.documentElement.dataset.homeBoot = 'start';
+				syncHomeBootPeek('start');
 			}
 		}
 	} catch {
 		/* ignore */
 	}
+}
+
+/** Keep SSR cookie in sync so `/builder` skeleton variant matches first paint. */
+export function syncBuilderDraftBootCookie(exerciseCount: number): void {
+	if (typeof document === 'undefined') return;
+	try {
+		const safe = Math.min(Math.max(exerciseCount, 0), 99);
+		document.documentElement.dataset.builderDraftRows = String(Math.min(safe, 4));
+		document.cookie = `repdraft_builder_draft_rows=${safe}; path=/; Max-Age=31536000; SameSite=Lax`;
+	} catch {
+		/* ignore */
+	}
+}
+
+/** Sync peek for builder skeleton (empty vs list + row count). */
+export function peekBuilderDraftExerciseCount(): number {
+	if (typeof localStorage !== 'undefined') {
+		const stored = readDraft();
+		if (stored) return stored.exercises.length;
+	}
+	if (typeof document !== 'undefined') {
+		const fromCookie = document.cookie.match(/(?:^|;\s*)repdraft_builder_draft_rows=(\d+)/);
+		if (fromCookie) {
+			const parsed = Number.parseInt(fromCookie[1] ?? '', 10);
+			if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+		}
+		const fromDom = document.documentElement.dataset.builderDraftRows;
+		if (fromDom != null) {
+			const parsed = Number.parseInt(fromDom, 10);
+			if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+		}
+	}
+	return 0;
 }
 
 function writePlans(plans: WorkoutPlan[]): void {
@@ -85,6 +121,7 @@ export function readDraft(): WorkoutPlan | null {
 export function writeDraft(plan: WorkoutPlan): void {
 	if (typeof localStorage === 'undefined') return;
 	localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(plan));
+	syncBuilderDraftBootCookie(plan.exercises.length);
 }
 
 /** Replace entire local plans list (after cloud merge). */

@@ -9,34 +9,42 @@
 	import { resolveBackFrom } from '$lib/domain/navigation';
 	import { labelTarget } from '$lib/domain/labels.ru';
 	import { translate } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
+	import { resolveSeoLang } from '$lib/seo/seoLang';
 	import { backLabelForHref } from '$lib/i18n/backLabel';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { ArrowLeft } from '@lucide/svelte';
 	import { page } from '$app/stores';
 
 	let { data } = $props();
 
 	let lang = $derived($resolvedLocale);
+	let seoLang = $derived(resolveSeoLang($page.data.seoLocale, lang));
 	let title = $derived(
 		data.bodyPart === 'all'
 			? translate(lang, 'catalog.allExercises')
 			: labelCatalogZone(data.bodyPart, lang)
 	);
 	let presetBodyPart = $derived(data.bodyPart === 'all' ? 'all' : data.bodyPart);
+	let urlTarget = $derived(readSearchParam($page.url, 'target') ?? '');
+	let urlBrowse = $derived(readSearchParam($page.url, 'browse') ?? '');
+	let effectiveTarget = $derived(data.initialTarget || urlTarget);
+	let effectiveBrowse = $derived(data.initialBrowse || urlBrowse);
 	let hasTargetBrowse = $derived(data.bodyPart !== 'all' && data.targetChips.length >= 2);
 	let showTargetBrowse = $derived(
-		hasTargetBrowse && !data.initialTarget && data.initialBrowse !== 'all'
+		hasTargetBrowse && !effectiveTarget && effectiveBrowse !== 'all'
 	);
 	let showExerciseList = $derived(!showTargetBrowse);
 	let exerciseTitle = $derived(
-		data.initialTarget ? labelTarget(data.initialTarget, lang) : title
+		effectiveTarget ? labelTarget(effectiveTarget, lang) : title
 	);
 	let inTargetList = $derived(
 		showExerciseList &&
 			hasTargetBrowse &&
-			(Boolean(data.initialTarget) || data.initialBrowse === 'all')
+			(Boolean(effectiveTarget) || effectiveBrowse === 'all')
 	);
-	let fromParam = $derived($page.url.searchParams.get('from'));
+	let fromParam = $derived(readSearchParam($page.url, 'from'));
 	let fromBuilder = $derived(isBuilderReturnPath(fromParam));
 	let hubHref = $derived(withFromParam('/exercises', fromParam));
 	let zoneBrowseHref = $derived(withFromParam(catalogZonePath(data.bodyPart), fromParam));
@@ -59,20 +67,43 @@
 		return backLabelForHref(backHref, lang);
 	});
 	let headerTitle = $derived(
-		showExerciseList && data.initialTarget
+		showExerciseList && effectiveTarget
 			? exerciseTitle
-			: showExerciseList && data.initialBrowse === 'all'
+			: showExerciseList && effectiveBrowse === 'all'
 				? translate(lang, 'catalog.allExercises')
 				: title
 	);
 	/** Dev/QA: ?skeleton=1 — preview category grid placeholders on target browse. */
-	let forceSkeleton = $derived($page.url.searchParams.get('skeleton') === '1');
+	let forceSkeleton = $derived(readSearchParam($page.url, 'skeleton') === '1');
 	let showTargetSkeleton = $derived(showTargetBrowse && forceSkeleton);
+	let seoZoneTitle = $derived(
+		data.bodyPart === 'all'
+			? translate(seoLang, 'catalog.allExercises')
+			: labelCatalogZone(data.bodyPart, seoLang)
+	);
+	let seoExerciseTitle = $derived(
+		effectiveTarget ? labelTarget(effectiveTarget, seoLang) : seoZoneTitle
+	);
+	let seoHeaderTitle = $derived(
+		showExerciseList && effectiveTarget
+			? seoExerciseTitle
+			: showExerciseList && effectiveBrowse === 'all'
+				? translate(seoLang, 'catalog.allExercises')
+				: seoZoneTitle
+	);
+	let seoHeadTitle = $derived(
+		showExerciseList && effectiveTarget
+			? `${seoExerciseTitle} · ${seoZoneTitle}`
+			: seoHeaderTitle
+	);
 </script>
 
-<svelte:head>
-	<title>{showExerciseList && data.initialTarget ? `${exerciseTitle} · ${title}` : headerTitle} · Repdraft</title>
-</svelte:head>
+<SeoHead
+	title={seoHeadTitle}
+	descriptionKey="seo.catalogZoneDescription"
+	vars={{ zone: seoZoneTitle }}
+	path={catalogZonePath(data.bodyPart)}
+/>
 
 <div
 	class={`content-page content-page--catalog ${showTargetBrowse ? 'catalog-page--browse' : 'catalog-page--list'}`}
@@ -114,7 +145,7 @@
 		{:else if showExerciseList}
 			<!-- Key = route shell only. Facets (q/equipment/target) sync via props+effects;
 			     including them remounts mid-typing and eats keystrokes. -->
-			{#key `${data.bodyPart}|${data.initialBrowse}|${fromBuilder ? 'builder' : 'browse'}`}
+			{#key `${data.bodyPart}|${effectiveBrowse}|${effectiveTarget}|${fromBuilder ? 'builder' : 'browse'}`}
 				<CatalogExerciseList
 					equipment={data.equipment}
 					targets={data.targets}
@@ -123,7 +154,7 @@
 					{presetBodyPart}
 					initialQuery={data.initialQuery}
 					initialEquipment={data.initialEquipment}
-					initialTarget={data.initialTarget}
+					initialTarget={effectiveTarget}
 					initialBodyPart={data.initialBodyPart}
 					gridOnDesktop
 				/>

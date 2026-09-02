@@ -2,7 +2,7 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
+	import SummaryPageSkeleton from '$lib/components/summary/SummaryPageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -19,6 +19,7 @@
 	import type { ExerciseIndexItem, LoggedSet, WorkoutSession } from '$lib/domain/types';
 	import { formatDurationMs } from '$lib/i18n/format';
 	import { translate } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { peekLocalSession } from '$lib/storage/localSessionRepository';
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -26,7 +27,9 @@
 	import { onboarding } from '$lib/stores/onboarding';
 	import { CircleCheck } from '@lucide/svelte';
 	import { page } from '$app/stores';
+	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 
 	const GUEST_SYNC_DISMISS_KEY = 'repdraft:guest-sync-hint-dismissed';
 
@@ -72,20 +75,7 @@
 	);
 
 	let volumeKg = $derived(session ? sessionVolumeKg(session) : 0);
-	let skeletonPreviewRows = $derived.by(() => {
-		const id = $page.url.searchParams.get('id');
-		if (!id) return 1;
-		const peeked = peekLocalSession(id);
-		if (!peeked) return 1;
-		const logged = peeked.exercises.filter((ex) => ex.sets.some((set) => set.completed)).length;
-		return Math.min(Math.max(logged, 1), PREVIEW_LIMIT);
-	});
-	let skeletonHasVolume = $derived.by(() => {
-		const id = $page.url.searchParams.get('id');
-		if (!id) return false;
-		const peeked = peekLocalSession(id);
-		return peeked ? sessionVolumeKg(peeked) > 0 : false;
-	});
+	let summarySessionId = $derived(readSearchParam($page.url, 'id') ?? '');
 	let skeletonGuestHint = $derived(!$auth.user);
 
 	function formatSet(set: LoggedSet): string {
@@ -118,13 +108,18 @@
 			guestHintDismissed = false;
 		}
 		void (async () => {
-			const id = $page.url.searchParams.get('id');
+			const id = readSearchParam(get(page).url, 'id');
 			if (!id) {
 				missing = true;
 				loading = false;
 				return;
 			}
-			const [found, index] = await Promise.all([live.getFinishedSession(id), loadExerciseIndex()]);
+			const peeked = peekLocalSession(id);
+			if (peeked?.finishedAt) session = peeked;
+			const [found, index] = await Promise.all([
+				session ? Promise.resolve(session) : live.getFinishedSession(id),
+				loadExerciseIndex()
+			]);
 			if (!found) missing = true;
 			else {
 				session = found;
@@ -139,19 +134,10 @@
 	});
 </script>
 
-<svelte:head>
-	<title>{translate(lang, 'summary.title')} · Repdraft</title>
-</svelte:head>
+<SeoHead title={translate(lang, 'summary.title')} noindex />
 
 {#if loading}
-	<div class="content-page content-page--narrow pb-mobile-actions">
-		<PageSkeleton
-			variant="summary"
-			previewRows={skeletonPreviewRows}
-			showVolumeStat={skeletonHasVolume}
-			showGuestHint={skeletonGuestHint}
-		/>
-	</div>
+	<SummaryPageSkeleton sessionId={summarySessionId} showGuestHint={skeletonGuestHint} />
 {:else if missing || !session}
 	<EmptyState
 		title={translate(lang, 'live.noPlan')}

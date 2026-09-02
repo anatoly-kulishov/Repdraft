@@ -15,11 +15,13 @@
 	let {
 		label,
 		rows = 1,
-		variant = 'plans-list'
+		variant = 'plans-list',
+		historyEmptyCtaLabel = ''
 	}: {
 		label: string;
 		rows?: number;
 		variant?: WorkoutsSkeletonVariant;
+		historyEmptyCtaLabel?: string;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
@@ -96,11 +98,13 @@
 						</span>
 					</div>
 				</div>
-				<span class="btn-link workouts-skel-bone workouts-skel-bone--link">
+				<span
+					class="btn-link block w-full empty-state__action workouts-skel-bone workouts-skeleton-empty__import-link"
+				>
 					{translate(lang, 'settings.importJson')}
 				</span>
 				<span class="btn-primary empty-state__action workouts-skel-bone workouts-skel-bone--cta">
-					{translate(lang, 'onboarding.tryDemo')}
+					{historyEmptyCtaLabel}
 				</span>
 			</div>
 		</AppPanel>

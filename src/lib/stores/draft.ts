@@ -20,7 +20,7 @@ import {
 } from '$lib/domain/workout';
 import type { WorkoutExercise, WorkoutPlan, WorkoutSession } from '$lib/domain/types';
 import { planDraftFromSession } from '$lib/domain/session';
-import { readDraft, writeDraft } from '$lib/storage/localWorkoutRepository';
+import { readDraft, writeDraft, syncBuilderDraftBootCookie } from '$lib/storage/localWorkoutRepository';
 import { clampPlanName } from '$lib/domain/inputLimits';
 import { writable } from 'svelte/store';
 
@@ -51,7 +51,10 @@ function createDraftStore() {
 				return;
 			}
 			const stored = readDraft();
-			if (stored) set(stored);
+			if (stored) {
+				set(stored);
+				syncBuilderDraftBootCookie(stored.exercises.length);
+			}
 			persist = true;
 			hydratedStore.set(true);
 		},

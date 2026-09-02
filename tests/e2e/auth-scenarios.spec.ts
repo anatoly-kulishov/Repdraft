@@ -161,8 +161,8 @@ test('password visibility toggle', async ({ page }) => {
 });
 
 test('12.6.13 next param preserved in URL before login', async ({ page }) => {
-	await gotoAuth(page, 'next=%2Frecords');
-	await expect(page).toHaveURL(/next=%2Frecords|next=%252Frecords/);
+	await gotoAuth(page, 'next=%2Fexercises%2Frecords');
+	await expect(page).toHaveURL(/next=%2Fexercises%2Frecords|next=%252Fexercises%252Frecords/);
 });
 
 test('12.6 signed-in flows', async ({ page }, testInfo) => {
@@ -186,9 +186,9 @@ test('12.6 signed-in flows', async ({ page }, testInfo) => {
 	await saveBtn.first().click();
 	await page.waitForURL(/\/workouts\/?$/, { timeout: 25_000 });
 
-	// Login with next=/records
-	await signInWithCredentials(page, E2E_AUTH_EMAIL, E2E_AUTH_PASSWORD, 'next=%2Frecords');
-	await expect(page).toHaveURL(/\/records/, { timeout: 15_000 });
+	// Login with next=/exercises/records
+	await signInWithCredentials(page, E2E_AUTH_EMAIL, E2E_AUTH_PASSWORD, 'next=%2Fexercises%2Frecords');
+	await expect(page).toHaveURL(/\/exercises\/records/, { timeout: 15_000 });
 
 	// Migrate toast (guest had a plan)
 	await waitForToastMatching(page, /загружены|uploaded/i).catch(() => {
