@@ -1,7 +1,7 @@
 {
 	"name": "repdraft",
 	"private": true,
-	"version": "0.15.7",
+	"version": "0.15.8",
 	"description": "Каталог упражнений и конструктор тренировок",
 	"type": "module",
 	"scripts": {
@@ -29,6 +29,7 @@
 		"e2e:ui": "node ./scripts/e2e-ui-audit.mjs",
 		"e2e:overflow": "node ./scripts/e2e-overflow-stress.mjs",
 		"test:e2e": "playwright test",
+		"test:e2e:history": "playwright test tests/e2e/history-detail.spec.ts --project=mobile-dark",
 		"test:e2e:update": "playwright test --update-snapshots",
 		"test:e2e:ui": "playwright test --ui",
 		"test:e2e:report": "playwright show-report .tmp/playwright-report",

@@ -500,7 +500,7 @@ export function updateGroupSets(plan: WorkoutPlan, groupId: string, sets: number
 }
 
 export function updateGroupRest(plan: WorkoutPlan, groupId: string, restSec: number): WorkoutPlan {
-	const next = Math.min(600, Math.max(0, restSec));
+	const next = Math.min(REST_SEC.max, Math.max(0, restSec));
 	const indices = plan.exercises
 		.map((ex, i) => (ex.groupId === groupId ? i : -1))
 		.filter((i) => i >= 0);

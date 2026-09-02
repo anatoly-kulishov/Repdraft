@@ -6,7 +6,7 @@ const ROUTES: { id: string; path: string; ready?: string }[] = [
 	{ id: 'workouts', path: '/workouts', ready: '.workouts-page' },
 	{ id: 'exercises-hub', path: '/exercises', ready: '.catalog-hub' },
 	{ id: 'catalog-chest', path: '/catalog/chest?target=pectorals', ready: '.catalog-zone, .exercise-card' },
-	{ id: 'records', path: '/records', ready: '.page-title, .content-page' },
+	{ id: 'records', path: '/exercises/records', ready: '.page-title, .content-page' },
 	{ id: 'saved', path: '/exercises/saved', ready: '.content-page, .page-title' },
 	{ id: 'builder-empty', path: '/builder?new', ready: '.builder-page, .builder-empty-state, .page-title' },
 	{ id: 'settings', path: '/settings', ready: '.content-page, .page-title' },

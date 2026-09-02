@@ -3,6 +3,9 @@ import { loadArticles } from '$lib/data/loadArticles';
 import { getExerciseById } from '$lib/data/loadExerciseCatalog';
 import type { PageLoad } from './$types';
 
+/** Dynamic exercise pages stay SSR — 1300+ entries, user-specific tabs. */
+export const prerender = false;
+
 export const load: PageLoad = async ({ params, fetch }) => {
 	const exercise = await getExerciseById(params.id, fetch);
 	if (!exercise) {

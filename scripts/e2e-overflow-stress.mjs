@@ -318,7 +318,7 @@ async function runViewport(browser, vp, payload) {
 		['/live/stress-plan-many', 'live-fat'],
 		['/workouts/summary?id=stress-finished', 'summary'],
 		['/workouts/history/stress-finished', 'history-detail'],
-		['/records', 'records'],
+		['/exercises/records', 'records'],
 		['/articles', 'articles'],
 		['/auth', 'auth'],
 		['/exercise/0001', 'exercise']

@@ -78,7 +78,6 @@ button.exercise-card-media {
 	.exercise-card-media,
 	.exercise-card--list .exercise-card-media,
 	.catalog-exercise-list .exercise-card--list .exercise-card-media,
-	.records-page .records-list-thumb,
 	.history-exercise__thumb,
 	.workout-preview-thumb
 ) {
@@ -208,7 +207,7 @@ button.exercise-card-media {
 }
 
 .empty-state__actions {
-	width: min(100%, 18rem);
+	width: 100%;
 }
 
 .empty-state--centered .empty-state__actions {

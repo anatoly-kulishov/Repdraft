@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pathWithSearch } from '$lib/navigation/urlSearchParams';
 	import { page } from '$app/stores';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
@@ -33,7 +34,7 @@
 		(() => {
 			const path = $page.url.pathname;
 			if (path === '/auth' || path.startsWith('/auth/')) return '/auth';
-			const next = path + $page.url.search;
+			const next = pathWithSearch($page.url);
 			return `/auth?next=${encodeURIComponent(next)}`;
 		})()
 	);

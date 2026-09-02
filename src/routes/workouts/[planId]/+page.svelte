@@ -12,6 +12,7 @@
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
 	import { altGroupMemberRole, groupMemberRole, planExerciseSlotCount, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { peekLocalPlan } from '$lib/storage/localWorkoutRepository';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -105,9 +106,7 @@
 	</AppButton>
 {/snippet}
 
-<svelte:head>
-	<title>{plan?.name ?? translate(lang, 'preview.title')} · Repdraft</title>
-</svelte:head>
+<SeoHead title={plan?.name ?? translate(lang, 'preview.title')} noindex />
 
 {#if loading}
 	<section class="workout-preview content-page content-page--narrow pb-mobile-actions" aria-busy="true">

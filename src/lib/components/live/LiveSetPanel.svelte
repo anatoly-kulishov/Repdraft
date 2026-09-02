@@ -283,6 +283,8 @@
 				>
 					<img src={`/${exerciseMeta.image}`} alt="" width="96" height="96" decoding="async" />
 				</AppButton>
+			{:else}
+				<div class="live-panel-thumb live-panel-thumb--placeholder media-well" aria-hidden="true"></div>
 			{/if}
 			<div class="live-panel-head__copy">
 				{#if exerciseMeta}

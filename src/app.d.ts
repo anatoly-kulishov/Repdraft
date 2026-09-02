@@ -4,13 +4,16 @@ declare global {
 	namespace App {
 		// interface Error {}
 		// interface Locals {}
-		// interface PageData {}
+		interface PageData {
+			seoLocale?: import('$lib/i18n/locale').AppLocale;
+		}
 		// interface PageState {}
 		// interface Platform {}
 	}
 
 	interface ImportMetaEnv {
 		readonly PUBLIC_APP_VERSION: string;
+		readonly PUBLIC_SITE_URL: string;
 	}
 }
 

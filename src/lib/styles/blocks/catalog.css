@@ -405,6 +405,13 @@
 }
 
 /* Catalog exercise list skeleton — mirror .catalog-grid breakpoints and card shell. */
+.catalog-exercise-skeleton__search {
+	display: block;
+	width: 100%;
+	min-height: var(--control-min-width);
+	border-radius: var(--radius-control);
+}
+
 .catalog-exercise-skeleton__count {
 	height: 0.875rem;
 	width: 5.5rem;
@@ -414,7 +421,7 @@
 
 .catalog-exercise-skeleton__section-title {
 	display: block;
-	height: 0.875rem;
+	height: calc(0.875rem * 1.35);
 	width: 9rem;
 	margin: 0 0 0.65rem;
 	border-radius: 0.35rem;
@@ -1454,6 +1461,14 @@
 
 	.page-skeleton--builder .page-skeleton-header--builder-mobile {
 		display: none;
+	}
+
+	.page-skeleton--builder-empty .page-skeleton-builder-desktop-head {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.75rem 1rem;
+		align-items: end;
+		margin-bottom: 1.25rem;
 	}
 
 	.page-skeleton-auth__desktop-head {
@@ -2838,13 +2853,18 @@ body:has(.sticky-actions) .draft-dock {
 	}
 
 	/* Auth, settings, etc.: no sticky ScreenHeader — keep safe-area + page pad. */
-	.shell-main--subroute.shell-main--flow:not(:has(.screen-header)) {
+	.shell-main--subroute.shell-main--flow:not(:has(.screen-header)):not(
+			:has(.workouts-history-skeleton-head)
+		):not(:has(.history-detail-skeleton-head)):not(:has(.builder-page)):not(:has(.auth-page--account)):not(
+			:has(.auth-page--booting)
+		) {
 		padding-top: calc(var(--page-pad-y) + var(--safe-top));
 	}
 
 	.shell-main--subroute.shell-main--flow:has(.auth-page--account),
 	.shell-main--subroute.shell-main--flow:has(.auth-page--booting),
-	.shell-main--subroute.shell-main--flow:has(.builder-page) {
+	.shell-main--subroute.shell-main--flow:has(.builder-page),
+	.shell-main--subroute.shell-main--flow:has(.live-page--skeleton) {
 		padding-top: 0;
 	}
 
@@ -3506,6 +3526,26 @@ body:has(.sticky-actions) .draft-dock {
 	border-color: var(--color-border);
 }
 
+.catalog-filter-skeleton__equipment {
+	display: block;
+	width: 100%;
+	min-height: 48px;
+	border-radius: var(--radius-control);
+}
+
+.catalog-filter-skeleton__chips {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 0.5rem;
+	overflow: hidden;
+}
+
+.catalog-filter-skeleton__chip {
+	flex: 0 0 4.5rem;
+	height: 2rem;
+	border-radius: 999px;
+}
+
 @media (min-width: 768px) {
 	.catalog-filters.panel {
 		padding: 0.875rem 1rem;
@@ -3537,6 +3577,13 @@ body:has(.sticky-actions) .draft-dock {
 
 	.catalog-filters .catalog-filter-equipment-trigger,
 	[data-slot='button'].catalog-filter-equipment-trigger {
+		width: auto;
+		flex: 0 0 auto;
+		min-width: 9.5rem;
+		max-width: 12.5rem;
+	}
+
+	.catalog-filters .catalog-filter-skeleton__equipment {
 		width: auto;
 		flex: 0 0 auto;
 		min-width: 9.5rem;
@@ -3812,4 +3859,7 @@ body:has(.sticky-actions) .draft-dock {
 	font-size: 0.8125rem;
 	line-height: 1.35;
 	color: var(--color-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }

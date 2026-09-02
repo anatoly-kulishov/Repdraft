@@ -27,6 +27,11 @@ const HUB_ZONE_ORDER: CatalogZoneSlug[] = [
 /** Hub grid card count — skeleton grid matches live. */
 export const CATALOG_HUB_ZONE_COUNT = HUB_ZONE_ORDER.length;
 
+/** Public catalog zone paths for sitemap.xml (hub zones + flat list). */
+export function catalogHubSitemapPaths(): string[] {
+	return ['all', ...HUB_ZONE_ORDER].map((zone) => `/catalog/${encodeURIComponent(zone)}`);
+}
+
 /** Primary catalog zone for a target muscle (by exercise count in index). */
 const TARGET_PRIMARY_ZONE: Record<string, CatalogZoneSlug> = {
 	abs: 'waist',

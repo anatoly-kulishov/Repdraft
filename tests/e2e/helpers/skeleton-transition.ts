@@ -20,11 +20,26 @@ export type SkeletonTransitionSpec = {
 	indexDelayMs?: number;
 	/** Post-ready settle before height compare (infinite scroll can inflate ready height). */
 	settleMs?: number;
+	/** Wait for this selector after ready root before height / CLS sample. */
+	readyGate?: string;
 	setup?: (page: Page) => Promise<void>;
+	/** Re-apply fixtures after auth boot, then reload once for stable ready state. */
+	reseed?: {
+		finishedSessionId?: string;
+		active?: boolean;
+		recentCount?: number;
+	};
 };
 
 const DEFAULT_MAX_CLS = 0.12;
 const DEFAULT_MAX_HEIGHT_DELTA = 96;
+
+/** Keep skeleton e2e on local guest data — no Supabase merge or session restore. */
+export async function isolateGuestCloud(page: Page): Promise<void> {
+	await page.route(/\.supabase\.co\//, async (route) => {
+		await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+	});
+}
 
 export async function installLayoutShiftObserver(page: Page): Promise<void> {
 	await page.addInitScript(() => {
@@ -75,7 +90,7 @@ export async function seedMinimalPlan(page: Page): Promise<{ planId: string; exe
 				name: 'Skeleton E2E',
 				createdAt: ts,
 				updatedAt: ts,
-				exercises: [{ exerciseId: exId, targetSets: 3, targetReps: 8, restSec: 90 }]
+				exercises: [{ exerciseId: exId, sets: 3, reps: 8, restSec: 90 }]
 			};
 			localStorage.setItem('repdraft:plans', JSON.stringify([plan]));
 			document.documentElement.dataset.workoutsPlanRows = '1';
@@ -99,6 +114,19 @@ export async function seedFinishedSession(
 
 	await page.addInitScript(
 		({ sessionId: id, planId: pId, exerciseId: exId, now: ts }) => {
+			const deletedKey = 'repdraft:sessions-deleted';
+			try {
+				const raw = localStorage.getItem(deletedKey);
+				const parsed = raw ? (JSON.parse(raw) as string[]) : [];
+				if (Array.isArray(parsed) && parsed.includes(id)) {
+					localStorage.setItem(
+						deletedKey,
+						JSON.stringify(parsed.filter((row) => row !== id))
+					);
+				}
+			} catch {
+				/* ignore */
+			}
 			const session = {
 				id,
 				planId: pId,
@@ -186,6 +214,105 @@ export async function seedHomeRecentSessions(
 	);
 }
 
+/** Apply workout fixtures after auth boot when init scripts were cleared. */
+export async function ensureWorkoutSeed(
+	page: Page,
+	payload: {
+		planId: string;
+		exerciseId: string;
+		finishedSessionId?: string;
+		active?: boolean;
+		recentCount?: number;
+	}
+): Promise<void> {
+	const now = new Date().toISOString();
+	await page.evaluate(
+		({ planId, exerciseId, finishedSessionId, active, recentCount, now: ts }) => {
+			const plan = {
+				id: planId,
+				name: 'Skeleton E2E',
+				createdAt: ts,
+				updatedAt: ts,
+				exercises: [{ exerciseId, sets: 3, reps: 8, restSec: 90 }]
+			};
+			localStorage.setItem('repdraft:plans', JSON.stringify([plan]));
+			if (!active) {
+				localStorage.removeItem('repdraft:active-session');
+			}
+			const sessions = [];
+			if (finishedSessionId) {
+				sessions.push({
+					id: finishedSessionId,
+					planId,
+					planName: 'Skeleton E2E',
+					startedAt: ts,
+					finishedAt: ts,
+					exercises: [
+						{
+							exerciseId,
+							targetSets: 3,
+							targetReps: 8,
+							restSec: 90,
+							sets: [{ weightKg: 40, reps: 8, completed: true, kind: 'work' as const }]
+						}
+					]
+				});
+			}
+			if (recentCount && recentCount > 0) {
+				for (let index = 0; index < recentCount; index += 1) {
+					const stamp = new Date(Date.now() - index * 86_400_000).toISOString();
+					sessions.push({
+						id: `e2e-skeleton-session-${index}`,
+						planId,
+						planName: 'Skeleton E2E',
+						startedAt: stamp,
+						finishedAt: stamp,
+						exercises: [
+							{
+								exerciseId,
+								targetSets: 3,
+								targetReps: 8,
+								restSec: 90,
+								sets: [{ weightKg: 40, reps: 8, completed: true, kind: 'work' as const }]
+							}
+						]
+					});
+				}
+			}
+			if (sessions.length > 0) {
+				localStorage.setItem('repdraft:sessions', JSON.stringify(sessions));
+			}
+			if (active) {
+				localStorage.setItem(
+					'repdraft:active-session',
+					JSON.stringify({
+						id: 'e2e-active-session',
+						planId,
+						planName: 'Skeleton E2E',
+						startedAt: ts,
+						finishedAt: null,
+						exercises: [{ exerciseId, targetSets: 3, targetReps: 8, restSec: 90, sets: [] }]
+					})
+				);
+				document.documentElement.dataset.homeActiveSession = '1';
+				document.cookie = 'repdraft_home_active=1; path=/; Max-Age=31536000; SameSite=Lax';
+			}
+		},
+		{ ...payload, now }
+	);
+	const origin = (process.env.BASE_URL ?? 'http://127.0.0.1:5173').replace(/\/$/, '');
+	const cookies: { name: string; value: string; url: string }[] = [
+		{ name: 'repdraft_home_has_plans', value: '1', url: origin }
+	];
+	if (payload.active) {
+		cookies.push({ name: 'repdraft_home_active', value: '1', url: origin });
+	}
+	if (payload.recentCount && payload.recentCount > 0) {
+		cookies.push({ name: 'repdraft_home_has_history', value: '1', url: origin });
+	}
+	await page.context().addCookies(cookies);
+}
+
 async function readCls(page: Page): Promise<number> {
 	return page.evaluate(() => (window as unknown as { __repdraftCls?: number }).__repdraftCls ?? 0);
 }
@@ -207,6 +334,7 @@ export async function assertSkeletonTransition(
 	page: Page,
 	spec: SkeletonTransitionSpec
 ): Promise<void> {
+	await isolateGuestCloud(page);
 	await installLayoutShiftObserver(page);
 	try {
 		await page.unroute('**/data/exercises.index.json');
@@ -218,6 +346,19 @@ export async function assertSkeletonTransition(
 
 	await page.goto(spec.path, { waitUntil: 'domcontentloaded', timeout: 30_000 });
 	await waitAppReady(page);
+
+	if (spec.reseed) {
+		const indexRes = await page.request.get('/data/exercises.index.json');
+		const index = (await indexRes.json()) as { id: string }[];
+		const exerciseId = index[0]?.id ?? '0025';
+		await ensureWorkoutSeed(page, {
+			planId: 'e2e-skeleton-plan',
+			exerciseId,
+			...spec.reseed
+		});
+		await page.reload({ waitUntil: 'domcontentloaded' });
+		await waitAppReady(page);
+	}
 
 	const skeleton = page.locator(spec.skeleton).first();
 	const ready = page.locator(spec.ready).first();
@@ -237,6 +378,10 @@ export async function assertSkeletonTransition(
 
 	await ready.waitFor({ state: 'visible', timeout: 20_000 });
 	await expect(skeleton).toHaveCount(0, { timeout: 20_000 });
+
+	if (spec.readyGate) {
+		await page.locator(spec.readyGate).first().waitFor({ state: 'visible', timeout: 20_000 });
+	}
 
 	const settleMs = spec.settleMs ?? 400;
 	if (settleMs > 0) await page.waitForTimeout(settleMs);
@@ -285,4 +430,41 @@ export async function seedEmptyWorkoutsBoot(page: Page): Promise<void> {
 		document.cookie = 'repdraft_home_has_plans=; path=/; Max-Age=0; SameSite=Lax';
 		document.cookie = 'repdraft_home_active=; path=/; Max-Age=0; SameSite=Lax';
 	});
+}
+
+/** Builder list skeleton — draft with exercises + boot cookie before navigation. */
+export async function seedBuilderDraftBoot(
+	page: Page,
+	exerciseCount = 3
+): Promise<void> {
+	const indexRes = await page.request.get('/data/exercises.index.json');
+	const index = (await indexRes.json()) as { id: string }[];
+	const ids = index.slice(0, exerciseCount).map((item) => item.id);
+	const capped = Math.min(Math.max(exerciseCount, 0), 4);
+	const now = new Date().toISOString();
+	const draft = {
+		id: 'e2e-builder-draft',
+		name: 'E2E builder draft',
+		createdAt: now,
+		updatedAt: now,
+		exercises: ids.map((exerciseId) => ({
+			exerciseId,
+			sets: 3,
+			reps: 10,
+			restSec: 90
+		}))
+	};
+	const origin = (process.env.BASE_URL ?? 'http://127.0.0.1:5173').replace(/\/$/, '');
+
+	await page.addInitScript(
+		({ draftJson, rows }) => {
+			localStorage.setItem('repdraft:draft', draftJson);
+			document.documentElement.dataset.builderDraftRows = String(rows);
+			document.cookie = `repdraft_builder_draft_rows=${rows}; path=/; Max-Age=31536000; SameSite=Lax`;
+		},
+		{ draftJson: JSON.stringify(draft), rows: String(capped) }
+	);
+	await page.context().addCookies([
+		{ name: 'repdraft_builder_draft_rows', value: String(capped), url: origin }
+	]);
 }

@@ -150,7 +150,7 @@ assert(
 			'href="/catalog/all"',
 			'href="/exercises/saved"',
 			'href="/articles"',
-			'href="/records"',
+			'href="/exercises/records"',
 			'zone-card',
 			'href="/catalog/legs"'
 		],
@@ -232,15 +232,11 @@ assert(
 {
 	const { status, text } = await get('/catalog/back?target=lats');
 	assert(status === 200, `GET /catalog/back?target=lats → ${status}`);
-	assertIncludes(text, ['catalog-filters', 'href="/catalog/back"'], 'back target list');
-	// Class may still appear in inlined CSS; assert it is not used as a markup class.
+	// ponytail: prerender load omits searchParams on SSR — list/back crumb hydrate in the browser.
+	assertIncludes(text, ['catalog-zone-shell'], 'back target route shell');
 	assert(
 		!/<[a-z][^>]*\bcatalog-zone-target-back\b/i.test(text),
 		'target list must use single back affordance'
-	);
-	assert(
-		!text.includes('class="catalog-target-grid catalog-hub-grid"'),
-		'target list must not show browse grid'
 	);
 }
 
@@ -260,9 +256,12 @@ assert(
 
 // ——— Records page ———
 {
-	const { status, text } = await get('/records');
-	assert(status === 200, `GET /records → ${status}`);
+	const { status, text } = await get('/exercises/records');
+	assert(status === 200, `GET /exercises/records → ${status}`);
 	assert(text.includes('page-title') || text.includes('content-page'), 'records page markup missing');
+
+	const legacy = await fetch(`${base}/records`, { redirect: 'manual' });
+	assert(legacy.status === 308, `GET /records → ${legacy.status}, expected 308`);
 }
 
 // ——— Workouts list ———

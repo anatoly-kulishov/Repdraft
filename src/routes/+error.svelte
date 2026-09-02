@@ -5,6 +5,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_PRIMARY } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { House, Library } from '@lucide/svelte';
 
@@ -14,11 +15,10 @@
 	let detail = $derived($page.error?.message?.trim() || '');
 </script>
 
-<svelte:head>
-	<title>
-		{is404 ? translate(lang, 'error.404.title') : translate(lang, 'error.generic.title')} · Repdraft
-	</title>
-</svelte:head>
+<SeoHead
+	title={is404 ? translate(lang, 'error.404.title') : translate(lang, 'error.generic.title')}
+	noindex
+/>
 
 <section class="error-page content-page" aria-labelledby="error-heading">
 	<div class="error-hero panel">

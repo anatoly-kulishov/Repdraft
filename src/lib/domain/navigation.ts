@@ -40,12 +40,16 @@ export function resolveBackFrom(from: string | null | undefined, fallback = '/ex
 }
 
 export function runNavigationSelfCheck(): void {
-	if (!isSafeFromPath('/records')) throw new Error('isSafeFromPath /records');
+	if (!isSafeFromPath('/exercises/records')) throw new Error('isSafeFromPath /exercises/records');
+	if (!isSafeFromPath('/records')) throw new Error('isSafeFromPath /records legacy');
 	if (isSafeFromPath('//evil.com')) throw new Error('isSafeFromPath reject protocol-relative');
 	if (isSafeFromPath('https://evil.com')) throw new Error('isSafeFromPath reject absolute URL');
 
-	if (withFromParam('/exercise/1', '/records') !== '/exercise/1?from=%2Frecords') {
-		throw new Error('withFromParam append');
+	if (
+		withFromParam('/exercise/1', '/exercises/records') !==
+		'/exercise/1?from=%2Fexercises%2Frecords'
+	) {
+		throw new Error('withFromParam append exercises/records');
 	}
 	if (withFromParam('/catalog/all?q=press', '/builder') !== '/catalog/all?q=press&from=%2Fbuilder') {
 		throw new Error('withFromParam existing query');
@@ -54,14 +58,17 @@ export function runNavigationSelfCheck(): void {
 		throw new Error('withFromParam reject unsafe from');
 	}
 
-	if (resolveBackFrom('/records') !== '/records') throw new Error('resolveBackFrom path');
+	if (resolveBackFrom('/exercises/records') !== '/exercises/records') {
+		throw new Error('resolveBackFrom exercises/records path');
+	}
+	if (resolveBackFrom('/records') !== '/records') throw new Error('resolveBackFrom legacy records path');
 	if (resolveBackFrom('workouts') !== '/workouts') throw new Error('resolveBackFrom workouts alias');
 	if (resolveBackFrom('catalog') !== '/exercises') throw new Error('resolveBackFrom catalog alias');
 	if (resolveBackFrom(null, '/articles') !== '/articles') throw new Error('resolveBackFrom fallback');
 
 	if (
-		currentReturnPath('/catalog/chest', new URLSearchParams('from=%2Frecords')) !==
-		'/catalog/chest?from=%2Frecords'
+		currentReturnPath('/catalog/chest', new URLSearchParams('from=%2Fexercises%2Frecords')) !==
+		'/catalog/chest?from=%2Fexercises%2Frecords'
 	) {
 		throw new Error('currentReturnPath search');
 	}

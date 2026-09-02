@@ -6,11 +6,11 @@
 	import LiveExerciseNav from '$lib/components/live/LiveExerciseNav.svelte';
 	import LiveSessionActions from '$lib/components/live/LiveSessionActions.svelte';
 	import LiveSetPanel from '$lib/components/live/LiveSetPanel.svelte';
-	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
+	import LivePageSkeleton from '$lib/components/live/LivePageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL, ICON_BUTTON } from '$lib/components/icons/sizes';
-	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import {
 		altGroupNeedsPick,
@@ -20,7 +20,7 @@
 		totalSetCount,
 		visibleSessionExerciseIndices
 	} from '$lib/domain/session';
-	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
+	import type { ExerciseIndexItem, WorkoutPlan, WorkoutSession } from '$lib/domain/types';
 	import { altGroupBounds, groupBounds, groupMemberRole } from '$lib/domain/workout';
 	import { acquireScreenWakeLock, releaseScreenWakeLock } from '$lib/media/wakeLock';
 	import { formatElapsedClock, formatRestSec } from '$lib/i18n/format';
@@ -29,6 +29,7 @@
 	import { createLiveSetActions } from '$lib/live/liveSetActions';
 	import { pickDefaultExerciseIndex } from '$lib/live/sessionUi';
 	import { translate, translateError } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { navigateBack } from '$lib/navigation/back';
 	import { live } from '$lib/stores/live';
 	import { plans } from '$lib/stores/plans';
@@ -55,15 +56,18 @@
 	let lang = $derived($resolvedLocale);
 	let showLiveLoggingCoachmark = $derived(shouldShowCoachmark($onboarding, 'live.logging'));
 	let showLiveFinishCoachmark = $derived(shouldShowCoachmark($onboarding, 'live.finish'));
-	let session = $derived($live.session);
+	let holdSession = $state<WorkoutSession | null>(null);
+	let session = $derived($live.session ?? holdSession);
 	let restUntil = $derived($live.restUntil);
 	let loading = $state(true);
 	let switching = $state(false);
 
 	$effect.pre(() => {
-		if (liveSessionMatchesPlan(params.planId)) {
-			loading = false;
-		}
+		if (!liveSessionMatchesPlan(params.planId)) return;
+		const cached = peekExerciseIndex();
+		if (!cached) return;
+		names = new Map(cached.map((ex) => [ex.id, ex]));
+		loading = false;
 	});
 	let finishing = $state(false);
 	let finishOfferOpen = $state(false);
@@ -204,13 +208,14 @@
 		void (async () => {
 			live.hydrate();
 			void live.refreshHistory();
-			void loadExerciseIndex()
-				.then((index) => {
-					names = new Map(index.map((ex) => [ex.id, ex]));
-				})
-				.catch(() => {
-					names = new Map();
-				});
+
+			let index: ExerciseIndexItem[] = [];
+			try {
+				index = await loadExerciseIndex();
+			} catch {
+				index = [];
+			}
+			names = new Map(index.map((ex) => [ex.id, ex]));
 
 			try {
 				const result = await bootLivePage(params.planId);
@@ -411,6 +416,7 @@
 		finishing = true;
 		finishOfferOpen = false;
 		discardOfferOpen = false;
+		holdSession = get(live).session;
 		try {
 			const done = await live.finish();
 			toasts.show(translate(lang, 'live.saved'), 'success');
@@ -422,6 +428,7 @@
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'live.saveFail'), 'error');
 			finishing = false;
+			holdSession = null;
 		}
 	}
 
@@ -485,9 +492,10 @@
 	<span class="screen-header-timer" aria-live="polite">{elapsedLabel}</span>
 {/snippet}
 
-<svelte:head>
-	<title>{session ? session.planName : translate(lang, 'live.title')} · Repdraft</title>
-</svelte:head>
+<SeoHead
+	title={session ? session.planName : translate(lang, 'live.title')}
+	noindex
+/>
 
 {#if switchOfferOpen}
 	<BottomSheet
@@ -509,7 +517,7 @@
 		{/snippet}
 	</BottomSheet>
 {:else if loading && !(session && !session.finishedAt && session.planId === params.planId)}
-	<PageSkeleton variant="live" rows={4} />
+	<LivePageSkeleton planId={params.planId} />
 {:else if missing || !session}
 	<div class="mx-auto max-w-md space-y-3">
 		<EmptyState

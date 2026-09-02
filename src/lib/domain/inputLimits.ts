@@ -1,11 +1,12 @@
 /** Shared numeric bounds for workout / PR inputs. */
 
-export const WEIGHT_KG = { min: 0, max: 500, step: 0.5 } as const;
-export const REPS = { min: 1, max: 500 } as const;
-export const LIVE_REPS = { min: 0, max: 500 } as const;
-export const SETS = { min: 1, max: 20 } as const;
-export const REST_SEC = { min: 0, max: 600 } as const;
-export const NOTE_MAX = 100;
+export const WEIGHT_KG = { min: 0, max: 999, step: 0.5 } as const;
+export const REPS = { min: 1, max: 999 } as const;
+export const LIVE_REPS = { min: 0, max: 999 } as const;
+export const SETS = { min: 1, max: 99 } as const;
+export const REST_SEC = { min: 0, max: 999 } as const;
+/** PR / record note — one line in list chips; keeps cards from ballooning. */
+export const NOTE_MAX = 60;
 /** Builder / plan title — keeps cards and headers from overflowing. */
 export const PLAN_NAME_MAX = 48;
 /** Catalog / workouts / articles search — soft cap while typing. */
@@ -15,7 +16,7 @@ export const SEARCH_QUERY_MAX = 80;
 export const SETS_INPUT_MAX_LEN = String(SETS.max).length;
 export const REPS_INPUT_MAX_LEN = String(REPS.max).length;
 export const REST_INPUT_MAX_LEN = String(REST_SEC.max).length;
-export const WEIGHT_INPUT_MAX_LEN = 6;
+export const WEIGHT_INPUT_MAX_LEN = String(WEIGHT_KG.max).length + 1;
 
 /** Digits + optional one decimal; empty crumbs → ''. Does not clamp to max. */
 function shapeWeight(raw: string): string {
@@ -23,7 +24,8 @@ function shapeWeight(raw: string): string {
 	if (!s) return '';
 	const hasDot = s.includes('.');
 	const [rawInt = '', rawDec = ''] = s.split('.');
-	const intPart = rawInt.replace(/^0+(?=\d)/, '');
+	const intMaxLen = String(WEIGHT_KG.max).length;
+	const intPart = rawInt.replace(/^0+(?=\d)/, '').slice(0, intMaxLen);
 	const decPart = hasDot ? rawDec.replace(/\D/g, '').slice(0, 1) : null;
 	if (hasDot) return `${intPart}.${decPart ?? ''}`;
 	return intPart;
@@ -46,7 +48,7 @@ function longestValidWeight(shaped: string): string {
 
 /**
  * Mask-style weight filter: keep previous value (or longest valid prefix) instead of
- * auto-replacing overflow with 500.
+ * auto-replacing overflow with max.
  */
 export function filterWeightInput(raw: string, previous = ''): string {
 	const candidate = shapeWeight(raw);
@@ -60,6 +62,7 @@ export function filterWeightInput(raw: string, previous = ''): string {
 function shapeReps(raw: string, allowZero: boolean): string {
 	const digits = raw.replace(/\D/g, '');
 	if (!digits) return '';
+	if (!allowZero && /^0+$/.test(digits)) return '';
 	const trimmed = digits.replace(/^0+(?=\d)/, '');
 	if (!trimmed) return allowZero ? '0' : '';
 	return trimmed;
@@ -87,8 +90,13 @@ export function filterRepsInput(
 	previous = ''
 ): string {
 	const allowZero = bounds.min === 0;
+	if (!raw.replace(/\D/g, '')) return '';
 	const candidate = shapeReps(raw, allowZero);
-	if (!candidate) return '';
+	if (!candidate) {
+		const prev = shapeReps(previous, allowZero);
+		if (prev && !repsOverMax(prev, bounds.max)) return prev;
+		return '';
+	}
 	if (!repsOverMax(candidate, bounds.max)) return candidate;
 	const prev = shapeReps(previous, allowZero);
 	if (prev && !repsOverMax(prev, bounds.max)) return prev;
@@ -100,9 +108,15 @@ export function filterSetsInput(raw: string, previous = ''): string {
 	return filterRepsInput(raw, SETS, previous);
 }
 
-/** Builder rest chip — allows 0, caps at REST_SEC.max (600 s). */
+/** Builder rest chip — allows 0, caps at REST_SEC.max (999 s). */
 export function filterRestSecInput(raw: string, previous = ''): string {
 	return filterRepsInput(raw, REST_SEC, previous);
+}
+
+/** Persisted kg → draft string (clamps junk / overflow from legacy data). */
+export function clampStoredWeightKg(kg: number): number {
+	if (!Number.isFinite(kg)) return WEIGHT_KG.min;
+	return Math.min(WEIGHT_KG.max, Math.max(WEIGHT_KG.min, Math.round(kg * 10) / 10));
 }
 
 /** Empty → null. Out of range / junk → null. */
@@ -193,17 +207,19 @@ export function nudgeReps(
 export function runInputLimitsSelfCheck(): void {
 	if (coerceWeightKg('80') !== 80) throw new Error('coerceWeightKg 80');
 	if (coerceWeightKg('80.56') !== 80.6) throw new Error('coerceWeightKg round');
-	if (coerceWeightKg('501') !== null) throw new Error('coerceWeightKg over max');
+	if (clampStoredWeightKg(100_000) !== 999) throw new Error('clampStoredWeightKg overflow');
+	if (coerceWeightKg('501') !== 501) throw new Error('coerceWeightKg 501');
+	if (coerceWeightKg('1000') !== null) throw new Error('coerceWeightKg over max');
 	if (coerceWeightKg('') !== null) throw new Error('coerceWeightKg empty');
 	if (coerceWeightKg('12.') !== 12) throw new Error('coerceWeightKg trailing dot');
 
 	if (coerceReps('8') !== 8) throw new Error('coerceReps 8');
 	if (coerceReps('0', LIVE_REPS) !== 0) throw new Error('live reps allow 0');
 	if (coerceReps('0', REPS) !== 1) throw new Error('PR reps clamp min to 1');
-	if (coerceReps('999', REPS) !== 500) throw new Error('coerceReps clamp max');
+	if (coerceReps('999', REPS) !== 999) throw new Error('coerceReps clamp max');
 	if (coerceReps('x') !== null) throw new Error('coerceReps junk');
 	if (filterRepsInput('8', LIVE_REPS, '') !== '8') throw new Error('filterRepsInput keep');
-	if (filterRepsInput('5001', LIVE_REPS, '500') !== '500') {
+	if (filterRepsInput('10001', LIVE_REPS, '999') !== '999') {
 		throw new Error('filterRepsInput reject extra digit');
 	}
 	if (nudgeWeightKg(100, 2.5) !== 102.5) throw new Error('nudgeWeightKg +2.5');
@@ -212,13 +228,25 @@ export function runInputLimitsSelfCheck(): void {
 	if (nudgeReps(8, 1, LIVE_REPS) !== 9) throw new Error('nudgeReps +1');
 	if (nudgeReps(null, 1, LIVE_REPS) !== 1) throw new Error('nudgeReps from empty');
 	if (nudgeReps(0, -1, LIVE_REPS) !== 0) throw new Error('nudgeReps floor');
-	if (filterRepsInput('501', LIVE_REPS, '') !== '50') {
+	if (filterRepsInput('1000', LIVE_REPS, '') !== '100') {
 		throw new Error('filterRepsInput longest valid prefix');
 	}
-	if (filterSetsInput('21', '20') !== '20') {
+	if (filterSetsInput('100', '99') !== '99') {
 		throw new Error('filterSetsInput reject extra digit');
 	}
-	if (filterRestSecInput('601', '600') !== '600') {
+	if (filterSetsInput('0', '3') !== '3') {
+		throw new Error('filterSetsInput reject lone zero');
+	}
+	if (filterRepsInput('0', REPS, '10') !== '10') {
+		throw new Error('filterRepsInput reject lone zero for builder reps');
+	}
+	if (filterRepsInput('0', LIVE_REPS, '') !== '0') {
+		throw new Error('filterRepsInput allow zero in live');
+	}
+	if (coerceSets('0') !== 1) throw new Error('coerceSets lone zero to min');
+	if (coerceSets('') !== 1) throw new Error('coerceSets empty to min');
+	if (coerceSets('99') !== 99) throw new Error('coerceSets max');
+	if (filterRestSecInput('1000', '999') !== '999') {
 		throw new Error('filterRestSecInput reject extra digit');
 	}
 	if (filterRestSecInput('0', '') !== '0') {
@@ -228,6 +256,12 @@ export function runInputLimitsSelfCheck(): void {
 	if (coerceWeightKg('-11') !== null) throw new Error('coerceWeightKg rejects negative');
 	if (filterWeightInput('-11', '') !== '11') {
 		throw new Error('filterWeightInput should strip minus');
+	}
+	if (filterWeightInput('12345', '') !== '123') {
+		throw new Error('filterWeightInput caps integer digits');
+	}
+	if (filterWeightInput('9999', '999') !== '999') {
+		throw new Error('filterWeightInput rejects digit past max');
 	}
 	if (sanitizeNote('  a\nb  ') !== 'a b') throw new Error('sanitizeNote whitespace');
 	if (sanitizeNote('x'.repeat(150)).length !== NOTE_MAX) {

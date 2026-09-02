@@ -31,6 +31,7 @@
 	import { onboarding } from '$lib/stores/onboarding';
 	import { flushSyncOutbox } from '$lib/storage/flushSyncOutbox';
 	import { whenIdle } from '$lib/browser/idle';
+	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { page } from '$app/stores';
 	import { onNavigate } from '$app/navigation';
 	import { onMount } from 'svelte';
@@ -44,7 +45,7 @@
 	let { children } = $props();
 
 	let path = $derived($page.url.pathname);
-	let fromParam = $derived($page.url.searchParams.get('from'));
+	let fromParam = $derived(readSearchParam($page.url, 'from'));
 	let lang = $derived($resolvedLocale);
 	let isLight = $derived($appTheme === 'light');
 	let hasActiveSession = $derived(Boolean($live.ready && $live.session && !$live.session.finishedAt));
@@ -57,10 +58,9 @@
 		if (pathname.startsWith('/auth')) return true;
 		if (pathname === '/privacy') return true;
 		if (pathname === '/scenarios') return true;
-		if (pathname === '/exercises/saved') return true;
+		if (pathname.startsWith('/exercises/')) return true;
 		/* Builder → pick exercise: ScreenHeader only (no logo chrome + phantom spacer). */
 		if (pathname === '/exercises' && isBuilderReturnPath(from)) return true;
-		if (pathname === '/records') return true;
 		if (pathname === '/workouts/summary') return true;
 		if (pathname === '/workouts' && tab === 'history') return true;
 		if (pathname.startsWith('/workouts/history/')) return true;
@@ -68,7 +68,7 @@
 		return false;
 	}
 
-	let workoutsTab = $derived($page.url.searchParams.get('tab'));
+	let workoutsTab = $derived(readSearchParam($page.url, 'tab'));
 	let hideMobileHeader = $derived(mobileFlowChrome(path, fromParam, workoutsTab));
 	let showHomeShellHeader = $derived(path === '/' && !hideMobileHeader);
 	let showMediaAttribution = $derived(showsExerciseMediaAttribution(path));
@@ -152,8 +152,7 @@
 				path.startsWith('/exercises/') ||
 				path.startsWith('/catalog/') ||
 				path.startsWith('/exercise/') ||
-				path.startsWith('/articles') ||
-				path === '/records'
+				path.startsWith('/articles')
 			);
 		}
 		if (href === '/workouts') {
@@ -170,13 +169,6 @@
 		return path === href || path.startsWith(`${href}/`);
 	}
 </script>
-
-<svelte:head>
-	<link rel="manifest" href="/manifest.webmanifest" />
-	<meta name="apple-mobile-web-app-title" content="Repdraft" />
-	<meta name="description" content={translate(lang, 'app.metaDescription')} />
-	<title>Repdraft</title>
-</svelte:head>
 
 <a class="skip-link" href="#main-content">{translate(lang, 'a11y.skip')}</a>
 <div class="app-shell" class:app-shell--immersive={hideMobileHeader}>
@@ -199,10 +191,28 @@
 						type="button"
 						class="shell-theme-toggle"
 						onclick={() => appTheme.toggle()}
-						aria-label={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
-						title={translate(lang, isLight ? 'settings.themeDark' : 'settings.themeLight')}
+						aria-label={translate(
+							lang,
+							!$auth.ready
+								? 'common.loading'
+								: isLight
+									? 'settings.themeDark'
+									: 'settings.themeLight'
+						)}
+						title={translate(
+							lang,
+							!$auth.ready
+								? 'common.loading'
+								: isLight
+									? 'settings.themeDark'
+									: 'settings.themeLight'
+						)}
 					>
-						<ThemeToggleIcon isLight={isLight} size={ICON_SIDEBAR} strokeWidth={1.75} />
+						{#if !$auth.ready}
+							<span class="shell-theme-toggle__skeleton" aria-hidden="true"></span>
+						{:else}
+							<ThemeToggleIcon isLight={isLight} size={ICON_SIDEBAR} strokeWidth={1.75} />
+						{/if}
 					</button>
 					{#if !showHomeShellHeader}
 						<AccountChip active={isActive('/auth')} />

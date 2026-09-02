@@ -143,6 +143,18 @@ export function peekShouldShowChecklist(): boolean {
 	}
 }
 
+/** Sync peek for builder superset banner skeleton before onboarding store hydrates. */
+export function peekShouldShowCoachmark(id: CoachmarkId): boolean {
+	if (typeof localStorage === 'undefined') return false;
+	try {
+		const raw = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+		if (!raw) return shouldShowCoachmark(defaultOnboardingState(), id);
+		return shouldShowCoachmark(parseOnboardingState(JSON.parse(raw) as unknown), id);
+	} catch {
+		return false;
+	}
+}
+
 /** Keep SSR cookie in sync so `/` checklist skeleton matches first paint. */
 export function syncOnboardingChecklistBootCookie(state?: OnboardingState): void {
 	if (typeof document === 'undefined') return;

@@ -155,7 +155,54 @@
 		height: var(--control-height);
 		min-height: var(--control-height);
 		border-radius: var(--radius-control);
-		background: var(--color-surface-muted);
+		border: 1px solid var(--color-border);
+		background-color: var(--skeleton-base);
+		background-image: linear-gradient(
+			90deg,
+			var(--skeleton-base) 0%,
+			var(--skeleton-shine) 50%,
+			var(--skeleton-base) 100%
+		);
+		background-size: 200% 100%;
+		animation: skeletonShimmer 1.25s ease-in-out infinite;
+	}
+
+	/* builder-chrome carries the mobile header boot — hide duplicate PageSkeleton chrome. */
+	.builder-page .page-skeleton--builder .page-skeleton-header--builder-mobile,
+	.builder-page .page-skeleton--builder .page-skeleton-field {
+		display: none;
+	}
+
+	/* Hint already has margin-bottom; page-skeleton gap duplicated ready spacing (~15px jump). */
+	.builder-page .page-skeleton--builder,
+	.builder-page .page-skeleton--builder-empty {
+		gap: 0;
+	}
+
+	.builder-skeleton-empty .empty-state__icon,
+	.builder-empty-state .empty-state__icon {
+		animation: none;
+	}
+
+	.builder-skeleton-sticky__btn {
+		display: block;
+		min-height: 3rem;
+		border-radius: var(--radius-control);
+		border: 1px solid var(--color-border);
+		background-color: var(--skeleton-base);
+		background-image: linear-gradient(
+			90deg,
+			var(--skeleton-base) 0%,
+			var(--skeleton-shine) 50%,
+			var(--skeleton-base) 100%
+		);
+		background-size: 200% 100%;
+		animation: skeletonShimmer 1.25s ease-in-out infinite;
+	}
+
+	.builder-skeleton-sticky__btn--primary {
+		border-color: color-mix(in srgb, var(--color-accent) 24%, var(--color-border));
+		background-color: color-mix(in srgb, var(--color-accent) 12%, var(--skeleton-base));
 	}
 }
 
@@ -194,6 +241,140 @@
 	font-weight: 500;
 	line-height: 1.35;
 	color: var(--color-muted);
+}
+
+.builder-group-hint--skeleton {
+	color: transparent;
+	user-select: none;
+}
+
+.page-skeleton--builder .builder-group-hint--skeleton,
+.builder-coachmark-skeleton__line,
+.builder-group-hint-skeleton__line {
+	border-radius: 0.35rem;
+	background-color: var(--skeleton-base);
+	background-image: linear-gradient(
+		90deg,
+		var(--skeleton-base) 0%,
+		var(--skeleton-shine) 50%,
+		var(--skeleton-base) 100%
+	);
+	background-size: 200% 100%;
+	animation: skeletonShimmer 1.25s ease-in-out infinite;
+}
+
+.builder-group-hint-skeleton__line {
+	display: block;
+	min-height: calc(0.8125rem * 1.35 * 2);
+	height: calc(0.8125rem * 1.35);
+	width: min(88%, 18rem);
+	border: none;
+}
+
+.builder-coachmark-skeleton__lines {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.builder-coachmark-skeleton__line {
+	display: block;
+	height: 0.75rem;
+	width: 100%;
+	border: none;
+	border-radius: 999px;
+}
+
+.builder-coachmark-skeleton__line--short {
+	width: 72%;
+}
+
+.builder-coachmark-skeleton__icon {
+	background-color: var(--skeleton-base);
+	background-image: linear-gradient(
+		90deg,
+		var(--skeleton-base) 0%,
+		var(--skeleton-shine) 50%,
+		var(--skeleton-base) 100%
+	);
+	background-size: 200% 100%;
+	animation: skeletonShimmer 1.25s ease-in-out infinite;
+	color: transparent;
+}
+
+.builder-coachmark-skeleton__dismiss {
+	position: absolute;
+	top: 50%;
+	right: 0.35rem;
+	width: 2.75rem;
+	height: 2.75rem;
+	border-radius: 999px;
+	transform: translateY(-50%);
+	background-color: var(--skeleton-base);
+	background-image: linear-gradient(
+		90deg,
+		var(--skeleton-base) 0%,
+		var(--skeleton-shine) 50%,
+		var(--skeleton-base) 100%
+	);
+	background-size: 200% 100%;
+	animation: skeletonShimmer 1.25s ease-in-out infinite;
+}
+
+.builder-exercise-skeleton__check-bone {
+	width: 1.375rem;
+	height: 1.375rem;
+	border-radius: 0.4rem;
+}
+
+.builder-exercise-skeleton__thumb {
+	border: 1px solid var(--color-border);
+}
+
+.builder-exercise-skeleton__title {
+	display: block;
+	width: min(100%, 14rem);
+	height: 1.125rem;
+	border-radius: 999px;
+}
+
+.builder-exercise-skeleton__menu {
+	width: 3rem;
+	min-width: 3rem;
+	height: 3rem;
+	border-radius: var(--radius-control);
+}
+
+.builder-exercise-skeleton__chip {
+	display: flex !important;
+	min-width: 0;
+}
+
+.builder-exercise-skeleton__chip-label {
+	color: transparent;
+	user-select: none;
+}
+
+.builder-exercise-skeleton__chip-input {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+	height: calc(0.3rem * 2 + 1rem * 1.25 + 2px);
+	min-height: calc(0.3rem * 2 + 1rem * 1.25 + 2px);
+	padding: 0.3rem 0.45rem;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+}
+
+@media (max-width: 639px) {
+	.builder-exercise-list--skeleton .builder-exercise-skeleton__title {
+		width: 100%;
+		max-width: none;
+		height: 1.25rem;
+	}
 }
 
 .builder-exercise-list .workout-ex-chip {
