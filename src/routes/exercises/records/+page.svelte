@@ -1,6 +1,5 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
-	import AppPanel from '$lib/components/AppPanel.svelte';
 	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import CloudSyncBanner from '$lib/components/CloudSyncBanner.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -20,7 +19,6 @@
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
-	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { records, recordsReady, recordsSync } from '$lib/stores/records';
 	import { isCloudListUncertain } from '$lib/domain/cloudSync';
@@ -28,7 +26,7 @@
 	import { onboarding } from '$lib/stores/onboarding';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { toasts } from '$lib/stores/toasts';
-	import { ArrowLeft, Trophy, Trash2 } from '@lucide/svelte';
+	import { Trophy, Trash2 } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 
@@ -115,39 +113,13 @@
 <SeoHead title={title} noindex />
 
 <section class="content-page content-page--catalog records-page">
-	<ScreenHeader class="lg:hidden" {title} backHref="/exercises" />
-
-	<div class="catalog-subroute-header">
-		<a class="catalog-zone-crumb-link" href="/exercises">
-			<LucideIcon icon={ArrowLeft} size={ICON_SMALL} />
-			{translate(lang, 'catalog.hubTitle')}
-		</a>
-		<div class="page-header page-header--compact catalog-zone-head">
-			<h1 class="page-title catalog-zone-title">{title}</h1>
-			<p class="page-lead">
-				{#if !$auth.ready}
-					<span
-						class="inline-block h-4 w-48 max-w-full animate-pulse rounded bg-[var(--color-surface-muted)]"
-						aria-hidden="true"
-					></span>
-				{:else if $auth.user}
-					{#if $recordsSync === 'error'}
-						{translate(lang, 'records.local')}
-					{:else}
-						{translate(lang, 'records.cloud')}
-					{/if}
-				{:else}
-					{translate(lang, 'records.local')}
-					{' '}
-					<a
-						class="font-semibold text-[var(--color-accent-text)] underline"
-						href="/auth?next=%2Fexercises%2Frecords"
-						>{translate(lang, 'records.signIn')}</a
-					>{translate(lang, 'records.syncSuffix')}
-				{/if}
-			</p>
-		</div>
-	</div>
+	<ScreenHeader
+		fixed
+		{title}
+		backHref="/exercises"
+		backLabelVisible
+		backLabel={translate(lang, 'catalog.hubTitle')}
+	/>
 
 	<CloudSyncBanner
 		sync={$recordsSync}
@@ -158,12 +130,8 @@
 
 	{#if showSkeleton}
 		<div class="catalog-list-layout">
-			<div class="catalog-list-layout__filters">
-				<div class="catalog-filters-shell">
-					<AppPanel class="catalog-filters catalog-filters--saved">
-						<AppSkeleton class="records-skeleton__search skeleton-shimmer" aria-hidden="true" />
-					</AppPanel>
-				</div>
+			<div class="catalog-list-layout__filters catalog-list-layout__filters--search-only">
+				<AppSkeleton class="records-skeleton__search skeleton-shimmer" aria-hidden="true" />
 			</div>
 			<div class="catalog-list-layout__main">
 				<RecordsListSkeleton includeSearch={false} label={translate(lang, 'common.loading')} />
@@ -189,16 +157,12 @@
 		</EmptyState>
 	{:else}
 		<div class="catalog-list-layout">
-			<div class="catalog-list-layout__filters records-page__search">
-				<div class="catalog-filters-shell">
-					<AppPanel class="catalog-filters catalog-filters--saved">
-						<SearchInput
-							bind:value={searchQuery}
-							debounceMs={150}
-							placeholder={translate(lang, 'catalog.search')}
-						/>
-					</AppPanel>
-				</div>
+			<div class="catalog-list-layout__filters catalog-list-layout__filters--search-only">
+				<SearchInput
+					bind:value={searchQuery}
+					debounceMs={150}
+					placeholder={translate(lang, 'catalog.search')}
+				/>
 			</div>
 			<div class="catalog-list-layout__main">
 				{#if filteredRecords.length === 0}

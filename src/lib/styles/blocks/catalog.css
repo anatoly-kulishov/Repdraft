@@ -2840,6 +2840,40 @@ body:has(.sticky-actions) .draft-dock {
 	.pb-mobile-actions {
 		padding-bottom: 0;
 	}
+
+	.shell-main--subroute .screen-header {
+		position: static;
+		top: auto;
+		z-index: auto;
+		margin: 0 0 0.85rem;
+		padding: 0;
+		border-bottom: none;
+		background: transparent;
+		min-height: 0;
+		overflow: visible;
+	}
+
+	.shell-main--subroute .content-page--narrow .screen-header:not(.screen-header--fixed) {
+		width: auto;
+		max-width: none;
+		margin-left: 0;
+		margin-right: 0;
+		padding-left: 0;
+		padding-right: 0;
+	}
+
+	.shell-main--subroute .screen-header.screen-header--fixed {
+		position: static;
+		left: auto;
+		right: auto;
+		margin: 0 0 0.85rem;
+		padding-left: 0;
+		padding-right: 0;
+	}
+
+	.screen-header-spacer {
+		display: none;
+	}
 }
 
 /* FO-inspired shell — catalog sub-routes hide app header on phone+tablet (tabbar era). */
@@ -3489,6 +3523,12 @@ body:has(.sticky-actions) .draft-dock {
 }
 
 .catalog-list-layout__filters {
+	width: 100%;
+	min-width: 0;
+}
+
+.catalog-list-layout__filters--search-only {
+	width: 100%;
 	min-width: 0;
 }
 
@@ -3498,6 +3538,22 @@ body:has(.sticky-actions) .draft-dock {
 
 /* Catalog list: keep search + facets under fixed ScreenHeader while scrolling. */
 @media (max-width: 1023px) {
+	.content-page--catalog .catalog-list-layout__filters--search-only {
+		position: sticky;
+		top: var(--screen-header-chrome-h);
+		z-index: 20;
+		padding-top: 0.35rem;
+		padding-bottom: 0.4rem;
+		background: var(--color-bg);
+	}
+
+	.content-page--catalog .catalog-list-layout__filters--search-only > :global(label),
+	.content-page--catalog .catalog-list-layout__filters--search-only > :global(.records-skeleton__search) {
+		display: block;
+		width: 100%;
+		min-width: 0;
+	}
+
 	.content-page--catalog .catalog-list-layout__filters .catalog-filters-shell {
 		position: sticky;
 		top: var(--screen-header-chrome-h);

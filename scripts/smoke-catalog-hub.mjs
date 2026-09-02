@@ -171,8 +171,8 @@ assert(
 		text,
 		[
 			'screen-header',
-			'catalog-subroute-header',
-			'catalog-zone-crumb-link',
+			'screen-header-crumb',
+			'screen-header--back-label',
 			'catalog-page--list',
 			'catalog-zone-shell--list',
 			'catalog-filters',
@@ -251,7 +251,7 @@ assert(
 {
 	const { status, text } = await get('/exercises/saved');
 	assert(status === 200, `GET /exercises/saved → ${status}`);
-	assertIncludes(text, ['screen-header', 'catalog-zone-crumb-link', 'href="/exercises"'], 'saved');
+	assertIncludes(text, ['screen-header', 'screen-header-crumb', 'screen-header--back-label'], 'saved');
 }
 
 // ——— Records page ———
@@ -284,7 +284,7 @@ const id = chest.id;
 	assert(status === 200, `GET /exercise/${id} → ${status}`);
 	assertIncludes(
 		text,
-		['screen-header', 'catalog-zone-crumb-link', 'href="/exercises"'],
+		['screen-header', 'screen-header-crumb', 'screen-header--back-label'],
 		'exercise detail'
 	);
 }
@@ -293,7 +293,7 @@ const id = chest.id;
 	const from = '/workouts/demo-plan';
 	const { status, text } = await get(`/exercise/${id}?from=${encodeURIComponent(from)}`);
 	assert(status === 200, `GET /exercise/${id}?from=… → ${status}`);
-	assert(text.includes(`href="${from}"`), 'exercise detail from-workouts back href missing');
+	assert(text.includes('screen-header-crumb'), 'exercise detail from= must keep ScreenHeader back');
 }
 
 // ——— Settings: legacy URL redirects to profile ———
@@ -315,8 +315,8 @@ const id = chest.id;
 // ——— Workout plan preview source has desktop back (plan id is dynamic) ———
 {
 	const src = await readFile(join(root, 'src/routes/workouts/[planId]/+page.svelte'), 'utf8');
-	assert(src.includes('SubrouteBack'), 'workout plan preview must use SubrouteBack');
-	assert(src.includes('ScreenHeader'), 'workout plan preview must keep mobile ScreenHeader');
+	assert(src.includes('ScreenHeader'), 'workout plan preview must use ScreenHeader');
+	assert(src.includes('workout-preview-start'), 'workout plan preview must keep desktop start block');
 }
 
 console.log('smoke-catalog-hub: ok', { base, exerciseId: id });

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { APP_VERSION_LABEL } from '$lib/appVersion';
 	import { GYM_VISUAL_TERMS_URL, GYM_VISUAL_URL } from '$lib/data/attribution';
 	import { privacyPolicyVars } from '$lib/legal/privacyOperator';
@@ -32,13 +31,7 @@
 <SeoHead titleKey="privacy.title" descriptionKey="seo.privacyDescription" path="/privacy" />
 
 <div class="content-page content-page--narrow privacy-page">
-	<div class="lg:hidden">
-		<ScreenHeader {title} backHref="/auth" />
-	</div>
-	<div class="subroute-desktop-head">
-		<SubrouteBack href="/auth" label={translate(lang, 'privacy.back')} />
-		<h1 class="page-title">{title}</h1>
-	</div>
+	<ScreenHeader {title} backHref="/auth" />
 
 	<p class="privacy-page__lead">{translate(lang, 'privacy.lead')}</p>
 	<p class="privacy-page__updated">{translate(lang, 'privacy.updated')}</p>

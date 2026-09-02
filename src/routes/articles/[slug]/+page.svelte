@@ -5,7 +5,6 @@
 	import { linkWithFrom, resolveBackFrom } from '$lib/domain/navigation';
 	import { withFromParam } from '$lib/domain/catalogLinks';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { backLabelForHref } from '$lib/i18n/backLabel';
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
@@ -58,18 +57,12 @@
 <JsonLd data={articleJsonLd} />
 
 <article class="content-page content-page--narrow article-page pb-mobile-actions lg:pb-0">
-	<div class="lg:hidden">
-		<ScreenHeader title={article.title} {backHref} />
-	</div>
-	<div class="subroute-desktop-head">
-		<SubrouteBack href={backHref} label={backLabel} />
-	</div>
+	<ScreenHeader title={article.title} {backHref} backLabelVisible {backLabel} />
 
 	<div class="article-page__hero panel" data-tone={tone}>
 		<div class="article-page__hero-inner">
 			<ArticleCover {article} />
 			<div class="article-page__hero-text">
-				<h1 class="page-title article-page__title hidden lg:block">{article.title}</h1>
 				<p class="article-page__excerpt">{article.excerpt}</p>
 			</div>
 		</div>

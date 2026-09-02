@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { seedGuestStorage, waitAppReady } from './helpers/app-ready';
 import {
+	builderNameInput,
+	builderSaveButton
+} from './helpers/flow-locators';
+import {
 	E2E_AUTH_EMAIL,
 	E2E_AUTH_PASSWORD,
 	expectGuestSignInPanel,
@@ -169,21 +173,17 @@ test('12.6 signed-in flows', async ({ page }, testInfo) => {
 	test.skip(!hasAuthCredentials, 'Set E2E_AUTH_EMAIL and E2E_AUTH_PASSWORD for signed-in auth scenarios');
 
 	const stamp = `E2E Auth ${testInfo.project.name} ${Date.now().toString(36).slice(-4)}`;
+	const isMobile = testInfo.project.name.startsWith('mobile');
 
 	// Guest plan for migrate check
 	await page.goto('/builder?new');
 	await waitAppReady(page);
-	const isMobile = testInfo.project.name.startsWith('mobile');
-	const nameInput = isMobile
-		? page.locator('.builder-chrome__name')
-		: page.locator('.builder-name-desktop input[type="text"]');
+	const nameInput = builderNameInput(page);
 	await nameInput.waitFor({ state: 'visible', timeout: 10_000 });
 	await nameInput.fill(stamp);
-	const saveBtn = isMobile
-		? page.locator('.sticky-actions button.btn-primary').filter({ hasText: /Сохранить|Save/ })
-		: page.locator('.builder-toolbar-save');
-	await expect(saveBtn.first()).toBeEnabled({ timeout: 10_000 });
-	await saveBtn.first().click();
+	const saveBtn = builderSaveButton(page, isMobile);
+	await expect(saveBtn).toBeEnabled({ timeout: 10_000 });
+	await saveBtn.click();
 	await page.waitForURL(/\/workouts\/?$/, { timeout: 25_000 });
 
 	// Login with next=/exercises/records

@@ -1,5 +1,9 @@
+/* Desktop-only in chrome; mobile saves via sticky CTA. */
+.builder-chrome__actions :is(.builder-chrome__save, [data-slot='button'].builder-chrome__save) {
+	display: none;
+}
+
 .builder-toolbar-save {
-	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	min-width: var(--control-min-width);
@@ -87,6 +91,7 @@
 		flex-shrink: 0;
 		align-items: center;
 		justify-content: flex-end;
+		gap: 0.35rem;
 		min-width: var(--control-height);
 		min-height: var(--control-height);
 	}
@@ -435,13 +440,73 @@
 
 @media (min-width: 1024px) {
 	.builder-name-desktop {
-		display: block;
-		width: 100%;
-		max-width: none;
+		display: none;
 	}
 
 	.builder-page.content-page {
-		max-width: var(--page-content-wide);
+		max-width: var(--page-content-max);
+		margin-inline: 0;
+	}
+
+	.builder-toolbar {
+		display: none;
+	}
+
+	.builder-chrome {
+		position: static;
+		top: auto;
+		z-index: auto;
+		display: flex;
+		flex-direction: column;
+		gap: 0.55rem;
+		margin: 0 0 0.75rem;
+		padding: 0;
+		background: transparent;
+		border-bottom: none;
+	}
+
+	.builder-chrome__head {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		column-gap: 0.4rem;
+		min-height: var(--control-height);
+		min-width: 0;
+	}
+
+	.builder-chrome__back {
+		display: inline-flex;
+		grid-column: 1;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		width: 3rem;
+		min-width: 3rem;
+		height: 3rem;
+		min-height: 3rem;
+		margin-left: -0.45rem;
+		border-radius: var(--radius-control);
+		color: var(--color-muted);
+	}
+
+	.builder-chrome__actions {
+		display: flex;
+		grid-column: 3;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.35rem;
+		min-width: var(--control-height);
+		min-height: var(--control-height);
+	}
+
+	.builder-chrome__head input[data-slot='input'].builder-chrome__name {
+		grid-column: 2;
+		min-width: 0;
+	}
+
+	.builder-chrome__actions :is(.builder-chrome__save, [data-slot='button'].builder-chrome__save) {
+		display: inline-flex;
 	}
 }
 

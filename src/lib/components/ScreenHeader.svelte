@@ -9,6 +9,7 @@
 
 	let {
 		title,
+		titleId = undefined as string | undefined,
 		backHref = '/',
 		backLabel = null as string | null,
 		backLabelVisible = false,
@@ -18,6 +19,7 @@
 		actions
 	}: {
 		title: string;
+		titleId?: string;
 		backHref?: string;
 		backLabel?: string | null;
 		/** Show destination text next to the back arrow (e.g. «Тренировки»). */
@@ -72,7 +74,7 @@
 			</div>
 		{/if}
 	</div>
-	<h1 class="screen-header-title">{title}</h1>
+	<h1 class="screen-header-title" id={titleId}>{title}</h1>
 </header>
 {#if fixed}
 	<div class="screen-header-spacer lg:hidden" aria-hidden="true"></div>

@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { gotoReady, seedGuestStorage, waitAppReady } from './helpers/app-ready';
+import {
+	builderNameInput,
+	builderSaveButton,
+	workoutPreviewStartButton
+} from './helpers/flow-locators';
 
 const OFFLINE_PLAN = {
 	id: 'e2e-offline-plan',
@@ -33,9 +38,7 @@ test('guest can log a set while offline after local boot', async ({ page, contex
 	const stamp = `Offline ${Date.now().toString(36).slice(-4)}`;
 
 	await gotoReady(page, '/builder?new=1');
-	const nameInput = isMobile
-		? page.locator('.builder-chrome__name')
-		: page.locator('.builder-name-desktop input[type="text"]');
+	const nameInput = builderNameInput(page);
 	await nameInput.waitFor({ state: 'visible', timeout: 10_000 });
 	await nameInput.fill(stamp);
 
@@ -66,11 +69,9 @@ test('guest can log a set while offline after local boot', async ({ page, contex
 		await gotoReady(page, '/builder');
 	}
 
-	const saveBtn = isMobile
-		? page.locator('.sticky-actions button.btn-primary').filter({ hasText: /Сохранить|Save/ })
-		: page.locator('.builder-toolbar-save');
-	await expect(saveBtn.first()).toBeEnabled({ timeout: 10_000 });
-	await saveBtn.first().click({ timeout: 15_000 });
+	const saveBtn = builderSaveButton(page, isMobile);
+	await expect(saveBtn).toBeEnabled({ timeout: 10_000 });
+	await saveBtn.click({ timeout: 15_000 });
 	await page.waitForURL(/\/workouts\/?$/, { timeout: 25_000 });
 	await waitAppReady(page);
 
@@ -81,9 +82,7 @@ test('guest can log a set while offline after local boot', async ({ page, contex
 	await gotoReady(page, previewHref!);
 	await page.locator('.workout-preview-list').waitFor({ state: 'visible', timeout: 15_000 });
 
-	const startBtn = isMobile
-		? page.locator('.workout-preview .sticky-actions button.btn-primary')
-		: page.locator('.workout-preview-actions-desktop button.btn-primary');
+	const startBtn = workoutPreviewStartButton(page, isMobile);
 	await startBtn.waitFor({ state: 'visible', timeout: 15_000 });
 	await startBtn.click();
 	await page.waitForURL(/\/live\//, { timeout: 20_000 });
