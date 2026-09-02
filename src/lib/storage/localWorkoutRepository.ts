@@ -32,6 +32,38 @@ export function peekLocalPlan(id: string): WorkoutPlan | null {
 	return readPlans().find((plan) => plan.id === id) ?? null;
 }
 
+const PREVIEW_ROWS_KEY_PREFIX = 'repdraft:preview-rows:';
+
+/** Remember exercise count before navigating to /workouts/[id] (preview skeleton). */
+export function syncPreviewExerciseRowsPeek(planId: string, exerciseCount: number): void {
+	if (typeof sessionStorage === 'undefined' || !planId) return;
+	try {
+		const n = Math.min(Math.max(exerciseCount, 0), 6);
+		sessionStorage.setItem(PREVIEW_ROWS_KEY_PREFIX + planId, String(n));
+	} catch {
+		/* ignore */
+	}
+}
+
+/** Sync peek for preview skeleton row count (local plan or last navigation hint). */
+export function peekPreviewExerciseRows(planId: string): number {
+	if (!planId) return 0;
+	const local = peekLocalPlan(planId);
+	if (local) return local.exercises.length;
+	if (typeof sessionStorage !== 'undefined') {
+		try {
+			const raw = sessionStorage.getItem(PREVIEW_ROWS_KEY_PREFIX + planId);
+			if (raw) {
+				const n = Number.parseInt(raw, 10);
+				if (Number.isFinite(n) && n > 0) return n;
+			}
+		} catch {
+			/* ignore */
+		}
+	}
+	return 0;
+}
+
 /** Keep SSR cookie in sync so `/workouts` skeleton row count matches first paint. */
 export function syncWorkoutsPlanRowsCookie(planCount: number): void {
 	if (typeof document === 'undefined') return;

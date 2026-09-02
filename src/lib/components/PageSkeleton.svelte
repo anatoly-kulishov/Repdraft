@@ -176,16 +176,11 @@
 	{:else if variant === 'auth'}
 		<!-- Logged-in /auth: hero + 6 settings cards (2-col from tablet). -->
 		<div class="page-skeleton-auth" aria-hidden="true">
-			<div class="page-skeleton-auth-guest__chrome lg:hidden">
+			<div class="page-skeleton-auth-guest__chrome">
 				<div class="page-skeleton-auth-guest__back-slot">
 					<AppSkeleton class="page-skeleton-auth-guest__back-icon" />
 				</div>
 				<AppSkeleton class="page-skeleton-auth-guest__title" />
-			</div>
-
-			<div class="page-skeleton-auth__desktop-head hidden lg:block">
-				<AppSkeleton class="page-skeleton-auth-back" />
-				<AppSkeleton class="page-skeleton-title page-skeleton-title--lg page-skeleton-auth__desktop-title" />
 			</div>
 
 			<header class="page-skeleton-auth-hero">
@@ -324,16 +319,10 @@
 			</div>
 		</div>
 	{:else if variant === 'summary'}
-		<div class="page-skeleton-summary-mobile-head lg:hidden" aria-hidden="true">
-			<AppSkeleton class="page-skeleton-toolbar page-skeleton-toolbar--summary-head" />
-		</div>
-		<div class="page-skeleton-summary-desktop-head hidden lg:block" aria-hidden="true">
+		<header class="screen-header page-skeleton-summary-head" aria-hidden="true">
 			<AppSkeleton class="page-skeleton-toolbar page-skeleton-toolbar--summary-head" />
 			<AppSkeleton class="page-skeleton-title page-skeleton-title--lg" />
-		</div>
-		<div class="page-skeleton-header page-skeleton-header--summary-mobile lg:hidden" aria-hidden="true">
-			<AppSkeleton class="page-skeleton-title" />
-		</div>
+		</header>
 		<div class="page-skeleton-summary-hero" aria-hidden="true">
 			<AppSkeleton class="page-skeleton-summary-check" />
 			<AppSkeleton class="page-skeleton-title page-skeleton-title--lg" />

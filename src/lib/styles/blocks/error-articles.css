@@ -639,8 +639,9 @@
 
 @media (min-width: 1024px) {
 	.scenarios-page.content-page--narrow {
-		max-width: none;
+		max-width: var(--page-content-narrow);
 		width: 100%;
+		margin-inline: 0;
 	}
 }
 

@@ -1041,7 +1041,6 @@ html.is-plan-reorder-active .reorder-handle {
 .summary-skeleton-preview-thumb,
 .summary-skeleton-preview-name,
 .summary-skeleton-set-val,
-.summary-skeleton-first-finish-icon,
 .summary-skeleton-guest-cta,
 .summary-skeleton-guest-dismiss,
 .summary-skeleton-done-btn,
@@ -1148,19 +1147,6 @@ html.is-plan-reorder-active .reorder-handle {
 	);
 	background-size: 200% 100%;
 	animation: skeletonShimmer 1.25s ease-in-out infinite;
-}
-
-.summary-skeleton-first-finish-icon {
-	background-color: var(--skeleton-base);
-	background-image: linear-gradient(
-		90deg,
-		var(--skeleton-base) 0%,
-		var(--skeleton-shine) 50%,
-		var(--skeleton-base) 100%
-	);
-	background-size: 200% 100%;
-	animation: skeletonShimmer 1.25s ease-in-out infinite;
-	color: transparent;
 }
 
 .summary-skeleton-guest-cta {

@@ -35,7 +35,7 @@ import { truncateMeta } from '$lib/seo/site';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { ArrowLeft, Bookmark, ClipboardList, Plus } from '@lucide/svelte';
+	import { Bookmark, ClipboardList, Plus } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 
@@ -193,17 +193,8 @@ import { truncateMeta } from '$lib/seo/site';
 	/>
 {:else}
 	<article class="content-page content-page--exercise exercise-detail-page pb-mobile-actions lg:pb-0">
-		<div class="exercise-detail-page__chrome min-w-0 lg:hidden">
-			<ScreenHeader fixed {title} {backHref} actions={exerciseHeaderActions} />
-		</div>
-		<div class="exercise-detail-page__chrome catalog-subroute-header">
-			<a class="catalog-zone-crumb-link" href={backHref}>
-				<LucideIcon icon={ArrowLeft} size={ICON_SMALL} />
-				{backLabel}
-			</a>
-			<div class="page-header page-header--compact catalog-zone-head">
-				<h1 class="page-title catalog-zone-title">{title}</h1>
-			</div>
+		<div class="exercise-detail-page__chrome min-w-0">
+			<ScreenHeader fixed {title} {backHref} backLabelVisible {backLabel} actions={exerciseHeaderActions} />
 		</div>
 
 		<div class="exercise-detail-page__layout">

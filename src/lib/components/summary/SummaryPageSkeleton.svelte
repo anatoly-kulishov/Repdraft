@@ -68,18 +68,12 @@
 	aria-busy="true"
 	aria-live="polite"
 >
-	<div class="lg:hidden text-left" aria-hidden="true">
-		<header class="screen-header summary-skeleton-head">
-			<div class="screen-header__bar">
-				<div class="summary-skeleton-head__back"></div>
-			</div>
-			<h1 class="screen-header-title">{translate(lang, 'summary.title')}</h1>
-		</header>
-	</div>
-
-	<div class="subroute-desktop-head text-left" aria-hidden="true">
-		<div class="summary-skeleton-desktop-back"></div>
-	</div>
+	<header class="screen-header summary-skeleton-head text-left" aria-hidden="true">
+		<div class="screen-header__bar">
+			<div class="summary-skeleton-head__back"></div>
+		</div>
+		<h1 class="screen-header-title">{translate(lang, 'summary.title')}</h1>
+	</header>
 
 	<div class="summary-hero" aria-hidden="true">
 		<div class="summary-check summary-skeleton-check"></div>
@@ -92,17 +86,14 @@
 	</div>
 
 	{#if showFirstFinish}
-		<AppPanel class="onboarding-first-finish" role="status">
-			<div class="onboarding-first-finish__head">
-				<span class="onboarding-first-finish__icon summary-skeleton-first-finish-icon" aria-hidden="true"></span>
-				<div class="onboarding-first-finish__copy min-w-0">
-					<p class="onboarding-first-finish__title">
-						{translate(lang, 'onboarding.firstFinishTitle')}
-					</p>
-					<p class="onboarding-first-finish__lead">
-						{translate(lang, 'onboarding.firstFinishLead')}
-					</p>
-				</div>
+		<AppPanel class="onboarding-first-finish text-left" role="status">
+			<div class="onboarding-first-finish__copy min-w-0">
+				<p class="onboarding-first-finish__title">
+					{translate(lang, 'onboarding.firstFinishTitle')}
+				</p>
+				<p class="onboarding-first-finish__lead">
+					{translate(lang, 'onboarding.firstFinishLead')}
+				</p>
 			</div>
 		</AppPanel>
 	{/if}

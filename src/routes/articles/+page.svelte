@@ -1,15 +1,12 @@
 <script lang="ts">
 	import ArticleCard from '$lib/components/ArticleCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import { filterArticles } from '$lib/domain/articles';
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ArrowLeft } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -30,20 +27,15 @@
 
 <div class="content-page content-page--catalog articles-hub-page">
 	<section class="articles-hub" aria-labelledby="articles-hub-heading">
-		<ScreenHeader class="lg:hidden" {title} backHref="/exercises" />
+		<ScreenHeader
+			titleId="articles-hub-heading"
+			{title}
+			backHref="/exercises"
+			backLabelVisible
+			backLabel={translate(lang, 'catalog.hubTitle')}
+		/>
 
-		<p class="page-lead lg:hidden articles-hub__lead">{translate(lang, 'articles.lead')}</p>
-
-		<div class="catalog-subroute-header">
-			<a class="catalog-zone-crumb-link" href="/exercises">
-				<LucideIcon icon={ArrowLeft} size={ICON_SMALL} />
-				{translate(lang, 'catalog.hubTitle')}
-			</a>
-			<header class="page-header page-header--compact catalog-zone-head">
-				<h1 id="articles-hub-heading" class="page-title catalog-zone-title">{title}</h1>
-				<p class="page-lead">{translate(lang, 'articles.lead')}</p>
-			</header>
-		</div>
+		<p class="page-lead articles-hub__lead">{translate(lang, 'articles.lead')}</p>
 
 		<div class="articles-hub__search">
 			<SearchInput bind:value={query} placeholder={translate(lang, 'articles.search')} />

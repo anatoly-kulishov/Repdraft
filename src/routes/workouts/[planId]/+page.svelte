@@ -3,7 +3,6 @@
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_PRIMARY } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
@@ -13,12 +12,13 @@
 	import { altGroupMemberRole, groupMemberRole, planExerciseSlotCount, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
-	import { peekLocalPlan } from '$lib/storage/localWorkoutRepository';
+	import { peekLocalPlan, syncPreviewExerciseRowsPeek, peekPreviewExerciseRows } from '$lib/storage/localWorkoutRepository';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	import { ChevronRight, Pencil, Play } from '@lucide/svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
@@ -36,17 +36,6 @@
 		peekedIndex ? new Map(peekedIndex.map((item) => [item.id, item])) : new Map()
 	);
 	let loading = $state(true);
-
-	$effect.pre(() => {
-		const cached = peekLocalPlan(params.planId);
-		if (cached) {
-			plan = cached;
-			loading = false;
-			return;
-		}
-		plan = null;
-		loading = true;
-	});
 	let missing = $state(false);
 	let fromPath = $derived($page.url.pathname);
 	let technique = $state<{
@@ -56,11 +45,28 @@
 		image: string;
 	} | null>(null);
 
+	function resolveBootPlan(id: string): WorkoutPlan | null {
+		if (!id) return null;
+		return peekLocalPlan(id) ?? get(plans).find((item) => item.id === id) ?? null;
+	}
+
+	$effect.pre(() => {
+		const boot = resolveBootPlan(params.planId);
+		if (boot) {
+			plan = boot;
+			loading = false;
+			syncPreviewExerciseRowsPeek(params.planId, boot.exercises.length);
+			return;
+		}
+		plan = null;
+		loading = true;
+	});
+
 	let muscles = $derived(plan ? planTargetSummary(plan, indexById, lang) : '');
 	let totalSets = $derived(plan ? planPrescribedSetCount(plan) : 0);
 	let skeletonExerciseRows = $derived.by(() => {
-		const peeked = peekLocalPlan(params.planId);
-		const n = peeked?.exercises.length ?? 0;
+		const boot = plan ?? resolveBootPlan(params.planId);
+		const n = boot?.exercises.length ?? peekPreviewExerciseRows(params.planId);
 		return Math.min(Math.max(n, 1), 6);
 	});
 
@@ -79,6 +85,7 @@
 					missing = true;
 				} else {
 					plan = found;
+					syncPreviewExerciseRowsPeek(id, found.exercises.length);
 				}
 			} catch {
 				missing = true;
@@ -109,23 +116,9 @@
 <SeoHead title={plan?.name ?? translate(lang, 'preview.title')} noindex />
 
 {#if loading}
-	<section class="workout-preview content-page content-page--narrow pb-mobile-actions" aria-busy="true">
-		<div class="workout-preview-skeleton-head lg:hidden" aria-hidden="true">
+	<section class="workout-preview content-page pb-mobile-actions" aria-busy="true">
+		<div class="workout-preview-skeleton-head" aria-hidden="true">
 			<div class="workout-preview-skeleton-head__bar"></div>
-		</div>
-		<div class="workout-preview-skeleton-desktop-head hidden lg:block" aria-hidden="true">
-			<div class="workout-preview-skeleton-head__bar workout-preview-skeleton-head__bar--back"></div>
-			<div class="workout-preview-skeleton-head__title-row">
-				<div class="workout-preview-skeleton-head__bar workout-preview-skeleton-head__bar--title"></div>
-				<div class="workout-preview-skeleton-head__actions">
-					<div
-						class="workout-preview-skeleton-head__bar workout-preview-skeleton-head__bar--action"
-					></div>
-					<div
-						class="workout-preview-skeleton-head__bar workout-preview-skeleton-head__bar--action"
-					></div>
-				</div>
-			</div>
 		</div>
 		<div class="workout-preview-skeleton-summary" aria-hidden="true">
 			<div class="workout-preview-skeleton-summary__line workout-preview-skeleton-summary__line--lead"></div>
@@ -152,20 +145,14 @@
 		actionLabel={translate(lang, 'live.backPlans')}
 	/>
 {:else}
-	<section class="workout-preview content-page content-page--narrow pb-mobile-actions lg:pb-8">
-		<div class="lg:hidden">
-			<ScreenHeader
-				fixed
-				class="workout-preview-header"
-				title={plan.name}
-				backHref="/workouts"
-				actions={headerActions}
-			/>
-		</div>
-		<div class="subroute-desktop-head">
-			<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />
-			<h1 class="page-title">{plan.name}</h1>
-		</div>
+	<section class="workout-preview content-page pb-mobile-actions lg:pb-8">
+		<ScreenHeader
+			fixed
+			class="workout-preview-header"
+			title={plan.name}
+			backHref="/workouts"
+			actions={headerActions}
+		/>
 
 		<AppPanel class="workout-preview-summary">
 			{#if muscles}
@@ -274,23 +261,17 @@
 			/>
 		{/if}
 
-		<div class="workout-preview-actions-desktop hidden flex-wrap gap-2 lg:flex">
-			<AppButton
-				class="workout-preview-action-icon"
-				onclick={onStart}
-				aria-label={translate(lang, 'workouts.start')}
-				title={translate(lang, 'workouts.start')}
-			>
-				<LucideIcon icon={Play} size={ICON_BUTTON} />
+		<div class="workout-preview-start">
+			<AppButton block class="gap-2" onclick={onStart}>
+				<LucideIcon icon={Play} size={ICON_PRIMARY} />
+				{translate(lang, 'workouts.start')}
 			</AppButton>
 			<AppButton
-				variant="ghost"
-				class="workout-preview-action-icon workout-preview-edit-link"
+				variant="link"
+				class="workout-preview-start__edit"
 				href={`/builder/${plan.id}`}
-				aria-label={translate(lang, 'preview.edit')}
-				title={translate(lang, 'preview.edit')}
 			>
-				<LucideIcon icon={Pencil} size={ICON_BUTTON} />
+				{translate(lang, 'preview.edit')}
 			</AppButton>
 		</div>
 

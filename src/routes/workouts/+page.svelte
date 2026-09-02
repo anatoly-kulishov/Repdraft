@@ -17,10 +17,10 @@
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { Copy, ArrowLeft, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
-	import { peekLocalPlanCount } from '$lib/storage/localWorkoutRepository';
+	import { peekLocalPlanCount, syncPreviewExerciseRowsPeek } from '$lib/storage/localWorkoutRepository';
 	import { peekLocalHistoryCount } from '$lib/storage/localSessionRepository';
 	import type { WorkoutsSkeletonVariant } from '$lib/components/WorkoutsPageSkeleton.svelte';
-	import type { ExerciseIndexItem } from '$lib/domain/types';
+	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
 	import { planExerciseSlotCount, planTargetSummary, resolveHomeNextPlan } from '$lib/domain/workout';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
@@ -163,6 +163,10 @@
 	let clearHistoryOfferOpen = $state(false);
 	let demoBusy = $state(false);
 
+	function rememberPreviewRows(plan: WorkoutPlan) {
+		syncPreviewExerciseRowsPeek(plan.id, plan.exercises.length);
+	}
+
 	async function onTryDemoPlan() {
 		if (demoBusy) return;
 		demoBusy = true;
@@ -261,8 +265,9 @@
 		}
 	}
 
-	function onOpen(planId: string) {
-		void goto(`/workouts/${planId}`);
+	function onOpen(plan: WorkoutPlan) {
+		rememberPreviewRows(plan);
+		void goto(`/workouts/${plan.id}`);
 	}
 
 	function pinNextPlan(planId: string, planName: string) {
@@ -508,7 +513,11 @@
 									actions={planTrailingSwipeActions(plan)}
 								>
 									<div class="entity-row">
-										<a class="entity-row__main" href={`/workouts/${plan.id}`}>
+										<a
+											class="entity-row__main"
+											href={`/workouts/${plan.id}`}
+											onclick={() => rememberPreviewRows(plan)}
+										>
 											<span class="entity-row__title">{plan.name}</span>
 											{#if muscles}
 												<span class="entity-row__meta">{muscles}</span>
@@ -548,7 +557,7 @@
 											<AppButton
 												variant="ghost"
 												class="entity-row__start entity-row__start--desktop"
-												onclick={() => onOpen(plan.id)}
+												onclick={() => onOpen(plan)}
 												disabled={plan.exercises.length === 0 || planBusyId !== null}
 												aria-label={translate(lang, 'workouts.open')}
 												title={translate(lang, 'workouts.open')}
