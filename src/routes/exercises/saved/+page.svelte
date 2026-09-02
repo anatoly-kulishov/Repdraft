@@ -1,12 +1,9 @@
 <script lang="ts">
 	import CatalogExerciseList from '$lib/components/CatalogExerciseList.svelte';
-	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ArrowLeft } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -17,21 +14,13 @@
 <SeoHead title={title} noindex />
 
 <div class="content-page content-page--catalog catalog-page--list catalog-saved-page records-page">
-	<ScreenHeader class="lg:hidden" fixed {title} backHref="/exercises" />
-
-	<div class="catalog-subroute-header">
-		<a class="catalog-zone-crumb-link" href="/exercises">
-			<LucideIcon icon={ArrowLeft} size={ICON_SMALL} />
-			{translate(lang, 'catalog.hubTitle')}
-		</a>
-		<div class="page-header page-header--compact catalog-zone-head">
-			<h1 class="page-title catalog-zone-title">{title}</h1>
-			<p class="page-lead">{translate(lang, 'bookmarks.lead')}</p>
-			<p class="mt-1 max-w-xl text-sm leading-relaxed text-[var(--color-muted)]">
-				{translate(lang, 'bookmarks.localOnlyHint')}
-			</p>
-		</div>
-	</div>
+	<ScreenHeader
+		fixed
+		{title}
+		backHref="/exercises"
+		backLabelVisible
+		backLabel={translate(lang, 'catalog.hubTitle')}
+	/>
 
 	<CatalogExerciseList
 		equipment={data.equipment}

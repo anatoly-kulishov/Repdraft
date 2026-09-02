@@ -165,13 +165,106 @@
 		grid-row: 1;
 	}
 
-	/* Labeled back (e.g. builder): stacked crumb row + title — not cramped inline grid. */
+	/* Desktop-style labeled crumb stays in markup for ≥1024; phone keeps inline arrow + title. */
+	.screen-header--back-label {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		column-gap: 0.35rem;
+		row-gap: 0;
+		min-height: var(--screen-header-min-h);
+	}
+
+	.screen-header--back-label .screen-header__bar {
+		display: contents;
+	}
+
+	.screen-header--back-label .screen-header-crumb {
+		grid-column: 1;
+		grid-row: 1;
+		justify-content: center;
+		width: 3rem;
+		min-width: 3rem;
+		height: 3rem;
+		min-height: 3rem;
+		margin-left: -0.45rem;
+		padding: 0;
+	}
+
+	.screen-header--back-label .screen-header-crumb__label {
+		display: none;
+	}
+
+	.screen-header--back-label .screen-header-title {
+		grid-column: 2;
+		grid-row: 1;
+	}
+
+	.screen-header--back-label .screen-header-actions {
+		grid-column: 3;
+		grid-row: 1;
+	}
+
+	.screen-header--back-label + .screen-header-spacer {
+		height: calc(var(--screen-header-chrome-h) + var(--screen-header-content-gap));
+	}
+}
+
+@media (min-width: 1024px) {
+	.screen-header {
+		position: static;
+		top: auto;
+		z-index: auto;
+		margin: 0 0 0.85rem;
+		padding: 0;
+		border-bottom: none;
+		background: transparent;
+		min-height: 0;
+		overflow: visible;
+	}
+
+	.screen-header-title {
+		font-size: 1.5rem;
+		font-weight: 700;
+		line-height: 1.2;
+		letter-spacing: -0.02em;
+	}
+
+	.screen-header-crumb {
+		width: auto;
+		height: auto;
+		min-width: var(--control-min-width);
+		min-height: var(--control-min-height);
+		margin-left: -0.15rem;
+		padding: 0;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: var(--color-muted);
+		justify-content: flex-start;
+	}
+
+	.screen-header-crumb--labeled {
+		max-width: min(100%, 14rem);
+		font-size: 0.9375rem;
+		color: var(--color-ink);
+	}
+
+	.screen-header-actions {
+		flex-shrink: 0;
+	}
+
+	/* Match mobile stacked crumb + title on desktop sub-routes. */
 	.screen-header--back-label {
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
 		gap: 0.35rem;
 		min-height: var(--screen-header-stacked-h);
+		margin-bottom: 0.65rem;
+	}
+
+	.shell-main--subroute .screen-header.screen-header--back-label {
+		background: transparent;
 	}
 
 	.screen-header--back-label .screen-header__bar {
@@ -182,38 +275,26 @@
 		min-width: 0;
 	}
 
-	.screen-header--back-label .screen-header-crumb {
-		grid-column: auto;
-		grid-row: auto;
-		flex: 0 1 auto;
+	.screen-header--back-label .screen-header-crumb,
+	.screen-header--back-label .screen-header-crumb--labeled {
 		width: auto;
 		height: auto;
 		min-height: var(--control-min-height);
 		margin-left: -0.15rem;
+		justify-content: flex-start;
+		color: var(--color-muted);
 	}
 
-	.screen-header--back-label + .screen-header-spacer {
-		height: calc(
-			var(--screen-header-stacked-h) + 2 * var(--screen-header-pad-block) + var(--safe-top) + 1px +
-				var(--screen-header-content-gap)
-		);
+	.screen-header--back-label .screen-header-crumb__label {
+		color: var(--color-muted);
 	}
 
 	.screen-header--back-label .screen-header-title {
-		grid-column: auto;
-		grid-row: auto;
-	}
-
-	.screen-header--back-label .screen-header-actions {
-		grid-column: auto;
-		grid-row: auto;
-		flex-shrink: 0;
-	}
-}
-
-@media (min-width: 1024px) {
-	.screen-header {
-		display: none;
+		font-family: var(--font-display);
+		font-size: clamp(1.375rem, 1.15vw + 1rem, 1.75rem);
+		font-weight: 600;
+		line-height: 1.2;
+		letter-spacing: -0.02em;
 	}
 }
 
@@ -1387,14 +1468,14 @@
 	.auth-page:not(.auth-page--account):not(.auth-page--booting) > .auth-panel {
 		max-width: var(--page-content-narrow);
 		width: 100%;
-		margin-inline: auto;
+		margin-inline: 0;
 		box-sizing: border-box;
 	}
 
 	.auth-page--booting-guest .page-skeleton-auth-guest {
 		align-items: stretch;
 		max-width: var(--page-content-narrow);
-		margin-inline: auto;
+		margin-inline: 0;
 	}
 
 	.auth-page--booting-guest .page-skeleton-auth-guest__header,
@@ -3280,7 +3361,7 @@ button.clip-composer__pick:hover:not(:disabled),
 .records-skeleton__search {
 	display: block;
 	width: 100%;
-	min-height: var(--control-min-width);
+	min-height: var(--control-height);
 	border-radius: var(--radius-control);
 }
 
@@ -3512,13 +3593,9 @@ button.catalog-zone-crumb-link {
 }
 
 @media (min-width: 1024px) {
-	.subroute-desktop-head {
-		display: block;
-	}
-
+	.subroute-desktop-head,
 	.catalog-subroute-header {
-		display: block;
-		margin-bottom: 0.85rem;
+		display: none;
 	}
 
 	.catalog-zone-crumb-link {

@@ -927,7 +927,7 @@ select {
 		box-sizing: border-box;
 		width: 100%;
 		max-width: var(--page-content-max);
-		margin-inline: auto;
+		margin-inline: 0;
 	}
 
 	.shell-main:has(.content-page--narrow) > .pwa-install {

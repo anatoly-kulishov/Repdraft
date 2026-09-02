@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { gotoReady, seedGuestStorage, waitAppReady } from './helpers/app-ready';
+import { workoutPreviewStartButton } from './helpers/flow-locators';
 
 test.beforeEach(async ({ page }) => {
 	await seedGuestStorage(page);
@@ -35,9 +36,7 @@ test('onboarding: demo path to first finish', async ({ page }, testInfo) => {
 	await waitAppReady(page);
 	await dismissCoachmarks(page);
 
-	const startBtn = isMobile
-		? page.locator('.workout-preview .sticky-actions button.btn-primary')
-		: page.locator('.workout-preview-actions-desktop button.btn-primary');
+	const startBtn = workoutPreviewStartButton(page, isMobile);
 	await startBtn.waitFor({ state: 'visible', timeout: 15_000 });
 	await startBtn.click();
 	await page.waitForURL(/\/live\//, { timeout: 20_000 });

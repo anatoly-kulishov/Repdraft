@@ -1,5 +1,4 @@
 <script lang="ts">
-	import AppPanel from '$lib/components/AppPanel.svelte';
 	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import {
 		EXERCISES_SUBROUTE_SKELETON_ROWS_DESKTOP,
@@ -34,12 +33,8 @@
 		<span class="sr-only">{label}</span>
 	{/if}
 	{#if includeSearch}
-		<div class="catalog-list-layout__filters records-page__search">
-			<div class="catalog-filters-shell">
-				<AppPanel class="catalog-filters catalog-filters--saved">
-					<AppSkeleton class="records-skeleton__search skeleton-shimmer" aria-hidden="true" />
-				</AppPanel>
-			</div>
+		<div class="catalog-list-layout__filters catalog-list-layout__filters--search-only">
+			<AppSkeleton class="records-skeleton__search skeleton-shimmer" aria-hidden="true" />
 		</div>
 	{/if}
 	<div class="catalog-list-count mb-3 text-sm text-[var(--color-muted)]" aria-hidden="true">
