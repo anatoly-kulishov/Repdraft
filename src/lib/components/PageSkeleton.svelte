@@ -1,5 +1,11 @@
 <script lang="ts">
+	import AppPanel from '$lib/components/AppPanel.svelte';
 	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
+	import BuilderSupersetBannerSkeleton from '$lib/components/builder/BuilderSupersetBannerSkeleton.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { translate } from '$lib/i18n/messages';
+	import { resolvedLocale } from '$lib/stores/locale';
+	import { Plus } from '@lucide/svelte';
 
 	let {
 		rows = 4,
@@ -9,6 +15,7 @@
 		showGuestHint = false,
 		setRows = 3,
 		hideHeader = false,
+		groupBanner = 'none',
 		variant = 'default'
 	}: {
 		rows?: number;
@@ -18,8 +25,19 @@
 		showGuestHint?: boolean;
 		setRows?: number;
 		hideHeader?: boolean;
-		variant?: 'default' | 'history' | 'live' | 'builder' | 'auth' | 'auth-guest' | 'summary';
+		groupBanner?: 'none' | 'hint' | 'coachmark';
+		variant?:
+			| 'default'
+			| 'history'
+			| 'live'
+			| 'builder'
+			| 'builder-empty'
+			| 'auth'
+			| 'auth-guest'
+			| 'summary';
 	} = $props();
+
+	let lang = $derived($resolvedLocale);
 </script>
 
 <div class={`page-skeleton page-skeleton--${variant}`} aria-busy="true" aria-live="polite">
@@ -76,15 +94,85 @@
 			<AppSkeleton class="page-skeleton-toolbar page-skeleton-toolbar--button" />
 		</div>
 		<AppSkeleton class="page-skeleton-field" aria-hidden="true" />
-		<AppSkeleton class="page-skeleton-label" aria-hidden="true" />
-		<div class="page-skeleton-section-head" aria-hidden="true">
-			<AppSkeleton class="page-skeleton-title" />
-			<AppSkeleton class="page-skeleton-toolbar" />
+		{#if groupBanner !== 'none'}
+			<BuilderSupersetBannerSkeleton
+				variant={groupBanner === 'coachmark' ? 'coachmark' : 'hint'}
+			/>
+		{/if}
+		<div class="builder-exercise-list builder-exercise-list--skeleton" aria-hidden="true">
+			{#each Array.from({ length: Math.min(Math.max(rows, 1), 4) }, (_, i) => i) as i (i)}
+				<article class="workout-ex-row builder-exercise-skeleton">
+					<div class="workout-ex-head">
+						<div class="workout-ex-head__check">
+							<AppSkeleton class="builder-exercise-skeleton__check-bone" />
+						</div>
+						<AppSkeleton
+							class="workout-ex-head__media workout-ex-head__media is-placeholder builder-exercise-skeleton__thumb"
+						/>
+						<div class="workout-ex-head__copy">
+							<AppSkeleton class="builder-exercise-skeleton__title" />
+							<div class="workout-ex-fields">
+								<div class="workout-ex-chip builder-exercise-skeleton__chip">
+									<span class="builder-exercise-skeleton__chip-label"
+										>{translate(lang, 'builder.sets')}</span
+									>
+									<span class="builder-exercise-skeleton__chip-input workouts-skel-bone"></span>
+								</div>
+								<span class="workout-ex-fields__times" aria-hidden="true">×</span>
+								<div class="workout-ex-chip builder-exercise-skeleton__chip">
+									<span class="builder-exercise-skeleton__chip-label"
+										>{translate(lang, 'builder.reps')}</span
+									>
+									<span class="builder-exercise-skeleton__chip-input workouts-skel-bone"></span>
+								</div>
+								<div class="workout-ex-chip workout-ex-chip--rest builder-exercise-skeleton__chip">
+									<span class="builder-exercise-skeleton__chip-label"
+										>{translate(lang, 'builder.rest')}</span
+									>
+									<span class="builder-exercise-skeleton__chip-input workouts-skel-bone"></span>
+								</div>
+							</div>
+						</div>
+						<div class="workout-ex-head__actions">
+							<AppSkeleton class="builder-exercise-skeleton__menu" />
+						</div>
+					</div>
+				</article>
+			{/each}
 		</div>
-		{#each Array.from({ length: Math.max(2, rows) }, (_, i) => i) as i (i)}
-			<AppSkeleton class="page-skeleton-row page-skeleton-row--builder" aria-hidden="true" />
-		{/each}
-		<AppSkeleton class="page-skeleton-row page-skeleton-row--action" aria-hidden="true" />
+	{:else if variant === 'builder-empty'}
+		<div class="page-skeleton-builder-desktop-head" aria-hidden="true">
+			<div class="page-skeleton-builder-desktop-head__copy">
+				<AppSkeleton class="page-skeleton-toolbar page-skeleton-toolbar--summary-head" />
+				<AppSkeleton class="page-skeleton-title page-skeleton-title--lg" />
+			</div>
+			<div class="page-skeleton-builder-desktop-head__actions">
+				<AppSkeleton class="page-skeleton-toolbar page-skeleton-toolbar--button" />
+				<AppSkeleton class="page-skeleton-toolbar page-skeleton-toolbar--button" />
+			</div>
+		</div>
+		<AppPanel
+			dashed
+			class="empty-state flex flex-col gap-3 py-6 empty-state--centered items-center text-center workouts-skeleton-empty builder-skeleton-empty"
+			aria-hidden="true"
+		>
+			<div class="empty-state__icon" aria-hidden="true">
+				<LucideIcon icon={Plus} size={28} />
+			</div>
+			<div class="empty-state__copy">
+				<h2 class="section-title empty-state__title workouts-skel-bone">
+					{translate(lang, 'builder.emptyTitle')}
+				</h2>
+				<p class="empty-state__desc max-w-md leading-relaxed workouts-skel-bone">
+					{translate(lang, 'builder.emptyDesc')}
+				</p>
+			</div>
+			<div class="empty-state__actions mt-1 flex w-full flex-col gap-2 items-stretch">
+				<span class="btn-primary empty-state__action workouts-skel-bone workouts-skel-bone--cta">
+					{translate(lang, 'builder.addExerciseShort')}
+				</span>
+			</div>
+		</AppPanel>
 	{:else if variant === 'auth'}
 		<!-- Logged-in /auth: hero + 6 settings cards (2-col from tablet). -->
 		<div class="page-skeleton-auth" aria-hidden="true">

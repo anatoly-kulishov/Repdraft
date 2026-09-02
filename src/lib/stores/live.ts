@@ -215,9 +215,19 @@ function createLiveStore() {
 		void refreshHistory();
 	}
 
+	function resyncActiveFromStorage() {
+		if (!browser) return;
+		const active = readActiveSession();
+		store.update((s) => ({
+			...s,
+			session: active && !active.finishedAt ? active : null
+		}));
+	}
+
 	return {
 		subscribe: store.subscribe,
 		hydrate,
+		resyncActiveFromStorage,
 		refreshHistory,
 		async startFromPlan(plan: WorkoutPlan): Promise<WorkoutSession> {
 			const history = get(store).history;

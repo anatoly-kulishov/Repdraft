@@ -12,6 +12,7 @@
 		userInitials
 	} from '$lib/domain/authFlow';
 	import { translate, translateError } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { auth } from '$lib/stores/auth';
 	import { greetingName } from '$lib/stores/greetingName';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -351,9 +352,7 @@
 
 </script>
 
-<svelte:head>
-	<title>{translate(lang, 'auth.title')} · Repdraft</title>
-</svelte:head>
+<SeoHead title={translate(lang, 'auth.title')} noindex />
 
 <section
 	class="auth-page content-page"

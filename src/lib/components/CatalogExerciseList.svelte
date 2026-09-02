@@ -1,10 +1,13 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
+	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import CatalogExerciseListSkeleton from '$lib/components/CatalogExerciseListSkeleton.svelte';
+	import RecordsListSkeleton from '$lib/components/RecordsListSkeleton.svelte';
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SearchInput from '$lib/components/SearchInput.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
@@ -15,6 +18,7 @@
 	import { catalogZoneBodyParts, isCatalogZone } from '$lib/domain/catalogLinks';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { currentReturnPath, linkWithFrom } from '$lib/domain/navigation';
+	import { urlSearchParams } from '$lib/navigation/urlSearchParams';
 	import type { ExerciseFilters, ExerciseIndexItem } from '$lib/domain/types';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { translate } from '$lib/i18n/messages';
@@ -114,7 +118,7 @@
 
 	let lang = $derived($resolvedLocale);
 	/** Current list URL — exercise detail back returns here (preserves `from` chain). */
-	let detailFrom = $derived(currentReturnPath($page.url.pathname, $page.url.searchParams));
+	let detailFrom = $derived(currentReturnPath($page.url.pathname, urlSearchParams($page.url)));
 	let catalog = $derived(indexReady ? items : []);
 	let statsMap = $derived($exerciseStats);
 	let catalogFiltered = $derived.by(() => {
@@ -160,10 +164,12 @@
 	);
 	let likelySections = $derived(!savedOnly && !filters.query.trim());
 	let filtersActive = $derived(
-		Boolean(filters.query.trim()) ||
-			filters.bodyPart !== 'all' ||
-			filters.equipment !== 'all' ||
-			filters.target !== 'all'
+		savedOnly
+			? Boolean(filters.query.trim())
+			: Boolean(filters.query.trim()) ||
+					filters.bodyPart !== 'all' ||
+					filters.equipment !== 'all' ||
+					filters.target !== 'all'
 	);
 	let filterConflict = $derived(
 		visible.length === 0 ? isFilterConflict(catalog, filters, lang) : false
@@ -173,6 +179,7 @@
 		indexReady && visibleLimit < (useSections ? allSectionItems.length : visible.length)
 	);
 	let bookmarksLoaded = $state(false);
+	let showListSkeleton = $derived(!indexReady || (savedOnly && !bookmarksLoaded));
 	let cardVariant = $derived(
 		savedOnly
 			? ('list' as const)
@@ -207,9 +214,9 @@
 
 	/** Apply facets from the live URL when navigation changes — not when local filters edit. */
 	$effect(() => {
-		$page.url.searchParams;
+		urlSearchParams($page.url);
 		presetBodyPart;
-		const next = filtersFromSearchParams($page.url.searchParams);
+		const next = filtersFromSearchParams(urlSearchParams($page.url));
 		// Snapshot must be fully untracked: reading `filters.foo` outside untrack
 		// still subscribes and re-runs this effect on every keystroke, wiping query.
 		const changed = untrack(() =>
@@ -226,14 +233,26 @@
 	$effect(() => {
 		if (!browser || !filtersHydrated || syncingFiltersToUrl) return;
 		filters.query;
-		filters.bodyPart;
-		filters.equipment;
-		filters.target;
+		if (!savedOnly) {
+			filters.bodyPart;
+			filters.equipment;
+			filters.target;
+		}
 
 		const url = new URL($page.url.href);
 		const q = filters.query.trim();
 		if (q) url.searchParams.set('q', q);
 		else url.searchParams.delete('q');
+
+		if (savedOnly) {
+			const next = `${url.pathname}${url.search}${url.hash}`;
+			const cur = `${$page.url.pathname}${$page.url.search}${$page.url.hash}`;
+			if (next === cur) return;
+			const frame = requestAnimationFrame(() => {
+				replaceState(next, $page.state);
+			});
+			return () => cancelAnimationFrame(frame);
+		}
 
 		if (filters.equipment !== 'all') url.searchParams.set('equipment', filters.equipment);
 		else url.searchParams.delete('equipment');
@@ -366,12 +385,49 @@
 
 <div class="catalog-list-layout">
 	<div class="catalog-list-layout__filters">
-		<FilterBar
-			bind:filters
-			equipment={equipmentOptions}
-			targets={targetOptions}
-			lockBodyPart={filterLockBodyPart}
-		/>
+		{#if savedOnly}
+			<div class="catalog-filters-shell">
+				<AppPanel class="catalog-filters catalog-filters--saved">
+					{#if showListSkeleton}
+						<AppSkeleton class="records-skeleton__search skeleton-shimmer" aria-hidden="true" />
+					{:else}
+						<SearchInput
+							bind:value={filters.query}
+							debounceMs={150}
+							placeholder={translate(lang, 'catalog.search')}
+						/>
+					{/if}
+				</AppPanel>
+			</div>
+		{:else if showListSkeleton}
+			<div class="catalog-filters-shell">
+				<AppPanel
+					class="catalog-filters {filterLockBodyPart ? 'catalog-filters--zone' : ''}"
+				>
+					<AppSkeleton class="records-skeleton__search skeleton-shimmer" aria-hidden="true" />
+					{#if filterLockBodyPart && targetFacets.length > 1}
+						<div class="catalog-filter-skeleton__chips" aria-hidden="true">
+							<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" aria-hidden="true" />
+							<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" aria-hidden="true" />
+							<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" aria-hidden="true" />
+						</div>
+					{/if}
+					{#if equipmentFacets.length > 0}
+						<AppSkeleton
+							class="catalog-filter-skeleton__equipment skeleton-shimmer"
+							aria-hidden="true"
+						/>
+					{/if}
+				</AppPanel>
+			</div>
+		{:else}
+			<FilterBar
+				bind:filters
+				equipment={equipmentOptions}
+				targets={targetOptions}
+				lockBodyPart={filterLockBodyPart}
+			/>
+		{/if}
 	</div>
 
 	<div class="catalog-list-layout__main">
@@ -380,12 +436,16 @@
 		title={translate(lang, 'catalog.dataMissing')}
 		description={indexError ? translate(lang, indexError) : ''}
 	/>
-{:else if !indexReady || (savedOnly && !bookmarksLoaded)}
-	<CatalogExerciseListSkeleton
-		label={translate(lang, 'catalog.loading')}
-		variant={likelySections ? 'sections' : cardVariant}
-		rows={CATALOG_PAGE_SIZE}
-	/>
+{:else if showListSkeleton}
+	{#if savedOnly}
+		<RecordsListSkeleton variant="saved" includeSearch={false} label={translate(lang, 'catalog.loading')} />
+	{:else}
+		<CatalogExerciseListSkeleton
+			label={translate(lang, 'catalog.loading')}
+			variant={likelySections ? 'sections' : cardVariant}
+			rows={CATALOG_PAGE_SIZE}
+		/>
+	{/if}
 {:else}
 	<p class="catalog-list-count mb-3 text-sm text-[var(--color-muted)]" aria-live="polite">
 		{translate(lang, 'catalog.countShown', {
@@ -453,18 +513,30 @@
 			<EmptyState
 				class={emptyStateClass}
 				centered={savedOnly}
-				icon={savedOnly ? Bookmark : null}
-				title={translate(lang, savedOnly ? 'bookmarks.emptyTitle' : 'catalog.emptyTitle')}
-				description={translate(lang, savedOnly ? 'bookmarks.emptyDesc' : 'catalog.emptyDesc')}
-				actionHref={savedOnly ? '/exercises' : undefined}
+				icon={savedOnly && !filters.query.trim() ? Bookmark : null}
+				title={translate(
+					lang,
+					savedOnly && !filters.query.trim() ? 'bookmarks.emptyTitle' : 'catalog.emptyTitle'
+				)}
+				description={translate(
+					lang,
+					savedOnly && !filters.query.trim() ? 'bookmarks.emptyDesc' : 'catalog.emptyDesc'
+				)}
+				actionHref={savedOnly && !filters.query.trim() ? '/exercises' : undefined}
 				actionLabel={
-					savedOnly
+					savedOnly && !filters.query.trim()
 						? translate(lang, 'bookmarks.browse')
 						: filtersActive
 							? translate(lang, 'catalog.reset')
 							: undefined
 				}
-				actionOnclick={savedOnly ? undefined : filtersActive ? resetCatalogFilters : undefined}
+				actionOnclick={
+					savedOnly && !filters.query.trim()
+						? undefined
+						: filtersActive
+							? resetCatalogFilters
+							: undefined
+				}
 			/>
 		{/if}
 	{:else if useSections}

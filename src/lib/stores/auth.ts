@@ -11,7 +11,12 @@ import {
 import { wipeAllAppStorage } from '$lib/storage/wipeAppStorage';
 import { localRecordRepository } from '$lib/storage/localRecordRepository';
 import { localSessionRepository } from '$lib/storage/localSessionRepository';
-import { localWorkoutRepository } from '$lib/storage/localWorkoutRepository';
+import {
+	localWorkoutRepository,
+	peekHasLocalPlans,
+	syncHomePlansBootCookie
+} from '$lib/storage/localWorkoutRepository';
+import { syncHomeBootPeek } from '$lib/storage/homeBootPeek';
 import type { LocalCacheUserAction } from '$lib/domain/localCacheUser';
 import { translate } from '$lib/i18n/messages';
 import type { Session, User } from '@supabase/supabase-js';
@@ -110,6 +115,7 @@ function createAuthStore() {
 			console.error('local bootstrap failed', err);
 		} finally {
 			update((s) => ({ ...s, dataBootstrap: true }));
+			live.resyncActiveFromStorage();
 		}
 
 		void runCloudBootstrap(loggedIn, { cacheAction: opts.cacheAction });
@@ -147,9 +153,11 @@ function createAuthStore() {
 				if (loggedIn) {
 					document.cookie = 'repdraft_auth_boot=1; path=/; Max-Age=31536000; SameSite=Lax';
 					document.documentElement.dataset.authBoot = 'account';
+					syncHomeBootPeek('start');
 				} else {
 					document.cookie = 'repdraft_auth_boot=; path=/; Max-Age=0; SameSite=Lax';
 					document.documentElement.dataset.authBoot = 'guest';
+					syncHomePlansBootCookie(peekHasLocalPlans());
 				}
 			} catch {
 				/* ignore cookie / dataset failures */

@@ -23,7 +23,8 @@ export default defineConfig({
 		baseURL,
 		trace: 'on-first-retry',
 		locale: 'ru-RU',
-		colorScheme: 'dark'
+		colorScheme: 'dark',
+		serviceWorkers: 'block'
 	},
 	projects: [
 		{

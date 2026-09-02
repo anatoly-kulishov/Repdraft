@@ -29,6 +29,7 @@ const checks = [
 	'pwaInstall',
 	'exerciseScore',
 	'onboarding',
+	'home',
 	'docMarkdown'
 ];
 
@@ -42,4 +43,24 @@ for (const name of checks) {
 	if (result.status !== 0) {
 		process.exit(result.status ?? 1);
 	}
+}
+
+const localeCheck = join(root, 'src/lib/i18n/locale.selfcheck.ts');
+const localeResult = spawnSync(
+	process.execPath,
+	['--import', register, '--experimental-strip-types', localeCheck],
+	{ stdio: 'inherit', cwd: root }
+);
+if (localeResult.status !== 0) {
+	process.exit(localeResult.status ?? 1);
+}
+
+const sitemapCheck = join(root, 'src/lib/seo/sitemap.selfcheck.ts');
+const sitemapResult = spawnSync(
+	process.execPath,
+	['--import', register, '--experimental-strip-types', sitemapCheck],
+	{ stdio: 'inherit', cwd: root }
+);
+if (sitemapResult.status !== 0) {
+	process.exit(sitemapResult.status ?? 1);
 }

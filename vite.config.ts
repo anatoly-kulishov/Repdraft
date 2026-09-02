@@ -28,7 +28,8 @@ export default defineConfig({
 		),
 		'import.meta.env.PUBLIC_PRIVACY_OPERATOR_ADDRESS': JSON.stringify(
 			process.env.PUBLIC_PRIVACY_OPERATOR_ADDRESS ?? ''
-		)
+		),
+		'import.meta.env.PUBLIC_SITE_URL': JSON.stringify(process.env.PUBLIC_SITE_URL ?? '')
 	},
 	server: {
 		host: true, // LAN: phone can open http://<your-ip>:5173

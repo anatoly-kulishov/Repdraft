@@ -1,10 +1,10 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
+	import HistoryDetailPageSkeleton from '$lib/components/history/HistoryDetailPageSkeleton.svelte';
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
-	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
@@ -25,6 +25,7 @@
 	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
 	import { formatDurationMs, formatLongDate } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { peekLocalSession } from '$lib/storage/localSessionRepository';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { draft } from '$lib/stores/draft';
@@ -38,9 +39,11 @@
 	import { ChevronRight, Plus, Trash2 } from '@lucide/svelte';
 	import HistoryDetailToolbar from './HistoryDetailToolbar.svelte';
 	import { goto } from '$app/navigation';
+	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import {
+		clampStoredWeightKg,
 		coerceReps,
 		coerceWeightKg,
 		filterRepsInput,
@@ -61,6 +64,7 @@
 	let editing = $state(false);
 	let savingEdit = $state(false);
 	let sendingToBuilder = $state(false);
+	let deleteConfirmOpen = $state(false);
 	let editSession = $state<WorkoutSession | null>(null);
 	let editBaseline = $state<WorkoutSession | null>(null);
 	let editDraft = $state<Record<string, { w: string; r: string }>>({});
@@ -71,29 +75,17 @@
 		return finishedSessionLogEqual(applyDraft(editSession), editBaseline);
 	});
 	let historyVolumeKg = $derived(viewSession ? sessionVolumeKg(viewSession) : 0);
+	let peekedSession = $derived.by(() => {
+		if (!browser) return null;
+		const id = $page.params.id;
+		return id ? peekLocalSession(id) : null;
+	});
 	let technique = $state<{
 		id: string;
 		title: string;
 		hint: string;
 		image: string;
 	} | null>(null);
-	let skeletonRows = $derived.by(() => {
-		const id = $page.params.id;
-		if (!id) return 1;
-		const peeked = peekLocalSession(id);
-		return Math.min(Math.max(peeked?.exercises.length ?? 1, 1), 4);
-	});
-	let skeletonSetRows = $derived.by(() => {
-		const id = $page.params.id;
-		if (!id) return 1;
-		const peeked = peekLocalSession(id);
-		if (!peeked) return 1;
-		const maxSets = Math.max(
-			1,
-			...peeked.exercises.map((ex) => ex.sets.filter((set) => set.completed).length)
-		);
-		return Math.min(maxSets, 3);
-	});
 
 	onMount(() => {
 		void (async () => {
@@ -103,7 +95,9 @@
 				loading = false;
 				return;
 			}
-			const found = await live.getFinishedSession(id);
+			const peeked = peekLocalSession(id);
+			if (peeked?.finishedAt) session = peeked;
+			const found = session ?? (await live.getFinishedSession(id));
 			if (!found) missing = true;
 			else session = found;
 			const index = await loadExerciseIndex();
@@ -112,14 +106,29 @@
 		})();
 	});
 
+	function offerDeleteSession() {
+		if (deleting || loading || !session) return;
+		deleteConfirmOpen = true;
+	}
+
+	function dismissDeleteOffer() {
+		if (deleting) return;
+		deleteConfirmOpen = false;
+	}
+
+	async function commitDeleteSession() {
+		deleteConfirmOpen = false;
+		await onDeleteSession();
+	}
+
 	async function onDeleteSession() {
 		const id = $page.params.id;
 		if (!id) return;
 		const current = session ?? (await live.getFinishedSession(id));
 		if (!current) return;
-		const snapshot = structuredClone(current);
 		deleting = true;
 		try {
+			const snapshot = $state.snapshot(current) as WorkoutSession;
 			await live.removeFromHistory(id);
 			toasts.showUndo(
 				translate(lang, 'workouts.sessionDeleted'),
@@ -129,9 +138,11 @@
 				},
 				'info'
 			);
-			void goto(WORKOUTS_HISTORY_HREF, { replaceState: true });
+			session = null;
+			await goto(WORKOUTS_HISTORY_HREF, { replaceState: true });
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'workouts.sessionDeleteFail'), 'error');
+		} finally {
 			deleting = false;
 		}
 	}
@@ -145,8 +156,11 @@
 		for (const [exIndex, ex] of s.exercises.entries()) {
 			for (const [setIndex, set] of ex.sets.entries()) {
 				next[setKey(exIndex, setIndex)] = {
-					w: set.weightKg != null ? `${set.weightKg}` : '',
-					r: set.reps != null ? `${set.reps}` : ''
+					w: set.weightKg != null ? `${clampStoredWeightKg(set.weightKg)}` : '',
+					r:
+						set.reps != null
+							? `${coerceReps(String(set.reps), LIVE_REPS) ?? LIVE_REPS.min}`
+							: ''
 				};
 			}
 		}
@@ -171,7 +185,7 @@
 	}
 
 	function cloneForEdit(s: WorkoutSession): WorkoutSession {
-		const cloned = structuredClone(s);
+		const cloned = $state.snapshot(s) as WorkoutSession;
 		cloned.exercises = cloned.exercises.map((ex) => ({
 			...ex,
 			sets: ex.sets.filter((set) => set.completed)
@@ -190,7 +204,7 @@
 					return;
 				}
 				const next = cloneForEdit(current);
-				editBaseline = structuredClone(next);
+				editBaseline = $state.snapshot(next) as WorkoutSession;
 				editSession = next;
 				editDraft = draftFromSession(next);
 				editing = true;
@@ -231,7 +245,7 @@
 	function removeHistoryExercise(exIndex: number, label: string) {
 		if (!editSession) return;
 		if (editSession.exercises.length <= 1) return;
-		const snapshot = structuredClone(editSession);
+		const snapshot = $state.snapshot(editSession) as WorkoutSession;
 		const next = removeLoggedExercise(applyDraft(editSession), exIndex);
 		editSession = next;
 		editDraft = draftFromSession(next);
@@ -305,21 +319,37 @@
 		onSave={onSaveEdit}
 		onCancel={cancelEdit}
 		onEdit={startEdit}
-		onDelete={onDeleteSession}
+		onDelete={offerDeleteSession}
 		onToBuilder={onToBuilder}
 	/>
 {/snippet}
 
-<svelte:head>
-	<title
-		>{session ? session.planName : translate(lang, 'workouts.historyDetail')} · Repdraft</title
-	>
-</svelte:head>
+<SeoHead
+	title={session ? session.planName : translate(lang, 'workouts.historyDetail')}
+	noindex
+/>
 
 {#if loading}
-	<div class="history-detail-skeleton-head lg:hidden" aria-hidden="true">
-		<div class="history-detail-skeleton-head__bar"></div>
-	</div>
+	<header
+		class="screen-header history-detail__screen-header history-detail-skeleton-head lg:hidden"
+		aria-hidden="true"
+	>
+		<div class="screen-header__bar">
+			<div class="history-detail-skeleton-head__back"></div>
+			<div class="screen-header-actions">
+				<div class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--action"></div>
+				<div class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--action"></div>
+				<div class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--action"></div>
+			</div>
+		</div>
+		<div class="history-detail-skeleton-head__title screen-header-title">
+			{#if peekedSession?.planName}
+				{peekedSession.planName}
+			{:else}
+				<span class="history-detail-skeleton-head__title-bone" aria-hidden="true"></span>
+			{/if}
+		</div>
+	</header>
 	<div class="history-detail-skeleton-desktop-head hidden lg:block" aria-hidden="true">
 		<div class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--back"></div>
 		<div class="history-detail-skeleton-head__title-row">
@@ -334,8 +364,7 @@
 			</div>
 		</div>
 	</div>
-	<AppSkeleton class="page-skeleton-meta history-detail-skeleton-meta" aria-hidden="true" />
-	<PageSkeleton variant="history" rows={skeletonRows} setRows={skeletonSetRows} hideHeader />
+	<HistoryDetailPageSkeleton sessionId={$page.params.id} />
 {:else if missing || !session}
 	<EmptyState
 		title={translate(lang, 'live.noPlan')}
@@ -509,9 +538,10 @@
 											value={editDraft[key]?.w ?? ''}
 											aria-label={translate(lang, 'live.weight')}
 											oninput={(e) => {
-												const nextRaw = (e.currentTarget as HTMLInputElement).value;
+												const el = e.currentTarget;
 												const prev = editDraft[key]?.w ?? '';
-												const next = filterWeightInput(nextRaw, prev);
+												const next = filterWeightInput(el.value, prev);
+												if (el.value !== next) el.value = next;
 												editDraft[key] = { ...(editDraft[key] ?? { w: '', r: '' }), w: next };
 											}}
 										/>
@@ -525,9 +555,10 @@
 											value={editDraft[key]?.r ?? ''}
 											aria-label={translate(lang, 'live.reps')}
 											oninput={(e) => {
-												const nextRaw = (e.currentTarget as HTMLInputElement).value;
+												const el = e.currentTarget;
 												const prev = editDraft[key]?.r ?? '';
-												const next = filterRepsInput(nextRaw, LIVE_REPS, prev);
+												const next = filterRepsInput(el.value, LIVE_REPS, prev);
+												if (el.value !== next) el.value = next;
 												editDraft[key] = { ...(editDraft[key] ?? { w: '', r: '' }), r: next };
 											}}
 										/>
@@ -561,13 +592,14 @@
 					{#if editing}
 						<AppButton
 							variant="ghost"
+							block
 							class="history-exercise__add-set"
 							disabled={savingEdit || ex.sets.length >= SETS.max}
 							aria-label={translate(lang, 'live.addSet')}
-							title={translate(lang, 'live.addSet')}
 							onclick={() => addHistorySet(exIndex)}
 						>
 							<LucideIcon icon={Plus} size={ICON_BUTTON} />
+							{translate(lang, 'live.addSet')}
 						</AppButton>
 					{/if}
 				</li>
@@ -589,3 +621,29 @@
 		}}
 	/>
 {/if}
+
+<BottomSheet
+	open={deleteConfirmOpen}
+	titleId="history-delete-session-title"
+	dismissible={!deleting}
+	onDismiss={dismissDeleteOffer}
+>
+	<p id="history-delete-session-title" class="bottom-sheet__title">
+		{translate(lang, 'workouts.confirmDeleteSession', {
+			name: session?.planName ?? translate(lang, 'workouts.historyDetail')
+		})}
+	</p>
+	{#snippet actions()}
+		<AppButton variant="secondary" disabled={deleting} onclick={dismissDeleteOffer}>
+			{translate(lang, 'common.cancel')}
+		</AppButton>
+		<AppButton
+			variant="danger"
+			disabled={deleting}
+			aria-busy={deleting}
+			onclick={() => void commitDeleteSession()}
+		>
+			{translate(lang, 'common.delete')}
+		</AppButton>
+	{/snippet}
+</BottomSheet>

@@ -16,11 +16,14 @@
 	import { blurActiveElement } from '$lib/dom/blurActiveElement';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import { translate } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
+	import { resolveSeoLang } from '$lib/seo/seoLang';
 	import { catalogUi } from '$lib/stores/catalogUi';
 	import { onboarding } from '$lib/stores/onboarding';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { records } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
@@ -28,18 +31,22 @@
 	let { data } = $props();
 
 	let lang = $derived($resolvedLocale);
+	let seoLang = $derived(resolveSeoLang($page.data.seoLocale, lang));
 	let showExercisesSearchCoachmark = $derived(shouldShowCoachmark($onboarding, 'exercises.search'));
 	let showExercisesPickerCoachmark = $derived(shouldShowCoachmark($onboarding, 'exercises.picker'));
 	let searchQuery = $state('');
 	let error = $derived(data.indexError);
-	let fromParam = $derived($page.url.searchParams.get('from'));
+	let fromParam = $derived(readSearchParam($page.url, 'from'));
 	let fromBuilder = $derived(isBuilderReturnPath(fromParam));
 	let hubTitle = $derived(translate(lang, 'catalog.hubTitle'));
 	let headerTitle = $derived(
 		fromBuilder ? translate(lang, 'builder.addExercise') : hubTitle
 	);
+	let seoHeaderTitle = $derived(
+		fromBuilder ? translate(seoLang, 'builder.addExercise') : translate(seoLang, 'catalog.hubTitle')
+	);
 	/** Dev/QA: ?skeleton=1 — preview category grid placeholders. */
-	let forceSkeleton = $derived($page.url.searchParams.get('skeleton') === '1');
+	let forceSkeleton = $derived(readSearchParam($page.url, 'skeleton') === '1');
 	let showCategorySkeleton = $derived(forceSkeleton);
 
 	onMount(() => {
@@ -72,9 +79,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{headerTitle} · Repdraft</title>
-</svelte:head>
+<SeoHead title={seoHeaderTitle} descriptionKey="seo.exercisesDescription" path="/exercises" />
 
 <section
 	class="catalog-hub content-page content-page--catalog"

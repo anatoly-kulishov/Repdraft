@@ -7,6 +7,7 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import { filterArticles } from '$lib/domain/articles';
 	import { translate } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { ArrowLeft } from '@lucide/svelte';
 
@@ -25,9 +26,7 @@
 	let title = $derived(translate(lang, 'articles.title'));
 </script>
 
-<svelte:head>
-	<title>{title} · Repdraft</title>
-</svelte:head>
+<SeoHead titleKey="articles.title" descriptionKey="articles.lead" path="/articles" />
 
 <div class="content-page content-page--catalog articles-hub-page">
 	<section class="articles-hub" aria-labelledby="articles-hub-heading">
