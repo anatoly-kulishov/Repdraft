@@ -7,7 +7,6 @@
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { WORKOUTS_HISTORY_HREF } from '$lib/domain/catalogLinks';
 	import { exerciseName } from '$lib/domain/exerciseName';
@@ -331,7 +330,7 @@
 
 {#if loading}
 	<header
-		class="screen-header history-detail__screen-header history-detail-skeleton-head lg:hidden"
+		class="screen-header history-detail__screen-header history-detail-skeleton-head"
 		aria-hidden="true"
 	>
 		<div class="screen-header__bar">
@@ -350,20 +349,6 @@
 			{/if}
 		</div>
 	</header>
-	<div class="history-detail-skeleton-desktop-head hidden lg:block" aria-hidden="true">
-		<div class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--back"></div>
-		<div class="history-detail-skeleton-head__title-row">
-			<div class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--title"></div>
-			<div class="history-detail-skeleton-head__actions">
-				<div
-					class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--action"
-				></div>
-				<div
-					class="history-detail-skeleton-head__bar history-detail-skeleton-head__bar--action"
-				></div>
-			</div>
-		</div>
-	</div>
 	<HistoryDetailPageSkeleton sessionId={$page.params.id} />
 {:else if missing || !session}
 	<EmptyState
@@ -374,24 +359,15 @@
 	/>
 {:else}
 	<!-- Outside .history-detail: overflow-x:clip there would clip sticky full-bleed margins. -->
-	<div class="lg:hidden">
-		<ScreenHeader
-			class="history-detail__screen-header"
-			title={session.planName}
-			backHref={WORKOUTS_HISTORY_HREF}
-			actions={historyDetailActions}
-		/>
-	</div>
+	<ScreenHeader
+		class="history-detail__screen-header"
+		title={session.planName}
+		backHref={WORKOUTS_HISTORY_HREF}
+		backLabelVisible
+		backLabel={translate(lang, 'builder.backWorkouts')}
+		actions={historyDetailActions}
+	/>
 	<section class="content-page content-page--narrow soft-enter history-detail">
-		<div class="subroute-desktop-head">
-			<SubrouteBack href={WORKOUTS_HISTORY_HREF} label={translate(lang, 'builder.backWorkouts')} />
-			<div class="history-detail__title-row">
-				<h1 class="page-title">{session.planName}</h1>
-				<div class="history-detail__actions">
-					{@render historyDetailActions()}
-				</div>
-			</div>
-		</div>
 		<p class="page-lead mt-1 lg:mt-0">
 			{formatLongDate(session.finishedAt ?? session.startedAt, lang)} · {formatDurationMs(
 				sessionDurationMs(session)

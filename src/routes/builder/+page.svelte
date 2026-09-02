@@ -6,7 +6,6 @@
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import BuilderSupersetBannerSkeleton from '$lib/components/builder/BuilderSupersetBannerSkeleton.svelte';
-	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
 	import WorkoutExerciseRow from '$lib/components/WorkoutExerciseRow.svelte';
@@ -226,13 +225,31 @@
 	{/if}
 {/snippet}
 
+{#snippet builderSaveChrome()}
+	<AppButton
+		variant="secondary"
+		class="builder-chrome__save builder-toolbar-save shrink-0"
+		disabled={!pageReady || saving || $draft.exercises.length === 0 || draftUnchanged}
+		aria-busy={saving}
+		aria-label={translate(lang, 'builder.save')}
+		title={translate(lang, 'builder.save')}
+		onclick={() => void save()}
+	>
+		{#if saving}
+			<Spinner size="sm" block={false} />
+		{:else}
+			<LucideIcon icon={Save} size={ICON_BUTTON} />
+		{/if}
+	</AppButton>
+{/snippet}
+
 <SeoHead title={headerTitle} noindex />
 
 <section
 	class="builder-page content-page md:pb-0"
 	class:pb-mobile-actions={$draftHydrated && pageReady}
 >
-	<div class="builder-chrome lg:hidden">
+	<div class="builder-chrome">
 		<div class="builder-chrome__head">
 			<button
 				type="button"
@@ -254,6 +271,7 @@
 				/>
 				<div class="builder-chrome__actions">
 					{@render builderClearAction()}
+					{@render builderSaveChrome()}
 				</div>
 			{:else}
 				<div class="builder-chrome__name-skel" aria-hidden="true"></div>
@@ -273,31 +291,6 @@
 				</div>
 			</div>
 		{/if}
-	</div>
-
-	<div class="builder-toolbar mb-5 hidden flex-wrap items-center justify-between gap-3 lg:flex">
-		<div class="min-w-0">
-			<SubrouteBack href="/workouts" label={translate(lang, 'builder.backWorkouts')} />
-			<h1 class="page-title mt-1">{headerTitle}</h1>
-		</div>
-		<div class="flex shrink-0 items-center gap-2">
-			{@render builderClearAction()}
-			<AppButton
-				variant="secondary"
-				class="builder-toolbar-save"
-				disabled={!pageReady || saving || $draft.exercises.length === 0 || draftUnchanged}
-				aria-busy={saving}
-				aria-label={translate(lang, 'builder.save')}
-				title={translate(lang, 'builder.save')}
-				onclick={() => void save()}
-			>
-				{#if saving}
-					<Spinner size="sm" block={false} />
-				{:else}
-					<LucideIcon icon={Save} size={ICON_BUTTON} />
-				{/if}
-			</AppButton>
-		</div>
 	</div>
 
 	{#if !pageReady}

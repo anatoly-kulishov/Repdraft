@@ -5,7 +5,6 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
-	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import {
 		CATALOG_HUB_ZONE_COUNT,
 		isBuilderReturnPath,
@@ -88,11 +87,13 @@
 	aria-labelledby={fromBuilder ? undefined : 'catalog-hub-heading'}
 >
 	{#if fromBuilder}
-		<ScreenHeader class="catalog-pick-header lg:hidden" title={headerTitle} backHref="/builder" />
-		<header class="page-header page-header--compact catalog-hub-pick-head hidden lg:block">
-			<SubrouteBack href="/builder" label={translate(lang, 'builder.title')} />
-			<h1 class="page-title">{headerTitle}</h1>
-		</header>
+		<ScreenHeader
+			class="catalog-pick-header"
+			title={headerTitle}
+			backHref="/builder"
+			backLabelVisible
+			backLabel={translate(lang, 'builder.title')}
+		/>
 	{:else}
 		<header class="page-header catalog-hub-intro">
 			<h1 id="catalog-hub-heading" class="page-title">{hubTitle}</h1>

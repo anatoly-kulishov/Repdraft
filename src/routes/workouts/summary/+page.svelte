@@ -4,7 +4,6 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import SummaryPageSkeleton from '$lib/components/summary/SummaryPageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_PRIMARY } from '$lib/components/icons/sizes';
 	import { WORKOUTS_HISTORY_HREF } from '$lib/domain/catalogLinks';
@@ -147,12 +146,13 @@
 	/>
 {:else}
 	<section class="summary-page content-page content-page--narrow soft-enter pb-mobile-actions text-center lg:pb-0">
-		<div class="lg:hidden text-left">
-			<ScreenHeader title={translate(lang, 'summary.title')} backHref={WORKOUTS_HISTORY_HREF} />
-		</div>
-		<div class="subroute-desktop-head text-left">
-			<SubrouteBack href={WORKOUTS_HISTORY_HREF} label={translate(lang, 'builder.backWorkouts')} />
-		</div>
+		<ScreenHeader
+			class="text-left"
+			title={translate(lang, 'summary.title')}
+			backHref={WORKOUTS_HISTORY_HREF}
+			backLabelVisible
+			backLabel={translate(lang, 'builder.backWorkouts')}
+		/>
 
 		<div class="summary-hero">
 			<div class="summary-check" aria-hidden="true">
@@ -163,19 +163,14 @@
 		</div>
 
 		{#if showFirstFinish}
-			<AppPanel class="onboarding-first-finish" role="status">
-				<div class="onboarding-first-finish__head">
-					<span class="onboarding-first-finish__icon" aria-hidden="true">
-						<LucideIcon icon={CircleCheck} size={ICON_PRIMARY} />
-					</span>
-					<div class="onboarding-first-finish__copy min-w-0">
-						<p class="onboarding-first-finish__title">
-							{translate(lang, 'onboarding.firstFinishTitle')}
-						</p>
-						<p class="onboarding-first-finish__lead">
-							{translate(lang, 'onboarding.firstFinishLead')}
-						</p>
-					</div>
+			<AppPanel class="onboarding-first-finish text-left" role="status">
+				<div class="onboarding-first-finish__copy min-w-0">
+					<p class="onboarding-first-finish__title">
+						{translate(lang, 'onboarding.firstFinishTitle')}
+					</p>
+					<p class="onboarding-first-finish__lead">
+						{translate(lang, 'onboarding.firstFinishLead')}
+					</p>
 				</div>
 			</AppPanel>
 		{/if}
@@ -197,8 +192,12 @@
 			</div>
 			{#if volumeKg > 0}
 				<div class="summary-stat">
-					<dt class="summary-stat__label">{translate(lang, 'summary.volume')}</dt>
-					<dd class="summary-stat__value tabular-nums">{Math.round(volumeKg)}</dd>
+					<dt class="summary-stat__label" title={translate(lang, 'summary.volumeHint')}>
+						{translate(lang, 'summary.volume')}
+					</dt>
+					<dd class="summary-stat__value tabular-nums">
+						{Math.round(volumeKg)} {translate(lang, 'pr.kg')}
+					</dd>
 				</div>
 			{/if}
 		</dl>

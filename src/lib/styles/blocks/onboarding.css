@@ -264,24 +264,6 @@
 		inset 3px 0 0 color-mix(in srgb, var(--color-accent) 72%, transparent);
 }
 
-.onboarding-first-finish__head {
-	display: flex;
-	align-items: flex-start;
-	gap: 0.75rem;
-}
-
-.onboarding-first-finish__icon {
-	display: inline-flex;
-	flex: 0 0 auto;
-	align-items: center;
-	justify-content: center;
-	width: 2.5rem;
-	height: 2.5rem;
-	border-radius: 999px;
-	background: var(--color-accent-muted);
-	color: var(--color-accent-text);
-}
-
 .onboarding-first-finish__title {
 	margin: 0;
 	font-size: 1rem;

@@ -2,8 +2,6 @@
 	import CatalogExerciseList from '$lib/components/CatalogExerciseList.svelte';
 	import CatalogTargetGrid from '$lib/components/CatalogTargetGrid.svelte';
 	import CatalogCategoryGridSkeleton from '$lib/components/CatalogCategoryGridSkeleton.svelte';
-	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import { catalogZonePath, CATALOG_HUB_ZONE_COUNT, isBuilderReturnPath, labelCatalogZone, withFromParam } from '$lib/domain/catalogLinks';
 	import { resolveBackFrom } from '$lib/domain/navigation';
@@ -14,7 +12,6 @@
 	import { backLabelForHref } from '$lib/i18n/backLabel';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
-	import { ArrowLeft } from '@lucide/svelte';
 	import { page } from '$app/stores';
 
 	let { data } = $props();
@@ -109,26 +106,16 @@
 	class={`content-page content-page--catalog ${showTargetBrowse ? 'catalog-page--browse' : 'catalog-page--list'}`}
 >
 	<ScreenHeader
-		class="lg:hidden"
 		fixed={showExerciseList}
 		title={headerTitle}
 		{backHref}
+		backLabelVisible
 		{backLabel}
 	/>
 
 	<section
 		class={`catalog-zone-shell ${showTargetBrowse ? 'catalog-zone-shell--browse' : 'catalog-zone-shell--list'}`}
 	>
-		<div class="catalog-subroute-header">
-			<a class="catalog-zone-crumb-link" href={backHref}>
-				<LucideIcon icon={ArrowLeft} size={ICON_SMALL} />
-				{backLabel}
-			</a>
-			<div class="page-header page-header--compact catalog-zone-head">
-				<h1 class="page-title catalog-zone-title">{headerTitle}</h1>
-			</div>
-		</div>
-
 		{#if showTargetSkeleton}
 			<CatalogCategoryGridSkeleton label={translate(lang, 'common.loading')} rows={CATALOG_HUB_ZONE_COUNT} />
 		{:else if showTargetBrowse}

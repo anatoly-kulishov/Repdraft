@@ -4,7 +4,6 @@
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { renderDocMarkdownDocument } from '$lib/domain/docMarkdown';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -31,13 +30,7 @@
 <SeoHead title={title} noindex />
 
 <div class="content-page content-page--narrow scenarios-page">
-	<div class="lg:hidden">
-		<ScreenHeader {title} backHref="/auth" />
-	</div>
-	<div class="subroute-desktop-head">
-		<SubrouteBack href="/auth" label={translate(lang, 'scenarios.back')} />
-		<h1 class="page-title">{title}</h1>
-	</div>
+	<ScreenHeader {title} backHref="/auth" />
 
 	<p class="scenarios-page__lead">{translate(lang, 'scenarios.lead')}</p>
 

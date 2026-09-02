@@ -384,21 +384,20 @@
 </script>
 
 <div class="catalog-list-layout">
-	<div class="catalog-list-layout__filters">
+	<div
+		class="catalog-list-layout__filters"
+		class:catalog-list-layout__filters--search-only={savedOnly}
+	>
 		{#if savedOnly}
-			<div class="catalog-filters-shell">
-				<AppPanel class="catalog-filters catalog-filters--saved">
-					{#if showListSkeleton}
-						<AppSkeleton class="records-skeleton__search skeleton-shimmer" aria-hidden="true" />
-					{:else}
-						<SearchInput
-							bind:value={filters.query}
-							debounceMs={150}
-							placeholder={translate(lang, 'catalog.search')}
-						/>
-					{/if}
-				</AppPanel>
-			</div>
+			{#if showListSkeleton}
+				<AppSkeleton class="records-skeleton__search skeleton-shimmer" aria-hidden="true" />
+			{:else}
+				<SearchInput
+					bind:value={filters.query}
+					debounceMs={150}
+					placeholder={translate(lang, 'catalog.search')}
+				/>
+			{/if}
 		{:else if showListSkeleton}
 			<div class="catalog-filters-shell">
 				<AppPanel

@@ -27,7 +27,6 @@
 	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
-	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import DataExportSection from '$lib/components/DataExportSection.svelte';
 	import ProfileDevWipePanel from '$lib/components/ProfileDevWipePanel.svelte';
 	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
@@ -361,28 +360,21 @@
 	class:auth-page--booting-account={showAccountSkeleton}
 	class:auth-page--booting-guest={showGuestSkeleton}
 >
-	<div class="lg:hidden">
-		{#if $auth.ready && !showBootSkeleton}
-			{#if accountMode}
-				<ScreenHeader
-					fixed
-					title={translate(lang, 'auth.title')}
-					backHref={nextPath}
-					backLabel={backLabel}
-				/>
-			{:else if !recoveryMode}
-				<ScreenHeader title={translate(lang, 'auth.title')} backHref={nextPath} />
-			{/if}
+	{#if $auth.ready && !showBootSkeleton}
+		{#if accountMode}
+			<ScreenHeader
+				fixed
+				title={translate(lang, 'auth.title')}
+				backHref={nextPath}
+				backLabel={backLabel}
+				backLabelVisible
+			/>
+		{:else if !recoveryMode}
+			<ScreenHeader title={translate(lang, 'auth.title')} backHref={nextPath} />
 		{/if}
-	</div>
+	{/if}
 	{#if $auth.ready && !accountMode && !showBootSkeleton}
 		<header class="page-header page-header--compact auth-page__header">
-			<div class="subroute-desktop-head">
-				<SubrouteBack href={nextPath} label={backLabel} />
-			</div>
-			<div class="auth-page__heading">
-				<h1 class="page-title auth-page__title hidden lg:block">{translate(lang, 'auth.title')}</h1>
-			</div>
 			{#if guestExtrasMode}
 				<BrandTagline class="brand-tagline--auth" />
 			{/if}
@@ -441,13 +433,6 @@
 		</div>
 	{:else if $auth.user}
 		<div class="auth-account">
-			<div class="auth-account__desktop-head hidden lg:block">
-				<div class="subroute-desktop-head">
-					<SubrouteBack href={nextPath} label={backLabel} />
-				</div>
-				<h1 class="page-title auth-page__title">{translate(lang, 'auth.title')}</h1>
-			</div>
-
 			<header class="profile-hero">
 				<div class="profile-hero__stage">
 					<div class="profile-hero__glow" aria-hidden="true"></div>
