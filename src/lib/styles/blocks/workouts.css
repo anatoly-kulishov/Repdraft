@@ -490,6 +490,34 @@ html.is-plan-reorder-active .reorder-handle {
 	gap: 0.75rem;
 }
 
+.workouts-skeleton-empty--history .empty-state__desc.workouts-skel-bone {
+	width: 100%;
+	max-width: 22rem;
+}
+
+.workouts-skeleton-empty__import-link.workouts-skel-bone {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	min-height: var(--control-height);
+	border-radius: var(--radius-button);
+}
+
+.workouts-skeleton-empty__link {
+	display: block;
+	width: 100%;
+	min-height: var(--control-height);
+	border-radius: var(--radius-button);
+}
+
+.workouts-skeleton-empty__cta {
+	display: block;
+	width: 100%;
+	min-height: var(--control-height);
+	border-radius: var(--radius-button);
+}
+
 .workouts-skeleton-history-mock.workouts-history-mock {
 	opacity: 1;
 }
@@ -879,7 +907,8 @@ html.is-plan-reorder-active .reorder-handle {
 
 @media (max-width: 1023px) {
 	/* ScreenHeader already carries the title on phone + tablet. */
-	.summary-hero__title {
+	.summary-hero__title,
+	.summary-page--skeleton .summary-skeleton-hero-title {
 		position: absolute;
 		width: 1px;
 		height: 1px;
@@ -894,6 +923,68 @@ html.is-plan-reorder-active .reorder-handle {
 
 .empty-state--history.empty-state--centered {
 	padding: 2rem 1.25rem 2.25rem;
+}
+
+.empty-state--history .empty-state__icon {
+	animation: none;
+}
+
+/* History tab mobile boot — mirror ScreenHeader grid (back + title, no shell chrome). */
+.workouts-history-skeleton-head {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: center;
+	column-gap: 0.35rem;
+	min-height: var(--screen-header-min-h);
+	margin: 0 0 var(--screen-header-content-gap);
+}
+
+.workouts-history-skeleton-head__back,
+.workouts-history-skeleton-head__title {
+	border-radius: var(--radius-control);
+	border: 1px solid var(--color-border);
+	background-color: var(--skeleton-base);
+	background-image: linear-gradient(
+		90deg,
+		var(--skeleton-base) 0%,
+		var(--skeleton-shine) 50%,
+		var(--skeleton-base) 100%
+	);
+	background-size: 200% 100%;
+	animation: skeletonShimmer 1.25s ease-in-out infinite;
+}
+
+.workouts-history-skeleton-head__back {
+	width: 3rem;
+	height: 3rem;
+	flex-shrink: 0;
+}
+
+.workouts-history-skeleton-head__title {
+	height: 1.375rem;
+	width: min(58%, 11rem);
+	justify-self: start;
+}
+
+@media (max-width: 1023px) {
+	.shell-main--subroute .workouts-page .workouts-history-skeleton-head {
+		position: sticky;
+		top: 0;
+		z-index: 25;
+		margin: 0 calc(-1 * max(var(--page-pad-x), var(--safe-right))) var(--screen-header-content-gap)
+			calc(-1 * max(var(--page-pad-x), var(--safe-left)));
+		padding: calc(var(--screen-header-pad-block) + var(--safe-top))
+			max(var(--page-pad-x), var(--safe-right)) var(--screen-header-pad-block)
+			max(var(--page-pad-x), var(--safe-left));
+		background: var(--color-surface);
+		border-bottom: 1px solid var(--color-border);
+	}
+}
+
+@media (min-width: 1024px) {
+	.workouts-history-skeleton-head {
+		display: none;
+	}
 }
 
 .empty-state--history .empty-state__actions {
@@ -935,3 +1026,174 @@ html.is-plan-reorder-active .reorder-handle {
 .workouts-history-mock .entity-row__meta {
 	color: var(--color-muted);
 }
+
+/* Summary page skeleton — mirror ready .summary-page mobile layout. */
+.summary-page--skeleton.page-skeleton {
+	gap: var(--page-section-gap);
+}
+
+.summary-skeleton-head__back,
+.summary-skeleton-head__title,
+.summary-skeleton-desktop-back,
+.summary-skeleton-check,
+.summary-skeleton-plan-bone,
+.summary-skeleton-stat-value,
+.summary-skeleton-preview-thumb,
+.summary-skeleton-preview-name,
+.summary-skeleton-set-val,
+.summary-skeleton-first-finish-icon,
+.summary-skeleton-guest-cta,
+.summary-skeleton-guest-dismiss,
+.summary-skeleton-done-btn,
+.summary-skeleton-details-link {
+	border-radius: var(--radius-control);
+	border: 1px solid var(--color-border);
+	background-color: var(--skeleton-base);
+	background-image: linear-gradient(
+		90deg,
+		var(--skeleton-base) 0%,
+		var(--skeleton-shine) 50%,
+		var(--skeleton-base) 100%
+	);
+	background-size: 200% 100%;
+	animation: skeletonShimmer 1.25s ease-in-out infinite;
+}
+
+.summary-skeleton-head__back {
+	width: 3rem;
+	height: 3rem;
+	flex-shrink: 0;
+}
+
+.summary-skeleton-desktop-back {
+	width: min(42%, 10rem);
+	height: 1rem;
+	margin-top: 0.35rem;
+	border-radius: 999px;
+}
+
+.summary-skeleton-check {
+	animation: skeletonShimmer 1.25s ease-in-out infinite;
+	color: transparent;
+}
+
+.summary-skeleton-hero-title {
+	margin: 0;
+	color: transparent;
+	user-select: none;
+}
+
+.summary-skeleton-plan-bone {
+	width: min(68%, 16rem);
+	height: 0.9375rem;
+	border-radius: 999px;
+}
+
+.summary-skeleton-stat-value {
+	display: inline-block;
+	min-width: 2.5rem;
+	color: transparent;
+	border: none;
+	background-color: var(--skeleton-base);
+	background-image: linear-gradient(
+		90deg,
+		var(--skeleton-base) 0%,
+		var(--skeleton-shine) 50%,
+		var(--skeleton-base) 100%
+	);
+	background-size: 200% 100%;
+	animation: skeletonShimmer 1.25s ease-in-out infinite;
+}
+
+.summary-skeleton-preview-thumb {
+	background-color: var(--skeleton-base);
+	background-image: linear-gradient(
+		90deg,
+		var(--skeleton-base) 0%,
+		var(--skeleton-shine) 50%,
+		var(--skeleton-base) 100%
+	);
+	background-size: 200% 100%;
+	animation: skeletonShimmer 1.25s ease-in-out infinite;
+}
+
+.summary-skeleton-preview-name {
+	height: 1.125rem;
+	width: min(72%, 14rem);
+	margin: 0;
+	color: transparent;
+	border: none;
+	background-color: var(--skeleton-base);
+	background-image: linear-gradient(
+		90deg,
+		var(--skeleton-base) 0%,
+		var(--skeleton-shine) 50%,
+		var(--skeleton-base) 100%
+	);
+	background-size: 200% 100%;
+	animation: skeletonShimmer 1.25s ease-in-out infinite;
+}
+
+.summary-skeleton-set-val {
+	display: inline-block;
+	min-width: 3.5rem;
+	color: transparent;
+	border: none;
+	background: color-mix(in srgb, var(--skeleton-base) 72%, transparent);
+	background-image: linear-gradient(
+		90deg,
+		var(--skeleton-base) 0%,
+		var(--skeleton-shine) 50%,
+		var(--skeleton-base) 100%
+	);
+	background-size: 200% 100%;
+	animation: skeletonShimmer 1.25s ease-in-out infinite;
+}
+
+.summary-skeleton-first-finish-icon {
+	background-color: var(--skeleton-base);
+	background-image: linear-gradient(
+		90deg,
+		var(--skeleton-base) 0%,
+		var(--skeleton-shine) 50%,
+		var(--skeleton-base) 100%
+	);
+	background-size: 200% 100%;
+	animation: skeletonShimmer 1.25s ease-in-out infinite;
+	color: transparent;
+}
+
+.summary-skeleton-guest-cta {
+	width: 100%;
+	min-height: var(--control-height);
+	border-radius: var(--radius-control);
+}
+
+.summary-skeleton-guest-dismiss {
+	align-self: center;
+	width: min(48%, 9rem);
+	height: 1rem;
+	margin-top: 0.15rem;
+	border-radius: 999px;
+}
+
+.summary-skeleton-done-btn {
+	width: 100%;
+	min-height: var(--control-height);
+	border-radius: var(--radius-control);
+}
+
+.summary-skeleton-details-link {
+	align-self: center;
+	width: min(52%, 10rem);
+	min-height: var(--control-height);
+	height: auto;
+	border-radius: var(--radius-control);
+}
+
+@media (min-width: 1024px) {
+	.summary-skeleton-desktop-back {
+		display: block;
+	}
+}
+

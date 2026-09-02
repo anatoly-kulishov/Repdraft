@@ -8,19 +8,32 @@
 	import SubrouteBack from '$lib/components/SubrouteBack.svelte';
 	import { backLabelForHref } from '$lib/i18n/backLabel';
 	import { translate } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
+	import JsonLd from '$lib/seo/JsonLd.svelte';
+	import { ARTICLE_OG_HEIGHT, ARTICLE_OG_WIDTH, articleOgPath } from '$lib/seo/articleOg';
+	import { buildArticleJsonLd } from '$lib/seo/jsonLd';
+	import { resolveSeoLang } from '$lib/seo/seoLang';
+	import { resolveSiteOrigin } from '$lib/seo/site';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { page } from '$app/stores';
 
 	let { data } = $props();
 
 	let lang = $derived($resolvedLocale);
+	let seoLang = $derived(resolveSeoLang($page.data.seoLocale, lang));
 	let article = $derived(
 		data.variants.find((a) => a.locale === lang) ??
 			data.variants.find((a) => a.locale === 'ru') ??
 			data.variants[0]!
 	);
+	let seoArticle = $derived(
+		data.variants.find((a) => a.locale === seoLang) ??
+			data.variants.find((a) => a.locale === 'ru') ??
+			data.variants[0]!
+	);
 	let articlePath = $derived(`/articles/${article.slug}`);
-	let backHref = $derived(resolveBackFrom($page.url.searchParams.get('from'), '/articles'));
+	let backHref = $derived(resolveBackFrom(readSearchParam($page.url, 'from'), '/articles'));
 	let backLabel = $derived(backLabelForHref(backHref, lang));
 	let bodyHtml = $derived(renderArticleBody(article.bodyMd));
 	let ctaHref = $derived(withFromParam(article.ctaHref ?? '/exercises', articlePath));
@@ -28,11 +41,21 @@
 		translate(lang, article.ctaLabelKey ?? 'articles.ctaExercises')
 	);
 	let tone = $derived(article.coverTone ?? 'lime');
+	let siteOrigin = $derived(resolveSiteOrigin($page.url.origin));
+	let articleJsonLd = $derived(buildArticleJsonLd(siteOrigin, seoArticle, seoLang));
 </script>
 
-<svelte:head>
-	<title>{article.title} · Repdraft</title>
-</svelte:head>
+<SeoHead
+	title={seoArticle.title}
+	description={seoArticle.excerpt}
+	path={articlePath}
+	ogType="article"
+	image={articleOgPath(seoArticle.slug, seoLang)}
+	imageWidth={ARTICLE_OG_WIDTH}
+	imageHeight={ARTICLE_OG_HEIGHT}
+	imageAlt={seoArticle.title}
+/>
+<JsonLd data={articleJsonLd} />
 
 <article class="content-page content-page--narrow article-page pb-mobile-actions lg:pb-0">
 	<div class="lg:hidden">

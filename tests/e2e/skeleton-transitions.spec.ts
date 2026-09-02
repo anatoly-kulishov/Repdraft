@@ -4,6 +4,7 @@ import {
 	seedActiveSession,
 	seedFinishedSession,
 	seedGuestBoot,
+	seedBuilderDraftBoot,
 	seedEmptyWorkoutsBoot,
 	seedHomeRecentSessions,
 	seedMinimalPlan,
@@ -71,7 +72,8 @@ const CASES: SkeletonTransitionSpec[] = [
 			const { planId, exerciseId } = await seedMinimalPlan(page);
 			await seedActiveSession(page, planId, exerciseId);
 			await seedHomeRecentSessions(page, planId, exerciseId, 3);
-		}
+		},
+		reseed: { active: true, recentCount: 3 }
 	},
 	{
 		id: 'workouts',
@@ -128,10 +130,29 @@ const CASES: SkeletonTransitionSpec[] = [
 	{
 		id: 'builder',
 		path: '/builder?new',
-		skeleton: '.page-skeleton--builder',
-		ready: '.builder-empty-state',
+		skeleton: '.page-skeleton--builder-empty',
+		ready: '.builder-empty-state:not(.builder-skeleton-empty)',
+		skeletonHeightSelectors: ['.builder-skeleton-empty'],
+		readyHeightSelectors: ['.builder-empty-state:not(.builder-skeleton-empty)'],
 		maxHeightDeltaPx: 96,
 		indexDelayMs: 500
+	},
+	{
+		id: 'builder-filled',
+		path: '/builder',
+		skeleton: '.page-skeleton--builder:not(.page-skeleton--builder-empty)',
+		ready: '.builder-exercise-list:not(.builder-exercise-list--skeleton)',
+		skeletonHeightSelectors: [
+			'.builder-group-hint--skeleton',
+			'.builder-exercise-list--skeleton',
+			'.builder-skeleton-sticky'
+		],
+		readyHeightSelectors: ['.builder-group-hint', '.builder-exercise-list', '.builder-sticky-actions'],
+		maxHeightDeltaPx: 120,
+		indexDelayMs: 700,
+		setup: async (page) => {
+			await seedBuilderDraftBoot(page, 3);
+		}
 	},
 	{
 		id: 'auth-guest',
@@ -143,7 +164,7 @@ const CASES: SkeletonTransitionSpec[] = [
 	},
 	{
 		id: 'records',
-		path: '/records',
+		path: '/exercises/records',
 		skeleton: '.records-skeleton',
 		ready: '.records-page',
 		maxHeightDeltaPx: null,
@@ -164,8 +185,21 @@ const CASES: SkeletonTransitionSpec[] = [
 	{
 		id: 'live',
 		path: '/live/e2e-skeleton-plan',
-		skeleton: '.page-skeleton--live',
+		skeleton: '.live-page--skeleton',
+		skeletonHeightSelectors: [
+			'.live-skeleton-head',
+			'.live-mobile-meta',
+			'.live-page--skeleton .live-nav',
+			'.live-page--skeleton .live-panel'
+		],
 		ready: '.live-panel',
+		readyHeightSelectors: [
+			'.screen-header--live',
+			'.live-mobile-meta',
+			'.live-nav',
+			'.live-panel'
+		],
+		readyGate: '.live-set-row',
 		maxHeightDeltaPx: 120,
 		indexDelayMs: 700,
 		setup: async (page) => {
@@ -175,14 +209,14 @@ const CASES: SkeletonTransitionSpec[] = [
 	{
 		id: 'history-detail',
 		path: '/workouts/history/e2e-skeleton-session',
-		skeleton: '.page-skeleton--history',
+		skeleton: '.history-detail--skeleton',
 		skeletonHeightSelectors: [
 			'.history-detail-skeleton-head',
 			'.history-detail-skeleton-desktop-head',
 			'.history-detail-skeleton-meta',
-			'.page-skeleton--history .page-skeleton-card'
+			'.history-exercise-list--skeleton'
 		],
-		ready: '.history-detail',
+		ready: '.history-detail:not(.history-detail--skeleton)',
 		readyHeightSelectors: [
 			'.history-detail__screen-header',
 			'.history-detail .subroute-desktop-head',
@@ -194,7 +228,8 @@ const CASES: SkeletonTransitionSpec[] = [
 		setup: async (page) => {
 			const { planId, exerciseId } = await seedMinimalPlan(page);
 			await seedFinishedSession(page, planId, exerciseId);
-		}
+		},
+		reseed: { finishedSessionId: 'e2e-skeleton-session' }
 	},
 	{
 		id: 'catalog-all-grid',
@@ -218,14 +253,18 @@ const CASES: SkeletonTransitionSpec[] = [
 	{
 		id: 'summary',
 		path: '/workouts/summary?id=e2e-skeleton-session',
-		skeleton: '.page-skeleton--summary',
-		ready: '.summary-page',
-		maxHeightDeltaPx: 320,
+		skeleton: '.summary-page--skeleton',
+		ready: '.summary-page:not(.summary-page--skeleton)',
+		skeletonHeightSelectors: ['.summary-hero', '.summary-stats', '.summary-exercises-preview__item'],
+		readyHeightSelectors: ['.summary-hero', '.summary-stats', '.summary-exercises-preview__item'],
+		maxHeightDeltaPx: 96,
+		readyGate: '.summary-exercises-preview__item',
 		indexDelayMs: 700,
 		setup: async (page) => {
 			const { planId, exerciseId } = await seedMinimalPlan(page);
 			await seedFinishedSession(page, planId, exerciseId);
-		}
+		},
+		reseed: { finishedSessionId: 'e2e-skeleton-session' }
 	}
 ];
 

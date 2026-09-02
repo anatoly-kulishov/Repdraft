@@ -12,6 +12,13 @@
 	} from '$lib/domain/labels.ru';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { translate } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
+	import JsonLd from '$lib/seo/JsonLd.svelte';
+import { buildExerciseHowToJsonLd } from '$lib/seo/jsonLd';
+import { exerciseOgImagePath } from '$lib/seo/prerenderPublic';
+import { truncateMeta } from '$lib/seo/site';
+	import { resolveSeoLang } from '$lib/seo/seoLang';
+	import { resolveSiteOrigin } from '$lib/seo/site';
 	import { backLabelForHref } from '$lib/i18n/backLabel';
 	import { cn } from '$lib/utils.js';
 	import { draft } from '$lib/stores/draft';
@@ -38,6 +45,7 @@
 
 	let exercise = $derived(data.exercise);
 	let lang = $derived($resolvedLocale);
+	let seoLang = $derived(resolveSeoLang($page.data.seoLocale, lang));
 	let showExerciseTabsCoachmark = $derived(shouldShowCoachmark($onboarding, 'exercise.tabs'));
 	let relatedArticles = $derived.by(() => {
 		const forLocale = data.relatedArticles.filter((a) => a.locale === lang);
@@ -51,6 +59,19 @@
 		if (!exercise) return [] as string[];
 		const map = exercise.instruction_steps ?? {};
 		return map[lang] ?? map.ru ?? map.en ?? [];
+	});
+	let seoDescription = $derived.by(() => {
+		if (!exercise) return translate(seoLang, 'app.metaDescription');
+		const fromStep = steps[0]?.trim();
+		if (fromStep) return truncateMeta(fromStep);
+		return translate(seoLang, 'seo.exerciseDescription', { name: title });
+	});
+	let seoImage = $derived(exerciseOgImagePath(exercise));
+	let seoPath = $derived(exercise ? `/exercise/${encodeURIComponent(exercise.id)}` : undefined);
+	let siteOrigin = $derived(resolveSiteOrigin($page.url.origin));
+	let exerciseJsonLd = $derived.by(() => {
+		if (!exercise || steps.length === 0) return null;
+		return buildExerciseHowToJsonLd(siteOrigin, exercise, seoLang, steps.slice(0, 8));
 	});
 	let bookmarkBusy = $state(false);
 	let inDraft = $derived(
@@ -145,8 +166,19 @@
 	</AppButton>
 {/snippet}
 
+<SeoHead
+	title={exercise ? title : translate(seoLang, 'exercise.notFoundTitle')}
+	description={seoDescription}
+	path={seoPath}
+	image={seoImage}
+	noindex={!exercise}
+/>
+
+{#if exerciseJsonLd}
+	<JsonLd data={exerciseJsonLd} />
+{/if}
+
 <svelte:head>
-	<title>{exercise ? `${title} · Repdraft` : `${translate(lang, 'exercise.notFoundTitle')} · Repdraft`}</title>
 	{#if exercise}
 		<link rel="preload" as="image" href={`/${exercise.gif_url}`} fetchpriority="high" />
 	{/if}

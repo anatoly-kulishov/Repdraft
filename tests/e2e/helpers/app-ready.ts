@@ -36,12 +36,24 @@ export async function seedGuestStorage(page: Page): Promise<void> {
 		localStorage.setItem('repdraft.locale', 'ru');
 		localStorage.setItem('repdraft:install-hint-dismissed', '1');
 		localStorage.setItem('repdraft:onboarding', onboardingDone);
+		localStorage.removeItem('repdraft:local-cache-user');
+		localStorage.removeItem('repdraft:sessions-deleted');
+		for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+			const key = localStorage.key(i);
+			if (key?.startsWith('sb-') && key.endsWith('-auth-token')) {
+				localStorage.removeItem(key);
+			}
+		}
+		if ('serviceWorker' in navigator) {
+			void navigator.serviceWorker.getRegistrations().then((regs) => {
+				for (const reg of regs) void reg.unregister();
+			});
+		}
 		// Init script runs on every navigation — seed destructive clears once per tab.
 		if (sessionStorage.getItem('repdraft:e2e-seeded') === '1') return;
 		sessionStorage.setItem('repdraft:e2e-seeded', '1');
 		localStorage.removeItem('repdraft:plans');
 		localStorage.removeItem('repdraft:draft');
-		localStorage.removeItem('repdraft:local-cache-user');
 		document.cookie = 'repdraft_home_has_plans=; path=/; Max-Age=0; SameSite=Lax';
 		document.cookie = 'repdraft_auth_boot=; path=/; Max-Age=0; SameSite=Lax';
 	}, E2E_ONBOARDING_DONE);

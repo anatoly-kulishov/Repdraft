@@ -22,6 +22,7 @@ cp .env.example .env
 npm run dev
 npm run check    # before finishing a task
 npm run build
+npm run test:e2e:history  # history detail delete / undo / edit save (release gate P0)
 ```
 
 ## Cursor rules map
@@ -32,6 +33,7 @@ npm run build
 | `mvp.mdc` | Scope and north star (always) |
 | `architecture.mdc` | Where code belongs (always) |
 | `release-branches.mdc` | Branches, semver, `package.json` version (always) |
+| `.cursor/skills/release-gate/` | Pre-release gate — say `release gate` or `релиз-гейт` |
 | `svelte-ts.mdc` | TS/Svelte conventions (`src/**`) |
 | `supabase-auth.mdc` | Auth dashboard checklist (on demand) |
 | `refactor-guardrails.mdc` | Large CSS/architecture refactors (on demand) |

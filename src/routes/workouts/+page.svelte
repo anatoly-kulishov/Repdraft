@@ -26,7 +26,9 @@
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { navigateBack } from '$lib/navigation/back';
+	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { auth } from '$lib/stores/auth';
 	import { homeNextPlan } from '$lib/stores/homeNextPlan';
 	import { live } from '$lib/stores/live';
@@ -40,6 +42,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { cn } from '$lib/utils.js';
+	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 
@@ -53,7 +56,7 @@
 
 	let lang = $derived($resolvedLocale);
 	let showWorkoutsPreviewCoachmark = $derived(shouldShowCoachmark($onboarding, 'workouts.preview'));
-	let activeTab = $derived(parseWorkoutsTab($page.url.searchParams.get('tab')));
+	let activeTab = $derived(parseWorkoutsTab(readSearchParam($page.url, 'tab')));
 	let searchQuery = $state('');
 	const peeked = peekExerciseIndex();
 	let indexById = $state<Map<string, ExerciseIndexItem>>(
@@ -109,6 +112,11 @@
 	let history = $derived($live.history);
 	let nextPlan = $derived.by(() =>
 		resolveHomeNextPlan($plans, history[0]?.planId, $homeNextPlan)
+	);
+	let historyEmptyCtaLabel = $derived(
+		$plans.length > 0 && nextPlan
+			? translate(lang, 'workouts.start')
+			: translate(lang, 'onboarding.tryDemo')
 	);
 
 	let displayedPlans = $derived(filteredPlans);
@@ -334,9 +342,7 @@
 	{/if}
 {/snippet}
 
-<svelte:head>
-	<title>{pageTitle} · Repdraft</title>
-</svelte:head>
+<SeoHead title={pageTitle} noindex />
 
 <section
 	class="workouts-page content-page content-page--narrow"
@@ -344,12 +350,19 @@
 	class:workouts-page--plans-empty={plansEmptyLayout}
 >
 	{#if activeTab === 'history'}
-		<ScreenHeader
-			class="lg:hidden"
-			title={pageTitle}
-			backHref="/workouts"
-			actions={historyClearAction}
-		/>
+		{#if !pageReady}
+			<div class="workouts-history-skeleton-head lg:hidden" aria-hidden="true">
+				<div class="workouts-history-skeleton-head__back"></div>
+				<div class="workouts-history-skeleton-head__title"></div>
+			</div>
+		{:else}
+			<ScreenHeader
+				class="lg:hidden"
+				title={pageTitle}
+				backHref="/workouts"
+				actions={historyClearAction}
+			/>
+		{/if}
 	{/if}
 	<div class="page-header workouts-page__header">
 		<div
@@ -427,6 +440,7 @@
 			label={translate(lang, 'common.loading')}
 			variant={skeletonVariant}
 			rows={skeletonRows}
+			{historyEmptyCtaLabel}
 		/>
 	{:else}
 	{#if activeTab === 'plans'}

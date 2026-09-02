@@ -17,7 +17,7 @@ const ROUTES = [
 	['/exercises', 'catalog-hub'],
 	['/catalog/chest', 'catalog-zone'],
 	['/builder', 'builder'],
-	['/records', 'records'],
+	['/exercises/records', 'records'],
 	['/auth', 'auth']
 ];
 

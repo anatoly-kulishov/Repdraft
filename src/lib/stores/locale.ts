@@ -3,6 +3,7 @@ import {
 	LOCALE_STORAGE_KEY,
 	detectBrowserLocale,
 	isAppLocale,
+	syncLocaleCookie,
 	type AppLocale
 } from '$lib/i18n/locale';
 import { writable } from 'svelte/store';
@@ -16,6 +17,7 @@ function bootLocale(): AppLocale {
 		if (raw && isAppLocale(raw)) return raw;
 		const detected = detectBrowserLocale();
 		localStorage.setItem(LOCALE_STORAGE_KEY, detected);
+		syncLocaleCookie(detected);
 		return detected;
 	} catch {
 		return detectBrowserLocale();
@@ -42,9 +44,11 @@ export const resolvedLocale = {
 			/* ignore */
 		}
 		applyDocumentLang(next);
+		syncLocaleCookie(next);
 	}
 };
 
 if (browser) {
 	applyDocumentLang(initial);
+	syncLocaleCookie(initial);
 }

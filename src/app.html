@@ -107,6 +107,10 @@
 					if (storedLocale === 'en' || storedLocale === 'ru') {
 						document.documentElement.lang = storedLocale;
 						document.documentElement.dataset.locale = storedLocale;
+						try {
+							document.cookie =
+								localeKey + '=' + storedLocale + '; path=/; Max-Age=31536000; SameSite=Lax';
+						} catch (localeCookieErr) {}
 					}
 					/* Auth /auth boot: pick account vs guest skeleton before Svelte hydrates. */
 					var authBoot = 'guest';
@@ -253,6 +257,24 @@
 							document.cookie = 'repdraft_home_has_plans=; path=/; Max-Age=0; SameSite=Lax';
 						}
 					} catch (homeCookieErr) {}
+					var builderDraftRows = 0;
+					try {
+						var draftRaw = localStorage.getItem('repdraft:draft');
+						if (draftRaw) {
+							var draftParsed = JSON.parse(draftRaw);
+							if (draftParsed && Array.isArray(draftParsed.exercises)) {
+								builderDraftRows = draftParsed.exercises.length;
+							}
+						}
+					} catch (builderDraftErr) {}
+					var builderDraftRowsCapped = Math.min(Math.max(builderDraftRows, 0), 4);
+					document.documentElement.dataset.builderDraftRows = String(builderDraftRowsCapped);
+					try {
+						document.cookie =
+							'repdraft_builder_draft_rows=' +
+							builderDraftRows +
+							'; path=/; Max-Age=31536000; SameSite=Lax';
+					} catch (builderDraftCookieErr) {}
 				} catch (e) {}
 			})();
 			// Capture beforeinstallprompt early — it can fire before Svelte mounts.

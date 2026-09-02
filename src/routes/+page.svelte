@@ -15,7 +15,7 @@
 		totalSetCount
 	} from '$lib/domain/session';
 	import { resolveHomeNextPlan, planExerciseSlotCount, planTargetSummary } from '$lib/domain/workout';
-	import { HOME_RECENT_ROW_LIMIT } from '$lib/domain/home';
+	import { HOME_RECENT_ROW_LIMIT, resolveHomeSkeletonVariant } from '$lib/domain/home';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
@@ -24,6 +24,12 @@
 	import { shouldShowChecklist, peekShouldShowChecklist } from '$lib/domain/onboarding';
 	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
+	import JsonLd from '$lib/seo/JsonLd.svelte';
+	import { buildWebSiteJsonLd } from '$lib/seo/jsonLd';
+	import { resolveSeoLang } from '$lib/seo/seoLang';
+	import { readSearchParam } from '$lib/navigation/urlSearchParams';
+	import { resolveSiteOrigin } from '$lib/seo/site';
 	import { auth } from '$lib/stores/auth';
 	import { greetingName } from '$lib/stores/greetingName';
 	import { homeNextPlan } from '$lib/stores/homeNextPlan';
@@ -37,6 +43,7 @@
 	import { browser } from '$app/environment';
 	import { readActiveSession, peekLocalHistoryCount } from '$lib/storage/localSessionRepository';
 	import { peekHasLocalPlans } from '$lib/storage/localWorkoutRepository';
+	import { peekAccountBoot } from '$lib/storage/homeBootPeek';
 	import { peekLikelySignedInUserId } from '$lib/storage/localUserCache';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
@@ -64,7 +71,18 @@
 	}
 
 	let lang = $derived($resolvedLocale);
-	let active = $derived($live.session);
+	let seoLang = $derived(resolveSeoLang($page.data.seoLocale, lang));
+	let siteOrigin = $derived(resolveSiteOrigin($page.url.origin));
+	let websiteJsonLd = $derived(
+		buildWebSiteJsonLd(siteOrigin, translate(seoLang, 'app.metaDescription'))
+	);
+	let active = $derived.by(() => {
+		const fromStore = $live.session;
+		if (fromStore && !fromStore.finishedAt) return fromStore;
+		if (!browser) return null;
+		const local = readActiveSession();
+		return local && !local.finishedAt ? local : null;
+	});
 	let recent = $derived($live.history.slice(0, HOME_RECENT_ROW_LIMIT));
 	const peekedIndex = peekExerciseIndex();
 	let indexById = $state<Map<string, ExerciseIndexItem>>(
@@ -84,9 +102,9 @@
 
 	/** Dev/QA: ?skeleton=create|start */
 	let skeletonForce = $derived(
-		$page.url.searchParams.get('skeleton') === 'create'
+		readSearchParam($page.url, 'skeleton') === 'create'
 			? ('create' as const)
-			: $page.url.searchParams.get('skeleton') === 'start'
+			: readSearchParam($page.url, 'skeleton') === 'start'
 				? ('start' as const)
 				: null
 	);
@@ -98,18 +116,31 @@
 		const session = readActiveSession();
 		return Boolean(session && !session.finishedAt);
 	});
-	let bootSkeletonVariant = $derived.by((): 'start' | 'create' => {
-		if (skeletonForce) return skeletonForce;
+	let bootAccountPeek = $derived.by(() => {
+		if (data.bootPeek.accountBoot) return true;
+		if (!browser) return false;
+		return peekAccountBoot();
+	});
+	let bootHomePeek = $derived.by((): 'create' | 'start' | null => {
+		if (bootAccountPeek) return 'start';
 		if (data.bootPeek.homeBoot === 'create' || data.bootPeek.homeBoot === 'start') {
 			return data.bootPeek.homeBoot;
 		}
-		if (!browser) return 'start';
-		const homeBoot = document.documentElement.dataset.homeBoot;
-		if (homeBoot === 'create' || homeBoot === 'start') return homeBoot;
-		if ($auth.ready && $auth.user) return 'start';
-		if ($auth.ready && isGuest && !hasPlans) return 'create';
-		return 'start';
+		if (!browser) return null;
+		const fromDom = document.documentElement.dataset.homeBoot;
+		if (fromDom === 'create' || fromDom === 'start') return fromDom;
+		return null;
 	});
+	let bootSkeletonVariant = $derived.by(() =>
+		resolveHomeSkeletonVariant({
+			force: skeletonForce,
+			accountBoot: bootAccountPeek,
+			homeBoot: bootHomePeek,
+			authReady: $auth.ready,
+			hasUser: Boolean($auth.user),
+			hasPlans
+		})
+	);
 	let bootShowChecklist = $derived.by(() => {
 		if (data.bootPeek.showChecklist) return true;
 		if (!browser) return false;
@@ -128,8 +159,9 @@
 		}
 	});
 	let bootLikelySignedIn = $derived.by(() => {
+		if (bootAccountPeek) return true;
+		if ($auth.ready && $auth.user) return true;
 		if (!browser) return false;
-		if (document.documentElement.dataset.authBoot === 'account') return true;
 		return peekLikelySignedInUserId() !== null;
 	});
 	/** Plans column only for signed-in user with zero plans — matches live `!hasPlans && !isGuest`. */
@@ -295,9 +327,8 @@
 	});
 </script>
 
-<svelte:head>
-	<title>{translate(lang, 'home.title')} · Repdraft</title>
-</svelte:head>
+<SeoHead titleKey="seo.homeTitle" descriptionKey="app.metaDescription" path="/" />
+<JsonLd data={websiteJsonLd} />
 
 <section
 	class="home-page content-page"

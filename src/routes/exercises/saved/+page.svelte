@@ -4,6 +4,7 @@
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import { translate } from '$lib/i18n/messages';
+	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { ArrowLeft } from '@lucide/svelte';
 
@@ -13,9 +14,7 @@
 	let title = $derived(translate(lang, 'bookmarks.title'));
 </script>
 
-<svelte:head>
-	<title>{title} · Repdraft</title>
-</svelte:head>
+<SeoHead title={title} noindex />
 
 <div class="content-page content-page--catalog catalog-page--list catalog-saved-page records-page">
 	<ScreenHeader class="lg:hidden" fixed {title} backHref="/exercises" />
