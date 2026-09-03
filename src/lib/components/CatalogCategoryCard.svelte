@@ -1,5 +1,6 @@
 <script lang="ts">
 	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
+	import { hasFadedInMedia, markFadedInMedia } from '$lib/media/mediaFadeCache';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 
@@ -18,18 +19,38 @@
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
+	let imageSrc = $derived(coverImage ? `/${coverImage}` : '');
 	let loaded = $state(false);
 	let imgEl = $state<HTMLImageElement | null>(null);
 	let countLabel = $derived(
 		count > 0 ? translate(lang, 'catalog.zoneCountShort', { n: count }) : ''
 	);
+	let imgLoading = $derived(
+		priority || (imageSrc !== '' && hasFadedInMedia(imageSrc))
+			? ('eager' as const)
+			: ('lazy' as const)
+	);
+
+	$effect.pre(() => {
+		loaded = coverImage ? hasFadedInMedia(`/${coverImage}`) : false;
+	});
 
 	$effect(() => {
 		const img = imgEl;
-		if (img?.complete && img.naturalWidth > 0) loaded = true;
+		if (!coverImage) return;
+		const src = `/${coverImage}`;
+		if (hasFadedInMedia(src)) {
+			loaded = true;
+			return;
+		}
+		if (img?.complete && img.naturalWidth > 0) {
+			markFadedInMedia(src);
+			loaded = true;
+		}
 	});
 
 	function onImgLoad() {
+		if (coverImage) markFadedInMedia(`/${coverImage}`);
 		loaded = true;
 	}
 </script>
@@ -52,7 +73,7 @@
 				width="180"
 				height="180"
 				sizes="(min-width: 1024px) 180px, (min-width: 768px) 25vw, 45vw"
-				loading={priority ? 'eager' : 'lazy'}
+				loading={imgLoading}
 				fetchpriority={priority ? 'high' : 'auto'}
 				decoding="async"
 				onload={onImgLoad}

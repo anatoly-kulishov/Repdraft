@@ -43,7 +43,7 @@ export async function fillPassword(page: Page, password: string, index = 0): Pro
 export async function submitPrimaryAuthForm(page: Page): Promise<void> {
 	await page.locator('.auth-signin form.auth-form, .auth-panel form.auth-form')
 		.first()
-		.getByRole('button', { name: /^(Войти|Sign in|Зарегистрироваться|Sign up|Прислать ссылку|Send link|Сбросить пароль|Reset password|Сохранить пароль|Save password)$/ })
+		.getByRole('button', { name: /^(Войти|Sign in|Зарегистрироваться|Sign up|Create account|Прислать ссылку|Send link|Сбросить пароль|Reset password|Сохранить пароль|Save password)$/ })
 		.click();
 }
 

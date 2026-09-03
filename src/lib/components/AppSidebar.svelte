@@ -30,7 +30,7 @@
 	let profileInitials = $derived(userInitials($auth.user));
 	let profileAvatarBroken = $state(false);
 	let showProfilePhoto = $derived(Boolean(profileAvatar) && !profileAvatarBroken);
-	let profileSignedIn = $derived(Boolean($auth.ready && $auth.user));
+	let profileSignedIn = $derived(Boolean($auth.ready && $auth.sessionKnown && $auth.user));
 
 	$effect(() => {
 		profileAvatar;

@@ -15,6 +15,7 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { linkWithFrom } from '$lib/domain/navigation';
+	import { hasFadedInMedia, markFadedInMedia } from '$lib/media/mediaFadeCache';
 	import { Bookmark, Check, Dumbbell, Film, Plus, StickyNote, Target } from '@lucide/svelte';
 
 	let {
@@ -35,6 +36,7 @@
 
 	let lang = $derived($resolvedLocale);
 	let title = $derived(exerciseName(exercise, lang));
+	let imageSrc = $derived(`/${exercise.image}`);
 	let inDraft = $derived($draft.exercises.some((ex) => ex.exerciseId === exercise.id));
 	let bookmarked = $derived($bookmarks.includes(exercise.id));
 	let recordTitle = $derived(recordChips.length ? recordChips.join(' · ') : '');
@@ -48,13 +50,29 @@
 	let bookmarkBusy = $state(false);
 	let imgEl = $state<HTMLImageElement | null>(null);
 	let justAdded = $state(false);
+	let imgLoading = $derived(
+		priority || hasFadedInMedia(imageSrc) ? ('eager' as const) : ('lazy' as const)
+	);
+
+	$effect.pre(() => {
+		loaded = hasFadedInMedia(`/${exercise.image}`);
+	});
 
 	$effect(() => {
 		const img = imgEl;
-		if (img?.complete && img.naturalWidth > 0) loaded = true;
+		const src = `/${exercise.image}`;
+		if (hasFadedInMedia(src)) {
+			loaded = true;
+			return;
+		}
+		if (img?.complete && img.naturalWidth > 0) {
+			markFadedInMedia(src);
+			loaded = true;
+		}
 	});
 
 	function onImgLoad() {
+		markFadedInMedia(`/${exercise.image}`);
 		loaded = true;
 	}
 
@@ -210,7 +228,7 @@
 						width="120"
 						height="120"
 						sizes="120px"
-						loading={priority ? 'eager' : 'lazy'}
+						loading={imgLoading}
 						fetchpriority={priority ? 'high' : 'auto'}
 						decoding="async"
 						draggable="false"
@@ -273,7 +291,7 @@
 					width="180"
 					height="180"
 					sizes="(min-width: 1024px) 180px, (min-width: 768px) 33vw, 45vw"
-					loading={priority ? 'eager' : 'lazy'}
+					loading={imgLoading}
 					fetchpriority={priority ? 'high' : 'auto'}
 					decoding="async"
 					draggable="false"

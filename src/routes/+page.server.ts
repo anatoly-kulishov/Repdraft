@@ -9,14 +9,20 @@ export const load: PageServerLoad = ({ cookies }) => {
 	const activeSession = cookies.get('repdraft_home_active') === '1';
 	const hasHistory = cookies.get('repdraft_home_has_history') === '1';
 	const accountBoot = cookies.get('repdraft_auth_boot') === '1';
+	const hasPlans = cookies.get('repdraft_home_has_plans') === '1';
 	const homeBootRaw = cookies.get('repdraft_home_boot');
-	const homeBootFromCookie = homeBootRaw === 'create' ? 'create' : 'start';
-	const homeBoot = accountBoot ? 'start' : homeBootFromCookie;
+	/**
+	 * Prefer start on SSR. Stale `create` must not flash guest skeleton when account/plans
+	 * cookies already say otherwise. True empty guests keep `create` only when cookie says so.
+	 */
+	const homeBoot =
+		accountBoot || hasPlans || homeBootRaw !== 'create' ? 'start' : 'create';
 	const showChecklist = cookies.get('repdraft_onboarding_checklist') === '1';
 	return {
 		bootPeek: {
 			activeSession,
 			hasHistory,
+			hasPlans,
 			recentRows: hasHistory ? HOME_RECENT_ROW_LIMIT : 0,
 			accountBoot,
 			homeBoot,

@@ -14,6 +14,7 @@ declare global {
 	interface ImportMetaEnv {
 		readonly PUBLIC_APP_VERSION: string;
 		readonly PUBLIC_SITE_URL: string;
+		readonly PUBLIC_TURNSTILE_SITE_KEY?: string;
 	}
 }
 

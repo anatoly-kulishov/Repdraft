@@ -160,13 +160,15 @@
 							}
 						}
 					} catch (plansErr) {}
+					/* Match WORKOUTS_PLANS_SKELETON_ROW_LIMIT in domain/home.ts */
+					var workoutsPlanRowsCapped = Math.min(Math.max(workoutsPlanRows, 0), 6);
 					document.documentElement.dataset.workoutsPlanRows = String(
-						Math.min(Math.max(workoutsPlanRows, 0), 4)
+						workoutsPlanRowsCapped
 					);
 					try {
 						document.cookie =
 							'repdraft_workouts_plan_rows=' +
-							Math.min(Math.max(workoutsPlanRows, 0), 4) +
+							workoutsPlanRowsCapped +
 							'; path=/; Max-Age=31536000; SameSite=Lax';
 					} catch (workoutsRowsCookieErr) {}
 					document.documentElement.dataset.homeBoot = homeBoot;
@@ -192,6 +194,7 @@
 							}
 						}
 					} catch (onboardingErr) {}
+					if (homeBoot === 'start') homeShowChecklist = false;
 					document.documentElement.dataset.homeShowChecklist = homeShowChecklist
 						? '1'
 						: '0';
@@ -217,8 +220,10 @@
 						}
 					} catch (sessionsErr) {}
 					document.documentElement.dataset.homeRecentRows = homeRecentRows > 0 ? '3' : '0';
+					/* Match WORKOUTS_HISTORY_SKELETON_ROW_LIMIT in domain/home.ts */
+					var workoutsHistoryRowsCapped = Math.min(Math.max(homeRecentRows, 0), 8);
 					document.documentElement.dataset.workoutsHistoryRows = String(
-						Math.min(Math.max(homeRecentRows, 0), 4)
+						workoutsHistoryRowsCapped
 					);
 					try {
 						if (homeRecentRows > 0) {
@@ -226,7 +231,7 @@
 								'repdraft_home_has_history=1; path=/; Max-Age=31536000; SameSite=Lax';
 							document.cookie =
 								'repdraft_workouts_history_rows=' +
-								Math.min(Math.max(homeRecentRows, 0), 4) +
+								workoutsHistoryRowsCapped +
 								'; path=/; Max-Age=31536000; SameSite=Lax';
 						} else {
 							document.cookie = 'repdraft_home_has_history=; path=/; Max-Age=0; SameSite=Lax';
@@ -250,7 +255,7 @@
 						}
 					} catch (activeErr) {}
 					try {
-						if (homeBoot === 'start') {
+						if (workoutsPlanRows > 0) {
 							document.cookie =
 								'repdraft_home_has_plans=1; path=/; Max-Age=31536000; SameSite=Lax';
 						} else {

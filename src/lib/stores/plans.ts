@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import { duplicatePlan, mergeWorkoutPlans, sortPlansByUserOrder, withSavedName, workoutPlanContentEqual } from '$lib/domain/workout';
 import type { WorkoutPlan } from '$lib/domain/types';
 import { clampPlanName } from '$lib/domain/inputLimits';
+import { isCloudPersistableId } from '$lib/domain/id';
 import { CLOUD_REQUEST_MS } from '$lib/domain/networkTimeouts';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { translate } from '$lib/i18n/messages';
@@ -121,9 +122,14 @@ import { resolvedLocale } from './locale';
 				!(await localWorkoutRepository.get(current.id));
 			const cloudOk = await mirrorCloudWrite({
 				localWrite: () => localWorkoutRepository.save(current),
-				cloudWrite: () => supabaseWorkoutRepository.save(current),
+				cloudWrite: isCloudPersistableId(current.id)
+					? () => supabaseWorkoutRepository.save(current)
+					: undefined,
+				cloudId: current.id,
 				label: 'plans.saveCurrent',
-				outboxOnFail: { kind: 'plan.save', id: current.id }
+				outboxOnFail: isCloudPersistableId(current.id)
+					? { kind: 'plan.save', id: current.id }
+					: undefined
 			});
 			if (isNew) planOrder.prepend(current.id);
 			await refresh({ cloud: cloudOk && isCloudMode() });
@@ -132,18 +138,26 @@ import { resolvedLocale } from './locale';
 		async removePlan(id: string) {
 			const cloudOk = await mirrorCloudWrite({
 				localWrite: () => localWorkoutRepository.remove(id),
-				cloudWrite: () => supabaseWorkoutRepository.remove(id),
+				cloudWrite: isCloudPersistableId(id)
+					? () => supabaseWorkoutRepository.remove(id)
+					: undefined,
+				cloudId: id,
 				label: 'plans.removePlan',
-				outboxOnFail: { kind: 'plan.delete', id }
+				outboxOnFail: isCloudPersistableId(id) ? { kind: 'plan.delete', id } : undefined
 			});
 			await refresh({ cloud: cloudOk && isCloudMode() });
 		},
 		async restorePlan(plan: WorkoutPlan, orderIndex = -1) {
 			const cloudOk = await mirrorCloudWrite({
 				localWrite: () => localWorkoutRepository.save(plan),
-				cloudWrite: () => supabaseWorkoutRepository.save(plan),
+				cloudWrite: isCloudPersistableId(plan.id)
+					? () => supabaseWorkoutRepository.save(plan)
+					: undefined,
+				cloudId: plan.id,
 				label: 'plans.restorePlan',
-				outboxOnFail: { kind: 'plan.save', id: plan.id }
+				outboxOnFail: isCloudPersistableId(plan.id)
+					? { kind: 'plan.save', id: plan.id }
+					: undefined
 			});
 			if (orderIndex >= 0) planOrder.insertAt(plan.id, orderIndex);
 			else planOrder.prepend(plan.id);
@@ -158,9 +172,14 @@ import { resolvedLocale } from './locale';
 			const copy = duplicatePlan(plan, translate(get(resolvedLocale), 'workouts.copySuffix'));
 			const synced = await mirrorCloudWrite({
 				localWrite: () => localWorkoutRepository.save(copy),
-				cloudWrite: () => supabaseWorkoutRepository.save(copy),
+				cloudWrite: isCloudPersistableId(copy.id)
+					? () => supabaseWorkoutRepository.save(copy)
+					: undefined,
+				cloudId: copy.id,
 				label: 'plans.duplicate',
-				outboxOnFail: { kind: 'plan.save', id: copy.id }
+				outboxOnFail: isCloudPersistableId(copy.id)
+					? { kind: 'plan.save', id: copy.id }
+					: undefined
 			});
 			planOrder.prepend(copy.id);
 			await refresh({ cloud: synced && isCloudMode() });
@@ -171,6 +190,7 @@ import { resolvedLocale } from './locale';
 			if (cached) return cached;
 			const local = await localWorkoutRepository.get(id);
 			if (local) return local;
+			if (!isCloudPersistableId(id)) return null;
 			try {
 				return await withTimeout(getWorkoutRepo().get(id), CLOUD_MS);
 			} catch {

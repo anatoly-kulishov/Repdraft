@@ -1,6 +1,7 @@
 import type { WorkoutRepository } from '$lib/domain/repository';
 import type { WorkoutSession } from '$lib/domain/types';
 import { CLOUD_REQUEST_MS } from '$lib/domain/networkTimeouts';
+import { isCloudPersistableId } from '$lib/domain/id';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
 import { localRecordRepository } from './localRecordRepository';
@@ -60,6 +61,7 @@ function markSessionsCloudDown(err: unknown) {
 export async function persistSession(session: WorkoutSession): Promise<void> {
 	await localSessionRepository.save(session);
 	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
+	if (!isCloudPersistableId(session.id)) return;
 	try {
 		await withTimeout(supabaseSessionRepository.save(session), CLOUD_REQUEST_MS);
 	} catch (err) {
@@ -79,6 +81,7 @@ export async function deleteSession(id: string): Promise<void> {
 	// Supabase/PostgREST often returns OK with 0 rows when RLS blocks delete.
 	addSessionTombstone(id);
 	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
+	if (!isCloudPersistableId(id)) return;
 	try {
 		await withTimeout(supabaseSessionRepository.remove(id), CLOUD_REQUEST_MS);
 	} catch (err) {
@@ -119,7 +122,7 @@ export async function migrateLocalToCloud(): Promise<void> {
 		const cloudPlans = await withTimeout(supabaseWorkoutRepository.list(), CLOUD_LIST_MS);
 		const cloudPlanIds = new Set(cloudPlans.map((p) => p.id));
 		for (const plan of localPlans) {
-			if (cloudPlanIds.has(plan.id)) continue;
+			if (!isCloudPersistableId(plan.id) || cloudPlanIds.has(plan.id)) continue;
 			try {
 				await withTimeout(supabaseWorkoutRepository.save(plan), CLOUD_REQUEST_MS);
 			} catch (err) {
@@ -161,7 +164,13 @@ export async function migrateLocalToCloud(): Promise<void> {
 			}
 			const cloudSessionIds = new Set(cloudSessions.map((s) => s.id));
 			for (const session of localSessions) {
-				if (deleted.has(session.id) || cloudSessionIds.has(session.id)) continue;
+				if (
+					deleted.has(session.id) ||
+					cloudSessionIds.has(session.id) ||
+					!isCloudPersistableId(session.id)
+				) {
+					continue;
+				}
 				try {
 					await withTimeout(supabaseSessionRepository.save(session), CLOUD_REQUEST_MS);
 				} catch (err) {
