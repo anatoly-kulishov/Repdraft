@@ -36,7 +36,10 @@
 	import { onNavigate } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { browser } from '$app/environment';
+	import { browser, dev } from '$app/environment';
+	import { injectAnalytics } from '@vercel/analytics/sveltekit';
+
+	injectAnalytics({ mode: dev ? 'development' : 'production' });
 
 	if (browser) {
 		onboarding.init(new URLSearchParams(window.location.search));
@@ -74,9 +77,21 @@
 	let showMediaAttribution = $derived(showsExerciseMediaAttribution(path));
 
 	onNavigate((navigation) => {
-		if (typeof document === 'undefined' || !document.startViewTransition) return;
+		if (typeof document === 'undefined') return;
 		/* Native swipe-back / history already animates; VT double-paints and flickers chrome. */
-		if (navigation.type === 'popstate') return;
+		if (navigation.type === 'popstate') {
+			/* Kill media opacity 0→1 / zone skeleton flash on remount after gesture back. */
+			document.documentElement.dataset.navBack = '1';
+			void navigation.complete.finally(() => {
+				requestAnimationFrame(() => {
+					requestAnimationFrame(() => {
+						delete document.documentElement.dataset.navBack;
+					});
+				});
+			});
+			return;
+		}
+		if (!document.startViewTransition) return;
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 		return new Promise<void>((resolve) => {
 			document.startViewTransition(async () => {

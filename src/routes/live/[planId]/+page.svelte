@@ -421,9 +421,12 @@
 			const done = await live.finish();
 			toasts.show(translate(lang, 'live.saved'), 'success');
 			if (done?.id) {
-				await goto(`/workouts/summary?id=${encodeURIComponent(done.id)}`);
+				/* Replace live in the stack so header/swipe back cannot reopen an empty session. */
+				await goto(`/workouts/summary?id=${encodeURIComponent(done.id)}`, {
+					replaceState: true
+				});
 			} else {
-				await goto('/workouts?tab=history');
+				await goto('/workouts?tab=history', { replaceState: true });
 			}
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'live.saveFail'), 'error');
@@ -448,9 +451,16 @@
 	}
 
 	function commitDiscard() {
+		if (finishing) return;
+		finishing = true;
 		discardOfferOpen = false;
+		finishOfferOpen = false;
+		/* Keep painting the live UI until navigation leaves /live (same as finish). */
+		holdSession = get(live).session;
 		live.discard();
-		void goto('/workouts', { replaceState: true });
+		void goto('/workouts', { replaceState: true }).finally(() => {
+			finishing = false;
+		});
 	}
 
 	function dismissDiscardOffer() {
@@ -518,6 +528,8 @@
 	</BottomSheet>
 {:else if loading && !(session && !session.finishedAt && session.planId === params.planId)}
 	<LivePageSkeleton planId={params.planId} />
+{:else if finishing && !session}
+	<LivePageSkeleton planId={params.planId} />
 {:else if missing || !session}
 	<div class="mx-auto max-w-md space-y-3">
 		<EmptyState
@@ -530,9 +542,14 @@
 			<AppButton
 				block
 				variant="danger"
+				disabled={finishing}
 				onclick={() => {
+					holdSession = get(live).session;
+					finishing = true;
 					live.discard();
-					void goto('/workouts');
+					void goto('/workouts', { replaceState: true }).finally(() => {
+						finishing = false;
+					});
 				}}
 			>
 				{translate(lang, 'live.discard')}

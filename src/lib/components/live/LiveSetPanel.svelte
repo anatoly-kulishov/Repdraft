@@ -3,8 +3,10 @@
 	import AppInput from '$lib/components/AppInput.svelte';
 	import { cn } from '$lib/utils.js';
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
+	import LiveExerciseHistorySheet from '$lib/components/live/LiveExerciseHistorySheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
+	import { blurActiveElement } from '$lib/dom/blurActiveElement';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, SessionExercise, WorkoutSession } from '$lib/domain/types';
@@ -13,7 +15,7 @@
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
-	import { Check, Plus, RefreshCw, SkipForward, Trash2 } from '@lucide/svelte';
+	import { Check, History, Plus, RefreshCw, SkipForward, Trash2 } from '@lucide/svelte';
 
 	let {
 		session,
@@ -62,6 +64,7 @@
 	} = $props();
 
 	let techniqueOpen = $state(false);
+	let historyOpen = $state(false);
 
 	function titleFor(id: string): string {
 		const item = names.get(id);
@@ -136,11 +139,23 @@
 
 	function openTechnique() {
 		if (!names.get(exercise.exerciseId)) return;
+		historyOpen = false;
 		techniqueOpen = true;
 	}
 
 	function dismissTechnique() {
 		techniqueOpen = false;
+	}
+
+	function openHistory() {
+		techniqueOpen = false;
+		blurActiveElement();
+		historyOpen = true;
+	}
+
+	function dismissHistory() {
+		historyOpen = false;
+		blurActiveElement();
 	}
 
 	let canRemoveSet = $derived(exercise.sets.length > 1);
@@ -220,7 +235,7 @@
 		if (labels.length === 0) return false;
 		return new Set(labels).size > 1;
 	});
-	let showQuickActions = $derived(lastCopy != null && lastFormatted != null && canApplyLast);
+	let showLastChip = $derived(lastCopy != null && lastFormatted != null && canApplyLast);
 
 	function showRemove(setIndex: number): boolean {
 		return canRemoveSet && setIndex === exercise.sets.length - 1;
@@ -312,6 +327,15 @@
 				{/if}
 			</div>
 			<div class="live-panel-head__actions">
+				<AppButton
+					variant="ghost"
+					class="live-panel-head-btn"
+					aria-label={translate(lang, 'live.historyOpenAria')}
+					title={translate(lang, 'live.historyTitle')}
+					onclick={openHistory}
+				>
+					<LucideIcon icon={History} size={ICON_SMALL} />
+				</AppButton>
 				{#if canSwapAlternative && onSwapAlternative}
 					<AppButton
 						variant="ghost"
@@ -339,20 +363,18 @@
 	</header>
 
 	<section class="live-panel__log" aria-label={translate(lang, 'live.setLogAria')}>
-		{#if showQuickActions}
+		{#if showLastChip && lastFormatted}
 			<div class="live-quick-actions">
-				{#if lastCopy && lastFormatted && canApplyLast}
-					<AppButton
-						variant="ghost"
-						class="live-last-chip live-last-chip--tap"
-						aria-label={translate(lang, 'live.lastApplyAria', { value: lastFormatted })}
-						onclick={applyLastPerformance}
-					>
-						<span class="live-last-chip__label">{translate(lang, 'live.last')}</span>
-						<span class="live-last-chip__value tabular-nums">{lastFormatted}</span>
-						<span class="live-last-chip__action">{translate(lang, 'live.applyLast')}</span>
-					</AppButton>
-				{/if}
+				<AppButton
+					variant="ghost"
+					class="live-last-chip live-last-chip--tap"
+					aria-label={translate(lang, 'live.lastApplyAria', { value: lastFormatted })}
+					onclick={applyLastPerformance}
+				>
+					<span class="live-last-chip__label">{translate(lang, 'live.last')}</span>
+					<span class="live-last-chip__value tabular-nums">{lastFormatted}</span>
+					<span class="live-last-chip__action">{translate(lang, 'live.applyLast')}</span>
+				</AppButton>
 			</div>
 		{/if}
 
@@ -558,3 +580,9 @@
 		onDismiss={dismissTechnique}
 	/>
 {/if}
+
+<LiveExerciseHistorySheet
+	open={historyOpen}
+	exerciseId={exercise.exerciseId}
+	onDismiss={dismissHistory}
+/>

@@ -4,7 +4,7 @@ Short contract. Cursor rules: [`.cursor/rules/`](.cursor/rules/). Coding rules: 
 
 ## North star
 
-[`GOAL.md`](GOAL.md) — polish the sacred workout loop (open → pick → preview → train → finish). Not feature count.
+[`GOAL.md`](GOAL.md) — polish the sacred workout loop (open → pick → preview → train → finish). Not feature count. Stay fast on weak/old phones.
 
 ## Stack
 

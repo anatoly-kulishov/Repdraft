@@ -152,6 +152,7 @@
 			backHref={WORKOUTS_HISTORY_HREF}
 			backLabelVisible
 			backLabel={translate(lang, 'builder.backWorkouts')}
+			preferHistoryBack={false}
 		/>
 
 		<div class="summary-hero">

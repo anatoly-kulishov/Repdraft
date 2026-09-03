@@ -3,7 +3,7 @@
 	SESSIONS_STORAGE_KEY,
 	type SessionRepository
 } from '$lib/domain/repository';
-import { HOME_RECENT_ROW_LIMIT } from '$lib/domain/home';
+import { HOME_RECENT_ROW_LIMIT, WORKOUTS_HISTORY_SKELETON_ROW_LIMIT } from '$lib/domain/home';
 import type { WorkoutSession } from '$lib/domain/types';
 
 function readSessions(): WorkoutSession[] {
@@ -40,7 +40,10 @@ export function syncHomeRecentBootDataset(): void {
 	try {
 		const historyCount = peekLocalHistoryCount();
 		const hasHistory = historyCount > 0;
-		const cappedHistoryRows = Math.min(Math.max(historyCount, 0), 4);
+		const cappedHistoryRows = Math.min(
+			Math.max(historyCount, 0),
+			WORKOUTS_HISTORY_SKELETON_ROW_LIMIT
+		);
 		document.documentElement.dataset.homeRecentRows = String(
 			hasHistory ? HOME_RECENT_ROW_LIMIT : 0
 		);
@@ -121,4 +124,9 @@ export const localSessionRepository: SessionRepository = {
 /** Wipe finished sessions; keep any unfinished rows if present. */
 export function clearFinishedSessions(): void {
 	writeSessions(readSessions().filter((s) => !s.finishedAt));
+}
+
+/** Replace entire local sessions list (backup import / cloud merge). */
+export function replaceAllSessions(sessions: WorkoutSession[]): void {
+	writeSessions(sessions);
 }

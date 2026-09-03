@@ -14,8 +14,8 @@
 	import AppFab from '$lib/components/AppFab.svelte';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, ArrowLeft, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
+	import { ICON_BUTTON, ICON_FAB, ICON_FAB_STROKE, ICON_SMALL } from '$lib/components/icons/sizes';
+	import { Copy, ArrowLeft, ArrowUp, Calendar, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { peekLocalPlanCount, syncPreviewExerciseRowsPeek } from '$lib/storage/localWorkoutRepository';
 	import { peekLocalHistoryCount } from '$lib/storage/localSessionRepository';
@@ -24,7 +24,18 @@
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
 	import { planExerciseSlotCount, planTargetSummary, resolveHomeNextPlan } from '$lib/domain/workout';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
-	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
+	import {
+		HISTORY_PAGE_SIZE,
+		WORKOUTS_HISTORY_SKELETON_ROW_LIMIT,
+		WORKOUTS_PLANS_SKELETON_ROW_LIMIT
+	} from '$lib/domain/home';
+	import {
+		formatDurationMinutes,
+		formatLocalDayKey,
+		formatRelativeDay,
+		localDayStartMs,
+		toLocalDayKey
+	} from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { navigateBack } from '$lib/navigation/back';
@@ -45,6 +56,11 @@
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
+
+	/** Show history scroll-top after this many px (about one short screen). */
+	const HISTORY_SCROLL_TOP_AFTER_PX = 360;
+
+	type HistoryDatePreset = 'all' | 'today' | 'week';
 
 	let { data } = $props();
 
@@ -82,20 +98,24 @@
 		return peekLocalPlanCount() === 0 ? 'plans-empty' : 'plans-list';
 	});
 	let skeletonRows = $derived.by(() => {
-		const cap = (n: number) => Math.min(Math.max(n, 1), 4);
+		const cap = (n: number, max: number) => Math.min(Math.max(n, 1), max);
 		if (activeTab === 'history') {
-			if ($live.historyHydrated) return cap(history.length);
-			if (data.bootPeek.historyRows > 0) return cap(data.bootPeek.historyRows);
+			if ($live.historyHydrated) return cap(history.length, WORKOUTS_HISTORY_SKELETON_ROW_LIMIT);
+			if (data.bootPeek.historyRows > 0) {
+				return cap(data.bootPeek.historyRows, WORKOUTS_HISTORY_SKELETON_ROW_LIMIT);
+			}
 			const peekedHistory = peekLocalHistoryCount();
-			if (peekedHistory > 0) return cap(peekedHistory);
+			if (peekedHistory > 0) return cap(peekedHistory, WORKOUTS_HISTORY_SKELETON_ROW_LIMIT);
 			return 1;
 		}
 		if (skeletonVariant === 'plans-empty') return 0;
-		if ($plansReady) return cap($plans.length);
-		if (data.bootPeek.planRows > 0) return cap(data.bootPeek.planRows);
+		if ($plansReady) return cap($plans.length, WORKOUTS_PLANS_SKELETON_ROW_LIMIT);
+		if (data.bootPeek.planRows > 0) {
+			return cap(data.bootPeek.planRows, WORKOUTS_PLANS_SKELETON_ROW_LIMIT);
+		}
 		const peekedPlans = peekLocalPlanCount();
 		if (peekedPlans === 0) return 0;
-		return cap(peekedPlans);
+		return cap(peekedPlans, WORKOUTS_PLANS_SKELETON_ROW_LIMIT);
 	});
 	let plansEmptyLayout = $derived(
 		activeTab === 'plans' &&
@@ -110,6 +130,142 @@
 	});
 
 	let history = $derived($live.history);
+	let historyQuery = $state('');
+	let historyDatePreset = $state<HistoryDatePreset>('all');
+	let historyDay = $state('');
+	let historyVisibleLimit = $state(HISTORY_PAGE_SIZE);
+
+	let historyFiltersActive = $derived(
+		historyQuery.trim().length > 0 || historyDatePreset !== 'all' || historyDay !== ''
+	);
+
+	let filteredHistory = $derived.by(() => {
+		let list = history;
+		const q = historyQuery.trim().toLowerCase();
+		if (q) {
+			list = list.filter((session) => session.planName.toLowerCase().includes(q));
+		}
+		if (historyDay) {
+			list = list.filter(
+				(session) => toLocalDayKey(session.finishedAt ?? session.startedAt) === historyDay
+			);
+		} else if (historyDatePreset === 'today') {
+			const today = toLocalDayKey();
+			list = list.filter(
+				(session) => toLocalDayKey(session.finishedAt ?? session.startedAt) === today
+			);
+		} else if (historyDatePreset === 'week') {
+			const from = localDayStartMs(6);
+			list = list.filter((session) => {
+				const t = new Date(session.finishedAt ?? session.startedAt).getTime();
+				return Number.isFinite(t) && t >= from;
+			});
+		}
+		return list;
+	});
+
+	let visibleHistory = $derived(filteredHistory.slice(0, historyVisibleLimit));
+	let historyHasMore = $derived(historyVisibleLimit < filteredHistory.length);
+
+	function loadMoreHistory() {
+		if (historyVisibleLimit >= filteredHistory.length) return;
+		historyVisibleLimit = Math.min(
+			filteredHistory.length,
+			historyVisibleLimit + HISTORY_PAGE_SIZE
+		);
+	}
+
+	function setHistoryPreset(preset: HistoryDatePreset) {
+		historyDatePreset = preset;
+		historyDay = '';
+		historyVisibleLimit = HISTORY_PAGE_SIZE;
+	}
+
+	function onHistoryDayInput(event: Event) {
+		const el = event.currentTarget as HTMLInputElement;
+		historyDay = el.value;
+		historyDatePreset = 'all';
+		historyVisibleLimit = HISTORY_PAGE_SIZE;
+	}
+
+	function clearHistoryFilters() {
+		historyQuery = '';
+		historyDatePreset = 'all';
+		historyDay = '';
+		historyVisibleLimit = HISTORY_PAGE_SIZE;
+	}
+
+	$effect(() => {
+		historyQuery;
+		historyDatePreset;
+		historyDay;
+		activeTab;
+		historyVisibleLimit = HISTORY_PAGE_SIZE;
+	});
+
+	$effect(() => {
+		if (activeTab !== 'history') return;
+		if (historyVisibleLimit <= filteredHistory.length) return;
+		historyVisibleLimit = filteredHistory.length > 0 ? filteredHistory.length : HISTORY_PAGE_SIZE;
+	});
+
+	let historyLoadMoreSentinel = $state<HTMLElement | null>(null);
+
+	$effect(() => {
+		if (!browser || activeTab !== 'history' || !historyHasMore || !historyLoadMoreSentinel) {
+			return;
+		}
+		const el = historyLoadMoreSentinel;
+		/* Edge-trigger: one page per approach to the end. Avoid cascade while sentinel stays visible. */
+		let armed = true;
+
+		const io = new IntersectionObserver(
+			(entries) => {
+				const entry = entries[0];
+				if (!entry) return;
+				if (entry.isIntersecting) {
+					if (!armed) return;
+					armed = false;
+					loadMoreHistory();
+				} else {
+					armed = true;
+				}
+			},
+			/* Small lead so load starts just before the true end, not 320px early. */
+			{ root: null, rootMargin: '48px 0px', threshold: 0 }
+		);
+		io.observe(el);
+
+		return () => {
+			io.disconnect();
+		};
+	});
+
+	let showHistoryScrollTop = $state(false);
+
+	function scrollHistoryToTop() {
+		const main = document.getElementById('main-content');
+		if (main) {
+			main.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			return;
+		}
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+	}
+
+	$effect(() => {
+		if (!browser || activeTab !== 'history') {
+			showHistoryScrollTop = false;
+			return;
+		}
+		const onScroll = () => {
+			const y = window.scrollY || document.documentElement.scrollTop || 0;
+			showHistoryScrollTop = y >= HISTORY_SCROLL_TOP_AFTER_PX;
+		};
+		onScroll();
+		window.addEventListener('scroll', onScroll, { passive: true });
+		return () => window.removeEventListener('scroll', onScroll);
+	});
+
 	let nextPlan = $derived.by(() =>
 		resolveHomeNextPlan($plans, history[0]?.planId, $homeNextPlan)
 	);
@@ -649,50 +805,131 @@
 				{/snippet}
 			</EmptyState>
 		{:else}
-			<ul class="entity-list entity-list--cards">
-				{#each history as session (session.id)}
-					<li>
-						<SwipeToDelete
-							label={translate(lang, 'workouts.deleteSession')}
-							disabled={historyBusyId !== null}
-							busy={historyBusyId === session.id}
-							onDelete={() => void onRemoveSession(session)}
+			<div class="workouts-history-tools">
+				<div class="workouts-page__search">
+					<SearchInput
+						bind:value={historyQuery}
+						placeholder={translate(lang, 'workouts.historySearchPh')}
+					/>
+				</div>
+				<div class="workouts-history-tools__dates" role="group" aria-label={translate(lang, 'workouts.historyDateFilter')}>
+					<button
+						type="button"
+						class={cn(
+							'workouts-history-chip',
+							historyDatePreset === 'today' && !historyDay && 'is-active'
+						)}
+						onclick={() => setHistoryPreset(historyDatePreset === 'today' ? 'all' : 'today')}
+					>
+						{translate(lang, 'home.today')}
+					</button>
+					<button
+						type="button"
+						class={cn(
+							'workouts-history-chip',
+							historyDatePreset === 'week' && !historyDay && 'is-active'
+						)}
+						onclick={() => setHistoryPreset(historyDatePreset === 'week' ? 'all' : 'week')}
+					>
+						{translate(lang, 'workouts.historyLast7Days')}
+					</button>
+					<label
+						class={cn('workouts-history-day', historyDay && 'is-active')}
+						title={translate(lang, 'workouts.historyPickDay')}
+					>
+						<span class="workouts-history-day__icon" aria-hidden="true">
+							<LucideIcon icon={Calendar} size={ICON_SMALL} />
+						</span>
+						<span class="workouts-history-day__label">
+							{historyDay
+								? formatLocalDayKey(historyDay, lang)
+								: translate(lang, 'workouts.historyPickDay')}
+						</span>
+						<input
+							class="workouts-history-day__input"
+							type="date"
+							value={historyDay}
+							max={toLocalDayKey()}
+							onchange={onHistoryDayInput}
+						/>
+					</label>
+					{#if historyFiltersActive}
+						<button
+							type="button"
+							class="workouts-history-chip workouts-history-chip--clear"
+							onclick={clearHistoryFilters}
 						>
-							<div class="entity-row">
-								<a class="entity-row__main" href={`/workouts/history/${session.id}`}>
-									<span class="entity-row__eyebrow">
-										{formatRelativeDay(session.finishedAt ?? session.startedAt, lang)}
-									</span>
-									<span class="entity-row__title">{session.planName}</span>
-									<span class="entity-row__meta">
-										{translate(lang, 'workouts.historyMeta', {
-											min: formatDurationMinutes(sessionDurationMs(session)) ?? '-',
-											sets: completedSetCount(session)
-										})}
-									</span>
-								</a>
-								<div class="entity-row__actions">
-									<AppButton
-										variant="ghost"
-										class="is-danger"
-										disabled={historyBusyId !== null}
-										aria-busy={historyBusyId === session.id}
-										aria-label={translate(lang, 'workouts.deleteSession')}
-										title={translate(lang, 'workouts.deleteSession')}
-										onclick={() => void onRemoveSession(session)}
-									>
-										{#if historyBusyId === session.id}
-											<Spinner size="sm" block={false} />
-										{:else}
-											<LucideIcon icon={Trash2} size={ICON_SMALL} />
-										{/if}
-									</AppButton>
+							{translate(lang, 'catalog.reset')}
+						</button>
+					{/if}
+				</div>
+				{#if historyFiltersActive && filteredHistory.length > 0}
+					<p class="workouts-history-tools__count" aria-live="polite">
+						{translate(lang, 'workouts.historyMatches', { n: filteredHistory.length })}
+					</p>
+				{/if}
+			</div>
+
+			{#if filteredHistory.length === 0}
+				<EmptyState
+					title={translate(lang, 'workouts.historyFilterEmptyTitle')}
+					description={translate(lang, 'workouts.historyFilterEmptyDesc')}
+					actionLabel={translate(lang, 'catalog.reset')}
+					actionOnclick={clearHistoryFilters}
+				/>
+			{:else}
+				<ul class="entity-list entity-list--cards">
+					{#each visibleHistory as session (session.id)}
+						<li>
+							<SwipeToDelete
+								label={translate(lang, 'workouts.deleteSession')}
+								disabled={historyBusyId !== null}
+								busy={historyBusyId === session.id}
+								onDelete={() => void onRemoveSession(session)}
+							>
+								<div class="entity-row">
+									<a class="entity-row__main" href={`/workouts/history/${session.id}`}>
+										<span class="entity-row__eyebrow">
+											{formatRelativeDay(session.finishedAt ?? session.startedAt, lang)}
+										</span>
+										<span class="entity-row__title">{session.planName}</span>
+										<span class="entity-row__meta">
+											{translate(lang, 'workouts.historyMeta', {
+												min: formatDurationMinutes(sessionDurationMs(session)) ?? '-',
+												sets: completedSetCount(session)
+											})}
+										</span>
+									</a>
+									<div class="entity-row__actions">
+										<AppButton
+											variant="ghost"
+											class="is-danger"
+											disabled={historyBusyId !== null}
+											aria-busy={historyBusyId === session.id}
+											aria-label={translate(lang, 'workouts.deleteSession')}
+											title={translate(lang, 'workouts.deleteSession')}
+											onclick={() => void onRemoveSession(session)}
+										>
+											{#if historyBusyId === session.id}
+												<Spinner size="sm" block={false} />
+											{:else}
+												<LucideIcon icon={Trash2} size={ICON_SMALL} />
+											{/if}
+										</AppButton>
+									</div>
 								</div>
-							</div>
-						</SwipeToDelete>
-					</li>
-				{/each}
-			</ul>
+							</SwipeToDelete>
+						</li>
+					{/each}
+				</ul>
+				{#if historyHasMore}
+					<div
+						bind:this={historyLoadMoreSentinel}
+						class="workouts-history-load-more"
+						aria-hidden="true"
+					></div>
+				{/if}
+			{/if}
 		{/if}
 	{/if}
 
@@ -702,6 +939,23 @@
 		label={translate(lang, 'workouts.newWorkout')}
 		hidden={activeTab === 'history' || (activeTab === 'plans' && $plans.length === 0)}
 	/>
+
+	{#if activeTab === 'history'}
+		<AppButton
+			variant="secondary"
+			class={cn(
+				'workouts-history-scroll-top lg:hidden',
+				showHistoryScrollTop && 'is-visible'
+			)}
+			aria-hidden={!showHistoryScrollTop}
+			tabindex={showHistoryScrollTop ? 0 : -1}
+			aria-label={translate(lang, 'workouts.scrollToTop')}
+			title={translate(lang, 'workouts.scrollToTop')}
+			onclick={scrollHistoryToTop}
+		>
+			<LucideIcon icon={ArrowUp} size={ICON_FAB} strokeWidth={ICON_FAB_STROKE} />
+		</AppButton>
+	{/if}
 </section>
 
 <BottomSheet

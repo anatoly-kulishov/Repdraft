@@ -43,6 +43,39 @@ export function formatRelativeDay(iso: string, lang: AppLocale): string {
 	return formatShortDate(iso, lang);
 }
 
+/** Local calendar day as `YYYY-MM-DD` (history filters / date input). */
+export function toLocalDayKey(isoOrDate: string | Date = new Date()): string {
+	const d = typeof isoOrDate === 'string' ? new Date(isoOrDate) : isoOrDate;
+	if (Number.isNaN(d.getTime())) return '';
+	const y = d.getFullYear();
+	const m = String(d.getMonth() + 1).padStart(2, '0');
+	const day = String(d.getDate()).padStart(2, '0');
+	return `${y}-${m}-${day}`;
+}
+
+/** Format `YYYY-MM-DD` in the user's locale without UTC day-shift. */
+export function formatLocalDayKey(dayKey: string, lang: AppLocale): string {
+	const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dayKey);
+	if (!m) return dayKey;
+	const date = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+	try {
+		return new Intl.DateTimeFormat(localeTag(lang), {
+			day: 'numeric',
+			month: 'short'
+		}).format(date);
+	} catch {
+		return dayKey;
+	}
+}
+
+/** Start of local day N calendar days before today (0 = today). */
+export function localDayStartMs(daysAgo = 0): number {
+	const now = new Date();
+	const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+	start.setDate(start.getDate() - daysAgo);
+	return start.getTime();
+}
+
 /** mm:ss, or h:mm:ss when extended and over an hour. */
 export function formatDurationMs(ms: number | null, opts?: { extended?: boolean }): string {
 	if (ms == null) return '-';

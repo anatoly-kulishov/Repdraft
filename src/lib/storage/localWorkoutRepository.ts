@@ -68,7 +68,8 @@ export function peekPreviewExerciseRows(planId: string): number {
 export function syncWorkoutsPlanRowsCookie(planCount: number): void {
 	if (typeof document === 'undefined') return;
 	try {
-		const capped = Math.min(Math.max(planCount, 0), 4);
+		/* Match WORKOUTS_PLANS_SKELETON_ROW_LIMIT in domain/home.ts */
+		const capped = Math.min(Math.max(planCount, 0), 6);
 		document.documentElement.dataset.workoutsPlanRows = String(capped);
 		document.cookie = `repdraft_workouts_plan_rows=${capped}; path=/; Max-Age=31536000; SameSite=Lax`;
 	} catch {
