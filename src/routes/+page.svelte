@@ -121,32 +121,6 @@
 		if (!browser) return false;
 		return peekAccountBoot();
 	});
-	let bootHomePeek = $derived.by((): 'create' | 'start' | null => {
-		if (bootAccountPeek) return 'start';
-		if (data.bootPeek.homeBoot === 'create' || data.bootPeek.homeBoot === 'start') {
-			return data.bootPeek.homeBoot;
-		}
-		if (!browser) return null;
-		const fromDom = document.documentElement.dataset.homeBoot;
-		if (fromDom === 'create' || fromDom === 'start') return fromDom;
-		return null;
-	});
-	let bootSkeletonVariant = $derived.by(() =>
-		resolveHomeSkeletonVariant({
-			force: skeletonForce,
-			accountBoot: bootAccountPeek,
-			homeBoot: bootHomePeek,
-			authReady: $auth.ready,
-			hasUser: Boolean($auth.user),
-			hasPlans
-		})
-	);
-	let bootShowChecklist = $derived.by(() => {
-		if (data.bootPeek.showChecklist) return true;
-		if (!browser) return false;
-		if (document.documentElement.dataset.homeShowChecklist === '1') return true;
-		return peekShouldShowChecklist();
-	});
 	let bootLikelyHasPlans = $derived.by(() => {
 		if ($plans.length > 0) return true;
 		if (!browser) return false;
@@ -157,6 +131,35 @@
 		} catch {
 			return false;
 		}
+	});
+	let bootHomePeek = $derived.by((): 'create' | 'start' | null => {
+		if (bootAccountPeek) return 'start';
+		/* Local peeks beat stale SSR cookie (plans import / account race). */
+		if (browser) {
+			if (peekHasLocalPlans()) return 'start';
+			const fromDom = document.documentElement.dataset.homeBoot;
+			if (fromDom === 'start' || fromDom === 'create') return fromDom;
+		}
+		if (data.bootPeek.homeBoot === 'create' || data.bootPeek.homeBoot === 'start') {
+			return data.bootPeek.homeBoot;
+		}
+		return null;
+	});
+	let bootSkeletonVariant = $derived.by(() =>
+		resolveHomeSkeletonVariant({
+			force: skeletonForce,
+			accountBoot: bootAccountPeek,
+			homeBoot: bootHomePeek,
+			authReady: $auth.ready,
+			hasUser: Boolean($auth.user),
+			hasPlans: hasPlans || bootLikelyHasPlans
+		})
+	);
+	let bootShowChecklist = $derived.by(() => {
+		if ($onboardingHydrated) return shouldShowChecklist($onboarding);
+		/* Local truth beats stale SSR checklist cookie. */
+		if (browser) return peekShouldShowChecklist();
+		return Boolean(data.bootPeek.showChecklist);
 	});
 	let bootLikelySignedIn = $derived.by(() => {
 		if (bootAccountPeek) return true;
@@ -178,16 +181,7 @@
 		if (fromStore > 0) return HOME_RECENT_ROW_LIMIT;
 		return readBootSkeletonRecentRows(false);
 	});
-	let showBootSkeleton = $derived(
-		skeletonForce !== null ||
-			!pageReady ||
-			(bootSkeletonVariant === 'start' && !indexReady)
-	);
-
-	/**
-	 * Guest create skeleton only when auth confirmed guest with no plans.
-	 * While auth bootstraps or SSR, prefer start — never flash guest UI to signed-in users.
-	 */
+	let showBootSkeleton = $derived(skeletonForce !== null || !pageReady);
 
 	let isCreateHome = $derived(!hasPlans);
 	let showGuestCreateHero = $derived(pageReady && isGuest && isCreateHome);

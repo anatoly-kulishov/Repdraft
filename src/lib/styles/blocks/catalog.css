@@ -1120,6 +1120,24 @@
 	opacity: 1;
 }
 
+/* Swipe-back / history: remounted thumbs must not fade from 0 again. */
+html[data-nav-back] :is(.exercise-card img, .exercise-card-img, .zone-card__img) {
+	opacity: 1;
+	transition: none;
+}
+
+html[data-nav-back] .zone-card__media-skel {
+	display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.exercise-card img,
+	.exercise-card-img,
+	.content-page--catalog .catalog-hub-grid .zone-card--grid .zone-card__img {
+		transition: none;
+	}
+}
+
 .skip-link {
 	position: absolute;
 	left: 0.75rem;

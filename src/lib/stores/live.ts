@@ -129,7 +129,12 @@ function createLiveStore() {
 				wantCloud: isSessionsCloudAvailable(),
 				listKey: 'sessions',
 				previousItems: get(store).history,
-				label: 'sessions'
+				label: 'sessions',
+				onUpdate: (partial) => {
+					/* Unlock home as soon as local sessions exist — don't wait on cloud. */
+					const finished = partial.items.filter((x) => x.finishedAt && !deleted.has(x.id));
+					store.update((s) => ({ ...s, history: finished, historyHydrated: true }));
+				}
 			});
 			const unnamedIds = result.items
 				.filter((session) => isJunkUnnamedSession(session))

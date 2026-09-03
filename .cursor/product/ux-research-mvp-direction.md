@@ -16,11 +16,14 @@ REPdraft should not try to win by having the most features. The market already h
 
 ## 1. The REPdraft mantra
 
-**IMPROVE THE EXPERIENCE. NOT THE FEATURE COUNT.**
+**IMPROVE THE EXPERIENCE. NOT THE FEATURE COUNT.**  
+**FAST ON WEAK DEVICES.**
 
 Make the existing flow faster, clearer, simpler and calmer. No feature creep. First build the best possible MVP. Then validate it. Then earn the right to build more.
 
-**Decision rule:** before implementing anything, ask whether it makes an existing user action faster, clearer, easier, or less cognitively demanding. If not, it is outside the MVP unless required for correctness.
+Target the gym phone people actually bring: often older, low RAM, slow CPU. Long history, media, backup import, and live logging must stay usable there. Prefer pagination, deferred work, and lean renders over “load everything now.”
+
+**Decision rule:** before implementing anything, ask whether it makes an existing user action faster, clearer, easier, or less cognitively demanding - and whether it stays smooth on a weak device. If not, it is outside the MVP unless required for correctness.
 
 ---
 
