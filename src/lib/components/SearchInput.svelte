@@ -1,6 +1,5 @@
 <script lang="ts">
 	import AppInput from '$lib/components/AppInput.svelte';
-	import AppIconButton from '$lib/components/AppIconButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { cn } from '$lib/utils.js';
 	import { ICON_INPUT } from '$lib/components/icons/sizes';
@@ -79,14 +78,15 @@
 		oninput={onInput}
 	/>
 	{#if canClear}
-		<AppIconButton
-			class="clear-btn !min-h-0 !min-w-0 size-auto p-0"
+		<button
+			type="button"
+			class="search-clear-btn"
 			onclick={clear}
 			aria-label={translate(lang, 'a11y.clearSearch')}
 			title={translate(lang, 'a11y.clearSearch')}
 		>
 			<LucideIcon icon={X} size={ICON_INPUT} />
-		</AppIconButton>
+		</button>
 	{/if}
 </label>
 
@@ -106,17 +106,18 @@
 		pointer-events: none;
 	}
 
-	:global(.clear-btn) {
+	.search-clear-btn {
 		position: absolute;
-		top: 0;
-		bottom: 0;
+		top: 50%;
 		right: 0.35rem;
 		z-index: 1;
 		display: grid;
 		place-items: center;
 		width: 1.85rem;
 		height: 1.85rem;
-		margin-block: auto;
+		min-width: 1.85rem;
+		min-height: 1.85rem;
+		margin: 0;
 		padding: 0;
 		border: 0;
 		border-radius: 9999px;
@@ -126,16 +127,17 @@
 		cursor: pointer;
 		appearance: none;
 		-webkit-appearance: none;
+		transform: translateY(-50%);
 	}
 
 	/* Keep ≥44px tap without making the visible disc taller than the field. */
-	:global(.clear-btn::before) {
+	.search-clear-btn::before {
 		content: '';
 		position: absolute;
 		inset: -0.55rem;
 	}
 
-	:global(.clear-btn:hover) {
+	.search-clear-btn:hover {
 		background: var(--color-surface-muted);
 		color: var(--color-ink);
 	}

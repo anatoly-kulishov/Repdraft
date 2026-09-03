@@ -75,6 +75,8 @@
 
 	onNavigate((navigation) => {
 		if (typeof document === 'undefined' || !document.startViewTransition) return;
+		/* Native swipe-back / history already animates; VT double-paints and flickers chrome. */
+		if (navigation.type === 'popstate') return;
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 		return new Promise<void>((resolve) => {
 			document.startViewTransition(async () => {

@@ -28,7 +28,11 @@ export type CoachmarkId =
 	| 'workouts.preview'
 	| 'exercises.search'
 	| 'exercises.picker'
+	| 'exercises.saved'
 	| 'exercise.tabs'
+	| 'exercise.bookmark'
+	| 'exercise.historyEmpty'
+	| 'bookmarks.empty'
 	| 'records.empty'
 	| 'history.detail'
 	| 'draft.dock';
@@ -42,7 +46,11 @@ export const COACHMARK_IDS: readonly CoachmarkId[] = [
 	'workouts.preview',
 	'exercises.search',
 	'exercises.picker',
+	'exercises.saved',
 	'exercise.tabs',
+	'exercise.bookmark',
+	'exercise.historyEmpty',
+	'bookmarks.empty',
 	'records.empty',
 	'history.detail',
 	'draft.dock'

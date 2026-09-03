@@ -3904,7 +3904,7 @@ body:has(.sticky-actions) .draft-dock {
 }
 
 .catalog-empty-state--saved.empty-state--centered .empty-state__desc {
-	max-width: 22rem;
+	max-width: 18.5rem;
 }
 
 .catalog-empty-state--saved .empty-state__action {

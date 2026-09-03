@@ -20,7 +20,7 @@
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { records, recordsReady, recordsSync } from '$lib/stores/records';
+	import { records, recordsSync } from '$lib/stores/records';
 	import { isCloudListUncertain } from '$lib/domain/cloudSync';
 	import { linkWithFrom } from '$lib/domain/navigation';
 	import { onboarding } from '$lib/stores/onboarding';
@@ -29,9 +29,11 @@
 	import { Trophy, Trash2 } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
+	import { browser } from '$app/environment';
 
 	const RECORDS_PATH = '/exercises/records';
 
+	let { data } = $props();
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let indexReady = $state(false);
 	let busyId = $state<string | null>(null);
@@ -40,15 +42,20 @@
 	let lang = $derived($resolvedLocale);
 	let showRecordsEmptyCoachmark = $derived(shouldShowCoachmark($onboarding, 'records.empty'));
 	let title = $derived(translate(lang, 'records.title'));
-	/** Avoid empty-state flash while cloud merge is still in flight (local may be []). */
+	let displayRecords = $derived($records.filter(hasLiftData));
+	/**
+	 * Empty → EmptyState. SSR cookie peek 0 → empty; unknown/>0 → skeleton.
+	 * Cloud may still fill an empty local list while stale/loading.
+	 */
 	let showSkeleton = $derived(
-		!$recordsReady ||
-			$recordsSync === 'loading' ||
-			$recordsSync === 'idle' ||
-			($recordsSync === 'stale' && $records.length === 0)
+		browser
+			? displayRecords.length === 0 &&
+					($recordsSync === 'stale' || $recordsSync === 'loading')
+			: data.recordsCountPeek === null
+				? true
+				: data.recordsCountPeek > 0
 	);
 	let listUncertain = $derived(isCloudListUncertain($recordsSync));
-	let displayRecords = $derived($records.filter(hasLiftData));
 	let filteredRecords = $derived.by(() => {
 		const query = normalizeSearchText(searchQuery);
 		if (!query) return displayRecords;
