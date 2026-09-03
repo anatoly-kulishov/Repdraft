@@ -4,12 +4,20 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
-const pkg = JSON.parse(
-	readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf-8')
-) as { version: string };
+const root = fileURLToPath(new URL('.', import.meta.url));
+const pkg = JSON.parse(readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf-8')) as {
+	version: string;
+};
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
+	resolve: {
+		// Vercel sveltekit entrypoints only advertise the `svelte` export condition.
+		alias: {
+			'@vercel/analytics/sveltekit': `${root}node_modules/@vercel/analytics/dist/sveltekit/index.mjs`,
+			'@vercel/speed-insights/sveltekit': `${root}node_modules/@vercel/speed-insights/dist/sveltekit/index.mjs`
+		}
+	},
 	build: {
 		target: 'es2020',
 		cssMinify: 'lightningcss'
