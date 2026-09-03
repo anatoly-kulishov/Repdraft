@@ -8,6 +8,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
+	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
@@ -18,6 +19,8 @@
 	import { catalogZoneBodyParts, isCatalogZone } from '$lib/domain/catalogLinks';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { currentReturnPath, linkWithFrom } from '$lib/domain/navigation';
+	import { shouldShowCoachmark } from '$lib/domain/onboarding';
+	import { blurActiveElement } from '$lib/dom/blurActiveElement';
 	import { urlSearchParams } from '$lib/navigation/urlSearchParams';
 	import type { ExerciseFilters, ExerciseIndexItem } from '$lib/domain/types';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
@@ -25,6 +28,7 @@
 	import { CATALOG_PAGE_SIZE } from '$lib/stores/catalogUi';
 	import { bookmarks } from '$lib/stores/bookmarks';
 	import { exerciseStats } from '$lib/stores/exerciseStats';
+	import { onboarding } from '$lib/stores/onboarding';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { browser } from '$app/environment';
@@ -45,7 +49,9 @@
 		initialBodyPart = '',
 		listOnMobile = true,
 		gridOnDesktop = false,
-		savedOnly = false
+		savedOnly = false,
+		/** SSR cookie peek: 0 = known empty, >0 = expect list, null = unknown. */
+		bookmarksCountPeek = null as number | null
 	}: {
 		equipment: string[];
 		targets: string[];
@@ -61,6 +67,7 @@
 		/** List on phone, grid from 768px (catalog all/zone and builder add flow). */
 		gridOnDesktop?: boolean;
 		savedOnly?: boolean;
+		bookmarksCountPeek?: number | null;
 	} = $props();
 
 	function filtersFromSearchParams(searchParams: URLSearchParams): ExerciseFilters {
@@ -174,12 +181,44 @@
 	let filterConflict = $derived(
 		visible.length === 0 ? isFilterConflict(catalog, filters, lang) : false
 	);
-	let totalForCount = $derived(indexReady ? visible.length : totalCount);
+	/**
+	 * Saved never uses catalog totalCount as the denominator — that caused «0 из 1324»
+	 * when empty bookmarks skip the skeleton before the index loads.
+	 */
+	let totalForCount = $derived(
+		savedOnly
+			? indexReady
+				? visible.length
+				: $bookmarks.length
+			: indexReady
+				? visible.length
+				: totalCount
+	);
 	let hasMore = $derived(
 		indexReady && visibleLimit < (useSections ? allSectionItems.length : visible.length)
 	);
-	let bookmarksLoaded = $state(false);
-	let showListSkeleton = $derived(!indexReady || (savedOnly && !bookmarksLoaded));
+	/**
+	 * Saved empty → EmptyState (not card skeletons).
+	 * SSR: cookie peek 0 → empty; peek >0 / unknown → skeleton. Client: skeleton while bookmarks await index.
+	 */
+	let showListSkeleton = $derived(
+		savedOnly
+			? browser
+				? $bookmarks.length > 0 && !indexReady
+				: bookmarksCountPeek === null
+					? true
+					: bookmarksCountPeek > 0
+			: !indexReady
+	);
+	let countN = $derived(
+		savedOnly
+			? indexReady
+				? visible.length
+				: $bookmarks.length
+			: filtersActive || indexReady
+				? visible.length
+				: totalForCount
+	);
 	let cardVariant = $derived(
 		savedOnly
 			? ('list' as const)
@@ -195,6 +234,18 @@
 	let emptyStateClass = $derived(
 		`catalog-empty-state${savedOnly ? ' catalog-empty-state--saved' : ''}`
 	);
+	/** No bookmarks at all: full EmptyState like Records (no search / count chrome). */
+	let savedTrulyEmpty = $derived(
+		savedOnly && !showListSkeleton && !indexError && $bookmarks.length === 0
+	);
+	let showBookmarksEmptyCoachmark = $derived(
+		savedTrulyEmpty && shouldShowCoachmark($onboarding, 'bookmarks.empty')
+	);
+
+	function dismissBookmarksEmptyCoachmark() {
+		onboarding.dismissCoachmark('bookmarks.empty');
+		blurActiveElement();
+	}
 
 	function resetCatalogFilters() {
 		filters = {
@@ -313,9 +364,12 @@
 	});
 
 	onMount(() => {
-		void bookmarks.refresh().finally(() => {
-			bookmarksLoaded = true;
-		});
+		void bookmarks.refresh();
+		const peekedOnMount = peekExerciseIndex();
+		if (peekedOnMount && !indexReady) {
+			items = peekedOnMount;
+			indexReady = true;
+		}
 		void loadExerciseIndex()
 			.then((all) => {
 				items = all;
@@ -383,6 +437,26 @@
 	});
 </script>
 
+{#if savedTrulyEmpty}
+	<EmptyState
+		class={emptyStateClass}
+		centered
+		icon={Bookmark}
+		title={translate(lang, 'bookmarks.emptyTitle')}
+		description={translate(lang, 'bookmarks.emptyDesc')}
+		actionHref="/exercises"
+		actionLabel={translate(lang, 'bookmarks.browse')}
+	>
+		{#snippet actions()}
+			{#if showBookmarksEmptyCoachmark}
+				<Coachmark
+					message={translate(lang, 'onboarding.coachBookmarksEmpty')}
+					onDismiss={dismissBookmarksEmptyCoachmark}
+				/>
+			{/if}
+		{/snippet}
+	</EmptyState>
+{:else}
 <div class="catalog-list-layout">
 	<div
 		class="catalog-list-layout__filters"
@@ -449,7 +523,7 @@
 	<p class="catalog-list-count mb-3 text-sm text-[var(--color-muted)]" aria-live="polite">
 		{translate(lang, 'catalog.countShown', {
 			shown: shownCount,
-			n: filtersActive || indexReady ? visible.length : totalForCount
+			n: countN
 		})}
 	</p>
 	{#if visible.length === 0}
@@ -681,3 +755,4 @@
 {/if}
 	</div>
 </div>
+{/if}

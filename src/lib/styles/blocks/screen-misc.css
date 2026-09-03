@@ -223,6 +223,11 @@
 		overflow: visible;
 	}
 
+	/* Beat .shell-main--subroute .screen-header chrome bg on desktop. */
+	.shell-main--subroute .screen-header {
+		background: transparent;
+	}
+
 	.screen-header-title {
 		font-size: 1.5rem;
 		font-weight: 700;
@@ -253,7 +258,46 @@
 		flex-shrink: 0;
 	}
 
-	/* Match mobile stacked crumb + title on desktop sub-routes. */
+	/*
+	 * Unlabeled back: one row (← Title), not a lonely arrow above the title.
+	 * Stacked crumb + title stays for .screen-header--back-label only.
+	 */
+	.screen-header:not(.screen-header--back-label) {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		column-gap: 0.35rem;
+		row-gap: 0;
+		min-height: var(--screen-header-min-h);
+	}
+
+	.screen-header:not(.screen-header--back-label) .screen-header__bar {
+		display: contents;
+	}
+
+	.screen-header:not(.screen-header--back-label) .screen-header-crumb {
+		grid-column: 1;
+		grid-row: 1;
+		justify-content: center;
+		width: 3rem;
+		min-width: 3rem;
+		height: 3rem;
+		min-height: 3rem;
+		margin-left: -0.45rem;
+		padding: 0;
+	}
+
+	.screen-header:not(.screen-header--back-label) .screen-header-title {
+		grid-column: 2;
+		grid-row: 1;
+	}
+
+	.screen-header:not(.screen-header--back-label) .screen-header-actions {
+		grid-column: 3;
+		grid-row: 1;
+	}
+
+	/* Labeled crumb + title stacked on desktop sub-routes. */
 	.screen-header--back-label {
 		display: flex;
 		flex-direction: column;
@@ -1461,8 +1505,9 @@
 	}
 }
 
-/* Desktop guest: narrow centered column, not full main width. */
+/* Desktop guest: one narrow column (header + tagline + form), left of main. */
 @media (min-width: 1024px) {
+	.auth-page:not(.auth-page--account):not(.auth-page--booting) > .screen-header,
 	.auth-page:not(.auth-page--account):not(.auth-page--booting) .auth-page__header,
 	.auth-page:not(.auth-page--account):not(.auth-page--booting) .auth-guest-stack,
 	.auth-page:not(.auth-page--account):not(.auth-page--booting) > .auth-panel {
@@ -1487,6 +1532,7 @@
 
 /* Wide desktop: pin guest column to the left of main (same rhythm as Home). */
 @media (min-width: 1200px) {
+	.auth-page:not(.auth-page--account):not(.auth-page--booting) > .screen-header,
 	.auth-page:not(.auth-page--account):not(.auth-page--booting) .auth-page__header,
 	.auth-page:not(.auth-page--account):not(.auth-page--booting) .auth-guest-stack,
 	.auth-page:not(.auth-page--account):not(.auth-page--booting) > .auth-panel {

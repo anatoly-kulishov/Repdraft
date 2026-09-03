@@ -37,6 +37,12 @@
 	let error = $derived(data.indexError);
 	let fromParam = $derived(readSearchParam($page.url, 'from'));
 	let fromBuilder = $derived(isBuilderReturnPath(fromParam));
+	/** After search tip: point at Saved chip without stacking. */
+	let showExercisesSavedCoachmark = $derived(
+		!fromBuilder &&
+			!showExercisesSearchCoachmark &&
+			shouldShowCoachmark($onboarding, 'exercises.saved')
+	);
 	let hubTitle = $derived(translate(lang, 'catalog.hubTitle'));
 	let headerTitle = $derived(
 		fromBuilder ? translate(lang, 'builder.addExercise') : hubTitle
@@ -74,6 +80,11 @@
 
 	function dismissExercisesSearchCoachmark() {
 		onboarding.dismissCoachmark('exercises.search');
+		blurActiveElement();
+	}
+
+	function dismissExercisesSavedCoachmark() {
+		onboarding.dismissCoachmark('exercises.saved');
 		blurActiveElement();
 	}
 </script>
@@ -117,6 +128,12 @@
 			/>
 		{/if}
 		<CatalogHubChips from={fromParam} pickMode={fromBuilder} />
+		{#if showExercisesSavedCoachmark}
+			<Coachmark
+				message={translate(lang, 'onboarding.coachExercisesSaved')}
+				onDismiss={dismissExercisesSavedCoachmark}
+			/>
+		{/if}
 	</div>
 
 	{#if error}
