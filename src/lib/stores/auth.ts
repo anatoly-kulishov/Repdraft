@@ -33,6 +33,11 @@ import { toasts } from './toasts';
 type AuthState = {
 	configured: boolean;
 	ready: boolean;
+	/**
+	 * True after the first getSession / applySession (or when cloud is off).
+	 * `ready` can unlock shell earlier; do not treat user as guest until this is true.
+	 */
+	sessionKnown: boolean;
 	/** False while initial local plans/records hydrate is in flight. */
 	dataBootstrap: boolean;
 	session: Session | null;
@@ -57,6 +62,7 @@ function createAuthStore() {
 	const { subscribe, set, update } = writable<AuthState>({
 		configured: false,
 		ready: false,
+		sessionKnown: false,
 		dataBootstrap: !browser,
 		session: null,
 		user: null,
@@ -68,7 +74,10 @@ function createAuthStore() {
 		opts: { cacheAction: LocalCacheUserAction }
 	) {
 		try {
-			await Promise.all([plans.refresh(), records.refresh(), live.refreshHistory()]);
+			/* Serial cloud pulls — parallel hung workout_sessions + technique_clips starved the pool. */
+			await plans.refresh();
+			await records.refresh();
+			await live.refreshHistory();
 			if (loggedIn) {
 				let hadGuestData = false;
 				if (opts.cacheAction === 'bind-first') {
@@ -81,7 +90,9 @@ function createAuthStore() {
 						plansLocal.length > 0 || sessionsLocal.length > 0 || recordsLocal.length > 0;
 				}
 				await migrateLocalToCloud();
-				await Promise.all([plans.refresh(), records.refresh(), live.refreshHistory()]);
+				await plans.refresh();
+				await records.refresh();
+				await live.refreshHistory();
 				if (hadGuestData) {
 					toasts.show(translate(get(resolvedLocale), 'auth.migrateLocalHint'), 'info');
 				}
@@ -108,9 +119,10 @@ function createAuthStore() {
 			await Promise.all([
 				plans.refresh({ cloud: false }),
 				records.refresh({ cloud: false }),
-				bookmarks.refresh(),
-				live.refreshHistory()
+				bookmarks.refresh()
 			]);
+			// History: hydrate seeds local + refreshHistory({ cloud:false }); cloud merge in runCloudBootstrap.
+			void live.refreshHistory({ cloud: false });
 		} catch (err) {
 			console.error('local bootstrap failed', err);
 		} finally {
@@ -168,6 +180,7 @@ function createAuthStore() {
 		set({
 			configured: isSupabaseConfigured(),
 			ready: true,
+			sessionKnown: true,
 			dataBootstrap: false,
 			session,
 			user: session?.user ?? null,
@@ -187,6 +200,7 @@ function createAuthStore() {
 			set({
 				configured: false,
 				ready: true,
+				sessionKnown: true,
 				dataBootstrap: true,
 				session: null,
 				user: null,
@@ -201,6 +215,7 @@ function createAuthStore() {
 			set({
 				configured: false,
 				ready: true,
+				sessionKnown: true,
 				dataBootstrap: false,
 				session: null,
 				user: null,
@@ -217,6 +232,7 @@ function createAuthStore() {
 			set({
 				configured: true,
 				ready: true,
+				sessionKnown: true,
 				dataBootstrap: true,
 				session: null,
 				user: null,
@@ -224,6 +240,18 @@ function createAuthStore() {
 			});
 			return;
 		}
+
+		/* Unlock shell chrome immediately; getSession may hang on slow networks.
+		 * Keep sessionKnown false so UI does not flash guest for signed-in peeks. */
+		set({
+			configured: true,
+			ready: true,
+			sessionKnown: false,
+			dataBootstrap: false,
+			session: null,
+			user: null,
+			passwordRecovery: false
+		});
 
 		let session: Session | null = null;
 		try {

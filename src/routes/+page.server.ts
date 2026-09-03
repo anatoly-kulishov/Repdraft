@@ -22,6 +22,7 @@ export const load: PageServerLoad = ({ cookies }) => {
 		bootPeek: {
 			activeSession,
 			hasHistory,
+			hasPlans,
 			recentRows: hasHistory ? HOME_RECENT_ROW_LIMIT : 0,
 			accountBoot,
 			homeBoot,

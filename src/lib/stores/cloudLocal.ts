@@ -1,5 +1,6 @@
 import { isCloudFresh, type SyncListKey } from '$lib/domain/cacheFreshness';
 import type { CloudListRefreshResult } from '$lib/domain/cloudSync';
+import { isCloudPersistableId } from '$lib/domain/id';
 import type { RepdraftExportPayload } from '$lib/domain/exportData';
 import { CLOUD_REQUEST_MS } from '$lib/domain/networkTimeouts';
 import { withTimeout } from '$lib/domain/withTimeout';
@@ -80,12 +81,15 @@ export async function refreshLocalCloudList<T>(opts: {
 export async function mirrorCloudWrite(opts: {
 	localWrite: () => Promise<void>;
 	cloudWrite?: () => Promise<void>;
+	/** When set, cloud mirror is skipped for local-only ids (demo plan, id-* fallbacks). */
+	cloudId?: string;
 	label: string;
 	/** Enqueued when cloud mirror fails so reconnect can flush. */
 	outboxOnFail?: SyncOutboxEntry;
 }): Promise<boolean> {
 	await opts.localWrite();
 	if (!isCloudMode() || !opts.cloudWrite) return true;
+	if (opts.cloudId !== undefined && !isCloudPersistableId(opts.cloudId)) return true;
 	try {
 		await withTimeout(opts.cloudWrite(), CLOUD_REQUEST_MS);
 		return true;
@@ -104,9 +108,11 @@ export async function syncImportedPayloadToCloud(payload: RepdraftExportPayload)
 	const noop = async () => {};
 
 	for (const plan of payload.plans) {
+		if (!isCloudPersistableId(plan.id)) continue;
 		const ok = await mirrorCloudWrite({
 			localWrite: noop,
 			cloudWrite: () => supabaseWorkoutRepository.save(plan),
+			cloudId: plan.id,
 			label: 'import.plan',
 			outboxOnFail: { kind: 'plan.save', id: plan.id }
 		});

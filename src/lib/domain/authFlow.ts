@@ -119,7 +119,9 @@ export function userAvatarUrl(user: AuthUserLike | null | undefined): string | n
 	for (const key of ['avatar_url', 'picture'] as const) {
 		const url = metaString(meta, key);
 		if (!url) continue;
-		if (url.startsWith('https://') || url.startsWith('http://')) return url;
+		if (url.startsWith('https://') || url.startsWith('http://')) {
+			return url;
+		}
 	}
 	return null;
 }

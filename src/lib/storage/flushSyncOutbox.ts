@@ -1,4 +1,5 @@
 import { CLOUD_REQUEST_MS } from '$lib/domain/networkTimeouts';
+import { isCloudPersistableId } from '$lib/domain/id';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { isCloudMode, isSessionsCloudAvailable } from '$lib/storage/dataAccess';
 import { localRecordRepository } from '$lib/storage/localRecordRepository';
@@ -27,6 +28,7 @@ export async function flushSyncOutbox(): Promise<void> {
 	if (inflight) return inflight;
 
 	inflight = (async () => {
+		purgeLocalOnlyOutboxEntries();
 		const entries = listOutbox();
 		for (const entry of entries) {
 			try {
@@ -44,7 +46,37 @@ export async function flushSyncOutbox(): Promise<void> {
 	return inflight;
 }
 
+function purgeLocalOnlyOutboxEntries(): void {
+	for (const entry of listOutbox()) {
+		if (!shouldFlushOutboxEntry(entry)) removeOutboxEntry(entry);
+	}
+}
+
+/** Drop demo-plan and other local-only ids from the outbox (safe on boot). */
+export function purgeUnsyncableOutboxEntries(): void {
+	purgeLocalOnlyOutboxEntries();
+}
+
+function shouldFlushOutboxEntry(entry: SyncOutboxEntry): boolean {
+	switch (entry.kind) {
+		case 'session.save':
+		case 'session.delete':
+			return isCloudPersistableId(entry.id);
+		case 'plan.save':
+		case 'plan.delete':
+			return isCloudPersistableId(entry.id);
+		case 'record.save':
+		case 'record.delete':
+			return true;
+		default: {
+			const _exhaustive: never = entry;
+			return _exhaustive;
+		}
+	}
+}
+
 async function flushOne(entry: SyncOutboxEntry): Promise<void> {
+	if (!shouldFlushOutboxEntry(entry)) return;
 	switch (entry.kind) {
 		case 'session.save': {
 			if (!isSessionsCloudAvailable()) return;

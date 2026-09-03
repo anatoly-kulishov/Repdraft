@@ -15,7 +15,7 @@
 		totalSetCount
 	} from '$lib/domain/session';
 	import { resolveHomeNextPlan, planExerciseSlotCount, planTargetSummary } from '$lib/domain/workout';
-	import { HOME_RECENT_ROW_LIMIT, resolveHomeSkeletonVariant } from '$lib/domain/home';
+	import { HOME_RECENT_ROW_LIMIT, resolveHomeSkeletonVariant, shouldShowHomeChecklistSkeleton } from '$lib/domain/home';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
@@ -46,13 +46,12 @@
 	import { peekAccountBoot } from '$lib/storage/homeBootPeek';
 	import { peekLikelySignedInUserId } from '$lib/storage/localUserCache';
 	import { onMount } from 'svelte';
-	import { get } from 'svelte/store';
 	import { ChevronRight, LogIn, NotebookPen, Play, Plus, Smartphone, UserRound } from '@lucide/svelte';
 
 	let { data } = $props();
 
-	function readBootSkeletonRecentRows(showPlansColumn: boolean): number {
-		if (showPlansColumn || !browser) return 0;
+	function readBootSkeletonRecentRows(): number {
+		if (!browser) return 0;
 		const fromDom = document.documentElement.dataset.homeRecentRows;
 		if (fromDom) {
 			const parsed = Number.parseInt(fromDom, 10);
@@ -94,10 +93,10 @@
 	let hasPlans = $derived($plans.length > 0);
 	let hasSessionHistory = $derived(recent.length > 0);
 	let isFirstTimeHome = $derived(!hasPlans && !hasSessionHistory);
-	let isGuest = $derived($auth.ready && $auth.configured && !$auth.user);
+	let isGuest = $derived($auth.ready && $auth.sessionKnown && $auth.configured && !$auth.user);
 	let authHref = '/auth?next=%2F';
 	let pageReady = $derived(
-		$auth.ready && $auth.dataBootstrap && $live.ready && $live.historyHydrated
+		$auth.ready && $auth.sessionKnown && $live.ready && $live.historyHydrated
 	);
 
 	/** Dev/QA: ?skeleton=create|start */
@@ -123,9 +122,9 @@
 	});
 	let bootLikelyHasPlans = $derived.by(() => {
 		if ($plans.length > 0) return true;
+		if (data.bootPeek.hasPlans) return true;
 		if (!browser) return false;
 		if (peekHasLocalPlans()) return true;
-		if (document.documentElement.dataset.homeBoot === 'start') return true;
 		try {
 			return document.cookie.includes('repdraft_home_has_plans=1');
 		} catch {
@@ -145,10 +144,17 @@
 		}
 		return null;
 	});
+	let bootLikelySignedIn = $derived.by(() => {
+		if (bootAccountPeek) return true;
+		if ($auth.ready && $auth.user) return true;
+		if (!browser) return false;
+		return peekLikelySignedInUserId() !== null;
+	});
 	let bootSkeletonVariant = $derived.by(() =>
 		resolveHomeSkeletonVariant({
 			force: skeletonForce,
 			accountBoot: bootAccountPeek,
+			likelySignedIn: bootLikelySignedIn,
 			homeBoot: bootHomePeek,
 			authReady: $auth.ready,
 			hasUser: Boolean($auth.user),
@@ -156,18 +162,18 @@
 		})
 	);
 	let bootShowChecklist = $derived.by(() => {
-		if ($onboardingHydrated) return shouldShowChecklist($onboarding);
-		/* Local truth beats stale SSR checklist cookie. */
-		if (browser) return peekShouldShowChecklist();
-		return Boolean(data.bootPeek.showChecklist);
+		const onboardingShowsChecklist = $onboardingHydrated
+			? shouldShowChecklist($onboarding)
+			: browser
+				? peekShouldShowChecklist()
+				: Boolean(data.bootPeek.showChecklist);
+		return shouldShowHomeChecklistSkeleton({
+			onboardingShowsChecklist,
+			hasPlans: hasPlans || bootLikelyHasPlans,
+			homeBoot: bootHomePeek
+		});
 	});
-	let bootLikelySignedIn = $derived.by(() => {
-		if (bootAccountPeek) return true;
-		if ($auth.ready && $auth.user) return true;
-		if (!browser) return false;
-		return peekLikelySignedInUserId() !== null;
-	});
-	/** Plans column only for signed-in user with zero plans — matches live `!hasPlans && !isGuest`. */
+	/** Plans cookie only from real local plans — not from account homeBoot=start. */
 	let bootShowPlansColumn = $derived(
 		bootSkeletonVariant === 'start' &&
 			!bootLikelyHasPlans &&
@@ -175,11 +181,10 @@
 			bootLikelySignedIn
 	);
 	let bootRecentRows = $derived.by(() => {
-		if (bootShowPlansColumn) return 0;
 		if (data.bootPeek.hasHistory) return HOME_RECENT_ROW_LIMIT;
 		const fromStore = $live.history.filter((session) => Boolean(session.finishedAt)).length;
 		if (fromStore > 0) return HOME_RECENT_ROW_LIMIT;
-		return readBootSkeletonRecentRows(false);
+		return readBootSkeletonRecentRows();
 	});
 	let showBootSkeleton = $derived(skeletonForce !== null || !pageReady);
 
@@ -304,13 +309,11 @@
 		}
 	}
 
+
 	onMount(() => {
 		void (async () => {
-			while (!$auth.ready || !$auth.dataBootstrap) {
+			while (!$auth.ready) {
 				await new Promise((r) => setTimeout(r, 20));
-			}
-			if (!get(live).historyHydrated) {
-				await live.refreshHistory();
 			}
 			if (!indexReady) {
 				const index = await loadExerciseIndex();
@@ -326,8 +329,8 @@
 
 <section
 	class="home-page content-page"
-	class:home-page--start={pageReady && hasPlans}
-	class:home-page--create={pageReady && isCreateHome}
+	class:home-page--start={(pageReady && hasPlans) || (showBootSkeleton && bootSkeletonVariant === 'start' && !bootShowPlansColumn)}
+	class:home-page--create={(pageReady && isCreateHome) || (showBootSkeleton && (bootSkeletonVariant === 'create' || bootShowPlansColumn))}
 	class:home-page--guest={pageReady && isGuest}
 	class:home-page--booting={showBootSkeleton}
 	class:home-page--booting-start={showBootSkeleton && bootSkeletonVariant === 'start'}
@@ -460,27 +463,6 @@
 
 		{#if showHomeMid}
 			<div class="home-dashboard-mid">
-				{#if !hasPlans && !isGuest}
-					<div class="home-dashboard-row">
-						<div class="home-section home-dashboard-plans">
-							<div class="home-section-head">
-								<h2 class="section-title">{translate(lang, 'home.plansTitle')}</h2>
-							</div>
-							<ul class="entity-list">
-								<li class="entity-row entity-row--create">
-									<a class="entity-row__main" href={BUILDER_NEW_HREF}>
-										<span class="entity-row__title entity-row__title--create">
-											<LucideIcon icon={Plus} size={ICON_SMALL} />
-											{translate(lang, 'home.plansCreateTitle')}
-										</span>
-										<span class="entity-row__meta">{translate(lang, 'home.plansCreateHint')}</span>
-									</a>
-								</li>
-							</ul>
-						</div>
-					</div>
-				{/if}
-
 				<div class="home-dashboard-aside">
 					{#if recent.length > 0}
 						<div class="home-section">

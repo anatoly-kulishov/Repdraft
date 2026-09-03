@@ -8,7 +8,6 @@ import {
 	finishSession,
 	finishedSessionLogEqual,
 	lastPerformance,
-	previousSetAtIndex,
 	mergeWorkoutSessions,
 	removeLoggedSet,
 	restSecAfterSet,
@@ -39,6 +38,7 @@ import { homeNextPlan } from '$lib/stores/homeNextPlan';
 import { plans } from '$lib/stores/plans';
 import {
 	localSessionRepository,
+	peekLocalFinishedSessions,
 	readActiveSession,
 	syncHomeRecentBootDataset,
 	writeActiveSession
@@ -105,87 +105,104 @@ function createLiveStore() {
 		else localStorage.setItem(REST_UNTIL_KEY, String(restUntil));
 	}
 
-	async function refreshHistory() {
+	let historyInflight: Promise<void> | null = null;
+
+	async function refreshHistory(opts?: { cloud?: boolean }) {
 		if (!browser) return;
-		try {
-			const deletedIds = listSessionTombstones();
-			const deleted = new Set(deletedIds);
-			// Scrub local copies that sync previously resurrected.
-			for (const id of deletedIds) {
-				try {
-					await localSessionRepository.remove(id);
-				} catch (err) {
-					console.warn('session tombstone local scrub failed', err);
-				}
-			}
-			let cloudSnapshot: WorkoutSession[] = [];
-			const result = await refreshLocalCloudList({
-				localList: () => localSessionRepository.list(),
-				cloudList: () => supabaseSessionRepository.list(),
-				merge: (local, cloud) => {
-					cloudSnapshot = cloud;
-					return mergeWorkoutSessions(local, cloud, deletedIds);
-				},
-				wantCloud: isSessionsCloudAvailable(),
-				listKey: 'sessions',
-				previousItems: get(store).history,
-				label: 'sessions',
-				onUpdate: (partial) => {
-					/* Unlock home as soon as local sessions exist — don't wait on cloud. */
-					const finished = partial.items.filter((x) => x.finishedAt && !deleted.has(x.id));
-					store.update((s) => ({ ...s, history: finished, historyHydrated: true }));
-				}
-			});
-			const unnamedIds = result.items
-				.filter((session) => isJunkUnnamedSession(session))
-				.map((session) => session.id);
-			if (unnamedIds.length > 0) {
-				addSessionTombstones(unnamedIds);
-				for (const id of unnamedIds) {
-					deleted.add(id);
+		// Wait out prior refresh so cloud:false bootstrap cannot swallow a later cloud pull.
+		while (historyInflight) await historyInflight;
+
+		const wantCloud = opts?.cloud !== false && isSessionsCloudAvailable();
+
+
+		const run = (async () => {
+			try {
+				const deletedIds = listSessionTombstones();
+				const deleted = new Set(deletedIds);
+				// Scrub local copies that sync previously resurrected.
+				for (const id of deletedIds) {
 					try {
 						await localSessionRepository.remove(id);
 					} catch (err) {
-						console.warn('unnamed session local scrub failed', err);
+						console.warn('session tombstone local scrub failed', err);
 					}
 				}
-			}
-			// Always gate UI by tombstones (local-only / cloud-error paths skip merge).
-			const finished = result.items.filter((x) => x.finishedAt && !deleted.has(x.id));
-			store.update((s) => ({ ...s, history: finished, historyHydrated: true }));
+				let cloudSnapshot: WorkoutSession[] = [];
+				const result = await refreshLocalCloudList({
+					localList: () => localSessionRepository.list(),
+					cloudList: () => supabaseSessionRepository.list(),
+					merge: (local, cloud) => {
+						cloudSnapshot = cloud;
+						return mergeWorkoutSessions(local, cloud, deletedIds);
+					},
+					wantCloud,
+					listKey: 'sessions',
+					previousItems: get(store).history,
+					label: 'sessions',
+					onUpdate: (partial) => {
+						/* Unlock home as soon as local list is ready — don't wait on cloud. */
+						const finished = partial.items.filter((x) => x.finishedAt && !deleted.has(x.id));
+						store.update((s) => ({ ...s, history: finished, historyHydrated: true }));
+					}
+				});
+				const unnamedIds = result.items
+					.filter((session) => isJunkUnnamedSession(session))
+					.map((session) => session.id);
+				if (unnamedIds.length > 0) {
+					addSessionTombstones(unnamedIds);
+					for (const id of unnamedIds) {
+						deleted.add(id);
+						try {
+							await localSessionRepository.remove(id);
+						} catch (err) {
+							console.warn('unnamed session local scrub failed', err);
+						}
+					}
+				}
+				// Always gate UI by tombstones (local-only / cloud-error paths skip merge).
+				const finished = result.items.filter((x) => x.finishedAt && !deleted.has(x.id));
+				store.update((s) => ({ ...s, history: finished, historyHydrated: true }));
 
-			// Persist cloud-only finished rows so offline “last time” keeps working.
-			const localIds = new Set((await localSessionRepository.list()).map((s) => s.id));
-			for (const session of finished) {
-				if (deleted.has(session.id) || localIds.has(session.id)) continue;
-				try {
-					await localSessionRepository.save(session);
-				} catch (err) {
-					console.warn('session local mirror failed', err);
+				// Persist cloud-only finished rows so offline “last time” keeps working.
+				if (wantCloud) {
+					const localIds = new Set((await localSessionRepository.list()).map((s) => s.id));
+					for (const session of finished) {
+						if (deleted.has(session.id) || localIds.has(session.id)) continue;
+						try {
+							await localSessionRepository.save(session);
+						} catch (err) {
+							console.warn('session local mirror failed', err);
+						}
+					}
 				}
-			}
-			syncHomeRecentBootDataset();
+				syncHomeRecentBootDataset();
 
-			// Retry cloud deletes; clear tombstone only when cloud list no longer has the id.
-			if (isSessionsCloudAvailable() && (deletedIds.length > 0 || unnamedIds.length > 0)) {
-				const stillInCloud = new Set(cloudSnapshot.map((s) => s.id));
-				for (const id of [...new Set([...deletedIds, ...unnamedIds])]) {
-					if (!stillInCloud.has(id)) {
-						clearSessionTombstone(id);
-						continue;
-					}
-					try {
-						await supabaseSessionRepository.remove(id);
-					} catch (err) {
-						console.warn('session tombstone cloud delete retry failed', err);
-						break;
+				// Retry cloud deletes only after a real cloud list (empty snapshot ≠ none in cloud).
+				if (wantCloud && (deletedIds.length > 0 || unnamedIds.length > 0)) {
+					const stillInCloud = new Set(cloudSnapshot.map((s) => s.id));
+					for (const id of [...new Set([...deletedIds, ...unnamedIds])]) {
+						if (!stillInCloud.has(id)) {
+							clearSessionTombstone(id);
+							continue;
+						}
+						try {
+							await supabaseSessionRepository.remove(id);
+						} catch (err) {
+							console.warn('session tombstone cloud delete retry failed', err);
+							break;
+						}
 					}
 				}
+			} catch (err) {
+				console.error('live.refreshHistory failed', err);
+				store.update((s) => ({ ...s, historyHydrated: true }));
+			} finally {
+				historyInflight = null;
 			}
-		} catch (err) {
-			console.error('live.refreshHistory failed', err);
-			store.update((s) => ({ ...s, historyHydrated: true }));
-		}
+		})();
+
+		historyInflight = run;
+		return run;
 	}
 
 	function hydrate() {
@@ -210,14 +227,15 @@ function createLiveStore() {
 		} catch {
 			restUntil = null;
 		}
+		const finished = peekLocalFinishedSessions();
 		store.update((s) => ({
 			session: active && !active.finishedAt ? active : null,
 			restUntil,
-			history: s.history,
+			history: finished,
 			ready: true,
-			historyHydrated: s.historyHydrated
+			historyHydrated: true
 		}));
-		void refreshHistory();
+		void refreshHistory({ cloud: false });
 	}
 
 	function resyncActiveFromStorage() {
@@ -463,9 +481,6 @@ function createLiveStore() {
 		},
 		lastFor(exerciseId: string): LastPerformance | null {
 			return lastPerformance(get(store).history, exerciseId);
-		},
-		previousSetFor(exerciseId: string, setIndex: number) {
-			return previousSetAtIndex(get(store).history, exerciseId, setIndex);
 		},
 		async getFinishedSession(id: string): Promise<WorkoutSession | null> {
 			if (listSessionTombstones().includes(id)) return null;

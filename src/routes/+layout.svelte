@@ -29,7 +29,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { onboarding } from '$lib/stores/onboarding';
-	import { flushSyncOutbox } from '$lib/storage/flushSyncOutbox';
+	import { flushSyncOutbox, purgeUnsyncableOutboxEntries } from '$lib/storage/flushSyncOutbox';
 	import { whenIdle } from '$lib/browser/idle';
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { page } from '$app/stores';
@@ -104,6 +104,7 @@
 	});
 
 	onMount(() => {
+		purgeUnsyncableOutboxEntries();
 		onboarding.init(get(page).url.searchParams);
 		draft.hydrate();
 		live.hydrate();

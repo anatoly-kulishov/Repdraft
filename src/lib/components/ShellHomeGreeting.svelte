@@ -18,7 +18,7 @@
 	let avatarBroken = $state(false);
 	let showPhoto = $derived(Boolean(avatarUrl) && !avatarBroken);
 	let initials = $derived(userInitials($auth.user));
-	let isGuest = $derived($auth.ready && $auth.configured && !$auth.user);
+	let isGuest = $derived($auth.ready && $auth.sessionKnown && $auth.configured && !$auth.user);
 	let firstName = $derived(greetingFirstName($greetingName, $auth.user));
 
 	let greetingText = $derived.by(() => {
@@ -46,7 +46,7 @@
 </script>
 
 <a class="shell-home-greeting" {href}>
-	{#if !$auth.ready}
+	{#if !$auth.ready || !$auth.sessionKnown}
 		<span class="account-avatar is-skeleton shell-home-greeting__avatar" aria-hidden="true"></span>
 		<span class="shell-home-greeting__copy">
 			<span class="shell-home-greeting__line shell-home-greeting__line--skeleton" aria-hidden="true"></span>
@@ -73,7 +73,7 @@
 		</span>
 	{/if}
 	<span class="shell-home-greeting__copy">
-		{#if $auth.ready}
+		{#if $auth.ready && $auth.sessionKnown}
 			<span class="shell-home-greeting__line">{greetingText}</span>
 		{:else}
 			<span class="shell-home-greeting__line shell-home-greeting__line--skeleton" aria-hidden="true"></span>

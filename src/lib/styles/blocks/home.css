@@ -1138,8 +1138,7 @@ a.home-header__row--link:active .home-header__cta {
 	width: 100%;
 }
 
-.home-skeleton--create.home-skeleton--with-checklist,
-.home-skeleton--start.home-skeleton--with-checklist {
+.home-skeleton--create.home-skeleton--with-checklist {
 	gap: 1.35rem;
 }
 
@@ -1347,10 +1346,18 @@ a.home-header__row--link:active .home-header__cta {
 }
 
 .home-skeleton--with-plans .home-dashboard-mid {
-	display: grid;
-	grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+	display: flex;
+	flex-direction: column;
 	gap: 1.25rem;
-	align-items: start;
+}
+
+@media (min-width: 1024px) {
+	.home-skeleton--with-plans .home-dashboard-mid {
+		display: grid;
+		grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+		gap: 1.25rem;
+		align-items: start;
+	}
 }
 
 @media (max-width: 1023px) {
@@ -1359,7 +1366,7 @@ a.home-header__row--link:active .home-header__cta {
 	}
 }
 
-.home-skeleton .entity-list:not(.home-skeleton-recent-list) {
+.home-skeleton .entity-list:has(.home-skeleton-row) {
 	gap: 0.55rem;
 	border: none;
 	background: transparent;
@@ -1395,7 +1402,8 @@ a.home-header__row--link:active .home-header__cta {
 	pointer-events: none;
 }
 
-.home-skeleton-continue-card .home-skel-bone {
+.home-skeleton-continue-card .home-skel-bone,
+.home-skeleton-mockup .home-skel-bone {
 	color: transparent !important;
 	-webkit-text-fill-color: transparent !important;
 	background-color: var(--skeleton-base);
@@ -1410,6 +1418,39 @@ a.home-header__row--link:active .home-header__cta {
 	border-radius: 0.35rem;
 	user-select: none;
 	box-shadow: none;
+}
+
+.home-skeleton-mockup {
+	pointer-events: none;
+}
+
+.home-skeleton-mockup .home-header__subtitle.home-skel-bone {
+	display: block;
+	width: min(100%, 18rem);
+	max-width: 100%;
+}
+
+.home-skeleton-mockup .brand-tagline.home-skel-bone {
+	display: block;
+	width: min(100%, 12rem);
+	max-width: 100%;
+	margin-top: 0.15rem;
+}
+
+.home-skeleton-mockup .home-skel-bone--cta-round {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	min-width: var(--control-height);
+	min-height: var(--control-height);
+	border: none;
+	color: transparent !important;
+}
+
+.home-skeleton-mockup .home-skel-bone--cta-round :global(svg),
+.home-skeleton-mockup .home-header__cta-text {
+	opacity: 0;
 }
 
 .home-skeleton-continue-card .home-continue-card__eyebrow.home-skel-bone {

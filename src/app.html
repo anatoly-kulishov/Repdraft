@@ -194,6 +194,7 @@
 							}
 						}
 					} catch (onboardingErr) {}
+					if (homeBoot === 'start') homeShowChecklist = false;
 					document.documentElement.dataset.homeShowChecklist = homeShowChecklist
 						? '1'
 						: '0';
@@ -254,7 +255,7 @@
 						}
 					} catch (activeErr) {}
 					try {
-						if (homeBoot === 'start') {
+						if (workoutsPlanRows > 0) {
 							document.cookie =
 								'repdraft_home_has_plans=1; path=/; Max-Age=31536000; SameSite=Lax';
 						} else {

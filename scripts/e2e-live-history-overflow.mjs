@@ -319,17 +319,6 @@ async function runVp(browser, vp, payload) {
 		pass(vp.id, 'live.done-all.touch');
 	}
 
-	// Previous column (different per-set labels) + fat weights
-	const hasPrev = await page.locator('.live-set-head--prev, .live-set-row--prev').count();
-	if (hasPrev > 0) {
-		s = await scan(page);
-		s.bad
-			? fail(vp.id, 'live.prev-col.overflow', JSON.stringify(s.offenders.slice(0, 5)), await shot(page, `${vp.id}-prev`))
-			: pass(vp.id, 'live.prev-col.overflow');
-	} else {
-		fail(vp.id, 'live.prev-col.overflow', 'previous column not shown');
-	}
-
 	// 2) Open History sheet with fat sessions
 	const histByAria = page.locator('button[aria-label*="истори" i], button[aria-label*="history" i]');
 	if ((await histByAria.count()) > 0) {

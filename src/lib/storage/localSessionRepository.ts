@@ -1,10 +1,11 @@
-	import {
+import {
 	ACTIVE_SESSION_KEY,
 	SESSIONS_STORAGE_KEY,
 	type SessionRepository
 } from '$lib/domain/repository';
 import { HOME_RECENT_ROW_LIMIT, WORKOUTS_HISTORY_SKELETON_ROW_LIMIT } from '$lib/domain/home';
 import type { WorkoutSession } from '$lib/domain/types';
+import { listSessionTombstones } from '$lib/storage/sessionTombstones';
 
 function readSessions(): WorkoutSession[] {
 	if (typeof localStorage === 'undefined') return [];
@@ -27,6 +28,14 @@ function writeSessions(sessions: WorkoutSession[]): void {
 /** Sync peek for loading skeleton row counts. */
 export function peekLocalSession(id: string): WorkoutSession | null {
 	return readSessions().find((session) => session.id === id) ?? null;
+}
+
+/** Finished sessions from localStorage (sync) — home boot must not wait on cloud. */
+export function peekLocalFinishedSessions(): WorkoutSession[] {
+	const deleted = new Set(listSessionTombstones());
+	return readSessions()
+		.filter((session) => Boolean(session.finishedAt) && !deleted.has(session.id))
+		.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }
 
 /** Finished sessions count for home boot skeleton aside. */

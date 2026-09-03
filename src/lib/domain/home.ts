@@ -17,6 +17,8 @@ export type HomeSkeletonBootInput = {
 	force?: HomeSkeletonVariant | null;
 	/** SSR/client peek: signed-in session before Svelte auth hydrates. */
 	accountBoot: boolean;
+	/** localStorage / sb-token peek before auth.ready (avoid guest skeleton for signed-in). */
+	likelySignedIn?: boolean;
 	/** SSR/client peek from repdraft_home_boot / dataset.homeBoot. */
 	homeBoot?: HomeSkeletonVariant | null;
 	authReady?: boolean;
@@ -26,16 +28,27 @@ export type HomeSkeletonBootInput = {
 
 /**
  * Single rule set for SSR + client home boot skeletons.
- * Guest `create` only after auth confirms guest with no plans.
- * While bootstrapping, prefer `start` — never flash guest UI to signed-in users
- * (stale `repdraft_home_boot=create` cookie must not win).
+ * Guest `create` when boot peek says create (app.html) — matches checklist + guest hero.
+ * Signed-in peeks always `start` (never flash guest layout).
  */
 export function resolveHomeSkeletonVariant(input: HomeSkeletonBootInput): HomeSkeletonVariant {
 	if (input.force) return input.force;
-	if (input.accountBoot) return 'start';
+	if (input.accountBoot || input.likelySignedIn) return 'start';
 	if (input.authReady && input.hasUser) return 'start';
 	if (input.hasPlans) return 'start';
 	if (input.homeBoot === 'start') return 'start';
+	if (input.homeBoot === 'create') return 'create';
 	if (input.authReady && !input.hasUser && !input.hasPlans) return 'create';
 	return 'start';
+}
+
+/** Live home hides the checklist once a plan exists. Boot skeleton must match. */
+export function shouldShowHomeChecklistSkeleton(input: {
+	onboardingShowsChecklist: boolean;
+	hasPlans?: boolean;
+	homeBoot?: HomeSkeletonVariant | null;
+}): boolean {
+	if (!input.onboardingShowsChecklist) return false;
+	if (input.hasPlans) return false;
+	return true;
 }
