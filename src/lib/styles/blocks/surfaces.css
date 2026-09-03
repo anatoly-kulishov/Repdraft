@@ -174,12 +174,14 @@ button.exercise-card-media {
 
 .empty-state__title {
 	margin: 0;
+	text-wrap: balance;
 }
 
 .empty-state__desc {
 	margin: 0;
 	font-size: var(--type-secondary, 0.8125rem);
 	line-height: 1.45;
+	text-wrap: pretty;
 }
 
 .empty-state__icon {

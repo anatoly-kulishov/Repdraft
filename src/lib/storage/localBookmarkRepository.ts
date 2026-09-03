@@ -1,4 +1,5 @@
 import { BOOKMARKS_STORAGE_KEY, type BookmarkRepository } from '$lib/domain/repository';
+import { syncBookmarksCountCookie } from '$lib/storage/listBootPeek';
 
 function readIds(): string[] {
 	if (typeof localStorage === 'undefined') return [];
@@ -16,6 +17,12 @@ function readIds(): string[] {
 function writeIds(ids: string[]): void {
 	if (typeof localStorage === 'undefined') return;
 	localStorage.setItem(BOOKMARKS_STORAGE_KEY, JSON.stringify(ids));
+	syncBookmarksCountCookie(ids.length);
+}
+
+/** Sync peek for empty-vs-skeleton on /exercises/saved. */
+export function peekLocalBookmarkIds(): string[] {
+	return readIds();
 }
 
 export const localBookmarkRepository: BookmarkRepository = {

@@ -1,9 +1,13 @@
 <script lang="ts">
+	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import { shouldShowCoachmark } from '$lib/domain/onboarding';
+	import { blurActiveElement } from '$lib/dom/blurActiveElement';
 	import { recentExerciseLogs } from '$lib/domain/session';
 	import { formatRelativeDay } from '$lib/i18n/format';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
+	import { onboarding } from '$lib/stores/onboarding';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { onMount } from 'svelte';
 
@@ -11,8 +15,11 @@
 
 	let lang = $derived($resolvedLocale);
 	let historyReady = $state(false);
-	let logs = $derived(
-		historyReady ? recentExerciseLogs($live.history, exerciseId, 5) : []
+	let logs = $derived(historyReady ? recentExerciseLogs($live.history, exerciseId, 5) : []);
+	let showHistoryEmptyCoachmark = $derived(
+		historyReady &&
+			logs.length === 0 &&
+			shouldShowCoachmark($onboarding, 'exercise.historyEmpty')
 	);
 
 	onMount(() => {
@@ -26,6 +33,11 @@
 		const r = reps != null ? String(reps) : '-';
 		return `${w}×${r}`;
 	}
+
+	function dismissHistoryEmptyCoachmark() {
+		onboarding.dismissCoachmark('exercise.historyEmpty');
+		blurActiveElement();
+	}
 </script>
 
 <section class="exercise-history panel">
@@ -37,6 +49,13 @@
 		<p class="exercise-history__hint text-sm text-[var(--color-muted)]">
 			{translate(lang, 'exercise.historyEmpty')}
 		</p>
+		{#if showHistoryEmptyCoachmark}
+			<Coachmark
+				class="mt-3"
+				message={translate(lang, 'onboarding.coachExerciseHistoryEmpty')}
+				onDismiss={dismissHistoryEmptyCoachmark}
+			/>
+		{/if}
 	{:else}
 		<ul class="exercise-history__list">
 			{#each logs as log (log.sessionId)}

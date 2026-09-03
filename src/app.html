@@ -275,6 +275,45 @@
 							builderDraftRows +
 							'; path=/; Max-Age=31536000; SameSite=Lax';
 					} catch (builderDraftCookieErr) {}
+					var bookmarksCount = 0;
+					try {
+						var bookmarksRaw = localStorage.getItem('repdraft:bookmarks');
+						if (bookmarksRaw) {
+							var bookmarksParsed = JSON.parse(bookmarksRaw);
+							if (Array.isArray(bookmarksParsed)) {
+								bookmarksCount = bookmarksParsed.filter(function (id) {
+									return typeof id === 'string' && id.length > 0;
+								}).length;
+							}
+						}
+					} catch (bookmarksErr) {}
+					try {
+						document.cookie =
+							'repdraft_bookmarks_count=' +
+							bookmarksCount +
+							'; path=/; Max-Age=31536000; SameSite=Lax';
+					} catch (bookmarksCookieErr) {}
+					var recordsCount = 0;
+					try {
+						var recordsRaw = localStorage.getItem('repdraft:records');
+						if (recordsRaw) {
+							var recordsParsed = JSON.parse(recordsRaw);
+							if (Array.isArray(recordsParsed)) {
+								recordsCount = recordsParsed.filter(function (r) {
+									if (!r) return false;
+									var hasWeight = r.weightKg != null && !isNaN(r.weightKg);
+									var hasReps = r.reps != null && !isNaN(r.reps);
+									return hasWeight || hasReps;
+								}).length;
+							}
+						}
+					} catch (recordsErr) {}
+					try {
+						document.cookie =
+							'repdraft_records_count=' +
+							recordsCount +
+							'; path=/; Max-Age=31536000; SameSite=Lax';
+					} catch (recordsCookieErr) {}
 				} catch (e) {}
 			})();
 			// Capture beforeinstallprompt early — it can fire before Svelte mounts.
@@ -293,6 +332,20 @@
 		<script>
 			(function () {
 				var KEYBOARD_LIFT_PX = 100;
+				var focusoutSyncTimers = [];
+				function isEditableTarget(el) {
+					if (!el || el === document.body || el === document.documentElement) return false;
+					var tag = el.tagName;
+					if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+					if (el.isContentEditable) return true;
+					return false;
+				}
+				function clearFocusoutSyncTimers() {
+					for (var i = 0; i < focusoutSyncTimers.length; i++) {
+						window.clearTimeout(focusoutSyncTimers[i]);
+					}
+					focusoutSyncTimers = [];
+				}
 				function syncVvChrome() {
 					var vv = window.visualViewport;
 					var root = document.documentElement;
@@ -308,12 +361,23 @@
 					var visualBottom = Math.round(vv.height + vv.offsetTop);
 					root.style.setProperty('--app-vh', Math.max(layoutH, visualBottom) + 'px');
 					var bottomInset = Math.max(0, Math.round(layoutH - visualBottom));
+					/* Residual inset after keyboard dismiss must not lift sticky CTA. */
+					if (!isEditableTarget(document.activeElement) && bottomInset <= KEYBOARD_LIFT_PX) {
+						bottomInset = 0;
+					}
 					root.style.setProperty('--vv-fixed-bottom', bottomInset + 'px');
 					var keyboardInset = bottomInset > KEYBOARD_LIFT_PX ? bottomInset : 0;
 					root.style.setProperty('--vv-keyboard-inset', keyboardInset + 'px');
 					root.style.setProperty('--vv-keyboard-lift', keyboardInset + 'px');
 					if (keyboardInset > 0) root.style.setProperty('--vv-bottom-pad', '0px');
 					else root.style.removeProperty('--vv-bottom-pad');
+				}
+				function scheduleFocusoutSync() {
+					clearFocusoutSyncTimers();
+					syncVvChrome();
+					focusoutSyncTimers.push(window.setTimeout(syncVvChrome, 50));
+					focusoutSyncTimers.push(window.setTimeout(syncVvChrome, 200));
+					focusoutSyncTimers.push(window.setTimeout(syncVvChrome, 400));
 				}
 				syncVvChrome();
 				if (window.visualViewport) {
@@ -322,6 +386,21 @@
 				}
 				window.addEventListener('orientationchange', syncVvChrome);
 				window.addEventListener('pageshow', syncVvChrome);
+				document.addEventListener(
+					'focusin',
+					function () {
+						clearFocusoutSyncTimers();
+						syncVvChrome();
+					},
+					true
+				);
+				document.addEventListener(
+					'focusout',
+					function () {
+						scheduleFocusoutSync();
+					},
+					true
+				);
 				window.__repdraftSyncVvChrome = syncVvChrome;
 			})();
 		</script>

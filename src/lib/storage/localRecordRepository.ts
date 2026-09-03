@@ -1,5 +1,7 @@
+import { hasLiftData } from '$lib/domain/records';
 import { RECORDS_STORAGE_KEY, type RecordRepository } from '$lib/domain/repository';
 import type { PersonalRecord } from '$lib/domain/types';
+import { syncRecordsCountCookie } from '$lib/storage/listBootPeek';
 
 function readAll(): PersonalRecord[] {
 	if (typeof localStorage === 'undefined') return [];
@@ -16,6 +18,12 @@ function readAll(): PersonalRecord[] {
 function writeAll(records: PersonalRecord[]): void {
 	if (typeof localStorage === 'undefined') return;
 	localStorage.setItem(RECORDS_STORAGE_KEY, JSON.stringify(records));
+	syncRecordsCountCookie(records.filter(hasLiftData).length);
+}
+
+/** Sync peek for empty-vs-skeleton on /exercises/records. */
+export function peekLocalRecords(): PersonalRecord[] {
+	return readAll().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 /** Replace entire local PR list (after cloud merge). */

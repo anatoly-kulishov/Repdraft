@@ -24,6 +24,7 @@ import { truncateMeta } from '$lib/seo/site';
 	import { draft } from '$lib/stores/draft';
 	import { bookmarks } from '$lib/stores/bookmarks';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { blurActiveElement } from '$lib/dom/blurActiveElement';
 	import { onboarding } from '$lib/stores/onboarding';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { toasts } from '$lib/stores/toasts';
@@ -78,6 +79,12 @@ import { truncateMeta } from '$lib/seo/site';
 		Boolean(exercise && $draft.exercises.some((ex) => ex.exerciseId === exercise.id))
 	);
 	let bookmarked = $derived(Boolean(exercise && $bookmarks.includes(exercise.id)));
+	/** After tabs tip: teach bookmark without stacking two coachmarks. */
+	let showExerciseBookmarkCoachmark = $derived(
+		!showExerciseTabsCoachmark &&
+			!bookmarked &&
+			shouldShowCoachmark($onboarding, 'exercise.bookmark')
+	);
 	let returnPath = $derived(currentReturnPath($page.url.pathname, $page.url.searchParams));
 	let backHref = $derived(resolveBackFrom($page.url.searchParams.get('from')));
 	let backLabel = $derived(backLabelForHref(backHref, lang));
@@ -100,6 +107,8 @@ import { truncateMeta } from '$lib/seo/site';
 			.toggle(exercise.id)
 			.then((saved) => {
 				if (saved) {
+					onboarding.dismissCoachmark('exercise.bookmark');
+					onboarding.dismissCoachmark('bookmarks.empty');
 					toasts.show(translate(lang, 'bookmarks.saved'), 'info', 2600, undefined, 'bookmark');
 					return;
 				}
@@ -230,6 +239,16 @@ import { truncateMeta } from '$lib/seo/site';
 								<LucideIcon icon={Bookmark} size={ICON_BUTTON + 2} fill={bookmarked ? 'currentColor' : 'none'} />
 							</AppButton>
 						</div>
+						{#if showExerciseBookmarkCoachmark}
+							<Coachmark
+								class="mt-2"
+								message={translate(lang, 'onboarding.coachExerciseBookmark')}
+								onDismiss={() => {
+									onboarding.dismissCoachmark('exercise.bookmark');
+									blurActiveElement();
+								}}
+							/>
+						{/if}
 
 						<div class="actions-inline" class:actions-inline--pair={inDraft}>
 							{#if inDraft}
@@ -275,7 +294,10 @@ import { truncateMeta } from '$lib/seo/site';
 						<Coachmark
 							class="mt-3"
 							message={translate(lang, 'onboarding.coachExerciseTabs')}
-							onDismiss={() => onboarding.dismissCoachmark('exercise.tabs')}
+							onDismiss={() => {
+								onboarding.dismissCoachmark('exercise.tabs');
+								blurActiveElement();
+							}}
 						/>
 					{/if}
 

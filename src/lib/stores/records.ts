@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import {
 	createEmptyRecord,
+	hasLiftData,
 	mergePersonalRecords,
 	personalRecordContentEqual,
 	sanitizePersonalRecord
@@ -8,8 +9,10 @@ import {
 import type { PersonalRecord } from '$lib/domain/types';
 import {
 	localRecordRepository,
+	peekLocalRecords,
 	replaceAllRecords
 } from '$lib/storage/localRecordRepository';
+import { syncRecordsCountCookie } from '$lib/storage/listBootPeek';
 import { clearLastSyncedAt } from '$lib/storage/syncMeta';
 import { supabaseRecordRepository } from '$lib/storage/supabaseRecordRepository';
 import type { CloudSyncState } from '$lib/domain/cloudSync';
@@ -21,17 +24,21 @@ import { isCloudMode } from '$lib/storage/dataAccess';
 import { get, writable } from 'svelte/store';
 
 function createRecordsStore() {
-	const store = writable<PersonalRecord[]>([]);
-	const ready = writable(false);
-	const sync = writable<CloudSyncState>('idle');
+	/** Client peek is sync for empty-vs-list; cloud refresh may still fill an empty local list. */
+	const initial = browser ? peekLocalRecords() : [];
+	if (browser) syncRecordsCountCookie(initial.filter(hasLiftData).length);
+	const store = writable<PersonalRecord[]>(initial);
+	const ready = writable(browser);
+	const sync = writable<CloudSyncState>(browser ? 'synced' : 'idle');
 	let inflight: Promise<void> | null = null;
 
 	function invalidate() {
 		inflight = null;
-		store.set([]);
-		sync.set('idle');
-		ready.set(false);
 		clearLastSyncedAt('records');
+		store.set(browser ? peekLocalRecords() : []);
+		sync.set(browser ? 'synced' : 'idle');
+		ready.set(browser);
+		if (browser) void refresh({ cloud: false });
 	}
 
 	async function refresh(opts?: { cloud?: boolean; force?: boolean }) {
@@ -60,6 +67,7 @@ function createRecordsStore() {
 					onUpdate: (update) => {
 						store.set(update.items);
 						sync.set(update.state);
+						syncRecordsCountCookie(update.items.filter(hasLiftData).length);
 						if (update.state !== 'loading') ready.set(true);
 					}
 				});
@@ -68,7 +76,7 @@ function createRecordsStore() {
 				}
 			} catch (err) {
 				console.error('records.refresh failed', err);
-				if (get(store).length === 0) store.set([]);
+				if (get(store).length === 0) store.set(peekLocalRecords());
 				sync.set('error');
 				ready.set(true);
 			} finally {
@@ -79,6 +87,8 @@ function createRecordsStore() {
 		inflight = run;
 		return run;
 	}
+
+	if (browser) void refresh({ cloud: false });
 
 	return {
 		subscribe: store.subscribe,
