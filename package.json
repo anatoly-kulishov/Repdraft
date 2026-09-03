@@ -60,6 +60,7 @@
 		"@lucide/svelte": "^1.33.0",
 		"@supabase/supabase-js": "^2.110.8",
 		"@vercel/analytics": "^2.0.1",
+		"@vercel/speed-insights": "^2.0.0",
 		"bits-ui": "^2.19.0",
 		"clsx": "^2.1.1",
 		"gifenc": "^1.0.3",

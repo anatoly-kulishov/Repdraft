@@ -1,23 +1,25 @@
 ---
-description: Supabase Auth dashboard checklist for magic link, password reset
+description: Supabase Auth dashboard checklist for magic link, password reset, Turnstile
 alwaysApply: false
 ---
 
 # Supabase Auth ops
 
-При любых изменениях `/auth`, magic link, reset password - **сначала сверь dashboard**, не только код.
+При любых изменениях `/auth`, magic link, reset password, Turnstile - **сначала сверь dashboard**, не только код.
 
 Код (`auth` store) шлёт `redirectTo` / `emailRedirectTo` на `{origin}/auth` (+ `?next=` / `?recovery=1`).
 
 ## Checklist
 
-1. Providers: Email ON.
-2. URL Configuration:
+1. Providers: **Email** ON. Phone можно оставить выключенным (в приложении входа по SMS нет).
+2. Password policy: min length **10** (совпадает с `PASSWORD_MIN_LENGTH` в коде).
+3. URL Configuration:
    - Site URL = production origin
    - Redirect allow-list includes `/auth` for prod + local (`localhost:5173`, `127.0.0.1:5173`)
-3. Email templates must honor redirect / Site URL (confirm, magic link, recovery).
-4. Vercel env: `PUBLIC_SUPABASE_*`, plus **server-only** `SUPABASE_SERVICE_ROLE_KEY` for account deletion (`POST /api/account/delete`). Never put service role in `PUBLIC_*`.
-5. After deploy: confirm delete-account works once while signed in (cloud rows + Auth user removed).
+4. Email templates must honor redirect / Site URL (confirm, magic link, recovery).
+5. Bot protection (prod): Cloudflare Turnstile ON; secret in Supabase; `PUBLIC_TURNSTILE_SITE_KEY` in Vercel.
+6. Vercel env: `PUBLIC_SUPABASE_*`, plus **server-only** `SUPABASE_SERVICE_ROLE_KEY` for account deletion (`POST /api/account/delete`). Never put service role in `PUBLIC_*`.
+7. After deploy: confirm delete-account works once while signed in. Spot-check «Выйти везде» on a second browser.
 
-Симптомы «забыли dashboard»: `provider is not enabled`, письмо не приходит, после клика по ссылке белый экран / ошибка redirect.
+Симптомы «забыли dashboard»: `provider is not enabled`, письмо не приходит, после клика по ссылке белый экран / ошибка redirect, Captcha rejected.
 Симптом без service role: «Удаление аккаунта пока не настроено на сервере».

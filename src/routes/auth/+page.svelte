@@ -11,6 +11,8 @@
 		userDisplayName,
 		userInitials
 	} from '$lib/domain/authFlow';
+	import { isTurnstileConfigured } from '$lib/auth/publicAuthConfig';
+	import { assertStrongPassword } from '$lib/security/assertStrongPassword';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { auth } from '$lib/stores/auth';
@@ -24,9 +26,11 @@
 	import BrandTagline from '$lib/components/BrandTagline.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import PasswordField from '$lib/components/PasswordField.svelte';
+	import PasswordPolicyHints from '$lib/components/PasswordPolicyHints.svelte';
 	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import TurnstileWidget from '$lib/components/TurnstileWidget.svelte';
 	import DataExportSection from '$lib/components/DataExportSection.svelte';
 	import ProfileDevWipePanel from '$lib/components/ProfileDevWipePanel.svelte';
 	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
@@ -54,9 +58,38 @@
 	let greetingNameInput = $state('');
 	let greetingNameSaving = $state(false);
 	let fieldsInvalid = $state(false);
+	let confirmMismatchVisible = $state(false);
 	let deleteConfirmOpen = $state(false);
 	let deleteConfirmText = $state('');
+	let captchaToken = $state('');
+	let captchaReset = $state(0);
 
+	let turnstileOn = $derived(isTurnstileConfigured());
+
+	function clearConfirmMismatch() {
+		confirmMismatchVisible = false;
+	}
+
+	function onConfirmPasswordBlur() {
+		// Defer so a following pointer click on submit still fires form submit.
+		window.setTimeout(() => {
+			confirmMismatchVisible =
+				passwordConfirm.length > 0 && !passwordsMatch(password, passwordConfirm);
+		}, 0);
+	}
+
+	function requireCaptchaToken(): string | undefined {
+		if (!turnstileOn) return undefined;
+		if (!captchaToken.trim()) {
+			throw new Error('auth.errors.captchaRequired');
+		}
+		return captchaToken.trim();
+	}
+
+	function bumpCaptcha() {
+		captchaToken = '';
+		captchaReset += 1;
+	}
 	async function flashInvalid() {
 		fieldsInvalid = false;
 		await tick();
@@ -64,6 +97,9 @@
 	}
 
 	let lang = $derived($resolvedLocale);
+	let confirmMismatchHint = $derived(
+		confirmMismatchVisible ? translate(lang, 'auth.errors.passwordMismatch') : null
+	);
 	let nextLang = $derived(lang === 'ru' ? ('en' as const) : ('ru' as const));
 	let theme = $derived($appTheme);
 	let nextTheme = $derived(theme === 'dark' ? ('light' as const) : ('dark' as const));
@@ -93,8 +129,9 @@
 		if (!id) return null;
 		if (id === 'email') return translate(lang, 'auth.provider.email');
 		if (id === 'google') return translate(lang, 'auth.provider.oauth');
+		const bare = id.replace(/^custom:/, '');
 		return translate(lang, 'auth.provider.other', {
-			name: id.charAt(0).toUpperCase() + id.slice(1)
+			name: bare.charAt(0).toUpperCase() + bare.slice(1)
 		});
 	});
 
@@ -122,6 +159,15 @@
 	function mapErr(err: unknown): string {
 		const key = authErrorMessageKey(err);
 		if (key) return translate(lang, key);
+		const msg =
+			err instanceof Error
+				? err.message.trim()
+				: err && typeof err === 'object' && 'message' in err && typeof (err as { message: unknown }).message === 'string'
+					? (err as { message: string }).message.trim()
+					: '';
+		if (msg.startsWith('auth.') || msg.startsWith('errors.')) {
+			return translate(lang, msg);
+		}
 		return translateError(lang, err, 'auth.error');
 	}
 
@@ -131,6 +177,7 @@
 		message = null;
 		password = '';
 		passwordConfirm = '';
+		clearConfirmMismatch();
 	}
 
 	async function submitPassword() {
@@ -142,11 +189,20 @@
 		message = null;
 		fieldsInvalid = false;
 		try {
+			const captcha = requireCaptchaToken();
 			if (panel === 'signup') {
 				if (!passwordsMatch(password, passwordConfirm)) {
-					throw new Error('auth.errors.passwordMismatch');
+					confirmMismatchVisible = true;
+					const text = translate(lang, 'auth.errors.passwordMismatch');
+					message = text;
+					toasts.show(text, 'error', 5000);
+					void flashInvalid();
+					return;
 				}
-				const { session } = await auth.signUp(email.trim(), password, nextPath);
+				clearConfirmMismatch();
+				await assertStrongPassword(password, email.trim());
+				const { session } = await auth.signUp(email.trim(), password, nextPath, captcha);
+				bumpCaptcha();
 				if (session) {
 					toasts.show(translate(lang, 'auth.signinToast'), 'success');
 					redirected = true;
@@ -156,12 +212,14 @@
 				toasts.show(translate(lang, 'auth.signupToast'), 'success');
 				openCheckEmail('signup');
 			} else {
-				await auth.signIn(email.trim(), password);
+				await auth.signIn(email.trim(), password, captcha);
+				bumpCaptcha();
 				toasts.show(translate(lang, 'auth.signinToast'), 'success');
 				redirected = true;
 				await goto(nextPath, { replaceState: true });
 			}
 		} catch (err) {
+			bumpCaptcha();
 			const text = mapErr(err);
 			message = text;
 			toasts.show(text, 'error');
@@ -180,10 +238,13 @@
 		message = null;
 		fieldsInvalid = false;
 		try {
-			await auth.signInWithOtp(email.trim(), nextPath);
+			const captcha = requireCaptchaToken();
+			await auth.signInWithOtp(email.trim(), nextPath, captcha);
+			bumpCaptcha();
 			toasts.show(translate(lang, 'auth.magicToast'), 'success');
 			openCheckEmail('magic');
 		} catch (err) {
+			bumpCaptcha();
 			const text = mapErr(err);
 			message = text;
 			toasts.show(text, 'error');
@@ -202,10 +263,13 @@
 		message = null;
 		fieldsInvalid = false;
 		try {
-			await auth.resetPasswordForEmail(email.trim());
+			const captcha = requireCaptchaToken();
+			await auth.resetPasswordForEmail(email.trim(), captcha);
+			bumpCaptcha();
 			toasts.show(translate(lang, 'auth.resetToast'), 'success');
 			openCheckEmail('reset');
 		} catch (err) {
+			bumpCaptcha();
 			const text = mapErr(err);
 			message = text;
 			toasts.show(text, 'error');
@@ -221,12 +285,21 @@
 		fieldsInvalid = false;
 		try {
 			if (!passwordsMatch(password, passwordConfirm)) {
-				throw new Error('auth.errors.passwordMismatch');
+				confirmMismatchVisible = true;
+				const text = translate(lang, 'auth.errors.passwordMismatch');
+				message = text;
+				toasts.show(text, 'error', 5000);
+				void flashInvalid();
+				return;
 			}
+			clearConfirmMismatch();
+			await assertStrongPassword(password, $auth.user?.email ?? email.trim());
 			await auth.updatePassword(password);
 			toasts.show(translate(lang, 'auth.passwordUpdated'), 'success');
 			password = '';
 			passwordConfirm = '';
+			clearConfirmMismatch();
+			auth.clearPasswordRecovery();
 			redirected = true;
 			await goto(nextPath, { replaceState: true });
 		} catch (err) {
@@ -245,6 +318,19 @@
 		try {
 			await auth.signOut();
 			toasts.show(translate(lang, 'auth.signedOut'), 'info');
+		} catch (err) {
+			toasts.show(mapErr(err) || translateError(lang, err, 'auth.signOutError'), 'error');
+		} finally {
+			loading = false;
+		}
+	}
+
+	async function logoutEverywhere() {
+		if (loading) return;
+		loading = true;
+		try {
+			await auth.signOutEverywhere();
+			toasts.show(translate(lang, 'auth.logoutEverywhereDone'), 'info');
 		} catch (err) {
 			toasts.show(mapErr(err) || translateError(lang, err, 'auth.signOutError'), 'error');
 		} finally {
@@ -281,6 +367,7 @@
 	function setPanel(next: Panel) {
 		panel = next;
 		message = null;
+		clearConfirmMismatch();
 	}
 
 	function openMagicLink() {
@@ -290,6 +377,7 @@
 	function setPasswordMode(mode: 'signin' | 'signup') {
 		message = null;
 		panel = mode;
+		clearConfirmMismatch();
 	}
 
 	let passwordMode = $derived(
@@ -394,7 +482,7 @@
 	{:else if recoveryMode}
 		<div class="auth-panel panel">
 			<form
-				class="auth-panel__primary auth-form flex flex-col gap-3"
+				class="auth-panel__primary auth-form"
 				onsubmit={(e) => {
 					e.preventDefault();
 					void submitRecovery();
@@ -402,33 +490,44 @@
 			>
 				<p class="text-sm font-semibold">{translate(lang, 'auth.recoveryTitle')}</p>
 				<p class="text-sm text-[var(--color-muted)]">{translate(lang, 'auth.recoveryLead')}</p>
-				<PasswordField
-					bind:value={password}
-					label={translate(lang, 'auth.newPassword')}
-					placeholder={translate(lang, 'auth.passwordPh')}
-					autocomplete="new-password"
-					invalid={fieldsInvalid}
-				/>
-				<PasswordField
-					bind:value={passwordConfirm}
-					label={translate(lang, 'auth.passwordConfirm')}
-					placeholder={translate(lang, 'auth.passwordConfirmPh')}
-					autocomplete="new-password"
-					invalid={fieldsInvalid}
-				/>
-				{#if message}
-					<p class="auth-form__error" role="alert">{message}</p>
-				{/if}
-				<AppButton type="submit" block disabled={loading}>
-					{#if loading}
-						<span class="inline-flex items-center gap-2">
-							<Spinner size="sm" block={false} />
-							{translate(lang, 'auth.wait')}
-						</span>
-					{:else}
-						{translate(lang, 'auth.submitNewPassword')}
+				<div class="auth-form__fields">
+					<PasswordField
+						bind:value={password}
+						label={translate(lang, 'auth.newPassword')}
+						placeholder={translate(lang, 'auth.passwordPh')}
+						autocomplete="new-password"
+						invalid={fieldsInvalid}
+						oninput={clearConfirmMismatch}
+					/>
+					<PasswordPolicyHints password={password} email={$auth.user?.email ?? email} />
+					<PasswordField
+						bind:value={passwordConfirm}
+						label={translate(lang, 'auth.passwordConfirm')}
+						placeholder={translate(lang, 'auth.passwordConfirmPh')}
+						autocomplete="new-password"
+						invalid={fieldsInvalid || confirmMismatchVisible}
+						onblur={onConfirmPasswordBlur}
+						oninput={clearConfirmMismatch}
+					/>
+					{#if confirmMismatchHint}
+						<p class="auth-form__error" role="status">{confirmMismatchHint}</p>
 					{/if}
-				</AppButton>
+					{#if message}
+						<p class="auth-form__error" role="alert">{message}</p>
+					{/if}
+				</div>
+				<div class="auth-form__actions">
+					<AppButton type="submit" block disabled={loading}>
+						{#if loading}
+							<span class="inline-flex items-center gap-2">
+								<Spinner size="sm" block={false} />
+								{translate(lang, 'auth.wait')}
+							</span>
+						{:else}
+							{translate(lang, 'auth.submitNewPassword')}
+						{/if}
+					</AppButton>
+				</div>
 			</form>
 		</div>
 	{:else if $auth.user}
@@ -654,6 +753,14 @@
 							void logout();
 						}}
 					/>
+					<ProfileSettingsRow
+						icon={LogOut}
+						label={loading ? translate(lang, 'auth.wait') : translate(lang, 'auth.logoutEverywhere')}
+						ariaLabel={translate(lang, 'auth.logoutEverywhere')}
+						onclick={() => {
+							void logoutEverywhere();
+						}}
+					/>
 				</div>
 			</div>
 			<p
@@ -687,42 +794,49 @@
 			<div class="auth-signin panel flex flex-col gap-4">
 			{#if panel === 'magic'}
 				<form
-					class="auth-form flex flex-col gap-3"
+					class="auth-form"
 					onsubmit={(e) => {
 						e.preventDefault();
 						void submitMagic();
 					}}
 				>
 					<p class="text-sm leading-relaxed text-[var(--color-muted)]">{translate(lang, 'auth.magicLead')}</p>
-					<AppLabel>
-						{translate(lang, 'auth.email')}
-						<AppInput
-							class="mt-1 w-full"
-							aria-invalid={fieldsInvalid || undefined}
-							type="email"
-							required
-							autocomplete="email"
-							inputmode="email"
-							placeholder={translate(lang, 'auth.emailPh')}
-							bind:value={email}
-						/>
-					</AppLabel>
-					{#if message}
-						<p class="auth-form__error" role="alert">{message}</p>
-					{/if}
-					<AppButton type="submit" block disabled={loading}>
-						{#if loading}
-							<span class="inline-flex items-center justify-center gap-2">
-								<Spinner size="sm" block={false} />
-								{translate(lang, 'auth.wait')}
-							</span>
-						{:else}
-							{translate(lang, 'auth.submitMagic')}
+					<div class="auth-form__fields">
+						<AppLabel>
+							{translate(lang, 'auth.email')}
+							<AppInput
+								class="mt-1 w-full"
+								aria-invalid={fieldsInvalid || undefined}
+								type="email"
+								required
+								autocomplete="email"
+								inputmode="email"
+								placeholder={translate(lang, 'auth.emailPh')}
+								bind:value={email}
+							/>
+						</AppLabel>
+						{#if message}
+							<p class="auth-form__error" role="alert">{message}</p>
 						{/if}
-					</AppButton>
-					<AppButton variant="link" class="auth-form__back" onclick={() => setPanel('signin')}>
-						{translate(lang, 'auth.backToPassword')}
-					</AppButton>
+					</div>
+					{#if turnstileOn}
+						<TurnstileWidget bind:token={captchaToken} resetSignal={captchaReset} />
+					{/if}
+					<div class="auth-form__actions">
+						<AppButton type="submit" block disabled={loading}>
+							{#if loading}
+								<span class="inline-flex items-center justify-center gap-2">
+									<Spinner size="sm" block={false} />
+									{translate(lang, 'auth.wait')}
+								</span>
+							{:else}
+								{translate(lang, 'auth.submitMagic')}
+							{/if}
+						</AppButton>
+						<AppButton variant="link" class="auth-form__back" onclick={() => setPanel('signin')}>
+							{translate(lang, 'auth.backToPassword')}
+						</AppButton>
+					</div>
 				</form>
 			{:else if panel !== 'forgot'}
 				<div class="auth-segments" role="tablist" aria-label={translate(lang, 'auth.modeAria')}>
@@ -751,75 +865,93 @@
 
 			{#if panel === 'signin' || panel === 'signup'}
 				<form
-					class="auth-form flex flex-col gap-3"
+					class="auth-form"
 					onsubmit={(e) => {
 						e.preventDefault();
 						void submitPassword();
 					}}
 				>
-					<AppLabel>
-						{translate(lang, 'auth.email')}
-						<AppInput
-							class="mt-1 w-full"
-							aria-invalid={fieldsInvalid || undefined}
-							type="email"
-							required
-							autocomplete="email"
-							inputmode="email"
-							placeholder={translate(lang, 'auth.emailPh')}
-							bind:value={email}
-						/>
-					</AppLabel>
-					<PasswordField
-						bind:value={password}
-						label={translate(lang, 'auth.password')}
-						placeholder={translate(lang, 'auth.passwordPh')}
-						autocomplete={passwordMode === 'signup' ? 'new-password' : 'current-password'}
-						invalid={fieldsInvalid}
-					/>
-					{#if passwordMode === 'signup'}
+					<div class="auth-form__fields">
+						<AppLabel>
+							{translate(lang, 'auth.email')}
+							<AppInput
+								class="mt-1 w-full"
+								aria-invalid={fieldsInvalid || undefined}
+								type="email"
+								required
+								autocomplete="email"
+								inputmode="email"
+								placeholder={translate(lang, 'auth.emailPh')}
+								bind:value={email}
+							/>
+						</AppLabel>
 						<PasswordField
-							bind:value={passwordConfirm}
-							label={translate(lang, 'auth.passwordConfirm')}
-							placeholder={translate(lang, 'auth.passwordConfirmPh')}
-							autocomplete="new-password"
+							bind:value={password}
+							label={translate(lang, 'auth.password')}
+							placeholder={translate(lang, 'auth.passwordPh')}
+							autocomplete={passwordMode === 'signup' ? 'new-password' : 'current-password'}
 							invalid={fieldsInvalid}
+							oninput={passwordMode === 'signup' ? clearConfirmMismatch : undefined}
 						/>
-					{/if}
+						{#if passwordMode === 'signup'}
+							<PasswordPolicyHints {password} {email} />
+							<PasswordField
+								bind:value={passwordConfirm}
+								label={translate(lang, 'auth.passwordConfirm')}
+								placeholder={translate(lang, 'auth.passwordConfirmPh')}
+								autocomplete="new-password"
+								invalid={fieldsInvalid || confirmMismatchVisible}
+								onblur={onConfirmPasswordBlur}
+								oninput={clearConfirmMismatch}
+							/>
+							{#if confirmMismatchHint}
+								<p class="auth-form__error" role="status">{confirmMismatchHint}</p>
+							{/if}
+						{/if}
+						{#if message}
+							<p class="auth-form__error" role="alert">{message}</p>
+						{/if}
+					</div>
 
 					{#if passwordMode === 'signin'}
 						<AppButton
 							variant="link"
-							class="auth-form__alt self-start text-sm"
+							class="auth-form__alt auth-form__forgot self-start text-sm"
 							onclick={() => setPanel('forgot')}
 						>
 							{translate(lang, 'auth.forgot')}
 						</AppButton>
 					{/if}
 
-					{#if message}
-						<p class="auth-form__error" role="alert">{message}</p>
+					{#if turnstileOn}
+						<TurnstileWidget bind:token={captchaToken} resetSignal={captchaReset} />
 					{/if}
 
-					<AppButton type="submit" block disabled={loading}>
-						{#if loading}
-							<span class="inline-flex items-center justify-center gap-2">
-								<Spinner size="sm" block={false} />
-								{translate(lang, 'auth.wait')}
-							</span>
-						{:else}
-							{passwordMode === 'signup'
-								? translate(lang, 'auth.submitSignUp')
-								: translate(lang, 'auth.submitSignIn')}
-						{/if}
-					</AppButton>
-					<AppButton variant="link" class="auth-form__alt auth-form__alt--center" onclick={openMagicLink}>
-						{translate(lang, 'auth.useMagicLink')}
-					</AppButton>
+					<div class="auth-form__actions">
+						<AppButton type="submit" block disabled={loading}>
+							{#if loading}
+								<span class="inline-flex items-center justify-center gap-2">
+									<Spinner size="sm" block={false} />
+									{translate(lang, 'auth.wait')}
+								</span>
+							{:else}
+								{passwordMode === 'signup'
+									? translate(lang, 'auth.submitSignUp')
+									: translate(lang, 'auth.submitSignIn')}
+							{/if}
+						</AppButton>
+						<AppButton
+							variant="link"
+							class="auth-form__alt auth-form__alt--center"
+							onclick={openMagicLink}
+						>
+							{translate(lang, 'auth.useMagicLink')}
+						</AppButton>
+					</div>
 				</form>
 			{:else if panel === 'forgot'}
 				<form
-					class="auth-form flex flex-col gap-3"
+					class="auth-form"
 					onsubmit={(e) => {
 						e.preventDefault();
 						void submitForgot();
@@ -827,35 +959,42 @@
 				>
 					<p class="text-sm font-semibold text-[var(--color-ink)]">{translate(lang, 'auth.forgot')}</p>
 					<p class="text-sm leading-relaxed text-[var(--color-muted)]">{translate(lang, 'auth.forgotLead')}</p>
-					<AppLabel>
-						{translate(lang, 'auth.email')}
-						<AppInput
-							class="mt-1 w-full"
-							aria-invalid={fieldsInvalid || undefined}
-							type="email"
-							required
-							autocomplete="email"
-							inputmode="email"
-							placeholder={translate(lang, 'auth.emailPh')}
-							bind:value={email}
-						/>
-					</AppLabel>
-					{#if message}
-						<p class="auth-form__error" role="alert">{message}</p>
-					{/if}
-					<AppButton type="submit" block disabled={loading}>
-						{#if loading}
-							<span class="inline-flex items-center justify-center gap-2">
-								<Spinner size="sm" block={false} />
-								{translate(lang, 'auth.wait')}
-							</span>
-						{:else}
-							{translate(lang, 'auth.submitReset')}
+					<div class="auth-form__fields">
+						<AppLabel>
+							{translate(lang, 'auth.email')}
+							<AppInput
+								class="mt-1 w-full"
+								aria-invalid={fieldsInvalid || undefined}
+								type="email"
+								required
+								autocomplete="email"
+								inputmode="email"
+								placeholder={translate(lang, 'auth.emailPh')}
+								bind:value={email}
+							/>
+						</AppLabel>
+						{#if message}
+							<p class="auth-form__error" role="alert">{message}</p>
 						{/if}
-					</AppButton>
-					<AppButton variant="secondary" block onclick={() => setPanel('signin')}>
-						{translate(lang, 'auth.backToSignIn')}
-					</AppButton>
+					</div>
+					{#if turnstileOn}
+						<TurnstileWidget bind:token={captchaToken} resetSignal={captchaReset} />
+					{/if}
+					<div class="auth-form__actions">
+						<AppButton type="submit" block disabled={loading}>
+							{#if loading}
+								<span class="inline-flex items-center justify-center gap-2">
+									<Spinner size="sm" block={false} />
+									{translate(lang, 'auth.wait')}
+								</span>
+							{:else}
+								{translate(lang, 'auth.submitReset')}
+							{/if}
+						</AppButton>
+						<AppButton variant="secondary" block onclick={() => setPanel('signin')}>
+							{translate(lang, 'auth.backToSignIn')}
+						</AppButton>
+					</div>
 				</form>
 			{/if}
 			</div>

@@ -59,11 +59,26 @@ test('12.6.7 password mismatch on signup (client validation)', async ({ page }) 
 	if (!(await isCloudAuthAvailable(page))) test.skip(true, 'Supabase not configured');
 	await setAuthTab(page, 'signup');
 	await fillEmail(page, 'mismatch@example.com');
-	await fillPassword(page, 'secret123', 0);
-	await fillPassword(page, 'different456', 1);
-	await page.locator('.auth-signin form.auth-form').getByRole('button', { name: /^(Зарегистрироваться|Sign up)$/ }).click();
-	await expect(page.locator('.auth-form__error')).toContainText(/не совпадают|do not match/i);
+	await fillPassword(page, 'GoodPass12a', 0);
+	await fillPassword(page, 'GoodPass12b', 1);
+	await page.locator('.auth-signin form.auth-form').evaluate((form) => {
+		(form as HTMLFormElement).requestSubmit();
+	});
 	await waitForToastMatching(page, /не совпадают|do not match/i);
+	await expect(page.getByRole('alert')).toContainText(/не совпадают|do not match/i);
+});
+
+test('12.6.7b weak password rejected on signup (client validation)', async ({ page }) => {
+	await gotoAuth(page);
+	if (!(await isCloudAuthAvailable(page))) test.skip(true, 'Supabase not configured');
+	await setAuthTab(page, 'signup');
+	await fillEmail(page, 'weakpass@example.com');
+	await fillPassword(page, 'abcdefghij', 0);
+	await fillPassword(page, 'abcdefghij', 1);
+	await page.locator('.auth-signin form.auth-form').evaluate((form) => {
+		(form as HTMLFormElement).requestSubmit();
+	});
+	await expect(page.getByRole('alert')).toContainText(/цифр|digit/i);
 });
 
 test('12.6.3 sign in wrong password', async ({ page }) => {

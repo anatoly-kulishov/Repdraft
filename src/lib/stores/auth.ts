@@ -262,40 +262,49 @@ function createAuthStore() {
 			passwordRecovery = false;
 			update((s) => ({ ...s, passwordRecovery: false }));
 		},
-		async signUp(email: string, password: string, next?: string | null) {
+		async signUp(email: string, password: string, next?: string | null, captchaToken?: string) {
 			const supabase = getSupabase();
 			if (!supabase) throw new Error('errors.cloudOff');
 			const { data, error } = await supabase.auth.signUp({
 				email,
 				password,
-				options: { emailRedirectTo: authCallbackUrl(next) }
+				options: {
+					emailRedirectTo: authCallbackUrl(next),
+					...(captchaToken ? { captchaToken } : {})
+				}
 			});
 			if (error) throw error;
 			return { session: data.session };
 		},
-		async signIn(email: string, password: string) {
+		async signIn(email: string, password: string, captchaToken?: string) {
 			const supabase = getSupabase();
 			if (!supabase) throw new Error('errors.cloudOff');
-			const { error } = await supabase.auth.signInWithPassword({ email, password });
+			const { error } = await supabase.auth.signInWithPassword({
+				email,
+				password,
+				options: captchaToken ? { captchaToken } : undefined
+			});
 			if (error) throw error;
 		},
-		async signInWithOtp(email: string, next?: string | null) {
+		async signInWithOtp(email: string, next?: string | null, captchaToken?: string) {
 			const supabase = getSupabase();
 			if (!supabase) throw new Error('errors.cloudOff');
 			const { error } = await supabase.auth.signInWithOtp({
 				email,
 				options: {
 					emailRedirectTo: authCallbackUrl(next),
-					shouldCreateUser: true
+					shouldCreateUser: true,
+					...(captchaToken ? { captchaToken } : {})
 				}
 			});
 			if (error) throw error;
 		},
-		async resetPasswordForEmail(email: string) {
+		async resetPasswordForEmail(email: string, captchaToken?: string) {
 			const supabase = getSupabase();
 			if (!supabase) throw new Error('errors.cloudOff');
 			const { error } = await supabase.auth.resetPasswordForEmail(email, {
-				redirectTo: recoveryCallbackUrl()
+				redirectTo: recoveryCallbackUrl(),
+				...(captchaToken ? { captchaToken } : {})
 			});
 			if (error) throw error;
 		},
@@ -310,7 +319,13 @@ function createAuthStore() {
 		async signOut() {
 			const supabase = getSupabase();
 			if (!supabase) return;
-			const { error } = await supabase.auth.signOut();
+			const { error } = await supabase.auth.signOut({ scope: 'local' });
+			if (error) throw error;
+		},
+		async signOutEverywhere() {
+			const supabase = getSupabase();
+			if (!supabase) return;
+			const { error } = await supabase.auth.signOut({ scope: 'global' });
 			if (error) throw error;
 		},
 		/** Wipe cloud account + local cache. Requires server SUPABASE_SERVICE_ROLE_KEY. */
