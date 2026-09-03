@@ -3,8 +3,10 @@
 	import AppInput from '$lib/components/AppInput.svelte';
 	import { cn } from '$lib/utils.js';
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
+	import LiveExerciseHistorySheet from '$lib/components/live/LiveExerciseHistorySheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
+	import { blurActiveElement } from '$lib/dom/blurActiveElement';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, SessionExercise, WorkoutSession } from '$lib/domain/types';
@@ -13,7 +15,7 @@
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
-	import { Check, Plus, RefreshCw, SkipForward, Trash2 } from '@lucide/svelte';
+	import { Check, History, Plus, RefreshCw, SkipForward, Trash2 } from '@lucide/svelte';
 
 	let {
 		session,
@@ -62,6 +64,7 @@
 	} = $props();
 
 	let techniqueOpen = $state(false);
+	let historyOpen = $state(false);
 
 	function titleFor(id: string): string {
 		const item = names.get(id);
@@ -87,33 +90,6 @@
 		return null;
 	}
 
-	function previousForSet(setIndex: number) {
-		return live.previousSetFor(exercise.exerciseId, setIndex);
-	}
-
-	function previousLabel(setIndex: number): string {
-		const prev = previousForSet(setIndex);
-		if (!prev) return translate(lang, 'live.noPrevious');
-		return formatPerformanceHint(prev.weightKg, prev.reps) ?? translate(lang, 'live.noPrevious');
-	}
-
-	function canApplyPrevious(setIndex: number): boolean {
-		if (exercise.sets[setIndex]?.completed) return false;
-		const prev = previousForSet(setIndex);
-		if (!prev) return false;
-		const set = exercise.sets[setIndex];
-		return set.weightKg !== prev.weightKg || set.reps !== prev.reps;
-	}
-
-	function applyPreviousSet(setIndex: number) {
-		const prev = previousForSet(setIndex);
-		if (!prev || exercise.sets[setIndex]?.completed) return;
-		live.patchSet(exerciseIndex, setIndex, {
-			weightKg: prev.weightKg,
-			reps: prev.reps
-		});
-	}
-
 	function lastVars(exerciseId: string): { w: string; r: string } | null {
 		const last = live.lastFor(exerciseId);
 		if (!last || (last.weightKg == null && last.reps == null)) return null;
@@ -136,11 +112,23 @@
 
 	function openTechnique() {
 		if (!names.get(exercise.exerciseId)) return;
+		historyOpen = false;
 		techniqueOpen = true;
 	}
 
 	function dismissTechnique() {
 		techniqueOpen = false;
+	}
+
+	function openHistory() {
+		techniqueOpen = false;
+		blurActiveElement();
+		historyOpen = true;
+	}
+
+	function dismissHistory() {
+		historyOpen = false;
+		blurActiveElement();
 	}
 
 	let canRemoveSet = $derived(exercise.sets.length > 1);
@@ -211,16 +199,7 @@
 	let exerciseMeta = $derived(names.get(exercise.exerciseId) ?? null);
 	let title = $derived(titleFor(exercise.exerciseId));
 	let lastFormatted = $derived(formatLast(exercise.exerciseId));
-	let hasPreviousColumn = $derived.by(() => {
-		if (!exercise.sets.some((_, si) => previousForSet(si) != null)) return false;
-		const noPrev = translate(lang, 'live.noPrevious');
-		const labels = exercise.sets
-			.map((_, si) => previousLabel(si))
-			.filter((label) => label !== noPrev);
-		if (labels.length === 0) return false;
-		return new Set(labels).size > 1;
-	});
-	let showQuickActions = $derived(lastCopy != null && lastFormatted != null && canApplyLast);
+	let showLastChip = $derived(lastCopy != null && lastFormatted != null && canApplyLast);
 
 	function showRemove(setIndex: number): boolean {
 		return canRemoveSet && setIndex === exercise.sets.length - 1;
@@ -312,6 +291,15 @@
 				{/if}
 			</div>
 			<div class="live-panel-head__actions">
+				<AppButton
+					variant="ghost"
+					class="live-panel-head-btn"
+					aria-label={translate(lang, 'live.historyOpenAria')}
+					title={translate(lang, 'live.historyTitle')}
+					onclick={openHistory}
+				>
+					<LucideIcon icon={History} size={ICON_SMALL} />
+				</AppButton>
 				{#if canSwapAlternative && onSwapAlternative}
 					<AppButton
 						variant="ghost"
@@ -339,20 +327,18 @@
 	</header>
 
 	<section class="live-panel__log" aria-label={translate(lang, 'live.setLogAria')}>
-		{#if showQuickActions}
+		{#if showLastChip && lastFormatted}
 			<div class="live-quick-actions">
-				{#if lastCopy && lastFormatted && canApplyLast}
-					<AppButton
-						variant="ghost"
-						class="live-last-chip live-last-chip--tap"
-						aria-label={translate(lang, 'live.lastApplyAria', { value: lastFormatted })}
-						onclick={applyLastPerformance}
-					>
-						<span class="live-last-chip__label">{translate(lang, 'live.last')}</span>
-						<span class="live-last-chip__value tabular-nums">{lastFormatted}</span>
-						<span class="live-last-chip__action">{translate(lang, 'live.applyLast')}</span>
-					</AppButton>
-				{/if}
+				<AppButton
+					variant="ghost"
+					class="live-last-chip live-last-chip--tap"
+					aria-label={translate(lang, 'live.lastApplyAria', { value: lastFormatted })}
+					onclick={applyLastPerformance}
+				>
+					<span class="live-last-chip__label">{translate(lang, 'live.last')}</span>
+					<span class="live-last-chip__value tabular-nums">{lastFormatted}</span>
+					<span class="live-last-chip__action">{translate(lang, 'live.applyLast')}</span>
+				</AppButton>
 			</div>
 		{/if}
 
@@ -360,11 +346,8 @@
 			<p class="live-bw-note">{translate(lang, 'live.weightBwHintShort')}</p>
 		{/if}
 
-		<div class="live-set-head" class:live-set-head--prev={hasPreviousColumn}>
+		<div class="live-set-head">
 			<span class="live-set-head__idx">#</span>
-			{#if hasPreviousColumn}
-				<span class="live-set-head__prev">{translate(lang, 'live.prev')}</span>
-			{/if}
 			{#if canFillWeightAll && fillWeightKg != null}
 				<button
 					type="button"
@@ -417,30 +400,12 @@
 			{#each exercise.sets as set, si (si)}
 				<li
 					class="live-set-row"
-					class:live-set-row--prev={hasPreviousColumn}
 					class:is-done={set.completed}
 					class:is-current={currentSetIndex === si}
 					class:is-just-done={justDoneSetIndex === si}
 					class:live-set-row--has-remove={showRemove(si)}
 				>
 					<span class="live-set-index">{si + 1}</span>
-					{#if hasPreviousColumn}
-						{#if canApplyPrevious(si)}
-							<AppButton
-								variant="ghost"
-								class="live-set-prev live-set-prev--tap tabular-nums"
-								aria-label={translate(lang, 'live.prevApplyAria', {
-									value: previousLabel(si)
-								})}
-								title={translate(lang, 'live.prevApplyAria', { value: previousLabel(si) })}
-								onclick={() => applyPreviousSet(si)}
-							>
-								{previousLabel(si)}
-							</AppButton>
-						{:else}
-							<span class="live-set-prev tabular-nums">{previousLabel(si)}</span>
-						{/if}
-					{/if}
 					<AppInput
 						class={`live-set-weight tabular-nums${invalidSetIndex === si && invalidKind === 'weight' ? ' is-invalid' : ''}`}
 						aria-invalid={invalidSetIndex === si && invalidKind === 'weight'}
@@ -558,3 +523,9 @@
 		onDismiss={dismissTechnique}
 	/>
 {/if}
+
+<LiveExerciseHistorySheet
+	open={historyOpen}
+	exerciseId={exercise.exerciseId}
+	onDismiss={dismissHistory}
+/>

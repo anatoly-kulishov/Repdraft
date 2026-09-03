@@ -1,10 +1,11 @@
-	import {
+import {
 	ACTIVE_SESSION_KEY,
 	SESSIONS_STORAGE_KEY,
 	type SessionRepository
 } from '$lib/domain/repository';
-import { HOME_RECENT_ROW_LIMIT } from '$lib/domain/home';
+import { HOME_RECENT_ROW_LIMIT, WORKOUTS_HISTORY_SKELETON_ROW_LIMIT } from '$lib/domain/home';
 import type { WorkoutSession } from '$lib/domain/types';
+import { listSessionTombstones } from '$lib/storage/sessionTombstones';
 
 function readSessions(): WorkoutSession[] {
 	if (typeof localStorage === 'undefined') return [];
@@ -29,6 +30,14 @@ export function peekLocalSession(id: string): WorkoutSession | null {
 	return readSessions().find((session) => session.id === id) ?? null;
 }
 
+/** Finished sessions from localStorage (sync) — home boot must not wait on cloud. */
+export function peekLocalFinishedSessions(): WorkoutSession[] {
+	const deleted = new Set(listSessionTombstones());
+	return readSessions()
+		.filter((session) => Boolean(session.finishedAt) && !deleted.has(session.id))
+		.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+}
+
 /** Finished sessions count for home boot skeleton aside. */
 export function peekLocalHistoryCount(): number {
 	return readSessions().filter((session) => Boolean(session.finishedAt)).length;
@@ -40,7 +49,10 @@ export function syncHomeRecentBootDataset(): void {
 	try {
 		const historyCount = peekLocalHistoryCount();
 		const hasHistory = historyCount > 0;
-		const cappedHistoryRows = Math.min(Math.max(historyCount, 0), 4);
+		const cappedHistoryRows = Math.min(
+			Math.max(historyCount, 0),
+			WORKOUTS_HISTORY_SKELETON_ROW_LIMIT
+		);
 		document.documentElement.dataset.homeRecentRows = String(
 			hasHistory ? HOME_RECENT_ROW_LIMIT : 0
 		);
@@ -121,4 +133,9 @@ export const localSessionRepository: SessionRepository = {
 /** Wipe finished sessions; keep any unfinished rows if present. */
 export function clearFinishedSessions(): void {
 	writeSessions(readSessions().filter((s) => !s.finishedAt));
+}
+
+/** Replace entire local sessions list (backup import / cloud merge). */
+export function replaceAllSessions(sessions: WorkoutSession[]): void {
+	writeSessions(sessions);
 }

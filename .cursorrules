@@ -7,6 +7,8 @@ You are working on the Repdraft MVP web app (SvelteKit + TypeScript PWA).
 **MANTRA:** Maximum UI/UX comfort and flawless basic experience in MVP above any new features. Every decision must speed up or simplify the athlete's workflow in the gym.
 
 Also: **IMPROVE THE EXPERIENCE. NOT THE FEATURE COUNT.**  
+And: **FAST ON WEAK DEVICES** - optimize so the app stays usable on old/low-end phones (long lists, media, import, live session). Prefer pagination, deferred work, lean renders; avoid main-thread jank and heavy payloads by default.
+
 Research: `.cursor/product/ux-research-mvp-direction.md`. Metric: phone → completed set.
 
 Sacred loop (see `GOAL.md`):

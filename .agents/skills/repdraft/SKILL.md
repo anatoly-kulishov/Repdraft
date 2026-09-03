@@ -56,6 +56,7 @@ npm run check:domain   # domain selfchecks
 
 - Одна primary CTA на экран. **Active Workout** — главный экран.
 - Полировка существующего экрана важнее новой кнопки/раздела.
+- **FAST ON WEAK DEVICES:** списки, медиа, импорт и live должны оставаться отзывчивыми на слабом/старом телефоне.
 - Язык UI: `/auth` (Профиль), остальное — по контексту i18n.
 - Детали: [`.cursor/product/mvp-spec.md`](.cursor/product/mvp-spec.md), [`.cursorrules`](.cursorrules).
 

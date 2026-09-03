@@ -8,7 +8,8 @@ alwaysApply: true
 **Sources:** [`GOAL.md`](../../GOAL.md) · [`.cursor/product/mvp-spec.md`](../product/mvp-spec.md) · [`.cursor/product/ux-research-mvp-direction.md`](../product/ux-research-mvp-direction.md)
 
 **MANTRA:** IMPROVE THE EXPERIENCE. NOT THE FEATURE COUNT.  
-Maximum UI/UX comfort of the basic loop above new features.
+Maximum UI/UX comfort of the basic loop above new features.  
+**FAST ON WEAK DEVICES** - usable on old/low-end phones; optimize lists, media, import, and live session for weak CPU/RAM.
 
 ```text
 Open → Pick workout → Preview → Start → Set → Weight × reps → Next → Finish → Saved result
@@ -19,14 +20,16 @@ Open → Pick workout → Preview → Start → Set → Weight × reps → Next 
 ## Before coding
 
 1. Does this make an existing step faster / clearer / simpler?
-2. Audit vs `mvp-spec.md` (Agent workflow) — implement only P0 gaps, no redesign from scratch.
-3. Release semver ideas: `.cursor/product/market-roadmap.md` (backlog, not a distraction).
+2. Will it stay smooth on a weak/old phone (pagination, deferred work, lean DOM)?
+3. Audit vs `mvp-spec.md` (Agent workflow) — implement only P0 gaps, no redesign from scratch.
+4. Release semver ideas: `.cursor/product/market-roadmap.md` (backlog, not a distraction).
 
 ## Non-negotiables
 
 - Nav: Home, Workouts, Exercises (+ Profile low emphasis)
 - Visual: dark minimal premium, Lucide only, one primary CTA per screen
 - No blocking full-screen loaders — skeletons / optimistic UI
+- Performance budget for low-end: no unbounded full-list renders, avoid main-thread jank
 - Native iOS/Android only after the PWA loop feels excellent
 
 ## Do not build without explicit user request

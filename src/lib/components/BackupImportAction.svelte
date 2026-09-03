@@ -1,19 +1,11 @@
 <script lang="ts">
 	import {
-		mergeLocalWithImport,
 		parseExportJson,
 		type RepdraftExportPayload
 	} from '$lib/domain/exportData';
 	import { translate, translateError } from '$lib/i18n/messages';
-	import { isCloudMode } from '$lib/storage/dataAccess';
-	import { syncImportedPayloadToCloud } from '$lib/stores/cloudLocal';
-	import { localRecordRepository } from '$lib/storage/localRecordRepository';
-	import { localSessionRepository } from '$lib/storage/localSessionRepository';
-	import { localWorkoutRepository } from '$lib/storage/localWorkoutRepository';
-	import { live } from '$lib/stores/live';
+	import { applyLocalBackupImport } from '$lib/storage/applyLocalBackupImport';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { plans } from '$lib/stores/plans';
-	import { records } from '$lib/stores/records';
 	import { toasts } from '$lib/stores/toasts';
 	import AppButton from '$lib/components/AppButton.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
@@ -34,15 +26,6 @@
 	let fileInput: HTMLInputElement | undefined = $state();
 	let pendingPayload = $state<RepdraftExportPayload | null>(null);
 	let importOfferOpen = $state(false);
-
-	async function loadLocalBundle() {
-		const [plansList, sessions, recordsList] = await Promise.all([
-			localWorkoutRepository.list(),
-			localSessionRepository.list(),
-			localRecordRepository.list()
-		]);
-		return { plans: plansList, sessions, records: recordsList };
-	}
 
 	function openImportPicker() {
 		if (busy) return;
@@ -85,25 +68,12 @@
 		if (!pendingPayload || busy) return;
 		busy = true;
 		const payload = pendingPayload;
+		// Let the confirm-button spinner paint before heavy sync work.
+		await new Promise<void>((resolve) =>
+			requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+		);
 		try {
-			const current = await loadLocalBundle();
-			const merged = mergeLocalWithImport(current, payload);
-
-			await Promise.all([
-				...merged.plans.map((plan) => localWorkoutRepository.save(plan)),
-				...merged.sessions.map((session) => localSessionRepository.save(session)),
-				...merged.records.map((record) => localRecordRepository.save(record))
-			]);
-
-			const cloudSynced = await syncImportedPayloadToCloud(payload);
-
-			const useCloud = isCloudMode();
-			await Promise.all([
-				plans.refresh({ cloud: useCloud, force: true }),
-				records.refresh({ cloud: useCloud, force: true }),
-				live.refreshHistory()
-			]);
-
+			const { cloudSynced, useCloud } = await applyLocalBackupImport(payload);
 			if (useCloud && !cloudSynced) {
 				toasts.show(translate(lang, 'settings.importCloudPending'), 'info');
 			} else {
@@ -160,7 +130,14 @@
 				{translate(lang, 'common.cancel')}
 			</AppButton>
 			<AppButton disabled={busy} aria-busy={busy} onclick={() => void commitImport()}>
-				{translate(lang, 'settings.importConfirmCta')}
+				{#if busy}
+					<span class="inline-flex items-center justify-center gap-2">
+						<Spinner size="sm" block={false} />
+						{translate(lang, 'auth.wait')}
+					</span>
+				{:else}
+					{translate(lang, 'settings.importConfirmCta')}
+				{/if}
 			</AppButton>
 		{/snippet}
 	</BottomSheet>

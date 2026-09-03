@@ -1,3 +1,19 @@
+import {
+	PASSWORD_MIN_LENGTH,
+	passwordPolicyChecklist,
+	passwordPolicyMessageKey,
+	validatePasswordPolicy,
+	type PasswordPolicyReason
+} from './passwordPolicy';
+
+export {
+	PASSWORD_MIN_LENGTH,
+	passwordPolicyChecklist,
+	passwordPolicyMessageKey,
+	validatePasswordPolicy,
+	type PasswordPolicyReason
+};
+
 /** Same-origin path for post-login redirect (blocks open redirects). */
 export function safeRedirectPath(raw: string | null | undefined, fallback = '/workouts'): string {
 	if (!raw) return fallback;
@@ -74,6 +90,9 @@ export function authErrorMessageKey(err: unknown): string | null {
 	if (code === 'same_password' || message.includes('same password')) {
 		return 'auth.errors.samePassword';
 	}
+	if (message.includes('captcha') || code === 'captcha_failed') {
+		return 'auth.errors.captchaFailed';
+	}
 
 	return null;
 }
@@ -100,7 +119,9 @@ export function userAvatarUrl(user: AuthUserLike | null | undefined): string | n
 	for (const key of ['avatar_url', 'picture'] as const) {
 		const url = metaString(meta, key);
 		if (!url) continue;
-		if (url.startsWith('https://') || url.startsWith('http://')) return url;
+		if (url.startsWith('https://') || url.startsWith('http://')) {
+			return url;
+		}
 	}
 	return null;
 }
@@ -219,5 +240,23 @@ export function runAuthFlowSelfCheck(): void {
 	}
 	if (userAuthProvider({ email: 'a@b.c', identities: [] }) !== 'email') {
 		throw new Error('userAuthProvider should fall back to email');
+	}
+	if (validatePasswordPolicy('short1') !== 'tooShort') {
+		throw new Error('password policy: tooShort');
+	}
+	if (validatePasswordPolicy('abcdefghij') !== 'needDigit') {
+		throw new Error('password policy: needDigit');
+	}
+	if (validatePasswordPolicy('1234567890') !== 'needLetter') {
+		throw new Error('password policy: needLetter');
+	}
+	if (validatePasswordPolicy('anatoly12345', 'anatoly@example.com') !== 'matchesEmail') {
+		throw new Error('password policy: matchesEmail');
+	}
+	if (validatePasswordPolicy('GoodPass12') !== 'ok') {
+		throw new Error('password policy: ok');
+	}
+	if (passwordPolicyMessageKey('tooShort') !== 'auth.errors.passwordTooShort') {
+		throw new Error('passwordPolicyMessageKey broken');
 	}
 }

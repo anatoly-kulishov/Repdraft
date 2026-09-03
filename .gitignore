@@ -29,6 +29,7 @@ scripts/set-vercel-env.mjs
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .tmp/
+static/dev/
 design-audit/
 static/data/exercises.full.json
 test-results/

@@ -5,6 +5,7 @@
 	import { ICON_INPUT } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { PASSWORD_MIN_LENGTH } from '$lib/domain/passwordPolicy';
 	import { Eye, EyeOff } from '@lucide/svelte';
 
 	let {
@@ -13,9 +14,11 @@
 		placeholder,
 		autocomplete = 'current-password',
 		required = true,
-		minlength = 6,
+		minlength = PASSWORD_MIN_LENGTH,
 		name,
-		invalid = false
+		invalid = false,
+		onblur,
+		oninput
 	}: {
 		value?: string;
 		label: string;
@@ -25,6 +28,8 @@
 		minlength?: number;
 		name?: string;
 		invalid?: boolean;
+		onblur?: (event: FocusEvent) => void;
+		oninput?: (event: Event) => void;
 	} = $props();
 
 	let visible = $state(false);
@@ -44,6 +49,8 @@
 			{name}
 			{placeholder}
 			bind:value
+			{onblur}
+			{oninput}
 		/>
 		<button
 			type="button"

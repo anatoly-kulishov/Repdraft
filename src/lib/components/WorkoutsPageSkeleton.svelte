@@ -2,6 +2,10 @@
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import {
+		WORKOUTS_HISTORY_SKELETON_ROW_LIMIT,
+		WORKOUTS_PLANS_SKELETON_ROW_LIMIT
+	} from '$lib/domain/home';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { ClipboardList, Clock } from '@lucide/svelte';
@@ -25,7 +29,12 @@
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
-	let skeletonRows = $derived(Math.min(Math.max(rows, 1), 4));
+	let rowCap = $derived(
+		variant === 'history-list'
+			? WORKOUTS_HISTORY_SKELETON_ROW_LIMIT
+			: WORKOUTS_PLANS_SKELETON_ROW_LIMIT
+	);
+	let skeletonRows = $derived(Math.min(Math.max(rows, 1), rowCap));
 </script>
 
 <div
