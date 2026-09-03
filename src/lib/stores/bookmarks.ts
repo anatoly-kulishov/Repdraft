@@ -1,10 +1,15 @@
 import { browser } from '$app/environment';
-import { localBookmarkRepository } from '$lib/storage/localBookmarkRepository';
+import { localBookmarkRepository, peekLocalBookmarkIds } from '$lib/storage/localBookmarkRepository';
+import { syncBookmarksCountCookie } from '$lib/storage/listBootPeek';
 import { get, writable } from 'svelte/store';
 
 function createBookmarksStore() {
-	const store = writable<string[]>([]);
-	const ready = writable(false);
+	/** Client peek is sync and authoritative for empty-vs-list; refresh keeps store fresh. */
+	const initial = browser ? peekLocalBookmarkIds() : [];
+	if (browser) syncBookmarksCountCookie(initial.length);
+	const store = writable<string[]>(initial);
+	const ready = writable(browser);
+	let inflight: Promise<void> | null = null;
 
 	async function refresh() {
 		if (!browser) {
@@ -12,19 +17,31 @@ function createBookmarksStore() {
 			ready.set(true);
 			return;
 		}
-		try {
-			store.set(await localBookmarkRepository.list());
-		} catch {
-			store.set([]);
-		} finally {
-			ready.set(true);
-		}
+		if (inflight) return inflight;
+		inflight = (async () => {
+			try {
+				const ids = await localBookmarkRepository.list();
+				store.set(ids);
+				syncBookmarksCountCookie(ids.length);
+			} catch {
+				const ids = peekLocalBookmarkIds();
+				store.set(ids);
+				syncBookmarksCountCookie(ids.length);
+			} finally {
+				ready.set(true);
+				inflight = null;
+			}
+		})();
+		return inflight;
 	}
 
 	function invalidate() {
-		store.set([]);
-		ready.set(false);
+		store.set(browser ? peekLocalBookmarkIds() : []);
+		ready.set(browser);
+		if (browser) void refresh();
 	}
+
+	if (browser) void refresh();
 
 	return {
 		subscribe: store.subscribe,
@@ -57,3 +74,4 @@ function createBookmarksStore() {
 }
 
 export const bookmarks = createBookmarksStore();
+export const bookmarksReady = { subscribe: bookmarks.ready.subscribe };
