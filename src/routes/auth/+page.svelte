@@ -27,6 +27,7 @@
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import PasswordField from '$lib/components/PasswordField.svelte';
 	import PasswordPolicyHints from '$lib/components/PasswordPolicyHints.svelte';
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -44,6 +45,7 @@
 	import { themeToggleStateIcon } from '$lib/components/icons/themeToggle';
 	import { Globe, LogOut, Timer, Shield, ClipboardList } from '@lucide/svelte';
 
+	let { data } = $props();
 
 	type Panel = 'signin' | 'signup' | 'magic' | 'forgot' | 'check-email';
 
@@ -61,6 +63,7 @@
 	let confirmMismatchVisible = $state(false);
 	let deleteConfirmOpen = $state(false);
 	let deleteConfirmText = $state('');
+	let logoutEverywhereConfirmOpen = $state(false);
 	let captchaToken = $state('');
 	let captchaReset = $state(0);
 
@@ -139,12 +142,13 @@
 		profileAvatar;
 		profileAvatarBroken = false;
 	});
+
 	let backLabel = $derived(
 		nextPath === '/' ? translate(lang, 'nav.tabHome') : translate(lang, 'a11y.back')
 	);
 
 	$effect(() => {
-		if (!$auth.ready || !$auth.user || recoveryMode || redirected) return;
+		if (!$auth.ready || !$auth.sessionKnown || !$auth.user || recoveryMode || redirected) return;
 		const params = $page.url.searchParams;
 		const hash = typeof window !== 'undefined' ? window.location.hash : '';
 		const fromCallback =
@@ -325,8 +329,18 @@
 		}
 	}
 
+	function openLogoutEverywhereConfirm() {
+		if (loading) return;
+		logoutEverywhereConfirmOpen = true;
+	}
+
+	function dismissLogoutEverywhereConfirm() {
+		logoutEverywhereConfirmOpen = false;
+	}
+
 	async function logoutEverywhere() {
 		if (loading) return;
+		logoutEverywhereConfirmOpen = false;
 		loading = true;
 		try {
 			await auth.signOutEverywhere();
@@ -383,13 +397,17 @@
 	let passwordMode = $derived(
 		panel === 'signup' ? ('signup' as const) : panel === 'forgot' ? ('forgot' as const) : ('signin' as const)
 	);
-	let accountMode = $derived($auth.ready && Boolean($auth.user) && !recoveryMode);
+	let accountMode = $derived($auth.ready && $auth.sessionKnown && Boolean($auth.user) && !recoveryMode);
 	/**
 	 * Boot skeleton: prefer account grid when a signed-in session is likely.
-	 * app.html peek sets `dataset.authBoot` before Svelte mounts (offline-safe, no server load).
+	 * SSR uses `repdraft_auth_boot` cookie (same peek as home). Client also reads
+	 * `dataset.authBoot` from app.html for the first paint after login before the
+	 * next full document request.
+	 * Hold skeleton until sessionKnown so early `ready` does not flash guest UI.
 	 */
 	let bootLikelyAccount = $derived(
-		browser && document.documentElement.dataset.authBoot === 'account'
+		data.bootPeek.accountBoot ||
+			(browser && document.documentElement.dataset.authBoot === 'account')
 	);
 	/** Dev/QA: force boot skeleton via ?skeleton=account|guest */
 	let skeletonForce = $derived(
@@ -399,19 +417,22 @@
 				? ('guest' as const)
 				: null
 	);
+	let authSessionPending = $derived(!browser || !$auth.sessionKnown);
 	let showAccountSkeleton = $derived(
 		skeletonForce === 'account' ||
-			((!browser || !$auth.ready) && !skeletonForce && bootLikelyAccount)
+			(authSessionPending && !skeletonForce && bootLikelyAccount)
 	);
 	let showGuestSkeleton = $derived(
 		skeletonForce === 'guest' ||
-			((!browser || !$auth.ready) && !skeletonForce && !bootLikelyAccount)
+			(authSessionPending && !skeletonForce && !bootLikelyAccount)
 	);
 	let showBootSkeleton = $derived(showAccountSkeleton || showGuestSkeleton);
 	/** Real cloud-off UI only after client auth finished and keys are missing. */
-	let showCloudOff = $derived(browser && $auth.ready && !$auth.configured && !showBootSkeleton);
+	let showCloudOff = $derived(
+		browser && $auth.ready && $auth.sessionKnown && !$auth.configured && !showBootSkeleton
+	);
 	let guestExtrasMode = $derived(
-		$auth.ready && !accountMode && !recoveryMode && !showBootSkeleton
+		$auth.ready && $auth.sessionKnown && !accountMode && !recoveryMode && !showBootSkeleton
 	);
 
 	$effect(() => {
@@ -448,7 +469,7 @@
 	class:auth-page--booting-account={showAccountSkeleton}
 	class:auth-page--booting-guest={showGuestSkeleton}
 >
-	{#if $auth.ready && !showBootSkeleton}
+	{#if $auth.ready && $auth.sessionKnown && !showBootSkeleton}
 		{#if accountMode}
 			<ScreenHeader
 				fixed
@@ -461,7 +482,7 @@
 			<ScreenHeader title={translate(lang, 'auth.title')} backHref={nextPath} />
 		{/if}
 	{/if}
-	{#if $auth.ready && !accountMode && !showBootSkeleton}
+	{#if $auth.ready && $auth.sessionKnown && !accountMode && !showBootSkeleton}
 		<header class="page-header page-header--compact auth-page__header">
 			{#if guestExtrasMode}
 				<BrandTagline class="brand-tagline--auth" />
@@ -753,14 +774,19 @@
 							void logout();
 						}}
 					/>
-					<ProfileSettingsRow
-						icon={LogOut}
-						label={loading ? translate(lang, 'auth.wait') : translate(lang, 'auth.logoutEverywhere')}
-						ariaLabel={translate(lang, 'auth.logoutEverywhere')}
-						onclick={() => {
-							void logoutEverywhere();
-						}}
-					/>
+					<div class="profile-settings-group__session-footer">
+						<p class="profile-settings-group__hint profile-settings-group__hint--session">
+							{translate(lang, 'auth.logoutEverywhereHint')}
+						</p>
+						<button
+							type="button"
+							class="profile-settings-group__text-action"
+							disabled={loading}
+							onclick={openLogoutEverywhereConfirm}
+						>
+							{loading ? translate(lang, 'auth.wait') : translate(lang, 'auth.logoutEverywhere')}
+						</button>
+					</div>
 				</div>
 			</div>
 			<p
@@ -1002,6 +1028,33 @@
 		</div>
 	{/if}
 </section>
+
+{#if $auth.user}
+	<BottomSheet
+		open={logoutEverywhereConfirmOpen}
+		titleId="auth-logout-everywhere-title"
+		onDismiss={dismissLogoutEverywhereConfirm}
+	>
+		<p id="auth-logout-everywhere-title" class="bottom-sheet__title">
+			{translate(lang, 'auth.logoutEverywhereConfirmTitle')}
+		</p>
+		<p class="bottom-sheet__hint">{translate(lang, 'auth.logoutEverywhereConfirmLead')}</p>
+		{#snippet actions()}
+			<AppButton variant="secondary" onclick={dismissLogoutEverywhereConfirm}>
+				{translate(lang, 'common.cancel')}
+			</AppButton>
+			<AppButton
+				variant="danger"
+				onclick={() => {
+					void logoutEverywhere();
+				}}
+				disabled={loading}
+			>
+				{loading ? translate(lang, 'auth.wait') : translate(lang, 'auth.logoutEverywhere')}
+			</AppButton>
+		{/snippet}
+	</BottomSheet>
+{/if}
 
 {#snippet guestSettingsPanel()}
 	<div class="auth-settings panel">

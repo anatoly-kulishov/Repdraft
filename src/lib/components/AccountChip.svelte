@@ -22,7 +22,7 @@
 	let showPhoto = $derived(Boolean(avatarUrl) && !avatarBroken);
 	let initials = $derived(userInitials($auth.user));
 	let ariaLabel = $derived(
-		!$auth.ready
+		!$auth.ready || !$auth.sessionKnown
 			? translate(lang, 'common.loading')
 			: !$auth.configured
 				? translate(lang, 'nav.account')
@@ -52,7 +52,7 @@
 	aria-label={ariaLabel}
 	title={email ?? ariaLabel}
 >
-	{#if !$auth.ready}
+	{#if !$auth.ready || !$auth.sessionKnown}
 		<span class="account-avatar is-skeleton" aria-hidden="true"></span>
 	{:else if showPhoto && avatarUrl}
 		<img

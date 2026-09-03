@@ -48,7 +48,7 @@
 		completed: LoggedSet[];
 	};
 
-	let isGuest = $derived($auth.ready && $auth.configured && !$auth.user);
+	let isGuest = $derived($auth.ready && $auth.sessionKnown && $auth.configured && !$auth.user);
 	let showGuestSyncHint = $derived(
 		isGuest && !guestHintDismissed && !loading && session != null && !showFirstFinish
 	);

@@ -1,7 +1,13 @@
 import type { WorkoutRepository } from '$lib/domain/repository';
 import type { WorkoutExercise, WorkoutPlan } from '$lib/domain/types';
+import { isCloudPersistableId } from '$lib/domain/id';
+import { DEMO_PLAN_ID } from '$lib/domain/onboarding';
 import { getSupabase } from '$lib/supabase/client';
 import { requireUserId } from './supabaseAuth';
+
+function canMirrorPlanId(id: string): boolean {
+	return id !== DEMO_PLAN_ID && isCloudPersistableId(id);
+}
 
 type PlanRow = {
 	id: string;
@@ -34,6 +40,7 @@ export const supabaseWorkoutRepository: WorkoutRepository = {
 	},
 
 	async get(id: string) {
+		if (!canMirrorPlanId(id)) return null;
 		const supabase = getSupabase();
 		if (!supabase) return null;
 		const { data, error } = await supabase
@@ -46,6 +53,7 @@ export const supabaseWorkoutRepository: WorkoutRepository = {
 	},
 
 	async save(plan: WorkoutPlan) {
+		if (!canMirrorPlanId(plan.id)) return;
 		const supabase = getSupabase();
 		if (!supabase) throw new Error('errors.cloudOff');
 		const userId = await requireUserId();
@@ -64,6 +72,7 @@ export const supabaseWorkoutRepository: WorkoutRepository = {
 	},
 
 	async remove(id: string) {
+		if (!canMirrorPlanId(id)) return;
 		const supabase = getSupabase();
 		if (!supabase) throw new Error('errors.cloudOff');
 		const { error } = await supabase.from('workout_plans').delete().eq('id', id);

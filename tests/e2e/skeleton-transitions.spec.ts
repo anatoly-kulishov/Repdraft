@@ -40,9 +40,9 @@ const CASES: SkeletonTransitionSpec[] = [
 			'.home-dashboard-aside .entity-list'
 		],
 		skeletonHeightSelectors: [
-			'.home-skeleton-top-card, .home-skeleton-continue-card',
-			'.home-skeleton--start .home-skeleton-section-head',
-			'.home-skeleton--start .home-skeleton-recent-list, .home-skeleton--start .home-skeleton-aside-card'
+			'.home-skeleton-top-card, .home-skeleton-continue-card, .home-skeleton-mockup',
+			'.home-skeleton--start .home-skeleton-section-head, .home-skeleton--start .home-section-head',
+			'.home-skeleton--start .home-skeleton-recent-list, .home-skeleton--start .home-skeleton-aside-card, .home-skeleton--start .home-aside-card'
 		],
 		maxHeightDeltaPx: 72,
 		indexDelayMs: 600,

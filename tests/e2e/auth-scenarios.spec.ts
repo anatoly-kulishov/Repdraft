@@ -165,9 +165,10 @@ test('12.6.16 light theme auth renders sign-in panel', async ({ page }) => {
 
 test('skeleton query guest vs account', async ({ page }) => {
 	await gotoAuth(page, 'skeleton=guest');
-	await expect(page.locator('.page-skeleton')).toBeVisible();
+	await expect(page.locator('.page-skeleton--auth-guest')).toBeVisible();
 	await gotoAuth(page, 'skeleton=account');
-	await expect(page.locator('.page-skeleton')).toBeVisible();
+	await expect(page.locator('.page-skeleton--auth')).toBeVisible();
+	await expect(page.locator('.page-skeleton--auth-guest')).toHaveCount(0);
 });
 
 test('password visibility toggle', async ({ page }) => {

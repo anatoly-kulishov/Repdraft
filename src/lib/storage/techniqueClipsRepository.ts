@@ -237,11 +237,13 @@ export async function listExerciseIdsWithPublicClips(limit = 2000): Promise<stri
 	const supabase = getSupabase();
 	if (!supabase) return [];
 
+
 	const withModeration = await supabase
 		.from('technique_clips')
 		.select('exercise_id')
 		.eq('hidden', false)
 		.limit(limit);
+
 
 	if (!withModeration.error) {
 		const rows = (withModeration.data as { exercise_id: string }[] | null) ?? [];

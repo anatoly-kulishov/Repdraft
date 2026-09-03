@@ -29,7 +29,9 @@ const checks = [
 	'pwaInstall',
 	'exerciseScore',
 	'onboarding',
+	'id',
 	'home',
+	'calendar',
 	'docMarkdown'
 ];
 

@@ -26,9 +26,9 @@
 		label: string;
 		/** create = guest empty hero; start = mockup CTA + aside */
 		variant?: 'create' | 'start';
-		/** Recent history rows in aside (when user already has plans). 0 = compact hint card. */
+		/** Recent history rows in aside. 0 = placeholder hint card. */
 		recentRows?: number;
-		/** Left plans grid — only when signed-in with no plans yet. */
+		/** Signed-in empty home (no plans): mockup CTA + recent placeholder skeleton. */
 		showPlansColumn?: boolean;
 		/** app.html / local peek: in-progress workout on home boot. */
 		hasActiveBoot?: boolean;
@@ -47,7 +47,6 @@
 	};
 
 	let skeletonRecentRows = $derived.by(() => {
-		if (showPlansColumn) return 0;
 		if (!browser) {
 			return Math.min(Math.max(recentRows, 0), HOME_RECENT_ROW_LIMIT);
 		}
@@ -79,6 +78,10 @@
 		const session = readActiveSession();
 		return Boolean(session && !session.finishedAt);
 	});
+
+	let mockupLeadKey = $derived(
+		showPlansColumn && skeletonRecentRows > 0 ? 'home.noPlansLead' : 'home.welcomeLead'
+	);
 
 	const guestHeroPoints = [
 		{ icon: NotebookPen, key: 'home.guestPointLog' as const },
@@ -144,6 +147,42 @@
 	</div>
 {/snippet}
 
+{#snippet asideSkeleton()}
+	<div class="home-dashboard-aside">
+		<div class="home-section">
+			<div class="home-skeleton-section-head">
+				<AppSkeleton class="home-skeleton-heading" />
+				{#if skeletonRecentRows > 0}
+					<AppSkeleton class="home-skeleton-section-link" />
+				{/if}
+			</div>
+			{#if skeletonRecentRows > 0}
+				<ul class="entity-list home-skeleton-recent-list">
+					{#each Array.from({ length: skeletonRecentRows }, (_, i) => i) as i (i)}
+						<li>
+							<div class="entity-row home-skeleton-recent-row">
+								<span class="entity-row__main">
+									<AppSkeleton class="home-skeleton-recent-title" />
+									<AppSkeleton class="home-skeleton-recent-meta" />
+								</span>
+								<AppSkeleton class="home-skeleton-recent-chevron" />
+							</div>
+						</li>
+					{/each}
+				</ul>
+			{:else if showPlansColumn}
+				<div class="home-aside-card home-aside-card--compact panel home-skeleton-aside-card">
+					<AppSkeleton class="home-skeleton-aside-hint" />
+				</div>
+			{:else if !showChecklist}
+				<div class="home-aside-card home-aside-card--compact panel home-skeleton-aside-card">
+					<AppSkeleton class="home-skeleton-aside-hint" />
+				</div>
+			{/if}
+		</div>
+	</div>
+{/snippet}
+
 {#if variant === 'create'}
 	<div
 		class="home-dashboard home-skeleton home-skeleton--create"
@@ -194,17 +233,11 @@
 {:else}
 	<div
 		class="home-skeleton home-skeleton--start"
-		class:home-skeleton--with-plans={showPlansColumn}
 		class:home-skeleton--continue={skeletonHasActiveBoot}
 		class:home-skeleton--with-checklist={showChecklist}
 		aria-busy="true"
 		aria-live="polite"
 	>
-		{#if showChecklist}
-			<div class="home-dashboard" aria-hidden="true">
-				{@render checklistSkeleton()}
-			</div>
-		{/if}
 		{#if skeletonHasActiveBoot}
 			<div class="home-continue-card panel home-skeleton-continue-card" aria-hidden="true">
 				<div class="home-continue-card__copy">
@@ -223,6 +256,28 @@
 					<span class="home-continue-card__cta-text">{translate(lang, 'home.continue')}</span>
 				</span>
 			</div>
+		{:else if showPlansColumn}
+			<header class="home-header home-header--mockup home-skeleton-mockup" aria-hidden="true">
+				<div class="home-header__row">
+					<div class="home-header__copy">
+						<p class="home-header__subtitle home-skel-bone">
+							{translate(lang, mockupLeadKey)}
+						</p>
+						{#if skeletonRecentRows === 0}
+							<BrandTagline class="brand-tagline--home-header home-skel-bone" />
+						{/if}
+					</div>
+					<span
+						class="btn-primary home-header__cta home-header__cta--compact home-skel-bone home-skel-bone--cta-round"
+						aria-hidden="true"
+					>
+						<LucideIcon icon={Play} size={ICON_PRIMARY} class="home-header__cta-icon" />
+						<span class="home-header__cta-text home-header__cta-text--short">
+							{translate(lang, 'home.startWorkoutShort')}
+						</span>
+					</span>
+				</div>
+			</header>
 		{:else}
 			<div class="home-skeleton-top-card panel" aria-hidden="true">
 				<div class="home-skeleton-top-card__copy">
@@ -235,50 +290,11 @@
 		{/if}
 
 		<div class="home-dashboard" aria-hidden="true">
+			{#if showChecklist}
+				{@render checklistSkeleton()}
+			{/if}
 			<div class="home-dashboard-mid">
-				{#if showPlansColumn}
-					<div class="home-dashboard-row">
-						<div class="home-section home-dashboard-plans">
-							<AppSkeleton class="home-skeleton-heading" />
-							<ul class="entity-list">
-								<li><AppSkeleton class="home-skeleton-row home-skeleton-row--create" /></li>
-							</ul>
-						</div>
-					</div>
-				{/if}
-				<div class="home-dashboard-aside">
-					<div class="home-section">
-						<div class="home-skeleton-section-head">
-							<AppSkeleton class="home-skeleton-heading" />
-							{#if !showPlansColumn && skeletonRecentRows > 0}
-								<AppSkeleton class="home-skeleton-section-link" />
-							{/if}
-						</div>
-						{#if showPlansColumn}
-							<div class="home-aside-card home-aside-card--compact panel home-skeleton-aside-card">
-								<AppSkeleton class="home-skeleton-aside-hint" />
-							</div>
-						{:else if skeletonRecentRows > 0}
-							<ul class="entity-list home-skeleton-recent-list">
-								{#each Array.from({ length: skeletonRecentRows }, (_, i) => i) as i (i)}
-									<li>
-										<div class="entity-row home-skeleton-recent-row">
-											<span class="entity-row__main">
-												<AppSkeleton class="home-skeleton-recent-title" />
-												<AppSkeleton class="home-skeleton-recent-meta" />
-											</span>
-											<AppSkeleton class="home-skeleton-recent-chevron" />
-										</div>
-									</li>
-								{/each}
-							</ul>
-						{:else if !showChecklist}
-							<div class="home-aside-card home-aside-card--compact panel home-skeleton-aside-card">
-								<AppSkeleton class="home-skeleton-aside-hint" />
-							</div>
-						{/if}
-					</div>
-				</div>
+				{@render asideSkeleton()}
 			</div>
 		</div>
 	</div>

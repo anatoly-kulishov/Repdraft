@@ -6,6 +6,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import ExerciseReorderHandle from '$lib/components/ExerciseReorderHandle.svelte';
 	import BackupImportAction from '$lib/components/BackupImportAction.svelte';
+	import HistoryDayPickerSheet from '$lib/components/HistoryDayPickerSheet.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -15,7 +16,7 @@
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_FAB, ICON_FAB_STROKE, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, ArrowLeft, ArrowUp, Calendar, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
+	import { Copy, ArrowLeft, ArrowUp, Calendar, ClipboardList, Clock, Flag, Play, Plus, Trash2, X } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { peekLocalPlanCount, syncPreviewExerciseRowsPeek } from '$lib/storage/localWorkoutRepository';
 	import { peekLocalHistoryCount } from '$lib/storage/localSessionRepository';
@@ -29,11 +30,11 @@
 		WORKOUTS_HISTORY_SKELETON_ROW_LIMIT,
 		WORKOUTS_PLANS_SKELETON_ROW_LIMIT
 	} from '$lib/domain/home';
+	import { dayKeyInInclusiveRange } from '$lib/domain/calendar';
 	import {
 		formatDurationMinutes,
-		formatLocalDayKey,
+		formatLocalDayRange,
 		formatRelativeDay,
-		localDayStartMs,
 		toLocalDayKey
 	} from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
@@ -60,7 +61,7 @@
 	/** Show history scroll-top after this many px (about one short screen). */
 	const HISTORY_SCROLL_TOP_AFTER_PX = 360;
 
-	type HistoryDatePreset = 'all' | 'today' | 'week';
+	type HistoryDatePreset = 'all' | 'today';
 
 	let { data } = $props();
 
@@ -132,11 +133,14 @@
 	let history = $derived($live.history);
 	let historyQuery = $state('');
 	let historyDatePreset = $state<HistoryDatePreset>('all');
-	let historyDay = $state('');
+	let historyRangeFrom = $state('');
+	let historyRangeTo = $state('');
+	let historyDaySheetOpen = $state(false);
 	let historyVisibleLimit = $state(HISTORY_PAGE_SIZE);
 
+	let historyRangeActive = $derived(historyRangeFrom !== '' && historyRangeTo !== '');
 	let historyFiltersActive = $derived(
-		historyQuery.trim().length > 0 || historyDatePreset !== 'all' || historyDay !== ''
+		historyQuery.trim().length > 0 || historyDatePreset !== 'all' || historyRangeActive
 	);
 
 	let filteredHistory = $derived.by(() => {
@@ -145,21 +149,19 @@
 		if (q) {
 			list = list.filter((session) => session.planName.toLowerCase().includes(q));
 		}
-		if (historyDay) {
-			list = list.filter(
-				(session) => toLocalDayKey(session.finishedAt ?? session.startedAt) === historyDay
+		if (historyRangeActive) {
+			list = list.filter((session) =>
+				dayKeyInInclusiveRange(
+					toLocalDayKey(session.finishedAt ?? session.startedAt),
+					historyRangeFrom,
+					historyRangeTo
+				)
 			);
 		} else if (historyDatePreset === 'today') {
 			const today = toLocalDayKey();
 			list = list.filter(
 				(session) => toLocalDayKey(session.finishedAt ?? session.startedAt) === today
 			);
-		} else if (historyDatePreset === 'week') {
-			const from = localDayStartMs(6);
-			list = list.filter((session) => {
-				const t = new Date(session.finishedAt ?? session.startedAt).getTime();
-				return Number.isFinite(t) && t >= from;
-			});
 		}
 		return list;
 	});
@@ -177,28 +179,37 @@
 
 	function setHistoryPreset(preset: HistoryDatePreset) {
 		historyDatePreset = preset;
-		historyDay = '';
+		historyRangeFrom = '';
+		historyRangeTo = '';
 		historyVisibleLimit = HISTORY_PAGE_SIZE;
 	}
 
-	function onHistoryDayInput(event: Event) {
-		const el = event.currentTarget as HTMLInputElement;
-		historyDay = el.value;
+	function setHistoryRange(from: string, to: string) {
+		historyRangeFrom = from;
+		historyRangeTo = to;
 		historyDatePreset = 'all';
+		historyVisibleLimit = HISTORY_PAGE_SIZE;
+	}
+
+	function clearHistoryRange() {
+		historyRangeFrom = '';
+		historyRangeTo = '';
 		historyVisibleLimit = HISTORY_PAGE_SIZE;
 	}
 
 	function clearHistoryFilters() {
 		historyQuery = '';
 		historyDatePreset = 'all';
-		historyDay = '';
+		historyRangeFrom = '';
+		historyRangeTo = '';
 		historyVisibleLimit = HISTORY_PAGE_SIZE;
 	}
 
 	$effect(() => {
 		historyQuery;
 		historyDatePreset;
-		historyDay;
+		historyRangeFrom;
+		historyRangeTo;
 		activeTab;
 		historyVisibleLimit = HISTORY_PAGE_SIZE;
 	});
@@ -817,7 +828,7 @@
 						type="button"
 						class={cn(
 							'workouts-history-chip',
-							historyDatePreset === 'today' && !historyDay && 'is-active'
+							historyDatePreset === 'today' && !historyRangeActive && 'is-active'
 						)}
 						onclick={() => setHistoryPreset(historyDatePreset === 'today' ? 'all' : 'today')}
 					>
@@ -825,41 +836,32 @@
 					</button>
 					<button
 						type="button"
-						class={cn(
-							'workouts-history-chip',
-							historyDatePreset === 'week' && !historyDay && 'is-active'
-						)}
-						onclick={() => setHistoryPreset(historyDatePreset === 'week' ? 'all' : 'week')}
-					>
-						{translate(lang, 'workouts.historyLast7Days')}
-					</button>
-					<label
-						class={cn('workouts-history-day', historyDay && 'is-active')}
-						title={translate(lang, 'workouts.historyPickDay')}
+						class={cn('workouts-history-day', historyRangeActive && 'is-active')}
+						title={translate(lang, 'workouts.historyPickRange')}
+						aria-haspopup="dialog"
+						aria-expanded={historyDaySheetOpen}
+						onclick={() => {
+							historyDaySheetOpen = true;
+						}}
 					>
 						<span class="workouts-history-day__icon" aria-hidden="true">
 							<LucideIcon icon={Calendar} size={ICON_SMALL} />
 						</span>
 						<span class="workouts-history-day__label">
-							{historyDay
-								? formatLocalDayKey(historyDay, lang)
-								: translate(lang, 'workouts.historyPickDay')}
+							{historyRangeActive
+								? formatLocalDayRange(historyRangeFrom, historyRangeTo, lang)
+								: translate(lang, 'workouts.historyPickRange')}
 						</span>
-						<input
-							class="workouts-history-day__input"
-							type="date"
-							value={historyDay}
-							max={toLocalDayKey()}
-							onchange={onHistoryDayInput}
-						/>
-					</label>
+					</button>
 					{#if historyFiltersActive}
 						<button
 							type="button"
 							class="workouts-history-chip workouts-history-chip--clear"
+							aria-label={translate(lang, 'workouts.historyClearFiltersAria')}
+							title={translate(lang, 'workouts.historyClearFiltersAria')}
 							onclick={clearHistoryFilters}
 						>
-							{translate(lang, 'catalog.reset')}
+							<LucideIcon icon={X} size={ICON_SMALL} />
 						</button>
 					{/if}
 				</div>
@@ -976,3 +978,14 @@
 		</AppButton>
 	{/snippet}
 </BottomSheet>
+
+<HistoryDayPickerSheet
+	open={historyDaySheetOpen}
+	from={historyRangeFrom}
+	to={historyRangeTo}
+	onSelect={setHistoryRange}
+	onClear={clearHistoryRange}
+	onDismiss={() => {
+		historyDaySheetOpen = false;
+	}}
+/>

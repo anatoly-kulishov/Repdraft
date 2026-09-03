@@ -1,5 +1,6 @@
 import type { SessionRepository } from '$lib/domain/repository';
 import type { SessionExercise, WorkoutSession } from '$lib/domain/types';
+import { isCloudPersistableId } from '$lib/domain/id';
 import { getSupabase } from '$lib/supabase/client';
 import { requireUserId } from './supabaseAuth';
 
@@ -90,11 +91,13 @@ export const supabaseSessionRepository: SessionRepository = {
 		const supabase = getSupabase();
 		if (!supabase) throw new Error('errors.cloudOff');
 		const userId = await requireUserId();
+		const planId =
+			session.planId && isCloudPersistableId(session.planId) ? session.planId : null;
 		const { error } = await supabase.from('workout_sessions').upsert(
 			{
 				id: session.id,
 				user_id: userId,
-				plan_id: session.planId,
+				plan_id: planId,
 				plan_name: session.planName,
 				started_at: session.startedAt,
 				finished_at: session.finishedAt,

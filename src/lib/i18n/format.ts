@@ -68,6 +68,14 @@ export function formatLocalDayKey(dayKey: string, lang: AppLocale): string {
 	}
 }
 
+/** Short inclusive range label; same day collapses to one date. Uses ASCII hyphen. */
+export function formatLocalDayRange(from: string, to: string, lang: AppLocale): string {
+	if (!from) return '';
+	const end = to || from;
+	if (from === end) return formatLocalDayKey(from, lang);
+	return `${formatLocalDayKey(from, lang)} - ${formatLocalDayKey(end, lang)}`;
+}
+
 /** Start of local day N calendar days before today (0 = today). */
 export function localDayStartMs(daysAgo = 0): number {
 	const now = new Date();

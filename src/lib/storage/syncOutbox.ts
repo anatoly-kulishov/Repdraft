@@ -1,3 +1,5 @@
+import { isCloudPersistableId } from '$lib/domain/id';
+
 export type SyncOutboxEntry =
 	| { kind: 'session.save'; id: string }
 	| { kind: 'session.delete'; id: string }
@@ -72,12 +74,30 @@ export function outboxCount(): number {
 	return listOutbox().length;
 }
 
-/** Dedupe by kind+id; newer enqueue replaces older same key. */
+/** Dedupe by kind+id; newer enqueue replaces older same key. Local-only ids never queue. */
 export function enqueueOutbox(entry: SyncOutboxEntry): void {
+	if (!shouldEnqueueOutboxEntry(entry)) return;
 	const key = entryKey(entry);
 	const next = listOutbox().filter((e) => entryKey(e) !== key);
 	next.push(entry);
 	writeOutbox(next);
+}
+
+function shouldEnqueueOutboxEntry(entry: SyncOutboxEntry): boolean {
+	switch (entry.kind) {
+		case 'session.save':
+		case 'session.delete':
+		case 'plan.save':
+		case 'plan.delete':
+			return isCloudPersistableId(entry.id);
+		case 'record.save':
+		case 'record.delete':
+			return true;
+		default: {
+			const _exhaustive: never = entry;
+			return _exhaustive;
+		}
+	}
 }
 
 export function removeOutboxEntry(entry: SyncOutboxEntry): void {
