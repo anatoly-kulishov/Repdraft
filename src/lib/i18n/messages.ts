@@ -72,9 +72,9 @@ const ru: Dict = {
 	'settings.devStressButton': 'Загрузить тестовый бэкап',
 	'settings.devStressConfirmTitle': 'Восстановить тестовый бэкап?',
 	'settings.devStressConfirmHint':
-		'Добавим тестовые данные для UI: {plans} планов, {sessions} сессий, {records} рекордов. Текущие данные на телефоне не удалим. При совпадении останется более новая версия.',
+		'Добавим реалистичные данные плюс #EDGE-кейсы: {plans} планов, {sessions} сессий, {records} рекордов. Текущие данные на телефоне не удалим. При совпадении останется более новая версия.',
 	'settings.devStressMissing':
-		'Файл не найден. В терминале: npm run gen:stress-backup, затем обнови страницу.',
+		'Файл тестового бэкапа не задеплоен. Локально: npm run gen:stress-backup, затем обнови страницу.',
 	'settings.devStressFail': 'Не удалось загрузить тестовый бэкап',
 	'settings.restSound': 'Звук отдыха',
 	'settings.restSoundHint':
@@ -917,9 +917,9 @@ const en: Dict = {
 	'settings.devStressButton': 'Load test backup',
 	'settings.devStressConfirmTitle': 'Restore test backup?',
 	'settings.devStressConfirmHint':
-		'Adds UI mock data: {plans} plans, {sessions} sessions, {records} records. Data already on this phone stays. On conflicts, the newer version wins.',
+		'Adds realistic data plus #EDGE cases: {plans} plans, {sessions} sessions, {records} records. Data already on this phone stays. On conflicts, the newer version wins.',
 	'settings.devStressMissing':
-		'File missing. In the terminal run: npm run gen:stress-backup, then refresh.',
+		'Test backup not deployed. Locally run: npm run gen:stress-backup, then refresh.',
 	'settings.devStressFail': 'Could not load test backup',
 	'settings.restSound': 'Rest timer sound',
 	'settings.restSoundHint':
