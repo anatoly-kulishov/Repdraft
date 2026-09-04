@@ -5,12 +5,26 @@ function localeTag(lang: AppLocale): string {
 	return lang === 'ru' ? 'ru-RU' : 'en-US';
 }
 
+/** Short weekday without a trailing period (ru `ср.` → `ср`). */
+function formatWeekdayShort(date: Date, lang: AppLocale): string {
+	try {
+		return new Intl.DateTimeFormat(localeTag(lang), { weekday: 'short' })
+			.format(date)
+			.replace(/\.$/, '');
+	} catch {
+		return '';
+	}
+}
+
 export function formatShortDate(iso: string, lang: AppLocale): string {
 	try {
-		return new Intl.DateTimeFormat(localeTag(lang), {
+		const d = new Date(iso);
+		const weekday = formatWeekdayShort(d, lang);
+		const dayMonth = new Intl.DateTimeFormat(localeTag(lang), {
 			day: 'numeric',
 			month: 'short'
-		}).format(new Date(iso));
+		}).format(d);
+		return weekday ? `${weekday}, ${dayMonth}` : dayMonth;
 	} catch {
 		return iso;
 	}
@@ -38,7 +52,9 @@ export function formatRelativeDay(iso: string, lang: AppLocale): string {
 	if (diffDays === 0) return translate(lang, 'home.today');
 	if (diffDays === 1) return translate(lang, 'home.yesterday');
 	if (diffDays > 1 && diffDays < 8) {
-		return translate(lang, 'home.daysAgo', { n: diffDays });
+		const weekday = formatWeekdayShort(d, lang);
+		const ago = translate(lang, 'home.daysAgo', { n: diffDays });
+		return weekday ? `${weekday}, ${ago}` : ago;
 	}
 	return formatShortDate(iso, lang);
 }

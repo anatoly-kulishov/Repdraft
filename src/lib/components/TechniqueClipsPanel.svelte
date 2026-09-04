@@ -34,7 +34,7 @@ import {
 	import { isSupabaseConfigured } from '$lib/supabase/client';
 	import { page } from '$app/stores';
 	import { replaceState } from '$app/navigation';
-	import { onDestroy, untrack } from 'svelte';
+	import { onDestroy } from 'svelte';
 	import { Plus } from '@lucide/svelte';
 
 	let { exerciseId }: { exerciseId: string } = $props();
@@ -42,8 +42,10 @@ import {
 	const CLIPS_LOAD_MS = 15000;
 
 	let clips = $state<TechniqueClip[]>([]);
-	let loading = $state(true);
+	let loading = $state(false);
 	let settled = $state(false);
+	/** False until IO/scroll/`?clip=` arms the feed fetch (UI shell still renders). */
+	let loadArmed = $state(false);
 	let refreshGen = 0;
 	let busy = $state(false);
 	let progress = $state('');
@@ -109,15 +111,83 @@ import {
 		}
 	}
 
+	/** Only reset feed state when the exercise id actually changes (not on every effect churn). */
+	let lastFeedExerciseId = '';
+	let deferGen = 0;
+
 	$effect(() => {
 		const id = exerciseId;
-		untrack(() => {
-			refreshGen += 1;
-			settled = false;
+		if (id === lastFeedExerciseId) return;
+		lastFeedExerciseId = id;
+		deferGen += 1;
+		refreshGen += 1;
+		settled = false;
+		loading = false;
+		loadArmed = false;
+		clips = [];
+	});
+
+	/** Sticky CTA covers the bottom ~100px; do not treat that strip as “in view”. */
+	const STICKY_CLEARANCE_PX = 100;
+
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		const id = exerciseId;
+		const el = sectionEl;
+		if (!el || loadArmed) return;
+
+		const gen = deferGen;
+		const deepLink = Boolean($page.url.searchParams.get('clip'));
+
+		const isAboveSticky = () => {
+			const top = el.getBoundingClientRect().top;
+			return top < window.innerHeight - STICKY_CLEARANCE_PX;
+		};
+
+		const armLoad = () => {
+			if (gen !== deferGen || loadArmed) return;
+			loadArmed = true;
 			loading = true;
-			clips = [];
 			void refresh(id);
-		});
+		};
+
+		if (deepLink) {
+			armLoad();
+			return;
+		}
+
+		if (isAboveSticky()) {
+			armLoad();
+			return;
+		}
+
+		const onScroll = () => {
+			if (!isAboveSticky()) return;
+			armLoad();
+			window.removeEventListener('scroll', onScroll);
+			io.disconnect();
+		};
+
+		const io = new IntersectionObserver(
+			(entries) => {
+				if (!entries.some((e) => e.isIntersecting)) return;
+				if (!isAboveSticky()) return;
+				armLoad();
+				io.disconnect();
+				window.removeEventListener('scroll', onScroll);
+			},
+			{
+				root: null,
+				rootMargin: `0px 0px -${STICKY_CLEARANCE_PX}px 0px`,
+				threshold: 0
+			}
+		);
+		io.observe(el);
+		window.addEventListener('scroll', onScroll, { passive: true });
+		return () => {
+			io.disconnect();
+			window.removeEventListener('scroll', onScroll);
+		};
 	});
 
 	$effect(() => {
@@ -539,15 +609,19 @@ import {
 		/>
 	{/if}
 
-	{#if loading && !settled}
+	{#if !loadArmed}
+		<!-- Shell only: feed fetch waits for scroll / IO / ?clip= -->
+	{:else if loading && !settled}
 		<div class="flex justify-center py-3 md:py-8">
 			<Spinner label={translate(lang, 'clips.loadingFeed')} size="sm" block={false} />
 		</div>
 	{:else if clips.length === 0}
 		{#if !composerOpen}
-			<AppPanel dashed class="py-4 text-center md:py-8">
-				<p class="text-sm font-medium">{translate(lang, 'clips.emptyTitle')}</p>
-				<p class="mt-1 text-xs text-[var(--color-muted)]">
+			<AppPanel dashed class="mb-3 py-4 text-left md:mb-4 md:py-5">
+				<p class="m-0 text-sm font-medium text-[var(--color-ink)]">
+					{translate(lang, 'clips.emptyTitle')}
+				</p>
+				<p class="mt-1 text-xs text-[var(--color-muted)] text-pretty">
 					{translate(lang, 'clips.emptyDesc')}
 				</p>
 				{#if canUpload}

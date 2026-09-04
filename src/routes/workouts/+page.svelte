@@ -13,10 +13,11 @@
 	import WorkoutsPageSkeleton from '$lib/components/WorkoutsPageSkeleton.svelte';
 	import SwipeToDelete, { type SwipeRowAction } from '$lib/components/SwipeToDelete.svelte';
 	import AppFab from '$lib/components/AppFab.svelte';
+	import ScrollToTopFab from '$lib/components/ScrollToTopFab.svelte';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_BUTTON, ICON_FAB, ICON_FAB_STROKE, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, ArrowLeft, ArrowUp, Calendar, ClipboardList, Clock, Flag, Play, Plus, Trash2, X } from '@lucide/svelte';
+	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
+	import { Copy, ArrowLeft, Calendar, ClipboardList, Clock, Flag, Play, Plus, Trash2, X } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { peekLocalPlanCount, syncPreviewExerciseRowsPeek } from '$lib/storage/localWorkoutRepository';
 	import { peekLocalHistoryCount } from '$lib/storage/localSessionRepository';
@@ -57,9 +58,6 @@
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-
-	/** Show history scroll-top after this many px (about one short screen). */
-	const HISTORY_SCROLL_TOP_AFTER_PX = 360;
 
 	type HistoryDatePreset = 'all' | 'today';
 
@@ -250,31 +248,6 @@
 		return () => {
 			io.disconnect();
 		};
-	});
-
-	let showHistoryScrollTop = $state(false);
-
-	function scrollHistoryToTop() {
-		const main = document.getElementById('main-content');
-		if (main) {
-			main.scrollIntoView({ behavior: 'smooth', block: 'start' });
-			return;
-		}
-		window.scrollTo({ top: 0, behavior: 'smooth' });
-	}
-
-	$effect(() => {
-		if (!browser || activeTab !== 'history') {
-			showHistoryScrollTop = false;
-			return;
-		}
-		const onScroll = () => {
-			const y = window.scrollY || document.documentElement.scrollTop || 0;
-			showHistoryScrollTop = y >= HISTORY_SCROLL_TOP_AFTER_PX;
-		};
-		onScroll();
-		window.addEventListener('scroll', onScroll, { passive: true });
-		return () => window.removeEventListener('scroll', onScroll);
 	});
 
 	let nextPlan = $derived.by(() =>
@@ -526,6 +499,7 @@
 			<div class="workouts-history-skeleton-head lg:hidden" aria-hidden="true">
 				<div class="workouts-history-skeleton-head__back"></div>
 				<div class="workouts-history-skeleton-head__title"></div>
+				<div class="workouts-history-skeleton-head__action"></div>
 			</div>
 		{:else}
 			<ScreenHeader
@@ -943,20 +917,7 @@
 	/>
 
 	{#if activeTab === 'history'}
-		<AppButton
-			variant="secondary"
-			class={cn(
-				'workouts-history-scroll-top lg:hidden',
-				showHistoryScrollTop && 'is-visible'
-			)}
-			aria-hidden={!showHistoryScrollTop}
-			tabindex={showHistoryScrollTop ? 0 : -1}
-			aria-label={translate(lang, 'workouts.scrollToTop')}
-			title={translate(lang, 'workouts.scrollToTop')}
-			onclick={scrollHistoryToTop}
-		>
-			<LucideIcon icon={ArrowUp} size={ICON_FAB} strokeWidth={ICON_FAB_STROKE} />
-		</AppButton>
+		<ScrollToTopFab />
 	{/if}
 </section>
 

@@ -34,6 +34,7 @@
 	import { toasts } from '$lib/stores/toasts';
 	import { get } from 'svelte/store';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { ChevronRight, Plus, Trash2 } from '@lucide/svelte';
 	import HistoryDetailToolbar from './HistoryDetailToolbar.svelte';
@@ -392,58 +393,141 @@
 				{@const rows = editing
 					? ex.sets.map((set, setIndex) => ({ set, setIndex }))
 					: ex.sets.map((set, setIndex) => ({ set, setIndex })).filter(({ set }) => set.completed)}
-				<li class="history-exercise">
+				{@const canRemoveExercise =
+					!savingEdit && (editSession?.exercises.length ?? 0) > 1}
+				<li class="history-exercise" class:history-exercise--editing={editing}>
 					{#if editing}
-						<div class="history-exercise__head is-static is-editing">
-							{#if meta}
-								{@const title = label}
+						<SwipeToDelete
+							label={translate(lang, 'workouts.removeExercise')}
+							disabled={!canRemoveExercise}
+							onDelete={() => removeHistoryExercise(exIndex, label)}
+						>
+							<div class="history-exercise__head is-static is-editing">
+								{#if meta}
+									{@const title = label}
+									<AppButton
+										variant="ghost"
+										class="history-exercise__thumb-btn media-well history-exercise__thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+										aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+										onclick={() => {
+											technique = {
+												id: meta.id,
+												title,
+												hint: `${labelTarget(meta.target, lang)} · ${labelEquipment(meta.equipment, lang)}`,
+												image: meta.image
+											};
+										}}
+									>
+										<img
+											src={`/${meta.image}`}
+											alt=""
+											width="180"
+											height="180"
+											loading="lazy"
+											decoding="async"
+										/>
+									</AppButton>
+								{:else}
+									<span
+										class="media-well history-exercise__thumb is-placeholder"
+										aria-hidden="true"
+									></span>
+								{/if}
+								<div class="workout-preview-row-body">
+									<p class="workout-preview-row-title">{label}</p>
+									{#if meta}
+										<p class="workout-preview-row-sub">
+											{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
+										</p>
+									{/if}
+								</div>
 								<AppButton
 									variant="ghost"
-									class="history-exercise__thumb-btn media-well history-exercise__thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
-									aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
-									onclick={() => {
-										technique = {
-											id: meta.id,
-											title,
-											hint: `${labelTarget(meta.target, lang)} · ${labelEquipment(meta.equipment, lang)}`,
-											image: meta.image
-										};
-									}}
+									class="live-set-remove-btn history-exercise__remove"
+									disabled={!canRemoveExercise}
+									aria-label={translate(lang, 'workouts.removeExercise')}
+									title={translate(lang, 'workouts.removeExercise')}
+									onclick={() => removeHistoryExercise(exIndex, label)}
 								>
-									<img
-										src={`/${meta.image}`}
-										alt=""
-										width="180"
-										height="180"
-										loading="lazy"
-										decoding="async"
-									/>
+									<LucideIcon icon={Trash2} size={ICON_SMALL} />
 								</AppButton>
-							{:else}
-								<span
-									class="media-well history-exercise__thumb is-placeholder"
-									aria-hidden="true"
-								></span>
-							{/if}
-							<div class="workout-preview-row-body">
-								<p class="workout-preview-row-title">{label}</p>
-								{#if meta}
-									<p class="workout-preview-row-sub">
-										{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
-									</p>
-								{/if}
 							</div>
-							<AppButton
-								variant="ghost"
-								class="live-set-remove-btn history-exercise__remove"
-								disabled={savingEdit || (editSession?.exercises.length ?? 0) <= 1}
-								aria-label={translate(lang, 'workouts.removeExercise')}
-								title={translate(lang, 'workouts.removeExercise')}
-								onclick={() => removeHistoryExercise(exIndex, label)}
-							>
-								<LucideIcon icon={Trash2} size={ICON_SMALL} />
-							</AppButton>
-						</div>
+
+							<!-- Sets / add: don't steal the exercise swipe gesture. -->
+							<div data-swipe-pass class="history-exercise__edit-body">
+								{#if rows.length > 0}
+									<ul class="history-exercise__sets history-exercise__sets--editing">
+										{#each rows as item, i (item.setIndex)}
+											{@const key = setKey(exIndex, item.setIndex)}
+											<li class="history-exercise__set tabular-nums">
+												<span class="history-exercise__set-i">{i + 1}</span>
+												<AppInput
+													class="history-set-field history-set-weight tabular-nums"
+													type="text"
+													inputmode="decimal"
+													autocomplete="off"
+													maxlength={WEIGHT_INPUT_MAX_LEN}
+													value={editDraft[key]?.w ?? ''}
+													aria-label={translate(lang, 'live.weight')}
+													oninput={(e) => {
+														const el = e.currentTarget;
+														const prev = editDraft[key]?.w ?? '';
+														const next = filterWeightInput(el.value, prev);
+														if (el.value !== next) el.value = next;
+														editDraft[key] = {
+															...(editDraft[key] ?? { w: '', r: '' }),
+															w: next
+														};
+													}}
+												/>
+												<span class="history-exercise__set-unit">kg</span>
+												<AppInput
+													class="history-set-field history-set-reps tabular-nums"
+													type="text"
+													inputmode="numeric"
+													autocomplete="off"
+													maxlength={REPS_INPUT_MAX_LEN}
+													value={editDraft[key]?.r ?? ''}
+													aria-label={translate(lang, 'live.reps')}
+													oninput={(e) => {
+														const el = e.currentTarget;
+														const prev = editDraft[key]?.r ?? '';
+														const next = filterRepsInput(el.value, LIVE_REPS, prev);
+														if (el.value !== next) el.value = next;
+														editDraft[key] = {
+															...(editDraft[key] ?? { w: '', r: '' }),
+															r: next
+														};
+													}}
+												/>
+												<AppButton
+													variant="ghost"
+													class="live-set-remove-btn"
+													aria-label={translate(lang, 'live.removeSet')}
+													title={translate(lang, 'live.removeSet')}
+													onclick={() => removeHistorySet(exIndex, item.setIndex)}
+												>
+													<LucideIcon icon={Trash2} size={ICON_SMALL} />
+												</AppButton>
+											</li>
+										{/each}
+									</ul>
+								{:else}
+									<p class="history-exercise__empty">{translate(lang, 'workouts.noLoggedSets')}</p>
+								{/if}
+								<AppButton
+									variant="ghost"
+									block
+									class="history-exercise__add-set"
+									disabled={savingEdit || ex.sets.length >= SETS.max}
+									aria-label={translate(lang, 'live.addSet')}
+									onclick={() => addHistorySet(exIndex)}
+								>
+									<LucideIcon icon={Plus} size={ICON_BUTTON} />
+									{translate(lang, 'live.addSet')}
+								</AppButton>
+							</div>
+						</SwipeToDelete>
 					{:else if meta}
 						{@const title = label}
 						{@const detailHref = `/exercise/${meta.id}?from=${encodeURIComponent(fromPath)}`}
@@ -482,6 +566,33 @@
 								</span>
 							</a>
 						</div>
+
+						{#if rows.length > 0}
+							<ul
+								class="history-exercise__sets"
+								class:history-exercise__sets--grid={rows.length >= 4}
+							>
+								{#each rows as item, i (item.setIndex)}
+									<li class="history-exercise__set tabular-nums">
+										<span class="history-exercise__set-i">{i + 1}</span>
+										{#if item.set.weightKg != null}
+											<span class="history-exercise__set-weight"
+												>{item.set.weightKg} {translate(lang, 'pr.kg')}</span
+											>
+											<span class="history-exercise__set-reps">× {item.set.reps ?? '-'}</span>
+										{:else}
+											<span class="history-exercise__set-reps">
+												{item.set.reps != null
+													? `${item.set.reps} ${translate(lang, 'pr.repsShort')}`
+													: '-'}
+											</span>
+										{/if}
+									</li>
+								{/each}
+							</ul>
+						{:else}
+							<p class="history-exercise__empty">{translate(lang, 'workouts.noLoggedSets')}</p>
+						{/if}
 					{:else}
 						<div class="history-exercise__head is-static">
 							<span
@@ -492,91 +603,32 @@
 								<p class="workout-preview-row-title">{ex.exerciseId}</p>
 							</div>
 						</div>
-					{/if}
-
-					{#if rows.length > 0}
-						<ul
-							class="history-exercise__sets"
-							class:history-exercise__sets--grid={rows.length >= 4 && !editing}
-							class:history-exercise__sets--editing={editing}
-						>
-							{#each rows as item, i (item.setIndex)}
-								<li class="history-exercise__set tabular-nums">
-									<span class="history-exercise__set-i">{i + 1}</span>
-									{#if editing}
-										{@const key = setKey(exIndex, item.setIndex)}
-										<AppInput
-											class="history-set-field history-set-weight tabular-nums"
-											type="text"
-											inputmode="decimal"
-											autocomplete="off"
-											maxlength={WEIGHT_INPUT_MAX_LEN}
-											value={editDraft[key]?.w ?? ''}
-											aria-label={translate(lang, 'live.weight')}
-											oninput={(e) => {
-												const el = e.currentTarget;
-												const prev = editDraft[key]?.w ?? '';
-												const next = filterWeightInput(el.value, prev);
-												if (el.value !== next) el.value = next;
-												editDraft[key] = { ...(editDraft[key] ?? { w: '', r: '' }), w: next };
-											}}
-										/>
-										<span class="history-exercise__set-unit">kg</span>
-										<AppInput
-											class="history-set-field history-set-reps tabular-nums"
-											type="text"
-											inputmode="numeric"
-											autocomplete="off"
-											maxlength={REPS_INPUT_MAX_LEN}
-											value={editDraft[key]?.r ?? ''}
-											aria-label={translate(lang, 'live.reps')}
-											oninput={(e) => {
-												const el = e.currentTarget;
-												const prev = editDraft[key]?.r ?? '';
-												const next = filterRepsInput(el.value, LIVE_REPS, prev);
-												if (el.value !== next) el.value = next;
-												editDraft[key] = { ...(editDraft[key] ?? { w: '', r: '' }), r: next };
-											}}
-										/>
-										<AppButton
-											variant="ghost"
-											class="live-set-remove-btn"
-											aria-label={translate(lang, 'live.removeSet')}
-											title={translate(lang, 'live.removeSet')}
-											onclick={() => removeHistorySet(exIndex, item.setIndex)}
-										>
-											<LucideIcon icon={Trash2} size={ICON_SMALL} />
-										</AppButton>
-									{:else if item.set.weightKg != null}
-										<span class="history-exercise__set-weight"
-											>{item.set.weightKg} {translate(lang, 'pr.kg')}</span
-										>
-										<span class="history-exercise__set-reps">× {item.set.reps ?? '-'}</span>
-									{:else}
-										<span class="history-exercise__set-reps">
-											{item.set.reps != null
-												? `${item.set.reps} ${translate(lang, 'pr.repsShort')}`
-												: '-'}
-										</span>
-									{/if}
-								</li>
-							{/each}
-						</ul>
-					{:else}
-						<p class="history-exercise__empty">{translate(lang, 'workouts.noLoggedSets')}</p>
-					{/if}
-					{#if editing}
-						<AppButton
-							variant="ghost"
-							block
-							class="history-exercise__add-set"
-							disabled={savingEdit || ex.sets.length >= SETS.max}
-							aria-label={translate(lang, 'live.addSet')}
-							onclick={() => addHistorySet(exIndex)}
-						>
-							<LucideIcon icon={Plus} size={ICON_BUTTON} />
-							{translate(lang, 'live.addSet')}
-						</AppButton>
+						{#if rows.length > 0}
+							<ul
+								class="history-exercise__sets"
+								class:history-exercise__sets--grid={rows.length >= 4}
+							>
+								{#each rows as item, i (item.setIndex)}
+									<li class="history-exercise__set tabular-nums">
+										<span class="history-exercise__set-i">{i + 1}</span>
+										{#if item.set.weightKg != null}
+											<span class="history-exercise__set-weight"
+												>{item.set.weightKg} {translate(lang, 'pr.kg')}</span
+											>
+											<span class="history-exercise__set-reps">× {item.set.reps ?? '-'}</span>
+										{:else}
+											<span class="history-exercise__set-reps">
+												{item.set.reps != null
+													? `${item.set.reps} ${translate(lang, 'pr.repsShort')}`
+													: '-'}
+											</span>
+										{/if}
+									</li>
+								{/each}
+							</ul>
+						{:else}
+							<p class="history-exercise__empty">{translate(lang, 'workouts.noLoggedSets')}</p>
+						{/if}
 					{/if}
 				</li>
 			{/each}

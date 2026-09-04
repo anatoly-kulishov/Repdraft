@@ -90,6 +90,10 @@
 	--shadow-float:
 		0 8px 28px rgb(0 0 0 / 0.45),
 		0 2px 8px rgb(0 0 0 / 0.28);
+	/* Sticky / fixed ScreenHeader — soft lift over scrolling content (no glow). */
+	--shadow-screen-header:
+		0 1px 0 rgb(255 255 255 / 0.04),
+		0 6px 18px rgb(0 0 0 / 0.32);
 	/* Sticky bottom bars — shadow casts upward. */
 	--shadow-float-top:
 		0 -6px 18px rgb(0 0 0 / 0.28),
@@ -346,6 +350,10 @@ html[data-theme='light'] {
 	--shadow-float:
 		0 8px 28px rgb(18 20 26 / 0.12),
 		0 2px 8px rgb(18 20 26 / 0.06);
+	/* Soft separation from page bg when border alone disappears into the wash. */
+	--shadow-screen-header:
+		0 1px 0 rgb(255 255 255 / 0.7),
+		0 4px 14px rgb(18 20 26 / 0.07);
 	--shadow-float-top:
 		0 -6px 18px rgb(18 20 26 / 0.1),
 		0 -1px 4px rgb(18 20 26 / 0.05);

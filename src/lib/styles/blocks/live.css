@@ -773,22 +773,6 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	transform: scale(0.96);
 }
 
-.live-panel-head-btn--skip,
-.live-panel-head-btn--skip.btn-ghost,
-[data-slot='button'].live-panel-head-btn--skip {
-	color: var(--color-muted);
-	-webkit-text-fill-color: var(--color-muted);
-}
-
-.live-panel-head-btn--skip:hover,
-.live-panel-head-btn--skip.btn-ghost:hover,
-[data-slot='button'].live-panel-head-btn--skip:hover {
-	color: color-mix(in srgb, var(--color-danger, #dc2626) 88%, var(--color-ink));
-	-webkit-text-fill-color: color-mix(in srgb, var(--color-danger, #dc2626) 88%, var(--color-ink));
-	border-color: color-mix(in srgb, var(--color-danger, #dc2626) 32%, var(--color-border));
-	background: color-mix(in srgb, var(--color-danger, #dc2626) 10%, var(--color-surface));
-}
-
 @media (prefers-reduced-motion: reduce) {
 	.live-panel-head-btn,
 	[data-slot='button'].live-panel-head-btn {
@@ -1122,6 +1106,14 @@ button.live-panel-thumb {
 	overflow: hidden;
 }
 
+.history-exercise--editing > .swipe-to-delete {
+	width: 100%;
+}
+
+.history-exercise__edit-body {
+	min-width: 0;
+}
+
 .history-exercise__head {
 	display: grid;
 	grid-template-columns: var(--media-native) minmax(0, 1fr) auto;
@@ -1143,6 +1135,36 @@ button.live-panel-thumb {
 
 .history-exercise__remove {
 	flex-shrink: 0;
+}
+
+@media (max-width: 1023px) {
+	/* Card chrome moves onto SwipeToDelete so the danger rail isn’t clipped. */
+	.history-exercise--editing {
+		border: none;
+		background: transparent;
+		box-shadow: none;
+		overflow: visible;
+	}
+
+	.history-exercise-list .history-exercise--editing > .swipe-to-delete.is-enabled {
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-panel);
+		background: var(--color-surface);
+		box-shadow: var(--shadow-panel);
+		overflow: hidden;
+	}
+
+	.history-exercise-list .history-exercise--editing > .swipe-to-delete.is-enabled .swipe-to-delete__sheet {
+		background: var(--color-surface);
+	}
+
+	.history-exercise-list .swipe-to-delete.is-enabled .history-exercise__remove {
+		display: none;
+	}
+
+	.history-exercise-list .swipe-to-delete.is-enabled .history-exercise__head.is-editing {
+		grid-template-columns: var(--media-native) minmax(0, 1fr);
+	}
 }
 
 .history-exercise__head:not(.is-static):hover {

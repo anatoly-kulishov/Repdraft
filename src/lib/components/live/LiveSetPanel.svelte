@@ -314,7 +314,7 @@
 				{#if onSkip}
 					<AppButton
 						variant="ghost"
-						class="live-panel-head-btn live-panel-head-btn--skip"
+						class="live-panel-head-btn"
 						aria-label={translate(lang, 'live.skipExercise')}
 						title={translate(lang, 'live.skipExercise')}
 						onclick={onSkip}
