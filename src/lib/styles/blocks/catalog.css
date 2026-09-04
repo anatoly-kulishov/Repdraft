@@ -2926,8 +2926,7 @@ body:has(.sticky-actions) .draft-dock {
 		z-index: 25;
 		margin: 0 calc(-1 * max(var(--page-pad-x), var(--safe-right))) var(--screen-header-content-gap)
 			calc(-1 * max(var(--page-pad-x), var(--safe-left)));
-		/* Extra 0.35rem beyond pad+safe — title was glued to the status bar. */
-		padding: calc(var(--screen-header-pad-block) + var(--safe-top) + 0.35rem)
+		padding: calc(var(--screen-header-pad-block) + var(--safe-top))
 			max(var(--page-pad-x), var(--safe-right)) var(--screen-header-pad-block)
 			max(var(--page-pad-x), var(--safe-left));
 		background: var(--chrome-header-bg);
@@ -3565,6 +3564,16 @@ body:has(.sticky-actions) .draft-dock {
 		--screen-header-content-gap: 0px;
 	}
 
+	/*
+	 * Empty cards sit under the spacer with gap=0 (no filter chrome).
+	 * Restore air so the panel is not flush against the header.
+	 */
+	.content-page--catalog.catalog-page--list > .empty-state,
+	.content-page--catalog.records-page > .empty-state {
+		/* Match default --screen-header-content-gap (zeroed above for sticky filters). */
+		margin-top: 1.15rem;
+	}
+
 	.shell-main--subroute .content-page--catalog.catalog-page--list .screen-header,
 	.shell-main--subroute .content-page--catalog.records-page .screen-header {
 		box-shadow: none;
@@ -3905,6 +3914,14 @@ body:has(.sticky-actions) .draft-dock {
 	width: 100%;
 }
 
+/* Coachmark inside empty actions: no extra bottom margin (card padding owns the inset). */
+.catalog-empty-state .empty-state__actions .onboarding-coachmark {
+	margin-bottom: 0;
+	margin-top: 0.15rem;
+	width: 100%;
+	text-align: start;
+}
+
 .catalog-empty-state--saved.empty-state {
 	border: 1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border));
 	background:
@@ -3917,7 +3934,21 @@ body:has(.sticky-actions) .draft-dock {
 }
 
 .catalog-empty-state--saved.empty-state--centered {
-	padding: 2rem 1.25rem 2.15rem;
+	padding: 2rem 1.25rem 1.5rem;
+	gap: 0.8rem;
+}
+
+/* Must beat .panel[data-slot='card'] { padding: 1rem !important }. */
+.panel.catalog-empty-state.empty-state[data-slot='card'] {
+	padding: 1.25rem 1.125rem 1.375rem !important;
+}
+
+.panel.catalog-empty-state.empty-state--centered[data-slot='card'] {
+	padding: 2.5rem 1.25rem !important;
+}
+
+.panel.catalog-empty-state--saved.empty-state--centered[data-slot='card'] {
+	padding: 2rem 1.25rem 1.5rem !important;
 	gap: 0.8rem;
 }
 

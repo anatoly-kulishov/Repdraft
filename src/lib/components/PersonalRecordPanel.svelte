@@ -23,10 +23,12 @@
 		createEmptyRecord,
 		formatPersonalRecord,
 		hasLiftData,
+		isRecordEmpty,
 		personalRecordContentEqual,
 		sanitizePersonalRecord
 	} from '$lib/domain/records';
 	import type { PersonalRecord } from '$lib/domain/types';
+	import { isCardioBodyPart } from '$lib/domain/workout';
 	import { cn } from '$lib/utils.js';
 	import { translate } from '$lib/i18n/messages';
 	import { records, recordsReady } from '$lib/stores/records';
@@ -35,7 +37,15 @@
 	import { X } from '@lucide/svelte';
 	import { tick } from 'svelte';
 
-	let { exerciseId, embedded = false }: { exerciseId: string; embedded?: boolean } = $props();
+	let {
+		exerciseId,
+		bodyPart = null as string | null,
+		embedded = false
+	}: {
+		exerciseId: string;
+		bodyPart?: string | null;
+		embedded?: boolean;
+	} = $props();
 
 	let form = $state<PersonalRecord>(createEmptyRecord(''));
 	let hasSaved = $state(false);
@@ -45,6 +55,7 @@
 	let noteText = $state('');
 	let busy = $state(false);
 	let lang = $derived($resolvedLocale);
+	let noteOnly = $derived(isCardioBodyPart(bodyPart));
 	/** Avoid re-applying store → inputs when $records refreshes with the same row. */
 	let syncedKey = '';
 	let boundId = '';
@@ -109,7 +120,7 @@
 			? `${id}:${existing.updatedAt}:${existing.weightKg}:${existing.reps}:${existing.note}`
 			: `${id}:empty`;
 		hasStoredEntry = existing != null;
-		hasSaved = existing != null && hasLiftData(existing);
+		hasSaved = existing != null && (noteOnly ? !isRecordEmpty(existing) : hasLiftData(existing));
 		if (dirty) return;
 		if (key === syncedKey) return;
 		syncedKey = key;
@@ -123,32 +134,42 @@
 	async function onSave() {
 		if (busy) return;
 		// Filters keep fields in-range; treat incomplete crumbs as empty.
-		let weightKg = weightText.trim() ? coerceWeightKg(weightText) : null;
-		let reps = repsText.trim() ? coerceReps(repsText, REPS) : null;
-		if (weightText.trim() && weightKg == null) {
+		let weightKg = noteOnly ? null : weightText.trim() ? coerceWeightKg(weightText) : null;
+		let reps = noteOnly ? null : repsText.trim() ? coerceReps(repsText, REPS) : null;
+		if (!noteOnly && weightText.trim() && weightKg == null) {
 			weightText = '';
 			weightKg = null;
 		}
-		if (repsText.trim() && reps == null) {
+		if (!noteOnly && repsText.trim() && reps == null) {
 			repsText = '';
 			reps = null;
 		}
 
-		const result = sanitizePersonalRecord({
-			exerciseId,
-			weightKg,
-			reps,
-			note: noteText,
-			updatedAt: new Date().toISOString()
-		});
+		const sanitizeOpts = noteOnly ? { allowNoteOnly: true } : undefined;
+		const result = sanitizePersonalRecord(
+			{
+				exerciseId,
+				weightKg,
+				reps,
+				note: noteText,
+				updatedAt: new Date().toISOString()
+			},
+			sanitizeOpts
+		);
 		if (!result.ok) {
 			toasts.show(
 				translate(lang, result.errorKey),
-				result.errorKey === 'pr.needValue' || result.errorKey === 'pr.needLift' ? 'info' : 'error'
+				result.errorKey === 'pr.needValue' ||
+					result.errorKey === 'pr.needLift' ||
+					result.errorKey === 'pr.needNote'
+					? 'info'
+					: 'error'
 			);
 			if (result.errorKey === 'pr.invalidWeight') void flashFields(true, false);
 			else if (result.errorKey === 'pr.invalidReps') void flashFields(false, true);
-			else if (result.errorKey !== 'pr.needLift') void flashFields(true, true);
+			else if (result.errorKey !== 'pr.needLift' && result.errorKey !== 'pr.needNote') {
+				void flashFields(true, true);
+			}
 			return;
 		}
 
@@ -160,7 +181,7 @@
 
 		busy = true;
 		try {
-			await records.save(result.record);
+			await records.save(result.record, sanitizeOpts);
 			const saved = result.record;
 			dirty = false;
 			syncedKey = `${exerciseId}:${saved.updatedAt}:${saved.weightKg}:${saved.reps}:${saved.note}`;
@@ -169,7 +190,7 @@
 			repsText = saved.reps != null ? String(saved.reps) : '';
 			noteText = saved.note;
 			hasStoredEntry = true;
-			hasSaved = hasLiftData(saved);
+			hasSaved = noteOnly ? !isRecordEmpty(saved) : hasLiftData(saved);
 			toasts.show(translate(lang, 'pr.saved'), 'success');
 		} catch (err) {
 			toasts.show(err instanceof Error ? err.message : translate(lang, 'pr.saveFail'), 'error');
@@ -203,7 +224,7 @@
 			dirty = false;
 			syncedKey = `${exerciseId}:empty`;
 			toasts.showUndo(translate(lang, 'pr.deleted'), async () => {
-				await records.save(snapshot);
+				await records.save(snapshot, noteOnly ? { allowNoteOnly: true } : undefined);
 			}, 'info');
 		} catch (err) {
 			toasts.show(err instanceof Error ? err.message : translate(lang, 'pr.deleteFail'), 'error');
@@ -217,29 +238,21 @@
 		markDirty();
 	}
 
-	let liftPreview = $derived(
-		formatPersonalRecord(
-			{
-				...form,
-				weightKg: weightText.trim() ? coerceWeightKg(weightText) : null,
-				reps: repsText.trim() ? coerceReps(repsText, REPS) : null,
-				note: ''
-			},
-			lang
-		)
-	);
 	function buildDraftRecord(): PersonalRecord | null {
-		let weightKg = weightText.trim() ? coerceWeightKg(weightText) : null;
-		let reps = repsText.trim() ? coerceReps(repsText, REPS) : null;
-		if (weightText.trim() && weightKg == null) weightKg = null;
-		if (repsText.trim() && reps == null) reps = null;
-		const result = sanitizePersonalRecord({
-			exerciseId,
-			weightKg,
-			reps,
-			note: noteText,
-			updatedAt: form.updatedAt || new Date().toISOString()
-		});
+		let weightKg = noteOnly ? null : weightText.trim() ? coerceWeightKg(weightText) : null;
+		let reps = noteOnly ? null : repsText.trim() ? coerceReps(repsText, REPS) : null;
+		if (!noteOnly && weightText.trim() && weightKg == null) weightKg = null;
+		if (!noteOnly && repsText.trim() && reps == null) reps = null;
+		const result = sanitizePersonalRecord(
+			{
+				exerciseId,
+				weightKg,
+				reps,
+				note: noteText,
+				updatedAt: form.updatedAt || new Date().toISOString()
+			},
+			noteOnly ? { allowNoteOnly: true } : undefined
+		);
 		return result.ok ? result.record : null;
 	}
 
@@ -264,6 +277,30 @@
 	);
 
 	let savedNotePreview = $derived(noteText.trim());
+	let previewValue = $derived.by(() => {
+		if (!noteOnly) {
+			return formatPersonalRecord(
+				{
+					...form,
+					weightKg: weightText.trim() ? coerceWeightKg(weightText) : null,
+					reps: repsText.trim() ? coerceReps(repsText, REPS) : null,
+					note: ''
+				},
+				lang
+			);
+		}
+		if (savedNotePreview) return savedNotePreview;
+		// Legacy cardio rows that still have weight×reps from before note-only.
+		return formatPersonalRecord(
+			{
+				...form,
+				weightKg: weightText.trim() ? coerceWeightKg(weightText) : null,
+				reps: repsText.trim() ? coerceReps(repsText, REPS) : null,
+				note: ''
+			},
+			lang
+		);
+	});
 </script>
 
 <AppPanel class={embedded ? 'pr-panel--embedded' : undefined}>
@@ -273,12 +310,18 @@
 		</div>
 	{/if}
 
-	{#if hasSaved && liftPreview}
+	{#if noteOnly}
+		<p class="pr-cardio-hint text-sm text-[var(--color-muted)]">
+			{translate(lang, 'pr.cardioHint')}
+		</p>
+	{/if}
+
+	{#if hasSaved && previewValue}
 		<div class="pr-now-preview">
-			<p class="pr-now-chip" title={liftPreview}>
-				<span class="pr-now-chip__text">{translate(lang, 'pr.now', { value: liftPreview })}</span>
+			<p class="pr-now-chip" title={previewValue}>
+				<span class="pr-now-chip__text">{translate(lang, 'pr.now', { value: previewValue })}</span>
 			</p>
-			{#if savedNotePreview}
+			{#if !noteOnly && savedNotePreview}
 				<RecordsNoteChip
 					text={savedNotePreview}
 					{lang}
@@ -291,46 +334,48 @@
 	{/if}
 
 	<div class="grid min-w-0 grid-cols-2 gap-3">
-		<AppLabel class="min-w-0">
-			{translate(lang, 'pr.weight')}
-			<span class="field-shell mt-1">
-				<AppInput
-					class={invalidWeight ? 'is-invalid' : undefined}
-					aria-invalid={invalidWeight}
-					type="text"
-					inputmode="decimal"
-					autocomplete="off"
-					placeholder="-"
-					maxlength={WEIGHT_INPUT_MAX_LEN}
-					aria-describedby="pr-weight-hint"
-					value={weightText}
-					oninput={onWeightInput}
-				/>
-			</span>
-			<span id="pr-weight-hint" class="mt-1 block text-[11px] text-[var(--color-muted)]">
-				{WEIGHT_KG.min}-{WEIGHT_KG.max}
-			</span>
-		</AppLabel>
-		<AppLabel class="min-w-0">
-			{translate(lang, 'pr.reps')}
-			<span class="field-shell mt-1">
-				<AppInput
-					class={invalidReps ? 'is-invalid' : undefined}
-					aria-invalid={invalidReps}
-					type="text"
-					inputmode="numeric"
-					autocomplete="off"
-					placeholder="-"
-					maxlength={REPS_INPUT_MAX_LEN}
-					aria-describedby="pr-reps-hint"
-					value={repsText}
-					oninput={onRepsInput}
-				/>
-			</span>
-			<span id="pr-reps-hint" class="mt-1 block text-[11px] text-[var(--color-muted)]">
-				{REPS.min}-{REPS.max}
-			</span>
-		</AppLabel>
+		{#if !noteOnly}
+			<AppLabel class="min-w-0">
+				{translate(lang, 'pr.weight')}
+				<span class="field-shell mt-1">
+					<AppInput
+						class={invalidWeight ? 'is-invalid' : undefined}
+						aria-invalid={invalidWeight}
+						type="text"
+						inputmode="decimal"
+						autocomplete="off"
+						placeholder="-"
+						maxlength={WEIGHT_INPUT_MAX_LEN}
+						aria-describedby="pr-weight-hint"
+						value={weightText}
+						oninput={onWeightInput}
+					/>
+				</span>
+				<span id="pr-weight-hint" class="mt-1 block text-[11px] text-[var(--color-muted)]">
+					{WEIGHT_KG.min}-{WEIGHT_KG.max}
+				</span>
+			</AppLabel>
+			<AppLabel class="min-w-0">
+				{translate(lang, 'pr.reps')}
+				<span class="field-shell mt-1">
+					<AppInput
+						class={invalidReps ? 'is-invalid' : undefined}
+						aria-invalid={invalidReps}
+						type="text"
+						inputmode="numeric"
+						autocomplete="off"
+						placeholder="-"
+						maxlength={REPS_INPUT_MAX_LEN}
+						aria-describedby="pr-reps-hint"
+						value={repsText}
+						oninput={onRepsInput}
+					/>
+				</span>
+				<span id="pr-reps-hint" class="mt-1 block text-[11px] text-[var(--color-muted)]">
+					{REPS.min}-{REPS.max}
+				</span>
+			</AppLabel>
+		{/if}
 		<AppLabel class="pr-note-block col-span-2 min-w-0">
 			{translate(lang, 'pr.note')}
 			<span class="field-shell pr-note-shell mt-1">
@@ -338,7 +383,7 @@
 					class={cn('pr-note-field', noteText.length > 0 && 'pr-note-field--has-clear')}
 					rows={1}
 					maxlength={NOTE_MAX}
-					placeholder={translate(lang, 'pr.notePh')}
+					placeholder={translate(lang, noteOnly ? 'pr.notePhCardio' : 'pr.notePh')}
 					aria-describedby="pr-note-count"
 					bind:value={noteText}
 					oninput={onNoteInput}

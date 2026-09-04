@@ -3,6 +3,18 @@
 	color: var(--color-ink);
 }
 
+.workouts-page__title-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.45rem 0.55rem;
+	min-width: 0;
+}
+
+.workouts-page__title-row .page-title {
+	min-width: 0;
+}
+
 .workouts-page-lead {
 	min-height: calc(2 * 1.4em);
 	font-size: 0.875rem;
@@ -1002,8 +1014,7 @@ html.is-plan-reorder-active .reorder-handle {
 		z-index: 25;
 		margin: 0 calc(-1 * max(var(--page-pad-x), var(--safe-right))) var(--screen-header-content-gap)
 			calc(-1 * max(var(--page-pad-x), var(--safe-left)));
-		/* Match ScreenHeader top air (+0.35rem). */
-		padding: calc(var(--screen-header-pad-block) + var(--safe-top) + 0.35rem)
+		padding: calc(var(--screen-header-pad-block) + var(--safe-top))
 			max(var(--page-pad-x), var(--safe-right)) var(--screen-header-pad-block)
 			max(var(--page-pad-x), var(--safe-left));
 		background: var(--chrome-header-bg);

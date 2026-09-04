@@ -21,7 +21,7 @@
 		visibleSessionExerciseIndices
 	} from '$lib/domain/session';
 	import type { ExerciseIndexItem, WorkoutPlan, WorkoutSession } from '$lib/domain/types';
-	import { altGroupBounds, groupBounds, groupMemberRole } from '$lib/domain/workout';
+	import { altGroupBounds, groupBounds, groupMemberRole, isCardioBodyPart } from '$lib/domain/workout';
 	import { acquireScreenWakeLock, releaseScreenWakeLock } from '$lib/media/wakeLock';
 	import { formatElapsedClock, formatRestSec } from '$lib/i18n/format';
 	import { bootLivePage } from '$lib/live/livePageBoot';
@@ -291,6 +291,12 @@
 			showToast: (message: string, kind: 'error' | 'success') => toasts.show(message, kind),
 			invalidWeightMsg: translate(lang, 'pr.invalidWeight'),
 			invalidRepsMsg: translate(lang, 'live.invalidReps'),
+			skipLiftChecks: (ei: number) => {
+				const session = get(live).session;
+				const id = session?.exercises[ei]?.exerciseId;
+				if (!id) return false;
+				return isCardioBodyPart(names.get(id)?.body_part);
+			},
 			setInvalid: (si: number | null, kind: 'weight' | 'reps' | null) => {
 				if (si == null || kind == null) {
 					invalidSetIndex = null;

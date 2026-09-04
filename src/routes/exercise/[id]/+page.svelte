@@ -342,7 +342,7 @@ import { truncateMeta } from '$lib/seo/site';
 						</div>
 					{:else if activeTab === 'record'}
 						<div class="exercise-detail-tab-panel">
-							<PersonalRecordPanel exerciseId={exercise.id} embedded />
+							<PersonalRecordPanel exerciseId={exercise.id} bodyPart={exercise.body_part} embedded />
 						</div>
 					{:else}
 						<div class="exercise-detail-tab-panel">

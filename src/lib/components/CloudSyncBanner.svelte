@@ -12,12 +12,15 @@
 		lang,
 		onRetry,
 		/** Hide while a page-level skeleton already covers loading (avoids layout jump). */
-		suppressed = false
+		suppressed = false,
+		/** When false, stale sync is handled elsewhere (e.g. title hint). Errors still show. */
+		includeStale = true
 	}: {
 		sync: CloudSyncState;
 		lang: 'ru' | 'en';
 		onRetry: () => void;
 		suppressed?: boolean;
+		includeStale?: boolean;
 	} = $props();
 
 	/** Debounce stale so a fast local→cloud merge does not flash the banner. */
@@ -25,7 +28,7 @@
 	let showStale = $state(false);
 
 	$effect(() => {
-		if (suppressed || sync !== 'stale') {
+		if (suppressed || !includeStale || sync !== 'stale') {
 			showStale = false;
 			return;
 		}

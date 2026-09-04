@@ -99,6 +99,11 @@ input[data-slot='input'].search-field.has-clear:not([type='file']) {
 	width: 100%;
 }
 
+.pr-cardio-hint {
+	margin: 0 0 0.75rem;
+	text-wrap: pretty;
+}
+
 .pr-now-preview .records-note-overflow-measure {
 	left: 0;
 	right: 0;
