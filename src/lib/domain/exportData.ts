@@ -67,6 +67,7 @@ function isSessionExercise(value: unknown): boolean {
 	if (typeof value.exerciseId !== 'string') return false;
 	if (typeof value.targetSets !== 'number' || typeof value.targetReps !== 'number') return false;
 	if (typeof value.restSec !== 'number') return false;
+	if (value.note !== undefined && typeof value.note !== 'string') return false;
 	return Array.isArray(value.sets) && value.sets.every(isLoggedSet);
 }
 

@@ -63,6 +63,7 @@
 	let restUntil = $derived($live.restUntil);
 	let loading = $state(true);
 	let switching = $state(false);
+	let names = $state(new Map<string, ExerciseIndexItem>());
 
 	$effect.pre(() => {
 		if (!liveSessionMatchesPlan(params.planId)) return;
@@ -79,7 +80,6 @@
 	let pendingSwitchPlan = $state<WorkoutPlan | null>(null);
 	let resumeActivePlanId = $state<string | null>(null);
 	let missing = $state(false);
-	let names = $state(new Map<string, ExerciseIndexItem>());
 	let now = $state(Date.now());
 	let selectedExerciseIndex = $state(0);
 	let invalidSetIndex = $state<number | null>(null);

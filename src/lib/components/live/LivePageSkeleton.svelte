@@ -1,39 +1,21 @@
 <script lang="ts">
-	import { PLANS_STORAGE_KEY } from '$lib/domain/repository';
-	import type { WorkoutPlan } from '$lib/domain/types';
+	import LiveLoggingCoachmarkSkeleton from '$lib/components/live/LiveLoggingCoachmarkSkeleton.svelte';
+	import { peekShouldShowCoachmark } from '$lib/domain/onboarding';
 	import { browser } from '$app/environment';
 
-	let {
-		planId = '',
-		exerciseCount = 3,
-		setRows = 3
-	}: {
-		planId?: string;
-		exerciseCount?: number;
-		setRows?: number;
-	} = $props();
+	/** Kept for callers (`planId={params.planId}`); counts are fixed — see SKEL_* below. */
+	let { planId: _planId = '' }: { planId?: string } = $props();
 
-	let navCount = $derived.by(() => {
-		let exercises = Math.min(Math.max(exerciseCount, 1), 5);
-		let sets = Math.min(Math.max(setRows, 1), 6);
-		if (!browser || !planId) return { exercises, sets };
-		try {
-			const raw = localStorage.getItem(PLANS_STORAGE_KEY);
-			if (!raw) return { exercises, sets };
-			const plans = JSON.parse(raw) as WorkoutPlan[];
-			if (!Array.isArray(plans)) return { exercises, sets };
-			const plan = plans.find((p) => p.id === planId);
-			if (!plan) return { exercises, sets };
-			exercises = Math.min(Math.max(plan.exercises.length, 1), 5);
-			const firstSets = plan.exercises[0]?.sets;
-			if (firstSets != null) sets = Math.min(Math.max(firstSets, 1), 6);
-			return { exercises, sets };
-		} catch {
-			return { exercises, sets };
-		}
-	});
+	/*
+	 * Fixed slot counts (not localStorage peek).
+	 * Old $derived peek morphs 3→N after SSR hydrate and causes the live skeleton jump.
+	 */
+	const SKEL_EXERCISES = 5;
+	/** Match typical plan / e2e seed (3). Extra ready rows grow the panel; avoid taller-skeleton WARN. */
+	const SKEL_SETS = 3;
 
-	// ponytail: coachmark renders after onboarding hydrate; omit from skeleton to avoid panel shift
+	// Client peek — same pattern as home checklist skeleton. SSR omits (no localStorage).
+	const showLoggingCoachmark = browser && peekShouldShowCoachmark('live.logging');
 </script>
 
 <section
@@ -62,7 +44,7 @@
 	<div class="live-workspace">
 		<nav class="live-nav" aria-hidden="true">
 			<ul class="live-nav-list">
-				{#each Array.from({ length: navCount.exercises }, (_, i) => i) as i (i)}
+				{#each Array.from({ length: SKEL_EXERCISES }, (_, i) => i) as i (i)}
 					<li class="live-nav-li">
 						<div class="live-skeleton-nav-item" class:live-skeleton-nav-item--active={i === 0}>
 							<span class="live-skeleton-nav-item__title"></span>
@@ -74,6 +56,9 @@
 		</nav>
 
 		<div class="live-panel-wrap">
+			{#if showLoggingCoachmark}
+				<LiveLoggingCoachmarkSkeleton />
+			{/if}
 			<div class="live-panel live-panel--skeleton">
 				<header class="live-panel__hero">
 					<div class="live-panel-head">
@@ -84,7 +69,6 @@
 							<span class="live-set-badge live-skeleton-set-badge" aria-hidden="true"></span>
 						</div>
 						<div class="live-panel-head__actions" aria-hidden="true">
-							<span class="live-skeleton-panel-action"></span>
 							<span class="live-skeleton-panel-action"></span>
 						</div>
 					</div>
@@ -98,19 +82,21 @@
 						<span class="live-skeleton-set-head-done"></span>
 					</div>
 					<ul class="live-set-list">
-						{#each Array.from({ length: navCount.sets }, (_, si) => si) as si (si)}
-							<li class="live-set-row live-skeleton-set-row" class:is-current={si === 0}>
-								<span class="live-skeleton-set-index"></span>
-								<span class="live-skeleton-set-input"></span>
-								<span class="live-skeleton-set-input"></span>
-								<span class="live-skeleton-set-done"></span>
+						{#each Array.from({ length: SKEL_SETS }, (_, si) => si) as si (si)}
+							<li class="live-set-li">
+								<div class="live-set-row live-skeleton-set-row" class:is-current={si === 0}>
+									<span class="live-skeleton-set-index"></span>
+									<span class="live-skeleton-set-input live-skeleton-set-input--weight"></span>
+									<span class="live-skeleton-set-input live-skeleton-set-input--reps"></span>
+									<span class="live-skeleton-set-done"></span>
+								</div>
 							</li>
 						{/each}
 					</ul>
+					<div class="live-panel__tools" aria-hidden="true">
+						<span class="live-skeleton-add-set"></span>
+					</div>
 				</section>
-				<div class="live-panel__tools" aria-hidden="true">
-					<span class="live-skeleton-add-set"></span>
-				</div>
 			</div>
 		</div>
 
