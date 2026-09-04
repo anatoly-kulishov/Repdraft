@@ -76,12 +76,12 @@ input[data-slot='input'].search-field-with-icon:not([type='file']) {
 	padding-left: 2.65rem;
 }
 
-/* Builder prescription chips — beat generic control padding; width tracks digit count. */
+/* Builder prescription chips — compact width, full touch height (≥48px). */
 input[data-slot='input'].workout-ex-chip__input:not([type='file']) {
 	padding: 0.3rem 0.45rem;
-	height: auto;
-	min-height: 0;
-	max-height: none;
+	height: var(--control-height, 3rem);
+	min-height: var(--control-height, 3rem);
+	max-height: var(--control-height, 3rem);
 }
 
 input[data-slot='input'].search-field.has-clear:not([type='file']) {
@@ -97,6 +97,11 @@ input[data-slot='input'].search-field.has-clear:not([type='file']) {
 	margin: 0 0 0.75rem;
 	min-width: 0;
 	width: 100%;
+}
+
+.pr-cardio-hint {
+	margin: 0 0 0.75rem;
+	text-wrap: pretty;
 }
 
 .pr-now-preview .records-note-overflow-measure {

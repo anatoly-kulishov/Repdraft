@@ -21,13 +21,13 @@
 		visibleSessionExerciseIndices
 	} from '$lib/domain/session';
 	import type { ExerciseIndexItem, WorkoutPlan, WorkoutSession } from '$lib/domain/types';
-	import { altGroupBounds, groupBounds, groupMemberRole } from '$lib/domain/workout';
+	import { altGroupBounds, groupBounds, groupMemberRole, isCardioBodyPart } from '$lib/domain/workout';
 	import { acquireScreenWakeLock, releaseScreenWakeLock } from '$lib/media/wakeLock';
 	import { formatElapsedClock, formatRestSec } from '$lib/i18n/format';
 	import { bootLivePage } from '$lib/live/livePageBoot';
 	import { startLiveRestTicker, type LiveRestTicker } from '$lib/live/liveRestTicker';
 	import { createLiveSetActions } from '$lib/live/liveSetActions';
-	import { pickDefaultExerciseIndex } from '$lib/live/sessionUi';
+	import { pickDefaultExerciseIndex, isLiveResumePlanId, liveContinueHref } from '$lib/live/sessionUi';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { navigateBack } from '$lib/navigation/back';
@@ -50,7 +50,9 @@
 		if (!browser) return false;
 		live.hydrate();
 		const active = get(live).session;
-		return Boolean(active && !active.finishedAt && active.planId === planId);
+		return Boolean(
+			active && !active.finishedAt && active.exercises.length > 0 && isLiveResumePlanId(planId, active)
+		);
 	}
 
 	let lang = $derived($resolvedLocale);
@@ -61,6 +63,7 @@
 	let restUntil = $derived($live.restUntil);
 	let loading = $state(true);
 	let switching = $state(false);
+	let names = $state(new Map<string, ExerciseIndexItem>());
 
 	$effect.pre(() => {
 		if (!liveSessionMatchesPlan(params.planId)) return;
@@ -77,7 +80,6 @@
 	let pendingSwitchPlan = $state<WorkoutPlan | null>(null);
 	let resumeActivePlanId = $state<string | null>(null);
 	let missing = $state(false);
-	let names = $state(new Map<string, ExerciseIndexItem>());
 	let now = $state(Date.now());
 	let selectedExerciseIndex = $state(0);
 	let invalidSetIndex = $state<number | null>(null);
@@ -289,6 +291,12 @@
 			showToast: (message: string, kind: 'error' | 'success') => toasts.show(message, kind),
 			invalidWeightMsg: translate(lang, 'pr.invalidWeight'),
 			invalidRepsMsg: translate(lang, 'live.invalidReps'),
+			skipLiftChecks: (ei: number) => {
+				const session = get(live).session;
+				const id = session?.exercises[ei]?.exerciseId;
+				if (!id) return false;
+				return isCardioBodyPart(names.get(id)?.body_part);
+			},
 			setInvalid: (si: number | null, kind: 'weight' | 'reps' | null) => {
 				if (si == null || kind == null) {
 					invalidSetIndex = null;
@@ -473,8 +481,8 @@
 		switchOfferOpen = false;
 		pendingSwitchPlan = null;
 		resumeActivePlanId = null;
-		if (id) void goto(`/live/${id}`);
-		else void goto('/workouts');
+		if (id) void goto(`/live/${encodeURIComponent(id)}`);
+		else void goto('/live/active');
 	}
 
 	async function confirmSwitchLivePlan() {
@@ -526,7 +534,7 @@
 			</AppButton>
 		{/snippet}
 	</BottomSheet>
-{:else if loading && !(session && !session.finishedAt && session.planId === params.planId)}
+{:else if loading && !(session && !session.finishedAt && isLiveResumePlanId(params.planId, session))}
 	<LivePageSkeleton planId={params.planId} />
 {:else if finishing && !session}
 	<LivePageSkeleton planId={params.planId} />
@@ -538,7 +546,10 @@
 			actionHref="/workouts"
 			actionLabel={translate(lang, 'live.backPlans')}
 		/>
-		{#if $live.session && !$live.session.finishedAt}
+		{#if $live.session && !$live.session.finishedAt && $live.session.exercises.length > 0}
+			<AppButton block href={liveContinueHref($live.session)}>
+				{translate(lang, 'home.continueWorkout')}
+			</AppButton>
 			<AppButton
 				block
 				variant="danger"

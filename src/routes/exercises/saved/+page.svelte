@@ -1,6 +1,7 @@
 <script lang="ts">
 	import CatalogExerciseList from '$lib/components/CatalogExerciseList.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
+	import ScrollToTopFab from '$lib/components/ScrollToTopFab.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { onboarding } from '$lib/stores/onboarding';
@@ -36,4 +37,6 @@
 		savedOnly
 		bookmarksCountPeek={data.bookmarksCountPeek}
 	/>
+
+	<ScrollToTopFab />
 </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
@@ -11,9 +12,13 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { onMount } from 'svelte';
 
+	/** First paint: few sessions. Sets per card capped so stress/giant-sets stay scannable. */
+	const SESSION_PAGE = 5;
+	const SETS_PREVIEW = 4;
+
 	let {
 		exerciseId,
-		limit = 5,
+		limit = 3,
 		linkRows = true,
 		showEmptyCoachmark = true,
 		panel = true,
@@ -21,6 +26,7 @@
 		ready = undefined as boolean | undefined
 	}: {
 		exerciseId: string;
+		/** Initial session rows before «Show more». */
 		limit?: number;
 		linkRows?: boolean;
 		showEmptyCoachmark?: boolean;
@@ -34,7 +40,18 @@
 	let lang = $derived($resolvedLocale);
 	let localReady = $state(false);
 	let historyReady = $derived(ready !== undefined ? ready : localReady);
-	let logs = $derived(historyReady ? recentExerciseLogs($live.history, exerciseId, limit) : []);
+	let visibleLimit = $state(3);
+
+	$effect(() => {
+		exerciseId;
+		visibleLimit = limit;
+	});
+
+	let fetched = $derived(
+		historyReady ? recentExerciseLogs($live.history, exerciseId, visibleLimit + 1) : []
+	);
+	let logs = $derived(fetched.slice(0, visibleLimit));
+	let hasMoreSessions = $derived(fetched.length > visibleLimit);
 	let showHistoryEmptyCoachmark = $derived(
 		showEmptyCoachmark &&
 			historyReady &&
@@ -50,15 +67,14 @@
 	});
 
 	function formatSet(weightKg: number | null, reps: number | null): string {
+		if (weightKg == null && reps == null) return translate(lang, 'live.setMarked');
 		const w = weightKg != null ? String(weightKg) : '-';
 		const r = reps != null ? String(reps) : '-';
 		return `${w}×${r}`;
 	}
 
-	function formatSetsLine(
-		sets: { weightKg: number | null; reps: number | null }[]
-	): string {
-		return sets.map((s, i) => `#${i + 1} ${formatSet(s.weightKg, s.reps)}`).join(' · ');
+	function showMoreSessions() {
+		visibleLimit += SESSION_PAGE;
 	}
 
 	function dismissHistoryEmptyCoachmark() {
@@ -84,6 +100,23 @@
 			/>
 		{/if}
 	{:else}
+		{#snippet setList(sets: { weightKg: number | null; reps: number | null }[])}
+			{@const preview = sets.slice(0, SETS_PREVIEW)}
+			{@const more = sets.length - preview.length}
+			<ul class="exercise-history__set-list">
+				{#each preview as set, si (si)}
+					<li class="exercise-history__set-line tabular-nums">
+						<span class="exercise-history__set-idx">#{si + 1}</span>
+						<span class="exercise-history__set-val">{formatSet(set.weightKg, set.reps)}</span>
+					</li>
+				{/each}
+			</ul>
+			{#if more > 0}
+				<span class="exercise-history__more-sets">
+					{translate(lang, 'exercise.historyMoreSets', { n: more })}
+				</span>
+			{/if}
+		{/snippet}
 		<ul class="exercise-history__list">
 			{#each logs as log (log.sessionId)}
 				<li class="exercise-history__row">
@@ -91,26 +124,32 @@
 						<a class="exercise-history__link" href={`/workouts/history/${log.sessionId}`}>
 							<span class="exercise-history__when">{formatRelativeDay(log.finishedAt, lang)}</span>
 							<span class="exercise-history__plan">{log.planName}</span>
-							<span class="exercise-history__sets">
-								{formatSetsLine(log.sets)}
-							</span>
+							{#if log.note}
+								<span class="exercise-history__note">{log.note}</span>
+							{/if}
+							{@render setList(log.sets)}
 						</a>
 					{:else}
 						<div class="exercise-history__card">
 							<span class="exercise-history__when">{formatRelativeDay(log.finishedAt, lang)}</span>
 							<span class="exercise-history__plan">{log.planName}</span>
-							<ul class="exercise-history__set-list">
-								{#each log.sets as set, si (si)}
-									<li class="exercise-history__set-line tabular-nums">
-										<span class="exercise-history__set-idx">#{si + 1}</span>
-										<span>{formatSet(set.weightKg, set.reps)}</span>
-									</li>
-								{/each}
-							</ul>
+							{#if log.note}
+								<span class="exercise-history__note">{log.note}</span>
+							{/if}
+							{@render setList(log.sets)}
 						</div>
 					{/if}
 				</li>
 			{/each}
 		</ul>
+		{#if hasMoreSessions}
+			<AppButton
+				variant="secondary"
+				class="exercise-history__more mt-2 w-full"
+				onclick={showMoreSessions}
+			>
+				{translate(lang, 'exercise.historyShowMore')}
+			</AppButton>
+		{/if}
 	{/if}
 </section>

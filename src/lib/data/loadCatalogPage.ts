@@ -5,9 +5,11 @@ import {
 } from '$lib/domain/catalogLinks';
 import { pickCatalogCoverImage, pickZoneCoverImage } from '$lib/domain/catalogCover';
 import {
+	equipmentCountsForZone,
 	targetChipsForZoneBrowse,
 	targetCountsForZone,
 	uniqueSorted,
+	type EquipmentChip,
 	type TargetChip
 } from '$lib/domain/filters';
 import type { ExerciseIndexItem } from '$lib/domain/types';
@@ -49,17 +51,42 @@ function targetCoversForZone(
 	return covers;
 }
 
+function equipmentCoversForZone(
+	exercises: ExerciseIndexItem[],
+	bodyParts: string[]
+): Record<string, string> {
+	const inZone = exercises.filter((ex) => bodyParts.includes(ex.body_part));
+	const byEquipment = new Map<string, ExerciseIndexItem[]>();
+	for (const ex of inZone) {
+		const eq = ex.equipment.trim();
+		if (!eq) continue;
+		const bucket = byEquipment.get(eq) ?? [];
+		bucket.push(ex);
+		byEquipment.set(eq, bucket);
+	}
+	const covers: Record<string, string> = {};
+	for (const [equipment, list] of byEquipment) {
+		const image = pickZoneCoverImage(list, equipment);
+		if (image) covers[equipment] = image;
+	}
+	return covers;
+}
+
 function catalogHubMeta(exercises: ExerciseIndexItem[]) {
 	const bodyParts = uniqueSorted(exercises, 'body_part');
-	const hubZones = hubCatalogZones(bodyParts);
+	const zones = hubCatalogZones(bodyParts);
 	const zoneCounts: Record<string, number> = {};
 	const zoneCovers: Record<string, string> = {};
-	for (const zone of hubZones) {
+	for (const zone of zones) {
 		const parts = catalogZoneBodyParts(zone);
 		const inZone = exercises.filter((ex) => parts.includes(ex.body_part));
 		zoneCounts[zone] = inZone.length;
 		zoneCovers[zone] = pickZoneCoverImage(inZone, zone);
 	}
+	/** Hub grid: most exercises first (ties keep stable slug order). */
+	const hubZones = [...zones].sort(
+		(a, b) => (zoneCounts[b] ?? 0) - (zoneCounts[a] ?? 0) || a.localeCompare(b, 'en')
+	);
 	return { zoneCounts, zoneCovers, hubZones };
 }
 
@@ -83,9 +110,20 @@ const EMPTY_INDEX: CatalogIndexPayload = {
 
 export type CatalogZonePayload = CatalogIndexPayload & {
 	targetChips: TargetChip[];
+	equipmentChips: EquipmentChip[];
 	zoneCount: number;
 	targetCovers: Record<string, string>;
+	equipmentCovers: Record<string, string>;
 	zoneCover: string;
+};
+
+const EMPTY_ZONE_EXTRA = {
+	targetChips: [] as TargetChip[],
+	equipmentChips: [] as EquipmentChip[],
+	zoneCount: 0,
+	targetCovers: {} as Record<string, string>,
+	equipmentCovers: {} as Record<string, string>,
+	zoneCover: ''
 };
 
 export async function loadCatalogZone(
@@ -94,39 +132,46 @@ export async function loadCatalogZone(
 ): Promise<CatalogZonePayload> {
 	const res = await fetchFn('/data/exercises.index.json');
 	if (!res.ok) {
-		return { ...EMPTY_INDEX, targetChips: [], zoneCount: 0, targetCovers: {}, zoneCover: '' };
+		return { ...EMPTY_INDEX, ...EMPTY_ZONE_EXTRA };
 	}
 	const exercises = (await res.json()) as ExerciseIndexItem[];
 	const meta = catalogIndexMeta(exercises);
 	const parts = catalogZoneBodyParts(bodyPart);
 	if (bodyPart !== 'all' && parts.length === 0) {
-		return { ...meta, targetChips: [], zoneCount: 0, targetCovers: {}, zoneCover: '' };
+		return { ...meta, ...EMPTY_ZONE_EXTRA };
 	}
 	if (bodyPart === 'all') {
 		return {
 			...meta,
-			targetChips: [],
-			zoneCount: meta.totalCount,
-			targetCovers: {},
-			zoneCover: ''
+			...EMPTY_ZONE_EXTRA,
+			zoneCount: meta.totalCount
 		};
 	}
 	const inZone = exercises.filter((ex) => parts.includes(ex.body_part));
 	const targetChips = targetChipsForZoneBrowse(targetCountsForZone(exercises, parts), bodyPart);
+	/** Equipment browse when the zone has no target subcategory grid. */
+	const equipmentFacets = targetChips.length < 2;
+	const equipmentChips = equipmentFacets ? equipmentCountsForZone(exercises, parts) : [];
 	const zoneCount = inZone.length;
 	const targetCovers = targetCoversForZone(exercises, parts);
-	/** Avoid same plate as the first visible target chip. */
+	const equipmentCovers = equipmentFacets ? equipmentCoversForZone(exercises, parts) : {};
+	/** «Все» must not reuse any visible target/equipment card plate. */
 	const avoidZoneDup = new Set<string>();
-	const topTarget = targetChips[0]?.target;
-	if (topTarget) {
-		const topCover = targetCovers[topTarget];
-		if (topCover) avoidZoneDup.add(topCover);
+	for (const chip of targetChips) {
+		const cover = targetCovers[chip.target];
+		if (cover) avoidZoneDup.add(cover);
+	}
+	for (const chip of equipmentChips) {
+		const cover = equipmentCovers[chip.equipment];
+		if (cover) avoidZoneDup.add(cover);
 	}
 	return {
 		...meta,
 		targetChips,
+		equipmentChips,
 		zoneCount,
 		targetCovers,
+		equipmentCovers,
 		zoneCover: pickZoneCoverImage(inZone, bodyPart, avoidZoneDup)
 	};
 }

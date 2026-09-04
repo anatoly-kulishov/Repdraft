@@ -3,9 +3,9 @@ import type { ExerciseIndexItem } from './types';
 /** Prefer iconic, muscle-readable Gym Visual plates; avoid stretches/cardio jumps. */
 const TARGET_COVER_WEIGHTS: Partial<Record<string, [RegExp, number][]>> = {
 	lats: [
-		[/lat pulldown|тяга верхнего блок/i, 16],
-		[/pull-up|подтяги|chin-up/i, 13],
-		[/barbell row|тяга штанги|pendlay|гребл/i, 12]
+		[/pull-up|подтяги|chin-up/i, 16],
+		[/lat pulldown|тяга верхнего блок/i, 12],
+		[/barbell row|тяга штанги|pendlay|гребл/i, 10]
 	],
 	pectorals: [
 		[/bench press|жим лёжа|жим на/i, 15],
@@ -17,7 +17,7 @@ const TARGET_COVER_WEIGHTS: Partial<Record<string, [RegExp, number][]>> = {
 		[/lateral raise|махи|front raise|подъём впер/i, 12]
 	],
 	biceps: [
-		[/barbell curl|сгибание на бицепс со штанг|biceps curl/i, 15],
+		[/^barbell curl\b|сгибание на бицепс со штангой$/i, 15],
 		[/curl|сгиб/i, 10]
 	],
 	triceps: [
@@ -30,15 +30,21 @@ const TARGET_COVER_WEIGHTS: Partial<Record<string, [RegExp, number][]>> = {
 		[/crunch|скруч/i, 12],
 		[/plank|планк/i, 10]
 	],
-	forearms: [[/wrist curl|сгибание запяст/i, 15]],
+	forearms: [
+		[/barbell wrist curl|сгибание запястий со штанг/i, 16],
+		[/wrist curl|сгибание запяст/i, 12]
+	],
 	'cardiovascular system': [
-		[/run|бег|treadmill|дорож/i, 15],
-		[/cycle|велос|bike|эллипс/i, 14],
-		[/jump rope|скакал/i, 10]
+		[/run \(equipment\)|бег \(тренаж/i, 16],
+		[/treadmill|дорож/i, 14],
+		[/run|бег/i, 12],
+		[/cycle|велос|bike|эллипс/i, 10],
+		[/jump rope|скакал/i, 8]
 	],
 	traps: [[/shrug|шраг/i, 15]],
 	'upper back': [
-		[/barbell row|тяга штанги|гребл|pendlay/i, 15],
+		[/bent over row|тяга штанги в наклоне/i, 16],
+		[/pendlay|barbell row|тяга штанги|гребл/i, 14],
 		[/face pull|тяга.*лиц/i, 12]
 	],
 	spine: [
@@ -67,7 +73,8 @@ const TARGET_COVER_WEIGHTS: Partial<Record<string, [RegExp, number][]>> = {
 		[/squat|присед/i, 8]
 	],
 	calves: [
-		[/calf raise|подъём на носк|икронож|calves/i, 15],
+		[/standing calf|подъём на носки(?!.*сидя)/i, 16],
+		[/calf raise|подъём на носк|икронож|calves/i, 12],
 		[/jump rope|скакал/i, 5]
 	],
 	abductors: [[/abduct|абдукт|outer thigh|внешн/i, 15]],
@@ -78,7 +85,7 @@ const COVER_AVOID = /jump|прыж|stretch|растяж|balance board|reach|burp
 
 /** Variant / band plates read poorly on small category cards. */
 const COVER_VARIANT =
-	/alternate|поочер|reverse|обратн|parallel|параллель|one arm|одной рук|узк|narrow|variant|вариант|band|резин|support|поддерж|towel|полотен|колен|kneeling|behind|за голов|из-за голов|skull|blaster|drag|assist|лучник|3\/4|вниз головой/i;
+	/alternate|поочер|reverse|обратн|parallel|параллель|one arm|одной рук|узк|narrow|wide|широк|variant|вариант|band|резин|support|поддерж|towel|полотен|колен|kneeling|behind|за спин|за голов|из-за голов|blaster|drag|assist|лучник|3\/4|вниз головой|incline|наклон|decline|prone|живот|seated calf|сидя подъём на носк/i;
 
 /** «Все упражнения» card — zone-level iconic lift per hub slug. */
 const ZONE_COVER_WEIGHTS: Partial<Record<string, [RegExp, number][]>> = {
@@ -88,51 +95,75 @@ const ZONE_COVER_WEIGHTS: Partial<Record<string, [RegExp, number][]>> = {
 		[/barbell row|тяга штанги|pendlay|гребл/i, 12],
 		[/верхн.*тяга.*блок|upper row/i, 10]
 	],
+	/** Prefer standing fly/crossover so «Все» ≠ pectorals bench silhouette. */
 	chest: [
-		[/bench press|жим.*скам|жим лёжа|жим на/i, 15],
-		[/fly|развод|pec deck/i, 12],
-		[/push-up|отжим/i, 10]
+		[/fly|развод|pec deck|crossover|кроссовер/i, 16],
+		[/push-up|отжим/i, 12],
+		[/bench press|жим.*скам|жим лёжа|жим на/i, 8]
 	],
 	shoulders: [
-		[/overhead press|жим над голов|shoulder press|армейск/i, 15],
-		[/lateral raise|махи/i, 12]
+		[/barbell seated overhead press|жим над головой сидя со штанг/i, 16],
+		[/dumbbell lateral raise|разведение гантелей в стороны/i, 15],
+		[/lateral raise|махи в сторон|разведение.*сторон/i, 13],
+		[/overhead press|жим над голов|shoulder press|армейск/i, 9]
 	],
 	waist: [
 		[/скручивание на пол|floor crunch|скручивания на пол/i, 14],
-		[/crunch|скруч|sit-up/i, 12],
-		[/plank|планк/i, 10]
+		[/front plank|планка(?!.*скруч|.*боков)/i, 12],
+		[/plank|планк/i, 10],
+		[/cable.*crunch|скручивание на блок/i, 9],
+		[/crunch|скруч|sit-up/i, 7]
 	],
 	'upper arms': [
-		[/barbell curl|сгибание на бицепс со штанг/i, 16],
-		[/triceps pushdown|разгибание на трицепс на блок/i, 16],
-		[/curl|сгиб/i, 14],
-		[/triceps|разгиб/i, 12]
+		[/^barbell curl\b|сгибание на бицепс со штангой$/i, 16],
+		[/skull crusher|французский жим|lying triceps extension/i, 15],
+		[/triceps pushdown|разгибание на трицепс на блок|cable pushdown/i, 12],
+		[/curl|сгиб/i, 10],
+		[/triceps|разгиб/i, 8]
 	],
-	'lower arms': [[/wrist curl|сгибание запяст/i, 12]],
+	'lower arms': [[/barbell wrist curl|сгибание запястий со штанг/i, 14], [/wrist curl|сгибание запяст/i, 10]],
 	cardio: [
-		[/run|бег|treadmill|дорож/i, 14],
-		[/cycle|велос|bike|эллипс/i, 13],
-		[/jump rope|скакал/i, 10]
+		[/^run$|^бег$/i, 16],
+		[/run|бег/i, 14],
+		[/cycle|велос|bike|эллипс/i, 12],
+		[/jump rope|скакал/i, 8]
 	],
 	neck: [[/neck|ше/i, 8]],
 	legs: [
-		[/leg extension|разгибание ног|leg press|жим ног/i, 14],
-		[/squat|присед|lunge|выпад/i, 10]
+		[/full squat|присед со штанг/i, 18],
+		[/squat|присед/i, 14],
+		[/leg press|жим ног/i, 10],
+		[/leg extension|разгибание ног/i, 8]
 	],
 	'upper legs': [
-		[/leg extension|разгибание ног|leg press|жим ног/i, 14],
-		[/squat|присед|lunge|выпад/i, 10]
+		[/full squat|присед со штанг/i, 18],
+		[/squat|присед/i, 14],
+		[/leg press|жим ног/i, 10],
+		[/leg extension|разгибание ног/i, 8]
 	],
-	'lower legs': [[/calf raise|подъём на носк|икронож/i, 14]]
+	'lower legs': [[/standing calf|подъём на носки(?!.*сидя)|calf raise|икронож/i, 14]]
 };
 
 /** Dataset has only stretch plates for neck — pick the cleaner side stretch. */
 const TARGET_COVER_OVERRIDES: Partial<Record<string, string>> = {
-	'levator scapulae': '1403'
+	'levator scapulae': '1403',
+	/** Classic hanging pull-up reads clearer than cable pulldown on small cards. */
+	lats: '0652',
+	/** Standing calf silhouette reads better than seated. */
+	calves: '1373',
+	/** Classic palms-up wrist curl (not behind-the-back). */
+	forearms: '0126',
+	/** Bent-over row is the clearest upper-back plate. */
+	'upper back': '0027'
 };
 
 const ZONE_COVER_OVERRIDES: Partial<Record<string, string>> = {
-	chest: '0047',
+	/** Standing cable fly — distinct from flat-bench pectorals plate. */
+	chest: '0227',
+	/** Barbell squat — iconic legs, distinct from machine isolation cards. */
+	legs: '0043',
+	/** Outdoor run — distinct from treadmill cardio target plate. */
+	cardio: '0685',
 	neck: '1403'
 };
 
@@ -279,7 +310,86 @@ export function runCatalogCoverSelfCheck(): void {
 
 	const latsPick = pickCatalogCoverImage(back, 'lats');
 	if (!latsPick.includes('2330')) {
-		throw new Error('lats cover should prefer standard lat pulldown over alternate');
+		throw new Error('lats cover should prefer standard lat pulldown when pull-up is absent');
+	}
+
+	const latsWithPullUp: ExerciseIndexItem[] = [
+		...back,
+		{
+			id: '0652',
+			name: 'pull-up',
+			name_ru: 'Подтягивания',
+			body_part: 'back',
+			equipment: 'body weight',
+			target: 'lats',
+			muscle_group: 'lats',
+			secondary_muscles: [],
+			globalPopularity: 90,
+			image: 'images/0652-x.jpg'
+		}
+	];
+	if (!pickCatalogCoverImage(latsWithPullUp, 'lats').includes('0652')) {
+		throw new Error('lats cover should prefer classic pull-up when present');
+	}
+
+	const legsZone: ExerciseIndexItem[] = [
+		{
+			id: '0585',
+			name: 'lever leg extension',
+			name_ru: 'Разгибание ног в тренажёре',
+			body_part: 'upper legs',
+			equipment: 'lever',
+			target: 'quads',
+			muscle_group: 'quads',
+			secondary_muscles: [],
+			globalPopularity: 25,
+			image: 'images/0585-x.jpg'
+		},
+		{
+			id: '0043',
+			name: 'barbell full squat',
+			name_ru: 'Присед со штангой',
+			body_part: 'upper legs',
+			equipment: 'barbell',
+			target: 'glutes',
+			muscle_group: 'quadriceps',
+			secondary_muscles: [],
+			globalPopularity: 99,
+			image: 'images/0043-x.jpg'
+		}
+	];
+	if (!pickZoneCoverImage(legsZone, 'legs', new Set(['images/0585-x.jpg'])).includes('0043')) {
+		throw new Error('legs zone cover should prefer squat over leg extension');
+	}
+
+	const calves: ExerciseIndexItem[] = [
+		{
+			id: '0088',
+			name: 'barbell seated calf raise',
+			name_ru: 'Сидя подъём на носки со штангой',
+			body_part: 'lower legs',
+			equipment: 'barbell',
+			target: 'calves',
+			muscle_group: 'calves',
+			secondary_muscles: [],
+			globalPopularity: 25,
+			image: 'images/0088-x.jpg'
+		},
+		{
+			id: '1373',
+			name: 'bodyweight standing calf raise',
+			name_ru: 'Подъём на носки',
+			body_part: 'lower legs',
+			equipment: 'body weight',
+			target: 'calves',
+			muscle_group: 'calves',
+			secondary_muscles: [],
+			globalPopularity: 25,
+			image: 'images/1373-x.jpg'
+		}
+	];
+	if (!pickCatalogCoverImage(calves, 'calves').includes('1373')) {
+		throw new Error('calves cover should prefer standing raise');
 	}
 
 	const chest: ExerciseIndexItem[] = [
@@ -306,6 +416,18 @@ export function runCatalogCoverSelfCheck(): void {
 			secondary_muscles: [],
 			globalPopularity: 25,
 			image: 'images/0025-y.jpg'
+		},
+		{
+			id: '0227',
+			name: 'cable standing fly',
+			name_ru: 'Стоя разведение на блоке',
+			body_part: 'chest',
+			equipment: 'cable',
+			target: 'pectorals',
+			muscle_group: 'deltoids',
+			secondary_muscles: [],
+			globalPopularity: 25,
+			image: 'images/0227-Pr9Rhf4.jpg'
 		}
 	];
 
@@ -317,8 +439,8 @@ export function runCatalogCoverSelfCheck(): void {
 	if (chestZone.includes('0025')) {
 		throw new Error('chest zone cover should avoid the top target (pectorals) plate');
 	}
-	if (!chestZone.includes('0009')) {
-		throw new Error('chest zone cover should fall back to next scored plate when bench avoided');
+	if (!chestZone.includes('0227')) {
+		throw new Error('chest zone cover should use standing fly, not another bench');
 	}
 
 	const arms: ExerciseIndexItem[] = [

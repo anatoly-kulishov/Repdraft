@@ -12,6 +12,7 @@ export const VIRTUAL_CATALOG_ZONES: Record<string, readonly BodyPart[]> = {
 
 export type CatalogZoneSlug = BodyPart | keyof typeof VIRTUAL_CATALOG_ZONES;
 
+/** Canonical zone list (sitemap / presence). Hub grid order is by exercise count. */
 const HUB_ZONE_ORDER: CatalogZoneSlug[] = [
 	'back',
 	'chest',

@@ -14,7 +14,9 @@
 		filters = $bindable(),
 		equipment,
 		targets,
-		lockBodyPart = false
+		lockBodyPart = false,
+		/** Deep-link target list (e.g. /catalog/back?target=traps): no sibling muscle chips. */
+		hideTargetChips = false
 	}: {
 		filters: ExerciseFilters;
 		/** Cascaded: options compatible with current body/target/query. */
@@ -23,12 +25,15 @@
 		targets: string[];
 		/** Zone route: body part comes from URL, not a list facet control. */
 		lockBodyPart?: boolean;
+		hideTargetChips?: boolean;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
 	let equipmentSheetOpen = $state(false);
 
-	let showTargetFilters = $derived(lockBodyPart && targets.length > 1);
+	let showTargetFilters = $derived(
+		lockBodyPart && !hideTargetChips && targets.length > 1
+	);
 
 	let equipmentTriggerLabel = $derived(
 		filters.equipment === 'all'

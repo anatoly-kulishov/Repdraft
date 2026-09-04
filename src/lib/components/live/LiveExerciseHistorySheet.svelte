@@ -35,7 +35,6 @@
 		<div class="live-history-sheet__body">
 			<ExerciseSessionHistory
 				{exerciseId}
-				limit={5}
 				linkRows={false}
 				showEmptyCoachmark={false}
 				panel={false}

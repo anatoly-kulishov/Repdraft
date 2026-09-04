@@ -23,6 +23,7 @@
 	import { greetingFirstName } from '$lib/domain/greetingName';
 	import { shouldShowChecklist, peekShouldShowChecklist } from '$lib/domain/onboarding';
 	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
+	import { liveContinueHref } from '$lib/live/sessionUi';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import JsonLd from '$lib/seo/JsonLd.svelte';
@@ -401,7 +402,7 @@
 	{#if hasActive && active}
 		<a
 			class="home-continue-card panel"
-			href={`/live/${active.planId}`}
+			href={liveContinueHref(active)}
 			aria-label={translate(lang, 'home.continueWorkout')}
 		>
 			<div class="home-continue-card__copy">
