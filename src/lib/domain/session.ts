@@ -1,5 +1,5 @@
 import { newId } from './id';
-import { REPS, REST_SEC, SETS } from './inputLimits';
+import { NOTE_MAX, REPS, REST_SEC, SETS, sanitizeNote } from './inputLimits';
 import type {
 	LastPerformance,
 	LoggedSet,
@@ -284,6 +284,29 @@ export function updateLoggedSet(
 	return { ...session, exercises };
 }
 
+/** Persist optional exercise note (empty clears the field). */
+export function updateExerciseNote(
+	session: WorkoutSession,
+	exerciseIndex: number,
+	note: string
+): WorkoutSession {
+	const cleaned = sanitizeNote(note, NOTE_MAX);
+	const current = session.exercises[exerciseIndex];
+	if (!current) return session;
+	const prev = current.note ?? '';
+	if (cleaned === prev) return session;
+	if (!cleaned && current.note === undefined) return session;
+	const exercises = session.exercises.map((ex, ei) => {
+		if (ei !== exerciseIndex) return ex;
+		if (!cleaned) {
+			const { note: _drop, ...rest } = ex;
+			return rest;
+		}
+		return { ...ex, note: cleaned };
+	});
+	return { ...session, exercises };
+}
+
 /** Copy weight onto every incomplete set that differs (gym: same load all sets). */
 export function applyWeightToOpenSets(
 	session: WorkoutSession,
@@ -540,6 +563,7 @@ export type ExerciseSessionLog = {
 	planName: string;
 	finishedAt: string;
 	sets: { weightKg: number | null; reps: number | null; kind?: SetKind }[];
+	note?: string;
 };
 
 /** Recent finished sessions that logged this exercise (newest first). */
@@ -557,7 +581,8 @@ export function recentExerciseLogs(
 		const ex = session.exercises.find((e) => e.exerciseId === exerciseId);
 		if (!ex) continue;
 		const done = ex.sets.filter((s) => s.completed);
-		if (done.length === 0) continue;
+		const note = ex.note?.trim() ?? '';
+		if (done.length === 0 && !note) continue;
 		out.push({
 			sessionId: session.id,
 			planName: session.planName,
@@ -566,7 +591,8 @@ export function recentExerciseLogs(
 				weightKg: s.weightKg,
 				reps: s.reps,
 				kind: loggedSetKind(s)
-			}))
+			})),
+			...(note ? { note } : {})
 		});
 		if (out.length >= limit) break;
 	}
@@ -821,6 +847,21 @@ export function runSessionSelfCheck(): void {
 	}
 	if (recentExerciseLogs([session], 'ex-b').length !== 0) {
 		throw new Error('ex-b should have empty recentExerciseLogs');
+	}
+
+	let noted = updateExerciseNote(startSessionFromPlan(plan), 0, '  20 min  ');
+	if (noted.exercises[0]?.note !== '20 min') {
+		throw new Error('updateExerciseNote should sanitize note');
+	}
+	noted = updateLoggedSet(noted, 0, 0, { completed: true });
+	noted = finishSession(noted);
+	const notedLogs = recentExerciseLogs([noted], 'ex-a', 5);
+	if (notedLogs.length !== 1 || notedLogs[0]?.note !== '20 min') {
+		throw new Error('recentExerciseLogs should include exercise note');
+	}
+	noted = updateExerciseNote(noted, 0, '');
+	if (noted.exercises[0]?.note !== undefined) {
+		throw new Error('updateExerciseNote empty should drop note field');
 	}
 
 	const draftPlan = planDraftFromSession(session);

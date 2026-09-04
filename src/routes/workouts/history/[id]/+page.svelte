@@ -567,6 +567,10 @@
 							</a>
 						</div>
 
+						{#if ex.note?.trim()}
+							<p class="history-exercise__note">{ex.note.trim()}</p>
+						{/if}
+
 						{#if rows.length > 0}
 							<ul
 								class="history-exercise__sets"
@@ -575,17 +579,21 @@
 								{#each rows as item, i (item.setIndex)}
 									<li class="history-exercise__set tabular-nums">
 										<span class="history-exercise__set-i">{i + 1}</span>
-										{#if item.set.weightKg != null}
-											<span class="history-exercise__set-weight"
-												>{item.set.weightKg} {translate(lang, 'pr.kg')}</span
-											>
-											<span class="history-exercise__set-reps">× {item.set.reps ?? '-'}</span>
+										{#if item.set.weightKg != null || item.set.reps != null}
+											{#if item.set.weightKg != null}
+												<span class="history-exercise__set-weight"
+													>{item.set.weightKg} {translate(lang, 'pr.kg')}</span
+												>
+												<span class="history-exercise__set-reps">× {item.set.reps ?? '-'}</span>
+											{:else}
+												<span class="history-exercise__set-reps">
+													{item.set.reps != null
+														? `${item.set.reps} ${translate(lang, 'pr.repsShort')}`
+														: '-'}
+												</span>
+											{/if}
 										{:else}
-											<span class="history-exercise__set-reps">
-												{item.set.reps != null
-													? `${item.set.reps} ${translate(lang, 'pr.repsShort')}`
-													: '-'}
-											</span>
+											<span class="history-exercise__set-reps">{translate(lang, 'live.setMarked')}</span>
 										{/if}
 									</li>
 								{/each}

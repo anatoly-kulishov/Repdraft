@@ -124,12 +124,18 @@
 						<a class="exercise-history__link" href={`/workouts/history/${log.sessionId}`}>
 							<span class="exercise-history__when">{formatRelativeDay(log.finishedAt, lang)}</span>
 							<span class="exercise-history__plan">{log.planName}</span>
+							{#if log.note}
+								<span class="exercise-history__note">{log.note}</span>
+							{/if}
 							{@render setList(log.sets)}
 						</a>
 					{:else}
 						<div class="exercise-history__card">
 							<span class="exercise-history__when">{formatRelativeDay(log.finishedAt, lang)}</span>
 							<span class="exercise-history__plan">{log.planName}</span>
+							{#if log.note}
+								<span class="exercise-history__note">{log.note}</span>
+							{/if}
 							{@render setList(log.sets)}
 						</div>
 					{/if}

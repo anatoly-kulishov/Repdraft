@@ -79,7 +79,7 @@ export const EQUIPMENT_LABELS: Record<string, string> = {
 	band: 'Резинка',
 	barbell: 'Штанга',
 	'body weight': 'Свой вес',
-	'bosu ball': 'BOSU',
+	'bosu ball': 'Босу',
 	cable: 'Блок',
 	dumbbell: 'Гантели',
 	'elliptical machine': 'Эллипсоид',

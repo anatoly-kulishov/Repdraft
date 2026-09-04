@@ -93,6 +93,8 @@ export type SessionExercise = {
 	sets: LoggedSet[];
 	/** Live: excluded from nav/progress; partial logs kept in history. */
 	skipped?: boolean;
+	/** Optional cue / cardio metrics for this exercise in the session. */
+	note?: string;
 };
 
 /** In-progress or finished workout run (performance, not prescription). */

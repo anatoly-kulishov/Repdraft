@@ -2965,10 +2965,6 @@ body:has(.sticky-actions) .draft-dock {
 		margin: 0 calc(-1 * var(--page-pad-x)) 0;
 		pointer-events: none;
 	}
-
-	.shell-main--subroute .screen-header--live {
-		margin-bottom: 0.5rem;
-	}
 }
 
 .app-shell > header {
@@ -3557,20 +3553,20 @@ body:has(.sticky-actions) .draft-dock {
 
 /* Catalog list: keep search + facets under fixed ScreenHeader while scrolling. */
 @media (max-width: 1023px) {
-	/* Flush sticky filters under header — avoid page-bg gap from content-gap. */
+	/* Slight air under header; sticky top includes the same gap so it does not jump. */
 	.content-page--catalog.catalog-page--list,
 	.content-page--catalog.records-page {
-		/* Must be 0px (not unitless 0): fixed ScreenHeader spacer is calc(chrome-h + gap). */
-		--screen-header-content-gap: 0px;
+		/* Must use a length (not unitless 0): spacer is calc(chrome-h + gap). */
+		--screen-header-content-gap: 0.3rem;
 	}
 
 	/*
-	 * Empty cards sit under the spacer with gap=0 (no filter chrome).
-	 * Restore air so the panel is not flush against the header.
+	 * Empty cards sit under the spacer with a small gap (no filter chrome).
+	 * Restore extra air so the panel is not flush against the header.
 	 */
 	.content-page--catalog.catalog-page--list > .empty-state,
 	.content-page--catalog.records-page > .empty-state {
-		/* Match default --screen-header-content-gap (zeroed above for sticky filters). */
+		/* Match default --screen-header-content-gap (reduced above for sticky filters). */
 		margin-top: 1.15rem;
 	}
 
@@ -3581,7 +3577,7 @@ body:has(.sticky-actions) .draft-dock {
 
 	.content-page--catalog .catalog-list-layout__filters--search-only {
 		position: sticky;
-		top: var(--screen-header-chrome-h);
+		top: calc(var(--screen-header-chrome-h) + var(--screen-header-content-gap));
 		z-index: 20;
 		padding-top: 0.35rem;
 		padding-bottom: 0.4rem;
@@ -3598,7 +3594,7 @@ body:has(.sticky-actions) .draft-dock {
 
 	.content-page--catalog .catalog-list-layout__filters .catalog-filters-shell {
 		position: sticky;
-		top: var(--screen-header-chrome-h);
+		top: calc(var(--screen-header-chrome-h) + var(--screen-header-content-gap));
 		z-index: 20;
 		margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
 		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));

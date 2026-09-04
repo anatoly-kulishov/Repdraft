@@ -81,8 +81,31 @@
 		return draft ?? String(stored());
 	}
 
-	function onChipFocus(setDraft: (v: string) => void, stored: () => number) {
+	function onChipFocus(
+		el: HTMLInputElement,
+		setDraft: (v: string) => void,
+		stored: () => number
+	) {
 		setDraft(String(stored()));
+		queueMicrotask(() => {
+			el.select();
+		});
+	}
+
+	function onChipKeydown(e: KeyboardEvent) {
+		if (e.key !== 'Enter') return;
+		e.preventDefault();
+		const el = e.currentTarget as HTMLInputElement;
+		const root = el.closest('.workout-ex-fields, .superset-bar__fields, .workout-ex-head__copy');
+		if (!root) {
+			el.blur();
+			return;
+		}
+		const inputs = [...root.querySelectorAll<HTMLInputElement>('input[data-slot="input"]')];
+		const idx = inputs.indexOf(el);
+		const next = idx >= 0 ? inputs[idx + 1] : undefined;
+		if (next) next.focus();
+		else el.blur();
 	}
 
 	function onChipInput(
@@ -150,13 +173,15 @@
 						type="text"
 						inputmode="numeric"
 						autocomplete="off"
+						enterkeyhint="next"
 						maxlength={SETS_INPUT_MAX_LEN}
 						value={chipValue(setsChip())}
-						onfocus={() => onChipFocus((v) => (setsDraft = v), () => item.sets)}
+						onfocus={(e) => onChipFocus(e.currentTarget, (v) => (setsDraft = v), () => item.sets)}
 						oninput={(e) => {
 							const el = e.currentTarget as HTMLInputElement;
 							onChipInput(el, setsChip(), (v) => (setsDraft = v), filterSetsInput);
 						}}
+						onkeydown={onChipKeydown}
 						onblur={(e) => {
 							const el = e.currentTarget as HTMLInputElement;
 							if (ongroupSets) {
@@ -168,20 +193,22 @@
 						}}
 					/>
 				</label>
-				<label class="workout-ex-chip">
+				<label class="workout-ex-chip workout-ex-chip--rest">
 					<span>{translate(lang, 'builder.rest')}</span>
 					<AppInput
-						class={chipInputClass}
+						class={chipInputRestClass}
 						type="text"
 						inputmode="numeric"
 						autocomplete="off"
+						enterkeyhint="done"
 						maxlength={REST_INPUT_MAX_LEN}
 						value={chipValue(restChip())}
-						onfocus={() => onChipFocus((v) => (restDraft = v), () => item.restSec)}
+						onfocus={(e) => onChipFocus(e.currentTarget, (v) => (restDraft = v), () => item.restSec)}
 						oninput={(e) => {
 							const el = e.currentTarget as HTMLInputElement;
 							onChipInput(el, restChip(), (v) => (restDraft = v), filterRestSecInput);
 						}}
+						onkeydown={onChipKeydown}
 						onblur={(e) => {
 							const el = e.currentTarget as HTMLInputElement;
 							if (ongroupRest) {
@@ -268,19 +295,21 @@
 					{title}
 				</a>
 				{#if inGroup}
-					<label class="workout-ex-chip">
+					<label class="workout-ex-chip workout-ex-chip--reps">
 						<span>{translate(lang, 'builder.reps')}</span>
 						<AppInput
 							class={chipInputClass}
 							type="text"
 							inputmode="numeric"
 							autocomplete="off"
+							enterkeyhint="done"
 							maxlength={REPS_INPUT_MAX_LEN}
 							value={chipValue(repsChip())}
-							onfocus={() => onChipFocus((v) => (repsDraft = v), () => item.reps)}
+							onfocus={(e) => onChipFocus(e.currentTarget, (v) => (repsDraft = v), () => item.reps)}
 							oninput={(e) =>
 								onChipInput(e.currentTarget as HTMLInputElement, repsChip(), (v) => (repsDraft = v), (raw, prev) =>
 									filterRepsInput(raw, REPS, prev))}
+							onkeydown={onChipKeydown}
 							onblur={(e) =>
 								onChipBlur(
 									e.currentTarget as HTMLInputElement,
@@ -301,11 +330,13 @@
 								type="text"
 								inputmode="numeric"
 								autocomplete="off"
+								enterkeyhint="next"
 								maxlength={SETS_INPUT_MAX_LEN}
 								value={chipValue(setsChip())}
-								onfocus={() => onChipFocus((v) => (setsDraft = v), () => item.sets)}
+								onfocus={(e) => onChipFocus(e.currentTarget, (v) => (setsDraft = v), () => item.sets)}
 								oninput={(e) =>
 									onChipInput(e.currentTarget as HTMLInputElement, setsChip(), (v) => (setsDraft = v), filterSetsInput)}
+								onkeydown={onChipKeydown}
 								onblur={(e) =>
 									onChipBlur(
 										e.currentTarget as HTMLInputElement,
@@ -325,12 +356,14 @@
 								type="text"
 								inputmode="numeric"
 								autocomplete="off"
+								enterkeyhint="next"
 								maxlength={REPS_INPUT_MAX_LEN}
 								value={chipValue(repsChip())}
-								onfocus={() => onChipFocus((v) => (repsDraft = v), () => item.reps)}
+								onfocus={(e) => onChipFocus(e.currentTarget, (v) => (repsDraft = v), () => item.reps)}
 								oninput={(e) =>
 									onChipInput(e.currentTarget as HTMLInputElement, repsChip(), (v) => (repsDraft = v), (raw, prev) =>
 										filterRepsInput(raw, REPS, prev))}
+								onkeydown={onChipKeydown}
 								onblur={(e) =>
 									onChipBlur(
 										e.currentTarget as HTMLInputElement,
@@ -349,11 +382,13 @@
 								type="text"
 								inputmode="numeric"
 								autocomplete="off"
+								enterkeyhint="done"
 								maxlength={REST_INPUT_MAX_LEN}
 								value={chipValue(restChip())}
-								onfocus={() => onChipFocus((v) => (restDraft = v), () => item.restSec)}
+								onfocus={(e) => onChipFocus(e.currentTarget, (v) => (restDraft = v), () => item.restSec)}
 								oninput={(e) =>
 									onChipInput(e.currentTarget as HTMLInputElement, restChip(), (v) => (restDraft = v), filterRestSecInput)}
+								onkeydown={onChipKeydown}
 								onblur={(e) =>
 									onChipBlur(
 										e.currentTarget as HTMLInputElement,

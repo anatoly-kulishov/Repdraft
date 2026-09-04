@@ -2383,6 +2383,14 @@
 	color: var(--color-ink);
 }
 
+.exercise-history__note {
+	min-width: 0;
+	font-size: 0.8125rem;
+	line-height: 1.35;
+	color: var(--color-muted);
+	text-wrap: pretty;
+}
+
 .exercise-history--plain {
 	min-width: 0;
 }
@@ -2463,11 +2471,53 @@
 	}
 }
 
+.exercise-detail-tabs__body {
+	min-width: 0;
+	touch-action: pan-y;
+}
+
 .exercise-detail-tab-panel {
 	display: flex;
 	min-width: 0;
 	flex-direction: column;
 	gap: 1rem;
+}
+
+.exercise-detail-tab-panel--from-next {
+	animation: exercise-tab-in-next 180ms ease-out;
+}
+
+.exercise-detail-tab-panel--from-prev {
+	animation: exercise-tab-in-prev 180ms ease-out;
+}
+
+@keyframes exercise-tab-in-next {
+	from {
+		opacity: 0.4;
+		transform: translateX(1.1rem);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@keyframes exercise-tab-in-prev {
+	from {
+		opacity: 0.4;
+		transform: translateX(-1.1rem);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.exercise-detail-tab-panel--from-next,
+	.exercise-detail-tab-panel--from-prev {
+		animation: none;
+	}
 }
 
 .exercise-detail-steps .section-title {
@@ -2998,6 +3048,12 @@ button.clip-composer__pick:hover:not(:disabled),
 	color: var(--color-muted);
 	overflow-wrap: anywhere;
 	word-break: break-word;
+}
+
+/* iOS Safari zooms focused inputs under 16px and often leaves the page zoomed after dismiss. */
+.bottom-sheet input[data-slot='input']:not([type='file']),
+.bottom-sheet textarea {
+	font-size: max(16px, 1em);
 }
 
 

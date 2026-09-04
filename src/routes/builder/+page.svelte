@@ -215,7 +215,7 @@
 	{#if $draft.exercises.length > 0}
 		<AppButton
 			variant="ghost"
-			class="is-danger shrink-0"
+			class="builder-chrome__clear is-danger shrink-0"
 			onclick={clearDraft}
 			aria-label={translate(lang, 'builder.clear')}
 			title={translate(lang, 'builder.clear')}
