@@ -2926,14 +2926,16 @@ body:has(.sticky-actions) .draft-dock {
 		z-index: 25;
 		margin: 0 calc(-1 * max(var(--page-pad-x), var(--safe-right))) var(--screen-header-content-gap)
 			calc(-1 * max(var(--page-pad-x), var(--safe-left)));
-		/* Extra top pad beyond safe-area — 0.2rem felt glued to the status bar. */
-		padding: calc(var(--screen-header-pad-block) + var(--safe-top))
+		/* Extra 0.35rem beyond pad+safe — title was glued to the status bar. */
+		padding: calc(var(--screen-header-pad-block) + var(--safe-top) + 0.35rem)
 			max(var(--page-pad-x), var(--safe-right)) var(--screen-header-pad-block)
 			max(var(--page-pad-x), var(--safe-left));
-		background: var(--color-surface);
+		background: var(--chrome-header-bg);
 		border-bottom: 1px solid var(--color-border);
+		box-shadow: var(--shadow-screen-header);
+		/* Title ellipsis lives on .screen-header-title — keep overflow visible for shadow. */
+		overflow: visible;
 		min-width: 0;
-		overflow: hidden;
 	}
 
 	/* Narrow reading routes (articles, privacy, summary): header spans the viewport, body stays capped. */
@@ -3556,12 +3558,25 @@ body:has(.sticky-actions) .draft-dock {
 
 /* Catalog list: keep search + facets under fixed ScreenHeader while scrolling. */
 @media (max-width: 1023px) {
+	/* Flush sticky filters under header — avoid page-bg gap from content-gap. */
+	.content-page--catalog.catalog-page--list,
+	.content-page--catalog.records-page {
+		/* Must be 0px (not unitless 0): fixed ScreenHeader spacer is calc(chrome-h + gap). */
+		--screen-header-content-gap: 0px;
+	}
+
+	.shell-main--subroute .content-page--catalog.catalog-page--list .screen-header,
+	.shell-main--subroute .content-page--catalog.records-page .screen-header {
+		box-shadow: none;
+	}
+
 	.content-page--catalog .catalog-list-layout__filters--search-only {
 		position: sticky;
 		top: var(--screen-header-chrome-h);
 		z-index: 20;
 		padding-top: 0.35rem;
 		padding-bottom: 0.4rem;
+		/* Page bg (not surface): opaque for scroll bleed, no second chrome bar. */
 		background: var(--color-bg);
 	}
 
@@ -3582,6 +3597,7 @@ body:has(.sticky-actions) .draft-dock {
 		padding-right: max(var(--page-pad-x), var(--safe-right));
 		padding-top: 0.35rem;
 		padding-bottom: 0.4rem;
+		background: var(--color-bg);
 	}
 }
 

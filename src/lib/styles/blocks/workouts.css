@@ -30,6 +30,32 @@
 	.workouts-page--history-tab .workouts-page__header {
 		display: none;
 	}
+
+	/* Sticky search/dates sit flush under ScreenHeader — no page-bg “hole”. */
+	.workouts-page--history-tab {
+		/* Must be 0px (not unitless 0): spacer uses calc(chrome-h + gap). */
+		--screen-header-content-gap: 0px;
+	}
+
+	.shell-main--subroute .workouts-page--history-tab .screen-header {
+		/* Lift comes from .workouts-history-tools so chrome reads as one block. */
+		box-shadow: none;
+	}
+
+	.workouts-page--history-tab .workouts-history-tools {
+		top: var(--screen-header-chrome-h);
+		z-index: 20;
+		margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
+		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
+		padding: 0.55rem max(var(--page-pad-x), var(--safe-right)) 0.55rem
+			max(var(--page-pad-x), var(--safe-left));
+		background: var(--chrome-header-bg);
+		box-shadow: var(--shadow-screen-header);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		/* Keep shadow visible when list scrolls under the strip. */
+		overflow: visible;
+	}
 }
 
 .workouts-page__toolbar {
@@ -929,10 +955,10 @@ html.is-plan-reorder-active .reorder-handle {
 	animation: none;
 }
 
-/* History tab mobile boot — mirror ScreenHeader grid (back + title, no shell chrome). */
+/* History tab mobile boot — mirror ScreenHeader grid (back + title + action). */
 .workouts-history-skeleton-head {
 	display: grid;
-	grid-template-columns: auto minmax(0, 1fr);
+	grid-template-columns: auto minmax(0, 1fr) auto;
 	align-items: center;
 	column-gap: 0.35rem;
 	min-height: var(--screen-header-min-h);
@@ -940,7 +966,8 @@ html.is-plan-reorder-active .reorder-handle {
 }
 
 .workouts-history-skeleton-head__back,
-.workouts-history-skeleton-head__title {
+.workouts-history-skeleton-head__title,
+.workouts-history-skeleton-head__action {
 	border-radius: var(--radius-control);
 	border: 1px solid var(--color-border);
 	background-color: var(--skeleton-base);
@@ -954,7 +981,8 @@ html.is-plan-reorder-active .reorder-handle {
 	animation: skeletonShimmer 1.25s ease-in-out infinite;
 }
 
-.workouts-history-skeleton-head__back {
+.workouts-history-skeleton-head__back,
+.workouts-history-skeleton-head__action {
 	width: 3rem;
 	height: 3rem;
 	flex-shrink: 0;
@@ -964,6 +992,7 @@ html.is-plan-reorder-active .reorder-handle {
 	height: 1.375rem;
 	width: min(58%, 11rem);
 	justify-self: start;
+	border-radius: 0.35rem;
 }
 
 @media (max-width: 1023px) {
@@ -973,11 +1002,13 @@ html.is-plan-reorder-active .reorder-handle {
 		z-index: 25;
 		margin: 0 calc(-1 * max(var(--page-pad-x), var(--safe-right))) var(--screen-header-content-gap)
 			calc(-1 * max(var(--page-pad-x), var(--safe-left)));
-		padding: calc(var(--screen-header-pad-block) + var(--safe-top))
+		/* Match ScreenHeader top air (+0.35rem). */
+		padding: calc(var(--screen-header-pad-block) + var(--safe-top) + 0.35rem)
 			max(var(--page-pad-x), var(--safe-right)) var(--screen-header-pad-block)
 			max(var(--page-pad-x), var(--safe-left));
-		background: var(--color-surface);
+		background: var(--chrome-header-bg);
 		border-bottom: 1px solid var(--color-border);
+		box-shadow: none;
 	}
 }
 
@@ -985,6 +1016,32 @@ html.is-plan-reorder-active .reorder-handle {
 	.workouts-history-skeleton-head {
 		display: none;
 	}
+}
+
+.workouts-skeleton-chip {
+	display: inline-block;
+	flex-shrink: 0;
+	min-height: 48px;
+	min-width: 5.5rem;
+	border-radius: 999px;
+	border: 1px solid var(--color-border);
+	background-color: var(--skeleton-base);
+	background-image: linear-gradient(
+		90deg,
+		var(--skeleton-base) 0%,
+		var(--skeleton-shine) 50%,
+		var(--skeleton-base) 100%
+	);
+	background-size: 200% 100%;
+	animation: skeletonShimmer 1.25s ease-in-out infinite;
+}
+
+.workouts-skeleton-chip--period {
+	min-width: 7.25rem;
+}
+
+.workouts-history-tools--skeleton {
+	pointer-events: none;
 }
 
 .empty-state--history .empty-state__actions {
@@ -1038,27 +1095,13 @@ html.is-plan-reorder-active .reorder-handle {
 	flex-direction: column;
 	gap: 0.55rem;
 	margin: 0 0 0.85rem;
-	padding: 0.15rem 0 0.55rem;
+	padding: 0.5rem 0 0.55rem;
 	position: sticky;
 	top: 0;
 	z-index: 6;
 	background: color-mix(in srgb, var(--color-bg) 94%, transparent);
 	backdrop-filter: blur(10px);
 	-webkit-backdrop-filter: blur(10px);
-}
-
-@media (max-width: 1023px) {
-	.workouts-page--history-tab .workouts-history-tools {
-		top: var(--screen-header-chrome-h);
-		z-index: 20;
-		margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
-		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
-		padding-left: max(var(--page-pad-x), var(--safe-left));
-		padding-right: max(var(--page-pad-x), var(--safe-right));
-		background: var(--color-bg);
-		backdrop-filter: none;
-		-webkit-backdrop-filter: none;
-	}
 }
 
 .workouts-history-tools .workouts-page__search {
@@ -1074,8 +1117,9 @@ html.is-plan-reorder-active .reorder-handle {
 }
 
 .workouts-history-tools__dates .workouts-history-day {
+	/* Hug label («Период» / short range); shrink with ellipsis only when the row is tight. */
 	min-width: 0;
-	flex: 1 1 auto;
+	flex: 0 1 auto;
 	max-width: 100%;
 }
 
@@ -1301,59 +1345,6 @@ html.is-plan-reorder-active .reorder-handle {
 	.history-day-cal__cell:not(:disabled):active {
 		transform: none;
 	}
-}
-
-.workouts-history-scroll-top {
-	position: fixed;
-	right: max(1rem, var(--safe-right));
-	bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--vv-fixed-bottom, 0px));
-	z-index: 35;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	box-sizing: border-box;
-	width: var(--fab-size);
-	height: var(--fab-size);
-	min-width: var(--fab-size);
-	min-height: var(--fab-size);
-	max-width: var(--fab-size);
-	max-height: var(--fab-size);
-	padding: 0;
-	aspect-ratio: 1;
-	border-radius: 999px;
-	box-shadow: var(--shadow-float);
-	opacity: 0;
-	pointer-events: none;
-	transform: translateY(0.35rem);
-	transition:
-		opacity 160ms ease,
-		transform 160ms ease,
-		background 140ms ease;
-}
-
-[data-slot='button'].workouts-history-scroll-top {
-	width: var(--fab-size);
-	height: var(--fab-size);
-	min-width: var(--fab-size);
-	min-height: var(--fab-size);
-	max-width: var(--fab-size);
-	max-height: var(--fab-size);
-	padding: 0;
-	border-radius: 999px;
-}
-
-.workouts-history-scroll-top.is-visible {
-	opacity: 1;
-	pointer-events: auto;
-	transform: translateY(0);
-}
-
-.workouts-history-scroll-top :global(.lucide-icon-wrap) {
-	line-height: 0;
-}
-
-.workouts-history-scroll-top :global(svg) {
-	display: block;
 }
 
 /* Summary page skeleton — mirror ready .summary-page mobile layout. */

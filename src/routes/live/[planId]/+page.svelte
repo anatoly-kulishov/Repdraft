@@ -27,7 +27,7 @@
 	import { bootLivePage } from '$lib/live/livePageBoot';
 	import { startLiveRestTicker, type LiveRestTicker } from '$lib/live/liveRestTicker';
 	import { createLiveSetActions } from '$lib/live/liveSetActions';
-	import { pickDefaultExerciseIndex } from '$lib/live/sessionUi';
+	import { pickDefaultExerciseIndex, isLiveResumePlanId, liveContinueHref } from '$lib/live/sessionUi';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { navigateBack } from '$lib/navigation/back';
@@ -50,7 +50,9 @@
 		if (!browser) return false;
 		live.hydrate();
 		const active = get(live).session;
-		return Boolean(active && !active.finishedAt && active.planId === planId);
+		return Boolean(
+			active && !active.finishedAt && active.exercises.length > 0 && isLiveResumePlanId(planId, active)
+		);
 	}
 
 	let lang = $derived($resolvedLocale);
@@ -473,8 +475,8 @@
 		switchOfferOpen = false;
 		pendingSwitchPlan = null;
 		resumeActivePlanId = null;
-		if (id) void goto(`/live/${id}`);
-		else void goto('/workouts');
+		if (id) void goto(`/live/${encodeURIComponent(id)}`);
+		else void goto('/live/active');
 	}
 
 	async function confirmSwitchLivePlan() {
@@ -526,7 +528,7 @@
 			</AppButton>
 		{/snippet}
 	</BottomSheet>
-{:else if loading && !(session && !session.finishedAt && session.planId === params.planId)}
+{:else if loading && !(session && !session.finishedAt && isLiveResumePlanId(params.planId, session))}
 	<LivePageSkeleton planId={params.planId} />
 {:else if finishing && !session}
 	<LivePageSkeleton planId={params.planId} />
@@ -538,7 +540,10 @@
 			actionHref="/workouts"
 			actionLabel={translate(lang, 'live.backPlans')}
 		/>
-		{#if $live.session && !$live.session.finishedAt}
+		{#if $live.session && !$live.session.finishedAt && $live.session.exercises.length > 0}
+			<AppButton block href={liveContinueHref($live.session)}>
+				{translate(lang, 'home.continueWorkout')}
+			</AppButton>
 			<AppButton
 				block
 				variant="danger"

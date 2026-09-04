@@ -254,6 +254,15 @@
 		return personalRecordContentEqual(existing, draft);
 	});
 
+	/** Empty draft with nothing stored: Reset does nothing useful. */
+	let clearDisabled = $derived(
+		busy ||
+			(!hasStoredEntry &&
+				!weightText.trim() &&
+				!repsText.trim() &&
+				!noteText.trim())
+	);
+
 	let savedNotePreview = $derived(noteText.trim());
 </script>
 
@@ -361,7 +370,7 @@
 		<AppButton
 			variant="secondary"
 			class="pr-actions__btn"
-			disabled={busy}
+			disabled={clearDisabled}
 			onclick={() => void onClear()}
 		>
 			{hasStoredEntry ? translate(lang, 'pr.delete') : translate(lang, 'pr.clear')}

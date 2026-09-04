@@ -7,7 +7,6 @@
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
-	import SearchInput from '$lib/components/SearchInput.svelte';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -32,7 +31,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { browser } from '$app/environment';
-	import { replaceState } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, untrack } from 'svelte';
 	import { Bookmark, Trash2 } from '@lucide/svelte';
@@ -98,7 +97,19 @@
 		};
 	}
 
+	/**
+	 * Facet source of truth on the client is `window.location`, not `$page.url`.
+	 * App `replaceState` for equipment left `history.state["sveltekit:pageurl"]` without the query;
+	 * after history.back() the address bar kept `?equipment=` while `$page.url` did not.
+	 */
+	function liveCatalogUrl(): URL {
+		return new URL(window.location.href);
+	}
+
 	function filtersFromUrl(): ExerciseFilters {
+		if (browser) {
+			return filtersFromSearchParams(new URLSearchParams(window.location.search));
+		}
 		return filtersFromSearchParams(
 			new URLSearchParams({
 				...(initialQuery.trim() ? { q: initialQuery } : {}),
@@ -115,24 +126,48 @@
 	let visibleLimit = $state(CATALOG_PAGE_SIZE);
 	let filters = $state<ExerciseFilters>(filtersFromUrl());
 	let filtersHydrated = $state(false);
-	let syncingFiltersToUrl = false;
+	/** Skip URL→filters when `$page` notifies but search/path/preset did not change (sheet history). */
+	let lastHydratedSearchKey = '';
+	/** True while applying URL → local filters (skip local → URL echo). Must be $state so write re-runs. */
+	let syncingFiltersToUrl = $state(false);
 
 	let zoneLocked = $derived(presetBodyPart !== 'all' && isCatalogZone(presetBodyPart));
 	let zoneBodyParts = $derived(
 		zoneLocked ? catalogZoneBodyParts(presetBodyPart) : []
 	);
 	let filterLockBodyPart = $derived(zoneLocked);
+	/** Opened via ?target=… (title is that muscle): sibling chips feel like leaving the category. */
+	let hideTargetChips = $derived(Boolean(initialTarget.trim()));
 
 	let lang = $derived($resolvedLocale);
-	/** Current list URL — exercise detail back returns here (preserves `from` chain). */
-	let detailFrom = $derived(currentReturnPath($page.url.pathname, urlSearchParams($page.url)));
+	/**
+	 * Return path for exercise links — built from live filters, not deferred URL.
+	 * Otherwise a fast tap after «Снаряд» stores `from=/catalog/all` without `equipment=`.
+	 */
+	let detailFrom = $derived.by(() => {
+		const params = new URLSearchParams();
+		const q = filters.query.trim();
+		if (q) params.set('q', q);
+		if (filters.equipment !== 'all') params.set('equipment', filters.equipment);
+		if (filters.target !== 'all') params.set('target', filters.target);
+		if (!zoneLocked && !savedOnly && filters.bodyPart !== 'all') {
+			params.set('bodyPart', filters.bodyPart);
+		}
+		const chainFrom = $page.url.searchParams.get('from');
+		if (chainFrom) params.set('from', chainFrom);
+		return currentReturnPath($page.url.pathname, params);
+	});
 	let catalog = $derived(indexReady ? items : []);
 	let statsMap = $derived($exerciseStats);
+	let bookmarkSet = $derived(new Set($bookmarks));
 	let catalogFiltered = $derived.by(() => {
 		const allowed = zoneLocked && zoneBodyParts.length > 0 ? new Set(zoneBodyParts) : null;
-		const scopedCatalog = allowed
+		let scopedCatalog = allowed
 			? catalog.filter((item) => allowed.has(item.body_part))
 			: catalog;
+		if (savedOnly) {
+			scopedCatalog = scopedCatalog.filter((ex) => bookmarkSet.has(ex.id));
+		}
 		/** Zone already scopes body parts — don't pass a single bodyPart into facets. */
 		const queryFilters =
 			allowed != null
@@ -143,10 +178,7 @@
 	let equipmentOptions = $derived(catalogFiltered.equipment);
 	let targetOptions = $derived(catalogFiltered.targets);
 	let filtered = $derived(catalogFiltered.items);
-	let bookmarkSet = $derived(new Set($bookmarks));
-	let visible = $derived(
-		savedOnly ? filtered.filter((ex) => bookmarkSet.has(ex.id)) : filtered
-	);
+	let visible = $derived(filtered);
 	let useSections = $derived(!savedOnly && !filters.query.trim() && visible.length > 0);
 	let frequentItems = $derived(useSections ? pickFrequent(visible, statsMap, 12) : []);
 	let frequentIds = $derived(new Set(frequentItems.map((ex) => ex.id)));
@@ -171,12 +203,10 @@
 	);
 	let likelySections = $derived(!savedOnly && !filters.query.trim());
 	let filtersActive = $derived(
-		savedOnly
-			? Boolean(filters.query.trim())
-			: Boolean(filters.query.trim()) ||
-					filters.bodyPart !== 'all' ||
-					filters.equipment !== 'all' ||
-					filters.target !== 'all'
+		Boolean(filters.query.trim()) ||
+			filters.bodyPart !== 'all' ||
+			filters.equipment !== 'all' ||
+			filters.target !== 'all'
 	);
 	let filterConflict = $derived(
 		visible.length === 0 ? isFilterConflict(catalog, filters, lang) : false
@@ -265,9 +295,37 @@
 
 	/** Apply facets from the live URL when navigation changes — not when local filters edit. */
 	$effect(() => {
-		urlSearchParams($page.url);
-		presetBodyPart;
-		const next = filtersFromSearchParams(urlSearchParams($page.url));
+		// Subscribe to SK navigation, but read facets from window.location (see liveCatalogUrl).
+		$page.url.pathname;
+		$page.url.search;
+		const live = browser ? liveCatalogUrl() : $page.url;
+		const params = urlSearchParams(live);
+		const searchKey = `${live.pathname}\0${params.toString()}\0${presetBodyPart}`;
+		const next = filtersFromSearchParams(params);
+		const localEq = untrack(() => filters.equipment);
+		// Local selection is ahead of URL write: empty URL must not wipe it.
+		if (next.equipment === 'all' && localEq !== 'all' && !params.get('equipment')) return;
+
+		// Same search can re-notify (sheet history). Still repair when local drifted
+		// behind the URL (stale-facet clear + skipped replaceState left ?equipment= orphaned).
+		if (searchKey === lastHydratedSearchKey) {
+			const drifted = untrack(() =>
+				(Object.keys(next) as (keyof ExerciseFilters)[]).some((key) => filters[key] !== next[key])
+			);
+			if (!drifted) return;
+			// Only pull from URL when it still carries a facet local lost — not local-ahead.
+			if (
+				next.equipment === 'all' &&
+				next.target === 'all' &&
+				!next.query.trim() &&
+				(next.bodyPart === 'all' || zoneLocked)
+			) {
+				return;
+			}
+		} else {
+			lastHydratedSearchKey = searchKey;
+		}
+
 		// Snapshot must be fully untracked: reading `filters.foo` outside untrack
 		// still subscribes and re-runs this effect on every keystroke, wiping query.
 		const changed = untrack(() =>
@@ -282,28 +340,19 @@
 	});
 
 	$effect(() => {
-		if (!browser || !filtersHydrated || syncingFiltersToUrl) return;
+		if (!browser || !filtersHydrated) return;
+		// Tracked $state: after hydrate microtask clears the flag, this effect re-runs
+		// so a stale-facet reset to `all` can delete orphaned `?equipment=` from the URL.
+		if (syncingFiltersToUrl) return;
 		filters.query;
-		if (!savedOnly) {
-			filters.bodyPart;
-			filters.equipment;
-			filters.target;
-		}
+		filters.bodyPart;
+		filters.equipment;
+		filters.target;
 
-		const url = new URL($page.url.href);
+		const url = liveCatalogUrl();
 		const q = filters.query.trim();
 		if (q) url.searchParams.set('q', q);
 		else url.searchParams.delete('q');
-
-		if (savedOnly) {
-			const next = `${url.pathname}${url.search}${url.hash}`;
-			const cur = `${$page.url.pathname}${$page.url.search}${$page.url.hash}`;
-			if (next === cur) return;
-			const frame = requestAnimationFrame(() => {
-				replaceState(next, $page.state);
-			});
-			return () => cancelAnimationFrame(frame);
-		}
 
 		if (filters.equipment !== 'all') url.searchParams.set('equipment', filters.equipment);
 		else url.searchParams.delete('equipment');
@@ -311,22 +360,22 @@
 		if (filters.target !== 'all') url.searchParams.set('target', filters.target);
 		else url.searchParams.delete('target');
 
-		if (!zoneLocked) {
+		if (!zoneLocked && !savedOnly) {
 			if (filters.bodyPart !== 'all') url.searchParams.set('bodyPart', filters.bodyPart);
 			else url.searchParams.delete('bodyPart');
 		} else {
 			url.searchParams.delete('bodyPart');
 		}
 
+		// Keep non-facet params (browse, from, …).
 		const next = `${url.pathname}${url.search}${url.hash}`;
-		const cur = `${$page.url.pathname}${$page.url.search}${$page.url.hash}`;
+		const cur = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 		if (next === cur) return;
 
-		// After paint so chip press feels instant; facets already applied in local state.
-		const frame = requestAnimationFrame(() => {
-			replaceState(next, $page.state);
-		});
-		return () => cancelAnimationFrame(frame);
+		// goto(replaceState) updates SvelteKit's history pageurl; plain replaceState did not,
+		// so history.back() restored a pageurl without ?equipment= while the bar still had it.
+		lastHydratedSearchKey = `${url.pathname}\0${url.searchParams.toString()}\0${presetBodyPart}`;
+		void goto(next, { replaceState: true, keepFocus: true, noScroll: true });
 	});
 
 	$effect(() => {
@@ -344,9 +393,11 @@
 
 	/** Drop stale facets using already-cascaded option lists (no second full catalog scan). */
 	$effect(() => {
-		if (!indexReady) return;
+		if (!indexReady || catalog.length === 0) return;
 		equipmentOptions;
 		targetOptions;
+		// Wait until facet pools exist — empty options on first paint must not wipe URL facets.
+		if (equipmentOptions.length === 0 && filters.equipment !== 'all') return;
 		const nextEq =
 			filters.equipment !== 'all' && !equipmentOptions.includes(filters.equipment)
 				? 'all'
@@ -458,34 +509,21 @@
 	</EmptyState>
 {:else}
 <div class="catalog-list-layout">
-	<div
-		class="catalog-list-layout__filters"
-		class:catalog-list-layout__filters--search-only={savedOnly}
-	>
-		{#if savedOnly}
-			{#if showListSkeleton}
-				<AppSkeleton class="records-skeleton__search skeleton-shimmer" aria-hidden="true" />
-			{:else}
-				<SearchInput
-					bind:value={filters.query}
-					debounceMs={150}
-					placeholder={translate(lang, 'catalog.search')}
-				/>
-			{/if}
-		{:else if showListSkeleton}
+	<div class="catalog-list-layout__filters">
+		{#if showListSkeleton}
 			<div class="catalog-filters-shell">
 				<AppPanel
 					class="catalog-filters {filterLockBodyPart ? 'catalog-filters--zone' : ''}"
 				>
 					<AppSkeleton class="records-skeleton__search skeleton-shimmer" aria-hidden="true" />
-					{#if filterLockBodyPart && targetFacets.length > 1}
+					{#if filterLockBodyPart && !hideTargetChips && targetFacets.length > 1}
 						<div class="catalog-filter-skeleton__chips" aria-hidden="true">
 							<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" aria-hidden="true" />
 							<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" aria-hidden="true" />
 							<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" aria-hidden="true" />
 						</div>
 					{/if}
-					{#if equipmentFacets.length > 0}
+					{#if equipmentFacets.length > 0 || savedOnly}
 						<AppSkeleton
 							class="catalog-filter-skeleton__equipment skeleton-shimmer"
 							aria-hidden="true"
@@ -499,6 +537,7 @@
 				equipment={equipmentOptions}
 				targets={targetOptions}
 				lockBodyPart={filterLockBodyPart}
+				{hideTargetChips}
 			/>
 		{/if}
 	</div>
@@ -738,6 +777,13 @@
 				</li>
 			{/each}
 		</ul>
+		{#if hasMore}
+			<div
+				bind:this={loadMoreSentinel}
+				class="catalog-list-load-more"
+				aria-hidden="true"
+			></div>
+		{/if}
 	{:else}
 		<div class={listClass}>
 			{#each shownFlat as exercise, i (exercise.id)}

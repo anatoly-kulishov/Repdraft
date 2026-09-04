@@ -95,7 +95,6 @@ import { truncateMeta } from '$lib/seo/site';
 		{ id: 'record', label: translate(lang, 'exercise.tabRecord') },
 		{ id: 'muscles', label: translate(lang, 'exercise.tabMuscles') }
 	]);
-
 	onMount(() => {
 		void bookmarks.refresh();
 	});
@@ -333,7 +332,9 @@ import { truncateMeta } from '$lib/seo/site';
 								</section>
 							{/if}
 
-							<TechniqueClipsPanel exerciseId={exercise.id} />
+							{#if exercise}
+								<TechniqueClipsPanel exerciseId={exercise.id} />
+							{/if}
 						</div>
 					{:else if activeTab === 'history'}
 						<div class="exercise-detail-tab-panel">
