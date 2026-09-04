@@ -4,7 +4,8 @@ import {
 	hasLiftData,
 	mergePersonalRecords,
 	personalRecordContentEqual,
-	sanitizePersonalRecord
+	sanitizePersonalRecord,
+	type SanitizePersonalRecordOptions
 } from '$lib/domain/records';
 import type { PersonalRecord } from '$lib/domain/types';
 import {
@@ -99,11 +100,21 @@ function createRecordsStore() {
 		get(exerciseId: string): PersonalRecord | null {
 			return get(store).find((r) => r.exerciseId === exerciseId) ?? null;
 		},
-		async save(record: PersonalRecord): Promise<boolean> {
-			const sanitized = sanitizePersonalRecord({
-				...record,
-				updatedAt: new Date().toISOString()
-			});
+		async save(
+			record: PersonalRecord,
+			options?: SanitizePersonalRecordOptions
+		): Promise<boolean> {
+			// Persist note-only rows (cardio MVP) on undo/outbox without catalog lookup.
+			const noteShaped = !hasLiftData(record) && record.note.trim().length > 0;
+			const sanitized = sanitizePersonalRecord(
+				{
+					...record,
+					updatedAt: new Date().toISOString()
+				},
+				{
+					allowNoteOnly: options?.allowNoteOnly === true || noteShaped
+				}
+			);
 			if (!sanitized.ok) return false;
 			const next = sanitized.record;
 			const existing = get(store).find((r) => r.exerciseId === next.exerciseId);

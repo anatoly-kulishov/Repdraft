@@ -11,7 +11,7 @@ import { live } from '$lib/stores/live';
 import { plans } from '$lib/stores/plans';
 import { records } from '$lib/stores/records';
 
-/** Served from `static/dev/` after `npm run gen:stress-backup`. */
+/** Served from `static/dev/` (committed fixture; regenerate via `npm run gen:stress-backup`). */
 export const DEV_STRESS_BACKUP_HREF = '/dev/repdraft-backup-stress-load.json';
 
 async function loadLocalBundle() {

@@ -26,6 +26,8 @@ export type LiveSetActionsDeps = {
 	showToast: (message: string, kind: 'error' | 'success') => void;
 	invalidWeightMsg: string;
 	invalidRepsMsg: string;
+	/** Cardio: mark sets done without weight × reps. */
+	skipLiftChecks?: (ei: number) => boolean;
 	setInvalid: (si: number | null, kind: 'weight' | 'reps' | null) => void;
 	clearInvalidIf: (si: number) => void;
 	setSelectedExerciseIndex: (index: number) => void;
@@ -83,14 +85,12 @@ export function createLiveSetActions(deps: LiveSetActionsDeps) {
 		}
 	}
 
-	function onComplete(ei: number, si: number) {
-		const ex = deps.getSession()?.exercises[ei];
-		const set = ex?.sets[si];
-		if (!set) return;
+	function validateLiftOrToast(ei: number, si: number, set: { weightKg: number | null; reps: number | null }) {
+		if (deps.skipLiftChecks?.(ei)) return true;
 		if (set.weightKg != null && !coerceWeightKg(String(set.weightKg))) {
 			deps.showToast(deps.invalidWeightMsg, 'error');
 			deps.setInvalid(si, 'weight');
-			return;
+			return false;
 		}
 		if (
 			set.reps == null ||
@@ -100,8 +100,16 @@ export function createLiveSetActions(deps: LiveSetActionsDeps) {
 		) {
 			deps.showToast(deps.invalidRepsMsg, 'error');
 			deps.setInvalid(si, 'reps');
-			return;
+			return false;
 		}
+		return true;
+	}
+
+	function onComplete(ei: number, si: number) {
+		const ex = deps.getSession()?.exercises[ei];
+		const set = ex?.sets[si];
+		if (!set) return;
+		if (!validateLiftOrToast(ei, si, set)) return;
 		deps.setInvalid(null, null);
 		if (typeof document !== 'undefined') {
 			const active = document.activeElement;
@@ -130,21 +138,7 @@ export function createLiveSetActions(deps: LiveSetActionsDeps) {
 		for (let si = 0; si < ex.sets.length; si++) {
 			const set = ex.sets[si]!;
 			if (set.completed) continue;
-			if (set.weightKg != null && !coerceWeightKg(String(set.weightKg))) {
-				deps.showToast(deps.invalidWeightMsg, 'error');
-				deps.setInvalid(si, 'weight');
-				return;
-			}
-			if (
-				set.reps == null ||
-				!Number.isInteger(set.reps) ||
-				set.reps < LIVE_REPS.min ||
-				set.reps > LIVE_REPS.max
-			) {
-				deps.showToast(deps.invalidRepsMsg, 'error');
-				deps.setInvalid(si, 'reps');
-				return;
-			}
+			if (!validateLiftOrToast(ei, si, set)) return;
 		}
 		const openIndexes = ex.sets.map((s, si) => (s.completed ? -1 : si)).filter((si) => si >= 0);
 		if (openIndexes.length === 0) return;

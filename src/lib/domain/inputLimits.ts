@@ -153,12 +153,14 @@ export function coerceRestSec(raw: string): number {
 	return Math.min(REST_SEC.max, Math.max(REST_SEC.min, n));
 }
 
+/** While typing: strip control chars and hard-cap (no trim — keeps caret stable). */
+export function clampNote(raw: string, maxLen = NOTE_MAX): string {
+	return raw.replace(/[\u0000-\u001F\u007F]/g, ' ').slice(0, maxLen);
+}
+
+/** Persist / display: collapse whitespace and trim. */
 export function sanitizeNote(raw: string, maxLen = NOTE_MAX): string {
-	return raw
-		.replace(/[\u0000-\u001F\u007F]/g, ' ')
-		.replace(/\s+/g, ' ')
-		.trim()
-		.slice(0, maxLen);
+	return clampNote(raw, maxLen).replace(/\s+/g, ' ').trim().slice(0, maxLen);
 }
 
 /** While typing: strip control chars and hard-cap length (no trim — keeps caret stable). */
@@ -266,6 +268,12 @@ export function runInputLimitsSelfCheck(): void {
 	if (sanitizeNote('  a\nb  ') !== 'a b') throw new Error('sanitizeNote whitespace');
 	if (sanitizeNote('x'.repeat(150)).length !== NOTE_MAX) {
 		throw new Error('sanitizeNote max length');
+	}
+	if (clampNote('  a\nb  ') !== '  a b  ') {
+		throw new Error('clampNote keeps edges while typing');
+	}
+	if (clampNote('x'.repeat(150)).length !== NOTE_MAX) {
+		throw new Error('clampNote max length');
 	}
 	if (clampPlanName('x'.repeat(80)).length !== PLAN_NAME_MAX) {
 		throw new Error('clampPlanName max length');

@@ -1,21 +1,42 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import { cn } from '$lib/utils.js';
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import LiveExerciseHistorySheet from '$lib/components/live/LiveExerciseHistorySheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { blurActiveElement } from '$lib/dom/blurActiveElement';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, SessionExercise, WorkoutSession } from '$lib/domain/types';
-	import { REPS_INPUT_MAX_LEN, WEIGHT_INPUT_MAX_LEN } from '$lib/domain/inputLimits';
-	import { isBodyweightEquipment } from '$lib/domain/workout';
+	import { NOTE_MAX, REPS_INPUT_MAX_LEN, WEIGHT_INPUT_MAX_LEN, clampNote } from '$lib/domain/inputLimits';
+	import { isBodyweightEquipment, isCardioBodyPart } from '$lib/domain/workout';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
-	import { Check, History, Plus, RefreshCw, SkipForward, Trash2 } from '@lucide/svelte';
+	import {
+		Check,
+		ClipboardPaste,
+		EllipsisVertical,
+		History,
+		Plus,
+		RefreshCw,
+		SkipForward,
+		StickyNote,
+		Trash2,
+		X
+	} from '@lucide/svelte';
+
+	type LiveOverlay =
+		| { kind: 'none' }
+		| { kind: 'technique' }
+		| { kind: 'history' }
+		| { kind: 'actions' }
+		| { kind: 'note' }
+		| { kind: 'setMenu'; index: number };
 
 	let {
 		session,
@@ -63,8 +84,37 @@
 		justDoneSetIndex?: number | null;
 	} = $props();
 
-	let techniqueOpen = $state(false);
-	let historyOpen = $state(false);
+	let overlay = $state<LiveOverlay>({ kind: 'none' });
+	let noteFocused = $state(false);
+	/** Local note while focused — commit via live.patchExerciseNote. */
+	let noteDraft = $state<string | null>(null);
+
+	$effect(() => {
+		exercise.exerciseId;
+		exerciseIndex;
+		noteDraft = null;
+	});
+
+	let noteText = $derived(noteDraft ?? exercise.note ?? '');
+	let hasNote = $derived(noteText.trim().length > 0);
+	let techniqueOpen = $derived(overlay.kind === 'technique');
+	let historyOpen = $derived(overlay.kind === 'history');
+	let actionsOpen = $derived(overlay.kind === 'actions');
+	let noteOpen = $derived(overlay.kind === 'note');
+	let setMenuIndex = $derived(overlay.kind === 'setMenu' ? overlay.index : null);
+
+	function onNoteInput(event: Event) {
+		const el = event.currentTarget as HTMLInputElement;
+		const next = clampNote(el.value);
+		noteDraft = next;
+		if (el.value !== next) el.value = next;
+		live.patchExerciseNote(exerciseIndex, next);
+	}
+
+	function clearNote() {
+		noteDraft = '';
+		live.patchExerciseNote(exerciseIndex, '');
+	}
 
 	function titleFor(id: string): string {
 		const item = names.get(id);
@@ -110,26 +160,32 @@
 		});
 	}
 
-	function openTechnique() {
-		if (!names.get(exercise.exerciseId)) return;
-		historyOpen = false;
-		techniqueOpen = true;
+	function openOverlay(next: Exclude<LiveOverlay, { kind: 'none' }>) {
+		if (next.kind === 'technique' && !names.get(exercise.exerciseId)) return;
+		if (next.kind === 'setMenu' && exercise.sets.length <= 1) return;
+		if (next.kind !== 'technique') blurActiveElement();
+		overlay = next;
 	}
 
-	function dismissTechnique() {
-		techniqueOpen = false;
-	}
-
-	function openHistory() {
-		techniqueOpen = false;
-		blurActiveElement();
-		historyOpen = true;
-	}
-
-	function dismissHistory() {
-		historyOpen = false;
+	function closeOverlay() {
+		overlay = { kind: 'none' };
+		noteFocused = false;
 		blurActiveElement();
 	}
+
+	function confirmRemoveSet() {
+		const si = overlay.kind === 'setMenu' ? overlay.index : null;
+		closeOverlay();
+		if (si == null) return;
+		onRemove(si);
+	}
+
+	function runActionsItem(action: () => void) {
+		closeOverlay();
+		queueMicrotask(action);
+	}
+
+	let showNoteCount = $derived(noteFocused || noteText.length > 0);
 
 	let canRemoveSet = $derived(exercise.sets.length > 1);
 	let allSetsDone = $derived(
@@ -149,6 +205,8 @@
 	let bodyweight = $derived(
 		isBodyweightEquipment(names.get(exercise.exerciseId)?.equipment)
 	);
+	let cardio = $derived(isCardioBodyPart(names.get(exercise.exerciseId)?.body_part));
+	let notePh = $derived(translate(lang, cardio ? 'live.notePhCardio' : 'live.notePh'));
 	let weightLabel = $derived(
 		translate(lang, bodyweight ? 'live.weightBw' : 'live.weight')
 	);
@@ -199,11 +257,9 @@
 	let exerciseMeta = $derived(names.get(exercise.exerciseId) ?? null);
 	let title = $derived(titleFor(exercise.exerciseId));
 	let lastFormatted = $derived(formatLast(exercise.exerciseId));
-	let showLastChip = $derived(lastCopy != null && lastFormatted != null && canApplyLast);
-
-	function showRemove(setIndex: number): boolean {
-		return canRemoveSet && setIndex === exercise.sets.length - 1;
-	}
+	let showLastChip = $derived(
+		!cardio && lastCopy != null && lastFormatted != null && canApplyLast
+	);
 
 	function scrollCurrentSetIntoView(node: HTMLElement) {
 		queueMicrotask(() => {
@@ -258,7 +314,7 @@
 					variant="ghost"
 					class="live-panel-thumb media-well !min-w-0 w-auto !p-0"
 					aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
-					onclick={openTechnique}
+					onclick={() => openOverlay({ kind: 'technique' })}
 				>
 					<img src={`/${exerciseMeta.image}`} alt="" width="96" height="96" decoding="async" />
 				</AppButton>
@@ -271,7 +327,7 @@
 						type="button"
 						class="live-panel-title live-panel-title--tap"
 						aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
-						onclick={openTechnique}
+						onclick={() => openOverlay({ kind: 'technique' })}
 					>
 						{title}
 					</button>
@@ -281,47 +337,45 @@
 				{#if metaFor(exercise.exerciseId)}
 					<p class="live-panel-meta">{metaFor(exercise.exerciseId)}</p>
 				{/if}
-				{#if activeSetProgress}
-					<p class="live-set-badge">
-						{translate(lang, 'live.setProgress', {
-							current: activeSetProgress.current,
-							total: activeSetProgress.total
-						})}
-					</p>
+				{#if activeSetProgress || hasNote}
+					<div class="live-panel-status">
+						{#if activeSetProgress}
+							<p class="live-set-badge">
+								{translate(lang, 'live.setProgress', {
+									current: activeSetProgress.current,
+									total: activeSetProgress.total
+								})}
+							</p>
+						{/if}
+						{#if hasNote}
+							<button
+								type="button"
+								class="live-panel-note-preview"
+								aria-label={translate(lang, 'live.noteOpenAria')}
+								title={noteText.trim()}
+								aria-haspopup="dialog"
+								aria-expanded={noteOpen}
+								onclick={() => openOverlay({ kind: 'note' })}
+							>
+								<span class="live-panel-note-preview__text">{noteText.trim()}</span>
+								<LucideIcon icon={StickyNote} size={12} />
+							</button>
+						{/if}
+					</div>
 				{/if}
 			</div>
 			<div class="live-panel-head__actions">
 				<AppButton
 					variant="ghost"
 					class="live-panel-head-btn"
-					aria-label={translate(lang, 'live.historyOpenAria')}
-					title={translate(lang, 'live.historyTitle')}
-					onclick={openHistory}
+					aria-label={translate(lang, 'live.actionsMenuAria')}
+					title={translate(lang, 'live.actionsMenuTitle')}
+					aria-haspopup="dialog"
+					aria-expanded={actionsOpen}
+					onclick={() => openOverlay({ kind: 'actions' })}
 				>
-					<LucideIcon icon={History} size={ICON_SMALL} />
+					<LucideIcon icon={EllipsisVertical} size={ICON_SMALL} />
 				</AppButton>
-				{#if canSwapAlternative && onSwapAlternative}
-					<AppButton
-						variant="ghost"
-						class="live-panel-head-btn"
-						aria-label={translate(lang, 'live.swapAlternative')}
-						title={translate(lang, 'live.swapAlternative')}
-						onclick={onSwapAlternative}
-					>
-						<LucideIcon icon={RefreshCw} size={ICON_SMALL} />
-					</AppButton>
-				{/if}
-				{#if onSkip}
-					<AppButton
-						variant="ghost"
-						class="live-panel-head-btn live-panel-head-btn--skip"
-						aria-label={translate(lang, 'live.skipExercise')}
-						title={translate(lang, 'live.skipExercise')}
-						onclick={onSkip}
-					>
-						<LucideIcon icon={SkipForward} size={ICON_SMALL} />
-					</AppButton>
-				{/if}
 			</div>
 		</div>
 	</header>
@@ -335,55 +389,62 @@
 					aria-label={translate(lang, 'live.lastApplyAria', { value: lastFormatted })}
 					onclick={applyLastPerformance}
 				>
-					<span class="live-last-chip__label">{translate(lang, 'live.last')}</span>
-					<span class="live-last-chip__value tabular-nums">{lastFormatted}</span>
-					<span class="live-last-chip__action">{translate(lang, 'live.applyLast')}</span>
+					<span class="live-last-chip__main">
+						<span class="live-last-chip__label">{translate(lang, 'live.last')}</span>
+						<span class="live-last-chip__value tabular-nums">{lastFormatted}</span>
+					</span>
+					<span class="live-last-chip__action">
+						{translate(lang, 'live.applyLast')}
+						<LucideIcon icon={ClipboardPaste} size={ICON_SMALL} />
+					</span>
 				</AppButton>
 			</div>
 		{/if}
 
-		{#if bodyweight}
-			<p class="live-bw-note">{translate(lang, 'live.weightBwHintShort')}</p>
-		{/if}
-
-		<div class="live-set-head">
+		<div class="live-set-head" class:live-set-head--cardio={cardio}>
 			<span class="live-set-head__idx">#</span>
-			{#if canFillWeightAll && fillWeightKg != null}
-				<button
-					type="button"
-					class="live-set-head__fill live-set-head__weight"
-					aria-label={fillWeightAllLabel}
-					title={fillWeightAllLabel}
-					onclick={applyWeightToAllSets}
-				>
-					<span class="live-set-head__fill-main">{weightLabel}</span>
-					<span class="live-set-head__fill-hint" aria-hidden="true">
-						{translate(lang, 'live.fillColumnHint')}
+			{#if !cardio}
+				{#if canFillWeightAll && fillWeightKg != null}
+					<button
+						type="button"
+						class="live-set-head__fill live-set-head__weight"
+						aria-label={fillWeightAllLabel}
+						title={bodyweight
+							? `${fillWeightAllLabel}. ${translate(lang, 'live.weightBwHintShort')}`
+							: fillWeightAllLabel}
+						onclick={applyWeightToAllSets}
+					>
+						<span class="live-set-head__fill-main">{weightLabel}</span>
+						<span class="live-set-head__fill-hint" aria-hidden="true">
+							{translate(lang, 'live.fillColumnHint')}
+						</span>
+					</button>
+				{:else}
+					<span
+						class="live-set-head__weight"
+						title={bodyweight ? translate(lang, 'live.weightBwHintShort') : undefined}
+					>
+						{weightLabel}
 					</span>
-				</button>
+				{/if}
+				{#if canFillRepsAll && fillReps != null}
+					<button
+						type="button"
+						class="live-set-head__fill live-set-head__reps"
+						aria-label={fillRepsAllLabel}
+						title={fillRepsAllLabel}
+						onclick={applyRepsToAllSets}
+					>
+						<span class="live-set-head__fill-main">{translate(lang, 'live.reps')}</span>
+						<span class="live-set-head__fill-hint" aria-hidden="true">
+							{translate(lang, 'live.fillColumnHint')}
+						</span>
+					</button>
+				{:else}
+					<span class="live-set-head__reps">{translate(lang, 'live.reps')}</span>
+				{/if}
 			{:else}
-				<span
-					class="live-set-head__weight"
-					title={bodyweight ? translate(lang, 'live.weightBwHintShort') : undefined}
-				>
-					{weightLabel}
-				</span>
-			{/if}
-			{#if canFillRepsAll && fillReps != null}
-				<button
-					type="button"
-					class="live-set-head__fill live-set-head__reps"
-					aria-label={fillRepsAllLabel}
-					title={fillRepsAllLabel}
-					onclick={applyRepsToAllSets}
-				>
-					<span class="live-set-head__fill-main">{translate(lang, 'live.reps')}</span>
-					<span class="live-set-head__fill-hint" aria-hidden="true">
-						{translate(lang, 'live.fillColumnHint')}
-					</span>
-				</button>
-			{:else}
-				<span class="live-set-head__reps">{translate(lang, 'live.reps')}</span>
+				<span class="live-set-head__mark">{translate(lang, 'live.cardioCol')}</span>
 			{/if}
 			<AppButton
 				variant="ghost"
@@ -392,75 +453,106 @@
 				title={toggleAllLabel}
 				onclick={onToggleAllComplete}
 			>
-				<LucideIcon icon={Check} size={ICON_SMALL} />
+				<LucideIcon icon={Check} size={ICON_BUTTON} />
 			</AppButton>
 		</div>
 
 		<ul class="live-set-list">
 			{#each exercise.sets as set, si (si)}
-				<li
-					class="live-set-row"
-					class:is-done={set.completed}
-					class:is-current={currentSetIndex === si}
-					class:is-just-done={justDoneSetIndex === si}
-					class:live-set-row--has-remove={showRemove(si)}
-				>
-					<span class="live-set-index">{si + 1}</span>
-					<AppInput
-						class={`live-set-weight tabular-nums${invalidSetIndex === si && invalidKind === 'weight' ? ' is-invalid' : ''}`}
-						aria-invalid={invalidSetIndex === si && invalidKind === 'weight'}
-						type="text"
-						inputmode="decimal"
-						autocomplete="off"
-						maxlength={WEIGHT_INPUT_MAX_LEN}
-						enterkeyhint="next"
-						placeholder={weightPlaceholder}
-						aria-label={`${weightLabel} ${si + 1}`}
-						value={set.weightKg ?? ''}
-						readonly={set.completed}
-						tabindex={set.completed ? -1 : undefined}
-						onfocus={(e) => {
-							if (set.completed) {
-								e.currentTarget.blur();
-								return;
-							}
-							scrollCurrentSetIntoView(e.currentTarget);
-						}}
-						oninput={(e) => {
-							if (set.completed) return;
-							const el = e.currentTarget;
-							const next = onWeight(si, el.value);
-							if (el.value !== next) el.value = next;
-						}}
-						onkeydown={(e) => onWeightKeydown(e, si)}
-					/>
-					<AppInput
-						class={`live-set-reps tabular-nums${invalidSetIndex === si && invalidKind === 'reps' ? ' is-invalid' : ''}`}
-						aria-invalid={invalidSetIndex === si && invalidKind === 'reps'}
-						type="text"
-						inputmode="numeric"
-						autocomplete="off"
-						maxlength={REPS_INPUT_MAX_LEN}
-						enterkeyhint="done"
-						aria-label={`${translate(lang, 'live.reps')} ${si + 1}`}
-						value={set.reps ?? ''}
-						readonly={set.completed}
-						tabindex={set.completed ? -1 : undefined}
-						onfocus={(e) => {
-							if (set.completed) {
-								e.currentTarget.blur();
-								return;
-							}
-							scrollCurrentSetIntoView(e.currentTarget);
-						}}
-						oninput={(e) => {
-							if (set.completed) return;
-							const el = e.currentTarget;
-							const next = onReps(si, el.value);
-							if (el.value !== next) el.value = next;
-						}}
-						onkeydown={(e) => onRepsKeydown(e, si)}
-					/>
+				<li class="live-set-li">
+					<SwipeToDelete
+						disabled={!canRemoveSet}
+						label={translate(lang, 'live.removeSet')}
+						onDelete={() => onRemove(si)}
+					>
+						<div
+							class="live-set-row"
+							class:live-set-row--cardio={cardio}
+							class:is-done={set.completed}
+							class:is-current={currentSetIndex === si}
+							class:is-just-done={justDoneSetIndex === si}
+						>
+					{#if canRemoveSet}
+						<button
+							type="button"
+							class="live-set-index live-set-index--action"
+							aria-label={translate(lang, 'live.setActionsAria', { n: si + 1 })}
+							title={translate(lang, 'live.removeSet')}
+							aria-haspopup="dialog"
+							aria-expanded={setMenuIndex === si}
+							data-swipe-pass=""
+							onclick={() => openOverlay({ kind: 'setMenu', index: si })}
+						>
+							{si + 1}
+						</button>
+					{:else}
+						<span class="live-set-index">{si + 1}</span>
+					{/if}
+					{#if !cardio}
+						<AppInput
+							class={`live-set-weight tabular-nums${invalidSetIndex === si && invalidKind === 'weight' ? ' is-invalid' : ''}`}
+							aria-invalid={invalidSetIndex === si && invalidKind === 'weight'}
+							type="text"
+							inputmode="decimal"
+							autocomplete="off"
+							maxlength={WEIGHT_INPUT_MAX_LEN}
+							enterkeyhint="next"
+							placeholder={weightPlaceholder}
+							aria-label={`${weightLabel} ${si + 1}`}
+							value={set.weightKg ?? ''}
+							readonly={set.completed}
+							tabindex={set.completed ? -1 : undefined}
+							data-swipe-pass=""
+							onfocus={(e) => {
+								if (set.completed) {
+									e.currentTarget.blur();
+									return;
+								}
+								scrollCurrentSetIntoView(e.currentTarget);
+							}}
+							oninput={(e) => {
+								if (set.completed) return;
+								const el = e.currentTarget;
+								const next = onWeight(si, el.value);
+								if (el.value !== next) el.value = next;
+							}}
+							onkeydown={(e) => onWeightKeydown(e, si)}
+						/>
+						<AppInput
+							class={`live-set-reps tabular-nums${invalidSetIndex === si && invalidKind === 'reps' ? ' is-invalid' : ''}`}
+							aria-invalid={invalidSetIndex === si && invalidKind === 'reps'}
+							type="text"
+							inputmode="numeric"
+							autocomplete="off"
+							maxlength={REPS_INPUT_MAX_LEN}
+							enterkeyhint="done"
+							aria-label={`${translate(lang, 'live.reps')} ${si + 1}`}
+							value={set.reps ?? ''}
+							readonly={set.completed}
+							tabindex={set.completed ? -1 : undefined}
+							data-swipe-pass=""
+							onfocus={(e) => {
+								if (set.completed) {
+									e.currentTarget.blur();
+									return;
+								}
+								scrollCurrentSetIntoView(e.currentTarget);
+							}}
+							oninput={(e) => {
+								if (set.completed) return;
+								const el = e.currentTarget;
+								const next = onReps(si, el.value);
+								if (el.value !== next) el.value = next;
+							}}
+							onkeydown={(e) => onRepsKeydown(e, si)}
+						/>
+					{:else}
+						<span class="live-set-cardio-mark" data-swipe-pass="">
+							{set.completed
+								? translate(lang, 'live.setMarked')
+								: translate(lang, 'live.cardioMarkIdle')}
+						</span>
+					{/if}
 					{#if set.completed}
 						<AppButton
 							variant="ghost"
@@ -474,8 +566,11 @@
 						</AppButton>
 					{:else}
 						<AppButton
-							variant={currentSetIndex === si ? 'primary' : 'secondary'}
-							class="live-set-done-btn"
+							variant={currentSetIndex === si ? 'primary' : 'ghost'}
+							class={cn(
+								'live-set-done-btn',
+								currentSetIndex !== si && 'live-set-done-btn--idle'
+							)}
 							aria-label={translate(lang, 'live.done')}
 							title={translate(lang, 'live.done')}
 							onclick={() => onComplete(si)}
@@ -484,33 +579,23 @@
 							<span class="sr-only">{translate(lang, 'live.done')}</span>
 						</AppButton>
 					{/if}
-					{#if showRemove(si)}
-						<AppButton
-							variant="ghost"
-							class="live-set-remove-btn"
-							aria-label={translate(lang, 'live.removeSet')}
-							title={translate(lang, 'live.removeSet')}
-							onclick={() => onRemove(si)}
-						>
-							<LucideIcon icon={Trash2} size={ICON_SMALL} />
-						</AppButton>
-					{/if}
+						</div>
+					</SwipeToDelete>
 				</li>
 			{/each}
 		</ul>
-	</section>
 
-	<div class="live-panel__tools">
-		<AppButton
-			variant="ghost"
-			class="live-panel-add-set"
-			onclick={() => live.addSet(exerciseIndex)}
-			aria-label={translate(lang, 'live.addSet')}
-			title={translate(lang, 'live.addSet')}
-		>
-			<LucideIcon icon={Plus} size={ICON_BUTTON} />
-		</AppButton>
-	</div>
+		<div class="live-panel__tools">
+			<button
+				type="button"
+				class="live-panel-add-set"
+				onclick={() => live.addSet(exerciseIndex)}
+			>
+				<LucideIcon icon={Plus} size={ICON_SMALL} />
+				{translate(lang, 'live.addSet')}
+			</button>
+		</div>
+	</section>
 </div>
 
 {#if techniqueOpen && exerciseMeta}
@@ -520,12 +605,168 @@
 		{title}
 		hint={labelTarget(exerciseMeta.target, lang)}
 		imagePath={exerciseMeta.image}
-		onDismiss={dismissTechnique}
+		onDismiss={closeOverlay}
 	/>
+{/if}
+
+{#if actionsOpen}
+	<BottomSheet
+		open={actionsOpen}
+		raised
+		titleId={`live-actions-${exercise.exerciseId}`}
+		onDismiss={closeOverlay}
+	>
+		<p id={`live-actions-${exercise.exerciseId}`} class="bottom-sheet__title">
+			{translate(lang, 'live.actionsMenuTitle')}
+		</p>
+		<div class="live-actions-sheet" role="group" aria-labelledby={`live-actions-${exercise.exerciseId}`}>
+			<AppButton
+				variant="secondary"
+				class="live-actions-sheet__item"
+				onclick={() => runActionsItem(() => openOverlay({ kind: 'history' }))}
+			>
+				{translate(lang, 'live.historyTitle')}
+				<LucideIcon icon={History} size={ICON_SMALL} />
+			</AppButton>
+			<AppButton
+				variant="secondary"
+				class="live-actions-sheet__item"
+				onclick={() => runActionsItem(() => openOverlay({ kind: 'note' }))}
+			>
+				{translate(lang, 'live.note')}
+				<LucideIcon icon={StickyNote} size={ICON_SMALL} />
+			</AppButton>
+			{#if canSwapAlternative && onSwapAlternative}
+				<AppButton
+					variant="secondary"
+					class="live-actions-sheet__item"
+					onclick={() => {
+						const swap = onSwapAlternative;
+						if (swap) runActionsItem(swap);
+					}}
+				>
+					{translate(lang, 'live.swapAlternative')}
+					<LucideIcon icon={RefreshCw} size={ICON_SMALL} />
+				</AppButton>
+			{/if}
+			{#if onSkip}
+				<AppButton
+					variant="secondary"
+					class="live-actions-sheet__item"
+					onclick={() => {
+						const skip = onSkip;
+						if (skip) runActionsItem(skip);
+					}}
+				>
+					{translate(lang, 'live.skipExercise')}
+					<LucideIcon icon={SkipForward} size={ICON_SMALL} />
+				</AppButton>
+			{/if}
+		</div>
+	</BottomSheet>
+{/if}
+
+{#if setMenuIndex != null}
+	<BottomSheet
+		open={true}
+		raised
+		titleId={`live-set-actions-${exercise.exerciseId}-${setMenuIndex}`}
+		onDismiss={closeOverlay}
+	>
+		<p
+			id={`live-set-actions-${exercise.exerciseId}-${setMenuIndex}`}
+			class="bottom-sheet__title"
+		>
+			{translate(lang, 'live.setActionsTitle', { n: setMenuIndex + 1 })}
+		</p>
+		<div
+			class="live-actions-sheet"
+			role="group"
+			aria-labelledby={`live-set-actions-${exercise.exerciseId}-${setMenuIndex}`}
+		>
+			<AppButton
+				variant="secondary"
+				class="live-actions-sheet__item live-actions-sheet__item--danger"
+				onclick={confirmRemoveSet}
+			>
+				{translate(lang, 'live.removeSet')}
+				<LucideIcon icon={Trash2} size={ICON_SMALL} />
+			</AppButton>
+		</div>
+	</BottomSheet>
+{/if}
+
+{#if noteOpen}
+	<BottomSheet
+		open={noteOpen}
+		raised
+		titleId={`live-note-${exercise.exerciseId}`}
+		onDismiss={closeOverlay}
+	>
+		<p id={`live-note-${exercise.exerciseId}`} class="bottom-sheet__title">
+			{translate(lang, 'live.note')}
+		</p>
+		<p class="bottom-sheet__hint">{translate(lang, 'live.noteSavedHint')}</p>
+		<label class="live-ex-note live-ex-note--sheet">
+			<span class="sr-only">{translate(lang, 'live.note')}</span>
+			<span class="live-ex-note__shell field-shell">
+				<AppInput
+					type="text"
+					class={cn('live-ex-note__field', noteText.length > 0 && 'live-ex-note__field--has-clear')}
+					maxlength={NOTE_MAX}
+					placeholder={notePh}
+					aria-label={translate(lang, 'live.note')}
+					aria-describedby={showNoteCount ? `live-note-count-${exercise.exerciseId}` : undefined}
+					value={noteText}
+					autocomplete="off"
+					enterkeyhint="done"
+					onfocus={() => {
+						noteFocused = true;
+					}}
+					onblur={() => {
+						noteFocused = false;
+					}}
+					oninput={onNoteInput}
+					onkeydown={(e) => {
+						if (e.key === 'Enter') {
+							e.preventDefault();
+							closeOverlay();
+						}
+					}}
+				/>
+				{#if noteText.length > 0}
+					<button
+						type="button"
+						class="live-ex-note__clear"
+						aria-label={translate(lang, 'a11y.clearField')}
+						title={translate(lang, 'a11y.clearField')}
+						onclick={clearNote}
+					>
+						<LucideIcon icon={X} size={ICON_SMALL} />
+					</button>
+				{/if}
+			</span>
+			{#if showNoteCount}
+				<span
+					id={`live-note-count-${exercise.exerciseId}`}
+					class="live-ex-note__count"
+					class:live-ex-note__count--limit={noteText.length >= NOTE_MAX}
+					aria-live="polite"
+				>
+					{noteText.length}/{NOTE_MAX}
+				</span>
+			{/if}
+		</label>
+		{#snippet actions()}
+			<AppButton variant="primary" onclick={closeOverlay}>
+				{translate(lang, 'live.noteDone')}
+			</AppButton>
+		{/snippet}
+	</BottomSheet>
 {/if}
 
 <LiveExerciseHistorySheet
 	open={historyOpen}
 	exerciseId={exercise.exerciseId}
-	onDismiss={dismissHistory}
+	onDismiss={closeOverlay}
 />

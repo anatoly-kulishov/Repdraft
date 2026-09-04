@@ -25,6 +25,7 @@ import { truncateMeta } from '$lib/seo/site';
 	import { bookmarks } from '$lib/stores/bookmarks';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { blurActiveElement } from '$lib/dom/blurActiveElement';
+	import { horizontalTabSwipe } from '$lib/dom/horizontalTabSwipe';
 	import { onboarding } from '$lib/stores/onboarding';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { toasts } from '$lib/stores/toasts';
@@ -41,6 +42,8 @@ import { truncateMeta } from '$lib/seo/site';
 	import { page } from '$app/stores';
 
 	type ExerciseDetailTab = 'description' | 'history' | 'record' | 'muscles';
+
+	const DETAIL_TAB_ORDER: ExerciseDetailTab[] = ['description', 'history', 'record', 'muscles'];
 
 	let { data } = $props();
 
@@ -89,16 +92,36 @@ import { truncateMeta } from '$lib/seo/site';
 	let backHref = $derived(resolveBackFrom($page.url.searchParams.get('from')));
 	let backLabel = $derived(backLabelForHref(backHref, lang));
 	let activeTab = $state<ExerciseDetailTab>('description');
+	/** Enter animation after swipe / segment jump. */
+	let tabEnterDir = $state<'next' | 'prev' | null>(null);
 	let detailTabOptions = $derived([
 		{ id: 'description', label: translate(lang, 'exercise.tabDescription') },
 		{ id: 'history', label: translate(lang, 'exercise.tabHistory') },
 		{ id: 'record', label: translate(lang, 'exercise.tabRecord') },
 		{ id: 'muscles', label: translate(lang, 'exercise.tabMuscles') }
 	]);
-
 	onMount(() => {
 		void bookmarks.refresh();
 	});
+
+	function goToDetailTab(tab: ExerciseDetailTab, dir: 'next' | 'prev' | null = null) {
+		if (tab === activeTab) return;
+		if (dir) {
+			tabEnterDir = dir;
+		} else {
+			const from = DETAIL_TAB_ORDER.indexOf(activeTab);
+			const to = DETAIL_TAB_ORDER.indexOf(tab);
+			tabEnterDir = to > from ? 'next' : to < from ? 'prev' : null;
+		}
+		activeTab = tab;
+	}
+
+	function shiftDetailTab(delta: -1 | 1) {
+		const i = DETAIL_TAB_ORDER.indexOf(activeTab);
+		const next = DETAIL_TAB_ORDER[i + delta];
+		if (!next) return;
+		goToDetailTab(next, delta > 0 ? 'next' : 'prev');
+	}
 
 	function toggleBookmark() {
 		if (!exercise || bookmarkBusy) return;
@@ -149,7 +172,7 @@ import { truncateMeta } from '$lib/seo/site';
 			case 'history':
 			case 'record':
 			case 'muscles':
-				activeTab = tab;
+				goToDetailTab(tab);
 				return;
 			default:
 				return;
@@ -301,105 +324,115 @@ import { truncateMeta } from '$lib/seo/site';
 						/>
 					{/if}
 
-					{#if activeTab === 'description'}
-						<div class="exercise-detail-tab-panel">
-							<AppPanel class="exercise-detail-steps min-w-0 max-w-full">
-								<h2 class="section-title mb-2">{translate(lang, 'exercise.howTo')}</h2>
-								<ol
-									class="exercise-detail-steps__list list-decimal space-y-2.5 pl-5 text-sm break-words text-[var(--color-ink)] lg:columns-2 lg:gap-x-8 xl:columns-1"
-								>
-									{#each steps as step, i (i)}
-										<li class="min-w-0 break-inside-avoid">{step}</li>
-									{/each}
-								</ol>
-							</AppPanel>
-
-							{#if relatedArticles.length > 0}
-								<section class="exercise-related-articles">
-									<h2 class="section-title mb-2">{translate(lang, 'articles.relatedTitle')}</h2>
-									<ul class="exercise-related-articles__list">
-										{#each relatedArticles as article (article.slug)}
-											<li>
-												<a
-													class="exercise-related-articles__link"
-													href={linkWithFrom(`/articles/${article.slug}`, returnPath)}
-												>
-													<span class="exercise-related-articles__title">{article.title}</span>
-													<span class="exercise-related-articles__excerpt">{article.excerpt}</span>
-												</a>
-											</li>
-										{/each}
-									</ul>
-								</section>
-							{/if}
-
-							<TechniqueClipsPanel exerciseId={exercise.id} />
-						</div>
-					{:else if activeTab === 'history'}
-						<div class="exercise-detail-tab-panel">
-							<ExerciseSessionHistory exerciseId={exercise.id} />
-						</div>
-					{:else if activeTab === 'record'}
-						<div class="exercise-detail-tab-panel">
-							<PersonalRecordPanel exerciseId={exercise.id} embedded />
-						</div>
-					{:else}
-						<div class="exercise-detail-tab-panel">
-							<AppPanel class="exercise-detail-muscles grid min-w-0 gap-3 !p-3 text-sm sm:grid-cols-2 xl:grid-cols-3">
-								<div class="min-w-0">
-									<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.bodyPart')}</dt>
-									<dd class="font-medium break-words">
-										<a class="exercise-facet-link" href={withFromParam(catalogZonePath(exercise.body_part), returnPath)}>
-											{labelBodyPart(exercise.body_part, lang)}
-										</a>
-									</dd>
-								</div>
-								<div class="min-w-0">
-									<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.equipment')}</dt>
-									<dd class="font-medium break-words">
-										<a
-											class="exercise-facet-link"
-											href={withFromParam(
-												catalogEquipmentPath(exercise.body_part, exercise.equipment),
-												returnPath
-											)}
+					<div
+						class="exercise-detail-tabs__body"
+						use:horizontalTabSwipe={{
+							onNext: () => shiftDetailTab(1),
+							onPrev: () => shiftDetailTab(-1)
+						}}
+					>
+						{#key activeTab}
+							<div
+								class="exercise-detail-tab-panel"
+								class:exercise-detail-tab-panel--from-next={tabEnterDir === 'next'}
+								class:exercise-detail-tab-panel--from-prev={tabEnterDir === 'prev'}
+							>
+								{#if activeTab === 'description'}
+									<AppPanel class="exercise-detail-steps min-w-0 max-w-full">
+										<h2 class="section-title mb-2">{translate(lang, 'exercise.howTo')}</h2>
+										<ol
+											class="exercise-detail-steps__list list-decimal space-y-2.5 pl-5 text-sm break-words text-[var(--color-ink)] lg:columns-2 lg:gap-x-8 xl:columns-1"
 										>
-											{labelEquipment(exercise.equipment, lang)}
-										</a>
-									</dd>
-								</div>
-								<div class="min-w-0">
-									<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.target')}</dt>
-									<dd class="font-medium break-words">
-										<a
-											class="exercise-facet-link"
-											href={withFromParam(
-												catalogTargetPath(exercise.target, exercise.body_part),
-												returnPath
-											)}
-										>
-											{labelTarget(exercise.target, lang)}
-										</a>
-									</dd>
-								</div>
-								<div class="min-w-0 sm:col-span-2 xl:col-span-3">
-									<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.secondary')}</dt>
-									<dd class="font-medium break-words">
-										{#if exercise.secondary_muscles.length}
-											{#each exercise.secondary_muscles as muscle, i (muscle)}
-												{#if i > 0}<span class="text-[var(--color-muted)]">, </span>{/if}
-												<a class="exercise-facet-link" href={withFromParam(catalogTargetPath(muscle), returnPath)}>
-													{labelTarget(muscle, lang)}
-												</a>
+											{#each steps as step, i (i)}
+												<li class="min-w-0 break-inside-avoid">{step}</li>
 											{/each}
-										{:else}
-											{translate(lang, 'exercise.dash')}
-										{/if}
-									</dd>
-								</div>
-							</AppPanel>
-						</div>
-					{/if}
+										</ol>
+									</AppPanel>
+
+									{#if relatedArticles.length > 0}
+										<section class="exercise-related-articles">
+											<h2 class="section-title mb-2">{translate(lang, 'articles.relatedTitle')}</h2>
+											<ul class="exercise-related-articles__list">
+												{#each relatedArticles as article (article.slug)}
+													<li>
+														<a
+															class="exercise-related-articles__link"
+															href={linkWithFrom(`/articles/${article.slug}`, returnPath)}
+														>
+															<span class="exercise-related-articles__title">{article.title}</span>
+															<span class="exercise-related-articles__excerpt">{article.excerpt}</span>
+														</a>
+													</li>
+												{/each}
+											</ul>
+										</section>
+									{/if}
+
+									{#if exercise}
+										<TechniqueClipsPanel exerciseId={exercise.id} />
+									{/if}
+								{:else if activeTab === 'history'}
+									<ExerciseSessionHistory exerciseId={exercise.id} />
+								{:else if activeTab === 'record'}
+									<PersonalRecordPanel exerciseId={exercise.id} bodyPart={exercise.body_part} embedded />
+								{:else}
+									<AppPanel class="exercise-detail-muscles grid min-w-0 gap-3 !p-3 text-sm sm:grid-cols-2 xl:grid-cols-3">
+										<div class="min-w-0">
+											<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.bodyPart')}</dt>
+											<dd class="font-medium break-words">
+												<a class="exercise-facet-link" href={withFromParam(catalogZonePath(exercise.body_part), returnPath)}>
+													{labelBodyPart(exercise.body_part, lang)}
+												</a>
+											</dd>
+										</div>
+										<div class="min-w-0">
+											<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.equipment')}</dt>
+											<dd class="font-medium break-words">
+												<a
+													class="exercise-facet-link"
+													href={withFromParam(
+														catalogEquipmentPath(exercise.body_part, exercise.equipment),
+														returnPath
+													)}
+												>
+													{labelEquipment(exercise.equipment, lang)}
+												</a>
+											</dd>
+										</div>
+										<div class="min-w-0">
+											<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.target')}</dt>
+											<dd class="font-medium break-words">
+												<a
+													class="exercise-facet-link"
+													href={withFromParam(
+														catalogTargetPath(exercise.target, exercise.body_part),
+														returnPath
+													)}
+												>
+													{labelTarget(exercise.target, lang)}
+												</a>
+											</dd>
+										</div>
+										<div class="min-w-0 sm:col-span-2 xl:col-span-3">
+											<dt class="text-[var(--color-muted)]">{translate(lang, 'exercise.secondary')}</dt>
+											<dd class="font-medium break-words">
+												{#if exercise.secondary_muscles.length}
+													{#each exercise.secondary_muscles as muscle, i (muscle)}
+														{#if i > 0}<span class="text-[var(--color-muted)]">, </span>{/if}
+														<a class="exercise-facet-link" href={withFromParam(catalogTargetPath(muscle), returnPath)}>
+															{labelTarget(muscle, lang)}
+														</a>
+													{/each}
+												{:else}
+													{translate(lang, 'exercise.dash')}
+												{/if}
+											</dd>
+										</div>
+									</AppPanel>
+								{/if}
+							</div>
+						{/key}
+					</div>
 				</section>
 			</div>
 		</div>

@@ -72,7 +72,19 @@ export function runNavigationSelfCheck(): void {
 	) {
 		throw new Error('currentReturnPath search');
 	}
+	if (
+		currentReturnPath('/catalog/all', new URLSearchParams('equipment=band')) !==
+		'/catalog/all?equipment=band'
+	) {
+		throw new Error('currentReturnPath equipment facet');
+	}
 	if (linkWithFrom('/articles/a', '/exercise/1') !== '/articles/a?from=%2Fexercise%2F1') {
 		throw new Error('linkWithFrom');
+	}
+	if (
+		linkWithFrom('/exercise/1', '/catalog/all?equipment=band') !==
+		'/exercise/1?from=%2Fcatalog%2Fall%3Fequipment%3Dband'
+	) {
+		throw new Error('linkWithFrom preserves catalog facets in from');
 	}
 }

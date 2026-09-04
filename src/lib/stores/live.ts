@@ -15,6 +15,7 @@ import {
 	skipSessionExercise,
 	startSessionFromPlan,
 	syncSessionPrescriptionFromPlan,
+	updateExerciseNote,
 	updateLoggedSet
 } from '$lib/domain/session';
 import type {
@@ -292,6 +293,15 @@ function createLiveStore() {
 				}
 				persistActive(session, restUntil);
 				return { ...s, session, restUntil };
+			});
+		},
+		patchExerciseNote(exerciseIndex: number, note: string) {
+			store.update((s) => {
+				if (!s.session) return s;
+				const session = updateExerciseNote(s.session, exerciseIndex, note);
+				if (session === s.session) return s;
+				persistActive(session, s.restUntil);
+				return { ...s, session };
 			});
 		},
 		/** Mark several sets in one write; rest timer uses the last index when completing. */

@@ -435,6 +435,8 @@ export function availableEquipment(
 
 export type TargetChip = { target: string; count: number };
 
+export type EquipmentChip = { equipment: string; count: number };
+
 /** Target muscles within a body-part zone, sorted by count desc then slug. */
 export function targetCountsForBodyPart(
 	items: ExerciseIndexItem[],
@@ -456,12 +458,35 @@ export function targetCountsForZone(items: ExerciseIndexItem[], bodyParts: strin
 		.sort((a, b) => b.count - a.count || a.target.localeCompare(b.target, 'en'));
 }
 
-/** Browse grid: drop #1 chip when it repeats the zone (Грудь → Грудные). */
+/** Equipment facets within a zone, sorted by count desc then slug. */
+export function equipmentCountsForZone(
+	items: ExerciseIndexItem[],
+	bodyParts: string[]
+): EquipmentChip[] {
+	const allowed = new Set(bodyParts);
+	const counts = new Map<string, number>();
+	for (const item of items) {
+		if (!allowed.has(item.body_part)) continue;
+		const eq = item.equipment.trim();
+		if (!eq) continue;
+		counts.set(eq, (counts.get(eq) ?? 0) + 1);
+	}
+	return [...counts.entries()]
+		.map(([equipment, count]) => ({ equipment, count }))
+		.sort((a, b) => b.count - a.count || a.equipment.localeCompare(b.equipment, 'en'));
+}
+
+/**
+ * Browse grid: drop #1 chip when it repeats the zone (Грудь → Грудные),
+ * but keep it when that would leave fewer than 2 chips (Руки: бицепс + трицепс).
+ */
 export function targetChipsForZoneBrowse(chips: TargetChip[], zoneSlug: string): TargetChip[] {
 	if (chips.length < 2) return chips;
 	const top = chips[0]!;
-	if (catalogTargetPrimaryZone(top.target) === zoneSlug) return chips.slice(1);
-	return chips;
+	if (catalogTargetPrimaryZone(top.target) !== zoneSlug) return chips;
+	const withoutTop = chips.slice(1);
+	if (withoutTop.length < 2) return chips;
+	return withoutTop;
 }
 
 /**
@@ -582,18 +607,84 @@ export function runFiltersSelfCheck(): void {
 		],
 		'chest'
 	);
-	if (chestBrowseChips.length !== 1 || chestBrowseChips[0]!.target !== 'serratus anterior') {
-		throw new Error('chest browse should drop redundant pectorals chip');
+	// Drop would leave 1 chip — keep both so browse still opens.
+	if (chestBrowseChips.length !== 2 || chestBrowseChips[0]!.target !== 'pectorals') {
+		throw new Error('chest browse should keep pectorals when only one other chip');
 	}
-	const legBrowseChips = targetChipsForZoneBrowse(
+	const legBrowseTwo = targetChipsForZoneBrowse(
 		[
 			{ target: 'quads', count: 120 },
 			{ target: 'calves', count: 30 }
 		],
 		'legs'
 	);
-	if (legBrowseChips[0]!.target !== 'calves') {
-		throw new Error('legs browse should drop redundant quads chip');
+	if (legBrowseTwo.length !== 2 || legBrowseTwo[0]!.target !== 'quads') {
+		throw new Error('legs browse with 2 chips should keep quads');
+	}
+	const legBrowseMany = targetChipsForZoneBrowse(
+		[
+			{ target: 'quads', count: 120 },
+			{ target: 'glutes', count: 50 },
+			{ target: 'calves', count: 30 }
+		],
+		'legs'
+	);
+	if (legBrowseMany.length !== 2 || legBrowseMany[0]!.target !== 'glutes') {
+		throw new Error('legs browse should drop redundant quads when 2+ remain');
+	}
+	const armsBrowse = targetChipsForZoneBrowse(
+		[
+			{ target: 'biceps', count: 151 },
+			{ target: 'triceps', count: 141 }
+		],
+		'upper arms'
+	);
+	if (
+		armsBrowse.length !== 2 ||
+		armsBrowse[0]!.target !== 'biceps' ||
+		armsBrowse[1]!.target !== 'triceps'
+	) {
+		throw new Error('upper arms browse must keep biceps and triceps');
+	}
+
+	const cardioEq = equipmentCountsForZone(
+		[
+			{
+				id: 'c1',
+				name: 'Treadmill',
+				body_part: 'cardio',
+				equipment: 'leverage machine',
+				target: 'cardiovascular system',
+				muscle_group: 'cardiovascular system',
+				secondary_muscles: [],
+				image: 'a.jpg'
+			},
+			{
+				id: 'c2',
+				name: 'Burpee',
+				body_part: 'cardio',
+				equipment: 'body weight',
+				target: 'cardiovascular system',
+				muscle_group: 'cardiovascular system',
+				secondary_muscles: [],
+				image: 'b.jpg'
+			},
+			{
+				id: 'c3',
+				name: 'Bike',
+				body_part: 'cardio',
+				equipment: 'stationary bike',
+				target: 'cardiovascular system',
+				muscle_group: 'cardiovascular system',
+				secondary_muscles: [],
+				image: 'c.jpg'
+			}
+		],
+		['cardio']
+	);
+	if (cardioEq.length < 2) throw new Error('cardio equipment chips need 2+');
+	if (!cardioEq.some((c) => c.equipment === 'body weight')) {
+		throw new Error('cardio equipment chips must include body weight');
 	}
 
 	const upperLegChips = targetCountsForZone(catalog, ['upper legs']);

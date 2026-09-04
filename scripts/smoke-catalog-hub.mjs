@@ -37,7 +37,8 @@ async function assertFile(rel) {
 for (const rel of [
 	'src/lib/components/SubrouteBack.svelte',
 	'src/lib/components/ScreenHeader.svelte',
-	'src/lib/components/CatalogCategoryCard.svelte'
+	'src/lib/components/CatalogCategoryCard.svelte',
+	'src/lib/components/CatalogEquipmentGrid.svelte'
 ]) {
 	await assertFile(rel);
 }
@@ -163,7 +164,7 @@ assert(
 	assert(!text.includes('href="/catalog/lower%20legs"'), 'hub must merge lower legs into legs');
 }
 
-// ——— Zone default landing (chest: one browse chip → list; back/legs: target grid) ———
+// ——— Zone default landing (target/equipment browse when ≥2 chips; else list) ———
 {
 	const { status, text } = await get('/catalog/chest');
 	assert(status === 200, `GET /catalog/chest → ${status}`);
@@ -173,28 +174,100 @@ assert(
 			'screen-header',
 			'screen-header-crumb',
 			'screen-header--back-label',
-			'catalog-page--list',
-			'catalog-zone-shell--list',
-			'catalog-filters',
+			'class="catalog-target-grid catalog-hub-grid"',
+			'zone-card',
+			'target=pectorals',
+			'browse=all',
 			'href="/exercises"'
 		],
-		'catalog chest list'
+		'catalog chest target browse'
 	);
-	assert(
-		!text.includes('class="catalog-target-grid catalog-hub-grid"'),
-		'chest with one browse chip must skip target grid and open list'
+	assert(!text.includes('catalog-target-chips'), 'chest browse must not use chip row');
+}
+
+{
+	const { status, text } = await get('/catalog/upper%20arms');
+	assert(status === 200, `GET /catalog/upper arms → ${status}`);
+	assertIncludes(
+		text,
+		[
+			'class="catalog-target-grid catalog-hub-grid"',
+			'target=biceps',
+			'target=triceps',
+			'browse=all'
+		],
+		'upper arms target browse'
 	);
 }
 
-// ——— Zone exercise list + filters ———
 {
-	const { status, text } = await get('/catalog/chest?target=pectorals');
-	assert(status === 200, `GET /catalog/chest?target=pectorals → ${status}`);
+	const { status, text } = await get('/catalog/cardio');
+	assert(status === 200, `GET /catalog/cardio → ${status}`);
+	assertIncludes(
+		text,
+		[
+			'class="catalog-target-grid catalog-hub-grid"',
+			'equipment=',
+			'browse=all',
+			'href="/exercises"'
+		],
+		'cardio equipment browse'
+	);
+	assert(!text.includes('catalog-target-chips'), 'cardio browse must not use chip row');
+}
+
+{
+	const { status, text } = await get('/catalog/shoulders');
+	assert(status === 200, `GET /catalog/shoulders → ${status}`);
+	assertIncludes(
+		text,
+		[
+			'class="catalog-target-grid catalog-hub-grid"',
+			'equipment=',
+			'browse=all',
+			'href="/exercises"'
+		],
+		'shoulders equipment browse'
+	);
+	assert(!text.includes('catalog-target-chips'), 'shoulders browse must not use chip row');
+}
+
+{
+	const { status, text } = await get('/catalog/waist');
+	assert(status === 200, `GET /catalog/waist → ${status}`);
+	assertIncludes(
+		text,
+		[
+			'class="catalog-target-grid catalog-hub-grid"',
+			'equipment=',
+			'browse=all',
+			'href="/exercises"'
+		],
+		'waist equipment browse'
+	);
+	assert(!text.includes('catalog-target-chips'), 'waist browse must not use chip row');
+}
+
+// ——— Zone exercise list + filters (prerendered list when no target/equipment browse) ———
+{
+	const { status, text } = await get('/catalog/neck');
+	assert(status === 200, `GET /catalog/neck → ${status}`);
 	assertIncludes(
 		text,
 		['catalog-filters', 'catalog-page--list', 'href="/exercises"'],
-		'catalog chest target list'
+		'catalog neck list'
 	);
+	assert(
+		!text.includes('class="catalog-target-grid catalog-hub-grid"'),
+		'neck must not use equipment/target browse grid (single equipment)'
+	);
+}
+
+{
+	const { status, text } = await get('/catalog/chest?target=pectorals');
+	assert(status === 200, `GET /catalog/chest?target=pectorals → ${status}`);
+	// ponytail: prerender load omits searchParams — chest default is target browse; list hydrates client-side.
+	assertIncludes(text, ['catalog-zone-shell', 'target=pectorals', 'href="/exercises"'], 'chest target route shell');
 }
 
 // ——— Zone target browse (hub-style cards) ———
