@@ -2,6 +2,7 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import CloudSyncBanner from '$lib/components/CloudSyncBanner.svelte';
+	import CloudSyncTitleHint from '$lib/components/CloudSyncTitleHint.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import ExerciseReorderHandle from '$lib/components/ExerciseReorderHandle.svelte';
@@ -527,20 +528,19 @@
 				</AppButton>
 			{/if}
 			<div class="workouts-page__intro min-w-0">
-				<h1 class="page-title">{pageTitle}</h1>
+				<div class="workouts-page__title-row">
+					<h1 class="page-title">{pageTitle}</h1>
+					{#if pageReady && activeTab === 'plans' && $auth.user}
+						<CloudSyncTitleHint sync={$plansSync} {lang} />
+					{/if}
+				</div>
 				{#if showPlansLeadSlot}
 					<p class="page-lead workouts-page-lead">
 						{#if !pageReady}
 							{translate(lang, 'workouts.local')}
 						{:else if showPlansLead}
-							{#if $auth.user}
-								{#if $plansSync === 'stale'}
-									{translate(lang, 'sync.cloudLoading')}
-								{:else if $plansSync === 'error'}
-									{translate(lang, 'workouts.local')}
-								{:else}
-									{translate(lang, 'workouts.cloud')}
-								{/if}
+							{#if $auth.user && $plansSync !== 'error'}
+								{translate(lang, 'workouts.cloud')}
 							{:else}
 								{translate(lang, 'workouts.local')}
 							{/if}
@@ -578,6 +578,7 @@
 		sync={$plansSync}
 		{lang}
 		suppressed={!pageReady}
+		includeStale={false}
 		onRetry={() => void plans.refresh({ force: true })}
 	/>
 

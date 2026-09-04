@@ -120,11 +120,9 @@
 
 @media (max-width: 1023px) {
 	:root {
-		/* Content row + pads + header border — sticky filters must sit fully below.
-		 * Extra 0.35rem top air: safe-area alone still feels glued under the status bar. */
+		/* Content row + pads + header border — sticky filters must sit fully below. */
 		--screen-header-chrome-h: calc(
-			var(--screen-header-min-h) + 2 * var(--screen-header-pad-block) + var(--safe-top) + 0.35rem +
-				1px
+			var(--screen-header-min-h) + 2 * var(--screen-header-pad-block) + var(--safe-top) + 1px
 		);
 	}
 

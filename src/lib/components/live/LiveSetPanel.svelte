@@ -11,7 +11,7 @@
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, SessionExercise, WorkoutSession } from '$lib/domain/types';
 	import { REPS_INPUT_MAX_LEN, WEIGHT_INPUT_MAX_LEN } from '$lib/domain/inputLimits';
-	import { isBodyweightEquipment } from '$lib/domain/workout';
+	import { isBodyweightEquipment, isCardioBodyPart } from '$lib/domain/workout';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
@@ -149,6 +149,7 @@
 	let bodyweight = $derived(
 		isBodyweightEquipment(names.get(exercise.exerciseId)?.equipment)
 	);
+	let cardio = $derived(isCardioBodyPart(names.get(exercise.exerciseId)?.body_part));
 	let weightLabel = $derived(
 		translate(lang, bodyweight ? 'live.weightBw' : 'live.weight')
 	);
@@ -199,7 +200,9 @@
 	let exerciseMeta = $derived(names.get(exercise.exerciseId) ?? null);
 	let title = $derived(titleFor(exercise.exerciseId));
 	let lastFormatted = $derived(formatLast(exercise.exerciseId));
-	let showLastChip = $derived(lastCopy != null && lastFormatted != null && canApplyLast);
+	let showLastChip = $derived(
+		!cardio && lastCopy != null && lastFormatted != null && canApplyLast
+	);
 
 	function showRemove(setIndex: number): boolean {
 		return canRemoveSet && setIndex === exercise.sets.length - 1;
@@ -342,48 +345,55 @@
 			</div>
 		{/if}
 
-		{#if bodyweight}
+		{#if bodyweight && !cardio}
 			<p class="live-bw-note">{translate(lang, 'live.weightBwHintShort')}</p>
 		{/if}
+		{#if cardio}
+			<p class="live-bw-note">{translate(lang, 'live.cardioHint')}</p>
+		{/if}
 
-		<div class="live-set-head">
+		<div class="live-set-head" class:live-set-head--cardio={cardio}>
 			<span class="live-set-head__idx">#</span>
-			{#if canFillWeightAll && fillWeightKg != null}
-				<button
-					type="button"
-					class="live-set-head__fill live-set-head__weight"
-					aria-label={fillWeightAllLabel}
-					title={fillWeightAllLabel}
-					onclick={applyWeightToAllSets}
-				>
-					<span class="live-set-head__fill-main">{weightLabel}</span>
-					<span class="live-set-head__fill-hint" aria-hidden="true">
-						{translate(lang, 'live.fillColumnHint')}
+			{#if !cardio}
+				{#if canFillWeightAll && fillWeightKg != null}
+					<button
+						type="button"
+						class="live-set-head__fill live-set-head__weight"
+						aria-label={fillWeightAllLabel}
+						title={fillWeightAllLabel}
+						onclick={applyWeightToAllSets}
+					>
+						<span class="live-set-head__fill-main">{weightLabel}</span>
+						<span class="live-set-head__fill-hint" aria-hidden="true">
+							{translate(lang, 'live.fillColumnHint')}
+						</span>
+					</button>
+				{:else}
+					<span
+						class="live-set-head__weight"
+						title={bodyweight ? translate(lang, 'live.weightBwHintShort') : undefined}
+					>
+						{weightLabel}
 					</span>
-				</button>
+				{/if}
+				{#if canFillRepsAll && fillReps != null}
+					<button
+						type="button"
+						class="live-set-head__fill live-set-head__reps"
+						aria-label={fillRepsAllLabel}
+						title={fillRepsAllLabel}
+						onclick={applyRepsToAllSets}
+					>
+						<span class="live-set-head__fill-main">{translate(lang, 'live.reps')}</span>
+						<span class="live-set-head__fill-hint" aria-hidden="true">
+							{translate(lang, 'live.fillColumnHint')}
+						</span>
+					</button>
+				{:else}
+					<span class="live-set-head__reps">{translate(lang, 'live.reps')}</span>
+				{/if}
 			{:else}
-				<span
-					class="live-set-head__weight"
-					title={bodyweight ? translate(lang, 'live.weightBwHintShort') : undefined}
-				>
-					{weightLabel}
-				</span>
-			{/if}
-			{#if canFillRepsAll && fillReps != null}
-				<button
-					type="button"
-					class="live-set-head__fill live-set-head__reps"
-					aria-label={fillRepsAllLabel}
-					title={fillRepsAllLabel}
-					onclick={applyRepsToAllSets}
-				>
-					<span class="live-set-head__fill-main">{translate(lang, 'live.reps')}</span>
-					<span class="live-set-head__fill-hint" aria-hidden="true">
-						{translate(lang, 'live.fillColumnHint')}
-					</span>
-				</button>
-			{:else}
-				<span class="live-set-head__reps">{translate(lang, 'live.reps')}</span>
+				<span class="live-set-head__mark">{translate(lang, 'live.cardioCol')}</span>
 			{/if}
 			<AppButton
 				variant="ghost"
@@ -400,67 +410,76 @@
 			{#each exercise.sets as set, si (si)}
 				<li
 					class="live-set-row"
+					class:live-set-row--cardio={cardio}
 					class:is-done={set.completed}
 					class:is-current={currentSetIndex === si}
 					class:is-just-done={justDoneSetIndex === si}
 					class:live-set-row--has-remove={showRemove(si)}
 				>
 					<span class="live-set-index">{si + 1}</span>
-					<AppInput
-						class={`live-set-weight tabular-nums${invalidSetIndex === si && invalidKind === 'weight' ? ' is-invalid' : ''}`}
-						aria-invalid={invalidSetIndex === si && invalidKind === 'weight'}
-						type="text"
-						inputmode="decimal"
-						autocomplete="off"
-						maxlength={WEIGHT_INPUT_MAX_LEN}
-						enterkeyhint="next"
-						placeholder={weightPlaceholder}
-						aria-label={`${weightLabel} ${si + 1}`}
-						value={set.weightKg ?? ''}
-						readonly={set.completed}
-						tabindex={set.completed ? -1 : undefined}
-						onfocus={(e) => {
-							if (set.completed) {
-								e.currentTarget.blur();
-								return;
-							}
-							scrollCurrentSetIntoView(e.currentTarget);
-						}}
-						oninput={(e) => {
-							if (set.completed) return;
-							const el = e.currentTarget;
-							const next = onWeight(si, el.value);
-							if (el.value !== next) el.value = next;
-						}}
-						onkeydown={(e) => onWeightKeydown(e, si)}
-					/>
-					<AppInput
-						class={`live-set-reps tabular-nums${invalidSetIndex === si && invalidKind === 'reps' ? ' is-invalid' : ''}`}
-						aria-invalid={invalidSetIndex === si && invalidKind === 'reps'}
-						type="text"
-						inputmode="numeric"
-						autocomplete="off"
-						maxlength={REPS_INPUT_MAX_LEN}
-						enterkeyhint="done"
-						aria-label={`${translate(lang, 'live.reps')} ${si + 1}`}
-						value={set.reps ?? ''}
-						readonly={set.completed}
-						tabindex={set.completed ? -1 : undefined}
-						onfocus={(e) => {
-							if (set.completed) {
-								e.currentTarget.blur();
-								return;
-							}
-							scrollCurrentSetIntoView(e.currentTarget);
-						}}
-						oninput={(e) => {
-							if (set.completed) return;
-							const el = e.currentTarget;
-							const next = onReps(si, el.value);
-							if (el.value !== next) el.value = next;
-						}}
-						onkeydown={(e) => onRepsKeydown(e, si)}
-					/>
+					{#if !cardio}
+						<AppInput
+							class={`live-set-weight tabular-nums${invalidSetIndex === si && invalidKind === 'weight' ? ' is-invalid' : ''}`}
+							aria-invalid={invalidSetIndex === si && invalidKind === 'weight'}
+							type="text"
+							inputmode="decimal"
+							autocomplete="off"
+							maxlength={WEIGHT_INPUT_MAX_LEN}
+							enterkeyhint="next"
+							placeholder={weightPlaceholder}
+							aria-label={`${weightLabel} ${si + 1}`}
+							value={set.weightKg ?? ''}
+							readonly={set.completed}
+							tabindex={set.completed ? -1 : undefined}
+							onfocus={(e) => {
+								if (set.completed) {
+									e.currentTarget.blur();
+									return;
+								}
+								scrollCurrentSetIntoView(e.currentTarget);
+							}}
+							oninput={(e) => {
+								if (set.completed) return;
+								const el = e.currentTarget;
+								const next = onWeight(si, el.value);
+								if (el.value !== next) el.value = next;
+							}}
+							onkeydown={(e) => onWeightKeydown(e, si)}
+						/>
+						<AppInput
+							class={`live-set-reps tabular-nums${invalidSetIndex === si && invalidKind === 'reps' ? ' is-invalid' : ''}`}
+							aria-invalid={invalidSetIndex === si && invalidKind === 'reps'}
+							type="text"
+							inputmode="numeric"
+							autocomplete="off"
+							maxlength={REPS_INPUT_MAX_LEN}
+							enterkeyhint="done"
+							aria-label={`${translate(lang, 'live.reps')} ${si + 1}`}
+							value={set.reps ?? ''}
+							readonly={set.completed}
+							tabindex={set.completed ? -1 : undefined}
+							onfocus={(e) => {
+								if (set.completed) {
+									e.currentTarget.blur();
+									return;
+								}
+								scrollCurrentSetIntoView(e.currentTarget);
+							}}
+							oninput={(e) => {
+								if (set.completed) return;
+								const el = e.currentTarget;
+								const next = onReps(si, el.value);
+								if (el.value !== next) el.value = next;
+							}}
+							onkeydown={(e) => onRepsKeydown(e, si)}
+						/>
+					{:else}
+						<span class="live-set-cardio-mark">
+							{set.completed
+								? translate(lang, 'live.setMarked')
+								: translate(lang, 'live.cardioMarkIdle')}
+						</span>
+					{/if}
 					{#if set.completed}
 						<AppButton
 							variant="ghost"

@@ -69,11 +69,20 @@ export type RecordSanitizeResult =
 	| { ok: true; record: PersonalRecord }
 	| { ok: false; errorKey: string };
 
+export type SanitizePersonalRecordOptions = {
+	/** Cardio MVP: note alone is a valid personal record (no new storage fields). */
+	allowNoteOnly?: boolean;
+};
+
 /** Normalize + validate before persist. */
-export function sanitizePersonalRecord(input: PersonalRecord): RecordSanitizeResult {
+export function sanitizePersonalRecord(
+	input: PersonalRecord,
+	options?: SanitizePersonalRecordOptions
+): RecordSanitizeResult {
+	const allowNoteOnly = options?.allowNoteOnly === true;
 	const note = sanitizeNote(input.note, NOTE_MAX);
-	const weightKg = input.weightKg;
-	const reps = input.reps;
+	const weightKg = allowNoteOnly ? null : input.weightKg;
+	const reps = allowNoteOnly ? null : input.reps;
 
 	if (!isValidWeightKg(weightKg)) {
 		return { ok: false, errorKey: 'pr.invalidWeight' };
@@ -94,9 +103,9 @@ export function sanitizePersonalRecord(input: PersonalRecord): RecordSanitizeRes
 	};
 
 	if (isRecordEmpty(record)) {
-		return { ok: false, errorKey: 'pr.needValue' };
+		return { ok: false, errorKey: allowNoteOnly ? 'pr.needNote' : 'pr.needValue' };
 	}
-	if (!hasLiftData(record)) {
+	if (!hasLiftData(record) && !allowNoteOnly) {
 		return { ok: false, errorKey: 'pr.needLift' };
 	}
 
@@ -132,6 +141,22 @@ export function runRecordsSelfCheck(): void {
 	const noteOnly = sanitizePersonalRecord({ ...empty, note: 'pause cue' });
 	if (noteOnly.ok || noteOnly.errorKey !== 'pr.needLift') {
 		throw new Error('note-only sanitize should needLift');
+	}
+
+	const cardioNote = sanitizePersonalRecord(
+		{ ...empty, note: '20 min · 5 km' },
+		{ allowNoteOnly: true }
+	);
+	if (!cardioNote.ok || cardioNote.record.note !== '20 min · 5 km') {
+		throw new Error('cardio note-only sanitize should pass');
+	}
+	if (cardioNote.record.weightKg != null || cardioNote.record.reps != null) {
+		throw new Error('cardio note-only must clear lift fields');
+	}
+
+	const cardioEmpty = sanitizePersonalRecord(empty, { allowNoteOnly: true });
+	if (cardioEmpty.ok || cardioEmpty.errorKey !== 'pr.needNote') {
+		throw new Error('cardio empty sanitize should needNote');
 	}
 
 	const badWeight = sanitizePersonalRecord({

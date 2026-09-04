@@ -808,6 +808,24 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	text-wrap: pretty;
 }
 
+.live-set-head__mark {
+	text-align: start;
+	min-width: 0;
+}
+
+.live-set-cardio-mark {
+	min-width: 0;
+	font-size: 0.875rem;
+	line-height: 1.35;
+	color: var(--color-muted);
+	text-wrap: pretty;
+}
+
+.live-set-row.is-done .live-set-cardio-mark {
+	color: var(--color-fg);
+	font-weight: 550;
+}
+
 .live-quick-actions {
 	display: flex;
 	flex-wrap: wrap;
@@ -2184,8 +2202,17 @@ button.live-panel-thumb {
 	padding-inline: 0.5rem;
 }
 
+.live-set-head--cardio,
+.live-set-row--cardio {
+	grid-template-columns: 1.5rem minmax(0, 1fr) 3rem;
+}
+
 .live-set-row--has-remove {
 	grid-template-columns: 1.5rem minmax(0, 1fr) minmax(0, 1fr) 3rem 2.75rem;
+}
+
+.live-set-row--cardio.live-set-row--has-remove {
+	grid-template-columns: 1.5rem minmax(0, 1fr) 3rem 2.75rem;
 }
 
 .live-set-head {
@@ -2569,8 +2596,17 @@ button.live-panel-thumb {
 		gap: 0.5rem;
 	}
 
+	.live-set-head--cardio,
+	.live-set-row--cardio {
+		grid-template-columns: 2rem minmax(0, 1fr) 3rem;
+	}
+
 	.live-set-row--has-remove {
 		grid-template-columns: 2rem minmax(5.5rem, 7.5rem) minmax(4.5rem, 1fr) minmax(4.5rem, 1fr) 3rem 2.75rem;
+	}
+
+	.live-set-row--cardio.live-set-row--has-remove {
+		grid-template-columns: 2rem minmax(0, 1fr) 3rem 2.75rem;
 	}
 }
 

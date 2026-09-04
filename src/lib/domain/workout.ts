@@ -21,6 +21,11 @@ export function isBodyweightEquipment(equipment: string | null | undefined): boo
 	return /^body weight$/i.test((equipment ?? '').trim());
 }
 
+/** Catalog zone: machines / conditioning where weight × reps is the wrong log shape. */
+export function isCardioBodyPart(bodyPart: string | null | undefined): boolean {
+	return /^cardio$/i.test((bodyPart ?? '').trim());
+}
+
 const HEAVY_REST_EQ =
 	/^(barbell|smith machine|sled machine|olympic barbell|trap bar|hex bar)$/i;
 
@@ -805,6 +810,9 @@ export function runWorkoutSelfCheck(): void {
 	}
 	if (!isBodyweightEquipment('body weight') || isBodyweightEquipment('barbell')) {
 		throw new Error('isBodyweightEquipment should match catalog body weight');
+	}
+	if (!isCardioBodyPart('cardio') || isCardioBodyPart('chest')) {
+		throw new Error('isCardioBodyPart should match catalog cardio zone');
 	}
 	if (
 		defaultRestSecForExercise({ name: 'barbell jump squat', equipment: 'barbell' }) !==

@@ -67,6 +67,7 @@
 	});
 
 	function formatSet(weightKg: number | null, reps: number | null): string {
+		if (weightKg == null && reps == null) return translate(lang, 'live.setMarked');
 		const w = weightKg != null ? String(weightKg) : '-';
 		const r = reps != null ? String(reps) : '-';
 		return `${w}×${r}`;
