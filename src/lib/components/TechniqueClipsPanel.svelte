@@ -575,11 +575,11 @@ import {
 	</div>
 
 	{#if !cloudReady}
-		<AppPanel dashed class="mb-3 text-sm text-[var(--color-muted)] md:mb-4">
+		<AppPanel dashed class="mb-3 text-center text-sm text-[var(--color-muted)] md:mb-4">
 			{translate(lang, 'clips.needSql')}
 		</AppPanel>
 	{:else if !$auth.user}
-		<AppPanel dashed class="mb-3 text-sm text-[var(--color-muted)] md:mb-4">
+		<AppPanel dashed class="mb-3 text-center text-sm text-[var(--color-muted)] md:mb-4">
 			<!-- Card is flex-col: keep link + suffix in one block so they wrap as inline text. -->
 			<p class="m-0 text-pretty">
 				<a
@@ -617,7 +617,7 @@ import {
 		</div>
 	{:else if clips.length === 0}
 		{#if !composerOpen}
-			<AppPanel dashed class="mb-3 py-4 text-left md:mb-4 md:py-5">
+			<AppPanel dashed class="mb-3 py-4 text-center md:mb-4 md:py-5">
 				<p class="m-0 text-sm font-medium text-[var(--color-ink)]">
 					{translate(lang, 'clips.emptyTitle')}
 				</p>
