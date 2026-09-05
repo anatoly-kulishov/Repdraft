@@ -11,6 +11,52 @@ export const DEFAULT_REST_SEC = 90;
 /** Squat / bench / deadlift family — longer recovery between heavy sets. */
 export const HEAVY_COMPOUND_REST_SEC = 180;
 
+/** Inclusive linear ladder (5→1 or 1→5). Caps length at SETS.max. */
+export function buildLadderScheme(from: number, to: number): number[] {
+	const a = Math.min(REPS.max, Math.max(REPS.min, Math.round(from)));
+	const b = Math.min(REPS.max, Math.max(REPS.min, Math.round(to)));
+	const step = a <= b ? 1 : -1;
+	const out: number[] = [];
+	for (let n = a; step > 0 ? n <= b : n >= b; n += step) {
+		out.push(n);
+		if (out.length >= SETS.max) break;
+	}
+	return out.length > 0 ? out : [a];
+}
+
+export function hasLadderScheme(ex: { repsScheme?: number[] | null }): boolean {
+	return Array.isArray(ex.repsScheme) && ex.repsScheme.length >= 2;
+}
+
+/** Display label for a ladder scheme, e.g. 5→1. */
+export function formatLadderLabel(scheme: number[]): string {
+	if (scheme.length === 0) return '';
+	const first = scheme[0]!;
+	const last = scheme[scheme.length - 1]!;
+	return `${first}→${last}`;
+}
+
+/** Plan / preview line: `3 × 10` or `5 · 5→1` when ladder. */
+export function formatExercisePrescription(ex: {
+	sets: number;
+	reps: number;
+	repsScheme?: number[] | null;
+}): string {
+	if (hasLadderScheme(ex) && ex.repsScheme) {
+		return `${ex.sets} · ${formatLadderLabel(ex.repsScheme)}`;
+	}
+	return `${ex.sets} × ${ex.reps}`;
+}
+
+/** Normalize a stored scheme: clamp reps, drop empties, sync length to SETS.max. */
+export function normalizeRepsScheme(scheme: number[]): number[] | null {
+	const cleaned = scheme
+		.map((n) => Math.min(REPS.max, Math.max(REPS.min, Math.round(n))))
+		.filter((n) => Number.isFinite(n));
+	if (cleaned.length < 2) return null;
+	return cleaned.slice(0, SETS.max);
+}
+
 export type ExerciseRestHint = {
 	name?: string;
 	equipment?: string;
@@ -185,9 +231,38 @@ export function updateExercise(
 	if (clamped.restSec != null) {
 		clamped.restSec = Math.min(REST_SEC.max, Math.max(REST_SEC.min, Math.round(clamped.restSec)));
 	}
+
+	const patchingScheme = Object.prototype.hasOwnProperty.call(patch, 'repsScheme');
+	if (patchingScheme) {
+		const normalized =
+			clamped.repsScheme == null ? null : normalizeRepsScheme(clamped.repsScheme);
+		if (!normalized) {
+			clamped.repsScheme = undefined;
+		} else {
+			clamped.repsScheme = normalized;
+			clamped.sets = normalized.length;
+			clamped.reps = normalized[0]!;
+		}
+	}
+
+	const clearsScheme =
+		!patchingScheme && (patch.sets != null || patch.reps != null);
+
 	return withUpdated(
 		plan,
-		plan.exercises.map((ex) => (ex.exerciseId === exerciseId ? { ...ex, ...clamped } : ex))
+		plan.exercises.map((ex) => {
+			if (ex.exerciseId !== exerciseId) return ex;
+			const merged: WorkoutExercise = { ...ex, ...clamped };
+			if (patchingScheme && clamped.repsScheme === undefined) {
+				const { repsScheme: _drop, ...rest } = merged;
+				return rest;
+			}
+			if (clearsScheme && merged.repsScheme) {
+				const { repsScheme: _drop, ...rest } = merged;
+				return rest;
+			}
+			return merged;
+		})
 	);
 }
 
@@ -500,7 +575,11 @@ export function updateGroupSets(plan: WorkoutPlan, groupId: string, sets: number
 	const next = Math.min(20, Math.max(1, sets));
 	return withUpdated(
 		plan,
-		plan.exercises.map((ex) => (ex.groupId === groupId ? { ...ex, sets: next } : ex))
+		plan.exercises.map((ex) => {
+			if (ex.groupId !== groupId) return ex;
+			const { repsScheme: _drop, ...rest } = ex;
+			return { ...rest, sets: next };
+		})
 	);
 }
 
@@ -579,7 +658,8 @@ export function workoutPlanContentEqual(a: WorkoutPlan, b: WorkoutPlan): boolean
 			ex.reps === other.reps &&
 			ex.restSec === other.restSec &&
 			(ex.groupId ?? null) === (other.groupId ?? null) &&
-			(ex.altGroupId ?? null) === (other.altGroupId ?? null)
+			(ex.altGroupId ?? null) === (other.altGroupId ?? null) &&
+			JSON.stringify(ex.repsScheme ?? null) === JSON.stringify(other.repsScheme ?? null)
 		);
 	});
 }
@@ -1039,5 +1119,27 @@ export function runWorkoutSelfCheck(): void {
 		throw new Error(
 			`moveExercise solo past group unexpected ${soloPastGroup.exercises.map((ex) => ex.exerciseId).join(',')}`
 		);
+	}
+
+	const ladder = buildLadderScheme(5, 1);
+	if (ladder.join(',') !== '5,4,3,2,1') {
+		throw new Error(`buildLadderScheme 5→1 unexpected ${ladder.join(',')}`);
+	}
+	if (formatLadderLabel(ladder) !== '5→1') {
+		throw new Error(`formatLadderLabel unexpected ${formatLadderLabel(ladder)}`);
+	}
+	let ladderDraft = createEmptyDraft('Ladder');
+	ladderDraft = addExercise(ladderDraft, 'ex-pull').plan;
+	ladderDraft = updateExercise(ladderDraft, 'ex-pull', {
+		repsScheme: buildLadderScheme(5, 1)
+	});
+	const pull = ladderDraft.exercises[0];
+	if (!pull || !hasLadderScheme(pull) || pull.sets !== 5 || pull.reps !== 5) {
+		throw new Error(`updateExercise ladder sync unexpected ${JSON.stringify(pull)}`);
+	}
+	ladderDraft = updateExercise(ladderDraft, 'ex-pull', { sets: 3 });
+	const cleared = ladderDraft.exercises[0];
+	if (!cleared || hasLadderScheme(cleared) || cleared.sets !== 3) {
+		throw new Error(`editing sets should clear ladder ${JSON.stringify(cleared)}`);
 	}
 }

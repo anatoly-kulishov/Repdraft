@@ -43,8 +43,9 @@
 		display: none;
 	}
 
-	/* Sticky search/dates sit flush under ScreenHeader — no page-bg “hole”. */
-	.workouts-page--history-tab {
+	/* Sticky search/dates sit flush under ScreenHeader — no page-bg “hole”.
+	 * Only when the tools strip exists; empty history keeps the normal content gap. */
+	.workouts-page--history-tab:has(.workouts-history-tools) {
 		/* Must be 0px (not unitless 0): spacer uses calc(chrome-h + gap). */
 		--screen-header-content-gap: 0px;
 	}

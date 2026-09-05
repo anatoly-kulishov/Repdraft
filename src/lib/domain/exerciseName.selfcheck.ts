@@ -49,6 +49,21 @@ export function runExerciseNameSelfCheck(): void {
 		throw new Error('smith sumo squat should be Сумо-присед в машине Смита');
 	}
 
+	const smithSeatedPress = index.find((item) => item.id === '0765');
+	const smithPressDup = index.find((item) => item.id === '0766');
+	if (
+		!smithSeatedPress ||
+		exerciseName(smithSeatedPress, 'ru') !== 'Сидя жим плечами в машине Смита'
+	) {
+		throw new Error('0765 should stay Сидя жим плечами в машине Смита');
+	}
+	if (
+		!smithPressDup ||
+		exerciseName(smithPressDup, 'ru') !== 'Сидя жим плечами в машине Смита (другой ракурс)'
+	) {
+		throw new Error('0766 should be marked as другой ракурс of seated smith press');
+	}
+
 	const byRu = new Map<string, ExerciseIndexItem[]>();
 	for (const item of index) {
 		const ru = exerciseName(item, 'ru');

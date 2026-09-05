@@ -30,3 +30,19 @@
 - Boot splash (`#pwa-boot`): слабый antiflash; решить keep short / remove.
 - Light theme contrast (muted / primary) - см. прошлый contrast audit в чате catalog polish.
 - ~~CTA ink / accent hue~~ → brand green **`#8BC34A`** (= logo) + white CTA ink. Contrast soft (~2:1); accepted for brand match.
+
+## Auth providers (planned, 2026-09-04)
+
+Сейчас: email/password (+ magic link / reset). Аватар только из OAuth `user_metadata.avatar_url` / `picture`; email → initials (Gravatar убрали: чужие/устаревшие картинки).
+
+**План:** подключить **разные способы авторизации** (не только email), в т.ч. чтобы снова стабильно тянуть фото профиля провайдера.
+
+- Google OAuth (фото в metadata) - приоритетный кандидат
+- Другие провайдеры Supabase Auth по мере нужды (Apple и т.п.)
+- Не смешивать с sacred-loop polish; отдельный minor / auth-сессия
+
+**Контекст:** после v0.16.1 Gravatar-fallback давал «не ту» аву на email; откат к OAuth-only photo.
+
+## Email confirm → standalone PWA (not MVP)
+
+Confirm link already redirects to origin `/auth` (web). Opening the **Home Screen standalone** from Mail is unreliable (iOS especially). Do **not** build Universal Links / Android intent deep-link as P0. UX: check-email PWA hint + email-confirmed toast. Spike later only if product insists.
