@@ -197,6 +197,20 @@
 	box-shadow:
 		var(--shadow-panel),
 		inset 3px 0 0 color-mix(in srgb, var(--color-accent) 68%, transparent);
+	touch-action: pan-y;
+	transition:
+		transform 180ms ease,
+		opacity 180ms ease;
+	will-change: transform;
+}
+
+.onboarding-coachmark.is-dragging {
+	transition: none;
+	touch-action: none;
+}
+
+.onboarding-coachmark.is-leaving {
+	pointer-events: none;
 }
 
 .onboarding-coachmark__body {

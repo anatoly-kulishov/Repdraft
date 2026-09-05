@@ -119,15 +119,14 @@
 		</AppPanel>
 	{:else if variant === 'history-list'}
 		<div class="workouts-history-tools workouts-history-tools--skeleton" aria-hidden="true">
-			<div class="workouts-page__search">
-				<div class="workouts-skeleton-search">
-					<AppSkeleton class="workouts-skeleton-search__icon skeleton-shimmer" />
-					<AppSkeleton class="workouts-skeleton-search__field skeleton-shimmer" />
+			<div class="workouts-history-tools__bar">
+				<div class="workouts-page__search">
+					<div class="workouts-skeleton-search">
+						<AppSkeleton class="workouts-skeleton-search__icon skeleton-shimmer" />
+						<AppSkeleton class="workouts-skeleton-search__field skeleton-shimmer" />
+					</div>
 				</div>
-			</div>
-			<div class="workouts-history-tools__dates">
-				<span class="workouts-skeleton-chip"></span>
-				<span class="workouts-skeleton-chip workouts-skeleton-chip--period"></span>
+				<span class="workouts-skeleton-filters-btn"></span>
 			</div>
 		</div>
 		<ul class="entity-list entity-list--cards workouts-skeleton-list workouts-skeleton-list--history" aria-hidden="true">

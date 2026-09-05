@@ -19,6 +19,15 @@
 	import { onMount, type Snippet } from 'svelte';
 
 	const ACTION_WIDTH = 72;
+	/** Ignore tiny jitter before choosing pan axis. */
+	const AXIS_LOCK_PX = 12;
+	/** Prefer clear horizontal/vertical; ambiguous motion stays undecided. */
+	const AXIS_BIAS = 1.35;
+	/** px/ms — flick past this commits open/close even under position threshold. */
+	const FLICK_VX = 0.55;
+	const SCROLL_CLOSE_GRACE_MS = 180;
+	/** Hide danger rail until the sheet has clearly moved (avoids red flash on scroll). */
+	const RAIL_REVEAL_PX = 20;
 
 	type OpenSide = false | 'leading' | 'trailing';
 
@@ -56,8 +65,8 @@
 	let leadingRail = $derived(leadingActions ?? []);
 	let trailingReveal = $derived(trailingActions.length * ACTION_WIDTH);
 	let leadingReveal = $derived(leadingRail.length * ACTION_WIDTH);
-	let trailingOpenAt = $derived(Math.max(40, trailingReveal * 0.52));
-	let leadingOpenAt = $derived(Math.max(40, leadingReveal * 0.52));
+	let trailingOpenAt = $derived(Math.max(44, trailingReveal * 0.45));
+	let leadingOpenAt = $derived(Math.max(44, leadingReveal * 0.45));
 
 	let swipeOk = $state(false);
 	let offset = $state(0);
@@ -66,14 +75,35 @@
 	let startX = 0;
 	let startY = 0;
 	let startOffset = 0;
-	let axis: 'undecided' | 'h' | 'v' = 'undecided';
+	let axis = $state<'undecided' | 'h' | 'v'>('undecided');
 	let moved = false;
 	let sheetEl = $state<HTMLDivElement | null>(null);
+	let lastX = 0;
+	let lastT = 0;
+	let velocityX = 0;
+	let ignoreScrollUntil = 0;
+	let claimed = false;
+	let suppressClickUntil = 0;
 
 	function close() {
 		offset = 0;
 		open = false;
 		dragging = false;
+		claimed = false;
+	}
+
+	function armClickSuppress() {
+		suppressClickUntil = performance.now() + 450;
+		const sheet = sheetEl;
+		if (!sheet) return;
+		const suppress = (event: Event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			event.stopImmediatePropagation();
+			sheet.removeEventListener('click', suppress, true);
+		};
+		sheet.addEventListener('click', suppress, true);
+		window.setTimeout(() => sheet.removeEventListener('click', suppress, true), 450);
 	}
 
 	function claim() {
@@ -93,6 +123,14 @@
 		return raw;
 	}
 
+	function releaseCapture(pointerId: number) {
+		try {
+			sheetEl?.releasePointerCapture(pointerId);
+		} catch {
+			/* already released */
+		}
+	}
+
 	onMount(() => {
 		const mq = window.matchMedia('(max-width: 1023px)');
 		const sync = () => {
@@ -101,6 +139,7 @@
 		};
 		const onScroll = () => {
 			if (dragging) return;
+			if (performance.now() < ignoreScrollUntil) return;
 			if (open || offset !== 0) close();
 		};
 		sync();
@@ -117,47 +156,82 @@
 	function onPointerDown(event: PointerEvent) {
 		if (!swipeOk || disabled) return;
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
+		if (event.isPrimary === false) return;
 		if (event.target instanceof Element && event.target.closest('[data-swipe-pass]')) return;
-		claim();
 		dragging = true;
 		moved = false;
+		claimed = false;
 		axis = 'undecided';
+		velocityX = 0;
 		startX = event.clientX;
 		startY = event.clientY;
+		lastX = event.clientX;
+		lastT = performance.now();
 		startOffset =
 			open === 'trailing' ? -trailingReveal : open === 'leading' ? leadingReveal : 0;
-		sheetEl?.setPointerCapture(event.pointerId);
+		/* Capture only after horizontal lock — otherwise vertical scroll feels sticky. */
 	}
 
 	function onPointerMove(event: PointerEvent) {
 		if (!dragging) return;
 		const dx = event.clientX - startX;
 		const dy = event.clientY - startY;
+		const now = performance.now();
+		const dt = Math.max(8, now - lastT);
+		velocityX = (event.clientX - lastX) / dt;
+		lastX = event.clientX;
+		lastT = now;
+
 		if (axis === 'undecided') {
-			if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-			axis = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
-			if (axis === 'v') {
+			const adx = Math.abs(dx);
+			const ady = Math.abs(dy);
+			if (adx < AXIS_LOCK_PX && ady < AXIS_LOCK_PX) return;
+			if (adx >= ady * AXIS_BIAS) {
+				axis = 'h';
+				sheetEl?.setPointerCapture(event.pointerId);
+				if (!claimed) {
+					claim();
+					claimed = true;
+				}
+			} else if (ady >= adx * AXIS_BIAS) {
+				axis = 'v';
 				dragging = false;
 				offset = startOffset;
 				return;
+			} else {
+				return;
 			}
 		}
+		if (axis !== 'h') return;
 		moved = true;
 		offset = clampOffset(startOffset + dx);
 	}
 
-	function onPointerUp() {
+	function onPointerUp(event: PointerEvent) {
 		if (!dragging && axis !== 'h') {
 			dragging = false;
+			axis = 'undecided';
 			return;
 		}
+		const didHorizontal = axis === 'h';
+		const didMove = moved;
 		dragging = false;
-		if (axis === 'h') {
+		ignoreScrollUntil = performance.now() + SCROLL_CLOSE_GRACE_MS;
+		releaseCapture(event.pointerId);
+
+		if (didHorizontal) {
 			const wasOpen = open;
-			if (trailingReveal > 0 && offset <= -trailingOpenAt) {
+			const flickLeft = velocityX <= -FLICK_VX;
+			const flickRight = velocityX >= FLICK_VX;
+			const pastTrailing = trailingReveal > 0 && offset <= -trailingOpenAt;
+			const pastLeading = leadingReveal > 0 && offset >= leadingOpenAt;
+			const flickOpenTrailing = trailingReveal > 0 && flickLeft && offset < -16;
+			const flickOpenLeading = leadingReveal > 0 && flickRight && offset > 16;
+
+			if (pastTrailing || flickOpenTrailing) {
 				open = 'trailing';
 				offset = -trailingReveal;
-			} else if (leadingReveal > 0 && offset >= leadingOpenAt) {
+			} else if (pastLeading || flickOpenLeading) {
 				open = 'leading';
 				offset = leadingReveal;
 			} else {
@@ -165,13 +239,15 @@
 				offset = 0;
 			}
 			if (!wasOpen && open) vibrateUndoTap();
+			if (didMove) armClickSuppress();
 		}
 		axis = 'undecided';
+		velocityX = 0;
 	}
 
 	function onSheetClick(event: MouseEvent) {
 		if (!swipeOk) return;
-		if (moved) {
+		if (moved || performance.now() < suppressClickUntil) {
 			event.preventDefault();
 			event.stopPropagation();
 			moved = false;
@@ -191,11 +267,13 @@
 	}
 
 	let sheetMoves = $derived(swipeOk && (dragging || open !== false || offset !== 0));
+	let axisLockedH = $derived(dragging && axis === 'h');
+	/* Reveal rails only after real horizontal travel — not on pointerdown. */
 	let showLeadingRail = $derived(
-		swipeOk && leadingReveal > 0 && (open === 'leading' || dragging || offset > 0)
+		swipeOk && leadingReveal > 0 && (open === 'leading' || offset > RAIL_REVEAL_PX)
 	);
 	let showTrailingRail = $derived(
-		swipeOk && trailingReveal > 0 && (open === 'trailing' || dragging || offset < 0)
+		swipeOk && trailingReveal > 0 && (open === 'trailing' || offset < -RAIL_REVEAL_PX)
 	);
 </script>
 
@@ -206,6 +284,7 @@
 	class:is-open-leading={open === 'leading'}
 	class:is-open-trailing={open === 'trailing'}
 	class:is-dragging={dragging}
+	class:is-dragging-h={axisLockedH}
 	class:is-revealed-leading={showLeadingRail}
 	class:is-revealed-trailing={showTrailingRail}
 	class:swipe-to-delete--leading={leadingRail.length > 0}

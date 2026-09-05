@@ -302,6 +302,7 @@
 											<a
 												class="records-list-thumb"
 												href={exerciseHref(record.exerciseId)}
+												draggable="false"
 												tabindex="-1"
 												aria-hidden="true"
 											>
@@ -317,7 +318,11 @@
 												{/if}
 											</a>
 											<div class="records-list-content">
-												<a class="records-list-text" href={exerciseHref(record.exerciseId)}>
+												<a
+													class="records-list-text"
+													href={exerciseHref(record.exerciseId)}
+													draggable="false"
+												>
 													<span class="records-preview__name">{recordTitle}</span>
 													<span class="records-list-meta">
 														{#if liftChip}

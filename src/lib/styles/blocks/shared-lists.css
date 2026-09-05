@@ -568,6 +568,19 @@ a.entity-row--link:hover,
 	gap: 0;
 	background: transparent;
 	border-radius: 0;
+	opacity: 0;
+	transition: opacity 120ms ease;
+}
+
+.swipe-to-delete.is-revealed-leading .swipe-to-delete__rail--leading,
+.swipe-to-delete.is-revealed-trailing .swipe-to-delete__rail--trailing,
+.swipe-to-delete.is-open-leading .swipe-to-delete__rail--leading,
+.swipe-to-delete.is-open-trailing .swipe-to-delete__rail--trailing {
+	opacity: 1;
+}
+
+.swipe-to-delete.is-dragging-h .swipe-to-delete__rail {
+	transition: none;
 }
 
 .swipe-to-delete__rail--leading {
@@ -684,6 +697,11 @@ a.entity-row--link:hover,
 
 .swipe-to-delete.is-dragging .swipe-to-delete__sheet {
 	transition: none;
+}
+
+/* Once horizontal is locked, keep the page from stealing the gesture. */
+.swipe-to-delete.is-dragging-h .swipe-to-delete__sheet {
+	touch-action: none;
 }
 
 .swipe-to-delete.is-enabled .entity-row {
