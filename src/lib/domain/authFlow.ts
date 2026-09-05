@@ -5,7 +5,6 @@ import {
 	validatePasswordPolicy,
 	type PasswordPolicyReason
 } from './passwordPolicy';
-import { md5Hex } from './md5';
 
 export {
 	PASSWORD_MIN_LENGTH,
@@ -113,15 +112,9 @@ function metaString(meta: Record<string, unknown> | null | undefined, key: strin
 	return value || null;
 }
 
-/** Gravatar image URL for an email (`d=404` so missing avatars fail into initials). */
-export function gravatarAvatarUrl(email: string, size = 192): string {
-	const hash = md5Hex(email.trim().toLowerCase());
-	return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=404`;
-}
-
 /**
- * Avatar URL: OAuth `avatar_url` / `picture`, else Gravatar from email.
- * Missing Gravatar returns 404 → UI `onerror` falls back to initials.
+ * Avatar URL from OAuth `user_metadata.avatar_url` / `picture` only.
+ * Email/password has no provider photo — UI shows initials (Gravatar often shows a stale unrelated image).
  */
 export function userAvatarUrl(user: AuthUserLike | null | undefined): string | null {
 	if (!user) return null;
@@ -133,9 +126,7 @@ export function userAvatarUrl(user: AuthUserLike | null | undefined): string | n
 			return url;
 		}
 	}
-	const email = user.email?.trim();
-	if (!email) return null;
-	return gravatarAvatarUrl(email);
+	return null;
 }
 
 /** Prefer full_name / name from metadata, else email local-part. */
@@ -232,14 +223,8 @@ export function runAuthFlowSelfCheck(): void {
 	if (userAvatarUrl({ user_metadata: { avatar_url: 'javascript:alert(1)' } }) !== null) {
 		throw new Error('userAvatarUrl should reject non-http URLs');
 	}
-	if (md5Hex('tekkenot95@gmail.com') !== 'fff616c939faa5ad954c0c91b6c4fe33') {
-		throw new Error('md5Hex should match Gravatar email hash');
-	}
-	if (
-		userAvatarUrl({ email: 'tekkenot95@gmail.com', user_metadata: {} }) !==
-		'https://www.gravatar.com/avatar/fff616c939faa5ad954c0c91b6c4fe33?s=192&d=404'
-	) {
-		throw new Error('userAvatarUrl should fall back to Gravatar');
+	if (userAvatarUrl({ email: 'tekkenot95@gmail.com', user_metadata: {} }) !== null) {
+		throw new Error('userAvatarUrl should not invent Gravatar for email auth');
 	}
 	if (
 		userAvatarUrl({
@@ -247,7 +232,7 @@ export function runAuthFlowSelfCheck(): void {
 			user_metadata: { avatar_url: 'https://cdn.example.com/avatars/x.jpg' }
 		}) !== 'https://cdn.example.com/avatars/x.jpg'
 	) {
-		throw new Error('userAvatarUrl should prefer OAuth over Gravatar');
+		throw new Error('userAvatarUrl should prefer OAuth avatar_url');
 	}
 	if (userDisplayName({ user_metadata: { full_name: 'Ada Lovelace' } }) !== 'Ada Lovelace') {
 		throw new Error('userDisplayName should prefer full_name');

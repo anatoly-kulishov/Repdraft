@@ -2298,6 +2298,45 @@
 	min-width: 0;
 }
 
+/* Mobile: grow tab swipe surface below hero so empty History/Record stay easy to flick. */
+@media (max-width: 1023px) {
+	.exercise-detail-page {
+		display: flex;
+		flex-direction: column;
+		/* Header + spacer live inside this article; sticky CTA is overlay + pb-mobile-actions. */
+		min-height: 100dvh;
+	}
+
+	.exercise-detail-page__layout,
+	.exercise-detail-page__primary,
+	.exercise-detail-tabs {
+		display: flex;
+		flex: 1 1 auto;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.exercise-detail-tabs {
+		min-height: 14rem;
+	}
+
+	.exercise-detail-page__hero,
+	.exercise-detail-tabs__nav {
+		flex-shrink: 0;
+	}
+
+	.exercise-detail-tabs__body {
+		display: flex;
+		flex: 1 1 auto;
+		flex-direction: column;
+		min-height: 14rem;
+	}
+
+	.exercise-detail-tab-panel {
+		flex: 1 1 auto;
+	}
+}
+
 .exercise-detail-page__chrome {
 	grid-column: 1 / -1;
 	min-width: 0;
@@ -2430,6 +2469,20 @@
 	color: var(--color-muted);
 	font-weight: 600;
 	font-size: 0.8125rem;
+}
+
+.exercise-history__set-kind {
+	flex: 0 0 auto;
+	margin-inline-start: 0.1rem;
+	padding: 0.08rem 0.35rem;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+	background: color-mix(in srgb, var(--color-surface-muted) 55%, transparent);
+	font-size: 0.6875rem;
+	font-weight: 650;
+	line-height: 1.2;
+	color: var(--color-muted);
+	white-space: nowrap;
 }
 
 .exercise-history__set-val {

@@ -1,11 +1,14 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppCheckbox from '$lib/components/AppCheckbox.svelte';
+	import AppIconButton from '$lib/components/AppIconButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
+	import AppLabel from '$lib/components/AppLabel.svelte';
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import ExerciseReorderHandle from '$lib/components/ExerciseReorderHandle.svelte';
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_SMALL } from '$lib/components/icons/sizes';
+	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import type { WorkoutExercise } from '$lib/domain/types';
 	import {
@@ -23,10 +26,15 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { linkWithFrom, currentReturnPath } from '$lib/domain/navigation';
+	import {
+		buildLadderScheme,
+		formatLadderLabel,
+		hasLadderScheme
+	} from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { page } from '$app/stores';
-	import { Trash2, Unlink } from '@lucide/svelte';
+	import { ArrowDown01, SlidersHorizontal, Trash2, Unlink } from '@lucide/svelte';
 
 	let {
 		item,
@@ -64,12 +72,20 @@
 
 	let lang = $derived($resolvedLocale);
 	let techniqueOpen = $state(false);
+	let actionsOpen = $state(false);
+	let ladderOpen = $state(false);
+	let ladderFromDraft = $state('');
+	let ladderToDraft = $state('');
 	/** Local chip text while focused — empty allowed until blur (coerce runs on commit). */
 	let setsDraft = $state<string | null>(null);
 	let repsDraft = $state<string | null>(null);
 	let restDraft = $state<string | null>(null);
 	let inGroup = $derived(Boolean(item.groupId));
 	let inOrGroup = $derived(Boolean(item.altGroupId));
+	let ladderOn = $derived(hasLadderScheme(item));
+	let ladderLabel = $derived(
+		ladderOn && item.repsScheme ? formatLadderLabel(item.repsScheme) : ''
+	);
 	const chipInputClass =
 		'workout-ex-chip__input !w-auto !min-w-0 shrink-0 text-center text-base tabular-nums';
 	const chipInputRestClass =
@@ -139,6 +155,44 @@
 	const setsChip = (): ChipDraft => ({ draft: setsDraft, stored: () => item.sets });
 	const repsChip = (): ChipDraft => ({ draft: repsDraft, stored: () => item.reps });
 	const restChip = (): ChipDraft => ({ draft: restDraft, stored: () => item.restSec });
+
+	function openLadderSheet() {
+		if (item.repsScheme && item.repsScheme.length >= 2) {
+			ladderFromDraft = String(item.repsScheme[0]);
+			ladderToDraft = String(item.repsScheme[item.repsScheme.length - 1]);
+		} else {
+			ladderFromDraft = String(item.reps);
+			ladderToDraft = '1';
+		}
+		ladderOpen = true;
+	}
+
+	function openLadderFromMenu() {
+		actionsOpen = false;
+		queueMicrotask(() => openLadderSheet());
+	}
+
+	function removeFromMenu() {
+		actionsOpen = false;
+		onremove();
+	}
+
+	function applyLadder() {
+		const from = coerceReps(ladderFromDraft, REPS) ?? REPS.min;
+		const to = coerceReps(ladderToDraft, REPS) ?? REPS.min;
+		const scheme = buildLadderScheme(from, to);
+		if (scheme.length < 2) {
+			onupdate({ repsScheme: undefined, sets: item.sets, reps: from });
+		} else {
+			onupdate({ repsScheme: scheme });
+		}
+		ladderOpen = false;
+	}
+
+	function clearLadder() {
+		onupdate({ repsScheme: undefined });
+		ladderOpen = false;
+	}
 </script>
 
 <article
@@ -295,32 +349,46 @@
 					{title}
 				</a>
 				{#if inGroup}
-					<label class="workout-ex-chip workout-ex-chip--reps">
-						<span>{translate(lang, 'builder.reps')}</span>
-						<AppInput
-							class={chipInputClass}
-							type="text"
-							inputmode="numeric"
-							autocomplete="off"
-							enterkeyhint="done"
-							maxlength={REPS_INPUT_MAX_LEN}
-							value={chipValue(repsChip())}
-							onfocus={(e) => onChipFocus(e.currentTarget, (v) => (repsDraft = v), () => item.reps)}
-							oninput={(e) =>
-								onChipInput(e.currentTarget as HTMLInputElement, repsChip(), (v) => (repsDraft = v), (raw, prev) =>
-									filterRepsInput(raw, REPS, prev))}
-							onkeydown={onChipKeydown}
-							onblur={(e) =>
-								onChipBlur(
-									e.currentTarget as HTMLInputElement,
-									repsChip(),
-									(v) => (repsDraft = v),
-									(raw, prev) => filterRepsInput(raw, REPS, prev),
-									(raw) => coerceReps(raw, REPS) ?? REPS.min,
-									(reps) => onupdate({ reps })
-								)}
-						/>
-					</label>
+					<div class="workout-ex-fields workout-ex-fields--group">
+						{#if ladderOn}
+							<button
+								type="button"
+								class="workout-ex-chip workout-ex-chip--reps workout-ex-chip--ladder"
+								aria-label={translate(lang, 'builder.ladderEdit', { scheme: ladderLabel })}
+								onclick={openLadderSheet}
+							>
+								<span>{translate(lang, 'builder.ladder')}</span>
+								<span class="workout-ex-chip__ladder-value tabular-nums">{ladderLabel}</span>
+							</button>
+						{:else}
+							<label class="workout-ex-chip workout-ex-chip--reps">
+								<span>{translate(lang, 'builder.reps')}</span>
+								<AppInput
+									class={chipInputClass}
+									type="text"
+									inputmode="numeric"
+									autocomplete="off"
+									enterkeyhint="done"
+									maxlength={REPS_INPUT_MAX_LEN}
+									value={chipValue(repsChip())}
+									onfocus={(e) => onChipFocus(e.currentTarget, (v) => (repsDraft = v), () => item.reps)}
+									oninput={(e) =>
+										onChipInput(e.currentTarget as HTMLInputElement, repsChip(), (v) => (repsDraft = v), (raw, prev) =>
+											filterRepsInput(raw, REPS, prev))}
+									onkeydown={onChipKeydown}
+									onblur={(e) =>
+										onChipBlur(
+											e.currentTarget as HTMLInputElement,
+											repsChip(),
+											(v) => (repsDraft = v),
+											(raw, prev) => filterRepsInput(raw, REPS, prev),
+											(raw) => coerceReps(raw, REPS) ?? REPS.min,
+											(reps) => onupdate({ reps })
+										)}
+								/>
+							</label>
+						{/if}
+					</div>
 				{:else}
 					<div class="workout-ex-fields">
 						<label class="workout-ex-chip">
@@ -349,32 +417,44 @@
 							/>
 						</label>
 						<span class="workout-ex-fields__times" aria-hidden="true">×</span>
-						<label class="workout-ex-chip">
-							<span>{translate(lang, 'builder.reps')}</span>
-							<AppInput
-								class={chipInputClass}
-								type="text"
-								inputmode="numeric"
-								autocomplete="off"
-								enterkeyhint="next"
-								maxlength={REPS_INPUT_MAX_LEN}
-								value={chipValue(repsChip())}
-								onfocus={(e) => onChipFocus(e.currentTarget, (v) => (repsDraft = v), () => item.reps)}
-								oninput={(e) =>
-									onChipInput(e.currentTarget as HTMLInputElement, repsChip(), (v) => (repsDraft = v), (raw, prev) =>
-										filterRepsInput(raw, REPS, prev))}
-								onkeydown={onChipKeydown}
-								onblur={(e) =>
-									onChipBlur(
-										e.currentTarget as HTMLInputElement,
-										repsChip(),
-										(v) => (repsDraft = v),
-										(raw, prev) => filterRepsInput(raw, REPS, prev),
-										(raw) => coerceReps(raw, REPS) ?? REPS.min,
-										(reps) => onupdate({ reps })
-									)}
-							/>
-						</label>
+						{#if ladderOn}
+							<button
+								type="button"
+								class="workout-ex-chip workout-ex-chip--reps workout-ex-chip--ladder"
+								aria-label={translate(lang, 'builder.ladderEdit', { scheme: ladderLabel })}
+								onclick={openLadderSheet}
+							>
+								<span>{translate(lang, 'builder.ladder')}</span>
+								<span class="workout-ex-chip__ladder-value tabular-nums">{ladderLabel}</span>
+							</button>
+						{:else}
+							<label class="workout-ex-chip">
+								<span>{translate(lang, 'builder.reps')}</span>
+								<AppInput
+									class={chipInputClass}
+									type="text"
+									inputmode="numeric"
+									autocomplete="off"
+									enterkeyhint="next"
+									maxlength={REPS_INPUT_MAX_LEN}
+									value={chipValue(repsChip())}
+									onfocus={(e) => onChipFocus(e.currentTarget, (v) => (repsDraft = v), () => item.reps)}
+									oninput={(e) =>
+										onChipInput(e.currentTarget as HTMLInputElement, repsChip(), (v) => (repsDraft = v), (raw, prev) =>
+											filterRepsInput(raw, REPS, prev))}
+									onkeydown={onChipKeydown}
+									onblur={(e) =>
+										onChipBlur(
+											e.currentTarget as HTMLInputElement,
+											repsChip(),
+											(v) => (repsDraft = v),
+											(raw, prev) => filterRepsInput(raw, REPS, prev),
+											(raw) => coerceReps(raw, REPS) ?? REPS.min,
+											(reps) => onupdate({ reps })
+										)}
+								/>
+							</label>
+						{/if}
 						<label class="workout-ex-chip workout-ex-chip--rest">
 							<span>{translate(lang, 'builder.rest')}</span>
 							<AppInput
@@ -412,24 +492,69 @@
 		{/if}
 
 		<div class="workout-ex-head__actions">
-			<AppButton
-				variant="ghost"
-				class="is-danger workout-ex-head__delete"
-				onclick={onremove}
-				aria-label={translate(lang, 'builder.remove')}
-				title={translate(lang, 'builder.remove')}
-			>
-				<LucideIcon icon={Trash2} size={ICON_SMALL} />
-			</AppButton>
 			<ExerciseReorderHandle
 				{index}
 				holdMs={0}
 				label={translate(lang, 'builder.reorder')}
 				onreorder={onreorder}
 			/>
+			<AppIconButton
+				class="workout-ex-head__menu"
+				onclick={() => {
+					actionsOpen = true;
+				}}
+				aria-label={translate(lang, 'builder.exerciseActionsAria')}
+				title={translate(lang, 'builder.exerciseActionsTitle')}
+				aria-haspopup="dialog"
+				aria-expanded={actionsOpen}
+			>
+				<LucideIcon icon={SlidersHorizontal} size={ICON_SMALL} />
+			</AppIconButton>
 		</div>
 	</div>
 </article>
+
+{#if actionsOpen}
+	<BottomSheet
+		open={actionsOpen}
+		raised
+		titleId={`builder-ex-actions-${item.exerciseId}`}
+		onDismiss={() => {
+			actionsOpen = false;
+		}}
+	>
+		<p id={`builder-ex-actions-${item.exerciseId}`} class="bottom-sheet__title">
+			{meta ? exerciseName(meta, lang) : translate(lang, 'builder.exerciseActionsTitle')}
+		</p>
+		<div
+			class="builder-ex-actions"
+			role="group"
+			aria-labelledby={`builder-ex-actions-${item.exerciseId}`}
+		>
+			<button type="button" class="builder-ex-action" onclick={openLadderFromMenu}>
+				<span class="builder-ex-action__well" aria-hidden="true">
+					<LucideIcon icon={ArrowDown01} size={ICON_BUTTON} />
+				</span>
+				<span class="builder-ex-action__label">
+					{ladderOn ? translate(lang, 'builder.ladderEditShort') : translate(lang, 'builder.ladder')}
+				</span>
+				{#if ladderOn}
+					<span class="builder-ex-action__meta tabular-nums">{ladderLabel}</span>
+				{/if}
+			</button>
+			<button
+				type="button"
+				class="builder-ex-action builder-ex-action--danger"
+				onclick={removeFromMenu}
+			>
+				<span class="builder-ex-action__well" aria-hidden="true">
+					<LucideIcon icon={Trash2} size={ICON_BUTTON} />
+				</span>
+				<span class="builder-ex-action__label">{translate(lang, 'builder.remove')}</span>
+			</button>
+		</div>
+	</BottomSheet>
+{/if}
 
 {#if meta && techniqueOpen}
 	<ExerciseTechniqueSheet
@@ -446,4 +571,74 @@
 			techniqueOpen = false;
 		}}
 	/>
+{/if}
+
+{#if ladderOpen}
+	<BottomSheet
+		open={ladderOpen}
+		titleId={`builder-ladder-${item.exerciseId}`}
+		onDismiss={() => {
+			ladderOpen = false;
+		}}
+	>
+		<p id={`builder-ladder-${item.exerciseId}`} class="bottom-sheet__title">
+			{translate(lang, 'builder.ladderTitle')}
+		</p>
+		<p class="bottom-sheet__hint">{translate(lang, 'builder.ladderHint')}</p>
+		<div class="workout-ex-ladder-sheet">
+			<div class="workout-ex-ladder-sheet__range">
+				<AppLabel class="workout-ex-ladder-sheet__field">
+					{translate(lang, 'builder.ladderFrom')}
+					<span class="field-shell mt-1">
+						<AppInput
+							class="tabular-nums text-center text-base"
+							type="text"
+							inputmode="numeric"
+							autocomplete="off"
+							enterkeyhint="next"
+							maxlength={REPS_INPUT_MAX_LEN}
+							value={ladderFromDraft}
+							oninput={(e) => {
+								ladderFromDraft = filterRepsInput(
+									(e.currentTarget as HTMLInputElement).value,
+									REPS,
+									ladderFromDraft
+								);
+							}}
+						/>
+					</span>
+				</AppLabel>
+				<span class="workout-ex-ladder-sheet__arrow" aria-hidden="true">→</span>
+				<AppLabel class="workout-ex-ladder-sheet__field">
+					{translate(lang, 'builder.ladderTo')}
+					<span class="field-shell mt-1">
+						<AppInput
+							class="tabular-nums text-center text-base"
+							type="text"
+							inputmode="numeric"
+							autocomplete="off"
+							enterkeyhint="done"
+							maxlength={REPS_INPUT_MAX_LEN}
+							value={ladderToDraft}
+							oninput={(e) => {
+								ladderToDraft = filterRepsInput(
+									(e.currentTarget as HTMLInputElement).value,
+									REPS,
+									ladderToDraft
+								);
+							}}
+						/>
+					</span>
+				</AppLabel>
+			</div>
+			<AppButton variant="primary" block onclick={applyLadder}>
+				{translate(lang, 'builder.ladderApply')}
+			</AppButton>
+			{#if ladderOn}
+				<AppButton variant="secondary" block onclick={clearLadder}>
+					{translate(lang, 'builder.ladderClear')}
+				</AppButton>
+			{/if}
+		</div>
+	</BottomSheet>
 {/if}

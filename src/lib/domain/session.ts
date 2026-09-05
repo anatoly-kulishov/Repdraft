@@ -15,6 +15,24 @@ export function loggedSetKind(set: LoggedSet): SetKind {
 	return set.kind ?? 'work';
 }
 
+/** i18n key for set type labels (live + history). */
+export function setKindMessageKey(kind: SetKind): string {
+	switch (kind) {
+		case 'work':
+			return 'live.setKindWork';
+		case 'warmup':
+			return 'live.setKindWarmup';
+		case 'drop':
+			return 'live.setKindDrop';
+		case 'failure':
+			return 'live.setKindFailure';
+		default: {
+			const _exhaustive: never = kind;
+			return _exhaustive;
+		}
+	}
+}
+
 /** Working sets drive “last time” / progress memory (skip warm-up). */
 export function isProgressSet(set: LoggedSet): boolean {
 	return loggedSetKind(set) !== 'warmup';
@@ -27,6 +45,8 @@ export function nextSetKind(kind: SetKind): SetKind {
 		case 'warmup':
 			return 'drop';
 		case 'drop':
+			return 'failure';
+		case 'failure':
 			return 'work';
 		default: {
 			const _exhaustive: never = kind;
@@ -35,7 +55,15 @@ export function nextSetKind(kind: SetKind): SetKind {
 	}
 }
 
-function emptySets(count: number, targetReps: number): LoggedSet[] {
+function emptySets(count: number, targetReps: number, scheme?: number[]): LoggedSet[] {
+	if (scheme && scheme.length > 0) {
+		return scheme.map((reps) => ({
+			weightKg: null,
+			reps,
+			completed: false,
+			kind: 'work' as const
+		}));
+	}
 	const n = Math.max(1, count);
 	return Array.from({ length: n }, () => ({
 		weightKg: null,
@@ -63,7 +91,7 @@ export function startSessionFromPlan(plan: WorkoutPlan): WorkoutSession {
 				targetSets: ex.sets,
 				targetReps: ex.reps,
 				restSec: ex.restSec,
-				sets: emptySets(ex.sets, ex.reps)
+				sets: emptySets(ex.sets, ex.reps, ex.repsScheme)
 			})
 		)
 	};
@@ -324,7 +352,8 @@ export function applyWeightToOpenSets(
 	return next;
 }
 
-/** Copy reps onto every incomplete set that differs (gym: same target all sets). */
+/** Copy reps onto every incomplete set that differs (gym: same target all sets).
+ * Skips when open sets already have mixed reps (ladder / scheme). */
 export function applyRepsToOpenSets(
 	session: WorkoutSession,
 	exerciseIndex: number,
@@ -332,6 +361,10 @@ export function applyRepsToOpenSets(
 ): WorkoutSession {
 	const ex = session.exercises[exerciseIndex];
 	if (!ex) return session;
+	const openReps = new Set(
+		ex.sets.filter((s) => !s.completed).map((s) => s.reps)
+	);
+	if (openReps.size > 1) return session;
 	let next = session;
 	for (let si = 0; si < ex.sets.length; si++) {
 		const set = ex.sets[si]!;
@@ -377,11 +410,14 @@ export function seedOpenSetsFromLastPerformance(
 	const exercises = session.exercises.map((ex) => {
 		const last = getLast(ex.exerciseId);
 		if (!last || (last.weightKg == null && last.reps == null)) return ex;
+		const openReps = new Set(ex.sets.filter((s) => !s.completed).map((s) => s.reps));
+		const mixedOpenReps = openReps.size > 1;
 		let setChanged = false;
 		const sets = ex.sets.map((s) => {
 			if (s.completed) return s;
 			const weightKg = s.weightKg ?? last.weightKg ?? null;
-			const reps = last.reps != null ? last.reps : s.reps;
+			const reps =
+				mixedOpenReps || last.reps == null ? s.reps : last.reps;
 			if (weightKg === s.weightKg && reps === s.reps) return s;
 			setChanged = true;
 			return { ...s, weightKg, reps };
@@ -1009,7 +1045,7 @@ export function runSessionSelfCheck(): void {
 		throw new Error('syncSessionPrescriptionFromPlan should restore groupId');
 	}
 
-	if (nextSetKind('work') !== 'warmup' || nextSetKind('drop') !== 'work') {
+	if (nextSetKind('work') !== 'warmup' || nextSetKind('failure') !== 'work') {
 		throw new Error('nextSetKind cycle failed');
 	}
 
@@ -1104,5 +1140,42 @@ export function runSessionSelfCheck(): void {
 	const skipDoneReps = applyRepsToOpenSets(fillPlan, 0, 12);
 	if (skipDoneReps.exercises[0]?.sets[1]?.reps !== 8) {
 		throw new Error('applyRepsToOpenSets should not touch completed sets');
+	}
+
+	const ladderPlan: WorkoutPlan = {
+		...plan,
+		exercises: [
+			{
+				exerciseId: 'ex-ladder',
+				sets: 5,
+				reps: 5,
+				restSec: 60,
+				repsScheme: [5, 4, 3, 2, 1]
+			}
+		]
+	};
+	const ladderSession = startSessionFromPlan(ladderPlan);
+	const ladderReps = ladderSession.exercises[0]?.sets.map((s) => s.reps).join(',');
+	if (ladderReps !== '5,4,3,2,1') {
+		throw new Error(`ladder startSession expected 5..1 got ${ladderReps}`);
+	}
+	const ladderFill = applyRepsToOpenSets(ladderSession, 0, 9);
+	if (ladderFill.exercises[0]?.sets.map((s) => s.reps).join(',') !== '5,4,3,2,1') {
+		throw new Error('applyRepsToOpenSets should not flatten ladder');
+	}
+	const seededLadder = seedOpenSetsFromLastPerformance(ladderSession, () => ({
+		weightKg: 0,
+		reps: 12,
+		sets: 3,
+		finishedAt: '2026-01-01T00:00:00.000Z'
+	}));
+	if (seededLadder.exercises[0]?.sets.map((s) => s.reps).join(',') !== '5,4,3,2,1') {
+		throw new Error('seedOpenSetsFromLastPerformance should keep ladder reps');
+	}
+	if (seededLadder.exercises[0]?.sets.some((s) => s.weightKg !== 0)) {
+		throw new Error('seedOpenSetsFromLastPerformance should still seed weight on ladder');
+	}
+	if (nextSetKind('drop') !== 'failure') {
+		throw new Error('nextSetKind should include failure after drop');
 	}
 }

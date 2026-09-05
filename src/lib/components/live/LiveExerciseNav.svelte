@@ -5,7 +5,7 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { visibleSessionExerciseIndices } from '$lib/domain/session';
 	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
-	import { groupMemberRole } from '$lib/domain/workout';
+	import { formatLadderLabel, groupMemberRole } from '$lib/domain/workout';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { Check, Link2 } from '@lucide/svelte';
@@ -74,6 +74,10 @@
 		const ex = session.exercises[index];
 		if (!ex) return '';
 		if (inGroup) return translate(lang, 'live.lastReps', { n: ex.targetReps });
+		const planned = ex.sets.map((s) => s.reps).filter((r): r is number => r != null);
+		if (planned.length >= 2 && new Set(planned).size > 1) {
+			return `${ex.sets.length} · ${formatLadderLabel(planned)}`;
+		}
 		return `${ex.sets.length} × ${ex.targetReps}`;
 	}
 

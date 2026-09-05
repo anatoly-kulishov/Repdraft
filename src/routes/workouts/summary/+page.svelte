@@ -24,6 +24,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { live } from '$lib/stores/live';
 	import { onboarding } from '$lib/stores/onboarding';
+	import { forceNormalShell, syncForceNormalShell } from '$lib/stores/shellChrome';
 	import { CircleCheck } from '@lucide/svelte';
 	import { page } from '$app/stores';
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
@@ -99,6 +100,8 @@
 			/* ignore */
 		}
 	}
+
+	$effect(() => syncForceNormalShell(!loading && (missing || !session)));
 
 	onMount(() => {
 		try {

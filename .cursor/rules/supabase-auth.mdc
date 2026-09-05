@@ -16,10 +16,13 @@ alwaysApply: false
 3. URL Configuration:
    - Site URL = production origin
    - Redirect allow-list includes `/auth` for prod + local (`localhost:5173`, `127.0.0.1:5173`)
-4. Email templates must honor redirect / Site URL (confirm, magic link, recovery).
+   - Confirm / magic / recovery должны открывать **тот же origin** `/auth` (web callback). Не жди открытия standalone PWA с Home Screen из письма: Mail → Safari/WebView; на iOS это ограничение ОС.
+4. Email templates must honor redirect / Site URL (confirm, magic link, recovery). Keep `{{ .ConfirmationURL }}` (or equivalent) so `emailRedirectTo` from the app is used.
 5. Bot protection (prod): Cloudflare Turnstile ON; secret in Supabase; `PUBLIC_TURNSTILE_SITE_KEY` in Vercel.
 6. Vercel env: `PUBLIC_SUPABASE_*`, plus **server-only** `SUPABASE_SERVICE_ROLE_KEY` for account deletion (`POST /api/account/delete`). Never put service role in `PUBLIC_*`.
 7. After deploy: confirm delete-account works once while signed in. Spot-check «Выйти везде» on a second browser.
+8. Spot-check email confirm: signup → open link from mail → lands on `/auth` → session + redirect to `next`. On iPhone, if the user confirmed in Safari but uses the Home Screen icon, storage may not match: open the icon and sign in again if still a guest.
 
 Симптомы «забыли dashboard»: `provider is not enabled`, письмо не приходит, после клика по ссылке белый экран / ошибка redirect, Captcha rejected.
 Симптом без service role: «Удаление аккаунта пока не настроено на сервере».
+PWA caveat: «подтвердил в Safari, в иконке всё ещё гость» - не баг redirect URL; разные storage contexts на iOS.
