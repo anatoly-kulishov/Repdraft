@@ -8,6 +8,7 @@
 	import ExerciseReorderHandle from '$lib/components/ExerciseReorderHandle.svelte';
 	import BackupImportAction from '$lib/components/BackupImportAction.svelte';
 	import HistoryDayPickerSheet from '$lib/components/HistoryDayPickerSheet.svelte';
+	import HistoryFiltersSheet from '$lib/components/HistoryFiltersSheet.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SearchInput from '$lib/components/SearchInput.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -18,7 +19,7 @@
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, ArrowLeft, Calendar, ClipboardList, Clock, Flag, Play, Plus, Trash2, X } from '@lucide/svelte';
+	import { Copy, ArrowLeft, ClipboardList, Clock, Flag, Play, Plus, SlidersHorizontal, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { peekLocalPlanCount, syncPreviewExerciseRowsPeek } from '$lib/storage/localWorkoutRepository';
 	import { peekLocalHistoryCount } from '$lib/storage/localSessionRepository';
@@ -135,11 +136,13 @@
 	let historyRangeFrom = $state('');
 	let historyRangeTo = $state('');
 	let historyDaySheetOpen = $state(false);
+	let historyFiltersSheetOpen = $state(false);
 	let historyVisibleLimit = $state(HISTORY_PAGE_SIZE);
 
 	let historyRangeActive = $derived(historyRangeFrom !== '' && historyRangeTo !== '');
+	let historyDateFiltersActive = $derived(historyDatePreset !== 'all' || historyRangeActive);
 	let historyFiltersActive = $derived(
-		historyQuery.trim().length > 0 || historyDatePreset !== 'all' || historyRangeActive
+		historyQuery.trim().length > 0 || historyDateFiltersActive
 	);
 
 	let filteredHistory = $derived.by(() => {
@@ -792,53 +795,29 @@
 			</EmptyState>
 		{:else}
 			<div class="workouts-history-tools">
-				<div class="workouts-page__search">
-					<SearchInput
-						bind:value={historyQuery}
-						placeholder={translate(lang, 'workouts.historySearchPh')}
-					/>
-				</div>
-				<div class="workouts-history-tools__dates" role="group" aria-label={translate(lang, 'workouts.historyDateFilter')}>
+				<div class="workouts-history-tools__bar">
+					<div class="workouts-page__search">
+						<SearchInput
+							bind:value={historyQuery}
+							placeholder={translate(lang, 'workouts.historySearchPh')}
+						/>
+					</div>
 					<button
 						type="button"
-						class={cn(
-							'workouts-history-chip',
-							historyDatePreset === 'today' && !historyRangeActive && 'is-active'
-						)}
-						onclick={() => setHistoryPreset(historyDatePreset === 'today' ? 'all' : 'today')}
-					>
-						{translate(lang, 'home.today')}
-					</button>
-					<button
-						type="button"
-						class={cn('workouts-history-day', historyRangeActive && 'is-active')}
-						title={translate(lang, 'workouts.historyPickRange')}
+						class={cn('workouts-history-filters-btn', historyDateFiltersActive && 'is-active')}
+						aria-label={translate(lang, 'workouts.historyDateFilter')}
+						title={translate(lang, 'workouts.historyDateFilter')}
 						aria-haspopup="dialog"
-						aria-expanded={historyDaySheetOpen}
+						aria-expanded={historyFiltersSheetOpen}
 						onclick={() => {
-							historyDaySheetOpen = true;
+							historyFiltersSheetOpen = true;
 						}}
 					>
-						<span class="workouts-history-day__icon" aria-hidden="true">
-							<LucideIcon icon={Calendar} size={ICON_SMALL} />
-						</span>
-						<span class="workouts-history-day__label">
-							{historyRangeActive
-								? formatLocalDayRange(historyRangeFrom, historyRangeTo, lang)
-								: translate(lang, 'workouts.historyPickRange')}
-						</span>
+						<LucideIcon icon={SlidersHorizontal} size={ICON_BUTTON} />
+						{#if historyDateFiltersActive}
+							<span class="workouts-history-filters-btn__badge" aria-hidden="true"></span>
+						{/if}
 					</button>
-					{#if historyFiltersActive}
-						<button
-							type="button"
-							class="workouts-history-chip workouts-history-chip--clear"
-							aria-label={translate(lang, 'workouts.historyClearFiltersAria')}
-							title={translate(lang, 'workouts.historyClearFiltersAria')}
-							onclick={clearHistoryFilters}
-						>
-							<LucideIcon icon={X} size={ICON_SMALL} />
-						</button>
-					{/if}
 				</div>
 				{#if historyFiltersActive && filteredHistory.length > 0}
 					<p class="workouts-history-tools__count" aria-live="polite">
@@ -940,6 +919,21 @@
 		</AppButton>
 	{/snippet}
 </BottomSheet>
+
+<HistoryFiltersSheet
+	open={historyFiltersSheetOpen}
+	preset={historyDatePreset}
+	rangeActive={historyRangeActive}
+	rangeLabel={historyRangeActive ? formatLocalDayRange(historyRangeFrom, historyRangeTo, lang) : ''}
+	onSelectPreset={setHistoryPreset}
+	onPickRange={() => {
+		historyDaySheetOpen = true;
+	}}
+	onClear={() => setHistoryPreset('all')}
+	onDismiss={() => {
+		historyFiltersSheetOpen = false;
+	}}
+/>
 
 <HistoryDayPickerSheet
 	open={historyDaySheetOpen}
