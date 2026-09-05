@@ -156,7 +156,12 @@
 			/access_token|type=signup|type=magiclink|type=email|type=invite/.test(hash);
 		if (!fromCallback) return;
 		redirected = true;
-		toasts.show(translate(lang, 'auth.signinToast'), 'success');
+		const emailConfirmed =
+			/type=signup/.test(hash) || params.get('type') === 'signup';
+		toasts.show(
+			translate(lang, emailConfirmed ? 'auth.emailConfirmedToast' : 'auth.signinToast'),
+			'success'
+		);
 		void goto(nextPath, { replaceState: true });
 	});
 
@@ -809,6 +814,11 @@
 						{translate(lang, 'auth.checkEmailSignup', { email: email.trim() })}
 					{/if}
 				</p>
+				{#if checkEmailKind === 'signup' || checkEmailKind === 'magic'}
+					<p class="text-sm leading-relaxed text-[var(--color-muted)]">
+						{translate(lang, 'auth.checkEmailPwaHint')}
+					</p>
+				{/if}
 				<AppButton variant="secondary" block onclick={() => setPanel('signin')}>
 					{translate(lang, 'auth.backToSignIn')}
 				</AppButton>

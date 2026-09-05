@@ -27,6 +27,7 @@
 	import { live } from '$lib/stores/live';
 	import { techniqueClipHints } from '$lib/stores/techniqueClipHints';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { forceNormalShell } from '$lib/stores/shellChrome';
 	import { toasts } from '$lib/stores/toasts';
 	import { onboarding } from '$lib/stores/onboarding';
 	import { flushSyncOutbox, purgeUnsyncableOutboxEntries } from '$lib/storage/flushSyncOutbox';
@@ -74,7 +75,9 @@
 	}
 
 	let workoutsTab = $derived(readSearchParam($page.url, 'tab'));
-	let hideMobileHeader = $derived(mobileFlowChrome(path, fromParam, workoutsTab));
+	let hideMobileHeader = $derived(
+		mobileFlowChrome(path, fromParam, workoutsTab) && !$forceNormalShell
+	);
 	let showHomeShellHeader = $derived(path === '/' && !hideMobileHeader);
 	let showMediaAttribution = $derived(showsExerciseMediaAttribution(path));
 

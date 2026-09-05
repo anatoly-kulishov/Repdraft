@@ -9,12 +9,13 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
-	import { altGroupMemberRole, groupMemberRole, planExerciseSlotCount, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
+	import { altGroupMemberRole, formatExercisePrescription, formatLadderLabel, groupMemberRole, hasLadderScheme, planExerciseSlotCount, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { peekLocalPlan, syncPreviewExerciseRowsPeek, peekPreviewExerciseRows } from '$lib/storage/localWorkoutRepository';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { forceNormalShell, syncForceNormalShell } from '$lib/stores/shellChrome';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
@@ -69,6 +70,8 @@
 		const n = boot?.exercises.length ?? peekPreviewExerciseRows(params.planId);
 		return Math.min(Math.max(n, 1), 6);
 	});
+
+	$effect(() => syncForceNormalShell(!loading && (missing || !plan)));
 
 	onMount(() => {
 		void (async () => {
@@ -224,11 +227,18 @@
 									<p class="workout-preview-row-title">{title}</p>
 									<p class="workout-preview-row-sub tabular-nums">
 										{#if role === 'solo'}
-											{item.sets} × {item.reps}
+											{formatExercisePrescription(item)}
 										{:else if role === 'first'}
 											{item.sets}
-											{translate(lang, 'builder.rounds').toLowerCase()} · {item.reps}
-											{translate(lang, 'builder.reps').toLowerCase()}
+											{translate(lang, 'builder.rounds').toLowerCase()} ·
+											{#if hasLadderScheme(item) && item.repsScheme}
+												{formatLadderLabel(item.repsScheme)}
+											{:else}
+												{item.reps}
+												{translate(lang, 'builder.reps').toLowerCase()}
+											{/if}
+										{:else if hasLadderScheme(item) && item.repsScheme}
+											{formatLadderLabel(item.repsScheme)}
 										{:else}
 											{item.reps} {translate(lang, 'builder.reps').toLowerCase()}
 										{/if}
@@ -246,7 +256,7 @@
 							<span class="media-well workout-preview-thumb is-placeholder" aria-hidden="true"></span>
 							<div class="workout-preview-row-body">
 								<p class="workout-preview-row-title">{item.exerciseId}</p>
-								<p class="workout-preview-row-sub tabular-nums">{item.sets} × {item.reps}</p>
+								<p class="workout-preview-row-sub tabular-nums">{formatExercisePrescription(item)}</p>
 							</div>
 						</div>
 					{/if}

@@ -42,6 +42,11 @@ export type WorkoutExercise = {
 	sets: number;
 	reps: number;
 	restSec: number;
+	/**
+	 * Per-set planned reps (ladder / scheme). When present, length is the set count;
+	 * `sets` / `reps` stay in sync for back-compat (`reps` = first step).
+	 */
+	repsScheme?: number[];
 	/** Same id = one superset / giant set (contiguous block in the list). */
 	groupId?: string | null;
 	/** Same id = interchangeable alternatives (“or”); pick one in live. */
@@ -73,7 +78,7 @@ export type PersonalRecord = {
 };
 
 /** One logged working set during a live session. */
-export type SetKind = 'work' | 'warmup' | 'drop';
+export type SetKind = 'work' | 'warmup' | 'drop' | 'failure';
 
 export type LoggedSet = {
 	weightKg: number | null;

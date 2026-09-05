@@ -34,6 +34,7 @@
 	import { live } from '$lib/stores/live';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { forceNormalShell, syncForceNormalShell } from '$lib/stores/shellChrome';
 	import { toasts } from '$lib/stores/toasts';
 	import { onboarding } from '$lib/stores/onboarding';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
@@ -88,6 +89,8 @@
 	let justDoneSetIndex = $state<number | null>(null);
 	let forceAltPick = $state(false);
 	let restTicker: LiveRestTicker | null = null;
+
+	$effect(() => syncForceNormalShell(!loading && !finishing && (missing || !session)));
 
 	let selectedRole = $derived(
 		session ? groupMemberRole(session.exercises, selectedExerciseIndex) : 'solo'

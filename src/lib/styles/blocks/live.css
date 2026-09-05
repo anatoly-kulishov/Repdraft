@@ -919,6 +919,92 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	margin-top: 0.35rem;
 }
 
+.live-actions-sheet__heading {
+	text-align: center;
+}
+
+.live-actions-sheet--icons {
+	display: grid;
+	grid-template-columns: repeat(3, 5.75rem);
+	justify-content: center;
+	justify-items: center;
+	column-gap: 0.85rem;
+	row-gap: 0.55rem;
+	width: 100%;
+	margin-top: 0.85rem;
+	margin-inline: auto;
+}
+
+.live-actions-sheet--icons-4 {
+	grid-template-columns: repeat(2, 5.75rem);
+}
+
+.live-actions-tile {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 0.4rem;
+	box-sizing: border-box;
+	width: 5.75rem;
+	min-width: 5.75rem;
+	max-width: 5.75rem;
+	min-height: 5.25rem;
+	margin: 0;
+	padding: 0.35rem 0.2rem 0.45rem;
+	border: none;
+	border-radius: var(--radius-control);
+	background: transparent;
+	color: var(--color-ink);
+	text-align: center;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.live-actions-tile:active {
+	transform: scale(0.97);
+}
+
+.live-actions-tile__well {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 3.25rem;
+	height: 3.25rem;
+	min-width: 3.25rem;
+	min-height: 3.25rem;
+	border-radius: 1rem;
+	border: 1px solid var(--color-border);
+	background: var(--color-surface-muted);
+	color: var(--color-ink);
+}
+
+.live-actions-tile__label {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	font-size: 0.75rem;
+	font-weight: 650;
+	line-height: 1.2;
+	text-align: center;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.live-actions-tile:active {
+		transform: none;
+	}
+}
+
+.live-actions-sheet__label {
+	margin: 0.15rem 0 0;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--color-muted);
+}
+
 .live-actions-sheet__item,
 [data-slot='button'].live-actions-sheet__item {
 	justify-content: space-between;
@@ -1575,6 +1661,21 @@ button.live-panel-thumb {
 	font-weight: 600;
 	color: var(--color-muted);
 	font-variant-numeric: tabular-nums;
+}
+
+.history-exercise__set-kind {
+	flex-shrink: 0;
+	margin-inline-start: 0.15rem;
+	padding: 0.12rem 0.4rem;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+	background: color-mix(in srgb, var(--color-surface-muted) 70%, transparent);
+	font-size: 0.6875rem;
+	font-weight: 650;
+	line-height: 1.2;
+	letter-spacing: 0.01em;
+	color: var(--color-muted);
+	white-space: nowrap;
 }
 
 .history-exercise__set-weight {
@@ -2495,20 +2596,21 @@ button.live-panel-thumb {
 .live-set-head,
 .live-set-row {
 	display: grid;
-	/* # is a 48px tap target (set menu); done stays at the trailing edge. */
-	grid-template-columns: 3rem minmax(0, 1fr) minmax(0, 1fr) 3rem;
+	/* # is a 48px tap target (set menu); done stays at the trailing edge.
+	   3.35rem leaves room for set-kind labels under # without hugging the border. */
+	grid-template-columns: 3.35rem minmax(0, 1fr) minmax(0, 1fr) 3rem;
 	justify-content: stretch;
 	column-gap: 0.45rem;
 	row-gap: 0.35rem;
 	align-items: center;
 	box-sizing: border-box;
 	width: 100%;
-	padding-inline: 0.5rem;
+	padding-inline: 0.55rem 0.5rem;
 }
 
 .live-set-head--cardio,
 .live-set-row--cardio {
-	grid-template-columns: 3rem minmax(0, 1fr) 3rem;
+	grid-template-columns: 3.35rem minmax(0, 1fr) 3rem;
 }
 
 .live-set-head {
@@ -2791,6 +2893,19 @@ button.live-panel-thumb {
 	padding-block: 0.28rem 0.45rem;
 }
 
+/* Kind label under # needs extra bottom inset so it does not kiss the current border. */
+.live-set-row:has(.live-set-kind-badge) {
+	padding-block: 0.32rem 0.5rem;
+}
+
+.live-set-row.is-current:has(.live-set-kind-badge) {
+	padding-block: 0.5rem 0.65rem;
+}
+
+.live-set-list > .live-set-li:first-child .live-set-row.is-current:has(.live-set-kind-badge) {
+	padding-block: 0.32rem 0.65rem;
+}
+
 .live-set-row.is-done {
 	opacity: 0.72;
 	padding-block: 0.12rem;
@@ -2905,6 +3020,34 @@ button.live-panel-thumb {
 	font-variant-numeric: tabular-nums;
 	color: var(--color-muted);
 	text-align: center;
+}
+
+.live-set-index-wrap {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.18rem;
+	width: 100%;
+	min-width: 0;
+	padding-inline: 0.1rem;
+	box-sizing: border-box;
+	justify-self: center;
+}
+
+.live-set-kind-badge {
+	max-width: 100%;
+	padding-inline: 0.05rem;
+	font-size: 0.5625rem;
+	font-weight: 650;
+	line-height: 1.15;
+	letter-spacing: 0.01em;
+	color: var(--color-muted);
+	text-align: center;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	box-sizing: border-box;
 }
 
 .live-set-index--action {
@@ -3061,7 +3204,8 @@ button.live-panel-thumb {
 	.live-set-head,
 	.live-set-row {
 		gap: 0.32rem;
-		padding-inline: 0.25rem;
+		/* Keep a bit more left inset so set-kind labels clear the current border. */
+		padding-inline: 0.4rem 0.25rem;
 	}
 
 	.live-set-row.is-current .live-set-weight[data-slot='input'],
@@ -3078,13 +3222,13 @@ button.live-panel-thumb {
 	.live-set-row {
 		width: 100%;
 		max-width: 100%;
-		grid-template-columns: 3rem minmax(0, 1fr) minmax(0, 1fr) 3rem;
+		grid-template-columns: 3.35rem minmax(0, 1fr) minmax(0, 1fr) 3rem;
 		column-gap: 0.55rem;
 	}
 
 	.live-set-head--cardio,
 	.live-set-row--cardio {
-		grid-template-columns: 3rem minmax(0, 1fr) 3rem;
+		grid-template-columns: 3.35rem minmax(0, 1fr) 3rem;
 	}
 }
 
@@ -3611,6 +3755,12 @@ button.live-panel-thumb {
 		gap: 0.75rem;
 		align-items: start;
 		max-width: var(--page-content-max);
+	}
+
+	/* Match ready nav height on desktop when the actual plan has one exercise
+	 * (common e2e seed / first plan). The full vertical list is shown on mobile. */
+	.live-page--skeleton .live-nav-li:nth-child(n + 2) {
+		display: none;
 	}
 
 	.live-page--skeleton .live-skeleton-nav-item {

@@ -11,9 +11,10 @@
 	import { blurActiveElement } from '$lib/dom/blurActiveElement';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
-	import type { ExerciseIndexItem, SessionExercise, WorkoutSession } from '$lib/domain/types';
+	import type { ExerciseIndexItem, SessionExercise, SetKind, WorkoutSession } from '$lib/domain/types';
 	import { NOTE_MAX, REPS_INPUT_MAX_LEN, WEIGHT_INPUT_MAX_LEN, clampNote } from '$lib/domain/inputLimits';
 	import { isBodyweightEquipment, isCardioBodyPart } from '$lib/domain/workout';
+	import { loggedSetKind, setKindMessageKey } from '$lib/domain/session';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
@@ -37,6 +38,8 @@
 		| { kind: 'actions' }
 		| { kind: 'note' }
 		| { kind: 'setMenu'; index: number };
+
+	const SET_KINDS: SetKind[] = ['work', 'warmup', 'drop', 'failure'];
 
 	let {
 		session,
@@ -162,7 +165,6 @@
 
 	function openOverlay(next: Exclude<LiveOverlay, { kind: 'none' }>) {
 		if (next.kind === 'technique' && !names.get(exercise.exerciseId)) return;
-		if (next.kind === 'setMenu' && exercise.sets.length <= 1) return;
 		if (next.kind !== 'technique') blurActiveElement();
 		overlay = next;
 	}
@@ -178,6 +180,13 @@
 		closeOverlay();
 		if (si == null) return;
 		onRemove(si);
+	}
+
+	function setMenuKind(kind: SetKind) {
+		const si = overlay.kind === 'setMenu' ? overlay.index : null;
+		if (si == null) return;
+		live.patchSet(exerciseIndex, si, { kind });
+		closeOverlay();
 	}
 
 	function runActionsItem(action: () => void) {
@@ -239,11 +248,13 @@
 		}
 		return null;
 	});
-	let canFillRepsAll = $derived(
-		fillReps != null &&
-			exercise.sets.length > 1 &&
-			exercise.sets.some((s) => !s.completed && s.reps !== fillReps)
-	);
+	let canFillRepsAll = $derived.by(() => {
+		if (fillReps == null || exercise.sets.length <= 1) return false;
+		const open = exercise.sets.filter((s) => !s.completed);
+		const openReps = new Set(open.map((s) => s.reps));
+		if (openReps.size > 1) return false;
+		return open.some((s) => s.reps !== fillReps);
+	});
 	let fillWeightAllLabel = $derived(
 		fillWeightKg != null
 			? translate(lang, 'live.weightFillAria', { weight: fillWeightKg })
@@ -458,7 +469,7 @@
 		</div>
 
 		<ul class="live-set-list">
-			{#each exercise.sets as set, si (si)}
+					{#each exercise.sets as set, si (si)}
 				<li class="live-set-li">
 					<SwipeToDelete
 						disabled={!canRemoveSet}
@@ -472,22 +483,25 @@
 							class:is-current={currentSetIndex === si}
 							class:is-just-done={justDoneSetIndex === si}
 						>
-					{#if canRemoveSet}
-						<button
-							type="button"
-							class="live-set-index live-set-index--action"
-							aria-label={translate(lang, 'live.setActionsAria', { n: si + 1 })}
-							title={translate(lang, 'live.removeSet')}
-							aria-haspopup="dialog"
-							aria-expanded={setMenuIndex === si}
-							data-swipe-pass=""
-							onclick={() => openOverlay({ kind: 'setMenu', index: si })}
-						>
-							{si + 1}
-						</button>
-					{:else}
-						<span class="live-set-index">{si + 1}</span>
-					{/if}
+						<div class="live-set-index-wrap">
+							<button
+								type="button"
+								class="live-set-index live-set-index--action"
+								aria-label={translate(lang, 'live.setActionsAria', { n: si + 1 })}
+								title={translate(lang, 'live.setActionsTitle', { n: si + 1 })}
+								aria-haspopup="dialog"
+								aria-expanded={setMenuIndex === si}
+								data-swipe-pass=""
+								onclick={() => openOverlay({ kind: 'setMenu', index: si })}
+							>
+								{si + 1}
+							</button>
+							{#if loggedSetKind(set) !== 'work'}
+								<span class="live-set-kind-badge">
+									{translate(lang, setKindMessageKey(loggedSetKind(set)))}
+								</span>
+							{/if}
+						</div>
 					{#if !cardio}
 						<AppInput
 							class={`live-set-weight tabular-nums${invalidSetIndex === si && invalidKind === 'weight' ? ' is-invalid' : ''}`}
@@ -616,57 +630,74 @@
 		titleId={`live-actions-${exercise.exerciseId}`}
 		onDismiss={closeOverlay}
 	>
-		<p id={`live-actions-${exercise.exerciseId}`} class="bottom-sheet__title">
+		<p id={`live-actions-${exercise.exerciseId}`} class="bottom-sheet__title live-actions-sheet__heading">
 			{translate(lang, 'live.actionsMenuTitle')}
 		</p>
-		<div class="live-actions-sheet" role="group" aria-labelledby={`live-actions-${exercise.exerciseId}`}>
-			<AppButton
-				variant="secondary"
-				class="live-actions-sheet__item"
+		<div
+			class="live-actions-sheet live-actions-sheet--icons"
+			class:live-actions-sheet--icons-4={Boolean(canSwapAlternative && onSwapAlternative && onSkip)}
+			role="group"
+			aria-labelledby={`live-actions-${exercise.exerciseId}`}
+		>
+			<button
+				type="button"
+				class="live-actions-tile"
 				onclick={() => runActionsItem(() => openOverlay({ kind: 'history' }))}
 			>
-				{translate(lang, 'live.historyTitle')}
-				<LucideIcon icon={History} size={ICON_SMALL} />
-			</AppButton>
-			<AppButton
-				variant="secondary"
-				class="live-actions-sheet__item"
+				<span class="live-actions-tile__well" aria-hidden="true">
+					<LucideIcon icon={History} size={ICON_BUTTON} />
+				</span>
+				<span class="live-actions-tile__label">{translate(lang, 'live.historyTitle')}</span>
+			</button>
+			<button
+				type="button"
+				class="live-actions-tile"
 				onclick={() => runActionsItem(() => openOverlay({ kind: 'note' }))}
 			>
-				{translate(lang, 'live.note')}
-				<LucideIcon icon={StickyNote} size={ICON_SMALL} />
-			</AppButton>
+				<span class="live-actions-tile__well" aria-hidden="true">
+					<LucideIcon icon={StickyNote} size={ICON_BUTTON} />
+				</span>
+				<span class="live-actions-tile__label">{translate(lang, 'live.note')}</span>
+			</button>
 			{#if canSwapAlternative && onSwapAlternative}
-				<AppButton
-					variant="secondary"
-					class="live-actions-sheet__item"
+				<button
+					type="button"
+					class="live-actions-tile"
 					onclick={() => {
 						const swap = onSwapAlternative;
 						if (swap) runActionsItem(swap);
 					}}
 				>
-					{translate(lang, 'live.swapAlternative')}
-					<LucideIcon icon={RefreshCw} size={ICON_SMALL} />
-				</AppButton>
+					<span class="live-actions-tile__well" aria-hidden="true">
+						<LucideIcon icon={RefreshCw} size={ICON_BUTTON} />
+					</span>
+					<span class="live-actions-tile__label"
+						>{translate(lang, 'live.swapAlternativeShort')}</span
+					>
+				</button>
 			{/if}
 			{#if onSkip}
-				<AppButton
-					variant="secondary"
-					class="live-actions-sheet__item"
+				<button
+					type="button"
+					class="live-actions-tile"
 					onclick={() => {
 						const skip = onSkip;
 						if (skip) runActionsItem(skip);
 					}}
 				>
-					{translate(lang, 'live.skipExercise')}
-					<LucideIcon icon={SkipForward} size={ICON_SMALL} />
-				</AppButton>
+					<span class="live-actions-tile__well" aria-hidden="true">
+						<LucideIcon icon={SkipForward} size={ICON_BUTTON} />
+					</span>
+					<span class="live-actions-tile__label">{translate(lang, 'live.skipExerciseShort')}</span>
+				</button>
 			{/if}
 		</div>
 	</BottomSheet>
 {/if}
 
 {#if setMenuIndex != null}
+	{@const menuSet = exercise.sets[setMenuIndex]}
+	{@const menuKind = menuSet ? loggedSetKind(menuSet) : 'work'}
 	<BottomSheet
 		open={true}
 		raised
@@ -684,14 +715,27 @@
 			role="group"
 			aria-labelledby={`live-set-actions-${exercise.exerciseId}-${setMenuIndex}`}
 		>
-			<AppButton
-				variant="secondary"
-				class="live-actions-sheet__item live-actions-sheet__item--danger"
-				onclick={confirmRemoveSet}
-			>
-				{translate(lang, 'live.removeSet')}
-				<LucideIcon icon={Trash2} size={ICON_SMALL} />
-			</AppButton>
+			<p class="live-actions-sheet__label">{translate(lang, 'live.setKindLabel')}</p>
+			{#each SET_KINDS as kind (kind)}
+				<AppButton
+					variant={menuKind === kind ? 'primary' : 'secondary'}
+					class="live-actions-sheet__item"
+					aria-pressed={menuKind === kind}
+					onclick={() => setMenuKind(kind)}
+				>
+					{translate(lang, setKindMessageKey(kind))}
+				</AppButton>
+			{/each}
+			{#if canRemoveSet}
+				<AppButton
+					variant="secondary"
+					class="live-actions-sheet__item live-actions-sheet__item--danger"
+					onclick={confirmRemoveSet}
+				>
+					{translate(lang, 'live.removeSet')}
+					<LucideIcon icon={Trash2} size={ICON_SMALL} />
+				</AppButton>
+			{/if}
 		</div>
 	</BottomSheet>
 {/if}
