@@ -15,10 +15,12 @@
 		addCompletedLoggedSet,
 		completedSetCount,
 		finishedSessionLogEqual,
+		loggedSetKind,
 		removeLoggedExercise,
 		removeLoggedSet,
 		sessionDurationMs,
 		sessionVolumeKg,
+		setKindMessageKey,
 		updateLoggedSet
 	} from '$lib/domain/session';
 	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
@@ -30,6 +32,7 @@
 	import { draft } from '$lib/stores/draft';
 	import { live } from '$lib/stores/live';
 	import { onboarding } from '$lib/stores/onboarding';
+	import { forceNormalShell, syncForceNormalShell } from '$lib/stores/shellChrome';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { toasts } from '$lib/stores/toasts';
 	import { get } from 'svelte/store';
@@ -86,6 +89,8 @@
 		hint: string;
 		image: string;
 	} | null>(null);
+
+	$effect(() => syncForceNormalShell(!loading && (missing || !session)));
 
 	onMount(() => {
 		void (async () => {
@@ -459,6 +464,7 @@
 									<ul class="history-exercise__sets history-exercise__sets--editing">
 										{#each rows as item, i (item.setIndex)}
 											{@const key = setKey(exIndex, item.setIndex)}
+											{@const setKind = loggedSetKind(item.set)}
 											<li class="history-exercise__set tabular-nums">
 												<span class="history-exercise__set-i">{i + 1}</span>
 												<AppInput
@@ -500,6 +506,11 @@
 														};
 													}}
 												/>
+												{#if setKind !== 'work'}
+													<span class="history-exercise__set-kind">
+														{translate(lang, setKindMessageKey(setKind))}
+													</span>
+												{/if}
 												<AppButton
 													variant="ghost"
 													class="live-set-remove-btn"
@@ -577,6 +588,7 @@
 								class:history-exercise__sets--grid={rows.length >= 4}
 							>
 								{#each rows as item, i (item.setIndex)}
+									{@const setKind = loggedSetKind(item.set)}
 									<li class="history-exercise__set tabular-nums">
 										<span class="history-exercise__set-i">{i + 1}</span>
 										{#if item.set.weightKg != null || item.set.reps != null}
@@ -594,6 +606,11 @@
 											{/if}
 										{:else}
 											<span class="history-exercise__set-reps">{translate(lang, 'live.setMarked')}</span>
+										{/if}
+										{#if setKind !== 'work'}
+											<span class="history-exercise__set-kind">
+												{translate(lang, setKindMessageKey(setKind))}
+											</span>
 										{/if}
 									</li>
 								{/each}
@@ -617,6 +634,7 @@
 								class:history-exercise__sets--grid={rows.length >= 4}
 							>
 								{#each rows as item, i (item.setIndex)}
+									{@const setKind = loggedSetKind(item.set)}
 									<li class="history-exercise__set tabular-nums">
 										<span class="history-exercise__set-i">{i + 1}</span>
 										{#if item.set.weightKg != null}
@@ -629,6 +647,11 @@
 												{item.set.reps != null
 													? `${item.set.reps} ${translate(lang, 'pr.repsShort')}`
 													: '-'}
+											</span>
+										{/if}
+										{#if setKind !== 'work'}
+											<span class="history-exercise__set-kind">
+												{translate(lang, setKindMessageKey(setKind))}
 											</span>
 										{/if}
 									</li>

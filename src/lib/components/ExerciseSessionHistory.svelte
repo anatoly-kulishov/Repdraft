@@ -4,7 +4,8 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { blurActiveElement } from '$lib/dom/blurActiveElement';
-	import { recentExerciseLogs } from '$lib/domain/session';
+	import { recentExerciseLogs, setKindMessageKey } from '$lib/domain/session';
+	import type { SetKind } from '$lib/domain/types';
 	import { formatRelativeDay } from '$lib/i18n/format';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
@@ -100,14 +101,22 @@
 			/>
 		{/if}
 	{:else}
-		{#snippet setList(sets: { weightKg: number | null; reps: number | null }[])}
+		{#snippet setList(
+			sets: { weightKg: number | null; reps: number | null; kind?: SetKind }[]
+		)}
 			{@const preview = sets.slice(0, SETS_PREVIEW)}
 			{@const more = sets.length - preview.length}
 			<ul class="exercise-history__set-list">
 				{#each preview as set, si (si)}
+					{@const kind = set.kind ?? 'work'}
 					<li class="exercise-history__set-line tabular-nums">
 						<span class="exercise-history__set-idx">#{si + 1}</span>
 						<span class="exercise-history__set-val">{formatSet(set.weightKg, set.reps)}</span>
+						{#if kind !== 'work'}
+							<span class="exercise-history__set-kind">
+								{translate(lang, setKindMessageKey(kind))}
+							</span>
+						{/if}
 					</li>
 				{/each}
 			</ul>
