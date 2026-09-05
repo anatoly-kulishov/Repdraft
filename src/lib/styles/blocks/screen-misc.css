@@ -2529,6 +2529,11 @@
 	touch-action: pan-y;
 }
 
+/* Let horizontal pans reach tab-swipe JS even when the gesture starts on a field. */
+.exercise-detail-tabs__body :is(input, textarea, select) {
+	touch-action: pan-y;
+}
+
 .exercise-detail-tab-panel {
 	display: flex;
 	min-width: 0;
@@ -3484,6 +3489,12 @@ button.clip-composer__pick:hover:not(:disabled),
 	padding: 0.45rem 0.2rem 0.45rem 0.45rem;
 	text-decoration: none;
 	color: inherit;
+}
+
+.records-list-thumb,
+.records-list-text {
+	-webkit-user-drag: none;
+	user-select: none;
 }
 
 .records-note-chip {

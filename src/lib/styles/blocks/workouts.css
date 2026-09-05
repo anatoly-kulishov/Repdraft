@@ -16,7 +16,8 @@
 }
 
 .workouts-page-lead {
-	min-height: calc(2 * 1.4em);
+	/* Single-line leads (local/cloud); keep one-line reserve to limit CLS while hydrating. */
+	min-height: 1.4em;
 	font-size: 0.875rem;
 	font-weight: 450;
 	line-height: 1.4;
@@ -73,7 +74,7 @@
 
 .workouts-page__toolbar {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	gap: 0.5rem;
 	width: 100%;
 	min-width: 0;
@@ -84,11 +85,16 @@
 	flex: 0 0 auto;
 	align-items: center;
 	gap: 0.5rem;
+	margin-top: 0.125rem;
 	margin-left: auto;
 }
 
 .workouts-page__toolbar--history {
 	align-items: center;
+}
+
+.workouts-page__toolbar--history .workouts-page__toolbar-actions {
+	margin-top: 0;
 }
 
 .workouts-page__toolbar--history .workouts-page__toolbar-icon-btn {
@@ -98,7 +104,7 @@
 
 .workouts-page__toolbar-icon-btn {
 	flex: 0 0 auto;
-	align-self: center;
+	align-self: flex-start;
 	min-width: var(--control-min-width);
 	min-height: var(--control-height);
 	padding: 0;
@@ -269,7 +275,7 @@ html.is-plan-reorder-active .reorder-handle {
 	}
 
 	.workouts-page__toolbar {
-		align-items: center;
+		align-items: flex-start;
 	}
 
 	.workouts-page__toolbar--history {
@@ -1030,12 +1036,14 @@ html.is-plan-reorder-active .reorder-handle {
 	}
 }
 
-.workouts-skeleton-chip {
+.workouts-skeleton-filters-btn {
 	display: inline-block;
 	flex-shrink: 0;
+	width: var(--control-height, 3rem);
+	height: var(--control-height, 3rem);
+	min-width: 48px;
 	min-height: 48px;
-	min-width: 5.5rem;
-	border-radius: 999px;
+	border-radius: var(--radius-control);
 	border: 1px solid var(--color-border);
 	background-color: var(--skeleton-base);
 	background-image: linear-gradient(
@@ -1046,10 +1054,6 @@ html.is-plan-reorder-active .reorder-handle {
 	);
 	background-size: 200% 100%;
 	animation: skeletonShimmer 1.25s ease-in-out infinite;
-}
-
-.workouts-skeleton-chip--period {
-	min-width: 7.25rem;
 }
 
 .workouts-history-tools--skeleton {
@@ -1116,122 +1120,80 @@ html.is-plan-reorder-active .reorder-handle {
 	-webkit-backdrop-filter: blur(10px);
 }
 
+.workouts-history-tools:has(.workouts-history-tools__count) {
+	gap: 0.4rem;
+}
+
 .workouts-history-tools .workouts-page__search {
 	margin: 0;
 }
 
-.workouts-history-tools__dates {
+
+.workouts-history-tools__bar {
 	display: flex;
-	flex-wrap: nowrap;
 	align-items: center;
-	gap: 0.4rem;
+	gap: 0.5rem;
 	min-width: 0;
 }
 
-.workouts-history-tools__dates .workouts-history-day {
-	/* Hug label («Период» / short range); shrink with ellipsis only when the row is tight. */
+.workouts-history-tools__bar .workouts-page__search {
+	flex: 1 1 auto;
 	min-width: 0;
-	flex: 0 1 auto;
-	max-width: 100%;
-}
-
-.workouts-history-tools__dates .workouts-history-day__label {
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.workouts-history-tools__dates .workouts-history-chip,
-.workouts-history-tools__dates .workouts-history-chip--clear {
-	flex-shrink: 0;
-}
-
-.workouts-history-tools__count {
 	margin: 0;
-	font-size: 0.75rem;
-	font-weight: 500;
-	line-height: 1.3;
-	color: var(--color-muted);
 }
 
-.workouts-history-chip {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 48px;
-	min-width: 48px;
-	padding: 0.35rem 0.85rem;
-	border: 1px solid var(--color-border);
-	border-radius: 999px;
-	background: var(--color-surface);
-	color: var(--color-ink);
-	font-size: 0.8125rem;
-	font-weight: 550;
-	line-height: 1.2;
-	cursor: pointer;
-	appearance: none;
-	-webkit-appearance: none;
-}
-
-.workouts-history-chip.is-active {
-	border-color: color-mix(in srgb, var(--color-accent) 52%, var(--color-border));
-	background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface));
-	color: var(--color-ink);
-}
-
-.workouts-history-chip--clear {
-	width: 3rem;
-	min-width: 3rem;
-	max-width: 3rem;
-	padding: 0;
-	color: var(--color-muted);
-	border-style: solid;
-	border-radius: 999px;
-}
-
-.workouts-history-chip--clear:hover:not(:disabled) {
-	color: var(--color-ink);
-	border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-ink));
-}
-
-.workouts-history-day {
+.workouts-history-filters-btn {
 	position: relative;
 	display: inline-flex;
 	align-items: center;
-	gap: 0.35rem;
-	min-height: 48px;
+	justify-content: center;
+	flex-shrink: 0;
+	width: var(--control-height, 3rem);
+	height: var(--control-height, 3rem);
 	min-width: 48px;
-	padding: 0.35rem 0.85rem 0.35rem 0.7rem;
-	border: 1px solid var(--color-border);
-	border-radius: 999px;
-	background: var(--color-surface);
-	color: var(--color-ink);
-	font-size: 0.8125rem;
-	font-weight: 550;
-	line-height: 1.2;
+	min-height: 48px;
+	padding: 0;
+	border: 1px solid var(--color-field-border);
+	border-radius: var(--radius-control);
+	background: var(--color-field);
+	box-shadow: var(--shadow-field);
+	color: var(--color-muted);
+	line-height: 0;
 	cursor: pointer;
 	appearance: none;
 	-webkit-appearance: none;
 }
 
-.workouts-history-day.is-active {
-	border-color: color-mix(in srgb, var(--color-accent) 52%, var(--color-border));
-	background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface));
-}
-
-.workouts-history-day__icon {
-	display: inline-flex;
-	flex-shrink: 0;
-	color: var(--color-muted);
-	line-height: 0;
-	pointer-events: none;
-}
-
-.workouts-history-day.is-active .workouts-history-day__icon {
+.workouts-history-filters-btn:hover:not(:disabled) {
 	color: var(--color-ink);
 }
 
-.workouts-history-day__label {
+.workouts-history-filters-btn.is-active {
+	border-color: color-mix(in srgb, var(--color-accent) 52%, var(--color-border));
+	background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface));
+	color: var(--color-ink);
+}
+
+.workouts-history-filters-btn__badge {
+	position: absolute;
+	top: 0.4rem;
+	right: 0.4rem;
+	width: 0.5rem;
+	height: 0.5rem;
+	border-radius: 999px;
+	background: var(--color-accent);
+	box-shadow: 0 0 0 2px var(--color-surface);
 	pointer-events: none;
+}
+
+/* List meta under filters (Mail / Files pattern): quiet, not a chip peer. */
+.workouts-history-tools__count {
+	margin: 0;
+	padding: 0.05rem 0.1rem 0;
+	font-size: 0.75rem;
+	font-weight: 500;
+	line-height: 1.25;
+	color: var(--color-muted);
 	white-space: nowrap;
 }
 
