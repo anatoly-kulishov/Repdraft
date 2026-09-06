@@ -72,7 +72,7 @@ const ru: Dict = {
 	'settings.devStressButton': 'Загрузить тестовый бэкап',
 	'settings.devStressConfirmTitle': 'Восстановить тестовый бэкап?',
 	'settings.devStressConfirmHint':
-		'Добавим реалистичные данные плюс #EDGE-кейсы: {plans} планов, {sessions} сессий, {records} рекордов. Текущие данные на телефоне не удалим. При совпадении останется более новая версия.',
+		'Добавим реалистичные данные плюс #EDGE-кейсы: {plans} планов, {sessions} сессий, {records} рекордов. Текущие данные на телефоне не удалим. При совпадении останется более новая версия. Если облако включено, часть уйдёт в аккаунт.',
 	'settings.devStressMissing':
 		'Файл тестового бэкапа не задеплоен. Локально: npm run gen:stress-backup, затем обнови страницу.',
 	'settings.devStressFail': 'Не удалось загрузить тестовый бэкап',
@@ -321,7 +321,7 @@ const ru: Dict = {
 	'builder.exercisesSection': 'Упражнения',
 	'builder.sets': 'Подходы',
 	'builder.reps': 'Повторы',
-	'builder.rest': 'Отдых, с',
+	'builder.rest': 'Отдых',
 	'builder.ladder': 'Лесенка',
 	'builder.ladderTitle': 'Лесенка повторов',
 	'builder.ladderFrom': 'От',
@@ -888,7 +888,10 @@ const ru: Dict = {
 	'privacy.s13TermsLink': 'Условия использования Gym Visual',
 	'auth.privacyHint': 'Подробнее о данных:',
 	'attr.media': 'Медиа упражнений',
-	'attr.versionAria': 'Версия приложения {version}'
+	'attr.versionAria': 'Версия приложения {version}',
+	'changelog.title': 'Что нового',
+	'changelog.lead': 'Последние обновления Repdraft.',
+	'changelog.openAria': 'Что нового в {version}'
 };
 
 const en: Dict = {
@@ -960,7 +963,7 @@ const en: Dict = {
 	'settings.devStressButton': 'Load test backup',
 	'settings.devStressConfirmTitle': 'Restore test backup?',
 	'settings.devStressConfirmHint':
-		'Adds realistic data plus #EDGE cases: {plans} plans, {sessions} sessions, {records} records. Data already on this phone stays. On conflicts, the newer version wins.',
+		'Adds realistic data plus #EDGE cases: {plans} plans, {sessions} sessions, {records} records. Data already on this phone stays. On conflicts, the newer version wins. If cloud sync is on, some rows will upload to your account.',
 	'settings.devStressMissing':
 		'Test backup not deployed. Locally run: npm run gen:stress-backup, then refresh.',
 	'settings.devStressFail': 'Could not load test backup',
@@ -1208,7 +1211,7 @@ const en: Dict = {
 	'builder.exercisesSection': 'Exercises',
 	'builder.sets': 'Sets',
 	'builder.reps': 'Reps',
-	'builder.rest': 'Rest, s',
+	'builder.rest': 'Rest',
 	'builder.ladder': 'Ladder',
 	'builder.ladderTitle': 'Rep ladder',
 	'builder.ladderFrom': 'From',
@@ -1773,7 +1776,10 @@ const en: Dict = {
 	'privacy.s13TermsLink': 'Gym Visual terms of use',
 	'auth.privacyHint': 'About your data:',
 	'attr.media': 'Exercise media',
-	'attr.versionAria': 'App version {version}'
+	'attr.versionAria': 'App version {version}',
+	'changelog.title': "What's new",
+	'changelog.lead': 'Recent Repdraft updates.',
+	'changelog.openAria': "What's new in {version}"
 };
 
 const tables: Record<AppLocale, Dict> = { ru, en };

@@ -123,6 +123,8 @@
 	display: block;
 }
 .shell-main {
+	display: flex;
+	flex-direction: column;
 	min-width: 0;
 	max-width: 100%;
 	padding: var(--page-pad-y) var(--page-pad-x);
@@ -769,8 +771,30 @@ select {
 }
 
 .shell-main > .pwa-install {
-	margin-top: var(--page-section-gap);
+	/* Sit under short pages (empty search) instead of floating mid-viewport. */
+	margin-top: auto;
 	margin-bottom: 0;
+	flex-shrink: 0;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+/* Keep a section gap above the bar when the page is tall (auto margin collapses to 0). */
+.shell-main:has(> .pwa-install) > :first-child {
+	margin-bottom: var(--page-section-gap);
+}
+
+@media (max-width: 1023px) {
+	/* Leave room for Create FAB on Workouts / similar. */
+	body:has(.app-fab:not(.app-fab--hidden)) .shell-main > .pwa-install,
+	body:has(.workouts-fab:not(.workouts-fab--hidden)) .shell-main > .pwa-install {
+		width: auto;
+		max-width: calc(
+			100% - var(--fab-size) - var(--fab-above-tabbar) - 0.35rem
+		);
+		margin-inline-end: calc(var(--fab-size) + var(--fab-above-tabbar) + 0.35rem);
+		align-self: flex-start;
+	}
 }
 
 .home-page + .pwa-install,

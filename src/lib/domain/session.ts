@@ -353,7 +353,7 @@ export function applyWeightToOpenSets(
 }
 
 /** Copy reps onto every incomplete set that differs (gym: same target all sets).
- * Skips when open sets already have mixed reps (ladder / scheme). */
+ * Explicit tap flattens a ladder / scheme — same as the weight fill button. */
 export function applyRepsToOpenSets(
 	session: WorkoutSession,
 	exerciseIndex: number,
@@ -361,10 +361,6 @@ export function applyRepsToOpenSets(
 ): WorkoutSession {
 	const ex = session.exercises[exerciseIndex];
 	if (!ex) return session;
-	const openReps = new Set(
-		ex.sets.filter((s) => !s.completed).map((s) => s.reps)
-	);
-	if (openReps.size > 1) return session;
 	let next = session;
 	for (let si = 0; si < ex.sets.length; si++) {
 		const set = ex.sets[si]!;
@@ -1160,8 +1156,8 @@ export function runSessionSelfCheck(): void {
 		throw new Error(`ladder startSession expected 5..1 got ${ladderReps}`);
 	}
 	const ladderFill = applyRepsToOpenSets(ladderSession, 0, 9);
-	if (ladderFill.exercises[0]?.sets.map((s) => s.reps).join(',') !== '5,4,3,2,1') {
-		throw new Error('applyRepsToOpenSets should not flatten ladder');
+	if (ladderFill.exercises[0]?.sets.map((s) => s.reps).join(',') !== '9,9,9,9,9') {
+		throw new Error('applyRepsToOpenSets should flatten ladder on explicit fill');
 	}
 	const seededLadder = seedOpenSetsFromLastPerformance(ladderSession, () => ({
 		weightKg: 0,
