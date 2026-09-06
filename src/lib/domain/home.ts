@@ -7,6 +7,9 @@ export const WORKOUTS_HISTORY_SKELETON_ROW_LIMIT = 8;
 /** History tab infinite-scroll page size (DOM only; store keeps full list). */
 export const HISTORY_PAGE_SIZE = 20;
 
+/** Plans tab infinite-scroll page size (DOM only; store keeps full list). */
+export const PLANS_PAGE_SIZE = 20;
+
 /** First-viewport plan cards on `/workouts` plans tab boot skeleton (search + list). */
 export const WORKOUTS_PLANS_SKELETON_ROW_LIMIT = 6;
 

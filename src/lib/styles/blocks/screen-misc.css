@@ -993,6 +993,93 @@
 	text-align: center;
 }
 
+.whats-new-version-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 48px;
+	margin: 0;
+	padding-block: 0.2rem;
+	padding-inline: var(--auth-account-gutter, 1.25rem);
+	border: none;
+	border-radius: var(--radius-control);
+	background: transparent;
+	font: inherit;
+	font-size: 0.75rem;
+	line-height: 1.3;
+	color: var(--color-muted);
+	text-align: center;
+	text-decoration: underline;
+	text-decoration-color: color-mix(in srgb, var(--color-muted) 40%, transparent);
+	text-underline-offset: 0.18em;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.whats-new-version-btn:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--color-accent) 70%, transparent);
+	outline-offset: 2px;
+}
+
+.whats-new-version-btn:active {
+	color: var(--color-ink);
+}
+
+/* Sit the version under the last settings card, not mid-void above the tabbar. */
+.auth-account > .whats-new-version-btn,
+.auth-guest-stack > .whats-new-version-btn {
+	margin-top: 0.15rem;
+	margin-bottom: 0;
+}
+
+.whats-new-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	margin: 0.15rem 0 0;
+	padding: 0;
+	list-style: none;
+	max-height: min(52vh, 28rem);
+	overflow: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+.whats-new-release {
+	padding: 0.7rem 0;
+	border-top: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+}
+
+.whats-new-release:first-child {
+	padding-top: 0.35rem;
+	border-top: none;
+}
+
+.whats-new-release:first-child .whats-new-release__version {
+	color: var(--color-accent-text);
+}
+
+.whats-new-release__version {
+	margin: 0 0 0.3rem;
+	font-size: 0.8125rem;
+	font-weight: 650;
+	line-height: 1.3;
+	color: var(--color-ink);
+}
+
+.whats-new-release__items {
+	margin: 0;
+	padding-left: 1.05rem;
+	font-size: 0.8125rem;
+	line-height: 1.4;
+	color: var(--color-muted);
+}
+
+.whats-new-release__items li + li {
+	margin-top: 0.22rem;
+}
+
 .auth-account__actions {
 	padding-top: 1.15rem;
 	padding-bottom: 1.15rem;
@@ -1516,6 +1603,8 @@
 /* Account gutters live on cards / toolbar. Hero glow stays edge-to-edge. */
 .auth-page--account {
 	--auth-account-gutter: 1.25rem;
+	/* Tabbar clearance is on shell-main; keep page content tight under the version. */
+	padding-bottom: 0;
 }
 
 .auth-account__desktop-head {
@@ -1712,6 +1801,8 @@
 	.shell-main:has(.auth-page:not(.auth-page--account):not(.auth-page--booting)) {
 		padding-left: max(0px, var(--safe-left));
 		padding-right: max(0px, var(--safe-right));
+		/* Tabbar clearance only: no extra page-pad-y under the version link. */
+		padding-bottom: calc(var(--mobile-chrome-bottom) + 0.25rem);
 		overflow-x: clip;
 	}
 

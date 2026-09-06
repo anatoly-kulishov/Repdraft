@@ -3168,8 +3168,13 @@ body:has(.sticky-actions) .draft-dock {
 }
 
 .catalog-hub-toolbar__search {
+	width: 100%;
 	min-width: 0;
 	margin: 0;
+}
+
+.catalog-hub-toolbar__search .list-search-bar {
+	margin-bottom: 0;
 }
 
 .catalog-hub-toolbar__nav {
@@ -3662,6 +3667,12 @@ body:has(.sticky-actions) .draft-dock {
 		gap: 0.5rem;
 		padding: 0.55rem 0.65rem;
 		overflow: visible;
+	}
+
+	.catalog-filters.panel > .list-search-bar {
+		flex: 1 1 12rem;
+		min-width: 0;
+		max-width: none;
 	}
 
 	.catalog-filters.panel > label {

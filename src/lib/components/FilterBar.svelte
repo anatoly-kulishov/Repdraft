@@ -3,7 +3,7 @@
 	import AppChip from '$lib/components/AppChip.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
-	import SearchInput from '$lib/components/SearchInput.svelte';
+	import ListSearchBar from '$lib/components/ListSearchBar.svelte';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseFilters } from '$lib/domain/types';
 	import { translate } from '$lib/i18n/messages';
@@ -59,7 +59,7 @@
 
 <div class="catalog-filters-shell">
 	<AppPanel class={cn('catalog-filters', lockBodyPart && 'catalog-filters--zone')}>
-		<SearchInput
+		<ListSearchBar
 			bind:value={filters.query}
 			debounceMs={150}
 			placeholder={translate(lang, 'catalog.search')}

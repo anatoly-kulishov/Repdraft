@@ -3,8 +3,9 @@
 	import CatalogCategoryCard from '$lib/components/CatalogCategoryCard.svelte';
 	import CatalogCategoryGridSkeleton from '$lib/components/CatalogCategoryGridSkeleton.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import ListSearchBar from '$lib/components/ListSearchBar.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import SearchInput from '$lib/components/SearchInput.svelte';
+	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import {
 		CATALOG_HUB_ZONE_COUNT,
 		isBuilderReturnPath,
@@ -13,7 +14,6 @@
 	} from '$lib/domain/catalogLinks';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { blurActiveElement } from '$lib/dom/blurActiveElement';
-	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { resolveSeoLang } from '$lib/seo/seoLang';
@@ -114,7 +114,11 @@
 
 	<div class="catalog-hub-toolbar">
 		<form class="catalog-hub-toolbar__search" onsubmit={onSearchSubmit}>
-			<SearchInput bind:value={searchQuery} placeholder={translate(lang, 'catalog.search')} />
+			<ListSearchBar
+				bind:value={searchQuery}
+				placeholder={translate(lang, 'catalog.search')}
+				class="list-search-bar--hub"
+			/>
 		</form>
 		{#if fromBuilder && showExercisesPickerCoachmark}
 			<Coachmark
