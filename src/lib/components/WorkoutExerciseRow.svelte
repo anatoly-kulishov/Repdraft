@@ -87,9 +87,9 @@
 		ladderOn && item.repsScheme ? formatLadderLabel(item.repsScheme) : ''
 	);
 	const chipInputClass =
-		'workout-ex-chip__input !w-auto !min-w-0 shrink-0 text-center text-base tabular-nums';
+		'workout-ex-chip__input w-full min-w-0 max-w-full text-center text-base tabular-nums';
 	const chipInputRestClass =
-		'workout-ex-chip__input workout-ex-chip__input--rest !w-auto !min-w-0 shrink-0 text-center text-base tabular-nums';
+		'workout-ex-chip__input workout-ex-chip__input--rest w-full min-w-0 max-w-full text-center text-base tabular-nums';
 
 	type ChipDraft = { draft: string | null; stored: () => number };
 

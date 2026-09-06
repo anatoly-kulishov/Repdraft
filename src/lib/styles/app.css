@@ -4,6 +4,7 @@
 @import './blocks/typography.css';
 @import './blocks/surfaces.css';
 @import './blocks/shared-lists.css';
+@import './blocks/list-search.css';
 @import './blocks/controls.css';
 @import './blocks/catalog.css';
 @import './blocks/workouts.css';

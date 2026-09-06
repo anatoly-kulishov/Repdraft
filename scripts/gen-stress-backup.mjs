@@ -7,9 +7,13 @@
  *
  * Usage:
  *   npm run gen:stress-backup
- *   node scripts/gen-stress-backup.mjs --sessions 600 --plans 48 --out .tmp/big.json
+ *   node scripts/gen-stress-backup.mjs --sessions 2000 --plans 120 --out .tmp/big.json
  *
+ * Defaults target weak-phone list stress (plans scroll/reorder + history pagination).
  * Default output is also written to static/dev/ (shipped for staging QA).
+ *
+ * Caution: importing while cloud sync is on will upsert into Supabase - wipe local
+ * or stay logged out for QA, or clear cloud rows after (see release / ops notes).
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -30,9 +34,9 @@ function arg(name, fallback) {
 	return fallback;
 }
 
-const PLAN_COUNT = Number(arg('plans', '42'));
-const SESSION_COUNT = Number(arg('sessions', '520'));
-const RECORD_COUNT = Number(arg('records', '240'));
+const PLAN_COUNT = Number(arg('plans', '96'));
+const SESSION_COUNT = Number(arg('sessions', '1400'));
+const RECORD_COUNT = Number(arg('records', '480'));
 const outPath = resolve(root, arg('out', '.tmp/repdraft-backup-stress-load.json'));
 
 const index = JSON.parse(readFileSync(join(root, 'static/data/exercises.index.json'), 'utf8'));
@@ -154,7 +158,55 @@ const REAL_PLAN_NAMES = [
 	'Вечер: ноги',
 	'Сплит Пн/Ср/Пт A',
 	'Сплит Вт/Чт/Сб B',
-	'Восстановление + лёгкий объём'
+	'Восстановление + лёгкий объём',
+	'Спина + бицепс',
+	'Грудь + трицепс',
+	'Ноги тяжёлые',
+	'Ноги объём',
+	'Плечи изоляция',
+	'Тяговый день',
+	'Жимовой день',
+	'Full body C · 45 мин',
+	'Upper / Lower A',
+	'Upper / Lower B',
+	'PPL Push',
+	'PPL Pull',
+	'PPL Legs',
+	'Силовая пятница',
+	'Техника воскресенье',
+	'Кардио + кор',
+	'Зал без штанги',
+	'Только тросы',
+	'Машины / тренажёры',
+	'Олимпийские тяги intro',
+	'RDL + задняя цепь',
+	'Присед + выпады',
+	'Жим гантелей фокус',
+	'Тяга в наклоне фокус',
+	'Руки finisher',
+	'Шея / трапеции',
+	'Предплечья + хват',
+	'Мобилити бёдер',
+	'Разминка + лёгкий объём',
+	'Соревновательный пик',
+	'После отпуска · возврат',
+	'Минимальный зал (3 упражнения)',
+	'Длинная сессия 90′',
+	'Обед 30′ pump',
+	'Вечер: верх + кор',
+	'Утро: ноги + икры',
+	'Сплит Пн/Чт грудь',
+	'Сплит Ср/Сб спина',
+	'Сплит Вт/Пт ноги',
+	'Гипертрофия блок 1',
+	'Гипертрофия блок 2',
+	'Сила блок 1',
+	'Сила блок 2',
+	'Кондиция + ОФП',
+	'Реабилитация плеча (лёгко)',
+	'Только дома: резинки',
+	'Парная тренировка',
+	'Solo · полный зал'
 ];
 
 const EDGE_PLANS = [
@@ -277,15 +329,16 @@ for (let i = 0; i < PLAN_COUNT; i++) {
 		? edge.name
 		: REAL_PLAN_NAMES[i % REAL_PLAN_NAMES.length] +
 			(i >= REAL_PLAN_NAMES.length ? ` · v${Math.floor(i / REAL_PLAN_NAMES.length) + 1}` : '');
-	const size = edge ? edge.size : 4 + (i % 5);
-	const mode = edge ? edge.mode : 'plain';
+	/* Mix short / medium / long templates so builder + live scroll get real stress. */
+	const size = edge ? edge.size : i % 9 === 0 ? 12 : i % 5 === 0 ? 8 : 4 + (i % 5);
+	const mode = edge ? edge.mode : i % 13 === 0 ? 'superset' : 'plain';
 	const prefer = edge?.prefer ?? (i % 3 === 0 ? 'barbell' : i % 3 === 1 ? 'dumbbell' : 'mixed');
-	const createdAt = isoDaysAgoLocal(360 - Math.min(i * 7, 300));
+	const createdAt = isoDaysAgoLocal(720 - Math.min(i * 5, 700));
 	plans.push({
 		id: `stress-plan-${String(i).padStart(3, '0')}`,
 		name,
 		createdAt,
-		updatedAt: isoDaysAgoLocal(Math.max(0, 60 - (i % 60))),
+		updatedAt: isoDaysAgoLocal(Math.max(0, 90 - (i % 90))),
 		exercises: buildExercises(i, size, mode, prefer)
 	});
 }
@@ -428,10 +481,11 @@ function buildSession(i, plan) {
 /** @type {import('../src/lib/domain/types').WorkoutSession[]} */
 const sessions = [];
 for (let i = 0; i < SESSION_COUNT; i++) {
+	/* Spread history across the full plan library (not only the first 10 edge plans). */
 	const planIdx =
-		i % 11 === 0
-			? i % Math.min(10, plans.length)
-			: 10 + ((i * 3) % Math.max(1, plans.length - 10));
+		i % 17 === 0
+			? i % Math.min(EDGE_PLANS.length, plans.length)
+			: (i * 7 + 13) % plans.length;
 	sessions.push(buildSession(i, plans[planIdx] ?? plans[0]));
 }
 

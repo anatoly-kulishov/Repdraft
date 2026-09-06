@@ -1,0 +1,134 @@
+/* Shared search (+ optional filter) strip: History, Plans, catalog lists, hub. */
+
+.list-search-bar {
+	display: flex;
+	flex-direction: column;
+	gap: 0.45rem;
+	width: 100%;
+	min-width: 0;
+	margin: 0 0 0.85rem;
+}
+
+.list-search-bar--sticky {
+	position: sticky;
+	top: 0;
+	z-index: 6;
+	padding: 0.5rem 0 0.55rem;
+	background: color-mix(in srgb, var(--color-bg) 94%, transparent);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+}
+
+.list-search-bar__row {
+	display: flex;
+	align-items: stretch;
+	gap: 0.45rem;
+	width: 100%;
+	min-width: 0;
+}
+
+.list-search-bar__search {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.list-search-bar__filter {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: var(--control-height, 3rem);
+	height: var(--control-height, 3rem);
+	min-width: 48px;
+	min-height: 48px;
+	margin: 0;
+	padding: 0;
+	border: 1px solid var(--color-field-border);
+	border-radius: var(--radius-control);
+	background: var(--color-field);
+	box-shadow: var(--shadow-field);
+	color: var(--color-muted);
+	line-height: 0;
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.list-search-bar__filter:hover:not(:disabled) {
+	color: var(--color-ink);
+}
+
+.list-search-bar__filter.is-active {
+	border-color: color-mix(in srgb, var(--color-accent) 48%, var(--color-field-border));
+	background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface));
+	color: var(--color-ink);
+}
+
+.list-search-bar__filter:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--color-accent) 70%, transparent);
+	outline-offset: 2px;
+}
+
+.list-search-bar__filter-badge {
+	position: absolute;
+	top: 0.4rem;
+	right: 0.4rem;
+	width: 0.5rem;
+	height: 0.5rem;
+	border-radius: 999px;
+	background: var(--color-accent);
+	box-shadow: 0 0 0 2px var(--color-field);
+	pointer-events: none;
+}
+
+.list-search-bar__count {
+	margin: 0;
+	padding: 0 0.15rem;
+	font-size: 0.75rem;
+	font-weight: 500;
+	line-height: 1.25;
+	color: var(--color-muted);
+	white-space: nowrap;
+}
+
+.list-search-bar__extra {
+	min-width: 0;
+}
+
+/* History: sticky strip flush under ScreenHeader (mobile). */
+@media (max-width: 1023px) {
+	.workouts-page--history-tab .list-search-bar--sticky,
+	.workouts-page--history-tab .workouts-history-tools.list-search-bar--sticky {
+		top: var(--screen-header-chrome-h);
+		z-index: 20;
+		/*
+		 * Bleed past .shell-main pad. Must NOT keep width:100%: in LTR that makes
+		 * margin-right over-constrained and ignored, so the strip stops short on the right.
+		 */
+		width: auto;
+		max-width: none;
+		margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
+		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
+		padding: 0.5rem max(var(--page-pad-x), var(--safe-right)) 0.55rem
+			max(var(--page-pad-x), var(--safe-left));
+		background: var(--chrome-header-bg);
+		box-shadow: var(--shadow-screen-header);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		overflow: visible;
+	}
+}
+
+/* Inside catalog FilterBar panel: no outer margin. */
+.catalog-filters .list-search-bar {
+	margin: 0;
+}
+
+@media (min-width: 1024px) {
+	.catalog-filters .list-search-bar {
+		flex: 1 1 12rem;
+		min-width: 0;
+	}
+}

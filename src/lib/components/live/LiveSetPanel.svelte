@@ -248,13 +248,11 @@
 		}
 		return null;
 	});
-	let canFillRepsAll = $derived.by(() => {
-		if (fillReps == null || exercise.sets.length <= 1) return false;
-		const open = exercise.sets.filter((s) => !s.completed);
-		const openReps = new Set(open.map((s) => s.reps));
-		if (openReps.size > 1) return false;
-		return open.some((s) => s.reps !== fillReps);
-	});
+	let canFillRepsAll = $derived(
+		fillReps != null &&
+			exercise.sets.length > 1 &&
+			exercise.sets.some((s) => !s.completed && s.reps !== fillReps)
+	);
 	let fillWeightAllLabel = $derived(
 		fillWeightKg != null
 			? translate(lang, 'live.weightFillAria', { weight: fillWeightKg })

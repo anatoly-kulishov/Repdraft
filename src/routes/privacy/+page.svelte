@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import { APP_VERSION_LABEL } from '$lib/appVersion';
+	import WhatsNewSheet from '$lib/components/WhatsNewSheet.svelte';
 	import { GYM_VISUAL_TERMS_URL, GYM_VISUAL_URL } from '$lib/data/attribution';
 	import { privacyPolicyVars } from '$lib/legal/privacyOperator';
 	import { translate } from '$lib/i18n/messages';
@@ -66,7 +66,5 @@
 		</section>
 	</div>
 
-	<p class="privacy-page__version" aria-label={translate(lang, 'attr.versionAria', { version: APP_VERSION_LABEL })}>
-		{APP_VERSION_LABEL}
-	</p>
+	<WhatsNewSheet class="privacy-page__version" />
 </div>

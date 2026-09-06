@@ -10,7 +10,7 @@
 	import HistoryDayPickerSheet from '$lib/components/HistoryDayPickerSheet.svelte';
 	import HistoryFiltersSheet from '$lib/components/HistoryFiltersSheet.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import SearchInput from '$lib/components/SearchInput.svelte';
+	import ListSearchBar from '$lib/components/ListSearchBar.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import WorkoutsPageSkeleton from '$lib/components/WorkoutsPageSkeleton.svelte';
 	import SwipeToDelete, { type SwipeRowAction } from '$lib/components/SwipeToDelete.svelte';
@@ -19,7 +19,7 @@
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, ArrowLeft, ClipboardList, Clock, Flag, Play, Plus, SlidersHorizontal, Trash2 } from '@lucide/svelte';
+	import { Copy, ArrowLeft, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { peekLocalPlanCount, syncPreviewExerciseRowsPeek } from '$lib/storage/localWorkoutRepository';
 	import { peekLocalHistoryCount } from '$lib/storage/localSessionRepository';
@@ -30,6 +30,7 @@
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import {
 		HISTORY_PAGE_SIZE,
+		PLANS_PAGE_SIZE,
 		WORKOUTS_HISTORY_SKELETON_ROW_LIMIT,
 		WORKOUTS_PLANS_SKELETON_ROW_LIMIT
 	} from '$lib/domain/home';
@@ -75,6 +76,8 @@
 	let showWorkoutsPreviewCoachmark = $derived(shouldShowCoachmark($onboarding, 'workouts.preview'));
 	let activeTab = $derived(parseWorkoutsTab(readSearchParam($page.url, 'tab')));
 	let searchQuery = $state('');
+	let plansVisibleLimit = $state(PLANS_PAGE_SIZE);
+	let plansLoadMoreSentinel = $state<HTMLElement | null>(null);
 	const peeked = peekExerciseIndex();
 	let indexById = $state<Map<string, ExerciseIndexItem>>(
 		peeked ? new Map(peeked.map((item) => [item.id, item])) : new Map()
@@ -124,11 +127,29 @@
 	);
 	let listUncertain = $derived(isCloudListUncertain($plansSync));
 
+	let plansFiltersActive = $derived(searchQuery.trim().length > 0);
+
 	let filteredPlans = $derived.by(() => {
+		let list = $plans;
 		const q = searchQuery.trim().toLowerCase();
-		if (!q) return $plans;
-		return $plans.filter((p) => p.name.toLowerCase().includes(q));
+		if (q) {
+			list = list.filter((p) => p.name.toLowerCase().includes(q));
+		}
+		return list;
 	});
+
+	let visiblePlans = $derived(filteredPlans.slice(0, plansVisibleLimit));
+	let plansHasMore = $derived(plansVisibleLimit < filteredPlans.length);
+
+	function loadMorePlans() {
+		if (plansVisibleLimit >= filteredPlans.length) return;
+		plansVisibleLimit = Math.min(filteredPlans.length, plansVisibleLimit + PLANS_PAGE_SIZE);
+	}
+
+	function clearPlansFilters() {
+		searchQuery = '';
+		plansVisibleLimit = PLANS_PAGE_SIZE;
+	}
 
 	let history = $derived($live.history);
 	let historyQuery = $state('');
@@ -217,12 +238,45 @@
 	});
 
 	$effect(() => {
+		searchQuery;
+		activeTab;
+		plansVisibleLimit = PLANS_PAGE_SIZE;
+	});
+
+	$effect(() => {
 		if (activeTab !== 'history') return;
 		if (historyVisibleLimit <= filteredHistory.length) return;
 		historyVisibleLimit = filteredHistory.length > 0 ? filteredHistory.length : HISTORY_PAGE_SIZE;
 	});
 
+	$effect(() => {
+		if (activeTab !== 'plans') return;
+		if (plansVisibleLimit <= filteredPlans.length) return;
+		plansVisibleLimit = filteredPlans.length > 0 ? filteredPlans.length : PLANS_PAGE_SIZE;
+	});
+
 	let historyLoadMoreSentinel = $state<HTMLElement | null>(null);
+	let nextPlan = $derived.by(() =>
+		resolveHomeNextPlan($plans, history[0]?.planId, $homeNextPlan)
+	);
+	let historyEmptyCtaLabel = $derived(
+		$plans.length > 0 && nextPlan
+			? translate(lang, 'workouts.start')
+			: translate(lang, 'onboarding.tryDemo')
+	);
+
+	let reorderFrom = $state<number | null>(null);
+	let reorderOver = $state<number | null>(null);
+	let displayedPlans = $derived(reorderFrom !== null ? filteredPlans : visiblePlans);
+	/** Reorder needs full-list indices; show all rows while dragging. */
+	let canReorderPlans = $derived(!plansFiltersActive && $plans.length > 1);
+
+	$effect(() => {
+		if (reorderFrom === null) return;
+		if (plansVisibleLimit < filteredPlans.length) {
+			plansVisibleLimit = filteredPlans.length;
+		}
+	});
 
 	$effect(() => {
 		if (!browser || activeTab !== 'history' || !historyHasMore || !historyLoadMoreSentinel) {
@@ -254,20 +308,33 @@
 		};
 	});
 
-	let nextPlan = $derived.by(() =>
-		resolveHomeNextPlan($plans, history[0]?.planId, $homeNextPlan)
-	);
-	let historyEmptyCtaLabel = $derived(
-		$plans.length > 0 && nextPlan
-			? translate(lang, 'workouts.start')
-			: translate(lang, 'onboarding.tryDemo')
-	);
+	$effect(() => {
+		if (!browser || activeTab !== 'plans' || !plansHasMore || !plansLoadMoreSentinel) {
+			return;
+		}
+		const el = plansLoadMoreSentinel;
+		let armed = true;
 
-	let displayedPlans = $derived(filteredPlans);
+		const io = new IntersectionObserver(
+			(entries) => {
+				const entry = entries[0];
+				if (!entry) return;
+				if (entry.isIntersecting) {
+					if (!armed) return;
+					armed = false;
+					loadMorePlans();
+				} else {
+					armed = true;
+				}
+			},
+			{ root: null, rootMargin: '48px 0px', threshold: 0 }
+		);
+		io.observe(el);
 
-	let canReorderPlans = $derived(!searchQuery.trim() && $plans.length > 1);
-	let reorderFrom = $state<number | null>(null);
-	let reorderOver = $state<number | null>(null);
+		return () => {
+			io.disconnect();
+		};
+	});
 
 	function reorderPlan(from: number, to: number) {
 		if (!canReorderPlans || planBusyId !== null) return;
@@ -618,17 +685,21 @@
 					{/snippet}
 				</EmptyState>
 			{:else}
-				<div class="workouts-page__search">
-					<SearchInput bind:value={searchQuery} placeholder={translate(lang, 'workouts.searchPh')} />
-				</div>
+				<ListSearchBar
+					bind:value={searchQuery}
+					placeholder={translate(lang, 'workouts.searchPh')}
+					matchLabel={
+						plansFiltersActive && filteredPlans.length > 0
+							? translate(lang, 'workouts.historyMatches', { n: filteredPlans.length })
+							: ''
+					}
+				/>
 				{#if filteredPlans.length === 0}
 					<EmptyState
 						title={translate(lang, 'catalog.emptyTitle')}
 						description={translate(lang, 'catalog.emptyDesc')}
 						actionLabel={translate(lang, 'catalog.reset')}
-						actionOnclick={() => {
-							searchQuery = '';
-						}}
+						actionOnclick={clearPlansFilters}
 					/>
 				{:else}
 					{#if showWorkoutsPreviewCoachmark}
@@ -756,6 +827,13 @@
 							</li>
 						{/each}
 					</ul>
+					{#if plansHasMore}
+						<div
+							bind:this={plansLoadMoreSentinel}
+							class="workouts-history-load-more"
+							aria-hidden="true"
+						></div>
+					{/if}
 				{/if}
 			{/if}
 		{:else if history.length === 0}
@@ -794,37 +872,23 @@
 				{/snippet}
 			</EmptyState>
 		{:else}
-			<div class="workouts-history-tools">
-				<div class="workouts-history-tools__bar">
-					<div class="workouts-page__search">
-						<SearchInput
-							bind:value={historyQuery}
-							placeholder={translate(lang, 'workouts.historySearchPh')}
-						/>
-					</div>
-					<button
-						type="button"
-						class={cn('workouts-history-filters-btn', historyDateFiltersActive && 'is-active')}
-						aria-label={translate(lang, 'workouts.historyDateFilter')}
-						title={translate(lang, 'workouts.historyDateFilter')}
-						aria-haspopup="dialog"
-						aria-expanded={historyFiltersSheetOpen}
-						onclick={() => {
-							historyFiltersSheetOpen = true;
-						}}
-					>
-						<LucideIcon icon={SlidersHorizontal} size={ICON_BUTTON} />
-						{#if historyDateFiltersActive}
-							<span class="workouts-history-filters-btn__badge" aria-hidden="true"></span>
-						{/if}
-					</button>
-				</div>
-				{#if historyFiltersActive && filteredHistory.length > 0}
-					<p class="workouts-history-tools__count" aria-live="polite">
-						{translate(lang, 'workouts.historyMatches', { n: filteredHistory.length })}
-					</p>
-				{/if}
-			</div>
+			<ListSearchBar
+				class="workouts-history-tools"
+				sticky
+				bind:value={historyQuery}
+				placeholder={translate(lang, 'workouts.historySearchPh')}
+				filterActive={historyDateFiltersActive}
+				filterAriaLabel={translate(lang, 'workouts.historyDateFilter')}
+				filterExpanded={historyFiltersSheetOpen}
+				onFilterClick={() => {
+					historyFiltersSheetOpen = true;
+				}}
+				matchLabel={
+					historyFiltersActive && filteredHistory.length > 0
+						? translate(lang, 'workouts.historyMatches', { n: filteredHistory.length })
+						: ''
+				}
+			/>
 
 			{#if filteredHistory.length === 0}
 				<EmptyState
@@ -896,7 +960,7 @@
 		hidden={activeTab === 'history' || (activeTab === 'plans' && $plans.length === 0)}
 	/>
 
-	{#if activeTab === 'history'}
+	{#if activeTab === 'history' || activeTab === 'plans'}
 		<ScrollToTopFab />
 	{/if}
 </section>
