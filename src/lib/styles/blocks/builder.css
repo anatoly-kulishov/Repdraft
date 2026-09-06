@@ -742,16 +742,32 @@
 		min-height: var(--media-native);
 	}
 
+	/*
+	 * Phone: dissolve the actions cluster into the card grid.
+	 * Menu stays in the header (row 1), grip drops to the fields row (row 2)
+	 * so it aligns with the prescription chips instead of floating in empty space.
+	 */
 	.builder-exercise-list .workout-ex-head__actions {
+		display: contents;
+	}
+
+	.builder-exercise-list .workout-ex-head__menu {
 		grid-row: 1;
 		grid-column: 4;
-		position: static;
-		z-index: 1;
-		margin-right: 0;
 		align-self: start;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.1rem;
+		z-index: 1;
+	}
+
+	.builder-exercise-list .workout-ex-head__actions .exercise-reorder-handle {
+		grid-row: 2;
+		grid-column: 4;
+		align-self: center;
+		z-index: 1;
+	}
+
+	/* Skeleton has no fields row: hide the grip so it does not open an empty row. */
+	.builder-exercise-list .workout-ex-head:has(.workout-ex-head__media.is-placeholder) .exercise-reorder-handle {
+		display: none;
 	}
 
 	.builder-exercise-list .workout-ex-head__title {
@@ -769,7 +785,7 @@
 	.builder-exercise-list .workout-ex-fields,
 	.builder-exercise-list .workout-ex-head__copy > .workout-ex-chip {
 		grid-row: 2;
-		grid-column: 1 / -1;
+		grid-column: 1 / 4;
 		min-width: 0;
 	}
 
@@ -823,20 +839,19 @@
 		align-self: start;
 	}
 
-	.builder-exercise-list .workout-ex-head--group .workout-ex-head__actions {
-		grid-row: 1;
-		align-self: start;
-	}
+	/* Group rows reuse the split actions from above: menu in header, grip beside the reps chip. */
 
-	/* Full-width prescription row: chips share the card, no empty right gutter. */
+	/* Full-width prescription row: equal chips, no overflow. */
 	.builder-exercise-list .workout-ex-fields {
-		display: flex;
-		flex-wrap: nowrap;
-		align-items: center;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1.2fr);
+		align-items: end;
 		justify-content: stretch;
-		gap: 0.4rem 0.45rem;
+		column-gap: 0.4rem;
+		row-gap: 0;
 		width: 100%;
 		max-width: 100%;
+		min-width: 0;
 		padding: 0;
 	}
 
@@ -848,23 +863,24 @@
 
 	.builder-exercise-list .workout-ex-fields__times {
 		display: flex;
-		flex: 0 0 auto;
 		align-items: center;
 		justify-content: center;
+		align-self: end;
+		width: auto;
 		height: var(--control-height, 3rem);
 		padding: 0;
 	}
 
 	.builder-exercise-list .workout-ex-chip {
-		flex: 1 1 0;
+		width: 100%;
 		min-width: 0;
-		width: auto;
+		max-width: 100%;
 	}
 
 	.builder-exercise-list .workout-ex-chip--ladder {
-		flex: 1.2 1 0;
-		min-width: calc(5.5ch + var(--chip-pad-x, 0.45rem) * 2);
 		width: 100%;
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	.builder-exercise-list .workout-ex-chip span {
@@ -879,21 +895,16 @@
 	}
 
 	.builder-exercise-list .workout-ex-chip input[data-slot='input'],
-	.builder-exercise-list .workout-ex-chip__input[data-slot='input'] {
+	.builder-exercise-list .workout-ex-chip__input[data-slot='input'],
+	.builder-exercise-list .workout-ex-chip--rest input[data-slot='input'],
+	.builder-exercise-list .workout-ex-chip__input--rest[data-slot='input'] {
 		box-sizing: border-box;
 		width: 100%;
 		min-width: 0;
-		max-width: none;
+		max-width: 100%;
 		height: var(--control-height, 3rem);
 		min-height: var(--control-height, 3rem);
 		max-height: var(--control-height, 3rem);
-	}
-
-	.builder-exercise-list .workout-ex-chip--rest input[data-slot='input'],
-	.builder-exercise-list .workout-ex-chip__input--rest[data-slot='input'] {
-		width: 100%;
-		min-width: 0;
-		max-width: none;
 	}
 }
 
@@ -1137,19 +1148,20 @@ html.is-builder-reorder-active .exercise-reorder-handle {
 	flex: 0 0 auto;
 }
 
-/* Superset member reps: a bit larger than the compact solo chips. */
+/* Superset member reps: compact fixed width under the title. */
 .workout-ex-head--group .workout-ex-fields--group .workout-ex-chip--reps input[data-slot='input'],
 .workout-ex-head--group .workout-ex-fields--group .workout-ex-chip__input[data-slot='input'] {
 	--chip-pad-x: 0.55rem;
-	width: calc(4.75ch + var(--chip-pad-x) * 2);
-	min-width: calc(4.75ch + var(--chip-pad-x) * 2);
-	max-width: calc(4.75ch + var(--chip-pad-x) * 2);
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
 	font-size: 1.0625rem;
 }
 
 .workout-ex-head--group .workout-ex-fields--group .workout-ex-chip--ladder {
 	--chip-pad-x: 0.55rem;
-	min-width: calc(6ch + var(--chip-pad-x) * 2);
+	width: 100%;
+	min-width: 0;
 	padding: 0.3rem var(--chip-pad-x);
 }
 
@@ -1199,18 +1211,28 @@ html.is-builder-reorder-active .exercise-reorder-handle {
 }
 
 .workout-ex-fields {
-	display: flex;
-	flex-wrap: nowrap;
-	align-items: center;
-	gap: 0.35rem;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1.2fr);
+	align-items: end;
+	column-gap: 0.4rem;
+	width: 100%;
+	max-width: 100%;
 	min-width: 0;
+}
+
+/* Superset member: only reps (or ladder) — not the full sets × reps · rest grid. */
+.workout-ex-fields--group {
+	display: flex;
+	grid-template-columns: none;
+	width: auto;
+	max-width: min(100%, 8rem);
 }
 
 .workout-ex-fields__times {
 	display: flex;
-	flex-shrink: 0;
 	align-items: center;
 	justify-content: center;
+	align-self: end;
 	height: var(--control-height, 3rem);
 	padding: 0;
 	font-size: 0.8125rem;
@@ -1220,8 +1242,9 @@ html.is-builder-reorder-active .exercise-reorder-handle {
 
 .workout-ex-chip {
 	display: flex;
-	flex: 0 0 auto;
 	min-width: 0;
+	max-width: 100%;
+	width: 100%;
 	flex-direction: column;
 	gap: 0;
 	font-size: 0.6875rem;
@@ -1233,14 +1256,13 @@ html.is-builder-reorder-active .exercise-reorder-handle {
 button.workout-ex-chip--ladder {
 	box-sizing: border-box;
 	display: inline-flex;
-	flex: 0 0 auto;
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	gap: 0;
-	/* Fit labels like 12→1 without collapsing in the sets × reps · rest row. */
-	width: auto;
-	min-width: calc(5.5ch + var(--chip-pad-x, 0.45rem) * 2);
+	gap: 0.15rem;
 	min-height: var(--control-height, 3rem);
 	margin: 0;
 	padding: 0.3rem var(--chip-pad-x, 0.45rem);
@@ -1314,12 +1336,16 @@ button.workout-ex-chip--ladder {
 	color: var(--color-muted);
 }
 
-/* Exercise actions sheet: compact rows, not stretched icon tiles. */
+/* Exercise actions sheet: iOS-style group (no muddy per-row muted fill). */
 .builder-ex-actions {
 	display: flex;
 	flex-direction: column;
-	gap: 0.35rem;
+	gap: 0;
 	margin-top: 0.85rem;
+	overflow: hidden;
+	border: 1px solid var(--color-field-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
 }
 
 .builder-ex-action {
@@ -1330,18 +1356,34 @@ button.workout-ex-chip--ladder {
 	min-width: 0;
 	min-height: 3.25rem;
 	margin: 0;
-	padding: 0.35rem 0.55rem 0.35rem 0.35rem;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-control);
-	background: var(--color-surface-muted);
+	padding: 0.4rem 0.65rem 0.4rem 0.4rem;
+	border: none;
+	border-bottom: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
+	border-radius: 0;
+	background: transparent;
 	color: var(--color-ink);
+	box-shadow: none;
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
 	text-align: start;
 }
 
+.builder-ex-action:last-child {
+	border-bottom: none;
+}
+
+.builder-ex-action:hover {
+	background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+}
+
 .builder-ex-action:active {
-	transform: scale(0.98);
+	background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.builder-ex-action:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--color-accent) 70%, transparent);
+	outline-offset: -2px;
+	z-index: 1;
 }
 
 .builder-ex-action__well {
@@ -1353,19 +1395,32 @@ button.workout-ex-chip--ladder {
 	min-width: 3rem;
 	min-height: 3rem;
 	border-radius: var(--radius-control);
-	border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-	background: var(--color-surface);
+	border: 1px solid color-mix(in srgb, var(--color-field-border) 65%, transparent);
+	background: color-mix(in srgb, var(--color-bg) 55%, var(--color-surface));
 	color: var(--color-ink);
+}
+
+html[data-theme='dark'] .builder-ex-action__well {
+	background: var(--icon-plate-bg);
+	border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
 }
 
 .builder-ex-action--danger {
 	color: var(--color-danger);
 }
 
+.builder-ex-action--danger:hover {
+	background: color-mix(in srgb, var(--color-danger) 7%, transparent);
+}
+
+.builder-ex-action--danger:active {
+	background: color-mix(in srgb, var(--color-danger) 11%, transparent);
+}
+
 .builder-ex-action--danger .builder-ex-action__well {
 	color: var(--color-danger);
-	border-color: color-mix(in srgb, var(--color-danger) 28%, var(--color-border));
-	background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface));
+	border-color: color-mix(in srgb, var(--color-danger) 22%, var(--color-field-border));
+	background: color-mix(in srgb, var(--color-danger) 7%, var(--color-surface));
 }
 
 .builder-ex-action__label {
@@ -1395,35 +1450,44 @@ button.workout-ex-chip--ladder {
 	white-space: nowrap;
 }
 
-@media (prefers-reduced-motion: reduce) {
-	.builder-ex-action:active {
-		transform: none;
-	}
+/* Prescription chips: short labels above values (sets × reps · rest). */
+.workout-ex-fields .workout-ex-chip,
+.workout-ex-head--group > .workout-ex-chip,
+.workout-ex-head__copy > .workout-ex-chip {
+	gap: 0.15rem;
+	align-items: stretch;
+	text-align: center;
 }
 
-/* Prescription chips: label is a11y-only — row reads as 3 × 10 · 90.
-   Ladder value span must stay visible (not clipped like the label). */
 .workout-ex-fields .workout-ex-chip > span:not(.workout-ex-chip__ladder-value),
 .workout-ex-head--group > .workout-ex-chip > span:not(.workout-ex-chip__ladder-value),
 .workout-ex-head__copy > .workout-ex-chip > span:not(.workout-ex-chip__ladder-value) {
-	position: absolute;
-	width: 1px;
-	height: 1px;
+	position: static;
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	height: auto;
+	margin: 0;
 	padding: 0;
-	margin: -1px;
 	overflow: hidden;
-	clip: rect(0, 0, 0, 0);
+	clip: auto;
+	text-overflow: ellipsis;
 	white-space: nowrap;
 	border: 0;
+	font-size: 0.625rem;
+	font-weight: 650;
+	letter-spacing: 0.02em;
+	line-height: 1.15;
+	color: var(--color-muted);
 }
 
 .workout-ex-chip input[data-slot='input'],
 .workout-ex-chip__input[data-slot='input'] {
 	--chip-pad-x: 0.45rem;
 	box-sizing: border-box;
-	width: calc(3.5ch + var(--chip-pad-x) * 2);
-	min-width: calc(3.5ch + var(--chip-pad-x) * 2);
-	max-width: calc(3.5ch + var(--chip-pad-x) * 2);
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
 	height: var(--control-height, 3rem);
 	min-height: var(--control-height, 3rem);
 	max-height: var(--control-height, 3rem);
@@ -1438,12 +1502,12 @@ button.workout-ex-chip--ladder {
 	box-shadow: none;
 }
 
-/* Rest chip: same field chrome as sets/reps; only wider for 180. */
+/* Rest shares the same full-width chip chrome (grid column is slightly wider). */
 .workout-ex-chip--rest input[data-slot='input'],
 .workout-ex-chip__input--rest[data-slot='input'] {
-	width: calc(4.5ch + var(--chip-pad-x) * 2);
-	min-width: calc(4.5ch + var(--chip-pad-x) * 2);
-	max-width: calc(4.5ch + var(--chip-pad-x) * 2);
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
 }
 
 .superset-bar {
@@ -1540,20 +1604,24 @@ button.workout-ex-chip--ladder {
 }
 
 @media (min-width: 640px) {
+	.workout-ex-head--group .workout-ex-fields--group {
+		max-width: min(100%, 8.5rem);
+	}
+
 	.workout-ex-head--group .workout-ex-fields--group .workout-ex-chip--reps input[data-slot='input'],
 	.workout-ex-head--group .workout-ex-fields--group .workout-ex-chip__input[data-slot='input'] {
 		--chip-pad-x: 0.55rem;
-		width: calc(4.75ch + var(--chip-pad-x) * 2);
-		min-width: calc(4.75ch + var(--chip-pad-x) * 2);
-		max-width: calc(4.75ch + var(--chip-pad-x) * 2);
+		width: 100%;
+		min-width: 0;
+		max-width: 100%;
 		font-size: 1.0625rem;
 	}
 
 	.workout-ex-head--group .workout-ex-fields--group .workout-ex-chip--rest input[data-slot='input'],
 	.workout-ex-head--group .workout-ex-fields--group .workout-ex-chip__input--rest[data-slot='input'] {
-		width: calc(5.5ch + var(--chip-pad-x) * 2);
-		min-width: calc(5.5ch + var(--chip-pad-x) * 2);
-		max-width: calc(5.5ch + var(--chip-pad-x) * 2);
+		width: 100%;
+		min-width: 0;
+		max-width: 100%;
 	}
 }
 

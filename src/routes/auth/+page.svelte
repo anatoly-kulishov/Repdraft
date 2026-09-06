@@ -35,7 +35,7 @@
 	import DataExportSection from '$lib/components/DataExportSection.svelte';
 	import ProfileDevWipePanel from '$lib/components/ProfileDevWipePanel.svelte';
 	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
-	import { APP_VERSION_LABEL } from '$lib/appVersion';
+	import WhatsNewSheet from '$lib/components/WhatsNewSheet.svelte';
 	import { GREETING_NAME_MAX, clampGreetingName, greetingNameMatchesStored } from '$lib/domain/greetingName';
 	import { isIosDevice } from '$lib/domain/pwaInstall';
 	import { restSoundEnabled } from '$lib/stores/prefs';
@@ -794,12 +794,7 @@
 					</div>
 				</div>
 			</div>
-			<p
-				class="auth-account__version"
-				aria-label={translate(lang, 'attr.versionAria', { version: APP_VERSION_LABEL })}
-			>
-				{APP_VERSION_LABEL}
-			</p>
+			<WhatsNewSheet />
 		</div>
 	{:else if panel === 'check-email'}
 		<div class="auth-guest-stack">
@@ -1088,12 +1083,7 @@
 			</div>
 		</div>
 	</div>
-	<p
-		class="auth-account__version"
-		aria-label={translate(lang, 'attr.versionAria', { version: APP_VERSION_LABEL })}
-	>
-		{APP_VERSION_LABEL}
-	</p>
+	<WhatsNewSheet />
 {/snippet}
 
 {#snippet onboardingHelpPanel()}
