@@ -18,13 +18,15 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		highlights: {
 			ru: [
 				'Тёмная тема по умолчанию',
-				'Подключён Inter Variable',
-				'Спокойнее блик в логотипе'
+				'Чётче шрифт и фокус с клавиатуры',
+				'Спокойнее блик в логотипе',
+				'В конструкторе поле под клавиатурой уезжает в центр экрана'
 			],
 			en: [
 				'Dark theme by default',
-				'Inter Variable font wired up',
-				'Calmer logo highlight'
+				'Clearer type and keyboard focus',
+				'Calmer logo highlight',
+				'Builder: focused field scrolls to the middle of the screen'
 			]
 		}
 	},
