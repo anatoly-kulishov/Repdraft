@@ -1,7 +1,7 @@
 {
 	"name": "repdraft",
 	"private": true,
-	"version": "0.16.5",
+	"version": "0.16.6",
 	"description": "Каталог упражнений и конструктор тренировок",
 	"type": "module",
 	"scripts": {
@@ -25,7 +25,7 @@
 		"check:auth": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/authFlow.selfcheck.ts",
 		"smoke:catalog-hub": "node ./scripts/smoke-catalog-hub.mjs",
 		"smoke:mvp": "node ./scripts/smoke-catalog-hub.mjs",
-		"icons:pwa": "node ./scripts/render-pwa-icons.mjs",
+		"icons:pwa": "node ./scripts/generate-brand-icons.mjs",
 		"e2e:ui": "node ./scripts/e2e-ui-audit.mjs",
 		"e2e:overflow": "node ./scripts/e2e-overflow-stress.mjs",
 		"gen:stress-backup": "node ./scripts/gen-stress-backup.mjs",
