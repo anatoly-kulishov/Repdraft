@@ -19,12 +19,12 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 			ru: [
 				'Тёмная тема по умолчанию',
 				'Чётче шрифт и фокус с клавиатуры',
-				'Спокойнее блик в логотипе, приветствие без эмодзи'
+				'Спокойнее блик в логотипе'
 			],
 			en: [
 				'Dark theme by default',
 				'Clearer type and keyboard focus',
-				'Calmer logo highlight, greeting without emoji'
+				'Calmer logo highlight'
 			]
 		}
 	},
