@@ -662,7 +662,6 @@
 						})}
 						onclick={() => appTheme.set(nextTheme)}
 					/>
-					<p class="profile-settings-group__hint">{translate(lang, 'settings.themeHint')}</p>
 				</div>
 
 				<div class="profile-settings-group panel">
