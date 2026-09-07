@@ -6,7 +6,7 @@
 			name="viewport"
 			content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual, maximum-scale=5"
 		/>
-		<meta name="theme-color" content="#F2F2F7" />
+		<meta name="theme-color" content="#0B0B0C" />
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -25,11 +25,11 @@
 				margin: 0;
 				min-height: var(--app-vh, 100dvh);
 				min-height: -webkit-fill-available;
-				background-color: #f2f2f7;
-			}
-			html[data-theme='dark'],
-			html[data-theme='dark'] body {
 				background-color: #0b0b0c;
+			}
+			html[data-theme='light'],
+			html[data-theme='light'] body {
+				background-color: #f2f2f7;
 			}
 			#pwa-boot {
 				position: fixed;
@@ -37,12 +37,12 @@
 				z-index: 9999;
 				display: grid;
 				place-items: center;
-				background: #f2f2f7;
+				background: #0b0b0c;
 				pointer-events: none;
 				transition: opacity 0.2s ease;
 			}
-			html[data-theme='dark'] #pwa-boot {
-				background: #0b0b0c;
+			html[data-theme='light'] #pwa-boot {
+				background: #f2f2f7;
 			}
 			#pwa-boot .pwa-boot-icon-wrap {
 				width: 120px;
@@ -71,7 +71,7 @@
 					var themeKey = 'repdraft.theme';
 					var theme = localStorage.getItem(themeKey);
 					if (theme !== 'light' && theme !== 'dark') {
-						theme = 'light';
+						theme = 'dark';
 					}
 					var bg = theme === 'light' ? '#f2f2f7' : '#0b0b0c';
 					document.documentElement.setAttribute('data-theme', theme);

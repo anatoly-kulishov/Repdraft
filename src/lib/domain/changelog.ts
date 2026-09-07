@@ -14,6 +14,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.16.7',
+		highlights: {
+			ru: [
+				'Тёмная тема по умолчанию',
+				'Чётче шрифт и фокус с клавиатуры',
+				'Спокойнее блик в логотипе, приветствие без эмодзи'
+			],
+			en: [
+				'Dark theme by default',
+				'Clearer type and keyboard focus',
+				'Calmer logo highlight, greeting without emoji'
+			]
+		}
+	},
+	{
 		version: '0.16.6',
 		highlights: {
 			ru: [
