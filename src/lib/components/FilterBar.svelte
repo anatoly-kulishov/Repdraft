@@ -1,8 +1,6 @@
 <script lang="ts">
-	import AppButton from '$lib/components/AppButton.svelte';
 	import AppChip from '$lib/components/AppChip.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
-	import AppPanel from '$lib/components/AppPanel.svelte';
 	import ListSearchBar from '$lib/components/ListSearchBar.svelte';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseFilters } from '$lib/domain/types';
@@ -35,10 +33,13 @@
 		lockBodyPart && !hideTargetChips && targets.length > 1
 	);
 
-	let equipmentTriggerLabel = $derived(
-		filters.equipment === 'all'
-			? translate(lang, 'catalog.equipment')
-			: labelEquipment(filters.equipment, lang)
+	let showEquipmentFilter = $derived(equipment.length > 0);
+	let equipmentActive = $derived(filters.equipment !== 'all');
+
+	let equipmentAriaLabel = $derived(
+		equipmentActive
+			? `${translate(lang, 'catalog.equipment')}: ${labelEquipment(filters.equipment, lang)}`
+			: translate(lang, 'catalog.equipment')
 	);
 
 	function toggleTarget(value: string) {
@@ -58,48 +59,39 @@
 </script>
 
 <div class="catalog-filters-shell">
-	<AppPanel class={cn('catalog-filters', lockBodyPart && 'catalog-filters--zone')}>
+	<div class={cn('catalog-filters', lockBodyPart && 'catalog-filters--zone')}>
 		<ListSearchBar
 			bind:value={filters.query}
 			debounceMs={150}
 			placeholder={translate(lang, 'catalog.search')}
-		/>
-
-		{#if showTargetFilters}
-			<div
-				class="catalog-filter-chips"
-				role="group"
-				aria-label={translate(lang, 'catalog.filterChipsAria')}
-			>
-				{#each targets as item (item)}
-					<AppChip
-						class="catalog-filter-chip w-auto min-w-0 rounded-full px-3"
-						active={filters.target === item}
-						onclick={() => toggleTarget(item)}
-					>
-						{labelTarget(item, lang)}
-					</AppChip>
-				{/each}
-			</div>
-		{/if}
-
-		{#if equipment.length > 0}
-			<AppButton
-				variant="secondary"
-				class={cn(
-					'catalog-filter-equipment-trigger !h-auto !min-h-12 justify-start px-[0.9rem] py-[0.55rem] text-left font-[550]',
-					filters.equipment !== 'all' && 'is-active'
-				)}
-				aria-haspopup="dialog"
-				aria-expanded={equipmentSheetOpen}
-				onclick={() => {
-					equipmentSheetOpen = true;
-				}}
-			>
-				{equipmentTriggerLabel}
-			</AppButton>
-		{/if}
-	</AppPanel>
+			filterActive={equipmentActive}
+			filterAriaLabel={equipmentAriaLabel}
+			filterExpanded={equipmentSheetOpen}
+			onFilterClick={showEquipmentFilter
+				? () => {
+						equipmentSheetOpen = true;
+					}
+				: undefined}
+		>
+			{#if showTargetFilters}
+				<div
+					class="catalog-filter-chips"
+					role="group"
+					aria-label={translate(lang, 'catalog.filterChipsAria')}
+				>
+					{#each targets as item (item)}
+						<AppChip
+							class="catalog-filter-chip w-auto min-w-0 rounded-full px-3"
+							active={filters.target === item}
+							onclick={() => toggleTarget(item)}
+						>
+							{labelTarget(item, lang)}
+						</AppChip>
+					{/each}
+				</div>
+			{/if}
+		</ListSearchBar>
+	</div>
 </div>
 
 {#if equipmentSheetOpen}

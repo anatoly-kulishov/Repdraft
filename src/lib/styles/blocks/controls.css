@@ -65,6 +65,13 @@ input[data-slot='input']:not([type='file']) {
 	height: var(--control-height);
 }
 
+/* Search fields: fixed height + vertical pad optically lifts glyphs; center via line-box. */
+input[data-slot='input'].search-field:not([type='file']) {
+	padding-top: 0;
+	padding-bottom: 0;
+	line-height: calc(var(--control-height) - 2px);
+}
+
 input[data-slot='input']:not([type='file'])::placeholder,
 textarea[data-slot='textarea']::placeholder {
 	color: var(--color-placeholder);

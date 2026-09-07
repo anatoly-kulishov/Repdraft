@@ -13,6 +13,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.16.5',
+		highlights: {
+			ru: [
+				'Нижние шиты и лайтбокс клипов больше не скроллят фон за собой',
+				'Live: тип подхода в сетке 2×2, удаление отдельно',
+				'Каталог: фильтр снаряда иконкой справа, поиск sticky под шапкой',
+				'Undo: тост внизу, кнопки «+» / черновик поднимаются выше'
+			],
+			en: [
+				'Bottom sheets and clip lightbox no longer scroll the page behind',
+				'Live: set kind as a 2×2 grid, delete separated',
+				'Catalog: equipment filter as an icon, search sticks under the header',
+				'Undo: snackbar stays low, + / draft buttons lift above it'
+			]
+		}
+	},
+	{
 		version: '0.16.4',
 		highlights: {
 			ru: [

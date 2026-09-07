@@ -642,10 +642,12 @@
 	}
 }
 
+/* Quiet twin of menu: no plate/border in idle (light especially). */
 .builder-exercise-list .workout-ex-head__actions .exercise-reorder-handle {
 	touch-action: none;
 	color: var(--color-muted);
 	background: transparent;
+	border: none;
 	border-radius: var(--radius-control);
 }
 
@@ -702,7 +704,7 @@
 	}
 
 	.builder-exercise-list .swipe-to-delete.is-enabled .workout-ex-head__actions .exercise-reorder-handle {
-		background: var(--color-surface);
+		background: transparent;
 	}
 
 	/*
@@ -758,10 +760,13 @@
 		z-index: 1;
 	}
 
+	/* Bottom-align with chip inputs (labels sit above; center would float the grip). */
 	.builder-exercise-list .workout-ex-head__actions .exercise-reorder-handle {
 		grid-row: 2;
 		grid-column: 4;
-		align-self: center;
+		align-self: end;
+		height: var(--control-height, 3rem);
+		min-height: var(--control-height, 3rem);
 		z-index: 1;
 	}
 
@@ -1336,30 +1341,30 @@ button.workout-ex-chip--ladder {
 	color: var(--color-muted);
 }
 
-/* Exercise actions sheet: iOS-style group (no muddy per-row muted fill). */
+/* Exercise actions: plain rows on the sheet surface (no plate, wells, or mud fills). */
 .builder-ex-actions {
 	display: flex;
 	flex-direction: column;
-	gap: 0;
-	margin-top: 0.85rem;
-	overflow: hidden;
-	border: 1px solid var(--color-field-border);
-	border-radius: var(--radius-control);
-	background: var(--color-surface);
+	gap: 0.1rem;
+	margin-top: 0.65rem;
+	overflow: visible;
+	border: none;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
 }
 
 .builder-ex-action {
 	display: grid;
-	grid-template-columns: 3rem minmax(0, 1fr) auto;
+	grid-template-columns: 2.5rem minmax(0, 1fr) auto;
 	align-items: center;
-	column-gap: 0.75rem;
+	column-gap: 0.55rem;
 	min-width: 0;
-	min-height: 3.25rem;
+	min-height: 3rem;
 	margin: 0;
-	padding: 0.4rem 0.65rem 0.4rem 0.4rem;
+	padding: 0.4rem 0.35rem;
 	border: none;
-	border-bottom: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
-	border-radius: 0;
+	border-radius: var(--radius-control);
 	background: transparent;
 	color: var(--color-ink);
 	box-shadow: none;
@@ -1368,21 +1373,17 @@ button.workout-ex-chip--ladder {
 	text-align: start;
 }
 
-.builder-ex-action:last-child {
-	border-bottom: none;
-}
-
 .builder-ex-action:hover {
-	background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+	background: color-mix(in srgb, var(--color-ink) 4%, transparent);
 }
 
 .builder-ex-action:active {
-	background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+	background: color-mix(in srgb, var(--color-ink) 7%, transparent);
 }
 
 .builder-ex-action:focus-visible {
 	outline: 2px solid color-mix(in srgb, var(--color-accent) 70%, transparent);
-	outline-offset: -2px;
+	outline-offset: 2px;
 	z-index: 1;
 }
 
@@ -1390,37 +1391,35 @@ button.workout-ex-chip--ladder {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 3rem;
-	height: 3rem;
-	min-width: 3rem;
-	min-height: 3rem;
-	border-radius: var(--radius-control);
-	border: 1px solid color-mix(in srgb, var(--color-field-border) 65%, transparent);
-	background: color-mix(in srgb, var(--color-bg) 55%, var(--color-surface));
-	color: var(--color-ink);
-}
-
-html[data-theme='dark'] .builder-ex-action__well {
-	background: var(--icon-plate-bg);
-	border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
+	width: 2.5rem;
+	height: 2.5rem;
+	min-width: 2.5rem;
+	min-height: 2.5rem;
+	border-radius: 0;
+	border: none;
+	background: transparent;
+	box-shadow: none;
+	color: inherit;
 }
 
 .builder-ex-action--danger {
 	color: var(--color-danger);
+	margin-top: 0.25rem;
+	background: transparent;
 }
 
 .builder-ex-action--danger:hover {
-	background: color-mix(in srgb, var(--color-danger) 7%, transparent);
+	background: color-mix(in srgb, var(--color-danger) 6%, transparent);
 }
 
 .builder-ex-action--danger:active {
-	background: color-mix(in srgb, var(--color-danger) 11%, transparent);
+	background: color-mix(in srgb, var(--color-danger) 10%, transparent);
 }
 
 .builder-ex-action--danger .builder-ex-action__well {
-	color: var(--color-danger);
-	border-color: color-mix(in srgb, var(--color-danger) 22%, var(--color-field-border));
-	background: color-mix(in srgb, var(--color-danger) 7%, var(--color-surface));
+	color: inherit;
+	border: none;
+	background: transparent;
 }
 
 .builder-ex-action__label {

@@ -130,11 +130,11 @@
 		transform: translateY(-50%);
 	}
 
-	/* Keep ≥44px tap without making the visible disc taller than the field. */
+	/* Keep ≥48px tap without making the visible disc taller than the field. */
 	.search-clear-btn::before {
 		content: '';
 		position: absolute;
-		inset: -0.55rem;
+		inset: -0.575rem;
 	}
 
 	.search-clear-btn:hover {

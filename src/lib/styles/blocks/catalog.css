@@ -2499,7 +2499,10 @@ body:has(.live-finish-coachmark--mobile) {
 	position: fixed;
 	z-index: 39;
 	left: 50%;
-	bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--vv-fixed-bottom, 0px));
+	bottom: calc(
+		var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--toast-undo-clearance, 0px) +
+			var(--vv-fixed-bottom, 0px)
+	);
 	transform: translateX(-50%) translateZ(0);
 	display: inline-flex;
 	align-items: center;
@@ -2521,6 +2524,7 @@ body:has(.live-finish-coachmark--mobile) {
 	box-shadow: var(--shadow-float);
 	-webkit-backface-visibility: hidden;
 	max-width: calc(100% - 1.5rem);
+	transition: bottom 180ms ease;
 }
 
 .draft-dock :is(.lucide-icon-wrap, .draft-dock__label) {
@@ -2549,7 +2553,10 @@ body:has(.live-finish-coachmark--mobile) {
 	position: fixed;
 	z-index: 39;
 	left: 50%;
-	bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--vv-fixed-bottom, 0px));
+	bottom: calc(
+		var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--toast-undo-clearance, 0px) +
+			var(--vv-fixed-bottom, 0px)
+	);
 	transform: translateX(-50%) translateZ(0);
 	display: flex;
 	flex-direction: column;
@@ -2557,6 +2564,7 @@ body:has(.live-finish-coachmark--mobile) {
 	gap: 0.55rem;
 	max-width: min(18rem, calc(100% - 1.5rem));
 	pointer-events: none;
+	transition: bottom 180ms ease;
 }
 
 .draft-dock-wrap > * {
@@ -2573,11 +2581,17 @@ body:has(.live-finish-coachmark--mobile) {
 }
 
 body:has(.sticky-actions) .draft-dock-wrap {
-	bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.55rem + var(--vv-fixed-bottom, 0px));
+	bottom: calc(
+		var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.55rem + var(--toast-undo-clearance, 0px) +
+			var(--vv-fixed-bottom, 0px)
+	);
 }
 
 body:has(.sticky-actions) .draft-dock {
-	bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.55rem + var(--vv-fixed-bottom, 0px));
+	bottom: calc(
+		var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.55rem + var(--toast-undo-clearance, 0px) +
+			var(--vv-fixed-bottom, 0px)
+	);
 }
 
 /* Phones + tablet (< sidebar): icon FAB + count badge — stays clear of titles / tabbar. */
@@ -2585,7 +2599,7 @@ body:has(.sticky-actions) .draft-dock {
 	.draft-dock {
 		left: auto;
 		right: max(0.75rem, var(--safe-right));
-		bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--vv-fixed-bottom, 0px));
+		bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--toast-undo-clearance, 0px) + var(--vv-fixed-bottom, 0px));
 		transform: translateZ(0);
 		width: 3rem;
 		height: 3rem;
@@ -2632,7 +2646,7 @@ body:has(.sticky-actions) .draft-dock {
 		right: max(1rem, var(--safe-right));
 		bottom: calc(
 			var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + 3.5rem + 0.75rem +
-				var(--vv-fixed-bottom, 0px)
+				var(--toast-undo-clearance, 0px) + var(--vv-fixed-bottom, 0px)
 		);
 	}
 
@@ -2640,21 +2654,24 @@ body:has(.sticky-actions) .draft-dock {
 	body:has(.workouts-fab:not(.workouts-fab--hidden)) .draft-dock {
 		/* Stack above Create FAB — vertical offset (both are bottom-right). */
 		right: max(1rem, var(--safe-right));
-		bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + 3.5rem + 0.75rem + var(--vv-fixed-bottom, 0px));
+		bottom: calc(
+			var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + 3.5rem + 0.75rem +
+				var(--toast-undo-clearance, 0px) + var(--vv-fixed-bottom, 0px)
+		);
 	}
 
 	body:has(.sticky-actions):has(.app-fab.app-fab--sticky:not(.app-fab--hidden)):has(.draft-dock-wrap)
 		.draft-dock-wrap {
 		bottom: calc(
 			var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.85rem + 3.5rem + 0.75rem +
-				var(--vv-fixed-bottom, 0px)
+				var(--toast-undo-clearance, 0px) + var(--vv-fixed-bottom, 0px)
 		);
 	}
 
 	body:has(.sticky-actions):has(.app-fab.app-fab--sticky:not(.app-fab--hidden)):has(.draft-dock) .draft-dock {
 		bottom: calc(
 			var(--mobile-chrome-bottom) + var(--sticky-actions-h) + 0.85rem + 3.5rem + 0.75rem +
-				var(--vv-fixed-bottom, 0px)
+				var(--toast-undo-clearance, 0px) + var(--vv-fixed-bottom, 0px)
 		);
 	}
 }
@@ -3556,22 +3573,24 @@ body:has(.sticky-actions) .draft-dock {
 	margin-bottom: 0;
 }
 
-/* Catalog list: keep search + facets under fixed ScreenHeader while scrolling. */
+/* Catalog list: sticky search + facets under ScreenHeader (History-matched).
+ * Sticky MUST be on __filters (sibling of __main), not on the shell inside:
+ * a short parent (~search height) gives sticky nowhere to travel. */
 @media (max-width: 1023px) {
-	/* Slight air under header; sticky top includes the same gap so it does not jump. */
-	.content-page--catalog.catalog-page--list,
-	.content-page--catalog.records-page {
-		/* Must use a length (not unitless 0): spacer is calc(chrome-h + gap). */
-		--screen-header-content-gap: 0.3rem;
+	.content-page--catalog.catalog-page--list:has(.catalog-filters-shell),
+	.content-page--catalog.records-page:has(.catalog-filters-shell),
+	.content-page--catalog.catalog-page--list:has(.catalog-list-layout__filters--search-only),
+	.content-page--catalog.records-page:has(.catalog-list-layout__filters--search-only) {
+		/* Flush under header; sticky strip carries the chrome (same as History). */
+		--screen-header-content-gap: 0px;
 	}
 
 	/*
 	 * Empty cards sit under the spacer with a small gap (no filter chrome).
-	 * Restore extra air so the panel is not flush against the header.
+	 * Restore air so the panel is not flush against the header.
 	 */
 	.content-page--catalog.catalog-page--list > .empty-state,
 	.content-page--catalog.records-page > .empty-state {
-		/* Match default --screen-header-content-gap (reduced above for sticky filters). */
 		margin-top: 1.15rem;
 	}
 
@@ -3580,14 +3599,20 @@ body:has(.sticky-actions) .draft-dock {
 		box-shadow: none;
 	}
 
-	.content-page--catalog .catalog-list-layout__filters--search-only {
+	.content-page--catalog .catalog-list-layout__filters--search-only,
+	.content-page--catalog .catalog-list-layout__filters:has(.catalog-filters-shell) {
 		position: sticky;
-		top: calc(var(--screen-header-chrome-h) + var(--screen-header-content-gap));
+		top: var(--screen-header-chrome-h);
 		z-index: 20;
-		padding-top: 0.35rem;
-		padding-bottom: 0.4rem;
-		/* Page bg (not surface): opaque for scroll bleed, no second chrome bar. */
-		background: var(--color-bg);
+		width: auto;
+		max-width: none;
+		align-self: stretch;
+		margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
+		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
+		padding: var(--screen-header-pad-block) max(var(--page-pad-x), var(--safe-right))
+			var(--screen-header-pad-block) max(var(--page-pad-x), var(--safe-left));
+		background: var(--chrome-header-bg);
+		box-shadow: var(--shadow-screen-header);
 	}
 
 	.content-page--catalog .catalog-list-layout__filters--search-only > :global(label),
@@ -3597,17 +3622,18 @@ body:has(.sticky-actions) .draft-dock {
 		min-width: 0;
 	}
 
+	/* Shell is plain again: sticky lives on the flex sibling above. */
 	.content-page--catalog .catalog-list-layout__filters .catalog-filters-shell {
-		position: sticky;
-		top: calc(var(--screen-header-chrome-h) + var(--screen-header-content-gap));
-		z-index: 20;
-		margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
-		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
-		padding-left: max(var(--page-pad-x), var(--safe-left));
-		padding-right: max(var(--page-pad-x), var(--safe-right));
-		padding-top: 0.35rem;
-		padding-bottom: 0.4rem;
-		background: var(--color-bg);
+		position: static;
+		top: auto;
+		z-index: auto;
+		width: 100%;
+		max-width: none;
+		margin-left: 0;
+		margin-right: 0;
+		padding: 0;
+		background: transparent;
+		box-shadow: none;
 	}
 }
 
@@ -3616,21 +3642,22 @@ body:has(.sticky-actions) .draft-dock {
 	width: 100%;
 }
 
-/* Desktop: toolbar row — search grows, equipment on the right, chips full width below. */
+/* Flat toolbar (History-matched): no panel plate around search. */
 
-.catalog-filters.panel {
+.catalog-filters {
 	display: flex;
 	flex-direction: column;
 	gap: 0.55rem;
-	padding: 0.65rem 0.7rem;
-	border-color: var(--color-border);
+	width: 100%;
+	min-width: 0;
 }
 
-.catalog-filter-skeleton__equipment {
-	display: block;
-	width: 100%;
-	min-height: 48px;
-	border-radius: var(--radius-control);
+.catalog-filter-skeleton__filter {
+	flex-shrink: 0;
+	pointer-events: none;
+	background: var(--color-surface-muted);
+	border-color: transparent;
+	box-shadow: none;
 }
 
 .catalog-filter-skeleton__chips {
@@ -3647,9 +3674,8 @@ body:has(.sticky-actions) .draft-dock {
 }
 
 @media (min-width: 768px) {
-	.catalog-filters.panel {
-		padding: 0.875rem 1rem;
-		gap: 0.75rem;
+	.catalog-filters {
+		gap: 0.65rem;
 	}
 }
 
@@ -3660,45 +3686,20 @@ body:has(.sticky-actions) .draft-dock {
 		margin-bottom: 0.65rem;
 	}
 
-	.catalog-filters.panel {
-		flex-direction: row;
-		flex-wrap: wrap;
-		align-items: center;
+	.catalog-filters {
+		flex-direction: column;
+		align-items: stretch;
 		gap: 0.5rem;
-		padding: 0.55rem 0.65rem;
 		overflow: visible;
 	}
 
-	.catalog-filters.panel > .list-search-bar {
-		flex: 1 1 12rem;
+	.catalog-filters > .list-search-bar {
+		width: 100%;
 		min-width: 0;
 		max-width: none;
-	}
-
-	.catalog-filters.panel > label {
-		flex: 1 1 12rem;
-		min-width: 0;
-		max-width: none;
-	}
-
-	.catalog-filters .catalog-filter-equipment-trigger,
-	[data-slot='button'].catalog-filter-equipment-trigger {
-		width: auto;
-		flex: 0 0 auto;
-		min-width: 9.5rem;
-		max-width: 12.5rem;
-	}
-
-	.catalog-filters .catalog-filter-skeleton__equipment {
-		width: auto;
-		flex: 0 0 auto;
-		min-width: 9.5rem;
-		max-width: 12.5rem;
 	}
 
 	.catalog-filters .catalog-filter-chips {
-		flex: 1 1 100%;
-		order: 3;
 		min-width: 0;
 		width: 100%;
 		margin-inline: 0;
@@ -3786,47 +3787,6 @@ body:has(.sticky-actions) .draft-dock {
 .catalog-filter-chip:focus-visible {
 	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
 	outline-offset: 1px;
-}
-
-.catalog-filter-equipment-trigger {
-	display: flex;
-	align-items: center;
-	justify-content: flex-start;
-	width: 100%;
-	min-height: 48px;
-	padding: 0.55rem 0.9rem;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-control);
-	background: var(--color-surface);
-	font-size: 0.875rem;
-	font-weight: 550;
-	line-height: 1.25;
-	color: var(--color-muted);
-	text-align: left;
-	cursor: pointer;
-	transition:
-		border-color 140ms ease,
-		background 140ms ease,
-		color 140ms ease;
-}
-
-.catalog-filter-equipment-trigger:hover {
-	border-color: color-mix(in srgb, var(--color-border) 60%, var(--color-ink));
-	color: var(--color-ink);
-}
-
-.catalog-filter-equipment-trigger:focus-visible {
-	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
-	outline-offset: 1px;
-}
-
-.catalog-filter-equipment-trigger.is-active,
-[data-slot='button'].catalog-filter-equipment-trigger.is-active {
-	border-color: color-mix(in srgb, var(--color-accent) 50%, var(--color-border));
-	background: var(--color-accent-muted);
-	color: var(--color-accent-text);
-	-webkit-text-fill-color: var(--color-accent-text);
-	box-shadow: none;
 }
 
 .catalog-equipment-sheet-options {

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
-	import AppPanel from '$lib/components/AppPanel.svelte';
 	import CloudSyncBanner from '$lib/components/CloudSyncBanner.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
@@ -221,13 +220,16 @@
 		<div class="catalog-list-layout">
 			<div class="catalog-list-layout__filters">
 				<div class="catalog-filters-shell">
-					<AppPanel class="catalog-filters">
-						<AppSkeleton class="records-skeleton__search skeleton-shimmer" aria-hidden="true" />
-						<AppSkeleton
-							class="catalog-filter-skeleton__equipment skeleton-shimmer"
-							aria-hidden="true"
-						/>
-					</AppPanel>
+					<div class="catalog-filters">
+						<div class="list-search-bar" aria-hidden="true">
+							<div class="list-search-bar__row">
+								<div class="list-search-bar__search">
+									<AppSkeleton class="records-skeleton__search skeleton-shimmer" />
+								</div>
+								<span class="list-search-bar__filter catalog-filter-skeleton__filter"></span>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 			<div class="catalog-list-layout__main">

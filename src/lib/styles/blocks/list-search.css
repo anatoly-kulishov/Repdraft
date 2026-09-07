@@ -13,7 +13,8 @@
 	position: sticky;
 	top: 0;
 	z-index: 6;
-	padding: 0.5rem 0 0.55rem;
+	/* Equal block pad so the row sits mid-strip (matches ScreenHeader pad-block). */
+	padding: var(--screen-header-pad-block) 0;
 	background: color-mix(in srgb, var(--color-bg) 94%, transparent);
 	backdrop-filter: blur(10px);
 	-webkit-backdrop-filter: blur(10px);
@@ -32,12 +33,14 @@
 	min-width: 0;
 }
 
+/* Twin of search field: same height, radius, border, fill, shadow. */
 .list-search-bar__filter {
 	position: relative;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
+	box-sizing: border-box;
 	width: var(--control-height, 3rem);
 	height: var(--control-height, 3rem);
 	min-width: 48px;
@@ -63,6 +66,7 @@
 .list-search-bar__filter.is-active {
 	border-color: color-mix(in srgb, var(--color-accent) 48%, var(--color-field-border));
 	background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface));
+	box-shadow: var(--shadow-field);
 	color: var(--color-ink);
 }
 
@@ -81,6 +85,10 @@
 	background: var(--color-accent);
 	box-shadow: 0 0 0 2px var(--color-field);
 	pointer-events: none;
+}
+
+.list-search-bar__filter.is-active .list-search-bar__filter-badge {
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 14%, var(--color-surface));
 }
 
 .list-search-bar__count {
@@ -111,8 +119,10 @@
 		max-width: none;
 		margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
 		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
-		padding: 0.5rem max(var(--page-pad-x), var(--safe-right)) 0.55rem
-			max(var(--page-pad-x), var(--safe-left));
+		/* Keep list gap outside the chrome so pad-block can stay visually centered. */
+		margin-bottom: 0.65rem;
+		padding: var(--screen-header-pad-block) max(var(--page-pad-x), var(--safe-right))
+			var(--screen-header-pad-block) max(var(--page-pad-x), var(--safe-left));
 		background: var(--chrome-header-bg);
 		box-shadow: var(--shadow-screen-header);
 		backdrop-filter: none;
@@ -121,7 +131,7 @@
 	}
 }
 
-/* Inside catalog FilterBar panel: no outer margin. */
+/* Inside catalog FilterBar: no outer margin (chips/equipment sit below). */
 .catalog-filters .list-search-bar {
 	margin: 0;
 }
