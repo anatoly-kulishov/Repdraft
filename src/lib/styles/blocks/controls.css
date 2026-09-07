@@ -251,6 +251,39 @@ textarea.pr-note-field.pr-note-field--has-clear {
 	border-color: var(--color-accent);
 }
 
+.field:focus:not(:focus-visible) {
+	outline: none;
+}
+
+.field:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
+	outline-offset: 1px;
+	border-color: var(--color-accent);
+}
+
+/*
+ * AppInput already ships focus-visible:ring from shadcn. Use one accent outline and
+ * clear the Tailwind ring so builder/live chips do not get a double halo.
+ */
+input[data-slot='input']:focus-visible,
+textarea[data-slot='textarea']:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
+	outline-offset: 1px;
+	border-color: color-mix(in srgb, var(--color-accent) 34%, var(--color-field-border));
+	--tw-ring-shadow: 0 0 #0000;
+	--tw-ring-offset-shadow: 0 0 #0000;
+	--tw-ring-offset-width: 0px;
+	box-shadow: none;
+}
+
+/* Compact builder chips: border only, no outline (tight grid). */
+.workout-ex-chip input[data-slot='input']:focus-visible,
+.workout-ex-chip__input[data-slot='input']:focus-visible {
+	outline: none;
+	border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-field-border));
+}
+
 .field.is-invalid {
 	border-color: var(--color-danger);
 	animation: kineticsShake 0.42s ease both;
