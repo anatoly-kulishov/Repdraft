@@ -1256,6 +1256,11 @@ html.is-builder-reorder-active .exercise-reorder-handle {
 	font-weight: 600;
 	line-height: 1.25;
 	color: var(--color-muted);
+	/* Keep focused sets/reps/rest in the middle above sticky Save + keyboard. */
+	scroll-margin-top: 5.5rem;
+	scroll-margin-bottom: calc(
+		var(--sticky-actions-h) + var(--safe-bottom) + var(--vv-keyboard-inset, 0px) + 1rem
+	);
 }
 
 button.workout-ex-chip--ladder {
