@@ -251,25 +251,6 @@ textarea.pr-note-field.pr-note-field--has-clear {
 	border-color: var(--color-accent);
 }
 
-.field:focus:not(:focus-visible) {
-	outline: none;
-}
-
-.field:focus-visible {
-	outline: 2px solid var(--color-accent);
-	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
-	outline-offset: 1px;
-	border-color: var(--color-accent);
-}
-
-/* shadcn inputs: visible keyboard ring (do not rely on mouse :focus alone). */
-input[data-slot='input']:focus-visible,
-textarea[data-slot='textarea']:focus-visible {
-	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
-	outline-offset: 1px;
-	border-color: color-mix(in srgb, var(--color-accent) 34%, var(--color-field-border));
-}
-
 .field.is-invalid {
 	border-color: var(--color-danger);
 	animation: kineticsShake 0.42s ease both;
