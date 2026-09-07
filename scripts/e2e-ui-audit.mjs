@@ -586,13 +586,18 @@ async function auditViewport(page, viewport) {
 			fail(viewport, 'flow.done-all-control', 'skipped');
 		}
 
+		/* After last set, finish offer may open a beat later than sticky/desktop CTA. */
 		const offer = page.locator('.bottom-sheet[aria-labelledby="live-finish-offer-title"]');
+		const finish = isMobile
+			? page.locator('.live-sticky-actions button.btn-primary').filter({ hasText: /заверш|finish/i })
+			: page.locator('.live-desktop-actions button.btn-primary').filter({ hasText: /заверш|finish/i });
+		await Promise.race([
+			offer.waitFor({ state: 'visible', timeout: 4_000 }).catch(() => null),
+			finish.first().waitFor({ state: 'visible', timeout: 4_000 }).catch(() => null)
+		]);
 		if ((await offer.count()) > 0 && (await offer.isVisible().catch(() => false))) {
 			await offer.locator('button.btn-primary').click();
 		} else {
-			const finish = isMobile
-				? page.locator('.live-sticky-actions button.btn-primary').filter({ hasText: /заверш|finish/i })
-				: page.locator('.live-desktop-actions button.btn-primary').filter({ hasText: /заверш|finish/i });
 			const finishBtn = finish.first();
 			if ((await finishBtn.count()) === 0 || !(await finishBtn.isVisible().catch(() => false))) {
 				fail(viewport, 'flow.finish', 'finish button missing');
@@ -600,6 +605,7 @@ async function auditViewport(page, viewport) {
 			}
 			await finishBtn.click();
 			const offerAfter = page.locator('.bottom-sheet[aria-labelledby="live-finish-offer-title"]');
+			await offerAfter.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => null);
 			if ((await offerAfter.count()) > 0 && (await offerAfter.isVisible().catch(() => false))) {
 				await offerAfter.locator('button.btn-primary').click();
 			}

@@ -1,21 +1,20 @@
-# REPdraft — final logo assets
+# REPdraft — logo assets (pulse RP)
 
-Source of truth: the supplied latest REPdraft RP app-icon artwork.
+Source of truth: `app-icon-master-pulse.png` → `npm run icons:pwa` (`scripts/generate-brand-icons.mjs`).
 
-Canonical mark:
-- RP monogram traced from the supplied reference
-- One vector path reused by app icon, maskable icon, mark and lockups
-- No raster embedded in SVG
+In-app chrome (`BrandMark`, boot splash, `icon.svg`) shares `MARK_INSET` from that script. PWA “any” icons use a mild center zoom so RP stays readable at home-screen sizes.
 
-Brand palette (Behance neon):
-- `#0F1012` ink / dark surfaces
-- `#FCFCFC` paper / light surfaces
-- `#7C7C7C` muted text
-- `#C8FF00` primary accent (electric chartreuse — CTA, progress, fills)
-- `#00FF94` accent hover / gradient end (neon mint)
+## Mark
+- White italic **RP** with heartbeat cutout through the mid stroke
+- Plate: violet gradient `#8b5cf6` → `#a78bfa` → `#c4b5fd` (matches `--color-accent`)
 
-Usage:
-- App icon: `#C8FF00` → `#00FF94` gradient; mark fill `#0F1012` (not white on neon)
-- **Neon surfaces** → text/icons `#0F1012` (`--color-accent-ink`)
-- **Light paper surfaces** → accent labels/links `#267300` (`--color-accent-text`), not raw neon
-- Wordmark: Repdraft, Inter 700 converted to SVG paths
+## Files
+| File | Role |
+|------|------|
+| `app-icon-master-pulse.png` | Full-bleed master |
+| `mark-pulse.png` | White mark on transparent (512), used by `BrandMark` |
+| `mark.svg` / `app-icon-*.svg` | SVG wrappers (gradient + mark image) |
+| `lockup-*.svg` | Wordmark lockups |
+
+## Static (cache-busted `-v3`)
+`/icon-192-v3.png`, `/icon-512-v3.png`, `/icon-maskable-512-v3.png`, `/apple-touch-icon-v3.png`, `/favicon.ico`, `/icon.svg`, `/brand-mark-pulse.png`

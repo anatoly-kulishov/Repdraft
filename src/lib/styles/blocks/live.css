@@ -2133,6 +2133,20 @@ button.live-panel-thumb {
 	.history-detail-skeleton-desktop-head {
 		display: grid;
 	}
+
+	/* Header sits outside .history-detail (overflow-x:clip); keep it on the narrow column. */
+	.shell-main--subroute .history-detail__screen-header.screen-header,
+	.shell-main--subroute .history-detail-skeleton-head {
+		box-sizing: border-box;
+		width: 100%;
+		max-width: var(--page-content-narrow);
+	}
+
+	.shell-main--subroute .history-detail__screen-header .screen-header-title,
+	.shell-main--subroute .history-detail-skeleton-head .screen-header-title {
+		min-width: 0;
+		max-width: 100%;
+	}
 }
 
 @media (min-width: 768px) {

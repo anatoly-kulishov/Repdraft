@@ -1,6 +1,6 @@
 export const SITE_NAME = 'Repdraft';
 
-const DEFAULT_OG_IMAGE = '/icon-512-v2.png';
+const DEFAULT_OG_IMAGE = '/icon-512-v3.png';
 
 /** Trim and cap length for meta description tags. */
 export function truncateMeta(text: string, max = 160): string {

@@ -13,6 +13,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.16.6',
+		highlights: {
+			ru: [
+				'Новый значок приложения: RP с пульсом на фиолетовом',
+				'Блик в логотипе проходит сквозь вырез пульса',
+				'Обновлены иконки PWA, favicon и splash'
+			],
+			en: [
+				'New app icon: RP with a pulse on violet',
+				'Logo highlight travels through the pulse cutout',
+				'Updated PWA icons, favicon, and splash'
+			]
+		}
+	},
+	{
 		version: '0.16.5',
 		highlights: {
 			ru: [
