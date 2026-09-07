@@ -512,24 +512,29 @@
 	<div class="catalog-list-layout__filters">
 		{#if showListSkeleton}
 			<div class="catalog-filters-shell">
-				<AppPanel
+				<div
 					class="catalog-filters {filterLockBodyPart ? 'catalog-filters--zone' : ''}"
 				>
-					<AppSkeleton class="records-skeleton__search skeleton-shimmer" aria-hidden="true" />
-					{#if filterLockBodyPart && !hideTargetChips && targetFacets.length > 1}
-						<div class="catalog-filter-skeleton__chips" aria-hidden="true">
-							<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" aria-hidden="true" />
-							<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" aria-hidden="true" />
-							<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" aria-hidden="true" />
+					<div class="list-search-bar" aria-hidden="true">
+						<div class="list-search-bar__row">
+							<div class="list-search-bar__search">
+								<AppSkeleton class="records-skeleton__search skeleton-shimmer" />
+							</div>
+							{#if equipmentFacets.length > 0 || savedOnly}
+								<span class="list-search-bar__filter catalog-filter-skeleton__filter"></span>
+							{/if}
 						</div>
-					{/if}
-					{#if equipmentFacets.length > 0 || savedOnly}
-						<AppSkeleton
-							class="catalog-filter-skeleton__equipment skeleton-shimmer"
-							aria-hidden="true"
-						/>
-					{/if}
-				</AppPanel>
+						{#if filterLockBodyPart && !hideTargetChips && targetFacets.length > 1}
+							<div class="list-search-bar__extra">
+								<div class="catalog-filter-skeleton__chips">
+									<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" />
+									<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" />
+									<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" />
+								</div>
+							</div>
+						{/if}
+					</div>
+				</div>
 			</div>
 		{:else}
 			<FilterBar

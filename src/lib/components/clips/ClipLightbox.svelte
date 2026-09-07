@@ -5,6 +5,7 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { overlayPortal } from '$lib/actions/overlayPortal';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
+	import { lockBackgroundScroll } from '$lib/dom/lockBackgroundScroll';
 	import type { TechniqueClip } from '$lib/domain/clips';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
@@ -40,6 +41,8 @@
 	let shareLabel = $derived(
 		canShareNative ? translate(lang, 'clips.share') : translate(lang, 'clips.link')
 	);
+
+	$effect(() => lockBackgroundScroll());
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->

@@ -117,7 +117,6 @@
 			<ListSearchBar
 				bind:value={searchQuery}
 				placeholder={translate(lang, 'catalog.search')}
-				class="list-search-bar--hub"
 			/>
 		</form>
 		{#if fromBuilder && showExercisesPickerCoachmark}

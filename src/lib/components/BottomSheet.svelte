@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
+	import { lockBackgroundScroll } from '$lib/dom/lockBackgroundScroll';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { cn } from '$lib/utils.js';
@@ -38,6 +39,11 @@
 		if (!dismissible) return;
 		onDismiss?.();
 	}
+
+	$effect(() => {
+		if (!open) return;
+		return lockBackgroundScroll();
+	});
 </script>
 
 <Sheet.Root {open} onOpenChange={onOpenChange}>

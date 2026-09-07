@@ -709,30 +709,40 @@
 			{translate(lang, 'live.setActionsTitle', { n: setMenuIndex + 1 })}
 		</p>
 		<div
-			class="live-actions-sheet"
-			role="group"
+			class="live-actions-sheet live-actions-sheet--set-kinds"
 			aria-labelledby={`live-set-actions-${exercise.exerciseId}-${setMenuIndex}`}
 		>
 			<p class="live-actions-sheet__label">{translate(lang, 'live.setKindLabel')}</p>
-			{#each SET_KINDS as kind (kind)}
-				<AppButton
-					variant={menuKind === kind ? 'primary' : 'secondary'}
-					class="live-actions-sheet__item"
-					aria-pressed={menuKind === kind}
-					onclick={() => setMenuKind(kind)}
-				>
-					{translate(lang, setKindMessageKey(kind))}
-				</AppButton>
-			{/each}
+			<div
+				class="live-set-kinds"
+				role="radiogroup"
+				aria-label={translate(lang, 'live.setKindLabel')}
+			>
+				{#each SET_KINDS as kind (kind)}
+					<button
+						type="button"
+						role="radio"
+						class={cn(
+							'live-set-kinds__cell',
+							menuKind === kind && 'live-set-kinds__cell--selected'
+						)}
+						aria-checked={menuKind === kind}
+						onclick={() => setMenuKind(kind)}
+					>
+						{translate(lang, setKindMessageKey(kind))}
+					</button>
+				{/each}
+			</div>
 			{#if canRemoveSet}
-				<AppButton
-					variant="secondary"
-					class="live-actions-sheet__item live-actions-sheet__item--danger"
+				<div class="live-actions-sheet__sep" aria-hidden="true"></div>
+				<button
+					type="button"
+					class="live-actions-sheet__danger"
 					onclick={confirmRemoveSet}
 				>
-					{translate(lang, 'live.removeSet')}
+					<span>{translate(lang, 'live.removeSet')}</span>
 					<LucideIcon icon={Trash2} size={ICON_SMALL} />
-				</AppButton>
+				</button>
 			{/if}
 		</div>
 	</BottomSheet>

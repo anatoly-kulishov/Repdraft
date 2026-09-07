@@ -397,6 +397,7 @@
 									{index}
 									{meta}
 									selected={selectedIds.includes(item.exerciseId)}
+									canReorder={$draft.exercises.length >= 2}
 									groupRole={role}
 									{altRole}
 									onupdate={(patch) => draft.updateExercise(item.exerciseId, patch)}

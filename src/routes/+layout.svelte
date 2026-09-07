@@ -139,11 +139,12 @@
 		syncVvChrome?.();
 
 		const recoverOverflow = () => {
-			if (
-				document.body.style.overflow === 'hidden' &&
-				!document.querySelector('[aria-modal="true"]')
-			) {
+			if (document.querySelector('[aria-modal="true"]')) return;
+			if (document.body.style.overflow === 'hidden') {
 				document.body.style.overflow = '';
+			}
+			if (document.documentElement.style.overflow === 'hidden') {
+				document.documentElement.style.overflow = '';
 			}
 		};
 

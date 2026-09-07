@@ -685,7 +685,8 @@ select {
 	text-decoration: none;
 	transition:
 		background 140ms ease,
-		transform 140ms ease;
+		transform 140ms ease,
+		bottom 180ms ease;
 }
 
 .app-fab :global(.lucide-icon-wrap),
@@ -724,11 +725,21 @@ select {
 
 .app-fab--tabbar,
 .workouts-fab {
-	bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--vv-fixed-bottom, 0px));
+	bottom: calc(
+		var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--toast-undo-clearance, 0px) +
+			var(--vv-fixed-bottom, 0px)
+	);
+}
+
+/* Undo snackbar sits low above the tabbar; lift FAB / draft-dock clear of it. */
+body:has(.toast-stack--undo-snackbar) {
+	--toast-undo-clearance: 4.75rem;
 }
 
 .app-fab--sticky {
-	bottom: calc(var(--sticky-actions-h) + var(--safe-bottom) + 0.85rem);
+	bottom: calc(
+		var(--sticky-actions-h) + var(--safe-bottom) + 0.85rem + var(--toast-undo-clearance, 0px)
+	);
 }
 
 .app-fab--hidden,
