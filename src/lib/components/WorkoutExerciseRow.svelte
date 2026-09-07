@@ -31,6 +31,7 @@
 		formatLadderLabel,
 		hasLadderScheme
 	} from '$lib/domain/workout';
+	import { scrollFieldIntoView } from '$lib/dom/scrollFieldIntoView';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { page } from '$app/stores';
@@ -105,6 +106,7 @@
 		stored: () => number
 	) {
 		setDraft(String(stored()));
+		scrollFieldIntoView(el);
 		queueMicrotask(() => {
 			el.select();
 		});

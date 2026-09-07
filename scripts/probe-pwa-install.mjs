@@ -294,7 +294,7 @@ async function probeBrowser() {
 			console.log('ok  Chromium + Safari UA → no Safari Share steps');
 		}
 
-		// 8) Default theme is light when no storage
+		// 8) Default theme is dark when no storage
 		{
 			const ctx = await browser.newContext();
 			const page = await openHome(ctx, [
@@ -303,10 +303,10 @@ async function probeBrowser() {
 				}
 			]);
 			const theme = await page.locator('html').getAttribute('data-theme');
-			assert.equal(theme, 'light', 'default theme is light');
+			assert.equal(theme, 'dark', 'default theme is dark');
 			results.push({ case: 'default-theme', theme });
 			await ctx.close();
-			console.log('ok  default theme light');
+			console.log('ok  default theme dark');
 		}
 
 		// 9) Install click marks installed and hides

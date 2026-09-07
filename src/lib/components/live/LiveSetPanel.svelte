@@ -9,6 +9,7 @@
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { blurActiveElement } from '$lib/dom/blurActiveElement';
+	import { scrollFieldIntoView } from '$lib/dom/scrollFieldIntoView';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, SessionExercise, SetKind, WorkoutSession } from '$lib/domain/types';
@@ -271,9 +272,7 @@
 	);
 
 	function scrollCurrentSetIntoView(node: HTMLElement) {
-		queueMicrotask(() => {
-			node.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
-		});
+		scrollFieldIntoView(node);
 	}
 
 	function applyWeightToAllSets() {
