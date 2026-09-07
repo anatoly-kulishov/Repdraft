@@ -18,12 +18,12 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		highlights: {
 			ru: [
 				'Тёмная тема по умолчанию',
-				'Чётче шрифт и фокус с клавиатуры',
+				'Подключён Inter Variable',
 				'Спокойнее блик в логотипе'
 			],
 			en: [
 				'Dark theme by default',
-				'Clearer type and keyboard focus',
+				'Inter Variable font wired up',
 				'Calmer logo highlight'
 			]
 		}
