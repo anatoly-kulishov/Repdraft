@@ -392,6 +392,7 @@
 			transform: none;
 		}
 
+		/* Undo stays full-width and low; FABs lift via --toast-undo-clearance. */
 		:global(
 				body:has(.workouts-fab:not(.workouts-fab--hidden)):not(:has(.sticky-actions)):not(
 						:has(.live-sticky-actions)
@@ -406,7 +407,7 @@
 		}
 	}
 
-	:global(body:has(.draft-dock)) .toast-stack {
+	:global(body:has(.draft-dock)) .toast-stack:not(.toast-stack--undo-snackbar) {
 		--toast-stack-bottom-base: calc(var(--mobile-chrome-bottom) + var(--draft-dock-clearance));
 	}
 
@@ -418,7 +419,8 @@
 			flex-direction: column-reverse;
 		}
 
-		:global(body:has(.sticky-actions):not(:has(.live-sticky-actions)):has(.draft-dock)) .toast-stack {
+		:global(body:has(.sticky-actions):not(:has(.live-sticky-actions)):has(.draft-dock))
+			.toast-stack:not(.toast-stack--undo-snackbar) {
 			--toast-stack-bottom-base: calc(
 				var(--mobile-chrome-bottom) + var(--sticky-actions-h) + var(--draft-dock-clearance)
 			);
@@ -455,7 +457,7 @@
 			--toast-stack-bottom-base: calc(var(--safe-bottom) + var(--sticky-actions-h) + 0.75rem);
 		}
 
-		:global(body:has(.sticky-actions):has(.draft-dock)) .toast-stack {
+		:global(body:has(.sticky-actions):has(.draft-dock)) .toast-stack:not(.toast-stack--undo-snackbar) {
 			--toast-stack-bottom-base: calc(
 				var(--mobile-chrome-bottom) + var(--sticky-actions-h) + var(--draft-dock-clearance)
 			);
