@@ -18,7 +18,7 @@ Cloning this repository does **not** grant media rights beyond what Gym visual's
 
 ## Brand mark (logo)
 
-The Repdraft app icon / wordmark mark (dumbbell on teal) in `src/lib/assets/` and `static/icon.svg`
+The Repdraft app icon / wordmark mark (violet plate, white RP with pulse) in `src/lib/assets/brand/` and `static/icon.svg`
 is **original artwork for this project**, released under the same MIT License as the application
 source. You may use it with Repdraft forks and deployments without a separate icon license.
 

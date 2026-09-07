@@ -14,7 +14,7 @@ function orgPublisher(origin: string): JsonLd {
 		url: origin,
 		logo: {
 			'@type': 'ImageObject',
-			url: absoluteUrl('/icon-512-v2.png', origin)
+			url: absoluteUrl('/icon-512-v3.png', origin)
 		}
 	};
 }

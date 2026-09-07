@@ -1,6 +1,7 @@
 /**
  * In-app “What’s new” for Profile version tap.
  * Update on each release: newest first. Keep 4–6 entries; short athlete-facing bullets.
+ * Plain language only: no sticky / toast / PWA / lightbox jargon.
  */
 import type { AppLocale } from '$lib/i18n/locale';
 
@@ -13,19 +14,34 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.16.6',
+		highlights: {
+			ru: [
+				'Новый значок приложения: RP с пульсом',
+				'В логотипе мягкий блик по линии пульса',
+				'Обновлены иконки на экране телефона и при запуске'
+			],
+			en: [
+				'New app icon: RP with a pulse',
+				'A soft highlight moves along the pulse in the logo',
+				'Updated icons for your phone home screen and app launch'
+			]
+		}
+	},
+	{
 		version: '0.16.5',
 		highlights: {
 			ru: [
-				'Нижние шиты и лайтбокс клипов больше не скроллят фон за собой',
-				'Live: тип подхода в сетке 2×2, удаление отдельно',
-				'Каталог: фильтр снаряда иконкой справа, поиск sticky под шапкой',
-				'Undo: тост внизу, кнопки «+» / черновик поднимаются выше'
+				'Нижние окна больше не двигают страницу за собой',
+				'На тренировке тип подхода удобнее выбрать, удаление отдельно',
+				'В каталоге фильтр снаряда справа, поиск всегда под шапкой',
+				'Кнопка «Отменить» внизу, плюс и черновик поднимаются выше'
 			],
 			en: [
-				'Bottom sheets and clip lightbox no longer scroll the page behind',
-				'Live: set kind as a 2×2 grid, delete separated',
-				'Catalog: equipment filter as an icon, search sticks under the header',
-				'Undo: snackbar stays low, + / draft buttons lift above it'
+				'Bottom panels no longer scroll the page behind them',
+				'In a workout, set type is easier to pick, delete is separate',
+				'Catalog: equipment filter on the right, search stays under the header',
+				'Undo sits at the bottom, + and draft buttons move up'
 			]
 		}
 	},
@@ -33,20 +49,18 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.16.4',
 		highlights: {
 			ru: [
-				'Тестовый бэкап крупнее: больше планов, истории и рекордов для проверки списков',
-				'В профиле тап по версии открывает список последних изменений',
-				'Live: «На все» для повторов работает как для веса',
-				'Список тренировок: подгрузка при скролле',
-				'В конструкторе у полей подходы / повторы / отдых снова видны подписи',
-				'Общий блок поиска и фильтров в истории, планах и каталоге'
+				'В профиле тап по версии открывает список изменений',
+				'На тренировке «На все» для повторов работает как для веса',
+				'Список тренировок подгружается при прокрутке',
+				'В конструкторе снова видны подписи у подходов, повторов и отдыха',
+				'Одинаковый поиск и фильтры в истории, планах и каталоге'
 			],
 			en: [
-				'Larger test backup: more plans, history, and records for list stress checks',
 				'Tap the version in Profile to see recent changes',
-				'Live: Apply-to-all for reps mirrors weight',
-				'Workouts list: infinite scroll',
-				'Builder: sets / reps / rest chips show labels again',
-				'Shared search and filter bar on history, plans, and catalog'
+				'In a workout, Apply to all for reps works like weight',
+				'Workout list loads more as you scroll',
+				'Builder: labels for sets, reps, and rest are visible again',
+				'Same search and filters on history, plans, and catalog'
 			]
 		}
 	},
@@ -54,14 +68,14 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.16.3',
 		highlights: {
 			ru: [
-				'Фильтры истории и счётчик совпадений; кнопка Истории у заголовка',
-				'Свайп удаления и подсказок стабильнее',
-				'Свайп вкладок на карточке упражнения работает с полей Рекорда'
+				'В истории фильтры и сколько найдено совпадений',
+				'Свайп удаления стал стабильнее',
+				'На карточке упражнения свайп вкладок удобнее с полей рекорда'
 			],
 			en: [
-				'History filters and match count; History button aligned to the title',
-				'Swipe-to-delete and coachmark dismiss feel more reliable',
-				'Exercise tab swipe works when starting on Record inputs'
+				'History: filters and how many matches you found',
+				'Swipe to delete feels more reliable',
+				'On an exercise card, swiping tabs works better from Record fields'
 			]
 		}
 	},
@@ -69,14 +83,14 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.16.2',
 		highlights: {
 			ru: [
-				'Лесенки повторов в конструкторе и на live',
+				'Лесенки повторов в конструкторе и на тренировке',
 				'Тип подхода «до отказа»',
-				'Правки оболочки на пустых экранах и мелкая полировка UI'
+				'Мелкие правки пустых экранов'
 			],
 			en: [
-				'Rep ladders in the builder and live session',
-				'Failure set kind',
-				'Empty-state shell fixes and UI polish'
+				'Rep ladders in the builder and during a workout',
+				'Failure set type',
+				'Small fixes on empty screens'
 			]
 		}
 	},
@@ -84,14 +98,12 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.16.1',
 		highlights: {
 			ru: [
-				'Live: быстрый Last, карто заметки, меню действий',
-				'Каталог: сетка снарядов',
-				'Тестовый бэкап для QA на стенде'
+				'На тренировке быстрый Last, заметки для кардио, меню действий',
+				'В каталоге удобная сетка снарядов'
 			],
 			en: [
-				'Live: Last chip, cardio notes, action menus',
-				'Catalog equipment browse grid',
-				'Test backup fixture for staging QA'
+				'In a workout: quick Last, cardio notes, action menus',
+				'Catalog: clearer equipment grid'
 			]
 		}
 	},
@@ -99,14 +111,12 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.16.0',
 		highlights: {
 			ru: [
-				'История упражнения на live в sheet',
-				'Фильтры истории: поиск, сегодня, период',
-				'Жёстче auth и локальный demo-план'
+				'История упражнения во время тренировки в отдельном окне',
+				'Фильтры истории: поиск, сегодня, период'
 			],
 			en: [
-				'Exercise history sheet on live',
-				'History filters: search, today, date range',
-				'Harder auth and local-only demo plan'
+				'Exercise history during a workout in a side panel',
+				'History filters: search, today, date range'
 			]
 		}
 	}

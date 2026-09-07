@@ -69,14 +69,14 @@ assert(
 
 // ——— Static PWA assets ———
 for (const rel of [
-	'static/icon-192-v2.png',
-	'static/icon-512-v2.png',
-	'static/icon-maskable-512-v2.png',
+	'static/icon-192-v3.png',
+	'static/icon-512-v3.png',
+	'static/icon-maskable-512-v3.png',
 	'static/icon.svg',
-	'static/apple-touch-icon-v2.png',
-	'static/apple-touch-icon-precomposed-v2.png',
+	'static/apple-touch-icon-v3.png',
+	'static/apple-touch-icon-precomposed-v3.png',
 	'static/favicon.ico',
-	'static/icon-boot.png',
+	'static/brand-mark-pulse.png',
 	'static/manifest.webmanifest'
 ]) {
 	await assertFile(rel);
@@ -101,16 +101,16 @@ assert(
 	'manifest missing 512 any PNG'
 );
 assert(
-	manifest.icons.every((i) => typeof i.src === 'string' && i.src.includes('-v2.')),
-	'manifest icons must use -v2 URLs (Android icon cache bust)'
+	manifest.icons.every((i) => typeof i.src === 'string' && i.src.includes('-v3.')),
+	'manifest icons must use -v3 URLs (Android icon cache bust)'
 );
 assert(
 	manifest.icons.some((i) => i.purpose === 'maskable' && i.sizes === '512x512'),
 	'manifest missing maskable 512 PNG'
 );
 
-const { status: appleStatus, headers: appleHeaders } = await get('/apple-touch-icon-v2.png');
-assert(appleStatus === 200, `GET /apple-touch-icon-v2.png → ${appleStatus}`);
+const { status: appleStatus, headers: appleHeaders } = await get('/apple-touch-icon-v3.png');
+assert(appleStatus === 200, `GET /apple-touch-icon-v3.png → ${appleStatus}`);
 assert(
 	String(appleHeaders.get('content-type') ?? '').includes('image/png'),
 	'apple-touch-icon must be image/png'
@@ -119,7 +119,7 @@ assert(
 const htmlHome = await get('/');
 assert(htmlHome.status === 200, `GET / → ${htmlHome.status}`);
 assert(
-	htmlHome.text.includes('rel="apple-touch-icon"') && htmlHome.text.includes('/apple-touch-icon-v2.png'),
+	htmlHome.text.includes('rel="apple-touch-icon"') && htmlHome.text.includes('/apple-touch-icon-v3.png'),
 	'home HTML must declare apple-touch-icon PNG'
 );
 assert(

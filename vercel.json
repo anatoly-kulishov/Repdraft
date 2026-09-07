@@ -28,7 +28,7 @@
 			]
 		},
 		{
-			"source": "/icon-(192|512)-v2\\.png",
+			"source": "/icon-(192|512)-v3\\.png",
 			"headers": [
 				{
 					"key": "Cache-Control",
@@ -37,7 +37,7 @@
 			]
 		},
 		{
-			"source": "/icon-maskable-512-v2\\.png",
+			"source": "/icon-maskable-512-v3\\.png",
 			"headers": [
 				{
 					"key": "Cache-Control",
@@ -46,7 +46,7 @@
 			]
 		},
 		{
-			"source": "/apple-touch-icon(-precomposed)?-v2\\.png",
+			"source": "/apple-touch-icon(-precomposed)?-v3\\.png",
 			"headers": [
 				{
 					"key": "Cache-Control",
