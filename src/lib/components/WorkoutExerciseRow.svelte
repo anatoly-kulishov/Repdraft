@@ -34,13 +34,14 @@
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { page } from '$app/stores';
-	import { ArrowDown01, SlidersHorizontal, Trash2, Unlink } from '@lucide/svelte';
+	import { ListOrdered, SlidersHorizontal, Trash2, Unlink } from '@lucide/svelte';
 
 	let {
 		item,
 		meta,
 		index,
 		selected = false,
+		canReorder = true,
 		groupRole = 'solo',
 		altRole = 'solo',
 		onupdate,
@@ -57,6 +58,7 @@
 		meta: ExerciseIndexItem | null;
 		index: number;
 		selected?: boolean;
+		canReorder?: boolean;
 		groupRole?: 'solo' | 'first' | 'middle' | 'last';
 		altRole?: 'solo' | 'first' | 'middle' | 'last';
 		onupdate: (patch: Partial<Omit<WorkoutExercise, 'exerciseId' | 'groupId' | 'altGroupId'>>) => void;
@@ -492,12 +494,14 @@
 		{/if}
 
 		<div class="workout-ex-head__actions">
-			<ExerciseReorderHandle
-				{index}
-				holdMs={0}
-				label={translate(lang, 'builder.reorder')}
-				onreorder={onreorder}
-			/>
+			{#if canReorder}
+				<ExerciseReorderHandle
+					{index}
+					holdMs={0}
+					label={translate(lang, 'builder.reorder')}
+					onreorder={onreorder}
+				/>
+			{/if}
 			<AppIconButton
 				class="workout-ex-head__menu"
 				onclick={() => {
@@ -533,7 +537,7 @@
 		>
 			<button type="button" class="builder-ex-action" onclick={openLadderFromMenu}>
 				<span class="builder-ex-action__well" aria-hidden="true">
-					<LucideIcon icon={ArrowDown01} size={ICON_BUTTON} />
+					<LucideIcon icon={ListOrdered} size={ICON_BUTTON} />
 				</span>
 				<span class="builder-ex-action__label">
 					{ladderOn ? translate(lang, 'builder.ladderEditShort') : translate(lang, 'builder.ladder')}
