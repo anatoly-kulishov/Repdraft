@@ -22,7 +22,8 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 				'Выход из аккаунта: мини-лоадер вместо «Подождите…»',
 				'Старт приложения: без чёрного мигания главной под заставкой',
 				'На iPhone заставка при запуске тёмная, без белого кадра',
-				'Тост больше не залезает на шапку нижнего окна'
+				'Тост больше не залезает на шапку нижнего окна',
+				'В фильтре снаряда видно выбранный пункт и список длиннее'
 			],
 			en: [
 				'Live: Discard and Next stay pinned to the bottom of the screen',
@@ -30,7 +31,8 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 				'Account sign-out: mini loader instead of “Please wait…”',
 				'App launch: no black flash of Home under the splash',
 				'iPhone launch splash is dark, no blank white frame',
-				'Toasts no longer sit on top of bottom sheets'
+				'Toasts no longer sit on top of bottom sheets',
+				'Equipment filter: clearer selected row, taller scrollable list'
 			]
 		}
 	},

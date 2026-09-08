@@ -6,7 +6,7 @@
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { Calendar } from '@lucide/svelte';
+	import { Calendar, Check } from '@lucide/svelte';
 
 	type HistoryDatePreset = 'all' | 'today';
 
@@ -66,32 +66,55 @@
 				{translate(lang, 'workouts.historyDateFilter')}
 			</p>
 		</div>
-		<div class="catalog-equipment-sheet-options" role="group" aria-labelledby={titleId}>
+		<div class="catalog-equipment-sheet-options" role="radiogroup" aria-labelledby={titleId}>
 			<AppChip
-				class="catalog-equipment-sheet-option !h-auto !min-h-12 w-full justify-start rounded-[var(--radius-control)] px-[0.9rem] py-[0.65rem] text-left font-medium"
+				class="catalog-equipment-sheet-option !h-auto !min-h-12 !w-full !rounded-[var(--radius-control)] !px-[0.85rem] !py-[0.55rem]"
 				active={preset === 'all' && !rangeActive}
+				role="radio"
+				aria-checked={preset === 'all' && !rangeActive}
 				onclick={() => pickPreset('all')}
 			>
-				{translate(lang, 'workouts.historyFilterAll')}
+				<span class="catalog-equipment-sheet-option__label">
+					{translate(lang, 'workouts.historyFilterAll')}
+				</span>
+				{#if preset === 'all' && !rangeActive}
+					<span class="catalog-equipment-sheet-option__check" aria-hidden="true">
+						<LucideIcon icon={Check} size={ICON_SMALL} />
+					</span>
+				{/if}
 			</AppChip>
 			<AppChip
-				class="catalog-equipment-sheet-option !h-auto !min-h-12 w-full justify-start rounded-[var(--radius-control)] px-[0.9rem] py-[0.65rem] text-left font-medium"
+				class="catalog-equipment-sheet-option !h-auto !min-h-12 !w-full !rounded-[var(--radius-control)] !px-[0.85rem] !py-[0.55rem]"
 				active={preset === 'today' && !rangeActive}
+				role="radio"
+				aria-checked={preset === 'today' && !rangeActive}
 				onclick={() => pickPreset('today')}
 			>
-				{translate(lang, 'home.today')}
+				<span class="catalog-equipment-sheet-option__label">{translate(lang, 'home.today')}</span>
+				{#if preset === 'today' && !rangeActive}
+					<span class="catalog-equipment-sheet-option__check" aria-hidden="true">
+						<LucideIcon icon={Check} size={ICON_SMALL} />
+					</span>
+				{/if}
 			</AppChip>
 			<AppChip
-				class="catalog-equipment-sheet-option !h-auto !min-h-12 w-full justify-start rounded-[var(--radius-control)] px-[0.9rem] py-[0.65rem] text-left font-medium"
+				class="catalog-equipment-sheet-option !h-auto !min-h-12 !w-full !rounded-[var(--radius-control)] !px-[0.85rem] !py-[0.55rem]"
 				active={rangeActive}
+				role="radio"
+				aria-checked={rangeActive}
 				onclick={pickRange}
 			>
-				<span class="history-filters-sheet__range">
+				<span class="catalog-equipment-sheet-option__label history-filters-sheet__range">
 					<LucideIcon icon={Calendar} size={ICON_SMALL} />
 					<span class="history-filters-sheet__range-label">
 						{rangeActive ? rangeLabel : translate(lang, 'workouts.historyPickRange')}
 					</span>
 				</span>
+				{#if rangeActive}
+					<span class="catalog-equipment-sheet-option__check" aria-hidden="true">
+						<LucideIcon icon={Check} size={ICON_SMALL} />
+					</span>
+				{/if}
 			</AppChip>
 		</div>
 	</BottomSheet>
