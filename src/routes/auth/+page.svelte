@@ -54,6 +54,9 @@
 	let password = $state('');
 	let passwordConfirm = $state('');
 	let loading = $state(false);
+	/** Account mutations: keep labels, show spinner on the active control. */
+	let accountBusy = $state<'logout' | 'logoutEverywhere' | 'delete' | null>(null);
+	let accountLocked = $derived(accountBusy !== null);
 	let message = $state<string | null>(null);
 	let checkEmailKind = $state<'signup' | 'magic' | 'reset'>('signup');
 	let redirected = $state(false);
@@ -322,20 +325,20 @@
 	}
 
 	async function logout() {
-		if (loading) return;
-		loading = true;
+		if (accountBusy) return;
+		accountBusy = 'logout';
 		try {
 			await auth.signOut();
 			toasts.show(translate(lang, 'auth.signedOut'), 'info');
 		} catch (err) {
 			toasts.show(mapErr(err) || translateError(lang, err, 'auth.signOutError'), 'error');
 		} finally {
-			loading = false;
+			accountBusy = null;
 		}
 	}
 
 	function openLogoutEverywhereConfirm() {
-		if (loading) return;
+		if (accountBusy) return;
 		logoutEverywhereConfirmOpen = true;
 	}
 
@@ -344,16 +347,16 @@
 	}
 
 	async function logoutEverywhere() {
-		if (loading) return;
+		if (accountBusy) return;
 		logoutEverywhereConfirmOpen = false;
-		loading = true;
+		accountBusy = 'logoutEverywhere';
 		try {
 			await auth.signOutEverywhere();
 			toasts.show(translate(lang, 'auth.logoutEverywhereDone'), 'info');
 		} catch (err) {
 			toasts.show(mapErr(err) || translateError(lang, err, 'auth.signOutError'), 'error');
 		} finally {
-			loading = false;
+			accountBusy = null;
 		}
 	}
 
@@ -370,8 +373,8 @@
 	}
 
 	async function deleteAccount() {
-		if (loading || !deleteConfirmReady) return;
-		loading = true;
+		if (accountBusy || !deleteConfirmReady) return;
+		accountBusy = 'delete';
 		try {
 			await auth.deleteAccount();
 			toasts.show(translate(lang, 'auth.deleteDone'), 'info');
@@ -379,7 +382,7 @@
 		} catch (err) {
 			toasts.show(mapErr(err) || translateError(lang, err, 'auth.deleteFail'), 'error');
 		} finally {
-			loading = false;
+			accountBusy = null;
 		}
 	}
 
@@ -703,7 +706,7 @@
 						<AppButton
 							variant="danger"
 							class="auth-danger-zone__trigger"
-							disabled={loading}
+							disabled={accountLocked}
 							onclick={openDeleteConfirm}
 						>
 							{translate(lang, 'auth.deleteButton')}
@@ -727,26 +730,30 @@
 									spellcheck="false"
 									placeholder={deleteConfirmWord}
 									bind:value={deleteConfirmText}
-									disabled={loading}
+									disabled={accountLocked}
 									onkeydown={(e) => {
 										if (e.key === 'Escape') cancelDeleteConfirm();
 									}}
 								/>
 							</AppLabel>
 							<div class="auth-danger-zone__confirm-actions">
-								<AppButton variant="secondary" disabled={loading} onclick={cancelDeleteConfirm}>
+								<AppButton
+									variant="secondary"
+									disabled={accountLocked}
+									onclick={cancelDeleteConfirm}
+								>
 									{translate(lang, 'auth.deleteCancel')}
 								</AppButton>
 								<AppButton
 									variant="danger"
-									disabled={loading || !deleteConfirmReady}
-									aria-busy={loading}
+									disabled={accountLocked || !deleteConfirmReady}
+									aria-busy={accountBusy === 'delete'}
 									onclick={deleteAccount}
 								>
-									{#if loading}
+									{#if accountBusy === 'delete'}
 										<span class="inline-flex items-center gap-2">
 											<Spinner size="sm" block={false} />
-											{translate(lang, 'auth.wait')}
+											{translate(lang, 'auth.deleteButtonFinal')}
 										</span>
 									{:else}
 										{translate(lang, 'auth.deleteButtonFinal')}
@@ -757,23 +764,31 @@
 					{/if}
 				</div>
 
-				<div class="profile-settings-group panel">
+				<div
+					class="profile-settings-group panel"
+					class:profile-settings-group--busy={accountLocked}
+					aria-busy={accountLocked || undefined}
+				>
 					<p class="profile-settings-group__title">{translate(lang, 'settings.accountTitle')}</p>
 					<ProfileSettingsRow
 						icon={ClipboardList}
 						label={translate(lang, 'scenarios.link')}
 						href="/scenarios"
+						disabled={accountLocked}
 					/>
 					<ProfileSettingsRow
 						icon={Shield}
 						label={translate(lang, 'privacy.link')}
 						href="/privacy"
+						disabled={accountLocked}
 					/>
 					<ProfileSettingsRow
 						icon={LogOut}
 						iconTone="accent"
-						label={loading ? translate(lang, 'auth.wait') : translate(lang, 'auth.logout')}
+						label={translate(lang, 'auth.logout')}
 						ariaLabel={translate(lang, 'auth.logout')}
+						busy={accountBusy === 'logout'}
+						disabled={accountLocked}
 						onclick={() => {
 							void logout();
 						}}
@@ -785,10 +800,18 @@
 						<button
 							type="button"
 							class="profile-settings-group__text-action"
-							disabled={loading}
+							disabled={accountLocked}
+							aria-busy={accountBusy === 'logoutEverywhere' || undefined}
 							onclick={openLogoutEverywhereConfirm}
 						>
-							{loading ? translate(lang, 'auth.wait') : translate(lang, 'auth.logoutEverywhere')}
+							{#if accountBusy === 'logoutEverywhere'}
+								<span class="profile-settings-group__text-action-busy">
+									<Spinner size="sm" block={false} />
+									{translate(lang, 'auth.logoutEverywhere')}
+								</span>
+							{:else}
+								{translate(lang, 'auth.logoutEverywhere')}
+							{/if}
 						</button>
 					</div>
 				</div>
@@ -1052,9 +1075,17 @@
 				onclick={() => {
 					void logoutEverywhere();
 				}}
-				disabled={loading}
+				disabled={accountLocked}
+				aria-busy={accountBusy === 'logoutEverywhere'}
 			>
-				{loading ? translate(lang, 'auth.wait') : translate(lang, 'auth.logoutEverywhere')}
+				{#if accountBusy === 'logoutEverywhere'}
+					<span class="inline-flex items-center gap-2">
+						<Spinner size="sm" block={false} />
+						{translate(lang, 'auth.logoutEverywhere')}
+					</span>
+				{:else}
+					{translate(lang, 'auth.logoutEverywhere')}
+				{/if}
 			</AppButton>
 		{/snippet}
 	</BottomSheet>

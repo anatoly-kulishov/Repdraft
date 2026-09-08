@@ -18,11 +18,13 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		highlights: {
 			ru: [
 				'Live: «Сбросить» и «Далее» всегда у нижнего края экрана',
-				'При вводе с клавиатуры нижние кнопки скрываются, больше места списку'
+				'При вводе с клавиатуры нижние кнопки скрываются, больше места списку',
+				'Выход из аккаунта: мини-лоадер вместо «Подождите…»'
 			],
 			en: [
 				'Live: Discard and Next stay pinned to the bottom of the screen',
-				'While typing, bottom action buttons hide so the list has more room'
+				'While typing, bottom action buttons hide so the list has more room',
+				'Account sign-out: mini loader instead of “Please wait…”'
 			]
 		}
 	},

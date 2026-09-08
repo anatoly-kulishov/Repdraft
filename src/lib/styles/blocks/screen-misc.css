@@ -1433,6 +1433,16 @@
 	box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
 }
 
+.profile-settings-group__text-action-busy {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+}
+
+.profile-settings-group--busy {
+	opacity: 0.78;
+}
+
 .profile-settings-group--paired .profile-settings-group__hint {
 	margin-top: 0.35rem;
 }
@@ -1531,6 +1541,28 @@
 .profile-settings-row__icon {
 	grid-area: icon;
 	flex-shrink: 0;
+}
+
+.profile-settings-row__busy {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: var(--radius-control);
+	border: 1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border));
+	background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
+}
+
+.profile-settings-row--busy {
+	cursor: progress;
+}
+
+.profile-settings-row--cycle:disabled,
+a.profile-settings-row--cycle[aria-disabled='true'] {
+	opacity: 0.55;
+	cursor: not-allowed;
+	pointer-events: none;
 }
 
 .profile-settings-row__label {
