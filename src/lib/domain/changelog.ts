@@ -14,6 +14,17 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.16.8',
+		highlights: {
+			ru: [
+				'Live: «Сбросить» и «Далее» всегда у нижнего края экрана'
+			],
+			en: [
+				'Live: Discard and Next stay pinned to the bottom of the screen'
+			]
+		}
+	},
+	{
 		version: '0.16.7',
 		highlights: {
 			ru: [
