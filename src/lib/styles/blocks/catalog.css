@@ -2429,6 +2429,16 @@ html[data-nav-back] .zone-card__media-skel {
 	-webkit-backface-visibility: hidden;
 }
 
+/*
+ * Keyboard open: drop sticky Add/Save (and Live Discard/Next). The bar otherwise
+ * rides above the keyboard via --vv-fixed-bottom and steals a full CTA row.
+ * --sticky-actions-h is forced to 0 in app.html while data-keyboard-open is set.
+ */
+html[data-keyboard-open] .sticky-actions {
+	visibility: hidden;
+	pointer-events: none;
+}
+
 /**
  * Home (and other screens with the floating tabbar): default sticky sits under the
  * tabbar (z-40). Lift above --mobile-chrome-bottom so the primary CTA is visible.

@@ -339,6 +339,18 @@
 					}
 					focusoutSyncTimers = [];
 				}
+				function setKeyboardOpen(open) {
+					var root = document.documentElement;
+					var body = document.body;
+					if (open) {
+						root.setAttribute('data-keyboard-open', '');
+						/* Override body:has(--sticky-actions-h) so list reclaim the CTA strip. */
+						if (body) body.style.setProperty('--sticky-actions-h', '0px');
+					} else {
+						root.removeAttribute('data-keyboard-open');
+						if (body) body.style.removeProperty('--sticky-actions-h');
+					}
+				}
 				function syncVvChrome() {
 					var vv = window.visualViewport;
 					var root = document.documentElement;
@@ -349,6 +361,7 @@
 						root.style.setProperty('--vv-keyboard-inset', '0px');
 						root.style.setProperty('--app-vh', layoutH + 'px');
 						root.style.removeProperty('--vv-bottom-pad');
+						setKeyboardOpen(false);
 						return;
 					}
 					var visualBottom = Math.round(vv.height + vv.offsetTop);
@@ -364,6 +377,8 @@
 					root.style.setProperty('--vv-keyboard-lift', keyboardInset + 'px');
 					if (keyboardInset > 0) root.style.setProperty('--vv-bottom-pad', '0px');
 					else root.style.removeProperty('--vv-bottom-pad');
+					/* Hide sticky CTAs while typing — Save/Next return after dismiss. */
+					setKeyboardOpen(keyboardInset > 0);
 				}
 				function scheduleFocusoutSync() {
 					clearFocusoutSyncTimers();
