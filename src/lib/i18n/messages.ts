@@ -595,6 +595,7 @@ const ru: Dict = {
 	'auth.logoutEverywhereConfirmTitle': 'Выйти на всех устройствах?',
 	'auth.logoutEverywhereConfirmLead':
 		'Сессии на всех устройствах, включая это, будут завершены.',
+	'auth.logoutEverywhereConfirmAction': 'Выйти',
 	'auth.logoutEverywhereDone': 'Вы вышли на всех устройствах',
 	'auth.deleteTitle': 'Удалить аккаунт',
 	'auth.deleteZoneLabel': 'Опасная зона',
@@ -1482,6 +1483,7 @@ const en: Dict = {
 	'auth.logoutEverywhereConfirmTitle': 'Sign out on all devices?',
 	'auth.logoutEverywhereConfirmLead':
 		'Sessions on all devices, including this one, will end.',
+	'auth.logoutEverywhereConfirmAction': 'Sign out',
 	'auth.logoutEverywhereDone': 'Signed out on all devices',
 	'auth.deleteTitle': 'Delete account',
 	'auth.deleteZoneLabel': 'Danger zone',

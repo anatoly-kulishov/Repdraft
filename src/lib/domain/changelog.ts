@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.16.8',
+		highlights: {
+			ru: [
+				'Live: «Сбросить» и «Далее» у нижнего края; при клавиатуре кнопки скрываются',
+				'На iPhone заставка при запуске тёмная, без белого кадра',
+				'Тост не залезает на нижнее окно',
+				'Фильтры и списки в окнах: галочка, длиннее список, без полосы прокрутки'
+			],
+			en: [
+				'Live: Discard/Next stay at the bottom; hide while typing',
+				'iPhone launch splash is dark, no blank white frame',
+				'Toasts stay under bottom sheets',
+				'Filters and sheet lists: checkmark, taller list, no scrollbar'
+			]
+		}
+	},
+	{
 		version: '0.16.7',
 		highlights: {
 			ru: [

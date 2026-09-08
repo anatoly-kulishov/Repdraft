@@ -72,6 +72,17 @@ async function shot(page, viewport, name) {
 
 async function waitApp(page) {
 	await page.waitForLoadState('domcontentloaded');
+	/* Splash + data-boot-pending hide the shell until hydrate (see app.html). */
+	await page
+		.waitForFunction(() => !document.getElementById('pwa-boot'), undefined, { timeout: 20_000 })
+		.catch(() => {});
+	await page
+		.waitForFunction(
+			() => !document.documentElement.hasAttribute('data-boot-pending'),
+			undefined,
+			{ timeout: 5_000 }
+		)
+		.catch(() => {});
 	await page.waitForTimeout(250);
 }
 
