@@ -3810,6 +3810,11 @@ body:has(.sticky-actions) .draft-dock {
 	scroll-padding-block: 0.5rem;
 	-webkit-overflow-scrolling: touch;
 	overscroll-behavior: contain;
+	scrollbar-width: none;
+}
+
+.catalog-equipment-sheet-options::-webkit-scrollbar {
+	display: none;
 }
 
 .catalog-equipment-sheet-option {
