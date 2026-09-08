@@ -55,7 +55,8 @@
 	/* Match 48px back/action hits — shorter min-h under-states sticky `top` and clips search pad. */
 	--screen-header-min-h: 3rem;
 	--screen-header-stacked-h: 5.35rem;
-	--screen-header-pad-block: 0.55rem;
+	/* Mobile chrome: keep safe-area, trim pad so title sits closer to status bar. */
+	--screen-header-pad-block: 0.35rem;
 	/* Space between ScreenHeader bottom and first content block. */
 	--screen-header-content-gap: 1.15rem;
 	--screen-header-chrome-h: calc(
