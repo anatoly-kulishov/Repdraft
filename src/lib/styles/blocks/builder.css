@@ -50,7 +50,9 @@
 		gap: 0.55rem;
 		margin: 0 calc(-1 * max(var(--page-pad-x), var(--safe-right))) 0.75rem
 			calc(-1 * max(var(--page-pad-x), var(--safe-left)));
-		padding: calc(0.45rem + var(--safe-top)) max(var(--page-pad-x), var(--safe-right)) 0.55rem
+		/* Match ScreenHeader: safe-area + shared pad-block (was 0.45/0.55, felt tall under notch). */
+		padding: calc(var(--screen-header-pad-block) + var(--safe-top))
+			max(var(--page-pad-x), var(--safe-right)) var(--screen-header-pad-block)
 			max(var(--page-pad-x), var(--safe-left));
 		background: var(--color-surface);
 		border-bottom: 1px solid var(--color-border);
@@ -589,6 +591,34 @@
 	text-align: center;
 	line-height: 1.2;
 	padding-inline: 0.65rem;
+}
+
+@media (max-width: 1023px) {
+	/*
+	 * Same pin as live Discard/Next: fixed to the visual viewport bottom.
+	 * Safe-area lives inside the bar so chrome reaches the screen edge.
+	 */
+	.builder-sticky-actions-bar.sticky-actions {
+		position: fixed;
+		inset-inline: 0;
+		left: 0;
+		right: 0;
+		bottom: var(--vv-fixed-bottom, 0px);
+		z-index: 30;
+		margin: 0;
+		width: 100%;
+		max-width: none;
+		transform: translateZ(0);
+		-webkit-backface-visibility: hidden;
+		padding-bottom: calc(0.65rem + var(--vv-bottom-pad, var(--safe-bottom)));
+		box-shadow: var(--shadow-float-top);
+	}
+
+	.app-shell--immersive:has(.builder-sticky-actions-bar) .shell-main,
+	.app-shell--immersive:has(.builder-sticky-actions-bar) .shell-main--subroute,
+	.app-shell--immersive:has(.builder-sticky-actions-bar) .shell-main--flow {
+		padding-bottom: 0;
+	}
 }
 
 .builder-exercise-list {
