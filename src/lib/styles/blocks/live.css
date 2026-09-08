@@ -1724,7 +1724,28 @@ button.live-panel-thumb {
 	overflow-x: auto;
 	overscroll-behavior-x: contain;
 	-webkit-overflow-scrolling: touch;
-	scrollbar-width: thin;
+	scrollbar-width: none;
+}
+
+.history-exercise__sets--grid::-webkit-scrollbar {
+	display: none;
+}
+
+@media (min-width: 768px) {
+	.history-exercise__sets--grid {
+		scrollbar-width: thin;
+		scrollbar-color: color-mix(in srgb, var(--color-muted) 40%, transparent) transparent;
+	}
+
+	.history-exercise__sets--grid::-webkit-scrollbar {
+		display: block;
+		height: 6px;
+	}
+
+	.history-exercise__sets--grid::-webkit-scrollbar-thumb {
+		background: color-mix(in srgb, var(--color-muted) 35%, transparent);
+		border-radius: 999px;
+	}
 }
 
 .history-exercise__set {

@@ -3817,9 +3817,11 @@ body:has(.sticky-actions) .draft-dock {
 	display: none;
 }
 
-.catalog-equipment-sheet-option {
+.catalog-equipment-sheet-option,
+[data-slot='button'].catalog-equipment-sheet-option {
 	display: flex;
 	align-items: center;
+	/* Override btn/shadcn justify-center so label+check stay left/right. */
 	justify-content: space-between;
 	gap: 0.75rem;
 	width: 100%;
@@ -3841,8 +3843,13 @@ body:has(.sticky-actions) .draft-dock {
 }
 
 .catalog-equipment-sheet-option__label {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
 	min-width: 0;
 	flex: 1 1 auto;
+	justify-content: flex-start;
+	text-align: left;
 }
 
 .catalog-equipment-sheet-option__check {

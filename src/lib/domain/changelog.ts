@@ -20,13 +20,13 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 				'Live: «Сбросить» и «Далее» у нижнего края; при клавиатуре кнопки скрываются',
 				'На iPhone заставка при запуске тёмная, без белого кадра',
 				'Тост не залезает на нижнее окно',
-				'Фильтр снаряда: галочка на выбранном, список длиннее'
+				'Фильтры и списки в окнах: галочка, длиннее список, без полосы прокрутки'
 			],
 			en: [
 				'Live: Discard/Next stay at the bottom; hide while typing',
 				'iPhone launch splash is dark, no blank white frame',
 				'Toasts stay under bottom sheets',
-				'Equipment filter: checkmark on selected, taller list'
+				'Filters and sheet lists: checkmark, taller list, no scrollbar'
 			]
 		}
 	},
