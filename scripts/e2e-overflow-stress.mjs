@@ -273,6 +273,16 @@ async function checkRoute(page, viewport, route, label) {
 		waitUntil: 'domcontentloaded',
 		timeout: 30_000
 	});
+	await page
+		.waitForFunction(() => !document.getElementById('pwa-boot'), undefined, { timeout: 20_000 })
+		.catch(() => {});
+	await page
+		.waitForFunction(
+			() => !document.documentElement.hasAttribute('data-boot-pending'),
+			undefined,
+			{ timeout: 5_000 }
+		)
+		.catch(() => {});
 	await page.waitForTimeout(450);
 	if (!res || res.status() >= 400) {
 		fail(viewport, route, `${label}.status`, `HTTP ${res?.status()}`);

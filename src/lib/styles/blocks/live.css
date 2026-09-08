@@ -54,16 +54,17 @@
 	.shell-main:has(> .live-page) {
 		display: flex;
 		flex-direction: column;
-		padding-bottom: calc(var(--safe-bottom) + 0.5rem);
+		/* Safe-area lives inside the fixed CTA bar — avoid a black gap under it. */
+		padding-bottom: 0;
 	}
 
 	.app-shell--immersive:has(.live-sticky-actions) .shell-main:has(> .live-page),
 	.app-shell--immersive:has(.sticky-actions) .shell-main:has(> .live-page) {
-		padding-bottom: calc(var(--safe-bottom) + 0.5rem);
+		padding-bottom: 0;
 	}
 
 	body:has(.live-finish-coachmark--mobile) .shell-main:has(> .live-page) {
-		padding-bottom: calc(var(--safe-bottom) + 0.75rem);
+		padding-bottom: 0;
 	}
 
 	body:has(.live-page) .shell-footer-pad {
@@ -72,7 +73,7 @@
 
 	/*
 	 * Fill the viewport even when the panel is short (alt picker).
-	 * Sticky alone only pins while scrolling — short pages left CTA mid-screen.
+	 * Fixed CTA pins to the visual viewport; this column only reserves clearance.
 	 */
 	.live-page {
 		display: flex;
@@ -97,6 +98,8 @@
 		gap: 0.5rem;
 		margin-top: auto;
 		flex-shrink: 0;
+		/* Reserve space for the fixed bar (and coachmark when --sticky-actions-h grows). */
+		padding-bottom: calc(var(--sticky-actions-h) + 0.35rem);
 	}
 
 	.live-mobile-actions .live-finish-coachmark {
@@ -104,16 +107,18 @@
 	}
 
 	.live-sticky-actions.sticky-actions {
-		position: sticky;
+		position: fixed;
 		inset-inline: 0;
 		left: 0;
 		right: 0;
 		bottom: var(--vv-fixed-bottom, 0px);
+		z-index: 30;
 		margin-top: 0;
-		margin-inline: calc(-1 * var(--page-pad-x));
-		width: auto;
+		margin-inline: 0;
+		width: 100%;
 		max-width: none;
-		transform: none;
+		transform: translateZ(0);
+		-webkit-backface-visibility: hidden;
 		box-shadow: var(--shadow-float-top);
 	}
 }
@@ -307,11 +312,12 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 		align-items: stretch;
 		gap: 0.35rem;
 		padding-top: 0.55rem;
-		padding-bottom: calc(1rem + var(--vv-bottom-pad, var(--safe-bottom)));
+		/* Safe-area inside the fixed bar so the chrome reaches the screen edge. */
+		padding-bottom: calc(0.65rem + var(--vv-bottom-pad, var(--safe-bottom)));
 	}
 
 	.live-sticky-actions.sticky-actions:not(.live-sticky-actions--rest) {
-		padding-bottom: calc(1rem + var(--vv-bottom-pad, var(--safe-bottom)));
+		padding-bottom: calc(0.65rem + var(--vv-bottom-pad, var(--safe-bottom)));
 	}
 }
 
@@ -1718,7 +1724,28 @@ button.live-panel-thumb {
 	overflow-x: auto;
 	overscroll-behavior-x: contain;
 	-webkit-overflow-scrolling: touch;
-	scrollbar-width: thin;
+	scrollbar-width: none;
+}
+
+.history-exercise__sets--grid::-webkit-scrollbar {
+	display: none;
+}
+
+@media (min-width: 768px) {
+	.history-exercise__sets--grid {
+		scrollbar-width: thin;
+		scrollbar-color: color-mix(in srgb, var(--color-muted) 40%, transparent) transparent;
+	}
+
+	.history-exercise__sets--grid::-webkit-scrollbar {
+		display: block;
+		height: 6px;
+	}
+
+	.history-exercise__sets--grid::-webkit-scrollbar-thumb {
+		background: color-mix(in srgb, var(--color-muted) 35%, transparent);
+		border-radius: 999px;
+	}
 }
 
 .history-exercise__set {

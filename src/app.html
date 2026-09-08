@@ -19,6 +19,63 @@
 		<link rel="icon" href="/icon.svg" type="image/svg+xml" />
 		<link rel="apple-touch-icon" href="/apple-touch-icon-v3.png" sizes="180x180" />
 		<link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed-v3.png" sizes="180x180" />
+		<!-- iOS PWA launch: exact sizes or Safari shows a blank white screen before HTML. -->
+		<link
+			rel="apple-touch-startup-image"
+			href="/splash/apple-splash-1320x2868.png"
+			media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3)"
+		/>
+		<link
+			rel="apple-touch-startup-image"
+			href="/splash/apple-splash-1206x2622.png"
+			media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3)"
+		/>
+		<link
+			rel="apple-touch-startup-image"
+			href="/splash/apple-splash-1290x2796.png"
+			media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)"
+		/>
+		<link
+			rel="apple-touch-startup-image"
+			href="/splash/apple-splash-1179x2556.png"
+			media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)"
+		/>
+		<link
+			rel="apple-touch-startup-image"
+			href="/splash/apple-splash-1170x2532.png"
+			media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)"
+		/>
+		<link
+			rel="apple-touch-startup-image"
+			href="/splash/apple-splash-1284x2778.png"
+			media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)"
+		/>
+		<link
+			rel="apple-touch-startup-image"
+			href="/splash/apple-splash-1125x2436.png"
+			media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)"
+		/>
+		<link
+			rel="apple-touch-startup-image"
+			href="/splash/apple-splash-1242x2688.png"
+			media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)"
+		/>
+		<link
+			rel="apple-touch-startup-image"
+			href="/splash/apple-splash-828x1792.png"
+			media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)"
+		/>
+		<link
+			rel="apple-touch-startup-image"
+			href="/splash/apple-splash-750x1334.png"
+			media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)"
+		/>
+		<link
+			rel="apple-touch-startup-image"
+			href="/splash/apple-splash-640x1136.png"
+			media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)"
+		/>
+		<link rel="preload" href="/brand-mark-pulse.png" as="image" type="image/png" />
 		<style>
 			html,
 			body {
@@ -34,20 +91,38 @@
 			#pwa-boot {
 				position: fixed;
 				inset: 0;
-				z-index: 9999;
-				display: grid;
-				place-items: center;
+				z-index: 2147483646;
 				background: #0b0b0c;
 				pointer-events: none;
 				transition: opacity 0.2s ease;
+				/* Own layer — first paint stays opaque over SSR home / skeleton. */
+				transform: translateZ(0);
+				-webkit-backface-visibility: hidden;
 			}
 			html[data-theme='light'] #pwa-boot {
 				background: #f2f2f7;
 			}
+			/*
+			 * Kill home CTA flash under splash: hide everything after #pwa-boot until dismiss.
+			 * (display:contents #app-root still inherits visibility to shell children.)
+			 */
+			html[data-boot-pending] body > *:not(#pwa-boot) {
+				visibility: hidden !important;
+			}
 			#pwa-boot .pwa-boot-icon-wrap {
+				position: fixed;
+				left: 50%;
+				top: 50%;
 				width: 120px;
 				height: 120px;
+				margin: 0;
 				line-height: 0;
+				transform: translate(-50%, -50%);
+				/* Hide until viewport height settles — avoids high→center slide on iOS. */
+				opacity: 0;
+			}
+			#pwa-boot.is-positioned .pwa-boot-icon-wrap {
+				opacity: 1;
 			}
 			#pwa-boot .pwa-boot-icon {
 				width: 120px;
@@ -68,6 +143,7 @@
 		<script>
 			(function () {
 				try {
+					document.documentElement.setAttribute('data-boot-pending', '');
 					var themeKey = 'repdraft.theme';
 					var theme = localStorage.getItem(themeKey);
 					if (theme !== 'light' && theme !== 'dark') {
@@ -339,6 +415,18 @@
 					}
 					focusoutSyncTimers = [];
 				}
+				function setKeyboardOpen(open) {
+					var root = document.documentElement;
+					var body = document.body;
+					if (open) {
+						root.setAttribute('data-keyboard-open', '');
+						/* Override body:has(--sticky-actions-h) so list reclaim the CTA strip. */
+						if (body) body.style.setProperty('--sticky-actions-h', '0px');
+					} else {
+						root.removeAttribute('data-keyboard-open');
+						if (body) body.style.removeProperty('--sticky-actions-h');
+					}
+				}
 				function syncVvChrome() {
 					var vv = window.visualViewport;
 					var root = document.documentElement;
@@ -349,6 +437,7 @@
 						root.style.setProperty('--vv-keyboard-inset', '0px');
 						root.style.setProperty('--app-vh', layoutH + 'px');
 						root.style.removeProperty('--vv-bottom-pad');
+						setKeyboardOpen(false);
 						return;
 					}
 					var visualBottom = Math.round(vv.height + vv.offsetTop);
@@ -364,6 +453,8 @@
 					root.style.setProperty('--vv-keyboard-lift', keyboardInset + 'px');
 					if (keyboardInset > 0) root.style.setProperty('--vv-bottom-pad', '0px');
 					else root.style.removeProperty('--vv-bottom-pad');
+					/* Hide sticky CTAs while typing — Save/Next return after dismiss. */
+					setKeyboardOpen(keyboardInset > 0);
 				}
 				function scheduleFocusoutSync() {
 					clearFocusoutSyncTimers();
@@ -464,53 +555,102 @@
 				</svg>
 			</div>
 		</div>
-		<div style="display: contents">%sveltekit.body%</div>
+		<div id="app-root" style="display: contents">%sveltekit.body%</div>
 		<script>
 			(function () {
 				var boot = document.getElementById('pwa-boot');
-				if (!boot) return;
+				if (!boot) {
+					document.documentElement.removeAttribute('data-boot-pending');
+					return;
+				}
 				var done = false;
+				var appReady = false;
 				var shownAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
-				/* Antiflash while HTML parses + Svelte mounts. Not tied to XHR/data.
-				 * Hide = max(ready, MIN): ready = DOM/load/hydrate; MIN keeps one beam pass visible.
-				 * MAX is an escape hatch if fonts/preload hang. */
-				var MIN_MS = 1100;
+				/*
+				 * Hide = max(appReady, MIN). Do not dismiss on DOMContentLoaded alone —
+				 * that revealed the home CTA under a fading splash before hydrate finished.
+				 * MAX escapes hung fonts / missing layout signal.
+				 */
+				var MIN_MS = 900;
 				var MAX_MS = 2500;
-				var hide = function () {
+				/* Lock icon to visualViewport center after height stabilizes (iOS grows after first paint). */
+				var iconRevealed = false;
+				var applyBootIconPos = function () {
+					var wrap = boot.querySelector('.pwa-boot-icon-wrap');
+					if (!wrap) return;
+					var vv = window.visualViewport;
+					var top = (vv ? vv.offsetTop : 0) + (vv ? vv.height : window.innerHeight) / 2;
+					var left = (vv ? vv.offsetLeft : 0) + (vv ? vv.width : window.innerWidth) / 2;
+					wrap.style.top = Math.round(top) + 'px';
+					wrap.style.left = Math.round(left) + 'px';
+					wrap.style.transform = 'translate(-50%, -50%)';
+				};
+				var revealBootIcon = function () {
+					if (iconRevealed) return;
+					applyBootIconPos();
+					boot.classList.add('is-positioned');
+					iconRevealed = true;
+				};
+				var quietTimer = null;
+				var armQuietReveal = function () {
+					if (iconRevealed) return;
+					if (quietTimer) window.clearTimeout(quietTimer);
+					quietTimer = window.setTimeout(revealBootIcon, 100);
+				};
+				var onViewportMaybeChanged = function () {
+					if (iconRevealed) return;
+					applyBootIconPos();
+					armQuietReveal();
+				};
+				requestAnimationFrame(function () {
+					onViewportMaybeChanged();
+					requestAnimationFrame(onViewportMaybeChanged);
+				});
+				window.setTimeout(revealBootIcon, 220);
+				if (window.visualViewport) {
+					window.visualViewport.addEventListener('resize', onViewportMaybeChanged);
+					window.visualViewport.addEventListener('scroll', onViewportMaybeChanged);
+				}
+				window.addEventListener('resize', onViewportMaybeChanged);
+				var dismiss = function () {
 					if (done) return;
 					done = true;
-					var now = typeof performance !== 'undefined' ? performance.now() : Date.now();
-					var wait = Math.max(0, MIN_MS - (now - shownAt));
+					boot.classList.add('is-done');
+					document.documentElement.removeAttribute('data-boot-pending');
 					window.setTimeout(function () {
-						boot.classList.add('is-done');
-						window.setTimeout(function () {
-							if (boot && boot.parentNode) boot.remove();
-							if (typeof window.__repdraftSyncVvChrome === 'function') {
-								window.__repdraftSyncVvChrome();
-								window.setTimeout(window.__repdraftSyncVvChrome, 50);
-								window.setTimeout(window.__repdraftSyncVvChrome, 200);
-							}
-						}, 220);
-					}, wait);
+						if (boot && boot.parentNode) boot.remove();
+						if (typeof window.__repdraftSyncVvChrome === 'function') {
+							window.__repdraftSyncVvChrome();
+							window.setTimeout(window.__repdraftSyncVvChrome, 50);
+							window.setTimeout(window.__repdraftSyncVvChrome, 200);
+						}
+					}, 220);
 				};
-				window.__repdraftHideBoot = hide;
+				var tryHide = function () {
+					if (done) return;
+					var now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+					var elapsed = now - shownAt;
+					if (!appReady && elapsed < MAX_MS) return;
+					var wait = appReady ? Math.max(0, MIN_MS - elapsed) : 0;
+					window.setTimeout(dismiss, wait);
+				};
+				window.__repdraftHideBoot = function () {
+					appReady = true;
+					tryHide();
+				};
 				/* Prefer quieter splash when user asks for reduced motion. */
 				try {
 					if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 						var anims = boot.querySelectorAll('animate');
 						for (var i = 0; i < anims.length; i++) anims[i].remove();
-						MIN_MS = 160;
-						MAX_MS = 700;
+						MIN_MS = 120;
+						MAX_MS = 600;
 					}
 				} catch (rmErr) {}
-				/* Do not wait only on window.load — font/preload hangs left splash forever. */
-				if (document.readyState === 'interactive' || document.readyState === 'complete') {
-					hide();
-				} else {
-					document.addEventListener('DOMContentLoaded', hide, { once: true });
-				}
-				window.addEventListener('load', hide, { once: true });
-				window.setTimeout(hide, MAX_MS);
+				window.setTimeout(function () {
+					appReady = true;
+					tryHide();
+				}, MAX_MS);
 			})();
 		</script>
 	</body>

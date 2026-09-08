@@ -10,7 +10,7 @@
  * In-app BrandMark / boot splash must use the same MARK_INSET as icon.svg.
  */
 import sharp from 'sharp';
-import { copyFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -224,8 +224,44 @@ const maskableSvg = `<?xml version="1.0" encoding="UTF-8"?>
 `;
 writeFileSync(join(brandDir, 'app-icon-maskable.svg'), maskableSvg);
 
+/* iOS standalone launch: without these Safari shows a blank white screen before HTML. */
+const SPLASH_BG = { r: 11, g: 11, b: 12 }; // #0B0B0C
+const splashDir = join(root, 'static/splash');
+mkdirSync(splashDir, { recursive: true });
+/** CSS width×height @ DPR → PNG pixel size. Portrait only (gym phone). */
+const APPLE_SPLASH = [
+	{ w: 1320, h: 2868, file: 'apple-splash-1320x2868.png' },
+	{ w: 1206, h: 2622, file: 'apple-splash-1206x2622.png' },
+	{ w: 1290, h: 2796, file: 'apple-splash-1290x2796.png' },
+	{ w: 1179, h: 2556, file: 'apple-splash-1179x2556.png' },
+	{ w: 1170, h: 2532, file: 'apple-splash-1170x2532.png' },
+	{ w: 1284, h: 2778, file: 'apple-splash-1284x2778.png' },
+	{ w: 1125, h: 2436, file: 'apple-splash-1125x2436.png' },
+	{ w: 1242, h: 2688, file: 'apple-splash-1242x2688.png' },
+	{ w: 828, h: 1792, file: 'apple-splash-828x1792.png' },
+	{ w: 750, h: 1334, file: 'apple-splash-750x1334.png' },
+	{ w: 640, h: 1136, file: 'apple-splash-640x1136.png' }
+];
+for (const s of APPLE_SPLASH) {
+	const markSize = Math.round(Math.min(s.w, s.h) * 0.22);
+	const mark = await sharp(join(root, 'static/icon-512-v3.png')).resize(markSize, markSize).png().toBuffer();
+	await sharp({
+		create: { width: s.w, height: s.h, channels: 3, background: SPLASH_BG }
+	})
+		.composite([
+			{
+				input: mark,
+				top: Math.round((s.h - markSize) / 2),
+				left: Math.round((s.w - markSize) / 2)
+			}
+		])
+		.png()
+		.toFile(join(splashDir, s.file));
+}
+
 console.log('generate-brand-icons: ok', {
 	MARK_INSET,
 	ANY_ZOOM,
-	markBBox: { minX, minY, maxX, maxY, bw, bh }
+	markBBox: { minX, minY, maxX, maxY, bw, bh },
+	appleSplash: APPLE_SPLASH.length
 });
