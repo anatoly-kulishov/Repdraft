@@ -58,7 +58,7 @@
 		if (e.target === e.currentTarget) onClose();
 	}}
 >
-	<div class="clip-lightbox__panel panel relative w-[min(100%,24rem)] max-h-[90vh] overflow-auto !rounded-2xl !p-0">
+	<div class="clip-lightbox__panel panel relative w-[min(100%,24rem)] max-h-[90vh] overflow-auto scroll-hide !rounded-2xl !p-0">
 		<CloseIconButton class="clip-lightbox__close" onclick={onClose} />
 		<div class="relative aspect-square w-full overflow-hidden bg-[var(--color-surface-muted)]">
 			{#if !ready && !failed}

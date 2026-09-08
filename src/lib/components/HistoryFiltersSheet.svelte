@@ -6,7 +6,7 @@
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { Calendar, Check } from '@lucide/svelte';
+	import { Check } from '@lucide/svelte';
 
 	type HistoryDatePreset = 'all' | 'today';
 
@@ -104,11 +104,8 @@
 				aria-checked={rangeActive}
 				onclick={pickRange}
 			>
-				<span class="catalog-equipment-sheet-option__label history-filters-sheet__range">
-					<LucideIcon icon={Calendar} size={ICON_SMALL} />
-					<span class="history-filters-sheet__range-label">
-						{rangeActive ? rangeLabel : translate(lang, 'workouts.historyPickRange')}
-					</span>
+				<span class="catalog-equipment-sheet-option__label history-filters-sheet__range-label">
+					{rangeActive ? rangeLabel : translate(lang, 'workouts.historyPickRange')}
 				</span>
 				{#if rangeActive}
 					<span class="catalog-equipment-sheet-option__check" aria-hidden="true">
@@ -121,13 +118,6 @@
 {/if}
 
 <style>
-	.history-filters-sheet__range {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		min-width: 0;
-	}
-
 	.history-filters-sheet__range-label {
 		min-width: 0;
 		overflow: hidden;
