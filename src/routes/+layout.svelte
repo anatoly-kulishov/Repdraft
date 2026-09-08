@@ -115,11 +115,12 @@
 		whenIdle(() => void techniqueClipHints.refresh());
 		void auth.init();
 
-		/* Belt-and-suspenders: same hide path as app.html (respects min splash time). */
+		/* Signal app hydrate — splash waits max(ready, MIN) then fades (see app.html). */
 		const hideBoot = (window as Window & { __repdraftHideBoot?: () => void }).__repdraftHideBoot;
 		if (typeof hideBoot === 'function') {
 			hideBoot();
 		} else {
+			document.documentElement.removeAttribute('data-boot-pending');
 			const boot = document.getElementById('pwa-boot');
 			if (boot) {
 				boot.classList.add('is-done');
