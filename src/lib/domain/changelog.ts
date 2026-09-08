@@ -14,6 +14,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.16.9',
+		highlights: {
+			ru: [
+				'Заголовок экрана и шапка конструктора ближе к верхнему краю',
+				'Конструктор: «Добавить» и «Сохранить» у нижнего края экрана',
+				'Форма «Новый клип»: заголовок ближе к верху карточки'
+			],
+			en: [
+				'Screen and builder headers sit closer to the top edge',
+				'Builder: Add and Save stay pinned to the bottom of the screen',
+				'New clip form: title sits closer to the top of the card'
+			]
+		}
+	},
+	{
 		version: '0.16.8',
 		highlights: {
 			ru: [

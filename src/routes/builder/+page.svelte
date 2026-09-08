@@ -302,7 +302,7 @@
 			/>
 		</div>
 		{#if !builderSkeletonEmpty}
-			<div class="sticky-actions lg:hidden builder-skeleton-sticky" aria-hidden="true">
+			<div class="sticky-actions builder-sticky-actions-bar lg:hidden builder-skeleton-sticky" aria-hidden="true">
 				<div class="sticky-actions__inner builder-sticky-actions">
 					<span class="builder-skeleton-sticky__btn"></span>
 					<span class="builder-skeleton-sticky__btn builder-skeleton-sticky__btn--primary"></span>
@@ -434,37 +434,39 @@
 						{translate(lang, 'builder.addExercise')}
 					</AppButton>
 				</div>
-
-				<div class="sticky-actions lg:hidden">
-					<div class="sticky-actions__inner builder-sticky-actions">
-						<AppButton
-							variant="secondary"
-							href={BUILDER_ADD_EXERCISE_HREF}
-							class="builder-sticky-actions__btn gap-1.5"
-							aria-label={translate(lang, 'builder.addExercise')}
-						>
-							<LucideIcon icon={Plus} size={ICON_BUTTON} />
-							{translate(lang, 'builder.addExerciseShort')}
-						</AppButton>
-						<AppButton
-							class="builder-sticky-actions__btn"
-							disabled={!pageReady || saving || $draft.exercises.length === 0 || draftUnchanged}
-							aria-busy={saving}
-							onclick={() => void save()}
-						>
-							{#if saving}
-								<span class="inline-flex items-center justify-center gap-2">
-									<Spinner size="sm" block={false} />
-									{translate(lang, 'auth.wait')}
-								</span>
-							{:else}
-								{translate(lang, 'builder.save')}
-							{/if}
-						</AppButton>
-					</div>
-				</div>
 			{/if}
 		</div>
+
+		{#if $draft.exercises.length > 0}
+			<div class="sticky-actions builder-sticky-actions-bar lg:hidden">
+				<div class="sticky-actions__inner builder-sticky-actions">
+					<AppButton
+						variant="secondary"
+						href={BUILDER_ADD_EXERCISE_HREF}
+						class="builder-sticky-actions__btn gap-1.5"
+						aria-label={translate(lang, 'builder.addExercise')}
+					>
+						<LucideIcon icon={Plus} size={ICON_BUTTON} />
+						{translate(lang, 'builder.addExerciseShort')}
+					</AppButton>
+					<AppButton
+						class="builder-sticky-actions__btn"
+						disabled={!pageReady || saving || $draft.exercises.length === 0 || draftUnchanged}
+						aria-busy={saving}
+						onclick={() => void save()}
+					>
+						{#if saving}
+							<span class="inline-flex items-center justify-center gap-2">
+								<Spinner size="sm" block={false} />
+								{translate(lang, 'auth.wait')}
+							</span>
+						{:else}
+							{translate(lang, 'builder.save')}
+						{/if}
+					</AppButton>
+				</div>
+			</div>
+		{/if}
 	{/if}
 </section>
 
