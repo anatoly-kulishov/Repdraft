@@ -2,11 +2,14 @@
 	import AppChip from '$lib/components/AppChip.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import ListSearchBar from '$lib/components/ListSearchBar.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseFilters } from '$lib/domain/types';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { cn } from '$lib/utils.js';
+	import { Check } from '@lucide/svelte';
 
 	let {
 		filters = $bindable(),
@@ -29,9 +32,7 @@
 	let lang = $derived($resolvedLocale);
 	let equipmentSheetOpen = $state(false);
 
-	let showTargetFilters = $derived(
-		lockBodyPart && !hideTargetChips && targets.length > 1
-	);
+	let showTargetFilters = $derived(lockBodyPart && !hideTargetChips && targets.length > 1);
 
 	let showEquipmentFilter = $derived(equipment.length > 0);
 	let equipmentActive = $derived(filters.equipment !== 'all');
@@ -57,6 +58,23 @@
 		equipmentSheetOpen = false;
 	}
 </script>
+
+{#snippet equipmentOption(value: string, label: string, active: boolean)}
+	<AppChip
+		class="catalog-equipment-sheet-option !h-auto !min-h-12 !w-full !rounded-[var(--radius-control)] !px-[0.85rem] !py-[0.55rem]"
+		{active}
+		role="radio"
+		aria-checked={active}
+		onclick={() => selectEquipment(value)}
+	>
+		<span class="catalog-equipment-sheet-option__label">{label}</span>
+		{#if active}
+			<span class="catalog-equipment-sheet-option__check" aria-hidden="true">
+				<LucideIcon icon={Check} size={ICON_SMALL} />
+			</span>
+		{/if}
+	</AppChip>
+{/snippet}
 
 <div class="catalog-filters-shell">
 	<div class={cn('catalog-filters', lockBodyPart && 'catalog-filters--zone')}>
@@ -108,24 +126,12 @@
 		</p>
 		<div
 			class="catalog-equipment-sheet-options"
-			role="group"
+			role="radiogroup"
 			aria-labelledby="catalog-equipment-sheet-title"
 		>
-			<AppChip
-				class="catalog-equipment-sheet-option !h-auto !min-h-12 w-full justify-start rounded-[var(--radius-control)] px-[0.9rem] py-[0.65rem] text-left font-medium"
-				active={filters.equipment === 'all'}
-				onclick={() => selectEquipment('all')}
-			>
-				{translate(lang, 'catalog.equipmentAny')}
-			</AppChip>
+			{@render equipmentOption('all', translate(lang, 'catalog.equipmentAny'), filters.equipment === 'all')}
 			{#each equipment as item (item)}
-				<AppChip
-					class="catalog-equipment-sheet-option !h-auto !min-h-12 w-full justify-start rounded-[var(--radius-control)] px-[0.9rem] py-[0.65rem] text-left font-medium"
-					active={filters.equipment === item}
-					onclick={() => selectEquipment(item)}
-				>
-					{labelEquipment(item, lang)}
-				</AppChip>
+				{@render equipmentOption(item, labelEquipment(item, lang), filters.equipment === item)}
 			{/each}
 		</div>
 	</BottomSheet>
