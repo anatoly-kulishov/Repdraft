@@ -1081,10 +1081,10 @@
 				{#if accountBusy === 'logoutEverywhere'}
 					<span class="inline-flex items-center gap-2">
 						<Spinner size="sm" block={false} />
-						{translate(lang, 'auth.logoutEverywhere')}
+						{translate(lang, 'auth.logoutEverywhereConfirmAction')}
 					</span>
 				{:else}
-					{translate(lang, 'auth.logoutEverywhere')}
+					{translate(lang, 'auth.logoutEverywhereConfirmAction')}
 				{/if}
 			</AppButton>
 		{/snippet}
