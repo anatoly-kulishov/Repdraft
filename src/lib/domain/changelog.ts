@@ -17,22 +17,16 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.16.8',
 		highlights: {
 			ru: [
-				'Live: «Сбросить» и «Далее» всегда у нижнего края экрана',
-				'При вводе с клавиатуры нижние кнопки скрываются, больше места списку',
-				'Выход из аккаунта: мини-лоадер вместо «Подождите…»',
-				'Старт приложения: без чёрного мигания главной под заставкой',
+				'Live: «Сбросить» и «Далее» у нижнего края; при клавиатуре кнопки скрываются',
 				'На iPhone заставка при запуске тёмная, без белого кадра',
-				'Тост больше не залезает на шапку нижнего окна',
-				'В фильтре снаряда видно выбранный пункт и список длиннее'
+				'Тост не залезает на нижнее окно',
+				'Фильтр снаряда: галочка на выбранном, список длиннее'
 			],
 			en: [
-				'Live: Discard and Next stay pinned to the bottom of the screen',
-				'While typing, bottom action buttons hide so the list has more room',
-				'Account sign-out: mini loader instead of “Please wait…”',
-				'App launch: no black flash of Home under the splash',
+				'Live: Discard/Next stay at the bottom; hide while typing',
 				'iPhone launch splash is dark, no blank white frame',
-				'Toasts no longer sit on top of bottom sheets',
-				'Equipment filter: clearer selected row, taller scrollable list'
+				'Toasts stay under bottom sheets',
+				'Equipment filter: checkmark on selected, taller list'
 			]
 		}
 	},
