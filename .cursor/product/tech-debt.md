@@ -27,7 +27,7 @@
 ## Related polish (не закрыто в той же сессии)
 
 - Shadow policy: soft float только у tabbar/FAB/dock/toast/sheets; sticky bars - border only; убрать glow у catalog `+` (если ещё остался).
-- Boot splash (`#pwa-boot`): слабый antiflash; решить keep short / remove.
+- Boot splash (`#pwa-boot`): iOS native black until first paint (нужны `apple-touch-startup-image` по размерам) — web antiflash уже через `data-boot-pending`.
 - Light theme contrast (muted / primary) - см. прошлый contrast audit в чате catalog polish.
 - ~~CTA ink / accent hue~~ → brand green **`#8BC34A`** (= logo) + white CTA ink. Contrast soft (~2:1); accepted for brand match.
 
