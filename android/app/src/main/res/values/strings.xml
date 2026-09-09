@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Repdraft</string>
+    <string name="title_activity_main">Repdraft</string>
+    <string name="package_name">com.repdraft.app</string>
+    <string name="custom_url_scheme">com.repdraft.app</string>
+</resources>

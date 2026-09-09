@@ -1,4 +1,6 @@
 /** Screen Wake Lock while an active live workout is on screen (best-effort). */
+import { KeepAwake } from '@capacitor-community/keep-awake';
+import { isNativeApp } from '$lib/app/native';
 
 type WakeLockSentinelLike = {
 	released: boolean;
@@ -8,8 +10,28 @@ type WakeLockSentinelLike = {
 
 let sentinel: WakeLockSentinelLike | null = null;
 let visibleHandler: (() => void) | null = null;
+let nativeKept = false;
 
-async function requestLock(): Promise<void> {
+async function requestNativeKeepAwake(): Promise<void> {
+	try {
+		await KeepAwake.keepAwake();
+		nativeKept = true;
+	} catch {
+		nativeKept = false;
+	}
+}
+
+async function releaseNativeKeepAwake(): Promise<void> {
+	if (!nativeKept) return;
+	try {
+		await KeepAwake.allowSleep();
+	} catch {
+		/* ignore */
+	}
+	nativeKept = false;
+}
+
+async function requestWebLock(): Promise<void> {
 	if (typeof navigator === 'undefined') return;
 	const nav = navigator as Navigator & {
 		wakeLock?: { request: (type: 'screen') => Promise<WakeLockSentinelLike> };
@@ -24,6 +46,14 @@ async function requestLock(): Promise<void> {
 	} catch {
 		sentinel = null;
 	}
+}
+
+async function requestLock(): Promise<void> {
+	if (isNativeApp()) {
+		await requestNativeKeepAwake();
+		return;
+	}
+	await requestWebLock();
 }
 
 export async function acquireScreenWakeLock(): Promise<void> {
@@ -43,6 +73,10 @@ export async function releaseScreenWakeLock(): Promise<void> {
 		window.removeEventListener('pageshow', visibleHandler);
 		window.removeEventListener('focus', visibleHandler);
 		visibleHandler = null;
+	}
+	if (isNativeApp()) {
+		await releaseNativeKeepAwake();
+		return;
 	}
 	const current = sentinel;
 	sentinel = null;

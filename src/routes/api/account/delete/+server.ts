@@ -26,6 +26,42 @@ function serviceRoleKey(): string {
 	return (privateEnv.SUPABASE_SERVICE_ROLE_KEY ?? '').trim();
 }
 
+function webOriginAllowlist(): string[] {
+	const origins = [
+		(publicEnv.PUBLIC_SITE_URL ?? '').trim().replace(/\/$/, ''),
+		(publicEnv.PUBLIC_WEB_ORIGIN ?? '').trim().replace(/\/$/, '')
+	].filter((o) => o.startsWith('https://') || o.startsWith('http://'));
+	return [...new Set(origins)];
+}
+
+function corsHeaders(request: Request): HeadersInit {
+	const origin = request.headers.get('origin') ?? '';
+	const allow = webOriginAllowlist();
+	const headers: Record<string, string> = {
+		'Access-Control-Allow-Methods': 'POST, OPTIONS',
+		'Access-Control-Allow-Headers': 'Authorization, Content-Type, Accept',
+		'Access-Control-Max-Age': '86400'
+	};
+	/* Capacitor / custom-scheme clients may omit Origin or send capacitor:// / ionic:// */
+	if (
+		!origin ||
+		origin.startsWith('capacitor://') ||
+		origin.startsWith('ionic://') ||
+		allow.includes(origin)
+	) {
+		headers['Access-Control-Allow-Origin'] = origin || '*';
+		if (origin) headers.Vary = 'Origin';
+	}
+	return headers;
+}
+
+function jsonWithCors(request: Request, body: unknown, init?: ResponseInit) {
+	const headers = new Headers(init?.headers);
+	const cors = corsHeaders(request);
+	for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+	return json(body, { ...init, headers });
+}
+
 async function listUserGifPaths(admin: SupabaseClient, userId: string): Promise<string[]> {
 	const paths: string[] = [];
 	const { data, error } = await admin.storage.from(CLIP_BUCKET).list(userId, {
@@ -51,6 +87,10 @@ async function removeStoragePaths(admin: SupabaseClient, paths: string[]): Promi
 	}
 }
 
+/** Preflight for native shell (absolute PUBLIC_WEB_ORIGIN fetch). */
+export const OPTIONS: RequestHandler = async ({ request }) =>
+	new Response(null, { status: 204, headers: corsHeaders(request) });
+
 /** Delete the signed-in Auth user and their cloud rows (152-FZ / GDPR right to erasure). */
 export const POST: RequestHandler = async ({ request }) => {
 	const url = publicUrl();
@@ -58,12 +98,12 @@ export const POST: RequestHandler = async ({ request }) => {
 	const service = serviceRoleKey();
 
 	if (!url.startsWith('https://') || !anon || !service) {
-		return json({ error: 'auth.deleteNotConfigured' }, { status: 503 });
+		return jsonWithCors(request, { error: 'auth.deleteNotConfigured' }, { status: 503 });
 	}
 
 	const authHeader = request.headers.get('authorization') ?? request.headers.get('Authorization');
 	if (!authHeader?.toLowerCase().startsWith('bearer ')) {
-		return json({ error: 'auth.deleteUnauthorized' }, { status: 401 });
+		return jsonWithCors(request, { error: 'auth.deleteUnauthorized' }, { status: 401 });
 	}
 
 	const userClient = createClient(url, anon, {
@@ -77,7 +117,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	} = await userClient.auth.getUser();
 
 	if (userError || !user) {
-		return json({ error: 'auth.deleteUnauthorized' }, { status: 401 });
+		return jsonWithCors(request, { error: 'auth.deleteUnauthorized' }, { status: 401 });
 	}
 
 	const admin = createClient(url, service, {
@@ -91,7 +131,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	if (clipsError && clipsError.code !== 'PGRST205' && clipsError.code !== '42P01') {
 		console.error('account delete: technique_clips select', clipsError);
-		return json({ error: 'auth.deleteFail' }, { status: 500 });
+		return jsonWithCors(request, { error: 'auth.deleteFail' }, { status: 500 });
 	}
 
 	const dbGifPaths = (clips ?? [])
@@ -103,21 +143,21 @@ export const POST: RequestHandler = async ({ request }) => {
 		listedPaths = await listUserGifPaths(admin, user.id);
 	} catch (err) {
 		console.error('account delete: storage.list', err);
-		return json({ error: 'auth.deleteFail' }, { status: 500 });
+		return jsonWithCors(request, { error: 'auth.deleteFail' }, { status: 500 });
 	}
 
 	try {
 		await removeStoragePaths(admin, [...dbGifPaths, ...listedPaths]);
 	} catch (err) {
 		console.error('account delete: storage.remove', err);
-		return json({ error: 'auth.deleteFail' }, { status: 500 });
+		return jsonWithCors(request, { error: 'auth.deleteFail' }, { status: 500 });
 	}
 
 	{
 		const { error } = await admin.from('technique_clip_reports').delete().eq('reporter_id', user.id);
 		if (error && error.code !== 'PGRST205' && error.code !== '42P01') {
 			console.error('account delete: technique_clip_reports reporter', error);
-			return json({ error: 'auth.deleteFail' }, { status: 500 });
+			return jsonWithCors(request, { error: 'auth.deleteFail' }, { status: 500 });
 		}
 	}
 
@@ -130,25 +170,24 @@ export const POST: RequestHandler = async ({ request }) => {
 			const { error } = await admin.from('technique_clip_reports').delete().in('clip_id', clipIds);
 			if (error && error.code !== 'PGRST205' && error.code !== '42P01') {
 				console.error('account delete: technique_clip_reports on clips', error);
-				return json({ error: 'auth.deleteFail' }, { status: 500 });
+				return jsonWithCors(request, { error: 'auth.deleteFail' }, { status: 500 });
 			}
 		}
 	}
 
 	for (const table of USER_TABLES) {
 		const { error } = await admin.from(table).delete().eq('user_id', user.id);
-		// Table may be absent in some envs (sessions / clips) — keep deleting the rest.
 		if (error && error.code !== 'PGRST205' && error.code !== '42P01') {
 			console.error(`account delete: ${table}`, error);
-			return json({ error: 'auth.deleteFail' }, { status: 500 });
+			return jsonWithCors(request, { error: 'auth.deleteFail' }, { status: 500 });
 		}
 	}
 
 	const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
 	if (deleteError) {
 		console.error('account delete: auth.admin.deleteUser', deleteError);
-		return json({ error: 'auth.deleteFail' }, { status: 500 });
+		return jsonWithCors(request, { error: 'auth.deleteFail' }, { status: 500 });
 	}
 
-	return json({ ok: true });
+	return jsonWithCors(request, { ok: true });
 };

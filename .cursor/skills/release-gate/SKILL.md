@@ -43,6 +43,12 @@ npm run test:e2e:history
 
 Новые destructive / persist actions на экранах — добавлять в e2e по тому же шаблону (helper seed → action → assert storage/navigation), не полагаться только на skeleton/visual.
 
+Release guards (SEO / redirects / consent / analytics / ladder):
+
+```bash
+npm run test:e2e -- tests/e2e/release-guards.spec.ts tests/e2e/builder-ladder.spec.ts
+```
+
 При UI/CSS изменениях в ветке — дополнительно:
 
 ```bash
@@ -57,7 +63,8 @@ npm run e2e:overflow
 - Слои: `domain` чистый, UI не лезет в `storage` напрямую.
 - MVP: touch ≥48px, skeletons не блокеры, offline-first, одна primary CTA на экран.
 - i18n: `translate()`, без em-dash в UI.
-- URL/SEO: `/exercises/saved`, `/exercises/records`, redirects, sitemap, robots.
+- URL/SEO: `/exercises/saved`, `/exercises/records`, `/privacy`, `/terms`, redirects, sitemap, robots.
+- Legal: signup/magic consent; real `PUBLIC_PRIVACY_*` before public/store (no placeholders).
 
 При сомнениях — `/auditor review diff before release`.
 
@@ -67,9 +74,11 @@ npm run e2e:overflow
 
 **Экраны (минимум):**
 
-`/ · /workouts · /workouts/[planId] · /live/[planId] · /builder · /exercises · /catalog/all · /catalog/[zone] · /exercise/[id] · /exercises/saved · /exercises/records · /auth · /privacy`
+`/ · /workouts · /workouts/[planId] · /live/[planId] · /builder · /exercises · /catalog/all · /catalog/[zone] · /exercise/[id] · /exercises/saved · /exercises/records · /auth · /privacy · /terms`
 
 На каждом: skeleton → контент без layout jump, back/nav, search/filters, empty states.
+
+**Auth legal:** signup + magic link show Terms/Privacy consent; submit disabled until checked; guest profile links to `/terms` + `/privacy`.
 
 **Sacred loop E2E:** pick → preview → start → set (weight×reps) → next → finish → result saved.
 

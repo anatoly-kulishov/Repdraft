@@ -8,7 +8,7 @@ Short contract. Cursor rules: [`.cursor/rules/`](.cursor/rules/). Coding rules: 
 
 ## Stack
 
-SvelteKit, TypeScript, Tailwind 4, Supabase (optional), mobile / PWA first.
+SvelteKit, TypeScript, Tailwind 4, Supabase (optional), mobile / PWA first. Capacitor shell (iOS/Android Mode B) for store builds.
 
 ## Layers
 
@@ -22,8 +22,15 @@ cp .env.example .env
 npm run dev
 npm run check    # before finishing a task
 npm run build
+npm run build:native          # Capacitor Mode B static SPA + cap sync
+npm run build:native:assets   # static SPA only (CI)
 npm run test:e2e:history  # history detail delete / undo / edit save (release gate P0)
+npm run test:e2e:guards   # SEO robots/sitemap, redirects, consent, analytics, ladder
 ```
+
+Native store checklist: [`.cursor/product/native-store-checklist.md`](.cursor/product/native-store-checklist.md).
+
+Legal before public/store: set real `PUBLIC_PRIVACY_*` in Vercel (not placeholders); have a lawyer review `/privacy` + `/terms` (updated 2026-09-09: native shell, Vercel Analytics opt-in). Web analytics is **off by default** (`repdraft:web-analytics`).
 
 ## Cursor rules map
 
@@ -39,7 +46,7 @@ npm run test:e2e:history  # history detail delete / undo / edit save (release ga
 | `refactor-guardrails.mdc` | Large CSS/architecture refactors (on demand) |
 | `tech-debt.mdc` | Backlog pointer (on demand) |
 
-Product detail: [`.cursor/product/mvp-spec.md`](.cursor/product/mvp-spec.md).
+Product: [`.cursor/product/mvp-spec.md`](.cursor/product/mvp-spec.md). Store: [`.cursor/product/native-store-checklist.md`](.cursor/product/native-store-checklist.md). Legal: `/privacy` + `/terms`.
 
 ## Secrets
 

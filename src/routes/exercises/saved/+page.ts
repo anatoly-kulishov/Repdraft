@@ -3,5 +3,5 @@ import { loadCatalogIndex } from '$lib/data/loadCatalogPage';
 
 export const load: PageLoad = async ({ fetch, data }) => ({
 	...(await loadCatalogIndex(fetch)),
-	bookmarksCountPeek: data.bookmarksCountPeek
+	bookmarksCountPeek: data.bookmarksCountPeek ?? null
 });

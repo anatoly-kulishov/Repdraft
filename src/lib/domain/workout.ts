@@ -3,7 +3,7 @@ import type { ExerciseIndexItem } from './types';
 import { labelTarget } from './labels.ru';
 import type { AppLocale } from '$lib/i18n/locale';
 import { newId } from './id';
-import { REPS, REST_SEC, SETS, clampPlanName } from './inputLimits';
+import { LADDER_REPS, REPS, REST_SEC, SETS, clampPlanName } from './inputLimits';
 
 export const DEFAULT_SETS = 3;
 export const DEFAULT_REPS = 10;
@@ -11,10 +11,10 @@ export const DEFAULT_REST_SEC = 90;
 /** Squat / bench / deadlift family — longer recovery between heavy sets. */
 export const HEAVY_COMPOUND_REST_SEC = 180;
 
-/** Inclusive linear ladder (5→1 or 1→5). Caps length at SETS.max. */
+/** Inclusive linear ladder (5→1 or 1→5). Caps length at SETS.max; ends at LADDER_REPS.max. */
 export function buildLadderScheme(from: number, to: number): number[] {
-	const a = Math.min(REPS.max, Math.max(REPS.min, Math.round(from)));
-	const b = Math.min(REPS.max, Math.max(REPS.min, Math.round(to)));
+	const a = Math.min(LADDER_REPS.max, Math.max(LADDER_REPS.min, Math.round(from)));
+	const b = Math.min(LADDER_REPS.max, Math.max(LADDER_REPS.min, Math.round(to)));
 	const step = a <= b ? 1 : -1;
 	const out: number[] = [];
 	for (let n = a; step > 0 ? n <= b : n >= b; n += step) {
@@ -51,7 +51,7 @@ export function formatExercisePrescription(ex: {
 /** Normalize a stored scheme: clamp reps, drop empties, sync length to SETS.max. */
 export function normalizeRepsScheme(scheme: number[]): number[] | null {
 	const cleaned = scheme
-		.map((n) => Math.min(REPS.max, Math.max(REPS.min, Math.round(n))))
+		.map((n) => Math.min(LADDER_REPS.max, Math.max(LADDER_REPS.min, Math.round(n))))
 		.filter((n) => Number.isFinite(n));
 	if (cleaned.length < 2) return null;
 	return cleaned.slice(0, SETS.max);
@@ -1127,6 +1127,15 @@ export function runWorkoutSelfCheck(): void {
 	}
 	if (formatLadderLabel(ladder) !== '5→1') {
 		throw new Error(`formatLadderLabel unexpected ${formatLadderLabel(ladder)}`);
+	}
+	const ladderClamped = buildLadderScheme(1, 999);
+	if (ladderClamped[ladderClamped.length - 1] !== 99 || ladderClamped.length !== 99) {
+		throw new Error(`buildLadderScheme should clamp ends to 99, got ${ladderClamped.join(',')}`);
+	}
+	if (normalizeRepsScheme([1, 500, 999])?.join(',') !== '1,99,99') {
+		throw new Error(
+			`normalizeRepsScheme should clamp ladder ends, got ${normalizeRepsScheme([1, 500, 999])?.join(',')}`
+		);
 	}
 	let ladderDraft = createEmptyDraft('Ladder');
 	ladderDraft = addExercise(ladderDraft, 'ex-pull').plan;

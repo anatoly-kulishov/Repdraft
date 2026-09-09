@@ -90,16 +90,25 @@
 		flex: 1 1 auto;
 		min-height: 0;
 		gap: 0.6rem;
+		/*
+		 * Spacer under set log / «Ещё подход». Must live with the panel content
+		 * (not only on .live-mobile-actions): sticky is position:fixed and taller
+		 * when rest is on; under-sized --sticky-actions-h was clipping the CTA.
+		 */
+		/* Slack kept modest: rest token already ≈ bar height; large +2rem left a dead gap. */
+		padding-bottom: calc(
+			var(--sticky-actions-h) + var(--vv-bottom-pad, var(--safe-bottom)) + 0.75rem
+		);
 	}
 
 	.live-mobile-actions {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		margin-top: auto;
+		margin-top: 0;
 		flex-shrink: 0;
-		/* Reserve space for the fixed bar (and coachmark when --sticky-actions-h grows). */
-		padding-bottom: calc(var(--sticky-actions-h) + 0.35rem);
+		/* Clearance moved to .live-workspace so it sits under the add-set button. */
+		padding-bottom: 0;
 	}
 
 	.live-mobile-actions .live-finish-coachmark {
@@ -120,6 +129,19 @@
 		transform: translateZ(0);
 		-webkit-backface-visibility: hidden;
 		box-shadow: var(--shadow-float-top);
+	}
+}
+
+/* Tablet portrait: sticky CTA still shows (until lg); keep set-log clearance. */
+@media (min-width: 768px) and (max-width: 1023px) {
+	.live-workspace {
+		padding-bottom: calc(
+			var(--sticky-actions-h) + var(--vv-bottom-pad, var(--safe-bottom)) + 0.75rem
+		);
+	}
+
+	.live-mobile-actions {
+		padding-bottom: 0;
 	}
 }
 
@@ -288,21 +310,24 @@
 	width: 100%;
 }
 
-/* Rest + CTA: one strip + CTA + discard — keep thumb zone clear without eating the set log. */
+/*
+ * Rest tokens: keep in sync with catalog.css (same values). live.css loads after
+ * catalog in app.css, so stale lower values here previously under-cleared the bar.
+ */
 body:has(.live-sticky-actions--rest) {
-	--sticky-actions-h: 7.25rem;
+	--sticky-actions-h: 9.75rem;
 }
 
 body:has(.live-sticky-actions--rest-expanded) {
-	--sticky-actions-h: 10rem;
+	--sticky-actions-h: 13rem;
 }
 
 body:has(.live-sticky-actions--rest.live-sticky-actions--end) {
-	--sticky-actions-h: 7.25rem;
+	--sticky-actions-h: 9.75rem;
 }
 
 body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
-	--sticky-actions-h: 10rem;
+	--sticky-actions-h: 13rem;
 }
 
 @media (max-width: 767px) {
@@ -754,7 +779,12 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	display: block;
 	width: 100%;
 	margin-top: 0.35rem;
+	margin-bottom: 0.25rem;
 	padding-inline: 0;
+	/* Focus / scroll-into-view must clear Live sticky (+ home indicator). */
+	scroll-margin-bottom: calc(
+		var(--sticky-actions-h) + var(--vv-bottom-pad, var(--safe-bottom)) + 1.75rem
+	);
 }
 
 .live-panel-add-set {
@@ -767,6 +797,9 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	min-height: 48px;
 	margin: 0;
 	padding: 0.55rem 0.85rem;
+	scroll-margin-bottom: calc(
+		var(--sticky-actions-h) + var(--vv-bottom-pad, var(--safe-bottom)) + 1.75rem
+	);
 	border: 1px solid var(--color-field-border);
 	border-radius: var(--radius-control);
 	background: var(--color-surface);

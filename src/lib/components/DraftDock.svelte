@@ -21,6 +21,7 @@
 			path.startsWith('/live/') ||
 			path.startsWith('/auth') ||
 			path === '/privacy' ||
+			path === '/terms' ||
 			path === '/workouts/summary' ||
 			/^\/workouts\/[^/]+$/.test(path)
 	);

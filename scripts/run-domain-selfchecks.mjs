@@ -32,7 +32,9 @@ const checks = [
 	'id',
 	'home',
 	'calendar',
-	'docMarkdown'
+	'docMarkdown',
+	'navigation',
+	'appStorageKeys'
 ];
 
 for (const name of checks) {
@@ -65,4 +67,14 @@ const sitemapResult = spawnSync(
 );
 if (sitemapResult.status !== 0) {
 	process.exit(sitemapResult.status ?? 1);
+}
+
+const nativeUrlsCheck = join(root, 'src/lib/app/nativeUrls.selfcheck.ts');
+const nativeUrlsResult = spawnSync(
+	process.execPath,
+	['--import', register, '--experimental-strip-types', nativeUrlsCheck],
+	{ stdio: 'inherit', cwd: root }
+);
+if (nativeUrlsResult.status !== 0) {
+	process.exit(nativeUrlsResult.status ?? 1);
 }

@@ -1,12 +1,18 @@
 /** Local device preferences (not synced to cloud). */
 
 export const REST_SOUND_STORAGE_KEY = 'repdraft:rest-sound';
+export const WEB_ANALYTICS_STORAGE_KEY = 'repdraft:web-analytics';
 export const INSTALL_HINT_DISMISSED_KEY = 'repdraft:install-hint-dismissed';
 export const PWA_INSTALLED_KEY = 'repdraft:pwa-installed';
 
 export function parseRestSoundEnabled(raw: string | null | undefined): boolean {
 	if (raw === '0' || raw === 'false') return false;
 	return true;
+}
+
+/** Opt-in: only explicit '1' / 'true' enables Vercel Analytics on web. */
+export function parseWebAnalyticsEnabled(raw: string | null | undefined): boolean {
+	return raw === '1' || raw === 'true';
 }
 
 export function isInstallHintDismissed(): boolean {

@@ -23,6 +23,7 @@
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import AuthInterfacePrefs from '$lib/components/AuthInterfacePrefs.svelte';
+	import AuthLegalConsent from '$lib/components/AuthLegalConsent.svelte';
 	import BrandTagline from '$lib/components/BrandTagline.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import PasswordField from '$lib/components/PasswordField.svelte';
@@ -41,13 +42,12 @@
 	import { restSoundEnabled } from '$lib/stores/prefs';
 	import { get } from 'svelte/store';
 	import { tick } from 'svelte';
-	import { appTheme } from '$lib/stores/theme';
-	import { themeToggleStateIcon } from '$lib/components/icons/themeToggle';
-	import { Globe, LogOut, Timer, Shield, ClipboardList } from '@lucide/svelte';
+	import { FileText, LogOut, Timer, Shield, ClipboardList } from '@lucide/svelte';
 
 	let { data } = $props();
 
 	type Panel = 'signin' | 'signup' | 'magic' | 'forgot' | 'check-email';
+	let legalAccepted = $state(false);
 
 	let panel = $state<Panel>('signin');
 	let email = $state('');
@@ -72,6 +72,14 @@
 
 	let turnstileOn = $derived(isTurnstileConfigured());
 
+	function requireLegalAccepted(): boolean {
+		if (legalAccepted) return true;
+		const text = translate(lang, 'auth.legalConsentNeed');
+		message = text;
+		toasts.show(text, 'error', 5000);
+		void flashInvalid();
+		return false;
+	}
 	function clearConfirmMismatch() {
 		confirmMismatchVisible = false;
 	}
@@ -106,9 +114,6 @@
 	let confirmMismatchHint = $derived(
 		confirmMismatchVisible ? translate(lang, 'auth.errors.passwordMismatch') : null
 	);
-	let nextLang = $derived(lang === 'ru' ? ('en' as const) : ('ru' as const));
-	let theme = $derived($appTheme);
-	let nextTheme = $derived(theme === 'dark' ? ('light' as const) : ('dark' as const));
 	let restSoundHintKey = $derived(
 		browser &&
 			isIosDevice({
@@ -203,6 +208,7 @@
 		try {
 			const captcha = requireCaptchaToken();
 			if (panel === 'signup') {
+				if (!requireLegalAccepted()) return;
 				if (!passwordsMatch(password, passwordConfirm)) {
 					confirmMismatchVisible = true;
 					const text = translate(lang, 'auth.errors.passwordMismatch');
@@ -246,6 +252,7 @@
 			toasts.show(translate(lang, 'auth.notConfigured'), 'error');
 			return;
 		}
+		if (!requireLegalAccepted()) return;
 		loading = true;
 		message = null;
 		fieldsInvalid = false;
@@ -641,31 +648,7 @@
 
 				{@render onboardingHelpPanel()}
 
-				<div class="profile-settings-group panel profile-settings-group--paired">
-					<p class="profile-settings-group__title">{translate(lang, 'settings.interfaceTitle')}</p>
-					<ProfileSettingsRow
-						icon={Globe}
-						label={translate(lang, 'lang.label')}
-						value={translate(lang, lang === 'ru' ? 'lang.ru' : 'lang.en')}
-						ariaLabel={translate(lang, 'settings.cycleHint', {
-							label: translate(lang, 'lang.label'),
-							current: translate(lang, lang === 'ru' ? 'lang.ru' : 'lang.en'),
-							next: translate(lang, nextLang === 'ru' ? 'lang.ru' : 'lang.en')
-						})}
-						onclick={() => resolvedLocale.set(nextLang)}
-					/>
-					<ProfileSettingsRow
-						icon={themeToggleStateIcon(theme === 'light')}
-						label={translate(lang, 'settings.theme')}
-						value={translate(lang, theme === 'light' ? 'settings.themeLight' : 'settings.themeDark')}
-						ariaLabel={translate(lang, 'settings.cycleHint', {
-							label: translate(lang, 'settings.theme'),
-							current: translate(lang, theme === 'light' ? 'settings.themeLight' : 'settings.themeDark'),
-							next: translate(lang, nextTheme === 'light' ? 'settings.themeLight' : 'settings.themeDark')
-						})}
-						onclick={() => appTheme.set(nextTheme)}
-					/>
-				</div>
+				<AuthInterfacePrefs surface="panel" />
 
 				<div class="profile-settings-group panel">
 					<p class="profile-settings-group__title">{translate(lang, 'settings.sessionTitle')}</p>
@@ -777,6 +760,12 @@
 						disabled={accountLocked}
 					/>
 					<ProfileSettingsRow
+						icon={FileText}
+						label={translate(lang, 'terms.link')}
+						href="/terms"
+						disabled={accountLocked}
+					/>
+					<ProfileSettingsRow
 						icon={Shield}
 						label={translate(lang, 'privacy.link')}
 						href="/privacy"
@@ -875,8 +864,9 @@
 					{#if turnstileOn}
 						<TurnstileWidget bind:token={captchaToken} resetSignal={captchaReset} />
 					{/if}
+					<AuthLegalConsent bind:checked={legalAccepted} />
 					<div class="auth-form__actions">
-						<AppButton type="submit" block disabled={loading}>
+						<AppButton type="submit" block disabled={loading || !legalAccepted}>
 							{#if loading}
 								<span class="inline-flex items-center justify-center gap-2">
 									<Spinner size="sm" block={false} />
@@ -980,8 +970,16 @@
 						<TurnstileWidget bind:token={captchaToken} resetSignal={captchaReset} />
 					{/if}
 
+					{#if passwordMode === 'signup'}
+						<AuthLegalConsent bind:checked={legalAccepted} />
+					{/if}
+
 					<div class="auth-form__actions">
-						<AppButton type="submit" block disabled={loading}>
+						<AppButton
+							type="submit"
+							block
+							disabled={loading || (passwordMode === 'signup' && !legalAccepted)}
+						>
 							{#if loading}
 								<span class="inline-flex items-center justify-center gap-2">
 									<Spinner size="sm" block={false} />
@@ -1104,6 +1102,11 @@
 					icon={ClipboardList}
 					label={translate(lang, 'scenarios.link')}
 					href="/scenarios"
+				/>
+				<ProfileSettingsRow
+					icon={FileText}
+					label={translate(lang, 'terms.link')}
+					href="/terms"
 				/>
 				<ProfileSettingsRow
 					icon={Shield}

@@ -9,7 +9,7 @@ property of **Gym visual**.
 ## Terms
 
 - **Resolution:** distributed and displayed at **180×180** only.
-- **Attribution:** show **© Gym visual — https://gymvisual.com/** on routes that display exercise media (`/exercises`, `/catalog/*`, `/exercise/*`) and in the Privacy page (`/privacy`).
+- **Attribution:** show **© Gym visual — https://gymvisual.com/** on routes that display exercise media (`/exercises`, `/catalog/*`, `/exercise/*`) and in the Privacy page (`/privacy`). Terms (`/terms`) cover app use; media attribution stays on Privacy + media routes.
 
 Review Gym visual's Terms & Conditions:
 https://gymvisual.com/content/3-terms-and-conditions-of-use
