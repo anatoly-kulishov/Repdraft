@@ -2,6 +2,8 @@
 
 export const WEIGHT_KG = { min: 0, max: 999, step: 0.5 } as const;
 export const REPS = { min: 1, max: 999 } as const;
+/** Ladder endpoints (От/До) — keep chips readable; length still capped by SETS.max. */
+export const LADDER_REPS = { min: 1, max: 99 } as const;
 export const LIVE_REPS = { min: 0, max: 999 } as const;
 export const SETS = { min: 1, max: 99 } as const;
 export const REST_SEC = { min: 0, max: 999 } as const;
@@ -15,6 +17,7 @@ export const SEARCH_QUERY_MAX = 80;
 /** Max digits while typing (derived from bounds — fits chip inputs without overflow). */
 export const SETS_INPUT_MAX_LEN = String(SETS.max).length;
 export const REPS_INPUT_MAX_LEN = String(REPS.max).length;
+export const LADDER_REPS_INPUT_MAX_LEN = String(LADDER_REPS.max).length;
 export const REST_INPUT_MAX_LEN = String(REST_SEC.max).length;
 export const WEIGHT_INPUT_MAX_LEN = String(WEIGHT_KG.max).length + 1;
 
@@ -248,6 +251,12 @@ export function runInputLimitsSelfCheck(): void {
 	if (coerceSets('0') !== 1) throw new Error('coerceSets lone zero to min');
 	if (coerceSets('') !== 1) throw new Error('coerceSets empty to min');
 	if (coerceSets('99') !== 99) throw new Error('coerceSets max');
+	if (filterRepsInput('100', LADDER_REPS, '99') !== '99') {
+		throw new Error('filterRepsInput ladder reject past 99');
+	}
+	if (coerceReps('999', LADDER_REPS) !== 99) {
+		throw new Error('coerceReps ladder clamp max');
+	}
 	if (filterRestSecInput('1000', '999') !== '999') {
 		throw new Error('filterRestSecInput reject extra digit');
 	}

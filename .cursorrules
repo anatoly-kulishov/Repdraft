@@ -17,7 +17,7 @@ Sacred loop (see `GOAL.md`):
 Open → Pick workout → Preview → Start → Set → Weight × reps → Next → Finish → Saved result
 ```
 
-If that loop is not excellent, ignore charts, AI, social, and other extras. Native iOS/Android is a later reward, not a current build target.
+If that loop is not excellent, ignore charts, AI, social, and other extras. Capacitor iOS/Android shell exists (Mode B SPA) as a delivery path; do not chase native-only features or store polish ahead of the PWA sacred loop. Store gate: `.cursor/product/native-store-checklist.md`.
 
 ## STRICT CODING RULES
 

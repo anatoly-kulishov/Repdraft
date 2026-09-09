@@ -32,6 +32,7 @@ import {
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { isSupabaseConfigured } from '$lib/supabase/client';
+	import { canShare, shareContent } from '$lib/media/share';
 	import { page } from '$app/stores';
 	import { replaceState } from '$app/navigation';
 	import { onDestroy } from 'svelte';
@@ -77,9 +78,7 @@ import {
 	let gifSizeLabel = $derived(
 		gifBlob ? translate(lang, 'clips.kb', { n: (gifBlob.size / 1024).toFixed(0) }) : null
 	);
-	let canShareNative = $derived(
-		typeof navigator !== 'undefined' && typeof navigator.share === 'function'
-	);
+	let canShareNative = $derived(canShare());
 	let renameUnchanged = $derived.by(() => {
 		if (!renameTarget) return true;
 		try {
@@ -383,12 +382,12 @@ import {
 				const res = await fetch(clip.gifUrl);
 				const blob = await res.blob();
 				const file = new File([blob], 'technique.gif', { type: 'image/gif' });
-				if (navigator.canShare?.({ files: [file] })) {
-					await navigator.share({ title: text, text, url: link, files: [file] });
-					return;
+				if (typeof navigator !== 'undefined' && navigator.canShare?.({ files: [file] })) {
+					const shared = await shareContent({ title: text, text, url: link, files: [file] });
+					if (shared) return;
 				}
-				await navigator.share({ title: text, text, url: link });
-				return;
+				const shared = await shareContent({ title: text, text, url: link });
+				if (shared) return;
 			} catch (err) {
 				if (err instanceof DOMException && err.name === 'AbortError') return;
 			}

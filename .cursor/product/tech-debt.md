@@ -43,6 +43,6 @@
 
 **Контекст:** после v0.16.1 Gravatar-fallback давал «не ту» аву на email; откат к OAuth-only photo.
 
-## Email confirm → standalone PWA (not MVP)
+## Email confirm → standalone PWA / native (partially shipped)
 
-Confirm link already redirects to origin `/auth` (web). Opening the **Home Screen standalone** from Mail is unreliable (iOS especially). Do **not** build Universal Links / Android intent deep-link as P0. UX: check-email PWA hint + email-confirmed toast. Spike later only if product insists.
+Confirm link redirects to origin `/auth` (web). Capacitor Mode B uses custom scheme `repdraft://auth` (patched at build). Opening the **Home Screen standalone PWA** from Mail is still unreliable on iOS. Universal Links / Android App Links are **not** required for store Mode B; revisit only if product insists on https→app without custom scheme.

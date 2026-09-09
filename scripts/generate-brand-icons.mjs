@@ -265,3 +265,21 @@ console.log('generate-brand-icons: ok', {
 	markBBox: { minX, minY, maxX, maxY, bw, bh },
 	appleSplash: APPLE_SPLASH.length
 });
+
+/* Capacitor Assets CLI expects ./assets/icon.png + splash.png (see @capacitor/assets). */
+const capAssets = join(root, 'assets');
+mkdirSync(capAssets, { recursive: true });
+copyFileSync(join(root, 'static/icon-512-v3.png'), join(capAssets, 'icon.png'));
+await sharp({
+	create: { width: 2732, height: 2732, channels: 3, background: SPLASH_BG }
+})
+	.composite([
+		{
+			input: await sharp(join(root, 'static/icon-512-v3.png')).resize(512, 512).png().toBuffer(),
+			top: Math.round((2732 - 512) / 2),
+			left: Math.round((2732 - 512) / 2)
+		}
+	])
+	.png()
+	.toFile(join(capAssets, 'splash.png'));
+console.log('generate-brand-icons: capacitor assets/icon.png + splash.png');

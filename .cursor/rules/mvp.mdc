@@ -30,8 +30,9 @@ Open → Pick workout → Preview → Start → Set → Weight × reps → Next 
 - Visual: dark minimal premium, Lucide only, one primary CTA per screen
 - No blocking full-screen loaders — skeletons / optimistic UI
 - Performance budget for low-end: no unbounded full-list renders, avoid main-thread jank
-- Native iOS/Android only after the PWA loop feels excellent
+- Capacitor shell is a delivery path (same UI); store submit only via `native-store-checklist.md` after the web loop feels excellent
+- Web analytics (Vercel) is opt-in and web-only; never inject in native shell
 
 ## Do not build without explicit user request
 
-Analytics/charts, AI coach, social/gamification, wearables, feature parity with Hevy/JEFIT/Boostcamp, side sections that do not speed up the sacred loop.
+Product analytics/charts dashboards, AI coach, social/gamification, wearables, feature parity with Hevy/JEFIT/Boostcamp, side sections that do not speed up the sacred loop.

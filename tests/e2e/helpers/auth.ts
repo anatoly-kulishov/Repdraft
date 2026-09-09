@@ -25,6 +25,26 @@ export async function expectGuestSignInPanel(page: Page): Promise<void> {
 	await expect(page.getByRole('button', { name: /ссылке на email|email link/i })).toBeVisible();
 }
 
+export async function expectGuestLegalLinks(page: Page): Promise<void> {
+	await expect(page.getByRole('link', { name: /^(Условия|Terms)$/ })).toHaveAttribute('href', '/terms');
+	await expect(page.getByRole('link', { name: /^(Конфиденциальность|Privacy)$/ })).toHaveAttribute(
+		'href',
+		'/privacy'
+	);
+}
+
+export async function expectSignupConsent(page: Page): Promise<void> {
+	const consent = page.locator('.auth-legal-consent').first();
+	await expect(consent).toBeVisible();
+	await expect(consent.getByRole('link', { name: /условия использования|terms of use/i })).toBeVisible();
+	await expect(consent.getByRole('link', { name: /политику конфиденциальности|privacy policy/i })).toBeVisible();
+	await expect(consent.locator('.auth-legal-consent__input')).not.toBeChecked();
+	const submit = page
+		.locator('.auth-signin form.auth-form')
+		.getByRole('button', { name: /^(Зарегистрироваться|Sign up|Create account)$/ });
+	await expect(submit).toBeDisabled();
+}
+
 export async function setAuthTab(page: Page, tab: 'signin' | 'signup'): Promise<void> {
 	const label = tab === 'signin' ? /^(Вход|Sign in)$/ : /^(Регистрация|Sign up)$/;
 	await page.getByRole('tab', { name: label }).click();
@@ -38,6 +58,21 @@ export async function fillPassword(page: Page, password: string, index = 0): Pro
 	await page.locator('input[type="password"], input[autocomplete="new-password"], input[autocomplete="current-password"]')
 		.nth(index)
 		.fill(password);
+}
+
+/** Signup / magic-link consent checkbox (Terms + Privacy). */
+export async function acceptLegalConsent(page: Page): Promise<void> {
+	const box = page.locator('.auth-legal-consent__input');
+	await expect(box).toBeVisible();
+	/* Mobile: label+input can double-toggle on locator.check(); set state directly. */
+	await box.evaluate((el) => {
+		const input = el as HTMLInputElement;
+		if (input.checked) return;
+		input.checked = true;
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		input.dispatchEvent(new Event('change', { bubbles: true }));
+	});
+	await expect(box).toBeChecked();
 }
 
 export async function submitPrimaryAuthForm(page: Page): Promise<void> {

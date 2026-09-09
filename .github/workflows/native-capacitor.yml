@@ -1,0 +1,37 @@
+name: Native Capacitor sync
+
+on:
+  push:
+    branches:
+      - 'cursor/v*-capacitor*'
+      - 'cursor/v*-native*'
+  pull_request:
+    paths:
+      - 'capacitor.config.ts'
+      - 'src/lib/app/**'
+      - 'scripts/build-native.mjs'
+      - 'scripts/native-route-mask.mjs'
+      - 'svelte.config.js'
+      - 'package.json'
+
+jobs:
+  native-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Build Capacitor static SPA (no cap sync platforms)
+        env:
+          APP_TARGET: capacitor
+          PUBLIC_APP_NATIVE: '1'
+          PUBLIC_SITE_URL: https://example.com
+          PUBLIC_WEB_ORIGIN: https://example.com
+          PUBLIC_SUPABASE_URL: https://example.supabase.co
+          PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example
+        run: npm run build:native:assets
+      - name: Assert SPA fallback exists
+        run: test -f build/index.html

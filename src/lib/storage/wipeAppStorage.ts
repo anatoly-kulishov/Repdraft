@@ -2,6 +2,8 @@ import {
 	isRepdraftOwnedCookieName,
 	isRepdraftOwnedStorageKey
 } from '$lib/domain/appStorageKeys';
+import { isNativeApp } from '$lib/app/native';
+import { clearMediaCache } from '$lib/media/mediaCache';
 
 function collectLocalStorageKeys(match: (key: string) => boolean): string[] {
 	if (typeof localStorage === 'undefined') return [];
@@ -70,6 +72,7 @@ export async function wipeBrowserCaches(): Promise<void> {
 }
 
 export async function wipeServiceWorkerRegistrations(): Promise<void> {
+	if (isNativeApp()) return;
 	if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
 	try {
 		const registrations = await navigator.serviceWorker.getRegistrations();
@@ -86,5 +89,6 @@ export async function wipeAllAppStorage(): Promise<void> {
 	wipeRepdraftCookies();
 	await wipeBrowserIndexedDatabases();
 	await wipeBrowserCaches();
+	await clearMediaCache();
 	await wipeServiceWorkerRegistrations();
 }
