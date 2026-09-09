@@ -110,8 +110,10 @@
 				{#each preview as set, si (si)}
 					{@const kind = set.kind ?? 'work'}
 					<li class="exercise-history__set-line tabular-nums">
-						<span class="exercise-history__set-idx">#{si + 1}</span>
-						<span class="exercise-history__set-val">{formatSet(set.weightKg, set.reps)}</span>
+						<div class="exercise-history__set-main">
+							<span class="exercise-history__set-idx">#{si + 1}</span>
+							<span class="exercise-history__set-val">{formatSet(set.weightKg, set.reps)}</span>
+						</div>
 						{#if kind !== 'work'}
 							<span class="exercise-history__set-kind">
 								{translate(lang, setKindMessageKey(kind))}

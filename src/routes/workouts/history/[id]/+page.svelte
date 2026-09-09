@@ -466,60 +466,62 @@
 											{@const key = setKey(exIndex, item.setIndex)}
 											{@const setKind = loggedSetKind(item.set)}
 											<li class="history-exercise__set tabular-nums">
-												<span class="history-exercise__set-i">{i + 1}</span>
-												<AppInput
-													class="history-set-field history-set-weight tabular-nums"
-													type="text"
-													inputmode="decimal"
-													autocomplete="off"
-													maxlength={WEIGHT_INPUT_MAX_LEN}
-													value={editDraft[key]?.w ?? ''}
-													aria-label={translate(lang, 'live.weight')}
-													oninput={(e) => {
-														const el = e.currentTarget;
-														const prev = editDraft[key]?.w ?? '';
-														const next = filterWeightInput(el.value, prev);
-														if (el.value !== next) el.value = next;
-														editDraft[key] = {
-															...(editDraft[key] ?? { w: '', r: '' }),
-															w: next
-														};
-													}}
-												/>
-												<span class="history-exercise__set-unit">kg</span>
-												<AppInput
-													class="history-set-field history-set-reps tabular-nums"
-													type="text"
-													inputmode="numeric"
-													autocomplete="off"
-													maxlength={REPS_INPUT_MAX_LEN}
-													value={editDraft[key]?.r ?? ''}
-													aria-label={translate(lang, 'live.reps')}
-													oninput={(e) => {
-														const el = e.currentTarget;
-														const prev = editDraft[key]?.r ?? '';
-														const next = filterRepsInput(el.value, LIVE_REPS, prev);
-														if (el.value !== next) el.value = next;
-														editDraft[key] = {
-															...(editDraft[key] ?? { w: '', r: '' }),
-															r: next
-														};
-													}}
-												/>
+												<div class="history-exercise__set-main">
+													<span class="history-exercise__set-i">{i + 1}</span>
+													<AppInput
+														class="history-set-field history-set-weight tabular-nums"
+														type="text"
+														inputmode="decimal"
+														autocomplete="off"
+														maxlength={WEIGHT_INPUT_MAX_LEN}
+														value={editDraft[key]?.w ?? ''}
+														aria-label={translate(lang, 'live.weight')}
+														oninput={(e) => {
+															const el = e.currentTarget;
+															const prev = editDraft[key]?.w ?? '';
+															const next = filterWeightInput(el.value, prev);
+															if (el.value !== next) el.value = next;
+															editDraft[key] = {
+																...(editDraft[key] ?? { w: '', r: '' }),
+																w: next
+															};
+														}}
+													/>
+													<span class="history-exercise__set-unit">kg</span>
+													<AppInput
+														class="history-set-field history-set-reps tabular-nums"
+														type="text"
+														inputmode="numeric"
+														autocomplete="off"
+														maxlength={REPS_INPUT_MAX_LEN}
+														value={editDraft[key]?.r ?? ''}
+														aria-label={translate(lang, 'live.reps')}
+														oninput={(e) => {
+															const el = e.currentTarget;
+															const prev = editDraft[key]?.r ?? '';
+															const next = filterRepsInput(el.value, LIVE_REPS, prev);
+															if (el.value !== next) el.value = next;
+															editDraft[key] = {
+																...(editDraft[key] ?? { w: '', r: '' }),
+																r: next
+															};
+														}}
+													/>
+													<AppButton
+														variant="ghost"
+														class="live-set-remove-btn"
+														aria-label={translate(lang, 'live.removeSet')}
+														title={translate(lang, 'live.removeSet')}
+														onclick={() => removeHistorySet(exIndex, item.setIndex)}
+													>
+														<LucideIcon icon={Trash2} size={ICON_SMALL} />
+													</AppButton>
+												</div>
 												{#if setKind !== 'work'}
 													<span class="history-exercise__set-kind">
 														{translate(lang, setKindMessageKey(setKind))}
 													</span>
 												{/if}
-												<AppButton
-													variant="ghost"
-													class="live-set-remove-btn"
-													aria-label={translate(lang, 'live.removeSet')}
-													title={translate(lang, 'live.removeSet')}
-													onclick={() => removeHistorySet(exIndex, item.setIndex)}
-												>
-													<LucideIcon icon={Trash2} size={ICON_SMALL} />
-												</AppButton>
 											</li>
 										{/each}
 									</ul>
@@ -590,23 +592,27 @@
 								{#each rows as item, i (item.setIndex)}
 									{@const setKind = loggedSetKind(item.set)}
 									<li class="history-exercise__set tabular-nums">
-										<span class="history-exercise__set-i">{i + 1}</span>
-										{#if item.set.weightKg != null || item.set.reps != null}
-											{#if item.set.weightKg != null}
-												<span class="history-exercise__set-weight"
-													>{item.set.weightKg} {translate(lang, 'pr.kg')}</span
-												>
-												<span class="history-exercise__set-reps">× {item.set.reps ?? '-'}</span>
+										<div class="history-exercise__set-main">
+											<span class="history-exercise__set-i">{i + 1}</span>
+											{#if item.set.weightKg != null || item.set.reps != null}
+												{#if item.set.weightKg != null}
+													<span class="history-exercise__set-weight"
+														>{item.set.weightKg} {translate(lang, 'pr.kg')}</span
+													>
+													<span class="history-exercise__set-reps">× {item.set.reps ?? '-'}</span>
+												{:else}
+													<span class="history-exercise__set-reps">
+														{item.set.reps != null
+															? `${item.set.reps} ${translate(lang, 'pr.repsShort')}`
+															: '-'}
+													</span>
+												{/if}
 											{:else}
-												<span class="history-exercise__set-reps">
-													{item.set.reps != null
-														? `${item.set.reps} ${translate(lang, 'pr.repsShort')}`
-														: '-'}
-												</span>
+												<span class="history-exercise__set-reps"
+													>{translate(lang, 'live.setMarked')}</span
+												>
 											{/if}
-										{:else}
-											<span class="history-exercise__set-reps">{translate(lang, 'live.setMarked')}</span>
-										{/if}
+										</div>
 										{#if setKind !== 'work'}
 											<span class="history-exercise__set-kind">
 												{translate(lang, setKindMessageKey(setKind))}
@@ -636,19 +642,21 @@
 								{#each rows as item, i (item.setIndex)}
 									{@const setKind = loggedSetKind(item.set)}
 									<li class="history-exercise__set tabular-nums">
-										<span class="history-exercise__set-i">{i + 1}</span>
-										{#if item.set.weightKg != null}
-											<span class="history-exercise__set-weight"
-												>{item.set.weightKg} {translate(lang, 'pr.kg')}</span
-											>
-											<span class="history-exercise__set-reps">× {item.set.reps ?? '-'}</span>
-										{:else}
-											<span class="history-exercise__set-reps">
-												{item.set.reps != null
-													? `${item.set.reps} ${translate(lang, 'pr.repsShort')}`
-													: '-'}
-											</span>
-										{/if}
+										<div class="history-exercise__set-main">
+											<span class="history-exercise__set-i">{i + 1}</span>
+											{#if item.set.weightKg != null}
+												<span class="history-exercise__set-weight"
+													>{item.set.weightKg} {translate(lang, 'pr.kg')}</span
+												>
+												<span class="history-exercise__set-reps">× {item.set.reps ?? '-'}</span>
+											{:else}
+												<span class="history-exercise__set-reps">
+													{item.set.reps != null
+														? `${item.set.reps} ${translate(lang, 'pr.repsShort')}`
+														: '-'}
+												</span>
+											{/if}
+										</div>
 										{#if setKind !== 'work'}
 											<span class="history-exercise__set-kind">
 												{translate(lang, setKindMessageKey(setKind))}

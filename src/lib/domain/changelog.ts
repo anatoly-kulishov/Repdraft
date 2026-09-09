@@ -14,6 +14,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.17.1',
+		highlights: {
+			ru: [
+				'В технике упражнения сначала кадр, потом GIF. Офлайн без пустого квадрата',
+				'Если превью нет, понятная заглушка вместо белой дыры',
+				'Тип подхода в истории: компактный бейдж под весом×повторами'
+			],
+			en: [
+				'Technique sheet shows a still first, then the GIF. No blank square offline',
+				'Clear placeholder when preview media is missing',
+				'Set kind in history: small badge under weight×reps'
+			]
+		}
+	},
+	{
 		version: '0.17.0',
 		highlights: {
 			ru: [
