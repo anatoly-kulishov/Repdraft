@@ -6,6 +6,9 @@ if (!isRepdraftOwnedStorageKey('repdraft:plans')) {
 if (!isRepdraftOwnedStorageKey('repdraft.theme')) {
 	throw new Error('repdraft.theme should match');
 }
+if (!isRepdraftOwnedStorageKey('repdraft:web-analytics')) {
+	throw new Error('repdraft:web-analytics should match');
+}
 if (!isRepdraftOwnedStorageKey('sb-abc-auth-token')) {
 	throw new Error('sb auth token should match');
 }

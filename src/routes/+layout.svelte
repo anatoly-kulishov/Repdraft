@@ -33,6 +33,9 @@
 	import { flushSyncOutbox, purgeUnsyncableOutboxEntries } from '$lib/storage/flushSyncOutbox';
 	import { whenIdle } from '$lib/browser/idle';
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
+	import { installNativeAuthDeepLinks } from '$lib/app/nativeAuthDeepLinks';
+	import { initNativeChrome } from '$lib/app/nativeChrome';
+	import { isWebAnalyticsAvailable } from '$lib/app/native';
 	import { page } from '$app/stores';
 	import { onNavigate } from '$app/navigation';
 	import { onMount } from 'svelte';
@@ -40,9 +43,16 @@
 	import { browser, dev } from '$app/environment';
 	import { injectAnalytics } from '@vercel/analytics/sveltekit';
 	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
+	import { webAnalyticsEnabled } from '$lib/stores/prefs';
 
-	injectAnalytics({ mode: dev ? 'development' : 'production' });
-	injectSpeedInsights();
+	let webAnalyticsInjected = false;
+	function ensureWebAnalyticsInjected() {
+		if (webAnalyticsInjected || !isWebAnalyticsAvailable()) return;
+		if (!get(webAnalyticsEnabled)) return;
+		injectAnalytics({ mode: dev ? 'development' : 'production' });
+		injectSpeedInsights();
+		webAnalyticsInjected = true;
+	}
 
 	if (browser) {
 		onboarding.init(new URLSearchParams(window.location.search));
@@ -62,7 +72,7 @@
 		if (pathname.startsWith('/catalog')) return true;
 		if (pathname.startsWith('/articles')) return true;
 		if (pathname.startsWith('/auth')) return true;
-		if (pathname === '/privacy') return true;
+		if (pathname === '/privacy' || pathname === '/terms') return true;
 		if (pathname === '/scenarios') return true;
 		if (pathname.startsWith('/exercises/')) return true;
 		/* Builder → pick exercise: ScreenHeader only (no logo chrome + phantom spacer). */
@@ -107,6 +117,13 @@
 	});
 
 	onMount(() => {
+		const removeDeepLinks = installNativeAuthDeepLinks();
+		void initNativeChrome();
+		ensureWebAnalyticsInjected();
+		const unsubAnalytics = webAnalyticsEnabled.subscribe((on) => {
+			if (on) ensureWebAnalyticsInjected();
+		});
+
 		purgeUnsyncableOutboxEntries();
 		onboarding.init(get(page).url.searchParams);
 		draft.hydrate();
@@ -164,6 +181,8 @@
 		});
 
 		return () => {
+			unsubAnalytics();
+			removeDeepLinks();
 			window.removeEventListener('online', onOnline);
 			document.removeEventListener('visibilitychange', onVisible);
 		};
@@ -190,7 +209,8 @@
 		if (href === '/builder') {
 			return path.startsWith('/builder');
 		}
-		if (href === '/auth') return path === '/auth' || path.startsWith('/auth/') || path === '/privacy';
+		if (href === '/auth')
+			return path === '/auth' || path.startsWith('/auth/') || path === '/privacy' || path === '/terms';
 		return path === href || path.startsWith(`${href}/`);
 	}
 </script>

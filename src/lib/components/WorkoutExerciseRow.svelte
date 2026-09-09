@@ -18,6 +18,8 @@
 		filterRestSecInput,
 		filterRepsInput,
 		filterSetsInput,
+		LADDER_REPS,
+		LADDER_REPS_INPUT_MAX_LEN,
 		REPS,
 		REPS_INPUT_MAX_LEN,
 		REST_INPUT_MAX_LEN,
@@ -162,10 +164,15 @@
 
 	function openLadderSheet() {
 		if (item.repsScheme && item.repsScheme.length >= 2) {
-			ladderFromDraft = String(item.repsScheme[0]);
-			ladderToDraft = String(item.repsScheme[item.repsScheme.length - 1]);
+			ladderFromDraft = String(
+				coerceReps(String(item.repsScheme[0]), LADDER_REPS) ?? LADDER_REPS.min
+			);
+			ladderToDraft = String(
+				coerceReps(String(item.repsScheme[item.repsScheme.length - 1]), LADDER_REPS) ??
+					LADDER_REPS.min
+			);
 		} else {
-			ladderFromDraft = String(item.reps);
+			ladderFromDraft = String(coerceReps(String(item.reps), LADDER_REPS) ?? LADDER_REPS.min);
 			ladderToDraft = '1';
 		}
 		ladderOpen = true;
@@ -182,8 +189,8 @@
 	}
 
 	function applyLadder() {
-		const from = coerceReps(ladderFromDraft, REPS) ?? REPS.min;
-		const to = coerceReps(ladderToDraft, REPS) ?? REPS.min;
+		const from = coerceReps(ladderFromDraft, LADDER_REPS) ?? LADDER_REPS.min;
+		const to = coerceReps(ladderToDraft, LADDER_REPS) ?? LADDER_REPS.min;
 		const scheme = buildLadderScheme(from, to);
 		if (scheme.length < 2) {
 			onupdate({ repsScheme: undefined, sets: item.sets, reps: from });
@@ -590,7 +597,9 @@
 		<p id={`builder-ladder-${item.exerciseId}`} class="bottom-sheet__title">
 			{translate(lang, 'builder.ladderTitle')}
 		</p>
-		<p class="bottom-sheet__hint">{translate(lang, 'builder.ladderHint')}</p>
+		<p class="bottom-sheet__hint">
+			{translate(lang, 'builder.ladderHint', { max: String(LADDER_REPS.max) })}
+		</p>
 		<div class="workout-ex-ladder-sheet">
 			<div class="workout-ex-ladder-sheet__range">
 				<AppLabel class="workout-ex-ladder-sheet__field">
@@ -602,12 +611,12 @@
 							inputmode="numeric"
 							autocomplete="off"
 							enterkeyhint="next"
-							maxlength={REPS_INPUT_MAX_LEN}
+							maxlength={LADDER_REPS_INPUT_MAX_LEN}
 							value={ladderFromDraft}
 							oninput={(e) => {
 								ladderFromDraft = filterRepsInput(
 									(e.currentTarget as HTMLInputElement).value,
-									REPS,
+									LADDER_REPS,
 									ladderFromDraft
 								);
 							}}
@@ -624,12 +633,12 @@
 							inputmode="numeric"
 							autocomplete="off"
 							enterkeyhint="done"
-							maxlength={REPS_INPUT_MAX_LEN}
+							maxlength={LADDER_REPS_INPUT_MAX_LEN}
 							value={ladderToDraft}
 							oninput={(e) => {
 								ladderToDraft = filterRepsInput(
 									(e.currentTarget as HTMLInputElement).value,
-									REPS,
+									LADDER_REPS,
 									ladderToDraft
 								);
 							}}

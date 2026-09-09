@@ -10,7 +10,8 @@ import {
 	nextFocusAfterSetComplete
 } from '$lib/domain/session';
 import type { WorkoutSession } from '$lib/domain/types';
-import { unlockAudioFromGesture, vibrateSetDone } from '$lib/domain/prefs';
+import { unlockAudioFromGesture } from '$lib/domain/prefs';
+import { hapticSetDone } from '$lib/media/haptics';
 import { get } from 'svelte/store';
 
 export type LiveSetActionsDeps = {
@@ -116,7 +117,7 @@ export function createLiveSetActions(deps: LiveSetActionsDeps) {
 			if (active instanceof HTMLElement) active.blur();
 		}
 		unlockAudioFromGesture();
-		vibrateSetDone();
+		void hapticSetDone();
 		deps.patchSet(ei, si, { completed: true });
 		afterSetComplete(ei, si);
 	}

@@ -25,7 +25,9 @@ const ru: Dict = {
 	'seo.exerciseDescription':
 		'{name}: техника, целевые мышцы и запись подходов в Repdraft.',
 	'seo.privacyDescription':
-		'Политика конфиденциальности Repdraft: какие данные хранятся локально и в облаке.',
+		'Политика конфиденциальности Repdraft: что хранится на устройстве и в облаке.',
+	'seo.termsDescription':
+		'Условия использования Repdraft: сайт, PWA и нативное приложение.',
 	'seo.homeTitle': 'Repdraft - дневник тренировок в зале',
 	'nav.tabHome': 'Главная',
 	'nav.exercises': 'Упражнения',
@@ -326,7 +328,7 @@ const ru: Dict = {
 	'builder.ladderTo': 'До',
 	'builder.ladderApply': 'Применить',
 	'builder.ladderClear': 'Сбросить лесенку',
-	'builder.ladderHint': 'Например 5→1: подходы 5, 4, 3, 2, 1.',
+	'builder.ladderHint': 'Числа от 1\u00a0до\u00a0{max}.',
 	'builder.ladderEdit': 'Лесенка {scheme}',
 	'builder.ladderEditShort': 'Лесенка',
 	'builder.ladderActiveHint': 'Сейчас: {scheme}. Можно изменить или сбросить в следующем экране.',
@@ -840,41 +842,41 @@ const ru: Dict = {
 	'privacy.back': 'Аккаунт',
 	'privacy.link': 'Конфиденциальность',
 	'privacy.lead':
-		'Настоящая политика описывает, какие данные обрабатывает веб-приложение Repdraft и на каких условиях.',
-	'privacy.updated': 'Дата публикации: 30 августа 2026 г.',
+		'Настоящая политика описывает, какие данные обрабатывает Repdraft (сайт, PWA и нативное приложение) и на каких условиях.',
+	'privacy.updated': 'Дата публикации: 9 сентября 2026 г.',
 	'privacy.s0Title': '1. Общие положения',
 	'privacy.s0Body':
-		'Политика действует для сайта и PWA Repdraft. Используя сервис, вы соглашаетесь с обработкой данных в объёме, необходимом для его работы. Обработка персональных данных выполняется в соответствии с Федеральным законом № 152-ФЗ «О персональных данных».',
+		'Политика действует для сайта, PWA и нативных приложений Repdraft (iOS / Android). Используя сервис, вы соглашаетесь с обработкой данных в объёме, необходимом для его работы, и с условиями использования. Обработка персональных данных выполняется в соответствии с Федеральным законом № 152-ФЗ «О персональных данных».',
 	'privacy.s1Title': '2. Оператор и контакты',
 	'privacy.s1Body':
 		'Оператор персональных данных: {operator}. Запросы по персональным данным, отзыв согласия и обращения субъектов данных направляйте на {email}.',
 	'privacy.s2Title': '3. Какие данные мы обрабатываем',
 	'privacy.s2Body':
-		'При регистрации и входе: адрес электронной почты и данные аутентификации. В профиле: имя для приветствия по вашему выбору. В приложении: планы тренировок, личные рекорды, история завершённых тренировок, а также опубликованные вами клипы техники (анимация и подпись). На устройстве локально: черновик тренировки, закладки, тема оформления, язык интерфейса и незавершённая активная тренировка. Мы не собираем рекламные идентификаторы и не используем стороннюю маркетинговую аналитику.',
+		'При регистрации и входе: адрес электронной почты и данные аутентификации. В профиле: имя для приветствия по вашему выбору. В приложении: планы тренировок, личные рекорды, история завершённых тренировок, а также опубликованные вами клипы техники (анимация и подпись). На устройстве локально: черновик тренировки, закладки, тема оформления, язык интерфейса, настройки звука и аналитики, незавершённая активная тренировка. Мы не собираем рекламные идентификаторы и не подключаем рекламные сети.',
 	'privacy.s3Title': '4. Цели и правовые основания',
 	'privacy.s3Body':
-		'Данные обрабатываются для регистрации и входа, синхронизации тренировок и рекордов между устройствами, отображения истории, работы приложения без постоянного подключения к сети и (если вы сами публикуете клип) показа клипа другим пользователям. Правовые основания: исполнение пользовательского соглашения (п. 5 ч. 1 ст. 6 152-ФЗ) и ваше согласие при публикации клипов и отдельных настройках (п. 1 ч. 1 ст. 6 152-ФЗ).',
+		'Данные обрабатываются для регистрации и входа, синхронизации тренировок и рекордов между устройствами, отображения истории, работы без постоянного подключения к сети, работы нативного приложения и (если вы сами публикуете клип) показа клипа другим пользователям. Правовые основания: исполнение условий использования (п. 5 ч. 1 ст. 6 152-ФЗ) и ваше согласие при регистрации, публикации клипов и отдельных настройках (п. 1 ч. 1 ст. 6 152-ФЗ).',
 	'privacy.s4Title': '5. Хранение данных',
 	'privacy.s4Body':
-		'Данные аккаунта размещаются у инфраструктурного провайдера Supabase. Копия данных также хранится в памяти браузера на вашем устройстве для быстрого доступа и работы без сети. Незавершённая активная тренировка хранится только на устройстве и не синхронизируется между устройствами.',
-	'privacy.s5Title': '6. Cookie и локальное хранилище',
+		'Данные аккаунта размещаются у инфраструктурного провайдера Supabase. Копия данных также хранится на вашем устройстве (браузер или нативное приложение) для быстрого доступа и работы без сети. Незавершённая активная тренировка хранится только на устройстве и не синхронизируется между устройствами.',
+	'privacy.s5Title': '6. Cookie, локальное хранилище и веб-аналитика',
 	'privacy.s5Body':
-		'Repdraft не использует сторонние рекламные или аналитические cookie. Для входа в аккаунт и сохранения тренировок, настроек и черновика используются cookie и localStorage браузера. Это технически необходимо для работы сервиса. Отключение хранилища в браузере может ограничить функции приложения.',
+		'Для входа и сохранения тренировок, настроек и черновика используются cookie и localStorage (или аналог в нативном приложении). Это технически необходимо для работы сервиса. На сайте и в PWA (не в нативном приложении) мы можем использовать Vercel Analytics и Vercel Speed Insights: обезличенные сведения о посещениях и производительности страниц, без рекламных профилей. Эта аналитика включается только если вы разрешите её в настройках аккаунта. Рекламные cookie третьих лиц не используются. Отключение хранилища в браузере может ограничить функции приложения.',
 	'privacy.s6Title': '7. Публичные клипы техники',
 	'privacy.s6Body':
 		'Если вы публикуете клип, GIF и указанная вами подпись становятся доступны другим пользователям сервиса. Пользователи могут пожаловаться на клип; при подтверждении нарушения клип скрывается из общей ленты. Не размещайте персональные данные других людей без их согласия и законного основания.',
 	'privacy.s7Title': '8. Передача третьим лицам',
 	'privacy.s7Body':
-		'Для облачного хранения и входа мы привлекаем Supabase (supabase.com). Вход выполняется по email (пароль или ссылка на почту). Для защиты форм входа может использоваться Cloudflare Turnstile. При регистрации и смене пароля мы проверяем хэш пароля через Have I Been Pwned (k-anonymity: полный пароль на их сервер не отправляется). Мы не продаём персональные данные и не передаём их рекламным сетям. Передача возможна по требованию закона или для защиты прав пользователей и сервиса.',
+		'Для облачного хранения и входа мы привлекаем Supabase (supabase.com). Вход выполняется по email (пароль или ссылка на почту). Для защиты форм входа может использоваться Cloudflare Turnstile. При регистрации и смене пароля мы проверяем хэш пароля через Have I Been Pwned (k-anonymity: полный пароль на их сервер не отправляется). Хостинг сайта и опциональная веб-аналитика: Vercel. Мы не продаём персональные данные и не передаём их рекламным сетям. Передача возможна по требованию закона или для защиты прав пользователей и сервиса.',
 	'privacy.s8Title': '9. Ваши права',
 	'privacy.s8Body':
-		'Вы вправе получить сведения об обработке, потребовать уточнения, блокирования или удаления данных, отозвать согласие, если обработка основана на согласии. В приложении доступны: изменение имени для приветствия, выход из аккаунта, удаление аккаунта (раздел «Опасная зона»), экспорт и восстановление резервной копии тренировок, истории и рекордов. Запросы также можно направить на {email}. Мы ответим в сроки, установленные законом.',
+		'Вы вправе получить сведения об обработке, потребовать уточнения, блокирования или удаления данных, отозвать согласие, если обработка основана на согласии. В приложении доступны: изменение имени для приветствия, выход из аккаунта, удаление аккаунта (раздел «Опасная зона»), экспорт и восстановление резервной копии тренировок, истории и рекордов, отключение веб-аналитики. Запросы также можно направить на {email}. Мы ответим в сроки, установленные законом.',
 	'privacy.s9Title': '10. Сроки хранения и удаление',
 	'privacy.s9Body':
 		'Пока аккаунт активен, данные хранятся для синхронизации и отображения истории. При удалении аккаунта приложение удаляет связанные записи в облаке, размещённые вами клипы и учётную запись входа, а также очищает локальные данные на устройстве. Отдельные резервные копии у провайдера могут сохраняться ограниченное время по правилам инфраструктуры и законодательства.',
 	'privacy.s10Title': '11. Трансграничная передача',
 	'privacy.s10Body':
-		'Supabase и Cloudflare (Turnstile) могут обрабатывать данные на серверах за пределами Российской Федерации. Have I Been Pwned получает только префикс хэша пароля. Трансграничная передача выполняется для целей, указанных в политике, с соблюдением требований 152-ФЗ.',
+		'Supabase, Cloudflare (Turnstile) и Vercel могут обрабатывать данные на серверах за пределами Российской Федерации. Have I Been Pwned получает только префикс хэша пароля. Трансграничная передача выполняется для целей, указанных в политике, с соблюдением требований 152-ФЗ.',
 	'privacy.s11Title': '12. Изменения политики',
 	'privacy.s11Body':
 		'Мы можем обновлять политику при изменении функций сервиса или требований закона. Актуальная версия всегда доступна на этой странице; дата публикации указана выше. Продолжение использования сервиса после обновления означает согласие с новой редакцией, если иное не требуется законом.',
@@ -885,7 +887,44 @@ const ru: Dict = {
 	'privacy.s13Body':
 		'Иллюстрации и GIF упражнений в каталоге принадлежат Gym Visual и используются в соответствии с их условиями. Мы показываем медиа только на экранах каталога и карточки упражнения, в размере не более 180×180 px. Копирование медиа из Repdraft или репозитория проекта не передаёт вам права на контент Gym Visual.',
 	'privacy.s13TermsLink': 'Условия использования Gym Visual',
-	'auth.privacyHint': 'Подробнее о данных:',
+	'terms.title': 'Условия использования',
+	'terms.link': 'Условия',
+	'terms.lead':
+		'Эти условия регулируют использование сайта, PWA и нативных приложений Repdraft.',
+	'terms.updated': 'Дата публикации: 9 сентября 2026 г.',
+	'terms.s0Title': '1. Сервис',
+	'terms.s0Body':
+		'Repdraft помогает составлять и вести тренировки. Сервис предоставляется «как есть». Мы не даём медицинских советов и не гарантируем спортивный результат.',
+	'terms.s1Title': '2. Аккаунт',
+	'terms.s1Body':
+		'Вы отвечаете за сохранность доступа к почте и паролю. Не передавайте аккаунт третьим лицам. Мы можем ограничить доступ при нарушении условий или злоупотреблениях.',
+	'terms.s2Title': '3. Контент пользователя',
+	'terms.s2Body':
+		'Планы, рекорды, заметки и клипы принадлежат вам. Публикуя клип, вы разрешаете показывать его другим пользователям сервиса. Запрещены незаконный контент, спам и чужие персональные данные без оснований.',
+	'terms.s3Title': '4. Медиа каталога',
+	'terms.s3Body':
+		'Иллюстрации упражнений предоставлены Gym Visual и подчиняются их лицензии. Их нельзя копировать из Repdraft для других продуктов без отдельного разрешения Gym Visual.',
+	'terms.s4Title': '5. Доступность',
+	'terms.s4Body':
+		'Мы стремимся поддерживать работу сервиса, но возможны перерывы, ошибки и изменение функций. Ответственность ограничена в пределах, допускаемых законом.',
+	'terms.s5Title': '6. Возраст',
+	'terms.s5Body': 'Сервис рассчитан на пользователей от 18 лет.',
+	'terms.s6Title': '7. Изменения',
+	'terms.s6Body':
+		'Мы можем обновлять условия. Актуальная версия публикуется на этой странице с датой. Существенные изменения отражаются здесь.',
+	'terms.s7Title': '8. Контакты',
+	'terms.s7Body': 'По вопросам условий и сервиса: {email}. Оператор: {operator}.',
+	'terms.s8Title': '9. Конфиденциальность',
+	'terms.s8Body': 'Обработка персональных данных описана в документе ',
+	'auth.privacyHint': 'Правовые документы:',
+	'auth.legalConsentLead': 'Принимаю',
+	'auth.legalConsentJoin': 'и',
+	'auth.legalConsentNeed': 'Отметьте согласие с условиями и политикой конфиденциальности',
+	'auth.legalTerms': 'условия использования',
+	'auth.legalPrivacy': 'политику конфиденциальности',
+	'settings.webAnalytics': 'Веб-аналитика',
+	'settings.webAnalyticsHint':
+		'Vercel Analytics и Speed Insights только на сайте/PWA. Выкл. по умолчанию. В нативном приложении не используется.',
 	'attr.media': 'Медиа упражнений',
 	'attr.versionAria': 'Версия приложения {version}',
 	'changelog.title': 'Что нового',
@@ -915,7 +954,9 @@ const en: Dict = {
 	'seo.exerciseDescription':
 		'{name}: technique, target muscles, and set logging in Repdraft.',
 	'seo.privacyDescription':
-		'Repdraft privacy policy: what is stored on your phone and in the cloud.',
+		'Repdraft privacy policy: what is stored on your device and in the cloud.',
+	'seo.termsDescription':
+		'Repdraft terms of use for the website, PWA, and native app.',
 	'seo.homeTitle': 'Repdraft - gym workout log',
 	'nav.tabHome': 'Home',
 	'nav.exercises': 'Exercises',
@@ -1215,7 +1256,7 @@ const en: Dict = {
 	'builder.ladderTo': 'To',
 	'builder.ladderApply': 'Apply',
 	'builder.ladderClear': 'Clear ladder',
-	'builder.ladderHint': 'Example 5→1: sets with 5, 4, 3, 2, 1 reps.',
+	'builder.ladderHint': 'Numbers from 1\u00a0to\u00a0{max}.',
 	'builder.ladderEdit': 'Ladder {scheme}',
 	'builder.ladderEditShort': 'Ladder',
 	'builder.ladderActiveHint': 'Current: {scheme}. Change or clear it on the next screen.',
@@ -1727,41 +1768,41 @@ const en: Dict = {
 	'privacy.back': 'Account',
 	'privacy.link': 'Privacy',
 	'privacy.lead':
-		'This policy explains what data the Repdraft web app processes and on what terms.',
-	'privacy.updated': 'Published: 30 August 2026',
+		'This policy explains what data Repdraft processes (website, PWA, and native apps) and on what terms.',
+	'privacy.updated': 'Published: 9 September 2026',
 	'privacy.s0Title': '1. General',
 	'privacy.s0Body':
-		'This policy applies to the Repdraft website and PWA. By using the service, you agree to data processing to the extent required for the app to work. Personal data is processed in line with applicable privacy laws, including GDPR where it applies.',
+		'This policy applies to the Repdraft website, PWA, and native apps (iOS / Android). By using the service, you agree to data processing required for the app to work and to the terms of use. Personal data is processed in line with applicable privacy laws, including GDPR where it applies.',
 	'privacy.s1Title': '2. Controller and contact',
 	'privacy.s1Body':
 		'Data controller: {operator}. For privacy requests, consent withdrawal, and data-subject enquiries, email {email}.',
 	'privacy.s2Title': '3. What we process',
 	'privacy.s2Body':
-		'On sign-up and sign-in: email address and authentication data. In your profile: a greeting name you choose. In the app: workout plans, personal records, finished session history, and technique clips you publish (GIF and label). On your device locally: workout draft, bookmarks, theme, interface language, and an unfinished active session. We do not collect ad identifiers or use third-party marketing analytics.',
+		'On sign-up and sign-in: email address and authentication data. In your profile: a greeting name you choose. In the app: workout plans, personal records, finished session history, and technique clips you publish (GIF and label). On your device locally: workout draft, bookmarks, theme, interface language, sound and analytics preferences, and an unfinished active session. We do not collect ad identifiers or use advertising networks.',
 	'privacy.s3Title': '4. Purposes and legal bases',
 	'privacy.s3Body':
-		'We process data to register and sign you in, sync plans and records across devices, show history, run the app offline, and (if you publish a clip) show that clip to other users. Legal bases: performance of the user agreement and, where required, your consent for clip publishing and specific settings.',
+		'We process data to register and sign you in, sync plans and records across devices, show history, run the app offline, run the native app, and (if you publish a clip) show that clip to other users. Legal bases: performance of the terms of use and, where required, your consent for registration, clip publishing, and specific settings.',
 	'privacy.s4Title': '5. Storage',
 	'privacy.s4Body':
-		'Account data is hosted by Supabase. A copy is also stored in your browser for fast access and offline use. An unfinished active session stays on the device only and is not synced across devices.',
-	'privacy.s5Title': '6. Cookies and local storage',
+		'Account data is hosted by Supabase. A copy is also stored on your device (browser or native app) for fast access and offline use. An unfinished active session stays on the device only and is not synced across devices.',
+	'privacy.s5Title': '6. Cookies, local storage, and web analytics',
 	'privacy.s5Body':
-		'Repdraft does not use third-party advertising or analytics cookies. Sign-in and saving workouts, settings, and drafts rely on browser cookies and localStorage. This is technically required for the service. Disabling browser storage may limit app features.',
+		'Sign-in and saving workouts, settings, and drafts rely on cookies and localStorage (or the native equivalent). This is technically required for the service. On the website and PWA (not in the native app) we may use Vercel Analytics and Vercel Speed Insights: anonymized visit and page-performance data, without ad profiles. This analytics runs only if you enable it in account settings. We do not use third-party advertising cookies. Disabling browser storage may limit app features.',
 	'privacy.s6Title': '7. Public technique clips',
 	'privacy.s6Body':
-		'If you publish a clip, the GIF and label you provide are visible to other users. Users may report a clip; if a violation is confirmed, the clip is hidden from the shared feed. Do not post other people’s personal data without their consent and a lawful basis.',
+		'If you publish a clip, the GIF and label you provide are visible to other users. Users may report a clip; if a violation is confirmed, the clip is hidden from the shared feed. Do not post other people\'s personal data without their consent and a lawful basis.',
 	'privacy.s7Title': '8. Third parties',
 	'privacy.s7Body':
-		'We use Supabase (supabase.com) for cloud storage and authentication. Sign-in is email-based (password or magic link). Cloudflare Turnstile may protect auth forms. On sign-up and password change we check a password hash prefix via Have I Been Pwned (k-anonymity: the full password is never sent). We do not sell personal data or share it with ad networks. Disclosure may occur when required by law or to protect users and the service.',
+		'We use Supabase (supabase.com) for cloud storage and authentication. Sign-in is email-based (password or magic link). Cloudflare Turnstile may protect auth forms. On sign-up and password change we check a password hash prefix via Have I Been Pwned (k-anonymity: the full password is never sent). Website hosting and optional web analytics: Vercel. We do not sell personal data or share it with ad networks. Disclosure may occur when required by law or to protect users and the service.',
 	'privacy.s8Title': '9. Your rights',
 	'privacy.s8Body':
-		'You may request access, rectification, erasure, restriction, or portability where applicable, and withdraw consent where processing is consent-based. In the app you can update your greeting name, sign out, delete your account (Danger zone), and export or restore a backup of workouts, history, and records. You may also email {email}. We respond within applicable legal time limits.',
+		'You may request access, rectification, erasure, restriction, or portability where applicable, and withdraw consent where processing is consent-based. In the app you can update your greeting name, sign out, delete your account (Danger zone), export or restore a backup of workouts, history, and records, and disable web analytics. You may also email {email}. We respond within applicable legal time limits.',
 	'privacy.s9Title': '10. Retention and deletion',
 	'privacy.s9Body':
 		'While your account is active, data is kept for sync and history. When you delete your account, the app removes related cloud records, clips you uploaded, and the sign-in account, and clears local data on the device. Provider backups may be retained for a limited time under infrastructure and legal rules.',
 	'privacy.s10Title': '11. International transfers',
 	'privacy.s10Body':
-		'Supabase and Cloudflare (Turnstile) may process data on servers outside your country. Have I Been Pwned receives only a password hash prefix. Transfers are made for the purposes in this policy with safeguards required by law.',
+		'Supabase, Cloudflare (Turnstile), and Vercel may process data on servers outside your country. Have I Been Pwned receives only a password hash prefix. Transfers are made for the purposes in this policy with safeguards required by law.',
 	'privacy.s11Title': '12. Policy updates',
 	'privacy.s11Body':
 		'We may update this policy when the service or legal requirements change. The current version is always on this page; the publication date is shown above. Continued use after an update means you accept the new version where the law allows.',
@@ -1772,7 +1813,44 @@ const en: Dict = {
 	'privacy.s13Body':
 		'Exercise illustrations and GIFs in the catalog belong to Gym Visual and are used under their terms. We display them only on catalog and exercise detail screens, at 180×180 px maximum. Copying media from Repdraft or its repository does not grant you rights to Gym Visual content.',
 	'privacy.s13TermsLink': 'Gym Visual terms of use',
-	'auth.privacyHint': 'About your data:',
+	'terms.title': 'Terms of use',
+	'terms.link': 'Terms',
+	'terms.lead':
+		'These terms cover the Repdraft website, PWA, and native apps.',
+	'terms.updated': 'Published: 9 September 2026',
+	'terms.s0Title': '1. Service',
+	'terms.s0Body':
+		'Repdraft helps you plan and log workouts. The service is provided as is. We do not give medical advice and do not guarantee training results.',
+	'terms.s1Title': '2. Account',
+	'terms.s1Body':
+		'You are responsible for your email and password. Do not share your account. We may restrict access for abuse or breaches of these terms.',
+	'terms.s2Title': '3. Your content',
+	'terms.s2Body':
+		'Plans, records, notes, and clips belong to you. Publishing a clip allows other users to see it in the service. Illegal content, spam, and other people\'s personal data without a lawful basis are not allowed.',
+	'terms.s3Title': '4. Catalog media',
+	'terms.s3Body':
+		'Exercise illustrations come from Gym Visual under their license. Do not copy them from Repdraft into other products without Gym Visual\'s permission.',
+	'terms.s4Title': '5. Availability',
+	'terms.s4Body':
+		'We aim to keep the service available, but outages, bugs, and feature changes may occur. Liability is limited to the extent allowed by law.',
+	'terms.s5Title': '6. Age',
+	'terms.s5Body': 'The service is intended for users aged 18 and over.',
+	'terms.s6Title': '7. Changes',
+	'terms.s6Body':
+		'We may update these terms. The current version is published on this page with a date. Material changes appear here.',
+	'terms.s7Title': '8. Contact',
+	'terms.s7Body': 'For questions about these terms or the service: {email}. Controller: {operator}.',
+	'terms.s8Title': '9. Privacy',
+	'terms.s8Body': 'Personal data processing is described in ',
+	'auth.privacyHint': 'Legal:',
+	'auth.legalConsentLead': 'I accept the',
+	'auth.legalConsentJoin': 'and',
+	'auth.legalConsentNeed': 'Please accept the terms and privacy policy',
+	'auth.legalTerms': 'terms of use',
+	'auth.legalPrivacy': 'privacy policy',
+	'settings.webAnalytics': 'Web analytics',
+	'settings.webAnalyticsHint':
+		'Vercel Analytics and Speed Insights on the website/PWA only. Off by default. Not used in the native app.',
 	'attr.media': 'Exercise media',
 	'attr.versionAria': 'App version {version}',
 	'changelog.title': "What's new",

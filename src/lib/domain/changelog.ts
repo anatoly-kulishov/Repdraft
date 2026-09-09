@@ -14,6 +14,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.17.0',
+		highlights: {
+			ru: [
+				'Каркас нативного приложения (iOS / Android) поверх того же интерфейса',
+				'Вход по ссылке из письма открывает приложение',
+				'Условия использования, согласие при регистрации и опт-ин веб-аналитики'
+			],
+			en: [
+				'Native app shell (iOS / Android) on the same workout UI',
+				'Email sign-in links can open the app',
+				'Terms of use, signup consent, and opt-in web analytics'
+			]
+		}
+	},
+	{
 		version: '0.16.9',
 		highlights: {
 			ru: [

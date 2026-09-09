@@ -195,7 +195,9 @@ Observe hesitation, wrong taps, backtracking, search behavior and time-to-comple
 
 ## 16. Native iOS / Android decision
 
-Native is **not** the MVP goal by itself. It is a scale decision after evidence: repeated usage, retention, preference over alternatives, and a demonstrated reason native capabilities would materially improve the experience.
+Native store distribution is **not** a substitute for MVP polish. Capacitor Mode B already wraps the same sacred-loop UI; shipping to App Store / Play still waits on evidence that the web loop feels excellent, plus the legal and store checklist (privacy operator env, Terms, consent, analytics off in shell).
+
+Do not invent native-only features ahead of loop quality.
 
 ---
 
