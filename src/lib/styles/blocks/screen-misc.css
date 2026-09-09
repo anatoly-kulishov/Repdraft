@@ -2629,13 +2629,20 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 
 .exercise-history__set-line {
 	display: flex;
-	align-items: baseline;
-	gap: 0.4rem;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0.08rem;
 	min-height: 1.5rem;
 	font-size: 0.875rem;
 	line-height: 1.35;
 	color: var(--color-ink);
 	font-variant-numeric: tabular-nums;
+}
+
+.exercise-history__set-main {
+	display: flex;
+	align-items: baseline;
+	gap: 0.4rem;
 }
 
 .exercise-history__set-idx {
@@ -2644,18 +2651,20 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	color: var(--color-muted);
 	font-weight: 600;
 	font-size: 0.8125rem;
+	line-height: 1.2;
 }
 
 .exercise-history__set-kind {
-	flex: 0 0 auto;
-	margin-inline-start: 0.1rem;
-	padding: 0.08rem 0.35rem;
+	margin-inline-start: calc(1.35rem + 0.4rem);
+	margin-block-start: 0.04rem;
+	padding: 0.08rem 0.4rem;
 	border-radius: 999px;
-	border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
-	background: color-mix(in srgb, var(--color-surface-muted) 55%, transparent);
-	font-size: 0.6875rem;
+	border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+	background: color-mix(in srgb, var(--color-surface-muted) 65%, transparent);
+	font-size: 0.625rem;
 	font-weight: 650;
-	line-height: 1.2;
+	line-height: 1.25;
+	letter-spacing: 0.01em;
 	color: var(--color-muted);
 	white-space: nowrap;
 }
@@ -3360,6 +3369,10 @@ button.clip-composer__pick:hover:not(:disabled),
 	flex-shrink: 0;
 }
 
+.exercise-technique-sheet__media.is-empty {
+	background: var(--color-surface-muted);
+}
+
 .exercise-technique-sheet__img {
 	display: block;
 	width: 100%;
@@ -3368,6 +3381,49 @@ button.clip-composer__pick:hover:not(:disabled),
 	max-height: var(--media-detail);
 	object-fit: contain;
 	object-position: center center;
+}
+
+.exercise-technique-sheet__img--still,
+.exercise-technique-sheet__img--gif {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.exercise-technique-sheet__img--gif {
+	opacity: 0;
+	transition: opacity 0.2s ease;
+	pointer-events: none;
+}
+
+.exercise-technique-sheet__img--gif.is-ready {
+	opacity: 1;
+}
+
+.exercise-technique-sheet__fail {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	box-sizing: border-box;
+	width: 100%;
+	height: 100%;
+	padding: 1rem;
+	text-align: center;
+}
+
+.exercise-technique-sheet__fail-icon {
+	color: var(--color-muted);
+}
+
+.exercise-technique-sheet__fail-text {
+	margin: 0;
+	max-width: 12rem;
+	font-size: 0.8125rem;
+	line-height: 1.35;
+	color: var(--color-muted);
 }
 
 @media (min-width: 1024px) {
