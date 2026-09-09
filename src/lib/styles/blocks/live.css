@@ -1783,8 +1783,9 @@ button.live-panel-thumb {
 
 .history-exercise__set {
 	display: flex;
-	align-items: baseline;
-	gap: 0.4rem;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0.14rem;
 	width: max-content;
 	max-width: none;
 	font-size: 1.0625rem;
@@ -1792,7 +1793,20 @@ button.live-panel-thumb {
 	white-space: nowrap;
 }
 
+.history-exercise__set-main {
+	display: flex;
+	align-items: baseline;
+	gap: 0.4rem;
+	width: max-content;
+	max-width: none;
+}
+
 .history-exercise__set:has(.history-set-field) {
+	width: 100%;
+	max-width: 100%;
+}
+
+.history-exercise__set:has(.history-set-field) .history-exercise__set-main {
 	align-items: center;
 	width: 100%;
 	max-width: 100%;
@@ -1828,18 +1842,20 @@ button.live-panel-thumb {
 	font-weight: 600;
 	color: var(--color-muted);
 	font-variant-numeric: tabular-nums;
+	line-height: 1.2;
 }
 
+/* Quiet chip under weight×reps; primary scan stays one clean row. */
 .history-exercise__set-kind {
-	flex-shrink: 0;
-	margin-inline-start: 0.15rem;
-	padding: 0.12rem 0.4rem;
+	margin-inline-start: calc(1rem + 0.4rem);
+	margin-block-start: 0.05rem;
+	padding: 0.08rem 0.4rem;
 	border-radius: 999px;
-	border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
-	background: color-mix(in srgb, var(--color-surface-muted) 70%, transparent);
-	font-size: 0.6875rem;
+	border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+	background: color-mix(in srgb, var(--color-surface-muted) 72%, transparent);
+	font-size: 0.625rem;
 	font-weight: 650;
-	line-height: 1.2;
+	line-height: 1.25;
 	letter-spacing: 0.01em;
 	color: var(--color-muted);
 	white-space: nowrap;
