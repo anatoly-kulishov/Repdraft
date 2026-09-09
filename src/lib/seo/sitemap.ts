@@ -44,7 +44,7 @@ export async function collectSitemapEntries(): Promise<SitemapEntry[]> {
 		}
 	};
 
-	for (const path of ['/', '/exercises', '/articles', '/privacy', ...catalogHubSitemapPaths()]) {
+	for (const path of ['/', '/exercises', '/articles', '/privacy', '/terms', ...catalogHubSitemapPaths()]) {
 		add(path, siteLastmod);
 	}
 

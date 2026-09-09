@@ -9,6 +9,7 @@
 	import type { TechniqueClip } from '$lib/domain/clips';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
+	import { getMediaCache } from '$lib/media/mediaCache';
 	import { Flag, Link2, Pencil, Share2 } from '@lucide/svelte';
 
 	let {
@@ -38,6 +39,24 @@
 	} = $props();
 
 	let imgEl = $state<HTMLImageElement | null>(null);
+	let displaySrc = $state('');
+
+	$effect(() => {
+		const url = clip.gifUrl;
+		displaySrc = url;
+		let cancelled = false;
+		void getMediaCache()
+			.getOrFetch(url)
+			.then((next) => {
+				if (!cancelled) displaySrc = next;
+			})
+			.catch(() => {
+				/* keep network URL */
+			});
+		return () => {
+			cancelled = true;
+		};
+	});
 	let shareLabel = $derived(
 		canShareNative ? translate(lang, 'clips.share') : translate(lang, 'clips.link')
 	);
@@ -76,7 +95,7 @@
 			{:else}
 				<img
 					bind:this={imgEl}
-					src={clip.gifUrl}
+					src={displaySrc}
 					alt={title}
 					width="480"
 					height="480"

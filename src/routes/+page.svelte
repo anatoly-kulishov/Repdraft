@@ -46,6 +46,7 @@
 	import { peekHasLocalPlans } from '$lib/storage/localWorkoutRepository';
 	import { peekAccountBoot } from '$lib/storage/homeBootPeek';
 	import { peekLikelySignedInUserId } from '$lib/storage/localUserCache';
+	import { readHomeClientBootPeek } from '$lib/storage/readHomeBootPeek';
 	import { onMount } from 'svelte';
 	import { ChevronRight, LogIn, NotebookPen, Play, Plus, Smartphone, UserRound } from '@lucide/svelte';
 
@@ -312,6 +313,14 @@
 
 
 	onMount(() => {
+		const clientPeek = readHomeClientBootPeek();
+		if (clientPeek.accountBoot || clientPeek.hasPlans) {
+			try {
+				document.documentElement.dataset.homeBoot = clientPeek.homeBoot;
+			} catch {
+				/* ignore */
+			}
+		}
 		void (async () => {
 			while (!$auth.ready) {
 				await new Promise((r) => setTimeout(r, 20));

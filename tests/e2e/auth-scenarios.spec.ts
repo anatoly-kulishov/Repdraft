@@ -7,7 +7,10 @@ import {
 import {
 	E2E_AUTH_EMAIL,
 	E2E_AUTH_PASSWORD,
+	acceptLegalConsent,
+	expectGuestLegalLinks,
 	expectGuestSignInPanel,
+	expectSignupConsent,
 	fillEmail,
 	fillPassword,
 	gotoAuth,
@@ -33,6 +36,8 @@ test('12.6.1 guest auth UI: tabs, magic link, prefs, backup, version', async ({ 
 	await gotoAuth(page, 'next=%2F');
 	await expectGuestSignInPanel(page);
 	await expect(page.getByText(/^(Интерфейс|Interface)$/)).toBeVisible();
+	await expect(page.getByRole('checkbox', { name: /Веб-аналитика|Web analytics/i })).toBeVisible();
+	await expectGuestLegalLinks(page);
 	await expect(page.getByRole('button', { name: /^(Скачать копию|Download backup)$/ })).toBeVisible();
 	await expect(page.getByRole('button', { name: /^(Восстановить из файла|Restore from file)$/ })).toBeVisible();
 	await expect(page.locator('.auth-account__version')).toBeVisible();
@@ -42,9 +47,11 @@ test('12.6 panels: signup tab, magic link, forgot, back navigation', async ({ pa
 	await gotoAuth(page);
 	await setAuthTab(page, 'signup');
 	await expect(page.getByText(/^(Ещё раз пароль|Confirm password|Repeat password)/i)).toBeVisible();
+	await expectSignupConsent(page);
 
 	await page.getByRole('button', { name: /ссылке на email|email link/i }).click();
 	await expect(page.getByRole('button', { name: /^(Прислать ссылку|Send link)$/ })).toBeVisible();
+	await expect(page.locator('.auth-legal-consent')).toBeVisible();
 	await page.getByRole('button', { name: /паролем|password/i }).click();
 	await expectGuestSignInPanel(page);
 
@@ -54,6 +61,20 @@ test('12.6 panels: signup tab, magic link, forgot, back navigation', async ({ pa
 	await expectGuestSignInPanel(page);
 });
 
+test('12.6.7c signup submit stays disabled until legal consent', async ({ page }) => {
+	await gotoAuth(page);
+	await setAuthTab(page, 'signup');
+	await fillEmail(page, 'consent@example.com');
+	await fillPassword(page, 'GoodPass12a', 0);
+	await fillPassword(page, 'GoodPass12a', 1);
+	const submit = page
+		.locator('.auth-signin form.auth-form')
+		.getByRole('button', { name: /^(Зарегистрироваться|Sign up|Create account)$/ });
+	await expect(submit).toBeDisabled();
+	await acceptLegalConsent(page);
+	await expect(submit).toBeEnabled();
+});
+
 test('12.6.7 password mismatch on signup (client validation)', async ({ page }) => {
 	await gotoAuth(page);
 	if (!(await isCloudAuthAvailable(page))) test.skip(true, 'Supabase not configured');
@@ -61,6 +82,7 @@ test('12.6.7 password mismatch on signup (client validation)', async ({ page }) 
 	await fillEmail(page, 'mismatch@example.com');
 	await fillPassword(page, 'GoodPass12a', 0);
 	await fillPassword(page, 'GoodPass12b', 1);
+	await acceptLegalConsent(page);
 	await page.locator('.auth-signin form.auth-form').evaluate((form) => {
 		(form as HTMLFormElement).requestSubmit();
 	});
@@ -75,6 +97,7 @@ test('12.6.7b weak password rejected on signup (client validation)', async ({ pa
 	await fillEmail(page, 'weakpass@example.com');
 	await fillPassword(page, 'abcdefghij', 0);
 	await fillPassword(page, 'abcdefghij', 1);
+	await acceptLegalConsent(page);
 	await page.locator('.auth-signin form.auth-form').evaluate((form) => {
 		(form as HTMLFormElement).requestSubmit();
 	});
@@ -100,6 +123,7 @@ test('12.6.5 magic link sends check-email panel', async ({ page }) => {
 	const email = `e2e-magic-${Date.now()}@example.com`;
 	await page.getByRole('button', { name: /ссылке на email|email link/i }).click();
 	await fillEmail(page, email);
+	await acceptLegalConsent(page);
 	await submitPrimaryAuthForm(page);
 	await waitForCheckEmailOrSkip(page, 'Magic link');
 	await expect(page.getByText(email)).toBeVisible();

@@ -8,6 +8,22 @@ node_modules
 /.svelte-kit
 /build
 
+# Native route mask leftovers (should never persist)
+*.__web_only__
+
+# Capacitor local overrides
+capacitor.config.local.ts
+ios/App/Pods
+ios/DerivedData
+android/.gradle
+android/build
+android/app/build
+android/local.properties
+android/.idea
+android/captures
+*.jks
+*.keystore
+
 # OS
 .DS_Store
 Thumbs.db
@@ -24,6 +40,10 @@ scripts/set-vercel-env.mjs
 
 # IDE
 .idea/
+
+# Local agent skill dumps (not project source)
+.cursor/skills/ui-ux-pro-max/
+.opencode/
 
 # Vite
 vite.config.js.timestamp-*

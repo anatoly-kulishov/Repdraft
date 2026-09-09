@@ -63,7 +63,7 @@ Analytics, charts, PR dashboards, RPE/RIR, muscle volume, social, AI, wearables 
 
 REPdraft — create, run, and save gym workouts. **North star:** [`GOAL.md`](../../GOAL.md).
 
-**MVP = UX священного цикла**, не каталог фич. Успех: цикл ощущается великолепно на телефоне в зале → тогда можно думать о native iOS & Android.
+**MVP = UX священного цикла**, не каталог фич. Успех: цикл ощущается великолепно на телефоне в зале. Capacitor shell (тот же UI) — канал доставки; store submit только после чеклиста [native-store-checklist.md](./native-store-checklist.md). Legal: `/privacy` + `/terms`, consent на signup/magic, веб-аналитика opt-in.
 
 MVP: simple, fast, clear, dark/minimal, desktop + mobile.
 

@@ -1,4 +1,8 @@
-/** Operator details for the privacy policy. Set via PUBLIC_* env before production deploy. */
+/**
+ * Operator details for /privacy and /terms.
+ * REQUIRED before public production / store release — set all PUBLIC_PRIVACY_* in Vercel env.
+ * Do not invent fake INN/address in the repo.
+ */
 const email = (import.meta.env.PUBLIC_PRIVACY_CONTACT_EMAIL as string | undefined)?.trim();
 const name = (import.meta.env.PUBLIC_PRIVACY_OPERATOR_NAME as string | undefined)?.trim();
 const inn = (import.meta.env.PUBLIC_PRIVACY_OPERATOR_INN as string | undefined)?.trim();

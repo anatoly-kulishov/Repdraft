@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import { SUPABASE_AUTH_MS } from '$lib/domain/networkTimeouts';
 import { withTimeout } from '$lib/domain/withTimeout';
+import { isNativeApp, webApiOrigin } from '$lib/app/native';
 import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
 import { migrateLocalToCloud, setCloudMode } from '$lib/storage/dataAccess';
 import {
@@ -47,12 +48,20 @@ type AuthState = {
 };
 
 function authCallbackUrl(next?: string | null): string {
+	if (isNativeApp()) {
+		return next
+			? `repdraft://auth?next=${encodeURIComponent(next)}`
+			: 'repdraft://auth';
+	}
 	const url = new URL('/auth', window.location.origin);
 	if (next) url.searchParams.set('next', next);
 	return url.toString();
 }
 
 function recoveryCallbackUrl(): string {
+	if (isNativeApp()) {
+		return 'repdraft://auth?recovery=1';
+	}
 	const url = new URL('/auth', window.location.origin);
 	url.searchParams.set('recovery', '1');
 	return url.toString();
@@ -365,7 +374,9 @@ function createAuthStore() {
 			} = await supabase.auth.getSession();
 			if (!session?.access_token) throw new Error('auth.deleteUnauthorized');
 
-			const res = await fetch('/api/account/delete', {
+			const origin = webApiOrigin();
+			const deleteUrl = origin ? `${origin}/api/account/delete` : '/api/account/delete';
+			const res = await fetch(deleteUrl, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${session.access_token}`,
