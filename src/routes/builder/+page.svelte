@@ -201,7 +201,7 @@
 </script>
 
 {#snippet builderGroupButtons()}
-	<AppButton variant="secondary" class="builder-group-bar__btn" onclick={makeSuperset}>
+	<AppButton class="builder-group-bar__btn builder-group-bar__btn--primary" onclick={makeSuperset}>
 		<LucideIcon icon={Layers} size={ICON_SMALL} />
 		{translate(lang, 'builder.superset')}
 	</AppButton>

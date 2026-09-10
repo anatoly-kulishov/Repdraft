@@ -77,18 +77,21 @@
 		{translate(lang, 'changelog.title')}
 	</p>
 	<p class="bottom-sheet__hint">{translate(lang, 'changelog.lead')}</p>
-	<button
-		type="button"
-		class="whats-new-unlock-version"
-		aria-label={APP_VERSION_LABEL}
-		onclick={onUnlockVersionTap}
-	>
-		{APP_VERSION_LABEL}
-	</button>
 	<ul class="whats-new-list">
-		{#each releases as release (release.version)}
+		{#each releases as release, releaseIndex (release.version)}
 			<li class="whats-new-release">
-				<p class="whats-new-release__version">{release.label}</p>
+				{#if releaseIndex === 0}
+					<button
+						type="button"
+						class="whats-new-release__version whats-new-release__version--unlock"
+						aria-label={release.label}
+						onclick={onUnlockVersionTap}
+					>
+						{release.label}
+					</button>
+				{:else}
+					<p class="whats-new-release__version">{release.label}</p>
+				{/if}
 				<ul class="whats-new-release__items">
 					{#each release.highlights as item, i (`${release.version}-${i}`)}
 						<li>{item}</li>

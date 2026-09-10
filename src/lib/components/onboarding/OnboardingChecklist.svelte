@@ -98,7 +98,6 @@
 	{#if !readonly}
 		<div class="onboarding-checklist__actions">
 			<AppButton
-				variant="secondary"
 				block
 				class="onboarding-checklist__demo"
 				disabled={demoBusy}

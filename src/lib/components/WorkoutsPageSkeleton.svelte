@@ -20,12 +20,14 @@
 		label,
 		rows = 1,
 		variant = 'plans-list',
-		historyEmptyCtaLabel = ''
+		historyEmptyCtaLabel = '',
+		preferDemo = false
 	}: {
 		label: string;
 		rows?: number;
 		variant?: WorkoutsSkeletonVariant;
 		historyEmptyCtaLabel?: string;
+		preferDemo?: boolean;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
@@ -63,17 +65,28 @@
 				</p>
 			</div>
 			<div class="empty-state__actions mt-1 flex w-full flex-col gap-2 items-stretch">
-				<span class="btn-primary empty-state__action workouts-skel-bone workouts-skel-bone--cta">
-					{translate(lang, 'workouts.create')}
-				</span>
+				{#if preferDemo}
+					<span class="btn-primary empty-state__action workouts-skel-bone workouts-skel-bone--cta">
+						{translate(lang, 'onboarding.tryDemo')}
+					</span>
+					<span class="btn-secondary empty-state__action workouts-skel-bone workouts-skel-bone--cta">
+						{translate(lang, 'workouts.create')}
+					</span>
+				{:else}
+					<span class="btn-primary empty-state__action workouts-skel-bone workouts-skel-bone--cta">
+						{translate(lang, 'workouts.create')}
+					</span>
+				{/if}
 				<span
 					class="btn-secondary empty-state__action workouts-skel-bone workouts-skel-bone--cta"
 				>
 					{translate(lang, 'settings.importJson')}
 				</span>
-				<span class="btn-link mt-2 workouts-skel-bone workouts-skel-bone--link">
-					{translate(lang, 'onboarding.emptyPlansDemo')}
-				</span>
+				{#if !preferDemo}
+					<span class="btn-link mt-2 workouts-skel-bone workouts-skel-bone--link">
+						{translate(lang, 'onboarding.emptyPlansDemo')}
+					</span>
+				{/if}
 			</div>
 		</AppPanel>
 	{:else if variant === 'history-empty'}

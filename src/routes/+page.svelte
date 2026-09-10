@@ -453,6 +453,7 @@
 					<div class="home-hero-actions">
 						<AppButton
 							href={BUILDER_NEW_HREF}
+							variant={showOnboardingChecklist ? 'secondary' : undefined}
 							class="home-hero-cta items-center justify-center gap-2"
 						>
 							<LucideIcon icon={Plus} size={ICON_PRIMARY} />

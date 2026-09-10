@@ -125,7 +125,7 @@
 			</ul>
 			<div class="onboarding-checklist__actions">
 				<span
-					class="btn-secondary onboarding-checklist__demo home-skel-bone home-skel-bone--cta"
+					class="btn-primary onboarding-checklist__demo home-skel-bone home-skel-bone--cta"
 				>
 					{translate(lang, 'onboarding.tryDemo')}
 				</span>
