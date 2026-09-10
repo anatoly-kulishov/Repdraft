@@ -156,24 +156,31 @@ export function coerceRestSec(raw: string): number {
 	return Math.min(REST_SEC.max, Math.max(REST_SEC.min, n));
 }
 
+/** Cap by Unicode code points so emoji / surrogates are not split mid-pair. */
+function clampCodePoints(raw: string, maxLen: number): string {
+	const points = [...raw];
+	if (points.length <= maxLen) return raw;
+	return points.slice(0, maxLen).join('');
+}
+
 /** While typing: strip control chars and hard-cap (no trim — keeps caret stable). */
 export function clampNote(raw: string, maxLen = NOTE_MAX): string {
-	return raw.replace(/[\u0000-\u001F\u007F]/g, ' ').slice(0, maxLen);
+	return clampCodePoints(raw.replace(/[\u0000-\u001F\u007F]/g, ' '), maxLen);
 }
 
 /** Persist / display: collapse whitespace and trim. */
 export function sanitizeNote(raw: string, maxLen = NOTE_MAX): string {
-	return clampNote(raw, maxLen).replace(/\s+/g, ' ').trim().slice(0, maxLen);
+	return clampCodePoints(clampNote(raw, maxLen).replace(/\s+/g, ' ').trim(), maxLen);
 }
 
 /** While typing: strip control chars and hard-cap length (no trim — keeps caret stable). */
 export function clampPlanName(raw: string, maxLen = PLAN_NAME_MAX): string {
-	return raw.replace(/[\u0000-\u001F\u007F]/g, '').slice(0, maxLen);
+	return clampCodePoints(raw.replace(/[\u0000-\u001F\u007F]/g, ''), maxLen);
 }
 
 /** Search fields: strip control chars, soft-cap length (no trim while typing). */
 export function clampSearchQuery(raw: string, maxLen = SEARCH_QUERY_MAX): string {
-	return raw.replace(/[\u0000-\u001F\u007F]/g, '').slice(0, maxLen);
+	return clampCodePoints(raw.replace(/[\u0000-\u001F\u007F]/g, ''), maxLen);
 }
 
 export function isValidWeightKg(value: number | null): boolean {
@@ -283,6 +290,20 @@ export function runInputLimitsSelfCheck(): void {
 	}
 	if (clampNote('x'.repeat(150)).length !== NOTE_MAX) {
 		throw new Error('clampNote max length');
+	}
+	{
+		// UTF-16 slice of an emoji leaves a lone high surrogate; code-point clamp must not.
+		const loneHigh = '🔥'.slice(0, 1);
+		if ((loneHigh.charCodeAt(0) & 0xfc00) !== 0xd800) {
+			throw new Error('test setup: expected lone high surrogate');
+		}
+		const emojiClamp = clampNote('🔥'.repeat(NOTE_MAX + 2));
+		if ([...emojiClamp].length !== NOTE_MAX) {
+			throw new Error(`clampNote emoji code points want ${NOTE_MAX} got ${[...emojiClamp].length}`);
+		}
+		if ([...emojiClamp].join('') !== emojiClamp) {
+			throw new Error('clampNote emoji round-trip failed');
+		}
 	}
 	if (clampPlanName('x'.repeat(80)).length !== PLAN_NAME_MAX) {
 		throw new Error('clampPlanName max length');

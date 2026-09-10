@@ -52,7 +52,8 @@
 	}
 
 	.shell-main--subroute .workouts-page--history-tab .screen-header {
-		/* Lift comes from sticky ListSearchBar so chrome reads as one block. */
+		/* One chrome with sticky search: no hairline seam, lift lives on ListSearchBar. */
+		border-bottom: none;
 		box-shadow: none;
 	}
 }
@@ -1010,7 +1011,7 @@ html.is-plan-reorder-active .reorder-handle {
 			max(var(--page-pad-x), var(--safe-right)) var(--screen-header-pad-block)
 			max(var(--page-pad-x), var(--safe-left));
 		background: var(--chrome-header-bg);
-		border-bottom: 1px solid var(--color-border);
+		border-bottom: none;
 		box-shadow: none;
 	}
 }

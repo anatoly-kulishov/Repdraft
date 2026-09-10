@@ -4,8 +4,12 @@
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { cn } from '$lib/utils.js';
 	import { GripVertical } from '@lucide/svelte';
+	import { onDestroy } from 'svelte';
 
 	const HOLD_MS_DEFAULT = 360;
+	/** Viewport edge band that drives auto-scroll while dragging. */
+	const EDGE_ZONE_PX = 88;
+	const MAX_SCROLL_PX_PER_FRAME = 22;
 
 	let {
 		index,
@@ -36,6 +40,9 @@
 	let pressOrigin = { x: 0, y: 0 };
 	let handleNode: HTMLElement | null = null;
 	let activePointerId: number | null = null;
+	let dragClientX = 0;
+	let dragClientY = 0;
+	let scrollRaf: number | null = null;
 
 	function queryRows(): Element[] {
 		return [...document.querySelectorAll(targetSelector)];
@@ -99,6 +106,70 @@
 		);
 	}
 
+	/** Nearest overflow ancestor of the list, or the document scroller. */
+	function resolveScrollRoot(): Element {
+		const list = document.querySelector(listSelector);
+		let node: HTMLElement | null = list instanceof HTMLElement ? list : null;
+		while (node) {
+			const { overflowY } = getComputedStyle(node);
+			if (
+				(overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+				node.scrollHeight > node.clientHeight + 1
+			) {
+				return node;
+			}
+			node = node.parentElement;
+		}
+		return document.scrollingElement ?? document.documentElement;
+	}
+
+	function applyScrollDelta(delta: number) {
+		if (delta === 0) return;
+		const root = resolveScrollRoot();
+		if (root === document.documentElement || root === document.body) {
+			window.scrollBy(0, delta);
+			return;
+		}
+		root.scrollTop += delta;
+	}
+
+	function edgeScrollDelta(clientY: number): number {
+		const topBound = EDGE_ZONE_PX;
+		const bottomBound = window.innerHeight - EDGE_ZONE_PX;
+		if (clientY < topBound) {
+			const t = Math.min(1, (topBound - clientY) / EDGE_ZONE_PX);
+			return -Math.ceil(MAX_SCROLL_PX_PER_FRAME * (0.2 + 0.8 * t * t));
+		}
+		if (clientY > bottomBound) {
+			const t = Math.min(1, (clientY - bottomBound) / EDGE_ZONE_PX);
+			return Math.ceil(MAX_SCROLL_PX_PER_FRAME * (0.2 + 0.8 * t * t));
+		}
+		return 0;
+	}
+
+	function stopAutoScroll() {
+		if (scrollRaf !== null) {
+			cancelAnimationFrame(scrollRaf);
+			scrollRaf = null;
+		}
+	}
+
+	function tickAutoScroll() {
+		scrollRaf = null;
+		if (!active || fromIndex === null) return;
+		const delta = edgeScrollDelta(dragClientY);
+		if (delta !== 0) {
+			applyScrollDelta(delta);
+			emitPhase(fromIndex, resolveTarget(dragClientX, dragClientY));
+		}
+		scrollRaf = requestAnimationFrame(tickAutoScroll);
+	}
+
+	function startAutoScroll() {
+		if (scrollRaf !== null) return;
+		scrollRaf = requestAnimationFrame(tickAutoScroll);
+	}
+
 	function clearPressListeners() {
 		window.removeEventListener('pointermove', onPressMove);
 		window.removeEventListener('pointerup', onPressEnd);
@@ -129,11 +200,14 @@
 
 	function onWindowMove(event: PointerEvent) {
 		if (!active || fromIndex === null) return;
+		dragClientX = event.clientX;
+		dragClientY = event.clientY;
 		emitPhase(fromIndex, resolveTarget(event.clientX, event.clientY));
 	}
 
 	function endDrag(event: PointerEvent) {
 		if (!active || fromIndex === null) return;
+		stopAutoScroll();
 		const from = fromIndex;
 		const to = resolveTarget(event.clientX, event.clientY);
 		window.removeEventListener('pointermove', onWindowMove);
@@ -166,6 +240,7 @@
 		window.addEventListener('pointermove', onWindowMove);
 		window.addEventListener('pointerup', endDrag);
 		window.addEventListener('pointercancel', endDrag);
+		startAutoScroll();
 	}
 
 	function onPressMove(event: PointerEvent) {
@@ -179,6 +254,8 @@
 			return;
 		}
 		if (pressTimer !== null) clearPressTimer();
+		dragClientX = event.clientX;
+		dragClientY = event.clientY;
 		startDrag();
 	}
 
@@ -192,6 +269,8 @@
 		handleNode = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
 		activePointerId = event.pointerId;
 		pressOrigin = { x: event.clientX, y: event.clientY };
+		dragClientX = event.clientX;
+		dragClientY = event.clientY;
 		pressing = holdMs > 0;
 		if (holdMs > 0) {
 			pressTimer = setTimeout(startDrag, holdMs);
@@ -200,6 +279,16 @@
 		window.addEventListener('pointerup', onPressEnd);
 		window.addEventListener('pointercancel', onPressEnd);
 	}
+
+	onDestroy(() => {
+		stopAutoScroll();
+		clearPressTimer();
+		clearPressListeners();
+		window.removeEventListener('pointermove', onWindowMove);
+		window.removeEventListener('pointerup', endDrag);
+		window.removeEventListener('pointercancel', endDrag);
+		document.documentElement.classList.remove(rootActiveClass);
+	});
 </script>
 
 <AppIconButton

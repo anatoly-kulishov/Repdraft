@@ -120,9 +120,9 @@
 
 @media (max-width: 1023px) {
 	:root {
-		/* Content row + pads + header border — sticky filters must sit fully below. */
+		/* Content row + pads — sticky filters must sit fully below. */
 		--screen-header-chrome-h: calc(
-			var(--screen-header-min-h) + 2 * var(--screen-header-pad-block) + var(--safe-top) + 1px
+			var(--screen-header-min-h) + 2 * var(--screen-header-pad-block) + var(--safe-top)
 		);
 	}
 
@@ -867,8 +867,8 @@
 }
 
 .auth-pref-toggle__input:focus-visible {
-	outline: 2px solid var(--color-accent);
-	outline-offset: 2px;
+	outline: none;
+	box-shadow: var(--focus-ring);
 }
 
 .auth-account__identity {
@@ -1019,8 +1019,8 @@
 }
 
 .whats-new-version-btn:focus-visible {
-	outline: 2px solid color-mix(in srgb, var(--color-accent) 70%, transparent);
-	outline-offset: 2px;
+	outline: none;
+	box-shadow: var(--focus-ring);
 }
 
 .whats-new-version-btn:active {
@@ -2287,8 +2287,8 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 }
 
 .auth-segment:focus-visible {
-	outline: 2px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
-	outline-offset: 2px;
+	outline: none;
+	box-shadow: var(--focus-ring);
 }
 
 .auth-segment--sub {
@@ -2302,6 +2302,10 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	color: var(--color-ink);
 	font-weight: 600;
 	box-shadow: var(--segment-active-shadow);
+}
+
+.auth-segment.is-active:focus-visible {
+	box-shadow: var(--segment-active-shadow), var(--focus-ring);
 }
 
 .auth-segment--sub.is-active {
@@ -3504,14 +3508,18 @@ button.clip-composer__pick:hover:not(:disabled),
 }
 
 .segment-control__tab:focus-visible {
-	outline: 2px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
-	outline-offset: 2px;
+	outline: none;
+	box-shadow: var(--focus-ring);
 }
 
 .segment-control__tab.is-active {
 	background: var(--segment-active-bg);
 	color: var(--color-ink);
 	box-shadow: var(--segment-active-shadow);
+}
+
+.segment-control__tab.is-active:focus-visible {
+	box-shadow: var(--segment-active-shadow), var(--focus-ring);
 }
 
 .reorder-handle {
