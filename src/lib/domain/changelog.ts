@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.17.4',
+		highlights: {
+			ru: [
+				'Короче подсказки на первой тренировке: вес × повторы, без лишних деталей',
+				'В чеклисте «тренировка» вместо «план»; демо - главная кнопка',
+				'Фильтр по мышцам в Моих тренировках; тема с первого визита как на устройстве',
+				'Суперсет в билдере - главная кнопка; типы подходов всегда под рукой'
+			],
+			en: [
+				'Shorter first-workout tips: weight × reps, no power-user extras yet',
+				'Checklist says workout (not plan); demo is the primary button',
+				'Muscle filter on My workouts; first visit follows device theme',
+				'Superset is the primary builder action; set kinds stay available'
+			]
+		}
+	},
+	{
 		version: '0.17.3',
 		highlights: {
 			ru: [

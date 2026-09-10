@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import {
-	parseAppTheme,
-	systemPreferredTheme,
+	DEFAULT_APP_THEME,
+	resolveInitialTheme,
 	THEME_COOKIE,
 	THEME_META_COLORS,
 	THEME_STORAGE_KEY,
@@ -9,12 +9,22 @@ import {
 } from '$lib/domain/theme';
 import { writable } from 'svelte/store';
 
-function readStoredTheme(): AppTheme {
-	if (!browser) return systemPreferredTheme();
+function readOsPrefersLight(): boolean | null {
+	if (!browser || typeof matchMedia !== 'function') return null;
 	try {
-		return parseAppTheme(localStorage.getItem(THEME_STORAGE_KEY)) ?? systemPreferredTheme();
+		return matchMedia('(prefers-color-scheme: light)').matches;
 	} catch {
-		return systemPreferredTheme();
+		return null;
+	}
+}
+
+function readStoredTheme(): AppTheme {
+	if (!browser) return DEFAULT_APP_THEME;
+	try {
+		const raw = localStorage.getItem(THEME_STORAGE_KEY);
+		return resolveInitialTheme(raw, readOsPrefersLight());
+	} catch {
+		return resolveInitialTheme(null, readOsPrefersLight());
 	}
 }
 

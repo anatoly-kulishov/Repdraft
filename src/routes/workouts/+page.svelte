@@ -5,10 +5,12 @@
 	import CloudSyncTitleHint from '$lib/components/CloudSyncTitleHint.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import PlansEmptyActions from '$lib/components/PlansEmptyActions.svelte';
 	import ExerciseReorderHandle from '$lib/components/ExerciseReorderHandle.svelte';
 	import BackupImportAction from '$lib/components/BackupImportAction.svelte';
 	import HistoryDayPickerSheet from '$lib/components/HistoryDayPickerSheet.svelte';
 	import HistoryFiltersSheet from '$lib/components/HistoryFiltersSheet.svelte';
+	import PlansMuscleFilterSheet from '$lib/components/PlansMuscleFilterSheet.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import ListSearchBar from '$lib/components/ListSearchBar.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -27,7 +29,9 @@
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
 	import {
+		collectPlanTargetFacets,
 		planExerciseSlotCount,
+		planHasTarget,
 		planTargetSummary,
 		promotePlanToFront,
 		resolveHomeNextPlan,
@@ -60,7 +64,11 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { onboarding } from '$lib/stores/onboarding';
-	import { shouldShowCoachmark } from '$lib/domain/onboarding';
+	import {
+		peekShouldShowChecklist,
+		shouldPreferDemoCta,
+		shouldShowCoachmark
+	} from '$lib/domain/onboarding';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { cn } from '$lib/utils.js';
@@ -133,13 +141,23 @@
 	);
 	let listUncertain = $derived(isCloudListUncertain($plansSync));
 
-	let plansFiltersActive = $derived(searchQuery.trim().length > 0);
+	let plansMuscleTarget = $state('');
+	let plansMuscleSheetOpen = $state(false);
+
+	let planMuscleFacets = $derived(collectPlanTargetFacets($plans, indexById, lang));
+	let plansMuscleFilterActive = $derived(plansMuscleTarget !== '');
+	let plansFiltersActive = $derived(
+		searchQuery.trim().length > 0 || plansMuscleFilterActive
+	);
 
 	let filteredPlans = $derived.by(() => {
 		let list = $plans;
 		const q = searchQuery.trim().toLowerCase();
 		if (q) {
 			list = list.filter((p) => p.name.toLowerCase().includes(q));
+		}
+		if (plansMuscleTarget) {
+			list = list.filter((p) => planHasTarget(p, indexById, plansMuscleTarget));
 		}
 		return list;
 	});
@@ -161,6 +179,12 @@
 
 	function clearPlansFilters() {
 		searchQuery = '';
+		plansMuscleTarget = '';
+		plansVisibleLimit = PLANS_PAGE_SIZE;
+	}
+
+	function setPlansMuscleTarget(target: string) {
+		plansMuscleTarget = target;
 		plansVisibleLimit = PLANS_PAGE_SIZE;
 	}
 
@@ -251,8 +275,15 @@
 
 	$effect(() => {
 		searchQuery;
+		plansMuscleTarget;
 		activeTab;
 		plansVisibleLimit = PLANS_PAGE_SIZE;
+	});
+
+	$effect(() => {
+		if (plansMuscleTarget && !planMuscleFacets.includes(plansMuscleTarget)) {
+			plansMuscleTarget = '';
+		}
 	});
 
 	$effect(() => {
@@ -679,6 +710,7 @@
 			variant={skeletonVariant}
 			rows={skeletonRows}
 			{historyEmptyCtaLabel}
+			preferDemo={peekShouldShowChecklist()}
 		/>
 	{:else}
 	{#if activeTab === 'plans'}
@@ -688,37 +720,39 @@
 					icon={ClipboardList}
 					title={translate(lang, 'workouts.emptyTitle')}
 					description={translate(lang, 'workouts.emptyDesc')}
-					actionHref={BUILDER_NEW_HREF}
-					actionLabel={translate(lang, 'workouts.create')}
 				>
 					{#snippet actions()}
-						<BackupImportAction variant="secondary" block />
-						<AppButton
-							variant="link"
-							block
-							class="mt-2"
-							disabled={demoBusy}
-							aria-busy={demoBusy}
-							onclick={() => void onTryDemoPlan()}
-						>
-							{translate(lang, 'onboarding.emptyPlansDemo')}
-						</AppButton>
+						<PlansEmptyActions
+							preferDemo={shouldPreferDemoCta($onboarding)}
+							{demoBusy}
+							onTryDemo={onTryDemoPlan}
+						/>
 					{/snippet}
 				</EmptyState>
 			{:else}
 				<ListSearchBar
 					bind:value={searchQuery}
 					placeholder={translate(lang, 'workouts.searchPh')}
+					filterActive={plansMuscleFilterActive}
+					filterAriaLabel={translate(lang, 'workouts.muscleFilter')}
+					filterExpanded={plansMuscleSheetOpen}
+					onFilterClick={
+						planMuscleFacets.length > 0
+							? () => {
+									plansMuscleSheetOpen = true;
+								}
+							: undefined
+					}
 					matchLabel={
 						plansFiltersActive && filteredPlans.length > 0
-							? translate(lang, 'workouts.historyMatches', { n: filteredPlans.length })
+							? translate(lang, 'workouts.plansMatches', { n: filteredPlans.length })
 							: ''
 					}
 				/>
 				{#if filteredPlans.length === 0}
 					<EmptyState
-						title={translate(lang, 'catalog.emptyTitle')}
-						description={translate(lang, 'catalog.emptyDesc')}
+						title={translate(lang, 'workouts.plansFilterEmptyTitle')}
+						description={translate(lang, 'workouts.plansFilterEmptyDesc')}
 						actionLabel={translate(lang, 'catalog.reset')}
 						actionOnclick={clearPlansFilters}
 					/>
@@ -1017,6 +1051,17 @@
 	onClear={() => setHistoryPreset('all')}
 	onDismiss={() => {
 		historyFiltersSheetOpen = false;
+	}}
+/>
+
+<PlansMuscleFilterSheet
+	open={plansMuscleSheetOpen}
+	selected={plansMuscleTarget}
+	targets={planMuscleFacets}
+	onSelect={setPlansMuscleTarget}
+	onClear={() => setPlansMuscleTarget('')}
+	onDismiss={() => {
+		plansMuscleSheetOpen = false;
 	}}
 />
 

@@ -63,7 +63,9 @@
 		onRemove,
 		invalidSetIndex = null as number | null,
 		invalidKind = null as 'weight' | 'reps' | null,
-		justDoneSetIndex = null as number | null
+		justDoneSetIndex = null as number | null,
+		showFillColumn = true,
+		showSetKinds = true
 	}: {
 		session: WorkoutSession;
 		exerciseIndex: number;
@@ -86,6 +88,10 @@
 		invalidSetIndex?: number | null;
 		invalidKind?: 'weight' | 'reps' | null;
 		justDoneSetIndex?: number | null;
+		/** Day-1 progressive disclosure: fill-all column actions. */
+		showFillColumn?: boolean;
+		/** Day-1 progressive disclosure: set-kind picker + badges. */
+		showSetKinds?: boolean;
 	} = $props();
 
 	let overlay = $state<LiveOverlay>({ kind: 'none' });
@@ -412,7 +418,7 @@
 		<div class="live-set-head" class:live-set-head--cardio={cardio}>
 			<span class="live-set-head__idx">#</span>
 			{#if !cardio}
-				{#if canFillWeightAll && fillWeightKg != null}
+				{#if showFillColumn && canFillWeightAll && fillWeightKg != null}
 					<button
 						type="button"
 						class="live-set-head__fill live-set-head__weight"
@@ -435,7 +441,7 @@
 						{weightLabel}
 					</span>
 				{/if}
-				{#if canFillRepsAll && fillReps != null}
+				{#if showFillColumn && canFillRepsAll && fillReps != null}
 					<button
 						type="button"
 						class="live-set-head__fill live-set-head__reps"
@@ -481,19 +487,23 @@
 							class:is-just-done={justDoneSetIndex === si}
 						>
 						<div class="live-set-index-wrap">
-							<button
-								type="button"
-								class="live-set-index live-set-index--action"
-								aria-label={translate(lang, 'live.setActionsAria', { n: si + 1 })}
-								title={translate(lang, 'live.setActionsTitle', { n: si + 1 })}
-								aria-haspopup="dialog"
-								aria-expanded={setMenuIndex === si}
-								data-swipe-pass=""
-								onclick={() => openOverlay({ kind: 'setMenu', index: si })}
-							>
-								{si + 1}
-							</button>
-							{#if loggedSetKind(set) !== 'work'}
+							{#if showSetKinds || canRemoveSet}
+								<button
+									type="button"
+									class="live-set-index live-set-index--action"
+									aria-label={translate(lang, 'live.setActionsAria', { n: si + 1 })}
+									title={translate(lang, 'live.setActionsTitle', { n: si + 1 })}
+									aria-haspopup="dialog"
+									aria-expanded={setMenuIndex === si}
+									data-swipe-pass=""
+									onclick={() => openOverlay({ kind: 'setMenu', index: si })}
+								>
+									{si + 1}
+								</button>
+							{:else}
+								<span class="live-set-index" aria-hidden="true">{si + 1}</span>
+							{/if}
+							{#if showSetKinds && loggedSetKind(set) !== 'work'}
 								<span class="live-set-kind-badge">
 									{translate(lang, setKindMessageKey(loggedSetKind(set)))}
 								</span>
@@ -711,29 +721,33 @@
 			class="live-actions-sheet live-actions-sheet--set-kinds"
 			aria-labelledby={`live-set-actions-${exercise.exerciseId}-${setMenuIndex}`}
 		>
-			<p class="live-actions-sheet__label">{translate(lang, 'live.setKindLabel')}</p>
-			<div
-				class="live-set-kinds"
-				role="radiogroup"
-				aria-label={translate(lang, 'live.setKindLabel')}
-			>
-				{#each SET_KINDS as kind (kind)}
-					<button
-						type="button"
-						role="radio"
-						class={cn(
-							'live-set-kinds__cell',
-							menuKind === kind && 'live-set-kinds__cell--selected'
-						)}
-						aria-checked={menuKind === kind}
-						onclick={() => setMenuKind(kind)}
-					>
-						{translate(lang, setKindMessageKey(kind))}
-					</button>
-				{/each}
-			</div>
+			{#if showSetKinds}
+				<p class="live-actions-sheet__label">{translate(lang, 'live.setKindLabel')}</p>
+				<div
+					class="live-set-kinds"
+					role="radiogroup"
+					aria-label={translate(lang, 'live.setKindLabel')}
+				>
+					{#each SET_KINDS as kind (kind)}
+						<button
+							type="button"
+							role="radio"
+							class={cn(
+								'live-set-kinds__cell',
+								menuKind === kind && 'live-set-kinds__cell--selected'
+							)}
+							aria-checked={menuKind === kind}
+							onclick={() => setMenuKind(kind)}
+						>
+							{translate(lang, setKindMessageKey(kind))}
+						</button>
+					{/each}
+				</div>
+				{#if canRemoveSet}
+					<div class="live-actions-sheet__sep" aria-hidden="true"></div>
+				{/if}
+			{/if}
 			{#if canRemoveSet}
-				<div class="live-actions-sheet__sep" aria-hidden="true"></div>
 				<button
 					type="button"
 					class="live-actions-sheet__danger"

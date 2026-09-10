@@ -30,6 +30,7 @@ const checks = [
 	'pwaInstall',
 	'exerciseScore',
 	'onboarding',
+	'theme',
 	'id',
 	'home',
 	'calendar',
