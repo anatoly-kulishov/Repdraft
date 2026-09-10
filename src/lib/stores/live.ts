@@ -36,6 +36,7 @@ import {
 import { flushSyncOutbox } from '$lib/storage/flushSyncOutbox';
 import { exerciseStats } from '$lib/stores/exerciseStats';
 import { homeNextPlan } from '$lib/stores/homeNextPlan';
+import { planOrder } from '$lib/stores/planOrder';
 import { plans } from '$lib/stores/plans';
 import {
 	localSessionRepository,
@@ -393,6 +394,21 @@ function createLiveStore() {
 			const current = get(store).session;
 			if (!current) return null;
 			const done = finishSession(current);
+			// Skip-all (or fully pruned) session: no empty history row.
+			if (done.exercises.length === 0) {
+				persistActive(null, null);
+				store.update((s) => ({
+					...s,
+					session: null,
+					restUntil: null
+				}));
+				if (done.planId) {
+					homeNextPlan.advanceAfterFinish(done.planId, get(plans));
+					planOrder.moveToEnd(done.planId);
+					plans.resort();
+				}
+				return null;
+			}
 			const usedIds = done.exercises
 				.filter((ex) => ex.sets.some((s) => s.completed))
 				.map((ex) => ex.exerciseId);
@@ -411,6 +427,8 @@ function createLiveStore() {
 			}));
 			if (done.planId) {
 				homeNextPlan.advanceAfterFinish(done.planId, get(plans));
+				planOrder.moveToEnd(done.planId);
+				plans.resort();
 			}
 			await refreshHistory();
 			void flushSyncOutbox();

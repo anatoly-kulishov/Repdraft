@@ -14,6 +14,25 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.17.2',
+		highlights: {
+			ru: [
+				'Тренировка «Следующая» всегда сверху списка',
+				'После финиша следующая = карточка под ней; пройденная уходит в конец очереди',
+				'При перестановке список сам крутится у края экрана',
+				'Шапка каталога без жёсткой линии: поиск и заголовок читаются одним блоком',
+				'Фокус полей: сплошная accent-рамка, без рваных углов на iOS'
+			],
+			en: [
+				'The Next workout stays at the top of the list',
+				'After finish, Next is the card under it; the finished plan moves to the end of the queue',
+				'While reordering, the list auto-scrolls near the screen edge',
+				'Catalog header loses the hard rule: title and search read as one chrome block',
+				'Field focus: solid accent border, no broken iOS corner outlines'
+			]
+		}
+	},
+	{
 		version: '0.17.1',
 		highlights: {
 			ru: [

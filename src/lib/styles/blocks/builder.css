@@ -688,8 +688,8 @@
 
 .builder-exercise-list .workout-ex-head__actions .exercise-reorder-handle:focus-visible,
 .builder-exercise-list .workout-ex-head__actions .workout-ex-head__menu:focus-visible {
-	outline: 2px solid var(--color-accent);
-	outline-offset: 0;
+	outline: none;
+	box-shadow: var(--focus-ring);
 }
 
 /* Twin of grip: quiet icon affordance, no filled tile. */
@@ -1396,7 +1396,7 @@ button.workout-ex-chip--ladder {
 /* Pill radius + outline-offset clips into corner arcs — border focus only. */
 .workout-ex-ladder-sheet__field input[data-slot='input']:focus-visible {
 	outline: none;
-	border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-field-border));
+	border-color: var(--color-accent);
 	--tw-ring-shadow: 0 0 #0000;
 	--tw-ring-offset-shadow: 0 0 #0000;
 	--tw-ring-offset-width: 0px;
@@ -1455,8 +1455,8 @@ button.workout-ex-chip--ladder {
 }
 
 .builder-ex-action:focus-visible {
-	outline: 2px solid color-mix(in srgb, var(--color-accent) 70%, transparent);
-	outline-offset: 2px;
+	outline: none;
+	box-shadow: var(--focus-ring);
 	z-index: 1;
 }
 

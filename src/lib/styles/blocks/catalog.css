@@ -642,8 +642,8 @@
 }
 
 .exercise-card-add:focus-visible {
-	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
-	outline-offset: 1px;
+	outline: none;
+	box-shadow: var(--focus-ring);
 }
 
 .exercise-card-add.is-in-draft {
@@ -1170,8 +1170,8 @@ html[data-nav-back] .zone-card__media-skel {
 	clip: auto;
 	clip-path: none;
 	border-radius: var(--radius-control);
-	outline: 2px solid var(--color-accent);
-	outline-offset: 2px;
+	outline: none;
+	box-shadow: var(--focus-ring);
 }
 
 .page-skeleton {
@@ -2356,8 +2356,8 @@ html[data-nav-back] .zone-card__media-skel {
 }
 
 .feed-rail:focus-visible {
-	outline: 2px solid var(--color-accent);
-	outline-offset: 2px;
+	outline: none;
+	box-shadow: var(--focus-ring);
 	border-radius: var(--radius-control);
 }
 
@@ -2975,7 +2975,7 @@ body:has(.sticky-actions) .draft-dock {
 			max(var(--page-pad-x), var(--safe-right)) var(--screen-header-pad-block)
 			max(var(--page-pad-x), var(--safe-left));
 		background: var(--chrome-header-bg);
-		border-bottom: 1px solid var(--color-border);
+		border-bottom: none;
 		box-shadow: var(--shadow-screen-header);
 		/* Title ellipsis lives on .screen-header-title — keep overflow visible for shadow. */
 		overflow: visible;
@@ -3344,8 +3344,8 @@ body:has(.sticky-actions) .draft-dock {
 }
 
 .catalog-hub-chip:focus-visible {
-	outline: 2px solid var(--color-accent);
-	outline-offset: 2px;
+	outline: none;
+	box-shadow: var(--focus-ring);
 }
 .catalog-hub-nav-link--primary :is(span, .lucide-icon-wrap) {
 	color: inherit;
@@ -3624,6 +3624,8 @@ body:has(.sticky-actions) .draft-dock {
 
 	.shell-main--subroute .content-page--catalog.catalog-page--list .screen-header,
 	.shell-main--subroute .content-page--catalog.records-page .screen-header {
+		/* One chrome with sticky filters: no hairline seam, lift lives on filters strip. */
+		border-bottom: none;
 		box-shadow: none;
 	}
 
@@ -3813,8 +3815,8 @@ body:has(.sticky-actions) .draft-dock {
 }
 
 .catalog-filter-chip:focus-visible {
-	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
-	outline-offset: 1px;
+	outline: none;
+	box-shadow: var(--focus-ring);
 }
 
 .catalog-equipment-sheet-options {
@@ -3883,8 +3885,8 @@ body:has(.sticky-actions) .draft-dock {
 }
 
 .catalog-equipment-sheet-option:focus-visible {
-	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
-	outline-offset: 1px;
+	outline: none;
+	box-shadow: var(--focus-ring);
 }
 
 .catalog-equipment-sheet-option.is-active,

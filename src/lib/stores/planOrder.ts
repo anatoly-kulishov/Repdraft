@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { syncPlanOrderIds, moveOrderIds } from '$lib/domain/workout';
+import { syncPlanOrderIds, moveOrderIds, rotatePlanIdToEnd } from '$lib/domain/workout';
 import { get, writable } from 'svelte/store';
 
 export const PLAN_ORDER_STORAGE_KEY = 'repdraft:plan-order';
@@ -68,6 +68,14 @@ function createPlanOrderStore() {
 					}
 				}
 				if (!changed) return order;
+				writeOrder(out);
+				return out;
+			});
+		},
+		moveToEnd(planId: string) {
+			update((order) => {
+				const out = rotatePlanIdToEnd(order, planId);
+				if (out.length === order.length && out.every((id, i) => id === order[i])) return order;
 				writeOrder(out);
 				return out;
 			});
