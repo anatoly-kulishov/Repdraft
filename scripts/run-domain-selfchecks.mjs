@@ -18,6 +18,7 @@ const checks = [
 	'clips',
 	'inputLimits',
 	'authFlow',
+	'authBoot',
 	'greetingName',
 	'localCacheUser',
 	'catalogCover',

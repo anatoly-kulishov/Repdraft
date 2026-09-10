@@ -20,13 +20,37 @@
 .shell-header-mobile {
 	display: block;
 	background: var(--chrome-header-bg);
-	/* Keep page titles from painting through while sticky. */
+	/* Keep page titles from painting through while sticky/fixed. */
 	isolation: isolate;
 }
 
 .shell-header-mobile--home {
 	border-bottom: none;
 	background: var(--color-bg);
+}
+
+/*
+ * Pin shell chrome on phone/tablet. Sticky + Safari URL-bar show/hide jumps the bar
+ * when scrolling up; fixed + spacer stays put (same idea as ScreenHeader--fixed).
+ */
+@media (max-width: 1023px) {
+	.shell-header-mobile:not(.shell-header-mobile-hidden) {
+		position: fixed;
+		inset-inline: 0;
+		top: 0;
+		z-index: 30;
+		width: 100%;
+	}
+
+	.shell-body:has(> .shell-header-mobile:not(.shell-header-mobile-hidden)) {
+		/* h-14 bar + 1px border-b */
+		padding-top: calc(var(--safe-top) + 3.5rem + 1px);
+	}
+
+	.shell-body:has(> .shell-header-mobile--home:not(.shell-header-mobile-hidden)) {
+		/* Home drops the bottom border */
+		padding-top: calc(var(--safe-top) + 3.5rem);
+	}
 }
 
 .shell-home-greeting {

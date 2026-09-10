@@ -77,6 +77,9 @@ const ru: Dict = {
 	'settings.devStressMissing':
 		'Файл тестового бэкапа не задеплоен. Локально: npm run gen:stress-backup, затем обнови страницу.',
 	'settings.devStressFail': 'Не удалось загрузить тестовый бэкап',
+	'settings.testerModeOn': 'Режим тестирования включён',
+	'settings.testerModeOff': 'Скрыть инструменты тестирования',
+	'settings.testerModeDenied': 'Инструменты тестирования скрыты',
 	'settings.restSound': 'Звук отдыха',
 	'settings.restSoundHint':
 		'Сигнал и вибрация в конце отдыха. Громкость и сила: в настройках телефона.',
@@ -1007,6 +1010,9 @@ const en: Dict = {
 	'settings.devStressMissing':
 		'Test backup not deployed. Locally run: npm run gen:stress-backup, then refresh.',
 	'settings.devStressFail': 'Could not load test backup',
+	'settings.testerModeOn': 'Tester mode on',
+	'settings.testerModeOff': 'Hide testing tools',
+	'settings.testerModeDenied': 'Testing tools are hidden',
 	'settings.restSound': 'Rest timer sound',
 	'settings.restSoundHint':
 		'Chime and vibration when rest ends. Volume and strength follow phone settings.',

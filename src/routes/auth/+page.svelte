@@ -39,7 +39,8 @@
 	import WhatsNewSheet from '$lib/components/WhatsNewSheet.svelte';
 	import { GREETING_NAME_MAX, clampGreetingName, greetingNameMatchesStored } from '$lib/domain/greetingName';
 	import { isIosDevice } from '$lib/domain/pwaInstall';
-	import { restSoundEnabled } from '$lib/stores/prefs';
+	import { restSoundEnabled, testerModeEnabled } from '$lib/stores/prefs';
+	import { testerToolsVisible } from '$lib/domain/prefs';
 	import { get } from 'svelte/store';
 	import { tick } from 'svelte';
 	import { FileText, LogOut, Timer, Shield, ClipboardList } from '@lucide/svelte';
@@ -111,6 +112,9 @@
 	}
 
 	let lang = $derived($resolvedLocale);
+	let showTesterTools = $derived(
+		testerToolsVisible({ pref: $testerModeEnabled, dev: import.meta.env.DEV })
+	);
 	let confirmMismatchHint = $derived(
 		confirmMismatchVisible ? translate(lang, 'auth.errors.passwordMismatch') : null
 	);
@@ -672,7 +676,9 @@
 					<DataExportSection embedded />
 				</div>
 
-				<ProfileDevWipePanel />
+				{#if showTesterTools}
+					<ProfileDevWipePanel />
+				{/if}
 
 				<div class="auth-danger-zone" aria-labelledby="auth-danger-title">
 					<p class="auth-danger-zone__eyebrow">{translate(lang, 'auth.deleteZoneLabel')}</p>
@@ -753,12 +759,14 @@
 					aria-busy={accountLocked || undefined}
 				>
 					<p class="profile-settings-group__title">{translate(lang, 'settings.accountTitle')}</p>
-					<ProfileSettingsRow
-						icon={ClipboardList}
-						label={translate(lang, 'scenarios.link')}
-						href="/scenarios"
-						disabled={accountLocked}
-					/>
+					{#if showTesterTools}
+						<ProfileSettingsRow
+							icon={ClipboardList}
+							label={translate(lang, 'scenarios.link')}
+							href="/scenarios"
+							disabled={accountLocked}
+						/>
+					{/if}
 					<ProfileSettingsRow
 						icon={FileText}
 						label={translate(lang, 'terms.link')}
@@ -1094,15 +1102,19 @@
 		{@render onboardingHelpPanel()}
 		<AuthInterfacePrefs />
 		<DataExportSection />
-		<ProfileDevWipePanel />
+		{#if showTesterTools}
+			<ProfileDevWipePanel />
+		{/if}
 		<div class="auth-account__section auth-account__section--legal">
 			<p class="auth-prefs__title">{translate(lang, 'auth.privacyHint')}</p>
 			<div class="auth-prefs__stack">
-				<ProfileSettingsRow
-					icon={ClipboardList}
-					label={translate(lang, 'scenarios.link')}
-					href="/scenarios"
-				/>
+				{#if showTesterTools}
+					<ProfileSettingsRow
+						icon={ClipboardList}
+						label={translate(lang, 'scenarios.link')}
+						href="/scenarios"
+					/>
+				{/if}
 				<ProfileSettingsRow
 					icon={FileText}
 					label={translate(lang, 'terms.link')}
