@@ -572,7 +572,7 @@ export function convertAltGroupToSuperset(plan: WorkoutPlan, altGroupId: string)
 }
 
 export function updateGroupSets(plan: WorkoutPlan, groupId: string, sets: number): WorkoutPlan {
-	const next = Math.min(20, Math.max(1, sets));
+	const next = Math.min(SETS.max, Math.max(SETS.min, sets));
 	return withUpdated(
 		plan,
 		plan.exercises.map((ex) => {
@@ -734,8 +734,8 @@ export function mergeWorkoutPlans(local: WorkoutPlan[], cloud: WorkoutPlan[]): W
 }
 
 /**
- * Home CTA: next plan in list order after the last finished one (split rotation).
- * Falls back to the first plan when there is no history or the last plan was deleted.
+ * Forward split rotation in stored list order (resolve when no pin).
+ * After finish, pair with `rotatePlanToEnd` so the queue head matches the card under Next.
  */
 export function suggestNextPlan<T extends { id: string }>(
 	plans: readonly T[],
@@ -746,6 +746,35 @@ export function suggestNextPlan<T extends { id: string }>(
 	const idx = plans.findIndex((p) => p.id === lastFinishedPlanId);
 	if (idx < 0) return plans[0]!;
 	return plans[(idx + 1) % plans.length]!;
+}
+
+/** Move finished plan to the end of the athlete's list (rotation queue). */
+export function rotatePlanToEnd<T extends { id: string }>(
+	plans: readonly T[],
+	finishedPlanId: string
+): T[] {
+	const idx = plans.findIndex((p) => p.id === finishedPlanId);
+	if (idx < 0) return [...plans];
+	const finished = plans[idx]!;
+	return [...plans.slice(0, idx), ...plans.slice(idx + 1), finished];
+}
+
+export function rotatePlanIdToEnd(orderIds: readonly string[], planId: string): string[] {
+	if (!orderIds.includes(planId)) return [...orderIds];
+	return [...orderIds.filter((id) => id !== planId), planId];
+}
+
+/**
+ * Storage index so a drop onto promoted «Следующая» places the row directly under it.
+ * Next at front → insert at 1; Next mid-list → move to 0 so promote shows it under Next.
+ */
+export function storageIndexForDropOntoNext(
+	orderIds: readonly string[],
+	nextPlanId: string
+): number {
+	const nextIdx = orderIds.indexOf(nextPlanId);
+	if (nextIdx < 0) return 0;
+	return nextIdx <= 0 ? Math.min(1, Math.max(0, orderIds.length - 1)) : 0;
 }
 
 /** Manual pin wins; otherwise split rotation from last finished session. */
@@ -762,22 +791,35 @@ export function resolveHomeNextPlan<T extends { id: string }>(
 	return suggestNextPlan(plans, lastFinishedPlanId);
 }
 
-/** After finishing `finishedPlanId`, advance pin unless user pinned a different plan. */
+/**
+ * After finishing `finishedPlanId`, advance pin unless user pinned a different plan.
+ * Moves finished to end of a copy then takes the new head (card that sat under Next on screen).
+ * Caller must persist the same rotation via `rotatePlanIdToEnd` on plan order.
+ */
 export function advanceHomeNextPlanId(
 	plans: readonly { id: string }[],
 	finishedPlanId: string,
 	pinnedPlanId: string | null | undefined
 ): string | null {
 	if (pinnedPlanId && pinnedPlanId !== finishedPlanId) return pinnedPlanId;
-	return suggestNextPlan(plans, finishedPlanId)?.id ?? null;
+	const rotated = rotatePlanToEnd(plans, finishedPlanId);
+	return rotated[0]?.id ?? null;
 }
 
 /** User-defined plan list order (localStorage ids). Unknown ids append at end (e.g. cloud sync). */
 export function syncPlanOrderIds(orderIds: readonly string[], planIds: readonly string[]): string[] {
 	const set = new Set(planIds);
-	const kept = orderIds.filter((id) => set.has(id));
+	const seen = new Set<string>();
+	const kept: string[] = [];
+	for (const id of orderIds) {
+		if (!set.has(id) || seen.has(id)) continue;
+		seen.add(id);
+		kept.push(id);
+	}
 	for (const id of planIds) {
-		if (!kept.includes(id)) kept.push(id);
+		if (seen.has(id)) continue;
+		seen.add(id);
+		kept.push(id);
 	}
 	return kept;
 }
@@ -1042,6 +1084,22 @@ export function runWorkoutSelfCheck(): void {
 	if (suggestNextPlan([{ id: 'solo' }], 'solo')?.id !== 'solo') {
 		throw new Error('suggestNextPlan with one plan should stay on it');
 	}
+	// Stored: solo…hyper…split. Finishing hyper moves it to end → head = solo (was under Next).
+	const visualRotation = [
+		{ id: 'solo' },
+		{ id: 'pair' },
+		{ id: 'hyper' },
+		{ id: 'split' }
+	];
+	if (suggestNextPlan(visualRotation, 'hyper')?.id !== 'split') {
+		throw new Error('suggestNextPlan should advance forward in stored order');
+	}
+	if (suggestNextPlan([{ id: 'a' }, { id: 'b' }, { id: 'c' }], 'b')?.id !== 'c') {
+		throw new Error('suggestNextPlan mid-list should go forward');
+	}
+	if (rotatePlanToEnd(visualRotation, 'hyper').map((p) => p.id).join(',') !== 'solo,pair,split,hyper') {
+		throw new Error('rotatePlanToEnd should append finished');
+	}
 	if (resolveHomeNextPlan(rotation, 'a', 'c')?.id !== 'c') {
 		throw new Error('resolveHomeNextPlan should prefer pinned plan');
 	}
@@ -1053,6 +1111,28 @@ export function runWorkoutSelfCheck(): void {
 	}
 	if (advanceHomeNextPlanId(rotation, 'b', 'a') !== 'a') {
 		throw new Error('advanceHomeNextPlanId should keep unrelated pin');
+	}
+	if (advanceHomeNextPlanId(visualRotation, 'hyper', 'hyper') !== 'solo') {
+		throw new Error('advanceHomeNextPlanId should pin queue head after rotating finished to end');
+	}
+	let oscPin: string | null = 'hyper';
+	const oscPlans = visualRotation;
+	oscPin = advanceHomeNextPlanId(oscPlans, 'hyper', oscPin);
+	const afterHyper = rotatePlanToEnd(oscPlans, 'hyper');
+	oscPin = advanceHomeNextPlanId(afterHyper, 'solo', oscPin);
+	const afterSolo = rotatePlanToEnd(afterHyper, 'solo');
+	oscPin = advanceHomeNextPlanId(afterSolo, 'pair', oscPin);
+	if (oscPin !== 'split') {
+		throw new Error(`multi-finish queue should reach split, got ${oscPin}`);
+	}
+	if (storageIndexForDropOntoNext(['solo', 'pair', 'hyper', 'split'], 'hyper') !== 0) {
+		throw new Error('drop onto mid-list Next should target storage index 0');
+	}
+	if (storageIndexForDropOntoNext(['hyper', 'solo', 'pair', 'split'], 'hyper') !== 1) {
+		throw new Error('drop onto leading Next should target storage index 1');
+	}
+	if (syncPlanOrderIds(['a', 'a', 'b'], ['a', 'b', 'c']).join(',') !== 'a,b,c') {
+		throw new Error('syncPlanOrderIds should dedupe');
 	}
 	const ordered = sortPlansByUserOrder(
 		[

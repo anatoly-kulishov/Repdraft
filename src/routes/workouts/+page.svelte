@@ -26,7 +26,13 @@
 	import type { WorkoutsSkeletonVariant } from '$lib/components/WorkoutsPageSkeleton.svelte';
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
-	import { planExerciseSlotCount, planTargetSummary, resolveHomeNextPlan } from '$lib/domain/workout';
+	import {
+		planExerciseSlotCount,
+		planTargetSummary,
+		promotePlanToFront,
+		resolveHomeNextPlan,
+		storageIndexForDropOntoNext
+	} from '$lib/domain/workout';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import {
 		HISTORY_PAGE_SIZE,
@@ -138,12 +144,19 @@
 		return list;
 	});
 
-	let visiblePlans = $derived(filteredPlans.slice(0, plansVisibleLimit));
-	let plansHasMore = $derived(plansVisibleLimit < filteredPlans.length);
+	let history = $derived($live.history);
+	let nextPlan = $derived.by(() =>
+		resolveHomeNextPlan($plans, history[0]?.planId, $homeNextPlan)
+	);
+	/** Display-only: next workout first; stored split order stays intact. */
+	let listPlans = $derived(promotePlanToFront(filteredPlans, nextPlan?.id));
+
+	let visiblePlans = $derived(listPlans.slice(0, plansVisibleLimit));
+	let plansHasMore = $derived(plansVisibleLimit < listPlans.length);
 
 	function loadMorePlans() {
-		if (plansVisibleLimit >= filteredPlans.length) return;
-		plansVisibleLimit = Math.min(filteredPlans.length, plansVisibleLimit + PLANS_PAGE_SIZE);
+		if (plansVisibleLimit >= listPlans.length) return;
+		plansVisibleLimit = Math.min(listPlans.length, plansVisibleLimit + PLANS_PAGE_SIZE);
 	}
 
 	function clearPlansFilters() {
@@ -151,7 +164,6 @@
 		plansVisibleLimit = PLANS_PAGE_SIZE;
 	}
 
-	let history = $derived($live.history);
 	let historyQuery = $state('');
 	let historyDatePreset = $state<HistoryDatePreset>('all');
 	let historyRangeFrom = $state('');
@@ -251,14 +263,11 @@
 
 	$effect(() => {
 		if (activeTab !== 'plans') return;
-		if (plansVisibleLimit <= filteredPlans.length) return;
-		plansVisibleLimit = filteredPlans.length > 0 ? filteredPlans.length : PLANS_PAGE_SIZE;
+		if (plansVisibleLimit <= listPlans.length) return;
+		plansVisibleLimit = listPlans.length > 0 ? listPlans.length : PLANS_PAGE_SIZE;
 	});
 
 	let historyLoadMoreSentinel = $state<HTMLElement | null>(null);
-	let nextPlan = $derived.by(() =>
-		resolveHomeNextPlan($plans, history[0]?.planId, $homeNextPlan)
-	);
 	let historyEmptyCtaLabel = $derived(
 		$plans.length > 0 && nextPlan
 			? translate(lang, 'workouts.start')
@@ -267,14 +276,14 @@
 
 	let reorderFrom = $state<number | null>(null);
 	let reorderOver = $state<number | null>(null);
-	let displayedPlans = $derived(reorderFrom !== null ? filteredPlans : visiblePlans);
+	let displayedPlans = $derived(reorderFrom !== null ? listPlans : visiblePlans);
 	/** Reorder needs full-list indices; show all rows while dragging. */
 	let canReorderPlans = $derived(!plansFiltersActive && $plans.length > 1);
 
 	$effect(() => {
 		if (reorderFrom === null) return;
-		if (plansVisibleLimit < filteredPlans.length) {
-			plansVisibleLimit = filteredPlans.length;
+		if (plansVisibleLimit < listPlans.length) {
+			plansVisibleLimit = listPlans.length;
 		}
 	});
 
@@ -338,7 +347,19 @@
 
 	function reorderPlan(from: number, to: number) {
 		if (!canReorderPlans || planBusyId !== null) return;
-		plans.reorderInOrder(from, to);
+		const fromId = listPlans[from]?.id;
+		const toId = listPlans[to]?.id;
+		if (!fromId || !toId || fromId === nextPlan?.id) return;
+		const order = get(planOrder);
+		const fromOrder = order.indexOf(fromId);
+		if (fromOrder < 0) return;
+		const toOrder =
+			nextPlan && toId === nextPlan.id
+				? storageIndexForDropOntoNext(order, nextPlan.id)
+				: order.indexOf(toId);
+		if (toOrder < 0) return;
+		if (fromOrder === toOrder) return;
+		plans.reorderInOrder(fromOrder, toOrder);
 	}
 
 	function planLeadingSwipeActions(plan: (typeof $plans)[number]): SwipeRowAction[] {
@@ -810,7 +831,7 @@
 												{/if}
 											</AppButton>
 										</div>
-										{#if canReorderPlans}
+										{#if canReorderPlans && !isNext}
 											<ExerciseReorderHandle
 												{index}
 												holdMs={0}
