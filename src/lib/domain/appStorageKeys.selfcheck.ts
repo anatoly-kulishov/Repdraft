@@ -9,6 +9,9 @@ if (!isRepdraftOwnedStorageKey('repdraft.theme')) {
 if (!isRepdraftOwnedStorageKey('repdraft:web-analytics')) {
 	throw new Error('repdraft:web-analytics should match');
 }
+if (!isRepdraftOwnedStorageKey('repdraft:tester-mode')) {
+	throw new Error('repdraft:tester-mode should match');
+}
 if (!isRepdraftOwnedStorageKey('sb-abc-auth-token')) {
 	throw new Error('sb auth token should match');
 }

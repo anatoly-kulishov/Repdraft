@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.17.3',
+		highlights: {
+			ru: [
+				'Офлайн: Home не зависает на скелете и не стирает локальные данные',
+				'Галочка согласия снова обычного размера',
+				'В Рекордах: свайп вправо в сохранённые, влево удалить',
+				'Сброс и сценарии только в режиме тестирования'
+			],
+			en: [
+				'Offline: Home leaves the skeleton and keeps local plans instead of wiping them',
+				'Terms checkbox is back to a normal size',
+				'Records: swipe right to save, swipe left to delete',
+				'Wipe and scenarios stay behind tester mode'
+			]
+		}
+	},
+	{
 		version: '0.17.2',
 		highlights: {
 			ru: [

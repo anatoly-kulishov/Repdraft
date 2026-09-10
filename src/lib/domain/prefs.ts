@@ -2,6 +2,9 @@
 
 export const REST_SOUND_STORAGE_KEY = 'repdraft:rest-sound';
 export const WEB_ANALYTICS_STORAGE_KEY = 'repdraft:web-analytics';
+export const TESTER_MODE_STORAGE_KEY = 'repdraft:tester-mode';
+/** Tap app version this many times to unlock wipe / scenarios tools. */
+export const TESTER_MODE_UNLOCK_TAPS = 7;
 export const INSTALL_HINT_DISMISSED_KEY = 'repdraft:install-hint-dismissed';
 export const PWA_INSTALLED_KEY = 'repdraft:pwa-installed';
 
@@ -13,6 +16,16 @@ export function parseRestSoundEnabled(raw: string | null | undefined): boolean {
 /** Opt-in: only explicit '1' / 'true' enables Vercel Analytics on web. */
 export function parseWebAnalyticsEnabled(raw: string | null | undefined): boolean {
 	return raw === '1' || raw === 'true';
+}
+
+/** Opt-in tester tools (wipe, stress backup, scenarios). Off by default. */
+export function parseTesterModeEnabled(raw: string | null | undefined): boolean {
+	return raw === '1' || raw === 'true';
+}
+
+/** Dev builds always show tools; production needs the local tester pref. */
+export function testerToolsVisible(opts: { pref: boolean; dev: boolean }): boolean {
+	return opts.dev || opts.pref;
 }
 
 export function isInstallHintDismissed(): boolean {

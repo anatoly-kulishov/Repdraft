@@ -62,12 +62,68 @@ function readUserIdFromSupabaseAuthStorage(parsed: unknown): string | null {
 			if (typeof id === 'string' && id.trim()) return id.trim();
 		}
 	}
+	const session = root.session;
+	if (session && typeof session === 'object') {
+		const user = (session as Record<string, unknown>).user;
+		if (user && typeof user === 'object') {
+			const id = (user as Record<string, unknown>).id;
+			if (typeof id === 'string' && id.trim()) return id.trim();
+		}
+	}
+	return null;
+}
+
+function readUserFromSupabaseAuthStorage(parsed: unknown): {
+	id: string;
+	email?: string;
+	user_metadata?: Record<string, unknown>;
+} | null {
+	if (!parsed || typeof parsed !== 'object') return null;
+	const root = parsed as Record<string, unknown>;
+	const candidates = [root.user, (root.currentSession as Record<string, unknown> | undefined)?.user, (root.session as Record<string, unknown> | undefined)?.user];
+	for (const candidate of candidates) {
+		if (!candidate || typeof candidate !== 'object') continue;
+		const user = candidate as Record<string, unknown>;
+		const id = typeof user.id === 'string' ? user.id.trim() : '';
+		if (!id) continue;
+		return {
+			id,
+			email: typeof user.email === 'string' ? user.email : undefined,
+			user_metadata:
+				user.user_metadata && typeof user.user_metadata === 'object'
+					? (user.user_metadata as Record<string, unknown>)
+					: undefined
+		};
+	}
 	return null;
 }
 
 /** Prefer app cache, then Supabase persisted session. */
 export function peekLikelySignedInUserId(): string | null {
 	return peekLocalCacheUserId() ?? peekSupabaseStoredUserId();
+}
+
+/** Best-effort user stub from persisted Supabase auth storage (offline greeting). */
+export function peekSupabaseStoredUserStub(): {
+	id: string;
+	email?: string;
+	user_metadata?: Record<string, unknown>;
+} | null {
+	if (typeof localStorage === 'undefined') return null;
+	try {
+		for (let i = 0; i < localStorage.length; i++) {
+			const key = localStorage.key(i);
+			if (!key?.startsWith('sb-') || !key.endsWith('-auth-token')) continue;
+			const raw = localStorage.getItem(key);
+			if (!raw) continue;
+			const parsed: unknown = JSON.parse(raw);
+			const stub = readUserFromSupabaseAuthStorage(parsed);
+			if (stub) return stub;
+		}
+	} catch {
+		return null;
+	}
+	return null;
 }
 
 const USER_DATA_KEYS = [

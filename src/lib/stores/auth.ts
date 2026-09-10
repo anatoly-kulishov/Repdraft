@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { resolveAuthBootSession } from '$lib/domain/authBoot';
 import { SUPABASE_AUTH_MS } from '$lib/domain/networkTimeouts';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { isNativeApp, webApiOrigin } from '$lib/app/native';
@@ -7,6 +8,8 @@ import { migrateLocalToCloud, setCloudMode } from '$lib/storage/dataAccess';
 import {
 	clearUserLocalData,
 	LOCAL_CACHE_USER_KEY,
+	peekLikelySignedInUserId,
+	peekSupabaseStoredUserStub,
 	syncLocalCacheUser
 } from '$lib/storage/localUserCache';
 import { wipeAllAppStorage } from '$lib/storage/wipeAppStorage';
@@ -145,6 +148,62 @@ function createAuthStore() {
 	/** Skip duplicate INITIAL_SESSION from getSession + onAuthStateChange. */
 	let lastUserId: string | null | undefined = undefined;
 	let passwordRecovery = false;
+	/** True only for explicit sign-out / wipe / delete — soft SIGNED_OUT keeps local cache. */
+	let allowClearOnSignOut = false;
+
+	function markAccountBootCookies() {
+		if (!browser) return;
+		try {
+			document.cookie = 'repdraft_auth_boot=1; path=/; Max-Age=31536000; SameSite=Lax';
+			document.documentElement.dataset.authBoot = 'account';
+			syncHomeBootPeek('start');
+		} catch {
+			/* ignore */
+		}
+	}
+
+	function stubUserFromLocalPeek(userId: string): User {
+		const stub = peekSupabaseStoredUserStub();
+		const base = stub && stub.id === userId ? stub : { id: userId };
+		return {
+			id: base.id,
+			email: base.email,
+			user_metadata: base.user_metadata ?? {},
+			app_metadata: {},
+			aud: 'authenticated',
+			created_at: ''
+		} as User;
+	}
+
+	/**
+	 * Offline / timed-out getSession: keep plans & greeting, unlock Home.
+	 * Do not call syncLocalCacheUser(null) — that wiped the device on timeout.
+	 */
+	async function continueWithLocalAccount(reason: string) {
+		const userId = peekLikelySignedInUserId();
+		if (!userId) {
+			await applySession(null, { force: true, passwordRecovery: false });
+			return;
+		}
+		console.warn(`auth ${reason} — continuing with local account data`);
+		/* Distinct from real user id so a later session apply is not skipped as duplicate. */
+		lastUserId = `__local__:${userId}`;
+		passwordRecovery = false;
+		markAccountBootCookies();
+		setCloudMode(true);
+		const user = stubUserFromLocalPeek(userId);
+		set({
+			configured: isSupabaseConfigured(),
+			ready: true,
+			sessionKnown: true,
+			dataBootstrap: false,
+			session: null,
+			user,
+			passwordRecovery: false
+		});
+		greetingName.bindUser(user);
+		void runDataBootstrap(true, { cacheCleared: false, cacheAction: 'noop' });
+	}
 
 	async function applySession(
 		session: Session | null,
@@ -172,9 +231,7 @@ function createAuthStore() {
 		if (browser) {
 			try {
 				if (loggedIn) {
-					document.cookie = 'repdraft_auth_boot=1; path=/; Max-Age=31536000; SameSite=Lax';
-					document.documentElement.dataset.authBoot = 'account';
-					syncHomeBootPeek('start');
+					markAccountBootCookies();
 				} else {
 					document.cookie = 'repdraft_auth_boot=; path=/; Max-Age=0; SameSite=Lax';
 					document.documentElement.dataset.authBoot = 'guest';
@@ -263,32 +320,55 @@ function createAuthStore() {
 		});
 
 		let session: Session | null = null;
+		let getSessionFailed = false;
 		try {
 			const { data } = await withTimeout(supabase.auth.getSession(), SUPABASE_AUTH_MS);
 			session = data.session;
 		} catch (err) {
+			getSessionFailed = true;
 			console.warn('auth getSession timed out — continuing with local data', err);
 		}
 		const hash = window.location.hash;
 		const recoveryHint =
 			hash.includes('type=recovery') ||
 			new URLSearchParams(window.location.search).get('recovery') === '1';
-		await applySession(session, {
-			force: true,
-			passwordRecovery: Boolean(recoveryHint && session)
-		});
 
-		supabase.auth.onAuthStateChange((event, session) => {
+		const boot = resolveAuthBootSession({
+			hasSession: Boolean(session?.user),
+			likelyUserId: peekLikelySignedInUserId()
+		});
+		if (boot.kind === 'local-account') {
+			await continueWithLocalAccount(
+				getSessionFailed ? 'getSession timeout' : 'getSession null with local peek'
+			);
+		} else {
+			await applySession(session, {
+				force: true,
+				passwordRecovery: Boolean(recoveryHint && session)
+			});
+		}
+
+		supabase.auth.onAuthStateChange((event, nextSession) => {
 			if (event === 'PASSWORD_RECOVERY') {
-				void applySession(session, { force: true, passwordRecovery: true });
+				void applySession(nextSession, { force: true, passwordRecovery: true });
 				return;
 			}
 			if (event === 'INITIAL_SESSION') return;
 			if (event === 'SIGNED_OUT') {
+				if (allowClearOnSignOut) {
+					allowClearOnSignOut = false;
+					void applySession(null, { force: true, passwordRecovery: false });
+					return;
+				}
+				/* Soft logout: refresh failed offline / expired token without explicit sign-out. */
+				if (peekLikelySignedInUserId()) {
+					void continueWithLocalAccount('SIGNED_OUT soft');
+					return;
+				}
 				void applySession(null, { force: true, passwordRecovery: false });
 				return;
 			}
-			void applySession(session);
+			void applySession(nextSession);
 		});
 	}
 
@@ -356,14 +436,22 @@ function createAuthStore() {
 		async signOut() {
 			const supabase = getSupabase();
 			if (!supabase) return;
+			allowClearOnSignOut = true;
 			const { error } = await supabase.auth.signOut({ scope: 'local' });
-			if (error) throw error;
+			if (error) {
+				allowClearOnSignOut = false;
+				throw error;
+			}
 		},
 		async signOutEverywhere() {
 			const supabase = getSupabase();
 			if (!supabase) return;
+			allowClearOnSignOut = true;
 			const { error } = await supabase.auth.signOut({ scope: 'global' });
-			if (error) throw error;
+			if (error) {
+				allowClearOnSignOut = false;
+				throw error;
+			}
 		},
 		/** Wipe cloud account + local cache. Requires server SUPABASE_SERVICE_ROLE_KEY. */
 		async deleteAccount() {
@@ -388,6 +476,7 @@ function createAuthStore() {
 				throw new Error(body?.error || 'auth.deleteFail');
 			}
 
+			allowClearOnSignOut = true;
 			clearUserLocalData();
 			if (typeof localStorage !== 'undefined') {
 				localStorage.removeItem(LOCAL_CACHE_USER_KEY);
@@ -398,6 +487,7 @@ function createAuthStore() {
 		/** QA: wipe on-device storage and sign out locally. Cloud account stays. */
 		async wipeLocalProfileForTesting(): Promise<void> {
 			const supabase = getSupabase();
+			allowClearOnSignOut = true;
 			if (supabase) {
 				try {
 					await supabase.auth.signOut({ scope: 'local' });
