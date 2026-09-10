@@ -402,6 +402,8 @@
 			(function () {
 				var KEYBOARD_LIFT_PX = 100;
 				var focusoutSyncTimers = [];
+				/* Grow-only until orientation/pageshow — URL-bar show/hide must not shrink min-height. */
+				var appVhFloor = 0;
 				function isEditableTarget(el) {
 					if (!el || el === document.body || el === document.documentElement) return false;
 					var tag = el.tagName;
@@ -431,20 +433,27 @@
 					var vv = window.visualViewport;
 					var root = document.documentElement;
 					var layoutH = window.innerHeight;
+					var editing = isEditableTarget(document.activeElement);
 					if (!vv) {
 						root.style.setProperty('--vv-fixed-bottom', '0px');
 						root.style.setProperty('--vv-keyboard-lift', '0px');
 						root.style.setProperty('--vv-keyboard-inset', '0px');
-						root.style.setProperty('--app-vh', layoutH + 'px');
+						if (layoutH > appVhFloor) appVhFloor = layoutH;
+						root.style.setProperty('--app-vh', (appVhFloor || layoutH) + 'px');
 						root.style.removeProperty('--vv-bottom-pad');
 						setKeyboardOpen(false);
 						return;
 					}
+					/* Stable document floor: never shrink while Safari chrome animates. */
+					if (layoutH > appVhFloor) appVhFloor = layoutH;
+					root.style.setProperty('--app-vh', appVhFloor + 'px');
 					var visualBottom = Math.round(vv.height + vv.offsetTop);
-					root.style.setProperty('--app-vh', Math.max(layoutH, visualBottom) + 'px');
 					var bottomInset = Math.max(0, Math.round(layoutH - visualBottom));
-					/* Residual inset after keyboard dismiss must not lift sticky CTA. */
-					if (!isEditableTarget(document.activeElement) && bottomInset <= KEYBOARD_LIFT_PX) {
+					/*
+					 * Lift fixed chrome only for the keyboard. Safari URL-bar / rubber-band
+					 * insets used to thrash --vv-fixed-bottom and make the tabbar jump.
+					 */
+					if (!editing || bottomInset <= KEYBOARD_LIFT_PX) {
 						bottomInset = 0;
 					}
 					root.style.setProperty('--vv-fixed-bottom', bottomInset + 'px');
@@ -456,6 +465,14 @@
 					/* Hide sticky CTAs while typing — Save/Next return after dismiss. */
 					setKeyboardOpen(keyboardInset > 0);
 				}
+				function onVvScroll() {
+					/* Ignore vv scroll while browsing — it fires on URL-bar / overscroll. */
+					if (isEditableTarget(document.activeElement)) syncVvChrome();
+				}
+				function resetAppVhFloor() {
+					appVhFloor = 0;
+					syncVvChrome();
+				}
 				function scheduleFocusoutSync() {
 					clearFocusoutSyncTimers();
 					syncVvChrome();
@@ -466,10 +483,10 @@
 				syncVvChrome();
 				if (window.visualViewport) {
 					window.visualViewport.addEventListener('resize', syncVvChrome);
-					window.visualViewport.addEventListener('scroll', syncVvChrome);
+					window.visualViewport.addEventListener('scroll', onVvScroll);
 				}
-				window.addEventListener('orientationchange', syncVvChrome);
-				window.addEventListener('pageshow', syncVvChrome);
+				window.addEventListener('orientationchange', resetAppVhFloor);
+				window.addEventListener('pageshow', resetAppVhFloor);
 				document.addEventListener(
 					'focusin',
 					function () {

@@ -14,6 +14,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { DatabaseZap, Eraser } from '@lucide/svelte';
+	import { testerModeEnabled } from '$lib/stores/prefs';
 
 	let loading = $state(false);
 	let confirmOpen = $state(false);
@@ -143,6 +144,16 @@
 			{translate(lang, 'settings.devWipeButton')}
 		</AppButton>
 	</div>
+	{#if $testerModeEnabled}
+		<button
+			type="button"
+			class="profile-dev-wipe__hide"
+			disabled={loading || stressBusy}
+			onclick={() => testerModeEnabled.set(false)}
+		>
+			{translate(lang, 'settings.testerModeOff')}
+		</button>
+	{/if}
 </div>
 
 <BottomSheet
