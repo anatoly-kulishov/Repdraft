@@ -147,7 +147,18 @@
 					var themeKey = 'repdraft.theme';
 					var theme = localStorage.getItem(themeKey);
 					if (theme !== 'light' && theme !== 'dark') {
-						theme = 'dark';
+						try {
+							theme =
+								window.matchMedia &&
+								window.matchMedia('(prefers-color-scheme: light)').matches
+									? 'light'
+									: 'dark';
+						} catch (themeOsErr) {
+							theme = 'dark';
+						}
+						try {
+							localStorage.setItem(themeKey, theme);
+						} catch (themeStoreErr) {}
 					}
 					var bg = theme === 'light' ? '#f2f2f7' : '#0b0b0c';
 					document.documentElement.setAttribute('data-theme', theme);

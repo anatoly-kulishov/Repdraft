@@ -18,7 +18,18 @@ export function parseAppTheme(value: string | null | undefined): AppTheme | null
 	return null;
 }
 
-/** First visit / SSR: dark (premium OLED). OS preference is not applied — user toggles explicitly. */
-export function systemPreferredTheme(): AppTheme {
+/**
+ * First visit (nothing stored): follow OS when known, else dark.
+ * After that the stored value wins until the user toggles.
+ * `prefersLight` is from `prefers-color-scheme: light` (null = unknown / SSR).
+ */
+export function resolveInitialTheme(
+	stored: string | null | undefined,
+	prefersLight: boolean | null
+): AppTheme {
+	const parsed = parseAppTheme(stored);
+	if (parsed) return parsed;
+	if (prefersLight === true) return 'light';
+	if (prefersLight === false) return 'dark';
 	return DEFAULT_APP_THEME;
 }

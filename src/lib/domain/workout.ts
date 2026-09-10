@@ -664,6 +664,50 @@ export function workoutPlanContentEqual(a: WorkoutPlan, b: WorkoutPlan): boolean
 	});
 }
 
+/** Unique catalog `target` keys in plan order. */
+export function planTargetKeys(
+	plan: WorkoutPlan,
+	indexById: Map<string, ExerciseIndexItem>
+): string[] {
+	const seen = new Set<string>();
+	const keys: string[] = [];
+	for (const ex of plan.exercises) {
+		const target = indexById.get(ex.exerciseId)?.target?.trim();
+		if (!target || seen.has(target)) continue;
+		seen.add(target);
+		keys.push(target);
+	}
+	return keys;
+}
+
+/** True when the plan includes at least one exercise with this target key. */
+export function planHasTarget(
+	plan: WorkoutPlan,
+	indexById: Map<string, ExerciseIndexItem>,
+	target: string
+): boolean {
+	if (!target) return true;
+	for (const ex of plan.exercises) {
+		if (indexById.get(ex.exerciseId)?.target === target) return true;
+	}
+	return false;
+}
+
+/** Distinct targets across plans, sorted by localized label. */
+export function collectPlanTargetFacets(
+	plans: readonly WorkoutPlan[],
+	indexById: Map<string, ExerciseIndexItem>,
+	locale: AppLocale = 'ru'
+): string[] {
+	const seen = new Set<string>();
+	for (const plan of plans) {
+		for (const key of planTargetKeys(plan, indexById)) seen.add(key);
+	}
+	return [...seen].sort((a, b) =>
+		labelTarget(a, locale).localeCompare(labelTarget(b, locale), locale)
+	);
+}
+
 /** Unique target muscle labels for plan cards (order preserved, capped). */
 export function planTargetSummary(
 	plan: WorkoutPlan,
@@ -671,15 +715,9 @@ export function planTargetSummary(
 	locale: AppLocale = 'ru',
 	maxLabels = 4
 ): string {
-	const seen = new Set<string>();
 	const parts: string[] = [];
-	for (const ex of plan.exercises) {
-		const meta = indexById.get(ex.exerciseId);
-		if (!meta?.target) continue;
-		const label = labelTarget(meta.target, locale);
-		if (seen.has(label)) continue;
-		seen.add(label);
-		parts.push(label);
+	for (const key of planTargetKeys(plan, indexById)) {
+		parts.push(labelTarget(key, locale));
 		if (parts.length >= maxLabels) break;
 	}
 	return parts.join(' · ');
@@ -1230,5 +1268,48 @@ export function runWorkoutSelfCheck(): void {
 	const cleared = ladderDraft.exercises[0];
 	if (!cleared || hasLadderScheme(cleared) || cleared.sets !== 3) {
 		throw new Error(`editing sets should clear ladder ${JSON.stringify(cleared)}`);
+	}
+
+	const muscleIndex = new Map<string, ExerciseIndexItem>([
+		[
+			'ex-chest',
+			{
+				id: 'ex-chest',
+				name: 'bench',
+				body_part: 'chest',
+				equipment: 'barbell',
+				target: 'pectorals',
+				muscle_group: 'chest',
+				secondary_muscles: [],
+				image: ''
+			}
+		],
+		[
+			'ex-back',
+			{
+				id: 'ex-back',
+				name: 'row',
+				body_part: 'back',
+				equipment: 'barbell',
+				target: 'lats',
+				muscle_group: 'back',
+				secondary_muscles: [],
+				image: ''
+			}
+		]
+	]);
+	let musclePlanA = createEmptyDraft('Push');
+	musclePlanA = addExercise(musclePlanA, 'ex-chest').plan;
+	let musclePlanB = createEmptyDraft('Pull');
+	musclePlanB = addExercise(musclePlanB, 'ex-back').plan;
+	if (!planHasTarget(musclePlanA, muscleIndex, 'pectorals')) {
+		throw new Error('planHasTarget should match primary target');
+	}
+	if (planHasTarget(musclePlanA, muscleIndex, 'lats')) {
+		throw new Error('planHasTarget should reject other targets');
+	}
+	const facets = collectPlanTargetFacets([musclePlanA, musclePlanB], muscleIndex, 'en');
+	if (facets.join(',') !== 'lats,pectorals') {
+		throw new Error(`collectPlanTargetFacets unexpected ${facets.join(',')}`);
 	}
 }
