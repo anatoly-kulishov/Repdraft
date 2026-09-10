@@ -221,7 +221,7 @@
 
 	<div class="shell-body flex min-h-dvh min-w-0 flex-1 flex-col">
 		<header
-			class="shell-header-mobile sticky top-0 z-30 border-b border-[var(--color-border)] pt-[var(--safe-top)]"
+			class="shell-header-mobile z-30 border-b border-[var(--color-border)] pt-[var(--safe-top)]"
 			class:shell-header-mobile-hidden={hideMobileHeader}
 			class:shell-header-mobile--home={showHomeShellHeader}
 		>

@@ -12,7 +12,7 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import ScrollToTopFab from '$lib/components/ScrollToTopFab.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
-	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
+	import SwipeToDelete, { type SwipeRowAction } from '$lib/components/SwipeToDelete.svelte';
 	import { hasLiftData, personalRecordChips } from '$lib/domain/records';
 	import { filterCatalogWithFacets, normalizeSearchText } from '$lib/domain/filters';
 	import { exerciseName } from '$lib/domain/exerciseName';
@@ -21,6 +21,7 @@
 	import type { ExerciseFilters, ExerciseIndexItem, PersonalRecord } from '$lib/domain/types';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import { CATALOG_PAGE_SIZE, emptyCatalogFilters } from '$lib/stores/catalogUi';
+	import { bookmarks } from '$lib/stores/bookmarks';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { records, recordsSync } from '$lib/stores/records';
 	import { isCloudListUncertain } from '$lib/domain/cloudSync';
@@ -28,7 +29,7 @@
 	import { onboarding } from '$lib/stores/onboarding';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { toasts } from '$lib/stores/toasts';
-	import { Trophy, Trash2 } from '@lucide/svelte';
+	import { Bookmark, Trophy, Trash2 } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { browser } from '$app/environment';
@@ -39,6 +40,7 @@
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let indexReady = $state(false);
 	let busyId = $state<string | null>(null);
+	let bookmarkBusyId = $state<string | null>(null);
 	let expandedNoteId = $state<string | null>(null);
 	let filters = $state<ExerciseFilters>(emptyCatalogFilters());
 	let visibleLimit = $state(CATALOG_PAGE_SIZE);
@@ -196,6 +198,53 @@
 			busyId = null;
 		}
 	}
+
+	async function onToggleBookmark(exerciseId: string) {
+		if (bookmarkBusyId) return;
+		bookmarkBusyId = exerciseId;
+		try {
+			const saved = await bookmarks.toggle(exerciseId);
+			if (saved) {
+				toasts.show(translate(lang, 'bookmarks.saved'), 'info', 2600, undefined, 'bookmark');
+			} else {
+				toasts.showUndo(
+					translate(lang, 'bookmarks.removed'),
+					() => void bookmarks.toggle(exerciseId),
+					'info',
+					undefined,
+					'bookmark'
+				);
+			}
+		} catch (err) {
+			toasts.show(translateError(lang, err, 'errors.generic'), 'error');
+		} finally {
+			bookmarkBusyId = null;
+		}
+	}
+
+	function recordLeadingSwipeActions(record: PersonalRecord, saved: boolean): SwipeRowAction[] {
+		return [
+			{
+				label: translate(lang, saved ? 'bookmarks.remove' : 'bookmarks.add'),
+				icon: Bookmark,
+				variant: 'accent',
+				busy: bookmarkBusyId === record.exerciseId,
+				onAction: () => void onToggleBookmark(record.exerciseId)
+			}
+		];
+	}
+
+	function recordTrailingSwipeActions(record: PersonalRecord): SwipeRowAction[] {
+		return [
+			{
+				label: translate(lang, 'records.delete'),
+				icon: Trash2,
+				variant: 'danger',
+				busy: busyId === record.exerciseId,
+				onAction: () => void onRemove(record.exerciseId)
+			}
+		];
+	}
 </script>
 
 <SeoHead title={title} noindex />
@@ -289,12 +338,12 @@
 							{@const liftChip = chips[0] ?? ''}
 							{@const noteChip = record.note.trim()}
 							{@const noteOpen = expandedNoteId === record.exerciseId}
+							{@const saved = $bookmarks.includes(record.exerciseId)}
 							<li>
 								<SwipeToDelete
-									label={translate(lang, 'records.delete')}
-									disabled={busyId !== null}
-									busy={busyId === record.exerciseId}
-									onDelete={() => void onRemove(record.exerciseId)}
+									disabled={busyId !== null || bookmarkBusyId !== null}
+									leadingActions={recordLeadingSwipeActions(record, saved)}
+									actions={recordTrailingSwipeActions(record)}
 								>
 									<div class="records-list-card">
 										<div
