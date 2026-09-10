@@ -1,7 +1,7 @@
 {
 	"name": "repdraft",
 	"private": true,
-	"version": "0.17.1",
+	"version": "0.17.2",
 	"description": "Каталог упражнений и конструктор тренировок",
 	"type": "module",
 	"scripts": {
@@ -34,6 +34,7 @@
 		"icons:pwa": "node ./scripts/generate-brand-icons.mjs",
 		"e2e:ui": "node ./scripts/e2e-ui-audit.mjs",
 		"e2e:overflow": "node ./scripts/e2e-overflow-stress.mjs",
+		"e2e:chaos": "node ./scripts/e2e-chaos-stress.mjs",
 		"gen:stress-backup": "node ./scripts/gen-stress-backup.mjs",
 		"test:e2e": "playwright test",
 		"test:e2e:history": "playwright test tests/e2e/history-detail.spec.ts --project=mobile-dark",

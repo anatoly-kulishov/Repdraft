@@ -245,9 +245,7 @@ textarea.pr-note-field.pr-note-field--has-clear {
 }
 
 .field:focus {
-	outline: 2px solid var(--color-accent);
-	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
-	outline-offset: 1px;
+	outline: none;
 	border-color: var(--color-accent);
 }
 
@@ -256,32 +254,37 @@ textarea.pr-note-field.pr-note-field--has-clear {
 }
 
 .field:focus-visible {
-	outline: 2px solid var(--color-accent);
-	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
-	outline-offset: 1px;
+	outline: none;
 	border-color: var(--color-accent);
 }
 
 /*
- * AppInput already ships focus-visible:ring from shadcn. Use one accent outline and
- * clear the Tailwind ring so builder/live chips do not get a double halo.
+ * Text fields: solid accent border only. Never CSS outline / Tailwind ring.
+ * outline-offset on --radius-control (1rem) draws broken corner arcs on iOS Safari.
  */
+input[data-slot='input']:focus,
 input[data-slot='input']:focus-visible,
-textarea[data-slot='textarea']:focus-visible {
-	outline: 2px solid color-mix(in srgb, var(--color-accent) 65%, var(--color-ink));
-	outline-offset: 1px;
-	border-color: color-mix(in srgb, var(--color-accent) 34%, var(--color-field-border));
+textarea[data-slot='textarea']:focus,
+textarea[data-slot='textarea']:focus-visible,
+select.field:focus,
+select.field:focus-visible {
+	outline: none;
+	border-color: var(--color-accent);
 	--tw-ring-shadow: 0 0 #0000;
 	--tw-ring-offset-shadow: 0 0 #0000;
 	--tw-ring-offset-width: 0px;
-	box-shadow: none;
+	--tw-ring-color: transparent;
+	box-shadow: var(--shadow-field);
 }
 
 /* Compact builder chips: border only, no outline (tight grid). */
+.workout-ex-chip input[data-slot='input']:focus,
 .workout-ex-chip input[data-slot='input']:focus-visible,
+.workout-ex-chip__input[data-slot='input']:focus,
 .workout-ex-chip__input[data-slot='input']:focus-visible {
 	outline: none;
-	border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-field-border));
+	border-color: var(--color-accent);
+	box-shadow: none;
 }
 
 .field.is-invalid {
@@ -290,7 +293,7 @@ textarea[data-slot='textarea']:focus-visible {
 }
 
 .field.is-invalid:focus {
-	outline-color: color-mix(in srgb, var(--color-danger) 70%, var(--color-ink));
+	outline: none;
 	border-color: var(--color-danger);
 }
 
@@ -303,8 +306,11 @@ input[data-slot='input'][aria-invalid='true'] {
 
 input[data-slot='input'][aria-invalid='true']:focus,
 input[data-slot='input'][aria-invalid='true']:focus-visible {
+	outline: none;
 	border-color: var(--color-danger);
 	box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 28%, transparent);
+	--tw-ring-shadow: 0 0 #0000;
+	--tw-ring-offset-shadow: 0 0 #0000;
 }
 
 .password-field__toggle {
@@ -333,8 +339,8 @@ input[data-slot='input'][aria-invalid='true']:focus-visible {
 }
 
 .password-field__toggle:focus-visible {
-	outline: 2px solid var(--color-accent);
-	outline-offset: -2px;
+	outline: none;
+	box-shadow: var(--focus-ring);
 }
 
 .password-field:has(input[aria-invalid='true']) .password-field__toggle {
@@ -348,6 +354,7 @@ input[data-slot='input'][aria-invalid='true']:focus-visible {
 	color: var(--color-danger);
 }
 
+/* Pill / large-radius controls: box-shadow ring (outline breaks into corner arcs on iOS). */
 .btn-primary:focus-visible,
 .btn-action:focus-visible,
 .btn-secondary:focus-visible,
@@ -359,8 +366,13 @@ input[data-slot='input'][aria-invalid='true']:focus-visible {
 .exercise-card:focus-visible,
 a:focus-visible,
 button:focus-visible {
-	outline: 2px solid var(--color-accent);
-	outline-offset: 2px;
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+
+.btn-danger:focus-visible,
+.btn-ghost.is-danger:focus-visible {
+	box-shadow: var(--focus-ring-danger);
 }
 
 .btn-primary,
@@ -413,11 +425,6 @@ button:focus-visible {
 	color: var(--color-accent-ink);
 	-webkit-text-fill-color: var(--color-accent-ink);
 	border-color: transparent;
-}
-
-.btn-primary:focus-visible,
-.btn-action:focus-visible {
-	outline-color: var(--color-accent);
 }
 
 .btn-primary:active:not(:disabled),

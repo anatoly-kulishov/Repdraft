@@ -200,6 +200,10 @@ import { resolvedLocale } from './locale';
 		reorderInOrder(fromIndex: number, toIndex: number) {
 			planOrder.reorder(fromIndex, toIndex);
 			store.update((items) => sortPlansByUserOrder(items, get(planOrder)));
+		},
+		/** Re-apply current plan-order ids after an external order mutation (e.g. finish rotate). */
+		resort() {
+			store.update((items) => sortPlansByUserOrder(items, get(planOrder)));
 		}
 	};
 }
