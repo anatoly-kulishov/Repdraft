@@ -139,6 +139,19 @@ export function shouldShowChecklist(state: OnboardingState): boolean {
 	return true;
 }
 
+/** Empty-plans / checklist: Demo is primary while the guided checklist is visible. */
+export function shouldPreferDemoCta(state: OnboardingState): boolean {
+	return shouldShowChecklist(state);
+}
+
+/**
+ * Fill-all column actions: after the first logged set, or once day-1 checklist mode ends
+ * (dismiss or activate). Avoids permanently hiding power UI for skippers.
+ */
+export function shouldRevealLiveFillAll(state: OnboardingState): boolean {
+	return !shouldShowChecklist(state) || state.checklist.setLogged;
+}
+
 /** Sync peek for home boot skeleton before Svelte hydrates onboarding store. */
 export function peekShouldShowChecklist(): boolean {
 	if (typeof localStorage === 'undefined') return false;

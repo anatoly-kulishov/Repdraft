@@ -37,7 +37,7 @@
 	import { forceNormalShell, syncForceNormalShell } from '$lib/stores/shellChrome';
 	import { toasts } from '$lib/stores/toasts';
 	import { onboarding } from '$lib/stores/onboarding';
-	import { shouldShowCoachmark } from '$lib/domain/onboarding';
+	import { shouldShowCoachmark, shouldRevealLiveFillAll } from '$lib/domain/onboarding';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
@@ -59,6 +59,7 @@
 	let lang = $derived($resolvedLocale);
 	let showLiveLoggingCoachmark = $derived(shouldShowCoachmark($onboarding, 'live.logging'));
 	let showLiveFinishCoachmark = $derived(shouldShowCoachmark($onboarding, 'live.finish'));
+	let showFillColumn = $derived(shouldRevealLiveFillAll($onboarding));
 	let holdSession = $state<WorkoutSession | null>(null);
 	let session = $derived($live.session ?? holdSession);
 	let restUntil = $derived($live.restUntil);
@@ -691,6 +692,7 @@
 								{invalidSetIndex}
 								{invalidKind}
 								{justDoneSetIndex}
+								{showFillColumn}
 							/>
 						{/if}
 					{/each}
