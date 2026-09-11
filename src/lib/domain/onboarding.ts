@@ -139,11 +139,6 @@ export function shouldShowChecklist(state: OnboardingState): boolean {
 	return true;
 }
 
-/** Empty-plans / checklist: Demo is primary while the guided checklist is visible. */
-export function shouldPreferDemoCta(state: OnboardingState): boolean {
-	return shouldShowChecklist(state);
-}
-
 /**
  * Fill-all column actions: after the first logged set, or once day-1 checklist mode ends
  * (dismiss or activate). Avoids permanently hiding power UI for skippers.

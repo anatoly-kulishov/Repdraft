@@ -14,6 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.17.5',
+		highlights: {
+			ru: [
+				'Внутренняя чистка: проще live-меню подходов и фильтр мышц',
+				'Меньше служебного кода в списках тренировок'
+			],
+			en: [
+				'Internal cleanup: simpler live set menu and muscle filter',
+				'Less plumbing in the workouts list'
+			]
+		}
+	},
+	{
 		version: '0.17.4',
 		highlights: {
 			ru: [
