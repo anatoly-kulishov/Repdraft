@@ -3229,7 +3229,8 @@ button.clip-composer__pick:hover:not(:disabled),
 	width: min(100%, 24rem);
 	padding: 1.1rem 1.05rem 1.15rem;
 	box-shadow: var(--shadow-overlay);
-	animation: kineticsToastIn 0.35s var(--ease-toast) both;
+	/* Translate only: scale would shrink CTAs below the 48px touch floor mid-enter. */
+	animation: kineticsSnackbarIn 0.35s var(--ease-toast) both;
 }
 
 [data-slot='sheet-overlay'] {
@@ -3402,11 +3403,20 @@ button.clip-composer__pick:hover:not(:disabled),
 	.btn-secondary,
 	.btn-danger,
 	[data-slot='button']
+),
+.live-finish-offer__actions :is(
+	.btn-primary,
+	.btn-action,
+	.btn-secondary,
+	.btn-danger,
+	[data-slot='button']
 ) {
 	width: 100%;
-	min-width: 0;
-	min-height: 3rem;
-	padding-block: 0.5rem;
+	min-width: 48px !important;
+	min-height: 48px !important;
+	height: auto;
+	box-sizing: border-box;
+	padding-block: 0.65rem;
 	padding-inline: 0.65rem;
 	border-radius: var(--radius-control) !important;
 	font-size: 0.8125rem;
@@ -4345,11 +4355,13 @@ button.catalog-zone-crumb-link {
 		margin-top: 0.3rem;
 	}
 }
-/* Mobile list pages: back-to-top after deep scroll (history, records, saved). */
+/* Mobile list pages: back-to-top after deep scroll (history, records, saved).
+   Bottom-left so it never fights the primary + FAB on the right. */
 .scroll-to-top-fab {
 	position: fixed;
-	right: max(1rem, var(--safe-right));
-	bottom: calc(var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--vv-fixed-bottom, 0px));
+	left: max(1rem, var(--safe-left));
+	right: auto;
+	/* bottom: shared with .app-fab--tabbar in shell.css */
 	z-index: 35;
 	display: inline-flex;
 	align-items: center;
@@ -4389,6 +4401,13 @@ button.catalog-zone-crumb-link {
 	opacity: 1;
 	pointer-events: auto;
 	transform: translateY(0);
+}
+
+/* Toast + left scroll FAB + right + in one row is unreadable — yield to the toast. */
+body:has(.toast-stack) .scroll-to-top-fab.is-visible {
+	opacity: 0;
+	pointer-events: none;
+	transform: translateY(0.35rem);
 }
 
 .scroll-to-top-fab :global(.lucide-icon-wrap) {

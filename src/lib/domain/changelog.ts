@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.17.6',
+		highlights: {
+			ru: [
+				'Кнопка «наверх» слева внизу, не мешает «+»',
+				'«Наверх» крутит до самого верха списка',
+				'Live: честные ошибки при полном хранилище, без пустых «0 подходов»',
+				'Завершить доступна при открытой клавиатуре; кнопки в шите ≥48px'
+			],
+			en: [
+				'Scroll-to-top sits bottom-left, clear of the + button',
+				'Back-to-top actually reaches the top of the list',
+				'Live: honest errors when storage is full, no empty 0-set history rows',
+				'Finish stays tappable with the keyboard open; sheet CTAs ≥48px'
+			]
+		}
+	},
+	{
 		version: '0.17.5',
 		highlights: {
 			ru: [

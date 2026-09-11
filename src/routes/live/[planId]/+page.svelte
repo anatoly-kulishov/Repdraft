@@ -29,6 +29,7 @@
 	import { createLiveSetActions } from '$lib/live/liveSetActions';
 	import { pickDefaultExerciseIndex, isLiveResumePlanId, liveContinueHref } from '$lib/live/sessionUi';
 	import { translate, translateError } from '$lib/i18n/messages';
+	import { isQuotaExceededError } from '$lib/domain/storageErrors';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { navigateBack } from '$lib/navigation/back';
 	import { live } from '$lib/stores/live';
@@ -82,6 +83,8 @@
 	let pendingSwitchPlan = $state<WorkoutPlan | null>(null);
 	let resumeActivePlanId = $state<string | null>(null);
 	let missing = $state(false);
+	/** Start failed because device storage is full (plan exists). */
+	let storageFull = $state(false);
 	let now = $state(Date.now());
 	let selectedExerciseIndex = $state(0);
 	let invalidSetIndex = $state<number | null>(null);
@@ -253,7 +256,12 @@
 				}
 			} catch (err) {
 				console.error('live boot failed', err);
-				missing = true;
+				if (isQuotaExceededError(err)) {
+					storageFull = true;
+					toasts.show(translateError(lang, err, 'live.storageFull'), 'error');
+				} else {
+					missing = true;
+				}
 			} finally {
 				loading = false;
 			}
@@ -295,6 +303,7 @@
 			showToast: (message: string, kind: 'error' | 'success') => toasts.show(message, kind),
 			invalidWeightMsg: translate(lang, 'pr.invalidWeight'),
 			invalidRepsMsg: translate(lang, 'live.invalidReps'),
+			persistFailMsg: translate(lang, 'live.saveFail'),
 			skipLiftChecks: (ei: number) => {
 				const session = get(live).session;
 				const id = session?.exercises[ei]?.exerciseId;
@@ -431,8 +440,8 @@
 		holdSession = get(live).session;
 		try {
 			const done = await live.finish();
-			toasts.show(translate(lang, 'live.saved'), 'success');
 			if (done?.id) {
+				toasts.show(translate(lang, 'live.saved'), 'success');
 				/* Replace live in the stack so header/swipe back cannot reopen an empty session. */
 				await goto(`/workouts/summary?id=${encodeURIComponent(done.id)}`, {
 					replaceState: true
@@ -542,6 +551,15 @@
 	<LivePageSkeleton planId={params.planId} />
 {:else if finishing && !session}
 	<LivePageSkeleton planId={params.planId} />
+{:else if storageFull}
+	<div class="mx-auto max-w-md space-y-3">
+		<EmptyState
+			title={translate(lang, 'live.storageFull')}
+			description={translate(lang, 'live.storageFullDesc')}
+			actionHref="/workouts"
+			actionLabel={translate(lang, 'live.backPlans')}
+		/>
+	</div>
 {:else if missing || !session}
 	<div class="mx-auto max-w-md space-y-3">
 		<EmptyState
