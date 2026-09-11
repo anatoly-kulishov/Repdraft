@@ -376,20 +376,28 @@
 	}
 
 	@media (max-width: 1023px) {
+		/*
+		 * With a bottom-right + FAB (and optional bottom-left scroll-to-top), do not
+		 * squeeze the toast beside them. Sit centered above the FAB row instead.
+		 */
 		:global(
 				body:has(.workouts-fab:not(.workouts-fab--hidden)):not(:has(.sticky-actions)):not(
 						:has(.live-sticky-actions)
 					)
 			)
-			.toast-stack,
+			.toast-stack:not(.toast-stack--undo-snackbar),
 		:global(
 				body:has(.app-fab:not(.app-fab--hidden)):not(:has(.sticky-actions)):not(:has(.live-sticky-actions))
 			)
-			.toast-stack {
-			left: max(1rem, var(--safe-left));
-			right: calc(var(--fab-size) + 1.15rem + var(--safe-right));
-			width: auto;
-			transform: none;
+			.toast-stack:not(.toast-stack--undo-snackbar) {
+			left: 50%;
+			right: auto;
+			width: min(20.5rem, calc(100vw - 2rem));
+			transform: translateX(-50%);
+			--toast-stack-bottom-base: calc(
+				var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--fab-size) + 0.65rem +
+					var(--vv-fixed-bottom, 0px)
+			);
 		}
 
 		/* Undo stays full-width and low; FABs lift via --toast-undo-clearance. */
@@ -403,7 +411,10 @@
 				body:has(.app-fab:not(.app-fab--hidden)):not(:has(.sticky-actions)):not(:has(.live-sticky-actions))
 			)
 			.toast-stack--undo-snackbar {
+			left: max(1rem, var(--safe-left));
 			right: max(1rem, var(--safe-right));
+			width: auto;
+			transform: none;
 		}
 	}
 

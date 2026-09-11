@@ -1,5 +1,6 @@
 import type { AppLocale } from './locale';
 import { authErrorMessageKey } from '$lib/domain/authFlow';
+import { isQuotaExceededError } from '$lib/domain/storageErrors';
 
 type Dict = Record<string, string>;
 
@@ -500,6 +501,8 @@ const ru: Dict = {
 	'live.emptyPlan': 'В тренировке нет упражнений',
 	'live.saved': 'Тренировка сохранена',
 	'live.saveFail': 'Не удалось сохранить тренировку',
+	'live.storageFull': 'Не хватает места на устройстве',
+	'live.storageFullDesc': 'Освободите место или удалите старые данные, затем попробуйте снова.',
 	'live.progress': '{done} / {total}',
 	'live.setProgress': 'Подход {current} из {total}',
 	'live.noPlan': 'Тренировка не найдена',
@@ -1421,6 +1424,8 @@ const en: Dict = {
 	'live.emptyPlan': 'This workout has no exercises',
 	'live.saved': 'Workout saved',
 	'live.saveFail': 'Could not save the workout',
+	'live.storageFull': 'Not enough storage on this device',
+	'live.storageFullDesc': 'Free up space or clear old data, then try again.',
 	'live.progress': '{done} / {total}',
 	'live.setProgress': 'Set {current} of {total}',
 	'live.noPlan': 'Workout not found',
@@ -1869,6 +1874,10 @@ export function translateError(
 ): string {
 	const authKey = authErrorMessageKey(err);
 	if (authKey) return translate(locale, authKey);
+
+	if (isQuotaExceededError(err)) {
+		return translate(locale, 'live.storageFull');
+	}
 
 	const msg = errorMessage(err);
 	if (msg && (tables[locale][msg] || tables.ru[msg])) {

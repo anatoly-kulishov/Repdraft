@@ -2439,6 +2439,12 @@ html[data-keyboard-open] .sticky-actions {
 	pointer-events: none;
 }
 
+/* After the last set, Finish must stay tappable even if the keyboard flag lags. */
+html[data-keyboard-open] .live-sticky-actions.live-sticky-actions--end {
+	visibility: visible;
+	pointer-events: auto;
+}
+
 /**
  * Home (and other screens with the floating tabbar): default sticky sits under the
  * tabbar (z-40). Lift above --mobile-chrome-bottom so the primary CTA is visible.
