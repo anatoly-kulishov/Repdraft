@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
 	import AppChip from '$lib/components/AppChip.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import ListSearchBar from '$lib/components/ListSearchBar.svelte';
@@ -57,6 +58,11 @@
 		};
 		equipmentSheetOpen = false;
 	}
+
+	function clearEquipmentAndClose() {
+		filters = { ...filters, equipment: 'all' };
+		equipmentSheetOpen = false;
+	}
 </script>
 
 {#snippet equipmentOption(value: string, label: string, active: boolean)}
@@ -74,6 +80,12 @@
 			</span>
 		{/if}
 	</AppChip>
+{/snippet}
+
+{#snippet equipmentActions()}
+	<AppButton variant="danger" onclick={clearEquipmentAndClose}>
+		{translate(lang, 'workouts.historyClearFiltersAria')}
+	</AppButton>
 {/snippet}
 
 <div class="catalog-filters-shell">
@@ -120,10 +132,13 @@
 		onDismiss={() => {
 			equipmentSheetOpen = false;
 		}}
+		actions={equipmentActive ? equipmentActions : null}
 	>
-		<p id="catalog-equipment-sheet-title" class="bottom-sheet__title">
-			{translate(lang, 'catalog.equipment')}
-		</p>
+		<div class="bottom-sheet__head">
+			<p id="catalog-equipment-sheet-title" class="bottom-sheet__title">
+				{translate(lang, 'catalog.equipment')}
+			</p>
+		</div>
 		<div
 			class="catalog-equipment-sheet-options"
 			role="radiogroup"

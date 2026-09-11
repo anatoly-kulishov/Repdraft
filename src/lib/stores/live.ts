@@ -284,17 +284,23 @@ function createLiveStore() {
 			setIndex: number,
 			patch: Partial<Pick<LoggedSet, 'weightKg' | 'reps' | 'completed' | 'kind'>>
 		) {
-			store.update((s) => {
-				if (!s.session) return s;
-				const session = updateLoggedSet(s.session, exerciseIndex, setIndex, patch);
-				let restUntil = s.restUntil;
-				if (patch.completed === true) {
-					const sec = restSecAfterSet(session, exerciseIndex, setIndex);
-					restUntil = sec > 0 ? Date.now() + sec * 1000 : null;
-				}
+			const prev = get(store);
+			if (!prev.session) return;
+			const session = updateLoggedSet(prev.session, exerciseIndex, setIndex, patch);
+			let restUntil = prev.restUntil;
+			if (patch.completed === true) {
+				const sec = restSecAfterSet(session, exerciseIndex, setIndex);
+				restUntil = sec > 0 ? Date.now() + sec * 1000 : null;
+			}
+			try {
 				persistActive(session, restUntil);
-				return { ...s, session, restUntil };
-			});
+			} catch (err) {
+				// Keep in-memory edits for weight/reps so the athlete can still tap Done;
+				// completing a set without durable write must fail loudly.
+				if (patch.completed === true) throw err;
+				console.warn('active session persist failed', err);
+			}
+			store.set({ ...prev, session, restUntil });
 		},
 		patchExerciseNote(exerciseIndex: number, note: string) {
 			store.update((s) => {
@@ -307,23 +313,27 @@ function createLiveStore() {
 		},
 		/** Mark several sets in one write; rest timer uses the last index when completing. */
 		setSetsCompleted(exerciseIndex: number, setIndexes: number[], completed: boolean) {
-			store.update((s) => {
-				if (!s.session || setIndexes.length === 0) return s;
-				let session = s.session;
-				for (const si of setIndexes) {
-					session = updateLoggedSet(session, exerciseIndex, si, { completed });
-				}
-				let restUntil = s.restUntil;
-				if (completed) {
-					const lastSi = setIndexes[setIndexes.length - 1]!;
-					const sec = restSecAfterSet(session, exerciseIndex, lastSi);
-					restUntil = sec > 0 ? Date.now() + sec * 1000 : null;
-				} else {
-					restUntil = null;
-				}
+			const prev = get(store);
+			if (!prev.session || setIndexes.length === 0) return;
+			let session = prev.session;
+			for (const si of setIndexes) {
+				session = updateLoggedSet(session, exerciseIndex, si, { completed });
+			}
+			let restUntil = prev.restUntil;
+			if (completed) {
+				const lastSi = setIndexes[setIndexes.length - 1]!;
+				const sec = restSecAfterSet(session, exerciseIndex, lastSi);
+				restUntil = sec > 0 ? Date.now() + sec * 1000 : null;
+			} else {
+				restUntil = null;
+			}
+			try {
 				persistActive(session, restUntil);
-				return { ...s, session, restUntil };
-			});
+			} catch (err) {
+				if (completed) throw err;
+				console.warn('active session persist failed', err);
+			}
+			store.set({ ...prev, session, restUntil });
 		},
 		applyWeightToOpenSets(exerciseIndex: number, weightKg: number) {
 			store.update((s) => {
@@ -394,8 +404,8 @@ function createLiveStore() {
 			const current = get(store).session;
 			if (!current) return null;
 			const done = finishSession(current);
-			// Skip-all (or fully pruned) session: no empty history row.
-			if (done.exercises.length === 0) {
+			// Skip-all / zero completed sets: no empty history row, no fake «saved».
+			if (done.exercises.length === 0 || completedSetCount(done) === 0) {
 				persistActive(null, null);
 				store.update((s) => ({
 					...s,

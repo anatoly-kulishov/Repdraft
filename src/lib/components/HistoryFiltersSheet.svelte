@@ -54,7 +54,7 @@
 </script>
 
 {#snippet actions()}
-	<AppButton variant="secondary" onclick={clear}>
+	<AppButton variant="danger" onclick={clear}>
 		{translate(lang, 'workouts.historyClearFiltersAria')}
 	</AppButton>
 {/snippet}

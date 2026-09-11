@@ -27,6 +27,8 @@ export type LiveSetActionsDeps = {
 	showToast: (message: string, kind: 'error' | 'success') => void;
 	invalidWeightMsg: string;
 	invalidRepsMsg: string;
+	/** Persist failure (e.g. storage quota) while marking a set done. */
+	persistFailMsg: string;
 	/** Cardio: mark sets done without weight × reps. */
 	skipLiftChecks?: (ei: number) => boolean;
 	setInvalid: (si: number | null, kind: 'weight' | 'reps' | null) => void;
@@ -51,7 +53,11 @@ export function createLiveSetActions(deps: LiveSetActionsDeps) {
 			deps.patchSet(ei, si, { weightKg: null });
 			return '';
 		}
-		deps.patchSet(ei, si, { weightKg: n });
+		try {
+			deps.patchSet(ei, si, { weightKg: n });
+		} catch {
+			deps.showToast(deps.persistFailMsg, 'error');
+		}
 		return filtered;
 	}
 
@@ -68,7 +74,11 @@ export function createLiveSetActions(deps: LiveSetActionsDeps) {
 			deps.patchSet(ei, si, { reps: null });
 			return '';
 		}
-		deps.patchSet(ei, si, { reps: n });
+		try {
+			deps.patchSet(ei, si, { reps: n });
+		} catch {
+			deps.showToast(deps.persistFailMsg, 'error');
+		}
 		return filtered;
 	}
 
@@ -118,7 +128,12 @@ export function createLiveSetActions(deps: LiveSetActionsDeps) {
 		}
 		unlockAudioFromGesture();
 		void hapticSetDone();
-		deps.patchSet(ei, si, { completed: true });
+		try {
+			deps.patchSet(ei, si, { completed: true });
+		} catch {
+			deps.showToast(deps.persistFailMsg, 'error');
+			return;
+		}
 		afterSetComplete(ei, si);
 	}
 
@@ -145,7 +160,12 @@ export function createLiveSetActions(deps: LiveSetActionsDeps) {
 		if (openIndexes.length === 0) return;
 		deps.setInvalid(null, null);
 		unlockAudioFromGesture();
-		deps.setSetsCompleted(ei, openIndexes, true);
+		try {
+			deps.setSetsCompleted(ei, openIndexes, true);
+		} catch {
+			deps.showToast(deps.persistFailMsg, 'error');
+			return;
+		}
 		deps.setRestChimeArmed(deps.getRestUntil() != null);
 		if (deps.getRestUntil() != null) unlockAudioFromGesture();
 		const lastSi = openIndexes[openIndexes.length - 1]!;
