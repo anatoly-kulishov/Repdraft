@@ -23,11 +23,7 @@
 	let visible = $state(false);
 
 	function scrollToTop() {
-		const main = document.getElementById('main-content');
-		if (main) {
-			main.scrollIntoView({ behavior: 'smooth', block: 'start' });
-			return;
-		}
+		// Always document top. scrollIntoView(#main-content) leaves shell-header offset (~50–60px).
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 	}
 
@@ -51,6 +47,7 @@
 	class={cn('scroll-to-top-fab lg:hidden', visible && 'is-visible', className)}
 	aria-hidden={!visible}
 	tabindex={visible ? 0 : -1}
+	inert={!visible}
 	aria-label={translate(lang, 'workouts.scrollToTop')}
 	title={translate(lang, 'workouts.scrollToTop')}
 	onclick={scrollToTop}

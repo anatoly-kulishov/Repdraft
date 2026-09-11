@@ -750,7 +750,8 @@ select {
 }
 
 .app-fab--tabbar,
-.workouts-fab {
+.workouts-fab,
+.scroll-to-top-fab {
 	bottom: calc(
 		var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--toast-undo-clearance, 0px) +
 			var(--vv-fixed-bottom, 0px)
