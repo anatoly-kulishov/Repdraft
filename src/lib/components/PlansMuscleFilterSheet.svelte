@@ -18,7 +18,7 @@
 		onDismiss
 	}: {
 		open?: boolean;
-		/** Empty string = all muscles. */
+		/** Empty = all muscles. */
 		selected?: string;
 		targets?: readonly string[];
 		onSelect: (target: string) => void;
@@ -30,7 +30,7 @@
 	let titleId = 'plans-muscle-filter-sheet-title';
 	let hasActive = $derived(selected !== '');
 
-	function pickAll() {
+	function clearAndClose() {
 		onClear();
 		onDismiss();
 	}
@@ -39,15 +39,10 @@
 		onSelect(target);
 		onDismiss();
 	}
-
-	function clear() {
-		onClear();
-		onDismiss();
-	}
 </script>
 
 {#snippet actions()}
-	<AppButton variant="secondary" onclick={clear}>
+	<AppButton variant="secondary" onclick={clearAndClose}>
 		{translate(lang, 'workouts.historyClearFiltersAria')}
 	</AppButton>
 {/snippet}
@@ -65,7 +60,7 @@
 				active={!hasActive}
 				role="radio"
 				aria-checked={!hasActive}
-				onclick={pickAll}
+				onclick={clearAndClose}
 			>
 				<span class="catalog-equipment-sheet-option__label">
 					{translate(lang, 'workouts.historyFilterAll')}

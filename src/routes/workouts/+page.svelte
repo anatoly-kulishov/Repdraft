@@ -6,7 +6,7 @@
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PlansEmptyActions from '$lib/components/PlansEmptyActions.svelte';
-	import ExerciseReorderHandle from '$lib/components/ExerciseReorderHandle.svelte';
+	import PlanListRow from '$lib/components/PlanListRow.svelte';
 	import BackupImportAction from '$lib/components/BackupImportAction.svelte';
 	import HistoryDayPickerSheet from '$lib/components/HistoryDayPickerSheet.svelte';
 	import HistoryFiltersSheet from '$lib/components/HistoryFiltersSheet.svelte';
@@ -21,7 +21,7 @@
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Copy, ArrowLeft, ClipboardList, Clock, Flag, Play, Plus, Trash2 } from '@lucide/svelte';
+	import { ArrowLeft, ClipboardList, Clock, Flag, Plus, Trash2 } from '@lucide/svelte';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { peekLocalPlanCount, syncPreviewExerciseRowsPeek } from '$lib/storage/localWorkoutRepository';
 	import { peekLocalHistoryCount } from '$lib/storage/localSessionRepository';
@@ -30,9 +30,7 @@
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
 	import {
 		collectPlanTargetFacets,
-		planExerciseSlotCount,
 		planHasTarget,
-		planTargetSummary,
 		promotePlanToFront,
 		resolveHomeNextPlan,
 		storageIndexForDropOntoNext
@@ -66,12 +64,11 @@
 	import { onboarding } from '$lib/stores/onboarding';
 	import {
 		peekShouldShowChecklist,
-		shouldPreferDemoCta,
+		shouldShowChecklist,
 		shouldShowCoachmark
 	} from '$lib/domain/onboarding';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { cn } from '$lib/utils.js';
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
@@ -185,7 +182,6 @@
 
 	function setPlansMuscleTarget(target: string) {
 		plansMuscleTarget = target;
-		plansVisibleLimit = PLANS_PAGE_SIZE;
 	}
 
 	let historyQuery = $state('');
@@ -723,7 +719,7 @@
 				>
 					{#snippet actions()}
 						<PlansEmptyActions
-							preferDemo={shouldPreferDemoCta($onboarding)}
+							preferDemo={shouldShowChecklist($onboarding)}
 							{demoBusy}
 							onTryDemo={onTryDemoPlan}
 						/>
@@ -770,116 +766,26 @@
 						data-reorder-list
 					>
 						{#each displayedPlans as plan, index (plan.id)}
-							{@const muscles = planTargetSummary(plan, indexById, lang)}
-							{@const isNext = nextPlan?.id === plan.id}
-							<li
-								class="plan-list-item"
-								class:plan-list-item--reorder-dragging={reorderFrom === index}
-								class:plan-list-item--reorder-over={reorderOver === index}
-								data-plan-index={index}
-							>
-								<SwipeToDelete
-									disabled={planBusyId !== null || reorderFrom !== null}
-									leadingActions={planLeadingSwipeActions(plan)}
-									actions={planTrailingSwipeActions(plan)}
-								>
-									<div class="entity-row">
-										<a
-											class="entity-row__main"
-											href={`/workouts/${plan.id}`}
-											onclick={() => rememberPreviewRows(plan)}
-										>
-											<span class="entity-row__title">{plan.name}</span>
-											{#if muscles}
-												<span class="entity-row__meta">{muscles}</span>
-											{:else}
-												<span class="entity-row__meta" aria-hidden="true">&nbsp;</span>
-											{/if}
-											<span class="entity-row__meta-row">
-												<span class="entity-row__meta">
-													{translate(lang, 'workouts.exCount', {
-														n: planExerciseSlotCount(plan)
-													})}
-												</span>
-												{#if isNext}
-													<span class="entity-row__badge"
-														>{translate(lang, 'home.nextPlanBadge')}</span
-													>
-												{/if}
-											</span>
-										</a>
-										<div class="entity-row__actions">
-											<AppButton
-												variant="ghost"
-												class={cn(
-													'entity-row__pin entity-row__pin--desktop',
-													isNext && 'is-pinned'
-												)}
-												onclick={() => pinNextPlan(plan.id, plan.name)}
-												disabled={planBusyId !== null || isNext}
-												aria-label={translate(lang, 'home.setNextPlan')}
-												title={translate(
-													lang,
-													isNext ? 'home.nextPlanBadge' : 'home.setNextPlan'
-												)}
-											>
-												<LucideIcon icon={Flag} size={ICON_SMALL} />
-											</AppButton>
-											<AppButton
-												variant="ghost"
-												class="entity-row__start entity-row__start--desktop"
-												onclick={() => onOpen(plan)}
-												disabled={plan.exercises.length === 0 || planBusyId !== null}
-												aria-label={translate(lang, 'workouts.open')}
-												title={translate(lang, 'workouts.open')}
-											>
-												<LucideIcon icon={Play} size={ICON_SMALL} />
-											</AppButton>
-											<AppButton
-												variant="ghost"
-												aria-label={translate(lang, 'workouts.duplicate')}
-												title={translate(lang, 'workouts.duplicate')}
-												disabled={planBusyId !== null}
-												aria-busy={planBusyId === plan.id && planBusyOp === 'copy'}
-												onclick={() => void onDuplicate(plan.id)}
-											>
-												{#if planBusyId === plan.id && planBusyOp === 'copy'}
-													<Spinner size="sm" block={false} />
-												{:else}
-													<LucideIcon icon={Copy} size={ICON_SMALL} />
-												{/if}
-											</AppButton>
-											<AppButton
-												variant="ghost"
-												class="is-danger"
-												aria-label={translate(lang, 'workouts.delete')}
-												title={translate(lang, 'workouts.delete')}
-												disabled={planBusyId !== null}
-												aria-busy={planBusyId === plan.id && planBusyOp === 'delete'}
-												onclick={() => void onRemove(plan.id, plan.name)}
-											>
-												{#if planBusyId === plan.id && planBusyOp === 'delete'}
-													<Spinner size="sm" block={false} />
-												{:else}
-													<LucideIcon icon={Trash2} size={ICON_SMALL} />
-												{/if}
-											</AppButton>
-										</div>
-										{#if canReorderPlans && !isNext}
-											<ExerciseReorderHandle
-												{index}
-												holdMs={0}
-												label={translate(lang, 'builder.reorder')}
-												onreorder={reorderPlan}
-												targetSelector="[data-plan-index]"
-												indexAttribute="data-plan-index"
-												rootActiveClass="is-plan-reorder-active"
-												eventName="repdraft:plan-reorder"
-											/>
-										{/if}
-									</div>
-								</SwipeToDelete>
-							</li>
+							<PlanListRow
+								{plan}
+								{index}
+								{lang}
+								{indexById}
+								isNext={nextPlan?.id === plan.id}
+								canReorder={canReorderPlans}
+								{reorderFrom}
+								{reorderOver}
+								busyId={planBusyId}
+								busyOp={planBusyOp}
+								leadingActions={planLeadingSwipeActions(plan)}
+								trailingActions={planTrailingSwipeActions(plan)}
+								onOpen={onOpen}
+								onPin={pinNextPlan}
+								onDuplicate={(id) => void onDuplicate(id)}
+								onRemove={(id, name) => void onRemove(id, name)}
+								onPreview={rememberPreviewRows}
+								onReorder={reorderPlan}
+							/>
 						{/each}
 					</ul>
 					{#if plansHasMore}
