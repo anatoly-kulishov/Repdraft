@@ -31,6 +31,7 @@ const checks = [
 	'exerciseScore',
 	'onboarding',
 	'theme',
+	'planTargets',
 	'id',
 	'home',
 	'calendar',
