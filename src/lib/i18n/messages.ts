@@ -1543,7 +1543,7 @@ const en: Dict = {
 	'pwa.desktopStep1': 'Menu',
 	'pwa.desktopStep2': 'Install',
 	'pwa.desktopStep3': 'Done',
-	'pwa.installAction': 'Install',
+	'pwa.installAction': 'Install App',
 	'pwa.installDismiss': 'Not now',
 	'auth.greetingNameLabel': 'Greeting name',
 	'auth.editProfile': 'Edit',
