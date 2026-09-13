@@ -14,19 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
-		version: '0.17.7',
+		version: '0.18.0',
 		highlights: {
 			ru: [
-				'Индикатор «Сохранено локально» после записи данных на телефон',
-				'В live - компактная галочка в шапке, не мешает подходам',
-				'Нажмите на индикатор: данные на устройстве, аккаунт для синка',
-				'При входе: выбрать сохранить локальные в аккаунт или оставить только облако'
+				'Своё фото профиля на экране Аккаунт',
+				'Индикатор «Сохранено локально» после записи на телефон',
+				'При входе: сохранить локальные в аккаунт или оставить только облако',
+				'На Android: кнопка «Установить» вместо подсказок для Safari'
 			],
 			en: [
+				'Custom profile photo on Account',
 				'“Saved locally” cue after data is written on this phone',
-				'Live: compact check in the header, clear of set controls',
-				'Tap the cue: on-device save, account for sync',
-				'On sign-in: keep local in account or use cloud only'
+				'On sign-in: keep local in account or use cloud only',
+				'On Android: Install App button instead of Safari-only tips'
 			]
 		}
 	},

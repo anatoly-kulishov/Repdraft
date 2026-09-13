@@ -272,8 +272,23 @@
 	display: flex;
 	flex-direction: column;
 	gap: 0.1rem;
-	padding: 0.65rem 0.7rem 0.75rem;
+	/* Right pad clears the fixed bottom-right focus marker. */
+	padding: 0.65rem 2rem 0.75rem 0.7rem;
 	pointer-events: none;
+}
+
+.content-page--catalog .catalog-hub-grid .zone-card__focus {
+	position: absolute;
+	right: 0.7rem;
+	bottom: 0.75rem;
+	z-index: 4;
+	width: 0.6rem;
+	height: 0.6rem;
+	border-radius: 999px;
+	pointer-events: none;
+	background: var(--color-accent);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 28%, transparent),
+		0 0 10px var(--color-accent-glow);
 }
 
 .content-page--catalog .catalog-hub-grid .zone-card__grid-title {
@@ -323,7 +338,19 @@
 	display: flex;
 	flex-direction: column;
 	gap: 0.45rem;
-	padding: 0.75rem 0.75rem 0.85rem;
+	/* Match zone-card caption pad so skeleton → card does not jump. */
+	padding: 0.75rem 2rem 0.85rem 0.75rem;
+}
+
+.catalog-category-skeleton__focus {
+	position: absolute;
+	right: 0.7rem;
+	bottom: 0.75rem;
+	z-index: 1;
+	width: 0.6rem;
+	height: 0.6rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
 }
 
 .catalog-category-skeleton__title {

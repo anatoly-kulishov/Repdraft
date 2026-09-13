@@ -3,8 +3,9 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import ThemeToggleIcon from '$lib/components/ThemeToggleIcon.svelte';
 	import { ICON_SIDEBAR } from '$lib/components/icons/sizes';
-	import { userAvatarUrl, userInitials } from '$lib/domain/authFlow';
+	import { userInitials } from '$lib/domain/authFlow';
 	import { translate } from '$lib/i18n/messages';
+	import { resolveUserAvatarUrl } from '$lib/storage/avatarsRepository';
 	import { auth } from '$lib/stores/auth';
 	import { draft, draftHydrated } from '$lib/stores/draft';
 	import { appTheme } from '$lib/stores/theme';
@@ -26,7 +27,7 @@
 	let draftCount = $derived($draft.exercises.length);
 	let showDraftNav = $derived($draftHydrated && draftCount > 0);
 	let draftActive = $derived(path.startsWith('/builder'));
-	let profileAvatar = $derived(userAvatarUrl($auth.user));
+	let profileAvatar = $derived(resolveUserAvatarUrl($auth.user));
 	let profileInitials = $derived(userInitials($auth.user));
 	let profileAvatarBroken = $state(false);
 	let showProfilePhoto = $derived(Boolean(profileAvatar) && !profileAvatarBroken);
