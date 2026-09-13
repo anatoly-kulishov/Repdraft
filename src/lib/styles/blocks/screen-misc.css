@@ -1391,6 +1391,33 @@ button.live-local-save-cue {
 	margin-top: 0;
 }
 
+.profile-hero__avatar-btn {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 6.5rem;
+	height: 6.5rem;
+	min-width: 48px;
+	min-height: 48px;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	border-radius: 999px;
+	cursor: pointer;
+	appearance: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.profile-hero__avatar-btn:disabled {
+	cursor: wait;
+	opacity: 0.92;
+}
+
+.profile-hero__avatar-btn:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 3px;
+}
+
 .profile-hero__avatar {
 	position: relative;
 	z-index: 1;
@@ -1401,6 +1428,44 @@ button.live-local-save-cue {
 	font-size: 1.35rem;
 	border: 3px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
 	box-shadow: 0 8px 24px rgb(0 0 0 / 0.28);
+}
+
+.profile-hero__camera-badge {
+	position: absolute;
+	z-index: 2;
+	right: 0.15rem;
+	bottom: 0.15rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	min-width: 2rem;
+	min-height: 2rem;
+	border-radius: 999px;
+	background: var(--color-surface);
+	color: var(--color-fg);
+	border: 1px solid var(--color-border);
+	box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+	pointer-events: none;
+}
+
+.profile-hero__avatar-busy {
+	position: absolute;
+	z-index: 3;
+	inset: 0.5rem;
+	display: grid;
+	place-items: center;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--color-bg) 55%, transparent);
+	pointer-events: none;
+}
+
+.profile-avatar-sheet__actions {
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
+	padding: 0.25rem 0 0.15rem;
 }
 
 .profile-hero__name {

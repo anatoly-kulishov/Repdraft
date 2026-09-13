@@ -1,3 +1,4 @@
+import { CUSTOM_AVATAR_PATH_KEY } from './avatarImage';
 import {
 	PASSWORD_MIN_LENGTH,
 	passwordPolicyChecklist,
@@ -112,12 +113,25 @@ function metaString(meta: Record<string, unknown> | null | undefined, key: strin
 	return value || null;
 }
 
-/**
- * Avatar URL from OAuth `user_metadata.avatar_url` / `picture` only.
- * Email/password has no provider photo — UI shows initials (Gravatar often shows a stale unrelated image).
- */
-export function userAvatarUrl(user: AuthUserLike | null | undefined): string | null {
+/** Storage object path for a custom upload (`{userId}/{id}.webp`). */
+export function userCustomAvatarPath(user: AuthUserLike | null | undefined): string | null {
 	if (!user) return null;
+	return metaString(user.user_metadata, CUSTOM_AVATAR_PATH_KEY);
+}
+
+/**
+ * Prefer resolved custom Storage URL, else OAuth `avatar_url` / `picture`.
+ * Pass `customPublicUrl` from `avatarPublicUrl(path)` when a custom path exists.
+ */
+export function userAvatarUrl(
+	user: AuthUserLike | null | undefined,
+	opts?: { customPublicUrl?: string | null }
+): string | null {
+	if (!user) return null;
+	const custom = opts?.customPublicUrl?.trim();
+	if (custom && (custom.startsWith('https://') || custom.startsWith('http://'))) {
+		return custom;
+	}
 	const meta = user.user_metadata;
 	for (const key of ['avatar_url', 'picture'] as const) {
 		const url = metaString(meta, key);
@@ -233,6 +247,26 @@ export function runAuthFlowSelfCheck(): void {
 		}) !== 'https://cdn.example.com/avatars/x.jpg'
 	) {
 		throw new Error('userAvatarUrl should prefer OAuth avatar_url');
+	}
+	if (
+		userCustomAvatarPath({
+			user_metadata: { custom_avatar_path: 'u1/a.webp' }
+		}) !== 'u1/a.webp'
+	) {
+		throw new Error('userCustomAvatarPath should read custom_avatar_path');
+	}
+	if (
+		userAvatarUrl(
+			{
+				user_metadata: {
+					custom_avatar_path: 'u1/a.webp',
+					avatar_url: 'https://cdn.example.com/oauth.jpg'
+				}
+			},
+			{ customPublicUrl: 'https://cdn.example.com/custom.webp' }
+		) !== 'https://cdn.example.com/custom.webp'
+	) {
+		throw new Error('userAvatarUrl should prefer custom public URL');
 	}
 	if (userDisplayName({ user_metadata: { full_name: 'Ada Lovelace' } }) !== 'Ada Lovelace') {
 		throw new Error('userDisplayName should prefer full_name');

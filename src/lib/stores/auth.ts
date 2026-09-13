@@ -1,5 +1,8 @@
 import { browser } from '$app/environment';
+import { isNativeApp, webApiOrigin } from '$lib/app/native';
 import { resolveAuthBootSession } from '$lib/domain/authBoot';
+import { userCustomAvatarPath } from '$lib/domain/authFlow';
+import type { LocalCacheUserAction } from '$lib/domain/localCacheUser';
 import {
 	hasCloudWorkoutData,
 	hasLocalGuestWorkoutData,
@@ -7,14 +10,16 @@ import {
 } from '$lib/domain/localMergeConflict';
 import { SUPABASE_AUTH_MS } from '$lib/domain/networkTimeouts';
 import { withTimeout } from '$lib/domain/withTimeout';
-import { isNativeApp, webApiOrigin } from '$lib/app/native';
-import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
+import { translate } from '$lib/i18n/messages';
+import { compressAvatarImage } from '$lib/media/avatarImage';
 import {
 	migrateLocalToCloud,
 	peekCloudWorkoutPresence,
 	peekLocalGuestWorkoutPresence,
 	setCloudMode
 } from '$lib/storage/dataAccess';
+import { removeAvatar, uploadAvatar } from '$lib/storage/avatarsRepository';
+import { syncHomeBootPeek } from '$lib/storage/homeBootPeek';
 import {
 	clearUserLocalData,
 	discardGuestLocalWorkoutData,
@@ -23,20 +28,18 @@ import {
 	peekSupabaseStoredUserStub,
 	syncLocalCacheUser
 } from '$lib/storage/localUserCache';
-import { wipeAllAppStorage } from '$lib/storage/wipeAppStorage';
 import { peekHasLocalPlans, syncHomePlansBootCookie } from '$lib/storage/localWorkoutRepository';
-import { syncHomeBootPeek } from '$lib/storage/homeBootPeek';
-import type { LocalCacheUserAction } from '$lib/domain/localCacheUser';
-import { translate } from '$lib/i18n/messages';
+import { wipeAllAppStorage } from '$lib/storage/wipeAppStorage';
+import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
 import type { Session, User } from '@supabase/supabase-js';
 import { get, writable } from 'svelte/store';
+import { bookmarks } from './bookmarks';
 import { draft } from './draft';
 import { greetingName } from './greetingName';
 import { live } from './live';
 import { localMergeConflict } from './localMergeConflict';
 import { plans } from './plans';
 import { records } from './records';
-import { bookmarks } from './bookmarks';
 import { resolvedLocale } from './locale';
 import { toasts } from './toasts';
 
@@ -77,7 +80,7 @@ function recoveryCallbackUrl(): string {
 }
 
 function createAuthStore() {
-	const { subscribe, set, update } = writable<AuthState>({
+	const store = writable<AuthState>({
 		configured: false,
 		ready: false,
 		sessionKnown: false,
@@ -86,6 +89,7 @@ function createAuthStore() {
 		user: null,
 		passwordRecovery: false
 	});
+	const { subscribe, set, update } = store;
 
 	async function runCloudBootstrap(
 		loggedIn: boolean,
@@ -466,6 +470,37 @@ function createAuthStore() {
 			if (error) throw error;
 			passwordRecovery = false;
 			update((s) => ({ ...s, passwordRecovery: false }));
+		},
+		async uploadProfileAvatar(file: File): Promise<void> {
+			if (!browser) throw new Error('auth.avatar.uploadFail');
+			const current = get(store).user;
+			if (!current?.id) throw new Error('auth.avatar.uploadFail');
+			const previousPath = userCustomAvatarPath(current);
+			const compressed = await compressAvatarImage(file);
+			const { user: next } = await uploadAvatar(
+				current.id,
+				compressed.blob,
+				compressed.contentType,
+				compressed.ext,
+				previousPath
+			);
+			update((s) => ({
+				...s,
+				user: next,
+				session: s.session ? { ...s.session, user: next } : s.session
+			}));
+		},
+		async removeProfileAvatar(): Promise<void> {
+			if (!browser) throw new Error('auth.avatar.removeFail');
+			const current = get(store).user;
+			if (!current?.id) throw new Error('auth.avatar.removeFail');
+			const path = userCustomAvatarPath(current);
+			const next = await removeAvatar(current.id, path);
+			update((s) => ({
+				...s,
+				user: next,
+				session: s.session ? { ...s.session, user: next } : s.session
+			}));
 		},
 		async signOut() {
 			const supabase = getSupabase();
