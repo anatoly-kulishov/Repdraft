@@ -17,6 +17,27 @@ const safariIphone =
 const chromeIos =
 	'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.6099.119 Mobile/15E148 Safari/604.1';
 
+/** First visit defers the install card; probes need visitCount >= 2. */
+function seedOnboardingPastPwaDefer() {
+	localStorage.setItem(
+		'repdraft:onboarding',
+		JSON.stringify({
+			checklistDismissed: true,
+			checklist: {
+				homeSeen: true,
+				planReady: true,
+				liveEntered: true,
+				setLogged: true,
+				sessionFinished: true
+			},
+			coachmarks: {},
+			activatedAt: '2000-01-01T00:00:00.000Z',
+			demoPlanInstalled: false,
+			visitCount: 3
+		})
+	);
+}
+
 /** Domain logic (fast, deterministic). */
 function probeDomain() {
 	assert.equal(resolvePwaManualGuide({ ua: safariIphone }), 'ios-safari');
@@ -54,6 +75,8 @@ async function openHome(context, initScripts = []) {
 	for (const fn of initScripts) {
 		await page.addInitScript(fn);
 	}
+	// After any localStorage.clear() in case scripts, allow the install card to show.
+	await page.addInitScript(seedOnboardingPastPwaDefer);
 	await page.goto(`${base}/`, { waitUntil: 'networkidle', timeout: 30000 });
 	// Install hint: related-apps check + ~500ms reveal.
 	await page.waitForTimeout(1200);
@@ -294,19 +317,19 @@ async function probeBrowser() {
 			console.log('ok  Chromium + Safari UA → no Safari Share steps');
 		}
 
-		// 8) Default theme is dark when no storage
+		// 8) First visit follows preferred color scheme when no storage
 		{
-			const ctx = await browser.newContext();
+			const ctx = await browser.newContext({ colorScheme: 'dark' });
 			const page = await openHome(ctx, [
 				() => {
 					localStorage.clear();
 				}
 			]);
 			const theme = await page.locator('html').getAttribute('data-theme');
-			assert.equal(theme, 'dark', 'default theme is dark');
+			assert.equal(theme, 'dark', 'first visit follows prefers-color-scheme');
 			results.push({ case: 'default-theme', theme });
 			await ctx.close();
-			console.log('ok  default theme dark');
+			console.log('ok  first visit theme follows color scheme');
 		}
 
 		// 9) Install click marks installed and hides

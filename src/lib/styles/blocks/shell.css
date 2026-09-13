@@ -940,12 +940,9 @@ button.local-save-chip__pill {
 }
 
 .pwa-install__cta {
-	flex: 0 0 auto;
-	min-width: var(--control-height);
-	width: var(--control-height);
-	min-height: var(--control-height);
+	width: 100%;
+	min-height: 48px;
 	margin: 0;
-	padding: 0;
 }
 
 .pwa-install__close {
