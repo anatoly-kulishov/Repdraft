@@ -1,25 +1,30 @@
 import { browser } from '$app/environment';
 import { resolveAuthBootSession } from '$lib/domain/authBoot';
+import {
+	hasCloudWorkoutData,
+	hasLocalGuestWorkoutData,
+	type LocalMergeChoice
+} from '$lib/domain/localMergeConflict';
 import { SUPABASE_AUTH_MS } from '$lib/domain/networkTimeouts';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { isNativeApp, webApiOrigin } from '$lib/app/native';
 import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
-import { migrateLocalToCloud, setCloudMode } from '$lib/storage/dataAccess';
+import {
+	migrateLocalToCloud,
+	peekCloudWorkoutPresence,
+	peekLocalGuestWorkoutPresence,
+	setCloudMode
+} from '$lib/storage/dataAccess';
 import {
 	clearUserLocalData,
+	discardGuestLocalWorkoutData,
 	LOCAL_CACHE_USER_KEY,
 	peekLikelySignedInUserId,
 	peekSupabaseStoredUserStub,
 	syncLocalCacheUser
 } from '$lib/storage/localUserCache';
 import { wipeAllAppStorage } from '$lib/storage/wipeAppStorage';
-import { localRecordRepository } from '$lib/storage/localRecordRepository';
-import { localSessionRepository } from '$lib/storage/localSessionRepository';
-import {
-	localWorkoutRepository,
-	peekHasLocalPlans,
-	syncHomePlansBootCookie
-} from '$lib/storage/localWorkoutRepository';
+import { peekHasLocalPlans, syncHomePlansBootCookie } from '$lib/storage/localWorkoutRepository';
 import { syncHomeBootPeek } from '$lib/storage/homeBootPeek';
 import type { LocalCacheUserAction } from '$lib/domain/localCacheUser';
 import { translate } from '$lib/i18n/messages';
@@ -28,6 +33,7 @@ import { get, writable } from 'svelte/store';
 import { draft } from './draft';
 import { greetingName } from './greetingName';
 import { live } from './live';
+import { localMergeConflict } from './localMergeConflict';
 import { plans } from './plans';
 import { records } from './records';
 import { bookmarks } from './bookmarks';
@@ -86,26 +92,54 @@ function createAuthStore() {
 		opts: { cacheAction: LocalCacheUserAction }
 	) {
 		try {
+			let conflictChoice: LocalMergeChoice | null = null;
+			let silentMigrate = false;
+
+			if (loggedIn && opts.cacheAction === 'bind-first') {
+				const localPresence = await peekLocalGuestWorkoutPresence();
+				if (hasLocalGuestWorkoutData(localPresence)) {
+					const cloudPresence = await peekCloudWorkoutPresence();
+					if (hasCloudWorkoutData(cloudPresence)) {
+						conflictChoice = await localMergeConflict.awaitChoice();
+						if (conflictChoice === 'discard') {
+							discardGuestLocalWorkoutData();
+							draft.resetDraft();
+							live.resetHistoryHydration();
+							live.hydrate();
+							plans.invalidate();
+							records.invalidate();
+						} else if (conflictChoice === 'merge') {
+							toasts.show(
+								translate(get(resolvedLocale), 'auth.mergeConflictKeepToast'),
+								'success'
+							);
+						} else {
+							const _exhaustive: never = conflictChoice;
+							void _exhaustive;
+						}
+					} else {
+						silentMigrate = true;
+					}
+				}
+			}
+
 			/* Serial cloud pulls — parallel hung workout_sessions + technique_clips starved the pool. */
 			await plans.refresh();
 			await records.refresh();
 			await live.refreshHistory();
 			if (loggedIn) {
-				let hadGuestData = false;
-				if (opts.cacheAction === 'bind-first') {
-					const [plansLocal, sessionsLocal, recordsLocal] = await Promise.all([
-						localWorkoutRepository.list(),
-						localSessionRepository.list(),
-						localRecordRepository.list()
-					]);
-					hadGuestData =
-						plansLocal.length > 0 || sessionsLocal.length > 0 || recordsLocal.length > 0;
+				if (conflictChoice !== 'discard') {
+					await migrateLocalToCloud();
+					await plans.refresh();
+					await records.refresh();
+					await live.refreshHistory();
 				}
-				await migrateLocalToCloud();
-				await plans.refresh();
-				await records.refresh();
-				await live.refreshHistory();
-				if (hadGuestData) {
+				if (conflictChoice === 'discard') {
+					toasts.show(
+						translate(get(resolvedLocale), 'auth.mergeConflictDiscardToast'),
+						'info'
+					);
+				} else if (silentMigrate) {
 					toasts.show(translate(get(resolvedLocale), 'auth.migrateLocalHint'), 'info');
 				}
 			}

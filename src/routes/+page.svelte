@@ -42,6 +42,7 @@
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
+	import { createDelayedTrue } from '$lib/browser/delayedTrue.svelte';
 	import { readActiveSession, peekLocalHistoryCount } from '$lib/storage/localSessionRepository';
 	import { peekHasLocalPlans } from '$lib/storage/localWorkoutRepository';
 	import { peekAccountBoot } from '$lib/storage/homeBootPeek';
@@ -188,7 +189,10 @@
 		if (fromStore > 0) return HOME_RECENT_ROW_LIMIT;
 		return readBootSkeletonRecentRows();
 	});
-	let showBootSkeleton = $derived(skeletonForce !== null || !pageReady);
+	/** Loading (not QA force). Delayed so fast local boots skip skeleton mount. */
+	let isBootLoading = $derived(skeletonForce === null && !pageReady);
+	let delayedBootSkeleton = createDelayedTrue(() => isBootLoading);
+	let showBootSkeleton = $derived(skeletonForce !== null || delayedBootSkeleton.current);
 
 	let isCreateHome = $derived(!hasPlans);
 	let showGuestCreateHero = $derived(pageReady && isGuest && isCreateHome);
@@ -357,6 +361,8 @@
 			hasActiveBoot={bootHasActiveSession}
 			showChecklist={bootShowChecklist}
 		/>
+	{:else if isBootLoading}
+		<!-- Delay window: no skeleton, no content (avoids FOLS). -->
 	{:else if showReadyHeader && !hasActive}
 		<header class="home-header home-header--mockup">
 			<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
@@ -407,7 +413,7 @@
 		</header>
 	{/if}
 
-	{#if !showBootSkeleton}
+	{#if !isBootLoading && !showBootSkeleton}
 	{#if hasActive && active}
 		<a
 			class="home-continue-card panel"

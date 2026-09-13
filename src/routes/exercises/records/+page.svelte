@@ -33,6 +33,7 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { browser } from '$app/environment';
+	import { createDelayedTrue } from '$lib/browser/delayedTrue.svelte';
 
 	const RECORDS_PATH = '/exercises/records';
 
@@ -53,7 +54,7 @@
 	 * Empty → EmptyState. SSR cookie peek 0 → empty; unknown/>0 → skeleton.
 	 * Cloud may still fill an empty local list while stale/loading.
 	 */
-	let showSkeleton = $derived(
+	let isListLoading = $derived(
 		browser
 			? displayRecords.length === 0 &&
 					($recordsSync === 'stale' || $recordsSync === 'loading')
@@ -61,6 +62,8 @@
 				? true
 				: data.recordsCountPeek > 0
 	);
+	let delayedListSkeleton = createDelayedTrue(() => isListLoading);
+	let showSkeleton = $derived(delayedListSkeleton.current);
 	let listUncertain = $derived(isCloudListUncertain($recordsSync));
 
 	let recordMetas = $derived.by(() => {
@@ -261,11 +264,11 @@
 	<CloudSyncBanner
 		sync={$recordsSync}
 		{lang}
-		suppressed={showSkeleton}
+		suppressed={isListLoading}
 		onRetry={() => void records.refresh({ force: true })}
 	/>
 
-	{#if showSkeleton}
+	{#if isListLoading && showSkeleton}
 		<div class="catalog-list-layout">
 			<div class="catalog-list-layout__filters">
 				<div class="catalog-filters-shell">
@@ -285,7 +288,7 @@
 				<RecordsListSkeleton includeSearch={false} label={translate(lang, 'common.loading')} />
 			</div>
 		</div>
-	{:else if displayRecords.length === 0}
+	{:else if !isListLoading && displayRecords.length === 0}
 		<EmptyState
 			centered
 			icon={Trophy}
@@ -303,7 +306,7 @@
 				{/if}
 			{/snippet}
 		</EmptyState>
-	{:else}
+	{:else if !isListLoading}
 		<div class="catalog-list-layout">
 			<div class="catalog-list-layout__filters">
 				<FilterBar

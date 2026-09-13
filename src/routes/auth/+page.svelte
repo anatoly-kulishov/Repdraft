@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { createDelayedTrue } from '$lib/browser/delayedTrue.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import {
@@ -445,7 +446,12 @@
 		skeletonForce === 'guest' ||
 			(authSessionPending && !skeletonForce && !bootLikelyAccount)
 	);
-	let showBootSkeleton = $derived(showAccountSkeleton || showGuestSkeleton);
+	/** Natural boot loading (not ?skeleton= force). */
+	let isBootLoading = $derived(authSessionPending && skeletonForce === null);
+	let delayedBootSkeleton = createDelayedTrue(() => isBootLoading);
+	let showBootSkeleton = $derived(
+		skeletonForce !== null || delayedBootSkeleton.current
+	);
 	/** Real cloud-off UI only after client auth finished and keys are missing. */
 	let showCloudOff = $derived(
 		browser && $auth.ready && $auth.sessionKnown && !$auth.configured && !showBootSkeleton
@@ -483,10 +489,10 @@
 
 <section
 	class="auth-page content-page"
-	class:auth-page--account={accountMode && !showBootSkeleton}
+	class:auth-page--account={accountMode && !showBootSkeleton && !isBootLoading}
 	class:auth-page--booting={showBootSkeleton}
-	class:auth-page--booting-account={showAccountSkeleton}
-	class:auth-page--booting-guest={showGuestSkeleton}
+	class:auth-page--booting-account={showBootSkeleton && showAccountSkeleton}
+	class:auth-page--booting-guest={showBootSkeleton && showGuestSkeleton}
 >
 	{#if $auth.ready && $auth.sessionKnown && !showBootSkeleton}
 		{#if accountMode}
@@ -511,6 +517,8 @@
 
 	{#if showBootSkeleton}
 		<PageSkeleton variant={showAccountSkeleton ? 'auth' : 'auth-guest'} rows={2} />
+	{:else if isBootLoading}
+		<!-- Delay window: no skeleton, no auth UI (avoids FOLS). -->
 	{:else if showCloudOff}
 		<div class="auth-guest-stack">
 			<div class="auth-signin panel">

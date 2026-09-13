@@ -21,6 +21,7 @@ const checks = [
 	'authBoot',
 	'greetingName',
 	'localCacheUser',
+	'localMergeConflict',
 	'catalogCover',
 	'exerciseName',
 	'articles',

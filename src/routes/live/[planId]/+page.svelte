@@ -7,6 +7,7 @@
 	import LiveSessionActions from '$lib/components/live/LiveSessionActions.svelte';
 	import LiveSetPanel from '$lib/components/live/LiveSetPanel.svelte';
 	import LivePageSkeleton from '$lib/components/live/LivePageSkeleton.svelte';
+	import LiveLocalSaveCue from '$lib/components/live/LiveLocalSaveCue.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL, ICON_BUTTON } from '$lib/components/icons/sizes';
@@ -520,6 +521,7 @@
 </script>
 
 {#snippet liveHeaderActions()}
+	<LiveLocalSaveCue />
 	<span class="screen-header-timer" aria-live="polite">{elapsedLabel}</span>
 {/snippet}
 

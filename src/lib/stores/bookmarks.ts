@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import { localBookmarkRepository, peekLocalBookmarkIds } from '$lib/storage/localBookmarkRepository';
 import { syncBookmarksCountCookie } from '$lib/storage/listBootPeek';
+import { syncState } from '$lib/stores/syncState';
 import { get, writable } from 'svelte/store';
 
 function createBookmarksStore() {
@@ -57,15 +58,18 @@ function createBookmarksStore() {
 				? get(store).filter((id) => id !== exerciseId)
 				: [exerciseId, ...get(store).filter((id) => id !== exerciseId)];
 			store.set(optimistic);
+			syncState.beginLocalSave();
 			try {
 				if (was) {
 					await localBookmarkRepository.remove(exerciseId);
 				} else {
 					await localBookmarkRepository.add(exerciseId);
 				}
+				syncState.markLocalSaved();
 				await refresh();
 				return !was;
 			} catch {
+				syncState.markLocalSaveError();
 				await refresh();
 				throw new Error('BOOKMARK_TOGGLE_FAILED');
 			}

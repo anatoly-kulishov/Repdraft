@@ -70,6 +70,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { browser } from '$app/environment';
+	import { createDelayedTrue } from '$lib/browser/delayedTrue.svelte';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 
@@ -98,6 +99,9 @@
 	let pageReady = $derived(
 		$auth.ready && $auth.dataBootstrap && $plansReady && indexReady && $live.historyHydrated
 	);
+	let isBootLoading = $derived(!pageReady);
+	let delayedBootSkeleton = createDelayedTrue(() => isBootLoading);
+	let showBootSkeleton = $derived(delayedBootSkeleton.current);
 	let skeletonVariant = $derived.by((): WorkoutsSkeletonVariant => {
 		if (activeTab === 'history') {
 			if ($live.historyHydrated) {
@@ -614,13 +618,13 @@
 	class:workouts-page--plans-empty={plansEmptyLayout}
 >
 	{#if activeTab === 'history'}
-		{#if !pageReady}
+		{#if showBootSkeleton}
 			<div class="workouts-history-skeleton-head lg:hidden" aria-hidden="true">
 				<div class="workouts-history-skeleton-head__back"></div>
 				<div class="workouts-history-skeleton-head__title"></div>
 				<div class="workouts-history-skeleton-head__action"></div>
 			</div>
-		{:else}
+		{:else if pageReady}
 			<ScreenHeader
 				class="lg:hidden"
 				title={pageTitle}
@@ -654,7 +658,7 @@
 				</div>
 				{#if showPlansLeadSlot}
 					<p class="page-lead workouts-page-lead">
-						{#if !pageReady}
+						{#if isBootLoading}
 							{translate(lang, 'workouts.local')}
 						{:else if showPlansLead}
 							{#if $auth.user && $plansSync !== 'error'}
@@ -695,12 +699,12 @@
 	<CloudSyncBanner
 		sync={$plansSync}
 		{lang}
-		suppressed={!pageReady}
+		suppressed={isBootLoading}
 		includeStale={false}
 		onRetry={() => void plans.refresh({ force: true })}
 	/>
 
-	{#if !pageReady}
+	{#if showBootSkeleton}
 		<WorkoutsPageSkeleton
 			label={translate(lang, 'common.loading')}
 			variant={skeletonVariant}
@@ -708,6 +712,8 @@
 			{historyEmptyCtaLabel}
 			preferDemo={peekShouldShowChecklist()}
 		/>
+	{:else if isBootLoading}
+		<!-- Delay window: no skeleton, no empty/data (avoids FOLS). -->
 	{:else}
 	{#if activeTab === 'plans'}
 			{#if $plans.length === 0}
