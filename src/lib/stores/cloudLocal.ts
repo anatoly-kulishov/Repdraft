@@ -10,6 +10,7 @@ import { enqueueOutbox, type SyncOutboxEntry } from '$lib/storage/syncOutbox';
 import { supabaseRecordRepository } from '$lib/storage/supabaseRecordRepository';
 import { supabaseSessionRepository } from '$lib/storage/supabaseSessionRepository';
 import { supabaseWorkoutRepository } from '$lib/storage/supabaseWorkoutRepository';
+import { syncState } from '$lib/stores/syncState';
 
 export type { CloudListRefreshResult, CloudSyncState } from '$lib/domain/cloudSync';
 export { isCloudListUncertain } from '$lib/domain/cloudSync';
@@ -86,8 +87,18 @@ export async function mirrorCloudWrite(opts: {
 	label: string;
 	/** Enqueued when cloud mirror fails so reconnect can flush. */
 	outboxOnFail?: SyncOutboxEntry;
+	/** Skip local-save chip (e.g. cloud-only re-mirror after import). Default true. */
+	announceLocalSave?: boolean;
 }): Promise<boolean> {
-	await opts.localWrite();
+	const announce = opts.announceLocalSave !== false;
+	if (announce) syncState.beginLocalSave();
+	try {
+		await opts.localWrite();
+		if (announce) syncState.markLocalSaved();
+	} catch (err) {
+		if (announce) syncState.markLocalSaveError();
+		throw err;
+	}
 	if (!isCloudMode() || !opts.cloudWrite) return true;
 	if (opts.cloudId !== undefined && !isCloudPersistableId(opts.cloudId)) return true;
 	try {
@@ -114,7 +125,8 @@ export async function syncImportedPayloadToCloud(payload: RepdraftExportPayload)
 			cloudWrite: () => supabaseWorkoutRepository.save(plan),
 			cloudId: plan.id,
 			label: 'import.plan',
-			outboxOnFail: { kind: 'plan.save', id: plan.id }
+			outboxOnFail: { kind: 'plan.save', id: plan.id },
+			announceLocalSave: false
 		});
 		if (!ok) allOk = false;
 	}
@@ -124,7 +136,8 @@ export async function syncImportedPayloadToCloud(payload: RepdraftExportPayload)
 			localWrite: noop,
 			cloudWrite: () => supabaseRecordRepository.save(record),
 			label: 'import.record',
-			outboxOnFail: { kind: 'record.save', exerciseId: record.exerciseId }
+			outboxOnFail: { kind: 'record.save', exerciseId: record.exerciseId },
+			announceLocalSave: false
 		});
 		if (!ok) allOk = false;
 	}
@@ -135,7 +148,8 @@ export async function syncImportedPayloadToCloud(payload: RepdraftExportPayload)
 				localWrite: noop,
 				cloudWrite: () => supabaseSessionRepository.save(session),
 				label: 'import.session',
-				outboxOnFail: { kind: 'session.save', id: session.id }
+				outboxOnFail: { kind: 'session.save', id: session.id },
+				announceLocalSave: false
 			});
 			if (!ok) allOk = false;
 		}

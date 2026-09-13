@@ -31,6 +31,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { browser } from '$app/environment';
+	import { createDelayedTrue } from '$lib/browser/delayedTrue.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, untrack } from 'svelte';
@@ -231,7 +232,7 @@
 	 * Saved empty → EmptyState (not card skeletons).
 	 * SSR: cookie peek 0 → empty; peek >0 / unknown → skeleton. Client: skeleton while bookmarks await index.
 	 */
-	let showListSkeleton = $derived(
+	let isListLoading = $derived(
 		savedOnly
 			? browser
 				? $bookmarks.length > 0 && !indexReady
@@ -240,6 +241,8 @@
 					: bookmarksCountPeek > 0
 			: !indexReady
 	);
+	let delayedListSkeleton = createDelayedTrue(() => isListLoading);
+	let showListSkeleton = $derived(delayedListSkeleton.current);
 	let countN = $derived(
 		savedOnly
 			? indexReady
@@ -266,7 +269,7 @@
 	);
 	/** No bookmarks at all: full EmptyState like Records (no search / count chrome). */
 	let savedTrulyEmpty = $derived(
-		savedOnly && !showListSkeleton && !indexError && $bookmarks.length === 0
+		savedOnly && !isListLoading && !indexError && $bookmarks.length === 0
 	);
 	let showBookmarksEmptyCoachmark = $derived(
 		savedTrulyEmpty && shouldShowCoachmark($onboarding, 'bookmarks.empty')
@@ -510,7 +513,7 @@
 {:else}
 <div class="catalog-list-layout">
 	<div class="catalog-list-layout__filters">
-		{#if showListSkeleton}
+		{#if isListLoading && showListSkeleton}
 			<div class="catalog-filters-shell">
 				<div
 					class="catalog-filters {filterLockBodyPart ? 'catalog-filters--zone' : ''}"
@@ -536,7 +539,7 @@
 					</div>
 				</div>
 			</div>
-		{:else}
+		{:else if !isListLoading}
 			<FilterBar
 				bind:filters
 				equipment={equipmentOptions}
@@ -553,7 +556,7 @@
 		title={translate(lang, 'catalog.dataMissing')}
 		description={indexError ? translate(lang, indexError) : ''}
 	/>
-{:else if showListSkeleton}
+{:else if isListLoading && showListSkeleton}
 	{#if savedOnly}
 		<RecordsListSkeleton variant="saved" includeSearch={false} label={translate(lang, 'catalog.loading')} />
 	{:else}
@@ -563,7 +566,7 @@
 			rows={CATALOG_PAGE_SIZE}
 		/>
 	{/if}
-{:else}
+{:else if !isListLoading}
 	<p class="catalog-list-count mb-3 text-sm text-[var(--color-muted)]" aria-live="polite">
 		{translate(lang, 'catalog.countShown', {
 			shown: shownCount,

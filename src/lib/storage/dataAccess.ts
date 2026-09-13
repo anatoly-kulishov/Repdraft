@@ -1,5 +1,6 @@
 import type { WorkoutRepository } from '$lib/domain/repository';
 import type { WorkoutSession } from '$lib/domain/types';
+import type { WorkoutDataPresence } from '$lib/domain/localMergeConflict';
 import { CLOUD_REQUEST_MS } from '$lib/domain/networkTimeouts';
 import { isCloudPersistableId } from '$lib/domain/id';
 import { withTimeout } from '$lib/domain/withTimeout';
@@ -19,6 +20,7 @@ import {
 	supabaseSessionRepository
 } from './supabaseSessionRepository';
 import { supabaseWorkoutRepository } from './supabaseWorkoutRepository';
+import { syncState } from '$lib/stores/syncState';
 import { enqueueOutbox } from './syncOutbox';
 
 let cloudMode = false;
@@ -59,7 +61,14 @@ function markSessionsCloudDown(err: unknown) {
 
 /** Always durable on device; also mirrors to cloud when available. */
 export async function persistSession(session: WorkoutSession): Promise<void> {
-	await localSessionRepository.save(session);
+	syncState.beginLocalSave();
+	try {
+		await localSessionRepository.save(session);
+		syncState.markLocalSaved();
+	} catch (err) {
+		syncState.markLocalSaveError();
+		throw err;
+	}
 	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
 	if (!isCloudPersistableId(session.id)) return;
 	try {
@@ -76,10 +85,17 @@ export async function persistSession(session: WorkoutSession): Promise<void> {
 }
 
 export async function deleteSession(id: string): Promise<void> {
-	await localSessionRepository.remove(id);
-	// Keep tombstone until refreshHistory confirms the row is gone from cloud.
-	// Supabase/PostgREST often returns OK with 0 rows when RLS blocks delete.
-	addSessionTombstone(id);
+	syncState.beginLocalSave();
+	try {
+		await localSessionRepository.remove(id);
+		// Keep tombstone until refreshHistory confirms the row is gone from cloud.
+		// Supabase/PostgREST often returns OK with 0 rows when RLS blocks delete.
+		addSessionTombstone(id);
+		syncState.markLocalSaved();
+	} catch (err) {
+		syncState.markLocalSaveError();
+		throw err;
+	}
 	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
 	if (!isCloudPersistableId(id)) return;
 	try {
@@ -96,21 +112,84 @@ export async function deleteSession(id: string): Promise<void> {
 }
 
 export async function clearFinishedSessionHistory(): Promise<void> {
-	const finished = (await localSessionRepository.list()).filter((s) => s.finishedAt);
-	clearFinishedSessions();
-	addSessionTombstones(finished.map((s) => s.id));
-	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
-	for (const s of finished) {
-		try {
-			await withTimeout(supabaseSessionRepository.remove(s.id), CLOUD_REQUEST_MS);
-		} catch (err) {
-			markSessionsCloudDown(err);
-			break;
+	syncState.beginLocalSave();
+	try {
+		const finished = (await localSessionRepository.list()).filter((s) => s.finishedAt);
+		clearFinishedSessions();
+		addSessionTombstones(finished.map((s) => s.id));
+		syncState.markLocalSaved();
+		if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
+		for (const s of finished) {
+			try {
+				await withTimeout(supabaseSessionRepository.remove(s.id), CLOUD_REQUEST_MS);
+			} catch (err) {
+				markSessionsCloudDown(err);
+				break;
+			}
 		}
+	} catch (err) {
+		syncState.markLocalSaveError();
+		throw err;
 	}
 }
 
 const CLOUD_LIST_MS = CLOUD_REQUEST_MS;
+
+/** Local workout rows present on this device (guest bind check). */
+export async function peekLocalGuestWorkoutPresence(): Promise<WorkoutDataPresence> {
+	const [plans, sessions, records] = await Promise.all([
+		localWorkoutRepository.list(),
+		localSessionRepository.list(),
+		localRecordRepository.list()
+	]);
+	return {
+		plans: plans.length,
+		sessions: sessions.length,
+		records: records.length
+	};
+}
+
+/**
+ * Cloud workout rows for the signed-in account. List only; does not write localStorage.
+ * Failures count as empty so we do not block login on a flaky peek.
+ */
+export async function peekCloudWorkoutPresence(): Promise<WorkoutDataPresence> {
+	const empty: WorkoutDataPresence = { plans: 0, sessions: 0, records: 0 };
+	if (!cloudMode) return empty;
+
+	let plans = 0;
+	let sessions = 0;
+	let records = 0;
+
+	try {
+		const list = await withTimeout(supabaseWorkoutRepository.list(), CLOUD_LIST_MS);
+		plans = list.length;
+	} catch (err) {
+		console.warn('cloud plans peek skipped', err);
+	}
+
+	try {
+		const list = await withTimeout(supabaseRecordRepository.list(), CLOUD_LIST_MS);
+		records = list.length;
+	} catch (err) {
+		console.warn('cloud records peek skipped', err);
+	}
+
+	if (sessionsCloudOk && !isSessionsTableUnavailable()) {
+		try {
+			const list = await withTimeout(supabaseSessionRepository.list(), CLOUD_LIST_MS);
+			if (isSessionsTableUnavailable()) {
+				sessionsCloudOk = false;
+			} else {
+				sessions = list.length;
+			}
+		} catch (err) {
+			markSessionsCloudDown(err);
+		}
+	}
+
+	return { plans, sessions, records };
+}
 
 /** Upload local-only data to cloud when logging in (merge by id). Never hang the UI. */
 export async function migrateLocalToCloud(): Promise<void> {

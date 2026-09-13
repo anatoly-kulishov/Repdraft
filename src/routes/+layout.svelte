@@ -7,6 +7,8 @@
 	import DraftDock from '$lib/components/DraftDock.svelte';
 	import Logo from '$lib/components/Logo.svelte';
 	import NetworkStatusChip from '$lib/components/NetworkStatusChip.svelte';
+	import LocalSaveChip from '$lib/components/LocalSaveChip.svelte';
+	import LocalMergeConflictSheet from '$lib/components/LocalMergeConflictSheet.svelte';
 	import ShellHomeGreeting from '$lib/components/ShellHomeGreeting.svelte';
 	import PwaInstallHint from '$lib/components/PwaInstallHint.svelte';
 	import ToastStack from '$lib/components/ToastStack.svelte';
@@ -293,6 +295,7 @@
 	class:shell-nav-tabbar-hidden={hideMobileHeader}
 	aria-label={translate(lang, 'nav.main')}
 >
+	<LocalSaveChip />
 	<NetworkStatusChip />
 	<div class="shell-nav-tabbar__inner">
 		<div class="shell-nav-tabbar__grid">
@@ -355,4 +358,5 @@
 </nav>
 
 <ToastStack items={$toasts} />
+<LocalMergeConflictSheet />
 <DraftDock />

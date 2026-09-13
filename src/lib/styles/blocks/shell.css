@@ -793,6 +793,57 @@ body:has(.toast-stack--undo-snackbar) {
 	border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
 }
 
+.local-save-chip--interactive {
+	pointer-events: auto;
+}
+
+.local-save-chip__pill {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	min-height: var(--control-height);
+	min-width: var(--control-min-width);
+	margin: 0 auto;
+	padding: 0.35rem 0.75rem;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	line-height: 1.3;
+	color: var(--color-muted);
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--color-surface) 92%, var(--color-accent));
+	border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+}
+
+button.local-save-chip__pill {
+	appearance: none;
+	cursor: pointer;
+	font: inherit;
+	width: auto;
+}
+
+.local-save-chip__pill--saved {
+	color: color-mix(in srgb, #16a34a 70%, var(--color-ink));
+	background: color-mix(in srgb, var(--color-surface) 88%, #16a34a);
+	border-color: color-mix(in srgb, #16a34a 28%, var(--color-border));
+}
+
+.local-save-chip__pill--error {
+	color: var(--color-danger);
+	background: color-mix(in srgb, var(--color-surface) 88%, var(--color-danger));
+	border-color: color-mix(in srgb, var(--color-danger) 28%, var(--color-border));
+}
+
+.local-save-chip__icon {
+	display: inline-flex;
+	flex-shrink: 0;
+	color: inherit;
+}
+
+.local-save-chip__label {
+	white-space: nowrap;
+}
+
 /* PWA install hint — compact inline bar in root layout shell bundle. */
 .pwa-install {
 	display: flex;
