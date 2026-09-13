@@ -14,7 +14,6 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
-<<<<<<< Updated upstream
 		version: '0.18.0',
 		highlights: {
 			ru: [
@@ -28,17 +27,6 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 				'“Saved locally” cue after data is written on this phone',
 				'On sign-in: keep local in account or use cloud only',
 				'On Android: Install App button instead of Safari-only tips'
-=======
-		version: '0.17.7',
-		highlights: {
-			ru: [
-				'На Android: большая кнопка «Установить» вместо подсказок для Safari',
-				'Карточка скрыта, если приложение уже на домашнем экране'
-			],
-			en: [
-				'On Android: a clear Install App button instead of Safari-only tips',
-				'Install card stays hidden when the app is already on your home screen'
->>>>>>> Stashed changes
 			]
 		}
 	},
