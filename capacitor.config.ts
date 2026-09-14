@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 /**
- * Mode A: set CAP_SERVER_URL (e.g. https://repdraft.app) so the WebView loads the live site.
+ * Mode A: set CAP_SERVER_URL (e.g. https://repdraft-zeta.vercel.app) so the WebView loads the live site.
  * Mode B: omit CAP_SERVER_URL; WebView serves the static `build/` SPA from the app bundle.
  */
 const serverUrl = (process.env.CAP_SERVER_URL ?? '').trim();

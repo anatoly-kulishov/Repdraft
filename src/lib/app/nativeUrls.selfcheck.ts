@@ -9,12 +9,15 @@ function assert(condition: boolean, message: string): void {
 }
 
 assert(
-	resolveWebApiOrigin({ webOrigin: 'https://repdraft.app/', siteUrl: 'https://other.test' }) ===
-		'https://repdraft.app',
+	resolveWebApiOrigin({
+		webOrigin: 'https://repdraft-zeta.vercel.app/',
+		siteUrl: 'https://other.test'
+	}) === 'https://repdraft-zeta.vercel.app',
 	'PUBLIC_WEB_ORIGIN wins and strips trailing slash'
 );
 assert(
-	resolveWebApiOrigin({ siteUrl: 'https://repdraft.app' }) === 'https://repdraft.app',
+	resolveWebApiOrigin({ siteUrl: 'https://repdraft-zeta.vercel.app' }) ===
+		'https://repdraft-zeta.vercel.app',
 	'PUBLIC_SITE_URL used when WEB_ORIGIN empty'
 );
 assert(
@@ -27,9 +30,12 @@ assert(resolveWebApiOrigin({}) === '', 'empty when nothing configured');
 assert(isAuthDeepLinkUrl('repdraft://auth'), 'custom scheme host auth');
 assert(isAuthDeepLinkUrl('repdraft://auth?code=abc'), 'custom scheme with query');
 assert(isAuthDeepLinkUrl('repdraft:///auth#access_token=x'), 'custom scheme path auth');
-assert(isAuthDeepLinkUrl('https://repdraft.app/auth'), 'https /auth');
+assert(isAuthDeepLinkUrl('https://repdraft-zeta.vercel.app/auth'), 'https /auth');
 assert(isAuthDeepLinkUrl('http://127.0.0.1:5173/auth?recovery=1'), 'http /auth local');
-assert(!isAuthDeepLinkUrl('https://repdraft.app/workouts'), 'https non-auth ignored');
+assert(
+	!isAuthDeepLinkUrl('https://repdraft-zeta.vercel.app/workouts'),
+	'https non-auth ignored'
+);
 assert(!isAuthDeepLinkUrl('repdraft://workouts'), 'custom scheme other host ignored');
 assert(!isAuthDeepLinkUrl('not a url'), 'junk ignored');
 
