@@ -12,6 +12,7 @@ const USER_TABLES = [
 ] as const;
 
 const CLIP_BUCKET = 'technique-gifs';
+const AVATAR_BUCKET = 'avatars';
 const REMOVE_CHUNK = 80;
 
 function publicUrl(): string {
@@ -62,27 +63,47 @@ function jsonWithCors(request: Request, body: unknown, init?: ResponseInit) {
 	return json(body, { ...init, headers });
 }
 
-async function listUserGifPaths(admin: SupabaseClient, userId: string): Promise<string[]> {
+async function listUserStoragePaths(
+	admin: SupabaseClient,
+	bucket: string,
+	userId: string,
+	extFilter?: (name: string) => boolean
+): Promise<string[]> {
 	const paths: string[] = [];
-	const { data, error } = await admin.storage.from(CLIP_BUCKET).list(userId, {
+	const { data, error } = await admin.storage.from(bucket).list(userId, {
 		limit: 1000,
 		offset: 0
 	});
 	if (error) throw error;
 	for (const item of data ?? []) {
 		if (!item.name || item.name.endsWith('/')) continue;
-		if (item.name.toLowerCase().endsWith('.gif')) {
-			paths.push(`${userId}/${item.name}`);
-		}
+		if (extFilter && !extFilter(item.name)) continue;
+		paths.push(`${userId}/${item.name}`);
 	}
 	return paths;
 }
 
-async function removeStoragePaths(admin: SupabaseClient, paths: string[]): Promise<void> {
+async function listUserGifPaths(admin: SupabaseClient, userId: string): Promise<string[]> {
+	return listUserStoragePaths(admin, CLIP_BUCKET, userId, (name) =>
+		name.toLowerCase().endsWith('.gif')
+	);
+}
+
+async function listUserAvatarPaths(admin: SupabaseClient, userId: string): Promise<string[]> {
+	return listUserStoragePaths(admin, AVATAR_BUCKET, userId, (name) =>
+		/\.(webp|jpe?g)$/i.test(name)
+	);
+}
+
+async function removeStoragePaths(
+	admin: SupabaseClient,
+	bucket: string,
+	paths: string[]
+): Promise<void> {
 	const unique = [...new Set(paths.filter(Boolean))];
 	for (let i = 0; i < unique.length; i += REMOVE_CHUNK) {
 		const chunk = unique.slice(i, i + REMOVE_CHUNK);
-		const { error } = await admin.storage.from(CLIP_BUCKET).remove(chunk);
+		const { error } = await admin.storage.from(bucket).remove(chunk);
 		if (error) throw error;
 	}
 }
@@ -146,8 +167,19 @@ export const POST: RequestHandler = async ({ request }) => {
 		return jsonWithCors(request, { error: 'auth.deleteFail' }, { status: 500 });
 	}
 
+	let avatarPaths: string[] = [];
 	try {
-		await removeStoragePaths(admin, [...dbGifPaths, ...listedPaths]);
+		avatarPaths = await listUserAvatarPaths(admin, user.id);
+	} catch (err) {
+		/* Bucket may not exist yet in older projects — do not block account wipe. */
+		console.warn('account delete: avatars.list', err);
+	}
+
+	try {
+		await removeStoragePaths(admin, CLIP_BUCKET, [...dbGifPaths, ...listedPaths]);
+		if (avatarPaths.length > 0) {
+			await removeStoragePaths(admin, AVATAR_BUCKET, avatarPaths);
+		}
 	} catch (err) {
 		console.error('account delete: storage.remove', err);
 		return jsonWithCors(request, { error: 'auth.deleteFail' }, { status: 500 });

@@ -42,6 +42,7 @@
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
+	import { createDelayedTrue } from '$lib/browser/delayedTrue.svelte';
 	import { readActiveSession, peekLocalHistoryCount } from '$lib/storage/localSessionRepository';
 	import { peekHasLocalPlans } from '$lib/storage/localWorkoutRepository';
 	import { peekAccountBoot } from '$lib/storage/homeBootPeek';
@@ -188,7 +189,13 @@
 		if (fromStore > 0) return HOME_RECENT_ROW_LIMIT;
 		return readBootSkeletonRecentRows();
 	});
-	let showBootSkeleton = $derived(skeletonForce !== null || !pageReady);
+	/** Loading (not QA force). Delayed in browser so fast local boots skip skeleton mount. */
+	let isBootLoading = $derived(skeletonForce === null && !pageReady);
+	let delayedBootSkeleton = createDelayedTrue(() => isBootLoading);
+	// SSR: show skeleton immediately (no $effect delay). Client: delay to avoid FOLS.
+	let showBootSkeleton = $derived(
+		skeletonForce !== null || (!browser && isBootLoading) || delayedBootSkeleton.current
+	);
 
 	let isCreateHome = $derived(!hasPlans);
 	let showGuestCreateHero = $derived(pageReady && isGuest && isCreateHome);
@@ -357,6 +364,8 @@
 			hasActiveBoot={bootHasActiveSession}
 			showChecklist={bootShowChecklist}
 		/>
+	{:else if isBootLoading}
+		<!-- Delay window: no skeleton, no content (avoids FOLS). -->
 	{:else if showReadyHeader && !hasActive}
 		<header class="home-header home-header--mockup">
 			<h1 id="home-heading" class="sr-only">{translate(lang, 'home.title')}</h1>
@@ -367,21 +376,20 @@
 					{/if}
 					{#if !isGuest}
 						<p class="home-header__subtitle">{mockupSubtitle}</p>
-						{#if nextPlan}
-							<p class="home-header__plan">{nextPlan.name}</p>
-							<p class="home-header__meta" aria-busy={!indexReady}>
-								{indexReady ? nextPlanMeta : '\u00a0'}
+						{#if hasPlans}
+							<p class="home-header__plan">{nextPlan?.name ?? '\u00a0'}</p>
+							<p class="home-header__meta" aria-busy={!nextPlan || !indexReady}>
+								{nextPlan && indexReady ? nextPlanMeta : '\u00a0'}
 							</p>
-						{/if}
-						{#if isFirstTimeHome}
+						{:else if isFirstTimeHome}
 							<BrandTagline class="brand-tagline--home-header" />
 						{/if}
 					{:else}
 						<p class="home-header__subtitle">{translate(lang, 'home.readyTitle')}</p>
-						{#if nextPlan}
-							<p class="home-header__plan">{nextPlan.name}</p>
-							<p class="home-header__meta" aria-busy={!indexReady}>
-								{indexReady ? nextPlanMeta : '\u00a0'}
+						{#if hasPlans}
+							<p class="home-header__plan">{nextPlan?.name ?? '\u00a0'}</p>
+							<p class="home-header__meta" aria-busy={!nextPlan || !indexReady}>
+								{nextPlan && indexReady ? nextPlanMeta : '\u00a0'}
 							</p>
 						{/if}
 					{/if}
@@ -407,7 +415,7 @@
 		</header>
 	{/if}
 
-	{#if !showBootSkeleton}
+	{#if !isBootLoading && !showBootSkeleton}
 	{#if hasActive && active}
 		<a
 			class="home-continue-card panel"

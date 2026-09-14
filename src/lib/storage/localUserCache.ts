@@ -3,9 +3,11 @@ import {
 	ACTIVE_SESSION_KEY,
 	BOOKMARKS_STORAGE_KEY,
 	DRAFT_STORAGE_KEY,
+	EXERCISE_STATS_STORAGE_KEY,
 	PLANS_STORAGE_KEY,
 	RECORDS_STORAGE_KEY,
 	REST_UNTIL_STORAGE_KEY,
+	SESSIONS_DELETED_KEY,
 	SESSIONS_STORAGE_KEY
 } from '$lib/domain/repository';
 import { clearAllLastSyncedAt } from '$lib/storage/syncMeta';
@@ -155,6 +157,30 @@ export function clearUserLocalData(): void {
 		localStorage.removeItem(key);
 	}
 	clearLegacyGreetingNameKeys();
+	clearAllLastSyncedAt();
+	clearSyncOutbox();
+}
+
+/**
+ * Drop guest workout cache on first bind when the user keeps cloud only.
+ * Keeps `LOCAL_CACHE_USER_KEY`, bookmarks, locale, and theme.
+ */
+const GUEST_DISCARD_KEYS = [
+	RECORDS_STORAGE_KEY,
+	PLANS_STORAGE_KEY,
+	DRAFT_STORAGE_KEY,
+	SESSIONS_STORAGE_KEY,
+	SESSIONS_DELETED_KEY,
+	ACTIVE_SESSION_KEY,
+	REST_UNTIL_STORAGE_KEY,
+	EXERCISE_STATS_STORAGE_KEY
+] as const;
+
+export function discardGuestLocalWorkoutData(): void {
+	if (typeof localStorage === 'undefined') return;
+	for (const key of GUEST_DISCARD_KEYS) {
+		localStorage.removeItem(key);
+	}
 	clearAllLastSyncedAt();
 	clearSyncOutbox();
 }

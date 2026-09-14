@@ -86,5 +86,6 @@
 				<p class="zone-card__grid-count truncate">{countLabel}</p>
 			{/if}
 		</div>
+		<span class="zone-card__focus" aria-hidden="true"></span>
 	</div>
 </a>

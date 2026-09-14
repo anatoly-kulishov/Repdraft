@@ -279,14 +279,30 @@
 				</div>
 			</header>
 		{:else}
-			<div class="home-skeleton-top-card panel" aria-hidden="true">
-				<div class="home-skeleton-top-card__copy">
-					<AppSkeleton class="home-skeleton-top-line home-skeleton-top-line--subtitle" />
-					<AppSkeleton class="home-skeleton-top-line home-skeleton-top-line--title" />
-					<AppSkeleton class="home-skeleton-top-line home-skeleton-top-line--meta" />
+			<header class="home-header home-header--mockup home-skeleton-mockup" aria-hidden="true">
+				<div class="home-header__row">
+					<div class="home-header__copy">
+						<p class="home-header__subtitle home-skel-bone">
+							{translate(lang, 'home.readyTitle')}
+						</p>
+						<p class="home-header__plan home-skel-bone">
+							{translate(lang, 'builder.untitled')}
+						</p>
+						<p class="home-header__meta home-skel-bone">
+							{translate(lang, 'workouts.exCount', { n: 5 })}
+						</p>
+					</div>
+					<span
+						class="btn-primary home-header__cta home-header__cta--compact home-skel-bone home-skel-bone--cta-round"
+						aria-hidden="true"
+					>
+						<LucideIcon icon={Play} size={ICON_PRIMARY} class="home-header__cta-icon" />
+						<span class="home-header__cta-text home-header__cta-text--short">
+							{translate(lang, 'home.startWorkoutShort')}
+						</span>
+					</span>
 				</div>
-				<AppSkeleton class="home-skeleton-top-cta" />
-			</div>
+			</header>
 		{/if}
 
 		<div class="home-dashboard" aria-hidden="true">

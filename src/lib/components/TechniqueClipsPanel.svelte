@@ -33,6 +33,7 @@ import {
 	import { toasts } from '$lib/stores/toasts';
 	import { isSupabaseConfigured } from '$lib/supabase/client';
 	import { canShare, shareContent } from '$lib/media/share';
+	import { scrollBehavior } from '$lib/dom/prefersReducedMotion';
 	import { page } from '$app/stores';
 	import { replaceState } from '$app/navigation';
 	import { onDestroy } from 'svelte';
@@ -197,7 +198,7 @@ import {
 		queueMicrotask(() => {
 			sectionEl
 				?.querySelector(`[data-clip-id="${CSS.escape(id)}"]`)
-				?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				?.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
 		});
 	});
 
@@ -347,7 +348,7 @@ import {
 			queueMicrotask(() => {
 				sectionEl
 					?.querySelector(`[data-clip-id="${CSS.escape(clip.id)}"]`)
-					?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					?.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
 			});
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : '';

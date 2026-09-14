@@ -1,36 +1,45 @@
 import { browser } from '$app/environment';
+import { isNativeApp, webApiOrigin } from '$lib/app/native';
 import { resolveAuthBootSession } from '$lib/domain/authBoot';
+import { userCustomAvatarPath } from '$lib/domain/authFlow';
+import type { LocalCacheUserAction } from '$lib/domain/localCacheUser';
+import {
+	hasCloudWorkoutData,
+	hasLocalGuestWorkoutData,
+	type LocalMergeChoice
+} from '$lib/domain/localMergeConflict';
 import { SUPABASE_AUTH_MS } from '$lib/domain/networkTimeouts';
 import { withTimeout } from '$lib/domain/withTimeout';
-import { isNativeApp, webApiOrigin } from '$lib/app/native';
-import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
-import { migrateLocalToCloud, setCloudMode } from '$lib/storage/dataAccess';
+import { translate } from '$lib/i18n/messages';
+import { compressAvatarImage } from '$lib/media/avatarImage';
+import {
+	migrateLocalToCloud,
+	peekCloudWorkoutPresence,
+	peekLocalGuestWorkoutPresence,
+	setCloudMode
+} from '$lib/storage/dataAccess';
+import { removeAvatar, uploadAvatar } from '$lib/storage/avatarsRepository';
+import { syncHomeBootPeek } from '$lib/storage/homeBootPeek';
 import {
 	clearUserLocalData,
+	discardGuestLocalWorkoutData,
 	LOCAL_CACHE_USER_KEY,
 	peekLikelySignedInUserId,
 	peekSupabaseStoredUserStub,
 	syncLocalCacheUser
 } from '$lib/storage/localUserCache';
+import { peekHasLocalPlans, syncHomePlansBootCookie } from '$lib/storage/localWorkoutRepository';
 import { wipeAllAppStorage } from '$lib/storage/wipeAppStorage';
-import { localRecordRepository } from '$lib/storage/localRecordRepository';
-import { localSessionRepository } from '$lib/storage/localSessionRepository';
-import {
-	localWorkoutRepository,
-	peekHasLocalPlans,
-	syncHomePlansBootCookie
-} from '$lib/storage/localWorkoutRepository';
-import { syncHomeBootPeek } from '$lib/storage/homeBootPeek';
-import type { LocalCacheUserAction } from '$lib/domain/localCacheUser';
-import { translate } from '$lib/i18n/messages';
+import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
 import type { Session, User } from '@supabase/supabase-js';
 import { get, writable } from 'svelte/store';
+import { bookmarks } from './bookmarks';
 import { draft } from './draft';
 import { greetingName } from './greetingName';
 import { live } from './live';
+import { localMergeConflict } from './localMergeConflict';
 import { plans } from './plans';
 import { records } from './records';
-import { bookmarks } from './bookmarks';
 import { resolvedLocale } from './locale';
 import { toasts } from './toasts';
 
@@ -71,7 +80,7 @@ function recoveryCallbackUrl(): string {
 }
 
 function createAuthStore() {
-	const { subscribe, set, update } = writable<AuthState>({
+	const store = writable<AuthState>({
 		configured: false,
 		ready: false,
 		sessionKnown: false,
@@ -80,32 +89,61 @@ function createAuthStore() {
 		user: null,
 		passwordRecovery: false
 	});
+	const { subscribe, set, update } = store;
 
 	async function runCloudBootstrap(
 		loggedIn: boolean,
 		opts: { cacheAction: LocalCacheUserAction }
 	) {
 		try {
+			let conflictChoice: LocalMergeChoice | null = null;
+			let silentMigrate = false;
+
+			if (loggedIn && opts.cacheAction === 'bind-first') {
+				const localPresence = await peekLocalGuestWorkoutPresence();
+				if (hasLocalGuestWorkoutData(localPresence)) {
+					const cloudPresence = await peekCloudWorkoutPresence();
+					if (hasCloudWorkoutData(cloudPresence)) {
+						conflictChoice = await localMergeConflict.awaitChoice();
+						if (conflictChoice === 'discard') {
+							discardGuestLocalWorkoutData();
+							draft.resetDraft();
+							live.resetHistoryHydration();
+							live.hydrate();
+							plans.invalidate();
+							records.invalidate();
+						} else if (conflictChoice === 'merge') {
+							toasts.show(
+								translate(get(resolvedLocale), 'auth.mergeConflictKeepToast'),
+								'success'
+							);
+						} else {
+							const _exhaustive: never = conflictChoice;
+							void _exhaustive;
+						}
+					} else {
+						silentMigrate = true;
+					}
+				}
+			}
+
 			/* Serial cloud pulls — parallel hung workout_sessions + technique_clips starved the pool. */
 			await plans.refresh();
 			await records.refresh();
 			await live.refreshHistory();
 			if (loggedIn) {
-				let hadGuestData = false;
-				if (opts.cacheAction === 'bind-first') {
-					const [plansLocal, sessionsLocal, recordsLocal] = await Promise.all([
-						localWorkoutRepository.list(),
-						localSessionRepository.list(),
-						localRecordRepository.list()
-					]);
-					hadGuestData =
-						plansLocal.length > 0 || sessionsLocal.length > 0 || recordsLocal.length > 0;
+				if (conflictChoice !== 'discard') {
+					await migrateLocalToCloud();
+					await plans.refresh();
+					await records.refresh();
+					await live.refreshHistory();
 				}
-				await migrateLocalToCloud();
-				await plans.refresh();
-				await records.refresh();
-				await live.refreshHistory();
-				if (hadGuestData) {
+				if (conflictChoice === 'discard') {
+					toasts.show(
+						translate(get(resolvedLocale), 'auth.mergeConflictDiscardToast'),
+						'info'
+					);
+				} else if (silentMigrate) {
 					toasts.show(translate(get(resolvedLocale), 'auth.migrateLocalHint'), 'info');
 				}
 			}
@@ -432,6 +470,37 @@ function createAuthStore() {
 			if (error) throw error;
 			passwordRecovery = false;
 			update((s) => ({ ...s, passwordRecovery: false }));
+		},
+		async uploadProfileAvatar(file: File): Promise<void> {
+			if (!browser) throw new Error('auth.avatar.uploadFail');
+			const current = get(store).user;
+			if (!current?.id) throw new Error('auth.avatar.uploadFail');
+			const previousPath = userCustomAvatarPath(current);
+			const compressed = await compressAvatarImage(file);
+			const { user: next } = await uploadAvatar(
+				current.id,
+				compressed.blob,
+				compressed.contentType,
+				compressed.ext,
+				previousPath
+			);
+			update((s) => ({
+				...s,
+				user: next,
+				session: s.session ? { ...s.session, user: next } : s.session
+			}));
+		},
+		async removeProfileAvatar(): Promise<void> {
+			if (!browser) throw new Error('auth.avatar.removeFail');
+			const current = get(store).user;
+			if (!current?.id) throw new Error('auth.avatar.removeFail');
+			const path = userCustomAvatarPath(current);
+			const next = await removeAvatar(current.id, path);
+			update((s) => ({
+				...s,
+				user: next,
+				session: s.session ? { ...s.session, user: next } : s.session
+			}));
 		},
 		async signOut() {
 			const supabase = getSupabase();

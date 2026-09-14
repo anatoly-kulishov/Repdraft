@@ -5,11 +5,12 @@
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { cn } from '$lib/utils.js';
+	import { scrollBehavior } from '$lib/dom/prefersReducedMotion';
 	import { ArrowUp } from '@lucide/svelte';
 	import { browser } from '$app/environment';
 
 	/** Show after roughly one short phone screen of scroll. */
-	const DEFAULT_AFTER_PX = 360;
+	const DEFAULT_AFTER_PX = 300;
 
 	let {
 		afterPx = DEFAULT_AFTER_PX,
@@ -24,7 +25,7 @@
 
 	function scrollToTop() {
 		// Always document top. scrollIntoView(#main-content) leaves shell-header offset (~50–60px).
-		window.scrollTo({ top: 0, behavior: 'smooth' });
+		window.scrollTo({ top: 0, behavior: scrollBehavior() });
 	}
 
 	$effect(() => {

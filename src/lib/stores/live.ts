@@ -38,6 +38,7 @@ import { exerciseStats } from '$lib/stores/exerciseStats';
 import { homeNextPlan } from '$lib/stores/homeNextPlan';
 import { planOrder } from '$lib/stores/planOrder';
 import { plans } from '$lib/stores/plans';
+import { syncState } from '$lib/stores/syncState';
 import {
 	localSessionRepository,
 	peekLocalFinishedSessions,
@@ -101,10 +102,18 @@ function createLiveStore() {
 	});
 
 	function persistActive(session: WorkoutSession | null, restUntil: number | null) {
-		writeActiveSession(session);
-		if (typeof localStorage === 'undefined') return;
-		if (restUntil == null) localStorage.removeItem(REST_UNTIL_KEY);
-		else localStorage.setItem(REST_UNTIL_KEY, String(restUntil));
+		syncState.beginLocalSave();
+		try {
+			writeActiveSession(session);
+			if (typeof localStorage !== 'undefined') {
+				if (restUntil == null) localStorage.removeItem(REST_UNTIL_KEY);
+				else localStorage.setItem(REST_UNTIL_KEY, String(restUntil));
+			}
+			syncState.markLocalSaved();
+		} catch (err) {
+			syncState.markLocalSaveError();
+			throw err;
+		}
 	}
 
 	let historyInflight: Promise<void> | null = null;

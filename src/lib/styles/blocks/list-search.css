@@ -6,7 +6,7 @@
 	gap: 0.45rem;
 	width: 100%;
 	min-width: 0;
-	margin: 0 0 0.85rem;
+	margin: 0 0 var(--list-search-content-gap);
 }
 
 .list-search-bar--sticky {
@@ -124,7 +124,7 @@
 		margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
 		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
 		/* Keep list gap outside the chrome so pad-block can stay visually centered. */
-		margin-bottom: 0.65rem;
+		margin-bottom: var(--list-search-content-gap);
 		padding: var(--screen-header-pad-block) max(var(--page-pad-x), var(--safe-right))
 			var(--screen-header-pad-block) max(var(--page-pad-x), var(--safe-left));
 		background: var(--chrome-header-bg);

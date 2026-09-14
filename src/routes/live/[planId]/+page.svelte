@@ -7,6 +7,7 @@
 	import LiveSessionActions from '$lib/components/live/LiveSessionActions.svelte';
 	import LiveSetPanel from '$lib/components/live/LiveSetPanel.svelte';
 	import LivePageSkeleton from '$lib/components/live/LivePageSkeleton.svelte';
+	import LiveLocalSaveCue from '$lib/components/live/LiveLocalSaveCue.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL, ICON_BUTTON } from '$lib/components/icons/sizes';
@@ -42,6 +43,7 @@
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
+	import { scrollBehavior } from '$lib/dom/prefersReducedMotion';
 	import { get } from 'svelte/store';
 	import { onDestroy, onMount, tick as nextFrame } from 'svelte';
 	import { ArrowLeft } from '@lucide/svelte';
@@ -279,7 +281,7 @@
 		queueMicrotask(() => {
 			document
 				.querySelector('.live-nav-item[data-active="true"]')
-				?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+				?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: scrollBehavior() });
 		});
 	});
 
@@ -520,6 +522,7 @@
 </script>
 
 {#snippet liveHeaderActions()}
+	<LiveLocalSaveCue />
 	<span class="screen-header-timer" aria-live="polite">{elapsedLabel}</span>
 {/snippet}
 

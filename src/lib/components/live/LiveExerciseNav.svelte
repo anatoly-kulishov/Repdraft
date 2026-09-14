@@ -8,6 +8,7 @@
 	import { formatLadderLabel, groupMemberRole } from '$lib/domain/workout';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
+	import { scrollBehavior } from '$lib/dom/prefersReducedMotion';
 	import { Check, Link2 } from '@lucide/svelte';
 
 	let {
@@ -86,7 +87,7 @@
 		if (typeof document === 'undefined') return;
 		const id = window.setTimeout(() => {
 			const el = document.querySelector<HTMLElement>(`.live-nav-item[data-active='true']`);
-			el?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+			el?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: scrollBehavior() });
 		}, 0);
 		return () => window.clearTimeout(id);
 	});

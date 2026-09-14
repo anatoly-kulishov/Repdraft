@@ -9,6 +9,7 @@
 	import RecordsListSkeleton from '$lib/components/RecordsListSkeleton.svelte';
 	import RecordsNoteChip from '$lib/components/RecordsNoteChip.svelte';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
+	import CatalogListStickyChrome from '$lib/components/CatalogListStickyChrome.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import ScrollToTopFab from '$lib/components/ScrollToTopFab.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -33,6 +34,7 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { browser } from '$app/environment';
+	import { createDelayedTrue } from '$lib/browser/delayedTrue.svelte';
 
 	const RECORDS_PATH = '/exercises/records';
 
@@ -53,7 +55,7 @@
 	 * Empty → EmptyState. SSR cookie peek 0 → empty; unknown/>0 → skeleton.
 	 * Cloud may still fill an empty local list while stale/loading.
 	 */
-	let showSkeleton = $derived(
+	let isListLoading = $derived(
 		browser
 			? displayRecords.length === 0 &&
 					($recordsSync === 'stale' || $recordsSync === 'loading')
@@ -61,7 +63,11 @@
 				? true
 				: data.recordsCountPeek > 0
 	);
+	let delayedListSkeleton = createDelayedTrue(() => isListLoading);
+	// SSR: show skeleton immediately (no $effect delay). Client: delay to avoid FOLS.
+	let showSkeleton = $derived((!browser && isListLoading) || delayedListSkeleton.current);
 	let listUncertain = $derived(isCloudListUncertain($recordsSync));
+	let recordsTrulyEmpty = $derived(!isListLoading && displayRecords.length === 0);
 
 	let recordMetas = $derived.by(() => {
 		const out: ExerciseIndexItem[] = [];
@@ -250,68 +256,73 @@
 <SeoHead title={title} noindex />
 
 <section class="content-page content-page--catalog records-page">
-	<ScreenHeader
-		fixed
-		{title}
-		backHref="/exercises"
-		backLabelVisible
-		backLabel={translate(lang, 'catalog.hubTitle')}
-	/>
-
-	<CloudSyncBanner
-		sync={$recordsSync}
-		{lang}
-		suppressed={showSkeleton}
-		onRetry={() => void records.refresh({ force: true })}
-	/>
-
-	{#if showSkeleton}
-		<div class="catalog-list-layout">
-			<div class="catalog-list-layout__filters">
-				<div class="catalog-filters-shell">
-					<div class="catalog-filters">
-						<div class="list-search-bar" aria-hidden="true">
-							<div class="list-search-bar__row">
-								<div class="list-search-bar__search">
-									<AppSkeleton class="records-skeleton__search skeleton-shimmer" />
+	<div class="catalog-list-layout">
+		<CatalogListStickyChrome>
+			{#snippet header()}
+				<ScreenHeader
+					embedded
+					{title}
+					backHref="/exercises"
+					backLabelVisible
+					backLabel={translate(lang, 'catalog.hubTitle')}
+				/>
+			{/snippet}
+			{#snippet tools()}
+				{#if !recordsTrulyEmpty}
+					{#if isListLoading}
+						<div class="catalog-filters-shell">
+							<div class="catalog-filters">
+								<div class="list-search-bar" aria-hidden="true">
+									<div class="list-search-bar__row">
+										<div class="list-search-bar__search">
+											<AppSkeleton class="records-skeleton__search skeleton-shimmer" />
+										</div>
+										<span class="list-search-bar__filter catalog-filter-skeleton__filter"></span>
+									</div>
 								</div>
-								<span class="list-search-bar__filter catalog-filter-skeleton__filter"></span>
 							</div>
 						</div>
-					</div>
-				</div>
-			</div>
+					{:else}
+						<FilterBar
+							bind:filters
+							equipment={equipmentOptions}
+							targets={targetOptions}
+						/>
+					{/if}
+				{/if}
+			{/snippet}
+		</CatalogListStickyChrome>
+
+		<CloudSyncBanner
+			sync={$recordsSync}
+			{lang}
+			suppressed={isListLoading}
+			onRetry={() => void records.refresh({ force: true })}
+		/>
+
+		{#if recordsTrulyEmpty}
+			<EmptyState
+				centered
+				icon={Trophy}
+				title={translate(lang, 'records.emptyTitle')}
+				description={translate(lang, 'records.emptyDesc')}
+				actionHref="/exercises"
+				actionLabel={translate(lang, 'bookmarks.browse')}
+			>
+				{#snippet actions()}
+					{#if showRecordsEmptyCoachmark}
+						<Coachmark
+							message={translate(lang, 'onboarding.coachRecordsEmpty')}
+							onDismiss={() => onboarding.dismissCoachmark('records.empty')}
+						/>
+					{/if}
+				{/snippet}
+			</EmptyState>
+		{:else if isListLoading && showSkeleton}
 			<div class="catalog-list-layout__main">
 				<RecordsListSkeleton includeSearch={false} label={translate(lang, 'common.loading')} />
 			</div>
-		</div>
-	{:else if displayRecords.length === 0}
-		<EmptyState
-			centered
-			icon={Trophy}
-			title={translate(lang, 'records.emptyTitle')}
-			description={translate(lang, 'records.emptyDesc')}
-			actionHref="/exercises"
-			actionLabel={translate(lang, 'bookmarks.browse')}
-		>
-			{#snippet actions()}
-				{#if showRecordsEmptyCoachmark}
-					<Coachmark
-						message={translate(lang, 'onboarding.coachRecordsEmpty')}
-						onDismiss={() => onboarding.dismissCoachmark('records.empty')}
-					/>
-				{/if}
-			{/snippet}
-		</EmptyState>
-	{:else}
-		<div class="catalog-list-layout">
-			<div class="catalog-list-layout__filters">
-				<FilterBar
-					bind:filters
-					equipment={equipmentOptions}
-					targets={targetOptions}
-				/>
-			</div>
+		{:else if !isListLoading}
 			<div class="catalog-list-layout__main">
 				{#if filteredRecords.length === 0}
 					<EmptyState
@@ -363,7 +374,7 @@
 													</span>
 												{:else}
 													<span
-														class="media-well records-preview__thumb records-preview__thumb--empty animate-pulse"
+														class="media-well records-preview__thumb records-preview__thumb--empty"
 														aria-hidden="true"
 													></span>
 												{/if}
@@ -425,8 +436,8 @@
 					{/if}
 				{/if}
 			</div>
-		</div>
-	{/if}
+		{/if}
+	</div>
 
 	<ScrollToTopFab />
 </section>
