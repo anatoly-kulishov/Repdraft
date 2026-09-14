@@ -793,6 +793,12 @@ body:has(.toast-stack--undo-snackbar) {
 	border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
 }
 
+.local-save-chip {
+	display: block;
+	padding: 0 0.65rem 0.35rem;
+	pointer-events: none;
+}
+
 .local-save-chip--interactive {
 	pointer-events: auto;
 }

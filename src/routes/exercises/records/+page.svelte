@@ -63,7 +63,8 @@
 				: data.recordsCountPeek > 0
 	);
 	let delayedListSkeleton = createDelayedTrue(() => isListLoading);
-	let showSkeleton = $derived(delayedListSkeleton.current);
+	// SSR: show skeleton immediately (no $effect delay). Client: delay to avoid FOLS.
+	let showSkeleton = $derived((!browser && isListLoading) || delayedListSkeleton.current);
 	let listUncertain = $derived(isCloudListUncertain($recordsSync));
 
 	let recordMetas = $derived.by(() => {

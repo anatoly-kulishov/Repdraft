@@ -189,10 +189,13 @@
 		if (fromStore > 0) return HOME_RECENT_ROW_LIMIT;
 		return readBootSkeletonRecentRows();
 	});
-	/** Loading (not QA force). Delayed so fast local boots skip skeleton mount. */
+	/** Loading (not QA force). Delayed in browser so fast local boots skip skeleton mount. */
 	let isBootLoading = $derived(skeletonForce === null && !pageReady);
 	let delayedBootSkeleton = createDelayedTrue(() => isBootLoading);
-	let showBootSkeleton = $derived(skeletonForce !== null || delayedBootSkeleton.current);
+	// SSR: show skeleton immediately (no $effect delay). Client: delay to avoid FOLS.
+	let showBootSkeleton = $derived(
+		skeletonForce !== null || (!browser && isBootLoading) || delayedBootSkeleton.current
+	);
 
 	let isCreateHome = $derived(!hasPlans);
 	let showGuestCreateHero = $derived(pageReady && isGuest && isCreateHome);

@@ -242,7 +242,10 @@
 			: !indexReady
 	);
 	let delayedListSkeleton = createDelayedTrue(() => isListLoading);
-	let showListSkeleton = $derived(delayedListSkeleton.current);
+	// SSR: show skeleton immediately (no $effect delay). Client: delay to avoid FOLS.
+	let showListSkeleton = $derived(
+		(!browser && isListLoading) || delayedListSkeleton.current
+	);
 	let countN = $derived(
 		savedOnly
 			? indexReady

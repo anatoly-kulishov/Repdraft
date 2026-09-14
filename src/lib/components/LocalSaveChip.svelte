@@ -22,7 +22,7 @@
 </script>
 
 {#if visible}
-	<div class="network-status-chip local-save-chip" class:local-save-chip--interactive={clickable}>
+	<div class="local-save-chip" class:local-save-chip--interactive={clickable}>
 		{#if status === 'saving'}
 			<div class="local-save-chip__pill" role="status" aria-live="polite">
 				<Spinner size="sm" block={false} label={translate(lang, 'sync.savingLocally')} />

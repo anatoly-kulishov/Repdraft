@@ -101,7 +101,10 @@
 	);
 	let isBootLoading = $derived(!pageReady);
 	let delayedBootSkeleton = createDelayedTrue(() => isBootLoading);
-	let showBootSkeleton = $derived(delayedBootSkeleton.current);
+	// SSR: show skeleton immediately (no $effect delay). Client: delay to avoid FOLS.
+	let showBootSkeleton = $derived(
+		(!browser && isBootLoading) || delayedBootSkeleton.current
+	);
 	let skeletonVariant = $derived.by((): WorkoutsSkeletonVariant => {
 		if (activeTab === 'history') {
 			if ($live.historyHydrated) {
