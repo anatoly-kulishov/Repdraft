@@ -20,13 +20,17 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 				'Своё фото профиля на экране Аккаунт',
 				'Индикатор «Сохранено локально» после записи на телефон',
 				'При входе: сохранить локальные в аккаунт или оставить только облако',
-				'На Android: кнопка «Установить» вместо подсказок для Safari'
+				'На Android: кнопка «Установить» вместо подсказок для Safari',
+				'В каталоге заголовок и поиск не разъезжаются при прокрутке',
+				'Понятнее статус синхронизации и очередь уведомлений'
 			],
 			en: [
 				'Custom profile photo on Account',
 				'“Saved locally” cue after data is written on this phone',
 				'On sign-in: keep local in account or use cloud only',
-				'On Android: Install App button instead of Safari-only tips'
+				'On Android: Install App button instead of Safari-only tips',
+				'Catalog title and search stay together while you scroll',
+				'Clearer sync status and toast queue'
 			]
 		}
 	},
