@@ -494,6 +494,11 @@
 
 	function openAvatarSheet() {
 		if (avatarBusy || !$auth.configured) return;
+		/* Sheet only when Remove is available; otherwise one extra tap before the picker. */
+		if (!hasCustomAvatar) {
+			openAvatarFilePicker();
+			return;
+		}
 		avatarSheetOpen = true;
 	}
 
