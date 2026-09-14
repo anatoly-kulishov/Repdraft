@@ -23,23 +23,18 @@
 		{translate(lang, 'onboarding.tryDemo')}
 	</AppButton>
 {/if}
-<AppButton
-	href={BUILDER_NEW_HREF}
-	variant={preferDemo ? 'secondary' : undefined}
-	block
->
+<AppButton href={BUILDER_NEW_HREF} variant={preferDemo ? 'secondary' : undefined} block>
 	{translate(lang, 'workouts.create')}
 </AppButton>
-<BackupImportAction variant="link" block class="mt-2 text-[var(--color-muted)]" />
 {#if !preferDemo}
 	<AppButton
-		variant="link"
+		variant="secondary"
 		block
-		class="mt-2"
 		disabled={demoBusy}
 		aria-busy={demoBusy}
 		onclick={() => void onTryDemo()}
 	>
-		{translate(lang, 'onboarding.emptyPlansDemo')}
+		{translate(lang, 'onboarding.tryDemo')}
 	</AppButton>
 {/if}
+<BackupImportAction variant="link" block class="plans-empty-restore-link" />

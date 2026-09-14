@@ -1052,6 +1052,19 @@ html.is-plan-reorder-active .reorder-handle {
 	margin-top: 0.35rem;
 }
 
+.plans-empty-restore-link.btn-link {
+	margin-top: 0.15rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var(--color-muted);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.plans-empty-restore-link.btn-link:hover {
+	color: var(--color-ink);
+}
+
 .workouts-history-mock.entity-row {
 	flex-direction: column;
 	align-items: stretch;

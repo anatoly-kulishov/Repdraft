@@ -7,7 +7,7 @@
 	import DraftDock from '$lib/components/DraftDock.svelte';
 	import Logo from '$lib/components/Logo.svelte';
 	import SyncSnackbar from '$lib/components/SyncSnackbar.svelte';
-	import LocalSaveChip from '$lib/components/LocalSaveChip.svelte';
+	import LocalSaveToasts from '$lib/components/LocalSaveToasts.svelte';
 	import LocalMergeConflictSheet from '$lib/components/LocalMergeConflictSheet.svelte';
 	import ShellHomeGreeting from '$lib/components/ShellHomeGreeting.svelte';
 	import PwaInstallHint from '$lib/components/PwaInstallHint.svelte';
@@ -234,11 +234,23 @@
 			class:shell-header-mobile--home={showHomeShellHeader}
 		>
 			<div class="shell-header-mobile__bar flex h-14 w-full items-center justify-between gap-3 shell-header-pad">
-				{#if showHomeShellHeader}
-					<ShellHomeGreeting />
-				{:else}
-					<Logo compact />
-				{/if}
+				<!-- Keep both mounted: toggling Logo↔greeting remounted avatar and jittered the bar. -->
+				<div class="shell-header-mobile__lead" class:shell-header-mobile__lead--home={showHomeShellHeader}>
+					<div
+						class="shell-header-mobile__home-slot"
+						class:is-hidden={!showHomeShellHeader}
+						aria-hidden={!showHomeShellHeader ? true : undefined}
+					>
+						<ShellHomeGreeting />
+					</div>
+					<div
+						class="shell-header-mobile__logo-slot"
+						class:is-hidden={showHomeShellHeader}
+						aria-hidden={showHomeShellHeader ? true : undefined}
+					>
+						<Logo compact />
+					</div>
+				</div>
 				<div class="shell-header-actions flex items-center">
 					<button
 						type="button"
@@ -301,7 +313,7 @@
 	class:shell-nav-tabbar-hidden={hideMobileHeader}
 	aria-label={translate(lang, 'nav.main')}
 >
-	<LocalSaveChip />
+	<LocalSaveToasts />
 	<SyncSnackbar />
 	<div class="shell-nav-tabbar__inner">
 		<div class="shell-nav-tabbar__grid">

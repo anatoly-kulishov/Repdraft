@@ -3,6 +3,9 @@ export const AVATAR_MAX_PX = 500;
 export const AVATAR_MAX_SOURCE_BYTES = 12 * 1024 * 1024;
 export const AVATAR_MAX_OUTPUT_BYTES = 300 * 1024;
 export const CUSTOM_AVATAR_PATH_KEY = 'custom_avatar_path';
+export const AVATARS_BUCKET = 'avatars';
+/** Short cache: path changes on each upload, but browsers may still hold the old object URL briefly. */
+export const AVATAR_CACHE_CONTROL = '3600';
 
 /** Center square crop from a bitmap size. */
 export function squareCropRect(
