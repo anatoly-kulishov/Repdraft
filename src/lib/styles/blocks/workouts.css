@@ -212,7 +212,7 @@
 }
 
 .workouts-page__search {
-	margin-bottom: 0.85rem;
+	margin-bottom: var(--list-search-content-gap);
 }
 
 .plan-list-item {
@@ -279,7 +279,7 @@ html.is-plan-reorder-active .reorder-handle {
 	}
 
 	.workouts-page__search {
-		margin-bottom: 0.75rem;
+		margin-bottom: var(--list-search-content-gap);
 	}
 }
 
@@ -291,7 +291,7 @@ html.is-plan-reorder-active .reorder-handle {
 	.workouts-page__search {
 		width: 100%;
 		max-width: none;
-		margin-bottom: 1rem;
+		margin-bottom: var(--list-search-content-gap);
 	}
 }
 

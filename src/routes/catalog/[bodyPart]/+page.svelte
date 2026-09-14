@@ -4,6 +4,7 @@
 	import CatalogTargetGrid from '$lib/components/CatalogTargetGrid.svelte';
 	import CatalogCategoryGridSkeleton from '$lib/components/CatalogCategoryGridSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
+	import ScrollToTopFab from '$lib/components/ScrollToTopFab.svelte';
 	import {
 		catalogZonePath,
 		CATALOG_HUB_ZONE_COUNT,
@@ -129,13 +130,14 @@
 <div
 	class={`content-page content-page--catalog ${showCategoryBrowse ? 'catalog-page--browse' : 'catalog-page--list'}`}
 >
-	<ScreenHeader
-		fixed={showExerciseList}
-		title={headerTitle}
-		{backHref}
-		backLabelVisible
-		{backLabel}
-	/>
+	{#if !showExerciseList}
+		<ScreenHeader
+			title={headerTitle}
+			{backHref}
+			backLabelVisible
+			{backLabel}
+		/>
+	{/if}
 
 	<section
 		class={`catalog-zone-shell ${showCategoryBrowse ? 'catalog-zone-shell--browse' : 'catalog-zone-shell--list'}`}
@@ -178,8 +180,22 @@
 					initialTarget={effectiveTarget}
 					initialBodyPart={data.initialBodyPart}
 					gridOnDesktop
-				/>
+				>
+					{#snippet stickyHeader()}
+						<ScreenHeader
+							embedded
+							title={headerTitle}
+							{backHref}
+							backLabelVisible
+							{backLabel}
+						/>
+					{/snippet}
+				</CatalogExerciseList>
 			{/key}
 		{/if}
 	</section>
+
+	{#if showExerciseList}
+		<ScrollToTopFab />
+	{/if}
 </div>

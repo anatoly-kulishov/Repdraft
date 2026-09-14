@@ -16,7 +16,9 @@ export type SkeletonTransitionSpec = {
 	maxCls?: number;
 	/** Max |Δheight| between skeleton root and ready root (px). Skip when null. */
 	maxHeightDeltaPx?: number | null;
-	/** Delay exercises.index.json to keep skeleton on screen. */
+	/** Delay exercises.index.json to keep skeleton on screen.
+	 * Must exceed page skeleton show-delay (SKELETON_SHOW_DELAY_MS = 220) so slow-path e2e still sees bones.
+	 * Fast boots may skip skeleton entirely (FOLS fix); assertSkeletonTransition treats that as optional. */
 	indexDelayMs?: number;
 	/** Post-ready settle before height compare (infinite scroll can inflate ready height). */
 	settleMs?: number;
@@ -373,7 +375,7 @@ export async function assertSkeletonTransition(
 			skeletonHeight = box?.height ?? null;
 		}
 	} catch {
-		/* Boot can be faster than delayed index on warm tabs — CLS still checked. */
+		/* Boot can finish under skeleton show-delay (220ms) or before delayed index — CLS still checked. */
 	}
 
 	await ready.waitFor({ state: 'visible', timeout: 20_000 });

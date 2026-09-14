@@ -25,3 +25,63 @@ html.e2e-stable *::after {
 	animation-delay: 0s !important;
 	transition-duration: 0.001ms !important;
 }
+
+/* OS / battery accessibility: stop infinite motion; solid skeletons; static spinners. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+
+	/* Skeletons: static solid, no shimmer gradient */
+	.skeleton-shimmer,
+	[class*='skel-bone'],
+	[class*='skeleton'],
+	.feed-skel,
+	.shell-home-greeting__line--skeleton,
+	.shell-theme-toggle__skeleton,
+	.account-avatar.is-skeleton {
+		animation: none !important;
+		background-image: none !important;
+		background-color: var(--skeleton-base, var(--color-surface-muted));
+	}
+
+	/* Spinners: discrete static ring */
+	.loader-spinner,
+	.cloud-sync-title-hint__icon {
+		animation: none !important;
+	}
+
+	/* Sheets / enters / freeze mid-fade denylist */
+	.soft-enter,
+	[data-slot='sheet-content'],
+	.bottom-sheet__card,
+	.exercise-card img,
+	.exercise-card-img,
+	.toast-stack > *,
+	.toast-item,
+	.live-rest,
+	.live-rest-value,
+	.live-rest__bar::after,
+	.live-set-done-btn--done,
+	.live-set-row.is-done,
+	.live-set-row.is-just-done,
+	.field.is-invalid,
+	input[data-slot='input'][aria-invalid='true'],
+	.clip-lightbox,
+	.clip-lightbox__panel,
+	.summary-check,
+	.summary-stat,
+	.cloud-sync-banner,
+	.empty-state__icon,
+	.exercise-card-add.is-just-added .exercise-card-add-icon {
+		animation: none !important;
+		transition: none !important;
+		opacity: 1 !important;
+		transform: none !important;
+	}
+}

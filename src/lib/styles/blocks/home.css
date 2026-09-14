@@ -43,6 +43,11 @@
 	box-shadow: var(--shadow-panel);
 }
 
+/* Start home (has plans): reserve populated 3-line copy so recent list does not jump. */
+.home-page--start .home-header--mockup {
+	min-height: 6.05rem;
+}
+
 .home-header--mockup .home-header__copy {
 	animation: kineticsSurfaceIn 0.55s var(--ease-toast) both;
 }
@@ -360,6 +365,7 @@ a.home-header__row--link:active .home-header__cta {
 }
 
 .home-header--mockup .home-header__plan {
+	min-height: calc(1.0625rem * 1.28);
 	font-size: 1.0625rem;
 	line-height: 1.28;
 }
@@ -384,6 +390,11 @@ a.home-header__row--link:active .home-header__cta {
 		gap: 0;
 		margin-bottom: 1.5rem;
 		padding: 1.25rem 1.35rem 1.15rem;
+	}
+
+	.home-page--start .home-header--mockup {
+		/* Desktop padding + 3-line copy (greeting is extra when shown). */
+		min-height: 6.55rem;
 	}
 
 	.home-header--mockup .home-header__row {
@@ -420,6 +431,7 @@ a.home-header__row--link:active .home-header__cta {
 
 	.home-header--mockup .home-header__plan {
 		font-size: 1.125rem;
+		min-height: calc(1.125rem * 1.28);
 	}
 
 	.home-header--mockup .home-header__cta.home-header__cta--compact {
@@ -1427,6 +1439,18 @@ a.home-header__row--link:active .home-header__cta {
 .home-skeleton-mockup .home-header__subtitle.home-skel-bone {
 	display: block;
 	width: min(100%, 18rem);
+	max-width: 100%;
+}
+
+.home-skeleton-mockup .home-header__plan.home-skel-bone {
+	display: block;
+	width: min(100%, 14rem);
+	max-width: 100%;
+}
+
+.home-skeleton-mockup .home-header__meta.home-skel-bone {
+	display: block;
+	width: min(100%, 12rem);
 	max-width: 100%;
 }
 

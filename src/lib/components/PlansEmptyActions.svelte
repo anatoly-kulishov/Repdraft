@@ -30,7 +30,7 @@
 >
 	{translate(lang, 'workouts.create')}
 </AppButton>
-<BackupImportAction variant="secondary" block />
+<BackupImportAction variant="link" block class="mt-2 text-[var(--color-muted)]" />
 {#if !preferDemo}
 	<AppButton
 		variant="link"

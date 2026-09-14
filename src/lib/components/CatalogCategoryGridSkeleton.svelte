@@ -21,6 +21,7 @@
 				<AppSkeleton class="catalog-category-skeleton__title" />
 				<AppSkeleton class="catalog-category-skeleton__count" />
 			</div>
+			<span class="catalog-category-skeleton__focus"></span>
 		</div>
 	{/each}
 </div>

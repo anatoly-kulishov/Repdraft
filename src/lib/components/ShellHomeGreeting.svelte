@@ -5,8 +5,9 @@
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
 	import { greetingFirstName } from '$lib/domain/greetingName';
-	import { userAvatarUrl, userInitials } from '$lib/domain/authFlow';
+	import { userInitials } from '$lib/domain/authFlow';
 	import { translate } from '$lib/i18n/messages';
+	import { resolveUserAvatarUrl } from '$lib/storage/avatarsRepository';
 	import { auth } from '$lib/stores/auth';
 	import { greetingName } from '$lib/stores/greetingName';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -14,7 +15,7 @@
 
 	let lang = $derived($resolvedLocale);
 	let email = $derived($auth.user?.email ?? null);
-	let avatarUrl = $derived(userAvatarUrl($auth.user));
+	let avatarUrl = $derived(resolveUserAvatarUrl($auth.user));
 	let avatarBroken = $state(false);
 	let showPhoto = $derived(Boolean(avatarUrl) && !avatarBroken);
 	let initials = $derived(userInitials($auth.user));

@@ -2,6 +2,10 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { syncToastStackLift, watchToastStackLift } from '$lib/dom/toastStackLift';
+	import {
+		toastSwipeDismiss,
+		toastSwipeSkipResetMotion
+	} from '$lib/dom/toastSwipeDismiss';
 	import { toasts, UNDO_MS, type Toast } from '$lib/stores/toasts';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -17,6 +21,13 @@
 
 	const UNDO_RING_R = 14;
 	const UNDO_RING_C = 2 * Math.PI * UNDO_RING_R;
+
+	let swipeId = $state<number | null>(null);
+	let swipeDx = $state(0);
+	let swipeOpacity = $state(1);
+	let swipeDragging = $state(false);
+	let swipeResetting = $state(false);
+	let swipeResetTimer: number | undefined;
 
 	$effect(() => {
 		const undoItems = items.filter(
@@ -57,6 +68,66 @@
 
 	const hasUndoSnackbar = $derived(items.some((t) => Boolean(t.onUndo)));
 
+	function clearSwipeResetTimer() {
+		if (swipeResetTimer !== undefined) {
+			window.clearTimeout(swipeResetTimer);
+			swipeResetTimer = undefined;
+		}
+	}
+
+	function clearSwipeVisual() {
+		clearSwipeResetTimer();
+		swipeId = null;
+		swipeDx = 0;
+		swipeOpacity = 1;
+		swipeDragging = false;
+		swipeResetting = false;
+	}
+
+	function swipeStyle(toastId: number): string | undefined {
+		if (swipeId !== toastId) return undefined;
+		return `transform: translateX(${swipeDx}px); opacity: ${swipeOpacity};`;
+	}
+
+	function onSwipeDrag(toastId: number, dx: number, opacity: number) {
+		clearSwipeResetTimer();
+		swipeId = toastId;
+		swipeDx = dx;
+		swipeOpacity = opacity;
+		swipeDragging = true;
+		swipeResetting = false;
+	}
+
+	function onSwipeIdle(toastId: number, animateReset: boolean) {
+		if (swipeId !== null && swipeId !== toastId) return;
+		if (!animateReset || toastSwipeSkipResetMotion()) {
+			clearSwipeVisual();
+			return;
+		}
+		swipeDragging = false;
+		swipeResetting = true;
+		swipeDx = 0;
+		swipeOpacity = 1;
+		clearSwipeResetTimer();
+		swipeResetTimer = window.setTimeout(() => {
+			swipeResetTimer = undefined;
+			if (swipeId === toastId) clearSwipeVisual();
+		}, 200);
+	}
+
+	function swipeParams(toastId: number) {
+		return {
+			onDismiss: () => toasts.dismiss(toastId),
+			onDrag: (dx: number, opacity: number) => onSwipeDrag(toastId, dx, opacity),
+			onIdle: (animateReset: boolean) => onSwipeIdle(toastId, animateReset)
+		};
+	}
+
+	$effect(() => {
+		const activeId = items[0]?.id;
+		if (swipeId !== null && activeId !== swipeId) clearSwipeVisual();
+	});
+
 	$effect(() => watchToastStackLift());
 
 	$effect(() => {
@@ -75,8 +146,12 @@
 			{#if toast.onUndo}
 				<div
 					class="toast-item toast-item--undo-snackbar pointer-events-auto"
+					class:toast-item--swiping={swipeDragging && swipeId === toast.id}
+					class:toast-item--swipe-reset={swipeResetting && swipeId === toast.id}
 					role="status"
 					aria-live="polite"
+					style={swipeStyle(toast.id)}
+					use:toastSwipeDismiss={swipeParams(toast.id)}
 				>
 					{#if toast.undoBusy}
 						<div class="toast-undo-snackbar__ring toast-undo-snackbar__ring--busy" aria-hidden="true">
@@ -135,7 +210,11 @@
 					class="toast-item pointer-events-auto relative w-full rounded-2xl py-2 pl-3.5 pr-11 text-sm font-medium leading-snug"
 					class:toast-item--accent={toast.kind === 'success' || toast.kind === 'info'}
 					class:toast-item--error={toast.kind === 'error'}
+					class:toast-item--swiping={swipeDragging && swipeId === toast.id}
+					class:toast-item--swipe-reset={swipeResetting && swipeId === toast.id}
 					role="status"
+					style={swipeStyle(toast.id)}
+					use:toastSwipeDismiss={swipeParams(toast.id)}
 				>
 					<div class="toast-item__body min-w-0">
 						<span class="block max-w-full text-left">{toast.message}</span>
@@ -171,6 +250,20 @@
 		flex: 0 0 auto;
 		align-self: stretch;
 		min-height: 2.5rem;
+		touch-action: pan-y;
+	}
+
+	.toast-item--swiping {
+		transition: none;
+		animation: none !important;
+		user-select: none;
+	}
+
+	.toast-item--swipe-reset {
+		transition:
+			transform 0.2s var(--ease-snackbar, ease),
+			opacity 0.2s var(--ease-snackbar, ease);
+		animation: none !important;
 	}
 
 	.toast-item--error {
@@ -379,7 +472,27 @@
 		/*
 		 * With a bottom-right + FAB (and optional bottom-left scroll-to-top), do not
 		 * squeeze the toast beside them. Sit centered above the FAB row instead.
+		 * Undo snackbars use the same clearance so they never cover the FAB.
 		 */
+		:global(
+				body:has(.workouts-fab:not(.workouts-fab--hidden)):not(:has(.sticky-actions)):not(
+						:has(.live-sticky-actions)
+					)
+			)
+			.toast-stack,
+		:global(
+				body:has(.app-fab:not(.app-fab--hidden)):not(:has(.sticky-actions)):not(:has(.live-sticky-actions))
+			)
+			.toast-stack {
+			left: 50%;
+			right: auto;
+			transform: translateX(-50%);
+			--toast-stack-bottom-base: calc(
+				var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--fab-size) + 0.65rem +
+					var(--vv-fixed-bottom, 0px)
+			);
+		}
+
 		:global(
 				body:has(.workouts-fab:not(.workouts-fab--hidden)):not(:has(.sticky-actions)):not(
 						:has(.live-sticky-actions)
@@ -390,17 +503,9 @@
 				body:has(.app-fab:not(.app-fab--hidden)):not(:has(.sticky-actions)):not(:has(.live-sticky-actions))
 			)
 			.toast-stack:not(.toast-stack--undo-snackbar) {
-			left: 50%;
-			right: auto;
 			width: min(20.5rem, calc(100vw - 2rem));
-			transform: translateX(-50%);
-			--toast-stack-bottom-base: calc(
-				var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--fab-size) + 0.65rem +
-					var(--vv-fixed-bottom, 0px)
-			);
 		}
 
-		/* Undo stays full-width and low; FABs lift via --toast-undo-clearance. */
 		:global(
 				body:has(.workouts-fab:not(.workouts-fab--hidden)):not(:has(.sticky-actions)):not(
 						:has(.live-sticky-actions)
@@ -411,10 +516,8 @@
 				body:has(.app-fab:not(.app-fab--hidden)):not(:has(.sticky-actions)):not(:has(.live-sticky-actions))
 			)
 			.toast-stack--undo-snackbar {
-			left: max(1rem, var(--safe-left));
-			right: max(1rem, var(--safe-right));
-			width: auto;
-			transform: none;
+			width: calc(100vw - 2rem);
+			max-width: 28rem;
 		}
 	}
 

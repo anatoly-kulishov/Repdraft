@@ -31,6 +31,7 @@
 	import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
+	import { createDelayedTrue } from '$lib/browser/delayedTrue.svelte';
 	import { readDraft, peekBuilderDraftExerciseCount } from '$lib/storage/localWorkoutRepository';
 	import { Plus, Save, Trash2, ArrowLeft, Layers, ListTree } from '@lucide/svelte';
 
@@ -50,6 +51,12 @@
 	let selectedCount = $derived(selectedIds.length);
 	let pageReady = $derived(
 		$draftHydrated && ($draft.exercises.length === 0 || indexReady)
+	);
+	let isBootLoading = $derived(!pageReady);
+	let delayedBootSkeleton = createDelayedTrue(() => isBootLoading);
+	// SSR: show skeleton immediately (no $effect delay). Client: delay to avoid FOLS.
+	let showBootSkeleton = $derived(
+		(!browser && isBootLoading) || delayedBootSkeleton.current
 	);
 	let builderSkeletonExerciseCount = $derived.by(() => {
 		if ($draft.exercises.length > 0) return $draft.exercises.length;
@@ -293,7 +300,7 @@
 		{/if}
 	</div>
 
-	{#if !pageReady}
+	{#if showBootSkeleton}
 		<div class="soft-enter">
 			<PageSkeleton
 				variant={builderSkeletonEmpty ? 'builder-empty' : 'builder'}
@@ -309,6 +316,8 @@
 				</div>
 			</div>
 		{/if}
+	{:else if isBootLoading}
+		<!-- Delay window: no skeleton, no content (avoids FOLS). -->
 	{:else if $draftHydrated}
 		<div class="soft-enter">
 			<div class="builder-name-desktop mb-4 w-full">

@@ -78,7 +78,7 @@
 					</span>
 				{/if}
 				<span
-					class="btn-secondary empty-state__action workouts-skel-bone workouts-skel-bone--cta"
+					class="btn-link mt-2 block w-full empty-state__action workouts-skel-bone workouts-skel-bone--link"
 				>
 					{translate(lang, 'settings.importJson')}
 				</span>

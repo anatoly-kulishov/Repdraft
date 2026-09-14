@@ -10,6 +10,7 @@ import { syncImportedPayloadToCloud } from '$lib/stores/cloudLocal';
 import { live } from '$lib/stores/live';
 import { plans } from '$lib/stores/plans';
 import { records } from '$lib/stores/records';
+import { syncState } from '$lib/stores/syncState';
 
 /** Served from `static/dev/` (committed fixture; regenerate via `npm run gen:stress-backup`). */
 export const DEV_STRESS_BACKUP_HREF = '/dev/repdraft-backup-stress-load.json';
@@ -30,9 +31,16 @@ export async function applyLocalBackupImport(
 	const current = await loadLocalBundle();
 	const merged = mergeLocalWithImport(current, payload);
 
-	replaceAllPlans(merged.plans);
-	replaceAllSessions(merged.sessions);
-	replaceAllRecords(merged.records);
+	syncState.beginLocalSave();
+	try {
+		replaceAllPlans(merged.plans);
+		replaceAllSessions(merged.sessions);
+		replaceAllRecords(merged.records);
+		syncState.markLocalSaved();
+	} catch (err) {
+		syncState.markLocalSaveError();
+		throw err;
+	}
 
 	const cloudSynced = await syncImportedPayloadToCloud(payload);
 	const useCloud = isCloudMode();

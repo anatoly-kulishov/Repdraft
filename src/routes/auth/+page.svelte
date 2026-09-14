@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { createDelayedTrue } from '$lib/browser/delayedTrue.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import {
 		authErrorMessageKey,
 		passwordsMatch,
 		safeRedirectPath,
-		userAvatarUrl,
 		userAuthProvider,
+		userCustomAvatarPath,
 		userDisplayName,
 		userInitials
 	} from '$lib/domain/authFlow';
@@ -19,6 +20,7 @@
 	import { greetingName } from '$lib/stores/greetingName';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import { resolveUserAvatarUrl } from '$lib/storage/avatarsRepository';
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
@@ -29,6 +31,7 @@
 	import PasswordField from '$lib/components/PasswordField.svelte';
 	import PasswordPolicyHints from '$lib/components/PasswordPolicyHints.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
+	import ProfileAvatarSheet from '$lib/components/ProfileAvatarSheet.svelte';
 	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -37,13 +40,15 @@
 	import ProfileDevWipePanel from '$lib/components/ProfileDevWipePanel.svelte';
 	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
 	import WhatsNewSheet from '$lib/components/WhatsNewSheet.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { GREETING_NAME_MAX, clampGreetingName, greetingNameMatchesStored } from '$lib/domain/greetingName';
 	import { isIosDevice } from '$lib/domain/pwaInstall';
 	import { restSoundEnabled, testerModeEnabled } from '$lib/stores/prefs';
 	import { testerToolsVisible } from '$lib/domain/prefs';
 	import { get } from 'svelte/store';
 	import { tick } from 'svelte';
-	import { FileText, LogOut, Timer, Shield, ClipboardList } from '@lucide/svelte';
+	import { Camera, FileText, LogOut, Timer, Shield, ClipboardList } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -70,6 +75,9 @@
 	let logoutEverywhereConfirmOpen = $state(false);
 	let captchaToken = $state('');
 	let captchaReset = $state(0);
+	let avatarSheetOpen = $state(false);
+	let avatarBusy = $state(false);
+	let avatarFileInput: HTMLInputElement | null = $state(null);
 
 	let turnstileOn = $derived(isTurnstileConfigured());
 
@@ -134,10 +142,11 @@
 	let nextPath = $derived(safeRedirectPath($page.url.searchParams.get('next')));
 	let recoveryMode = $derived($auth.passwordRecovery);
 	let profileName = $derived(userDisplayName($auth.user));
-	let profileAvatar = $derived(userAvatarUrl($auth.user));
+	let profileAvatar = $derived(resolveUserAvatarUrl($auth.user));
 	let profileInitials = $derived(userInitials($auth.user));
 	let profileAvatarBroken = $state(false);
 	let showProfilePhoto = $derived(Boolean(profileAvatar) && !profileAvatarBroken);
+	let hasCustomAvatar = $derived(Boolean(userCustomAvatarPath($auth.user)));
 	let profileProvider = $derived(userAuthProvider($auth.user));
 	let profileProviderLabel = $derived.by(() => {
 		const id = profileProvider;
@@ -445,7 +454,13 @@
 		skeletonForce === 'guest' ||
 			(authSessionPending && !skeletonForce && !bootLikelyAccount)
 	);
-	let showBootSkeleton = $derived(showAccountSkeleton || showGuestSkeleton);
+	/** Natural boot loading (not ?skeleton= force). */
+	let isBootLoading = $derived(authSessionPending && skeletonForce === null);
+	let delayedBootSkeleton = createDelayedTrue(() => isBootLoading);
+	// SSR: show skeleton immediately (no $effect delay). Client: delay to avoid FOLS.
+	let showBootSkeleton = $derived(
+		skeletonForce !== null || (!browser && isBootLoading) || delayedBootSkeleton.current
+	);
 	/** Real cloud-off UI only after client auth finished and keys are missing. */
 	let showCloudOff = $derived(
 		browser && $auth.ready && $auth.sessionKnown && !$auth.configured && !showBootSkeleton
@@ -477,16 +492,54 @@
 		}
 	}
 
+	function openAvatarSheet() {
+		if (avatarBusy || !$auth.configured) return;
+		avatarSheetOpen = true;
+	}
+
+	function openAvatarFilePicker() {
+		avatarFileInput?.click();
+	}
+
+	async function onAvatarFileChange(e: Event) {
+		const input = e.currentTarget as HTMLInputElement;
+		const file = input.files?.[0] ?? null;
+		input.value = '';
+		if (!file || avatarBusy) return;
+		avatarBusy = true;
+		try {
+			await auth.uploadProfileAvatar(file);
+			toasts.show(translate(lang, 'auth.avatar.saved'), 'success');
+		} catch (err) {
+			toasts.show(translateError(lang, err, 'auth.avatar.uploadFail'), 'error');
+		} finally {
+			avatarBusy = false;
+		}
+	}
+
+	async function removeCustomAvatar() {
+		if (avatarBusy || !hasCustomAvatar) return;
+		avatarBusy = true;
+		try {
+			await auth.removeProfileAvatar();
+			toasts.show(translate(lang, 'auth.avatar.removed'), 'success');
+		} catch (err) {
+			toasts.show(translateError(lang, err, 'auth.avatar.removeFail'), 'error');
+		} finally {
+			avatarBusy = false;
+		}
+	}
+
 </script>
 
 <SeoHead title={translate(lang, 'auth.title')} noindex />
 
 <section
 	class="auth-page content-page"
-	class:auth-page--account={accountMode && !showBootSkeleton}
+	class:auth-page--account={accountMode && !showBootSkeleton && !isBootLoading}
 	class:auth-page--booting={showBootSkeleton}
-	class:auth-page--booting-account={showAccountSkeleton}
-	class:auth-page--booting-guest={showGuestSkeleton}
+	class:auth-page--booting-account={showBootSkeleton && showAccountSkeleton}
+	class:auth-page--booting-guest={showBootSkeleton && showGuestSkeleton}
 >
 	{#if $auth.ready && $auth.sessionKnown && !showBootSkeleton}
 		{#if accountMode}
@@ -511,6 +564,8 @@
 
 	{#if showBootSkeleton}
 		<PageSkeleton variant={showAccountSkeleton ? 'auth' : 'auth-guest'} rows={2} />
+	{:else if isBootLoading}
+		<!-- Delay window: no skeleton, no auth UI (avoids FOLS). -->
 	{:else if showCloudOff}
 		<div class="auth-guest-stack">
 			<div class="auth-signin panel">
@@ -575,26 +630,54 @@
 			<header class="profile-hero">
 				<div class="profile-hero__stage">
 					<div class="profile-hero__glow" aria-hidden="true"></div>
-					{#if showProfilePhoto && profileAvatar}
-						<img
-							class="account-avatar is-photo profile-hero__avatar"
-							src={profileAvatar}
-							alt=""
-							width="96"
-							height="96"
-							referrerpolicy="no-referrer"
-							decoding="async"
-							onerror={() => {
-								profileAvatarBroken = true;
-							}}
-						/>
-					{:else if profileInitials}
-						<span class="account-avatar profile-hero__avatar" aria-hidden="true">{profileInitials}</span>
-					{:else}
-						<span class="account-avatar is-guest profile-hero__avatar" aria-hidden="true">
-							{profileName?.charAt(0)?.toUpperCase() ?? '?'}
-						</span>
-					{/if}
+					<button
+						type="button"
+						class="profile-hero__avatar-btn"
+						aria-label={translate(lang, 'auth.avatar.editAria')}
+						disabled={avatarBusy || !$auth.configured}
+						onclick={openAvatarSheet}
+					>
+						{#if showProfilePhoto && profileAvatar}
+							<img
+								class="account-avatar is-photo profile-hero__avatar"
+								src={profileAvatar}
+								alt=""
+								width="96"
+								height="96"
+								referrerpolicy="no-referrer"
+								decoding="async"
+								onerror={() => {
+									profileAvatarBroken = true;
+								}}
+							/>
+						{:else if profileInitials}
+							<span class="account-avatar profile-hero__avatar" aria-hidden="true"
+								>{profileInitials}</span
+							>
+						{:else}
+							<span class="account-avatar is-guest profile-hero__avatar" aria-hidden="true">
+								{profileName?.charAt(0)?.toUpperCase() ?? '?'}
+							</span>
+						{/if}
+						{#if avatarBusy}
+							<span class="profile-hero__avatar-busy" aria-hidden="true">
+								<Spinner size="sm" block={false} label="" />
+							</span>
+						{:else}
+							<span class="profile-hero__camera-badge" aria-hidden="true">
+								<LucideIcon icon={Camera} size={ICON_SMALL} />
+							</span>
+						{/if}
+					</button>
+					<input
+						bind:this={avatarFileInput}
+						type="file"
+						accept="image/*"
+						class="sr-only"
+						tabindex="-1"
+						aria-hidden="true"
+						onchange={onAvatarFileChange}
+					/>
 				</div>
 
 				<h2 class="profile-hero__name">{profileName || $auth.user.email}</h2>
@@ -605,6 +688,19 @@
 					<span class="auth-provider-badge profile-hero__badge">{profileProviderLabel}</span>
 				{/if}
 			</header>
+
+			<ProfileAvatarSheet
+				open={avatarSheetOpen}
+				canRemove={hasCustomAvatar}
+				busy={avatarBusy}
+				onChangePhoto={openAvatarFilePicker}
+				onRemovePhoto={() => {
+					void removeCustomAvatar();
+				}}
+				onDismiss={() => {
+					avatarSheetOpen = false;
+				}}
+			/>
 
 			<div class="profile-settings-stack">
 				<form

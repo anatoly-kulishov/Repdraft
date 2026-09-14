@@ -6,7 +6,9 @@
 	import AccountChip from '$lib/components/AccountChip.svelte';
 	import DraftDock from '$lib/components/DraftDock.svelte';
 	import Logo from '$lib/components/Logo.svelte';
-	import NetworkStatusChip from '$lib/components/NetworkStatusChip.svelte';
+	import SyncSnackbar from '$lib/components/SyncSnackbar.svelte';
+	import LocalSaveChip from '$lib/components/LocalSaveChip.svelte';
+	import LocalMergeConflictSheet from '$lib/components/LocalMergeConflictSheet.svelte';
 	import ShellHomeGreeting from '$lib/components/ShellHomeGreeting.svelte';
 	import PwaInstallHint from '$lib/components/PwaInstallHint.svelte';
 	import ToastStack from '$lib/components/ToastStack.svelte';
@@ -149,7 +151,12 @@
 			void flushSyncOutbox();
 			void techniqueClipHints.refresh();
 		};
+		/* Flush soon after enqueue while online (repdraft:outbox), not only on visibility. */
+		const onOutbox = () => {
+			if (navigator.onLine) void flushSyncOutbox();
+		};
 		window.addEventListener('online', onOnline);
+		window.addEventListener('repdraft:outbox', onOutbox);
 		if (navigator.onLine) void flushSyncOutbox();
 
 		const syncVvChrome = (window as Window & { __repdraftSyncVvChrome?: () => void })
@@ -184,6 +191,7 @@
 			unsubAnalytics();
 			removeDeepLinks();
 			window.removeEventListener('online', onOnline);
+			window.removeEventListener('repdraft:outbox', onOutbox);
 			document.removeEventListener('visibilitychange', onVisible);
 		};
 	});
@@ -293,7 +301,8 @@
 	class:shell-nav-tabbar-hidden={hideMobileHeader}
 	aria-label={translate(lang, 'nav.main')}
 >
-	<NetworkStatusChip />
+	<LocalSaveChip />
+	<SyncSnackbar />
 	<div class="shell-nav-tabbar__inner">
 		<div class="shell-nav-tabbar__grid">
 		<a
@@ -355,4 +364,5 @@
 </nav>
 
 <ToastStack items={$toasts} />
+<LocalMergeConflictSheet />
 <DraftDock />
