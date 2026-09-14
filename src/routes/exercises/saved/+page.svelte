@@ -21,14 +21,6 @@
 <SeoHead title={title} noindex />
 
 <div class="content-page content-page--catalog catalog-page--list catalog-saved-page records-page">
-	<ScreenHeader
-		fixed
-		{title}
-		backHref="/exercises"
-		backLabelVisible
-		backLabel={translate(lang, 'catalog.hubTitle')}
-	/>
-
 	<CatalogExerciseList
 		equipment={data.equipment}
 		targets={data.targets}
@@ -36,7 +28,17 @@
 		indexError={data.indexError}
 		savedOnly
 		bookmarksCountPeek={data.bookmarksCountPeek}
-	/>
+	>
+		{#snippet stickyHeader()}
+			<ScreenHeader
+				embedded
+				{title}
+				backHref="/exercises"
+				backLabelVisible
+				backLabel={translate(lang, 'catalog.hubTitle')}
+			/>
+		{/snippet}
+	</CatalogExerciseList>
 
 	<ScrollToTopFab />
 </div>

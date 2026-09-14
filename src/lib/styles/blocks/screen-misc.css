@@ -14,6 +14,26 @@
 	background: var(--chrome-header-bg);
 }
 
+/* Nested in CatalogListStickyChrome: parent owns sticky / safe-area / shadow. */
+.screen-header--embedded,
+.shell-main--subroute .screen-header.screen-header--embedded,
+.shell-main--subroute .screen-header.screen-header--embedded.screen-header--fixed {
+	position: static;
+	top: auto;
+	left: auto;
+	right: auto;
+	z-index: auto;
+	width: auto;
+	max-width: none;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	border-bottom: none;
+	box-shadow: none;
+	overflow: visible;
+}
+
 .screen-header__bar {
 	display: flex;
 	align-items: center;
@@ -1756,6 +1776,10 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	width: max-content;
 	min-height: 3rem;
 	min-width: 3rem;
+}
+
+.profile-settings-row__control .segment-control {
+	width: min(11.5rem, 46vw);
 }
 
 .profile-settings-row__toggle {

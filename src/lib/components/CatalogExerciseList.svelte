@@ -7,6 +7,7 @@
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
+	import CatalogListStickyChrome from '$lib/components/CatalogListStickyChrome.svelte';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -34,7 +35,7 @@
 	import { createDelayedTrue } from '$lib/browser/delayedTrue.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { onMount, untrack } from 'svelte';
+	import { onMount, untrack, type Snippet } from 'svelte';
 	import { Bookmark, Trash2 } from '@lucide/svelte';
 
 	let {
@@ -51,7 +52,9 @@
 		gridOnDesktop = false,
 		savedOnly = false,
 		/** SSR cookie peek: 0 = known empty, >0 = expect list, null = unknown. */
-		bookmarksCountPeek = null as number | null
+		bookmarksCountPeek = null as number | null,
+		/** ScreenHeader (or similar) rendered inside CatalogListStickyChrome. */
+		stickyHeader
 	}: {
 		equipment: string[];
 		targets: string[];
@@ -68,6 +71,7 @@
 		gridOnDesktop?: boolean;
 		savedOnly?: boolean;
 		bookmarksCountPeek?: number | null;
+		stickyHeader?: Snippet;
 	} = $props();
 
 	function filtersFromSearchParams(searchParams: URLSearchParams): ExerciseFilters {
@@ -494,7 +498,50 @@
 	});
 </script>
 
+{#snippet filterChrome()}
+	{#if isListLoading}
+		<div class="catalog-filters-shell">
+			<div class="catalog-filters {filterLockBodyPart ? 'catalog-filters--zone' : ''}">
+				<div class="list-search-bar" aria-hidden="true">
+					<div class="list-search-bar__row">
+						<div class="list-search-bar__search">
+							<AppSkeleton class="records-skeleton__search skeleton-shimmer" />
+						</div>
+						{#if equipmentFacets.length > 0 || savedOnly}
+							<span class="list-search-bar__filter catalog-filter-skeleton__filter"></span>
+						{/if}
+					</div>
+					{#if filterLockBodyPart && !hideTargetChips && targetFacets.length > 1}
+						<div class="list-search-bar__extra">
+							<div class="catalog-filter-skeleton__chips">
+								<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" />
+								<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" />
+								<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" />
+							</div>
+						</div>
+					{/if}
+				</div>
+			</div>
+		</div>
+	{:else}
+		<FilterBar
+			bind:filters
+			equipment={equipmentOptions}
+			targets={targetOptions}
+			lockBodyPart={filterLockBodyPart}
+			{hideTargetChips}
+		/>
+	{/if}
+{/snippet}
+
 {#if savedTrulyEmpty}
+	{#if stickyHeader}
+		<CatalogListStickyChrome>
+			{#snippet header()}
+				{@render stickyHeader()}
+			{/snippet}
+		</CatalogListStickyChrome>
+	{/if}
 	<EmptyState
 		class={emptyStateClass}
 		centered
@@ -515,43 +562,20 @@
 	</EmptyState>
 {:else}
 <div class="catalog-list-layout">
-	<div class="catalog-list-layout__filters">
-		{#if isListLoading && showListSkeleton}
-			<div class="catalog-filters-shell">
-				<div
-					class="catalog-filters {filterLockBodyPart ? 'catalog-filters--zone' : ''}"
-				>
-					<div class="list-search-bar" aria-hidden="true">
-						<div class="list-search-bar__row">
-							<div class="list-search-bar__search">
-								<AppSkeleton class="records-skeleton__search skeleton-shimmer" />
-							</div>
-							{#if equipmentFacets.length > 0 || savedOnly}
-								<span class="list-search-bar__filter catalog-filter-skeleton__filter"></span>
-							{/if}
-						</div>
-						{#if filterLockBodyPart && !hideTargetChips && targetFacets.length > 1}
-							<div class="list-search-bar__extra">
-								<div class="catalog-filter-skeleton__chips">
-									<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" />
-									<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" />
-									<AppSkeleton class="catalog-filter-skeleton__chip skeleton-shimmer" />
-								</div>
-							</div>
-						{/if}
-					</div>
-				</div>
-			</div>
-		{:else if !isListLoading}
-			<FilterBar
-				bind:filters
-				equipment={equipmentOptions}
-				targets={targetOptions}
-				lockBodyPart={filterLockBodyPart}
-				{hideTargetChips}
-			/>
-		{/if}
-	</div>
+	{#if stickyHeader}
+		<CatalogListStickyChrome>
+			{#snippet header()}
+				{@render stickyHeader()}
+			{/snippet}
+			{#snippet tools()}
+				{@render filterChrome()}
+			{/snippet}
+		</CatalogListStickyChrome>
+	{:else}
+		<div class="catalog-list-layout__filters">
+			{@render filterChrome()}
+		</div>
+	{/if}
 
 	<div class="catalog-list-layout__main">
 {#if indexError}

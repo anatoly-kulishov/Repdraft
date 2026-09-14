@@ -16,6 +16,8 @@
 		preferHistoryBack = true,
 		class: className = '',
 		fixed = false,
+		/** Nested inside CatalogListStickyChrome: no own sticky/bg/shadow. */
+		embedded = false,
 		actions
 	}: {
 		title: string;
@@ -29,6 +31,7 @@
 		class?: string;
 		/** Pin to viewport top on mobile sub-routes (long scroll lists). */
 		fixed?: boolean;
+		embedded?: boolean;
 		actions?: import('svelte').Snippet;
 	} = $props();
 
@@ -38,7 +41,8 @@
 
 <header
 	class="screen-header {className}"
-	class:screen-header--fixed={fixed}
+	class:screen-header--fixed={fixed && !embedded}
+	class:screen-header--embedded={embedded}
 	class:screen-header--back-label={backLabelVisible}
 >
 	<div class="screen-header__bar">
@@ -76,6 +80,6 @@
 	</div>
 	<h1 class="screen-header-title" id={titleId}>{title}</h1>
 </header>
-{#if fixed}
+{#if fixed && !embedded}
 	<div class="screen-header-spacer lg:hidden" aria-hidden="true"></div>
 {/if}
