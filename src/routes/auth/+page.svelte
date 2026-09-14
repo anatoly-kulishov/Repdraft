@@ -457,8 +457,9 @@
 	/** Natural boot loading (not ?skeleton= force). */
 	let isBootLoading = $derived(authSessionPending && skeletonForce === null);
 	let delayedBootSkeleton = createDelayedTrue(() => isBootLoading);
+	// SSR: show skeleton immediately (no $effect delay). Client: delay to avoid FOLS.
 	let showBootSkeleton = $derived(
-		skeletonForce !== null || delayedBootSkeleton.current
+		skeletonForce !== null || (!browser && isBootLoading) || delayedBootSkeleton.current
 	);
 	/** Real cloud-off UI only after client auth finished and keys are missing. */
 	let showCloudOff = $derived(
