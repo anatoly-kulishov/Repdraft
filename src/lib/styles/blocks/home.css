@@ -48,17 +48,7 @@
 	min-height: 6.05rem;
 }
 
-.home-header--mockup .home-header__copy {
-	animation: kineticsSurfaceIn 0.55s var(--ease-toast) both;
-}
-
-.home-header--mockup .home-header__row {
-	animation: kineticsSurfaceIn 0.55s var(--ease-toast) both;
-}
-
-.home-header--mockup .home-header__cta {
-	animation: kineticsSurfaceIn 0.65s var(--ease-toast) 0.06s both;
-}
+/* No enter animation: Home remounts on every tab return; scale/fade looked like jitter. */
 
 .home-header--compact {
 	margin-bottom: 0.5rem;
@@ -368,6 +358,10 @@ a.home-header__row--link:active .home-header__cta {
 	min-height: calc(1.0625rem * 1.28);
 	font-size: 1.0625rem;
 	line-height: 1.28;
+}
+
+.home-header--mockup .home-header__meta {
+	min-height: calc(0.8125rem * 1.35);
 }
 
 .home-header__cta-text {

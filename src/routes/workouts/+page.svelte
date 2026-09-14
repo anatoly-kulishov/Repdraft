@@ -927,7 +927,7 @@
 		class="lg:hidden"
 		href={BUILDER_NEW_HREF}
 		label={translate(lang, 'workouts.newWorkout')}
-		hidden={activeTab === 'history' || (activeTab === 'plans' && $plans.length === 0)}
+		hidden={activeTab === 'history'}
 	/>
 
 	{#if activeTab === 'history' || activeTab === 'plans'}

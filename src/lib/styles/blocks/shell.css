@@ -29,6 +29,27 @@
 	background: var(--color-bg);
 }
 
+.shell-header-mobile__lead {
+	display: flex;
+	align-items: center;
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.shell-header-mobile__home-slot {
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.shell-header-mobile__logo-slot {
+	flex: 0 0 auto;
+}
+
+.shell-header-mobile__home-slot.is-hidden,
+.shell-header-mobile__logo-slot.is-hidden {
+	display: none;
+}
+
 /*
  * Pin shell chrome on phone/tablet. Sticky + Safari URL-bar show/hide jumps the bar
  * when scrolling up; fixed + spacer stays put (same idea as ScreenHeader--fixed).
@@ -464,9 +485,11 @@ button.sidebar-link {
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
+	width: var(--control-min-width);
+	height: var(--control-height);
 	min-height: var(--control-height);
 	min-width: var(--control-min-width);
-	padding: 0.25rem;
+	padding: 0;
 	border: 1px solid transparent;
 	border-radius: 999px;
 	background: transparent;
@@ -525,7 +548,7 @@ button.sidebar-link {
 }
 
 .shell-header-actions {
-	gap: 0.35rem;
+	gap: 0.5rem;
 	flex-shrink: 0;
 	align-items: center;
 }
@@ -703,6 +726,8 @@ select {
 	min-width: var(--fab-size);
 	min-height: var(--fab-size);
 	padding: 0;
+	gap: 0;
+	line-height: 0;
 	border-radius: 999px;
 	background: var(--color-accent-fill);
 	color: var(--color-accent-ink);
@@ -717,6 +742,7 @@ select {
 
 .app-fab :global(.lucide-icon-wrap),
 .workouts-fab :global(.lucide-icon-wrap) {
+	display: flex;
 	line-height: 0;
 }
 
@@ -724,6 +750,8 @@ select {
 .workouts-fab :global(svg) {
 	display: block;
 	stroke: currentColor;
+	/* Lucide Plus reads high in a round FAB; 1px optical nudge. */
+	transform: translateY(1px);
 }
 
 .workouts-fab:hover,
@@ -733,7 +761,9 @@ select {
 
 .workouts-fab:active,
 .app-fab:active {
+	/* Beat shadcn active:translate-y-px so press scale stays centered. */
 	transform: scale(0.96);
+	translate: 0;
 }
 
 [data-slot='button'].app-fab,
@@ -771,9 +801,11 @@ select {
 }
 
 .sync-snackbar {
-	display: block;
+	display: flex;
+	justify-content: center;
 	padding: 0 0.65rem 0.35rem;
 	pointer-events: none;
+	padding-inline: calc(var(--fab-size) + var(--fab-above-tabbar) + 0.35rem);
 }
 
 .sync-snackbar--interactive {
@@ -818,9 +850,9 @@ button.sync-snackbar__pill {
 }
 
 .sync-snackbar__pill--success {
-	color: color-mix(in srgb, #16a34a 70%, var(--color-ink));
-	background: color-mix(in srgb, var(--color-surface) 88%, #16a34a);
-	border-color: color-mix(in srgb, #16a34a 28%, var(--color-border));
+	color: var(--color-ink);
+	background: color-mix(in srgb, var(--color-surface) 86%, var(--color-accent));
+	border-color: color-mix(in srgb, var(--color-accent) 28%, var(--color-border));
 }
 
 .sync-snackbar__pill--error {
@@ -835,64 +867,11 @@ button.sync-snackbar__pill {
 	color: inherit;
 }
 
+.sync-snackbar__pill--success .sync-snackbar__icon {
+	color: var(--color-accent-text-soft);
+}
+
 .sync-snackbar__label {
-	white-space: nowrap;
-}
-
-.local-save-chip {
-	display: block;
-	padding: 0 0.65rem 0.35rem;
-	pointer-events: none;
-}
-
-.local-save-chip--interactive {
-	pointer-events: auto;
-}
-
-.local-save-chip__pill {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.35rem;
-	min-height: var(--control-height);
-	min-width: var(--control-min-width);
-	margin: 0 auto;
-	padding: 0.35rem 0.75rem;
-	font-size: 0.6875rem;
-	font-weight: 600;
-	line-height: 1.3;
-	color: var(--color-muted);
-	border-radius: 999px;
-	background: color-mix(in srgb, var(--color-surface) 92%, var(--color-accent));
-	border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-}
-
-button.local-save-chip__pill {
-	appearance: none;
-	cursor: pointer;
-	font: inherit;
-	width: auto;
-}
-
-.local-save-chip__pill--saved {
-	color: color-mix(in srgb, #16a34a 70%, var(--color-ink));
-	background: color-mix(in srgb, var(--color-surface) 88%, #16a34a);
-	border-color: color-mix(in srgb, #16a34a 28%, var(--color-border));
-}
-
-.local-save-chip__pill--error {
-	color: var(--color-danger);
-	background: color-mix(in srgb, var(--color-surface) 88%, var(--color-danger));
-	border-color: color-mix(in srgb, var(--color-danger) 28%, var(--color-border));
-}
-
-.local-save-chip__icon {
-	display: inline-flex;
-	flex-shrink: 0;
-	color: inherit;
-}
-
-.local-save-chip__label {
 	white-space: nowrap;
 }
 
@@ -917,6 +896,8 @@ button.local-save-chip__pill {
 	margin-bottom: 0;
 	flex-shrink: 0;
 	width: 100%;
+	max-width: 100%;
+	align-self: stretch;
 	box-sizing: border-box;
 }
 
@@ -926,15 +907,26 @@ button.local-save-chip__pill {
 }
 
 @media (max-width: 1023px) {
-	/* Leave room for Create FAB on Workouts / similar. */
-	body:has(.app-fab:not(.app-fab--hidden)) .shell-main > .pwa-install,
-	body:has(.workouts-fab:not(.workouts-fab--hidden)) .shell-main > .pwa-install {
-		width: auto;
-		max-width: calc(
-			100% - var(--fab-size) - var(--fab-above-tabbar) - 0.35rem
+	/*
+	 * Full-width install bar; lift FAB / scroll-top fully above it (was side-squeezed).
+	 * Clearance ≈ bar height − fab-above-tabbar + gap. Short values leave + overlapping
+	 * the card and the glyph looks off-center.
+	 */
+	body:has(.shell-main > .pwa-install.pwa-install--prompt) {
+		--fab-pwa-clearance: 8.25rem;
+	}
+
+	body:has(.shell-main > .pwa-install.pwa-install--guide) {
+		--fab-pwa-clearance: 10rem;
+	}
+
+	body:has(.shell-main > .pwa-install) .app-fab--tabbar,
+	body:has(.shell-main > .pwa-install) .workouts-fab,
+	body:has(.shell-main > .pwa-install) .scroll-to-top-fab {
+		bottom: calc(
+			var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--toast-undo-clearance, 0px) +
+				var(--fab-pwa-clearance, 0px) + var(--vv-fixed-bottom, 0px)
 		);
-		margin-inline-end: calc(var(--fab-size) + var(--fab-above-tabbar) + 0.35rem);
-		align-self: flex-start;
 	}
 }
 
