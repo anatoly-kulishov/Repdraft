@@ -43,6 +43,7 @@
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
+	import { scrollBehavior } from '$lib/dom/prefersReducedMotion';
 	import { get } from 'svelte/store';
 	import { onDestroy, onMount, tick as nextFrame } from 'svelte';
 	import { ArrowLeft } from '@lucide/svelte';
@@ -280,7 +281,7 @@
 		queueMicrotask(() => {
 			document
 				.querySelector('.live-nav-item[data-active="true"]')
-				?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+				?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: scrollBehavior() });
 		});
 	});
 

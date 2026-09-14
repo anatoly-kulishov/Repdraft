@@ -99,5 +99,5 @@ test('guest can log a set while offline after local boot', async ({ page, contex
 	if ((await done.count()) > 0) await done.click();
 
 	await expect(page.locator('.live-panel')).toBeVisible();
-	await expect(page.locator('.network-status-chip')).toContainText(/Без сети|Offline/);
+	await expect(page.locator('.sync-snackbar')).toContainText(/Без сети|Offline/);
 });
