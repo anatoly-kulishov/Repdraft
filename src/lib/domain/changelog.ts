@@ -17,37 +17,18 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.17.7',
 		highlights: {
 			ru: [
+				'Своё фото профиля на экране Аккаунт',
 				'После сохранения: обычный тост «Сохранено», без чипа у «+»',
 				'Язык и тема снова строкой с тапом',
 				'Главная без дёрганья при возврате',
 				'Общие отступы empty-state; «+» снова на пустых тренировках'
 			],
 			en: [
+				'Custom profile photo on Account',
 				'After save: a normal “Saved” toast, no chip next to +',
 				'Language and theme back to tap-to-cycle rows',
 				'Home stays still when returning from other tabs',
 				'Shared empty-state spacing; + FAB back on empty workouts'
-			]
-		}
-	},
-	{
-		version: '0.18.0',
-		highlights: {
-			ru: [
-				'Своё фото профиля на экране Аккаунт',
-				'Индикатор «Сохранено локально» после записи на телефон',
-				'При входе: сохранить локальные в аккаунт или оставить только облако',
-				'На Android: кнопка «Установить» вместо подсказок для Safari',
-				'В каталоге заголовок и поиск не разъезжаются при прокрутке',
-				'Понятнее статус синхронизации и очередь уведомлений'
-			],
-			en: [
-				'Custom profile photo on Account',
-				'“Saved locally” cue after data is written on this phone',
-				'On sign-in: keep local in account or use cloud only',
-				'On Android: Install App button instead of Safari-only tips',
-				'Catalog title and search stay together while scrolling',
-				'Clearer sync status and toast queue'
 			]
 		}
 	},
