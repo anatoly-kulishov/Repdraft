@@ -28,14 +28,24 @@ export type Toast = {
 	replaceGroup?: string;
 };
 
-const MAX_TOASTS = 2;
 const DEFAULT_MS = 2600;
 export const UNDO_MS = 5000;
 
+type PendingEntry = {
+	toast: Toast;
+	ttl: number;
+};
+
+function isUndoToast(toast: Pick<Toast, 'onUndo'>): boolean {
+	return Boolean(toast.onUndo);
+}
+
 function createToastStore() {
-	const { subscribe, update } = writable<Toast[]>([]);
+	const store = writable<Toast[]>([]);
+	const { subscribe, update, set } = store;
 	let seq = 0;
 	const timers = new Map<number, number>();
+	let pending: PendingEntry[] = [];
 
 	function clearTimer(id: number) {
 		const timer = timers.get(id);
@@ -45,6 +55,15 @@ function createToastStore() {
 		}
 	}
 
+	function matchesIncoming(existing: Toast, incoming: Omit<Toast, 'id'> | Toast): boolean {
+		if (incoming.replaceGroup) return existing.replaceGroup === incoming.replaceGroup;
+		return existing.message === incoming.message;
+	}
+
+	function prunePending(incoming: Omit<Toast, 'id'> | Toast) {
+		pending = pending.filter((entry) => !matchesIncoming(entry.toast, incoming));
+	}
+
 	function scheduleDismiss(id: number, ttl: number) {
 		if (typeof window === 'undefined') return;
 		clearTimer(id);
@@ -52,26 +71,70 @@ function createToastStore() {
 			id,
 			window.setTimeout(() => {
 				timers.delete(id);
-				update((list) => list.filter((t) => t.id !== id));
+				removeActive(id, true);
 			}, ttl)
 		);
 	}
 
+	function promoteNext(): Toast[] {
+		const next = pending.shift();
+		if (!next) return [];
+		scheduleDismiss(next.toast.id, next.ttl);
+		return [next.toast];
+	}
+
+	/** Remove the active toast by id; optionally promote the next queued item. */
+	function removeActive(id: number, promote: boolean) {
+		clearTimer(id);
+		update((list) => {
+			const filtered = list.filter((t) => t.id !== id);
+			if (filtered.length > 0) return filtered;
+			if (!promote) return [];
+			return promoteNext();
+		});
+	}
+
+	function readActive(): Toast | null {
+		return get(store)[0] ?? null;
+	}
+
 	function push(toast: Omit<Toast, 'id'>, ttl: number) {
 		const id = ++seq;
-		update((list) => {
-			let trimmed = list;
-			if (toast.replaceGroup) {
-				for (const existing of list) {
-					if (existing.replaceGroup === toast.replaceGroup) clearTimer(existing.id);
-				}
-				trimmed = list.filter((t) => t.replaceGroup !== toast.replaceGroup);
-			} else {
-				trimmed = list.filter((t) => t.message !== toast.message);
+		const next: Toast = { ...toast, id };
+		const active = readActive();
+
+		prunePending(toast);
+
+		if (active && matchesIncoming(active, toast)) {
+			clearTimer(active.id);
+			set([next]);
+			scheduleDismiss(id, ttl);
+			return id;
+		}
+
+		if (!active) {
+			set([next]);
+			scheduleDismiss(id, ttl);
+			return id;
+		}
+
+		const incomingUndo = isUndoToast(next);
+		const activeUndo = isUndoToast(active);
+
+		// Displace: new undo always; normal displaces normal.
+		if (incomingUndo || !activeUndo) {
+			clearTimer(active.id);
+			if (incomingUndo) {
+				// Fresh undo window: drop queued normals that would steal focus after.
+				pending = [];
 			}
-			return [...trimmed, { ...toast, id }].slice(-MAX_TOASTS);
-		});
-		scheduleDismiss(id, ttl);
+			set([next]);
+			scheduleDismiss(id, ttl);
+			return id;
+		}
+
+		// Active undo + normal toast → enqueue (do not interrupt undo).
+		pending.push({ toast: next, ttl });
 		return id;
 	}
 
@@ -99,8 +162,7 @@ function createToastStore() {
 			push({ message, kind, onUndo, undoExpiresAt, undoDurationMs, replaceGroup }, ms);
 		},
 		dismiss(id: number) {
-			clearTimer(id);
-			update((list) => list.filter((t) => t.id !== id));
+			removeActive(id, true);
 		},
 		undo(id: number, onUndo: () => void | Promise<void>) {
 			vibrateUndoTap();
@@ -112,13 +174,12 @@ function createToastStore() {
 			);
 			void Promise.resolve(onUndo())
 				.then(() => {
-					clearTimer(id);
-					update((list) => list.filter((t) => t.id !== id));
+					removeActive(id, true);
 				})
 				.catch((err) => {
 					console.error('toast undo failed', err);
-					clearTimer(id);
-					update((list) => list.filter((t) => t.id !== id));
+					// Keep pending; show failure as the new active toast.
+					removeActive(id, false);
 					const lang = get(resolvedLocale);
 					push(
 						{ message: translate(lang, 'toast.undoFail'), kind: 'error' },

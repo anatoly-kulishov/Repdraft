@@ -1,8 +1,13 @@
+import { scrollBehavior as preferredScrollBehavior } from '$lib/dom/prefersReducedMotion';
+
 /**
  * Scroll a focused field toward the middle of the visible viewport.
  * Re-runs once after visualViewport resize so iOS keyboard settle still centers the field.
  */
-export function scrollFieldIntoView(el: HTMLElement, behavior: ScrollBehavior = 'smooth'): void {
+export function scrollFieldIntoView(
+	el: HTMLElement,
+	behavior: ScrollBehavior = preferredScrollBehavior()
+): void {
 	const run = () => {
 		el.scrollIntoView({ block: 'center', inline: 'nearest', behavior });
 	};

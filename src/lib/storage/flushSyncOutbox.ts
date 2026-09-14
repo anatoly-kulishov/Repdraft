@@ -10,6 +10,7 @@ import {
 	removeOutboxEntry,
 	type SyncOutboxEntry
 } from '$lib/storage/syncOutbox';
+import { outboxSyncUi } from '$lib/stores/outboxSyncUi';
 import { supabaseRecordRepository } from '$lib/storage/supabaseRecordRepository';
 import { supabaseSessionRepository } from '$lib/storage/supabaseSessionRepository';
 import { supabaseWorkoutRepository } from '$lib/storage/supabaseWorkoutRepository';
@@ -29,6 +30,14 @@ export async function flushSyncOutbox(): Promise<void> {
 
 	inflight = (async () => {
 		purgeLocalOnlyOutboxEntries();
+		const startedWith = listOutbox().length;
+		if (startedWith === 0) {
+			outboxSyncUi.markFlushIdle();
+			return;
+		}
+
+		outboxSyncUi.beginFlush();
+		let stalled = false;
 		const entries = listOutbox();
 		for (const entry of entries) {
 			try {
@@ -36,9 +45,17 @@ export async function flushSyncOutbox(): Promise<void> {
 				removeOutboxEntry(entry);
 			} catch (err) {
 				console.warn('sync outbox flush stalled', entry.kind, err);
+				stalled = true;
 				break;
 			}
 		}
+
+		const remaining = listOutbox().length;
+		if (stalled || remaining > 0) {
+			outboxSyncUi.markFlushError();
+			return;
+		}
+		outboxSyncUi.markFlushSuccess();
 	})().finally(() => {
 		inflight = null;
 	});
