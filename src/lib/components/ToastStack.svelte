@@ -10,7 +10,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import Spinner from '$lib/components/Spinner.svelte';
-	import { X } from '@lucide/svelte';
+	import { X, Check } from '@lucide/svelte';
 
 	let { items }: { items: Toast[] } = $props();
 	let lang = $derived($resolvedLocale);
@@ -217,7 +217,14 @@
 					use:toastSwipeDismiss={swipeParams(toast.id)}
 				>
 					<div class="toast-item__body min-w-0">
-						<span class="block max-w-full text-left">{toast.message}</span>
+						<span class="toast-item__message">
+							{#if toast.kind === 'success'}
+								<span class="toast-item__icon" aria-hidden="true">
+									<LucideIcon icon={Check} size={ICON_BUTTON} />
+								</span>
+							{/if}
+							<span class="block max-w-full min-w-0 text-left">{toast.message}</span>
+						</span>
 						{#if toast.action}
 							<a class="toast-action" href={toast.action.href} onclick={() => toasts.dismiss(toast.id)}>
 								{toast.action.label}
@@ -269,6 +276,20 @@
 	.toast-item--error {
 		background: var(--color-danger);
 		color: #fcfcfc;
+	}
+
+	.toast-item__message {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.45rem;
+		min-width: 0;
+	}
+
+	.toast-item__icon {
+		display: inline-flex;
+		flex-shrink: 0;
+		margin-top: 0.1rem;
+		color: var(--color-accent-text-soft);
 	}
 
 	.toast-item--accent .toast-item__close {

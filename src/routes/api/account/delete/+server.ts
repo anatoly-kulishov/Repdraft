@@ -1,5 +1,6 @@
 import { env as publicEnv } from '$env/dynamic/public';
 import { env as privateEnv } from '$env/dynamic/private';
+import { AVATARS_BUCKET } from '$lib/domain/avatarImage';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -12,7 +13,7 @@ const USER_TABLES = [
 ] as const;
 
 const CLIP_BUCKET = 'technique-gifs';
-const AVATAR_BUCKET = 'avatars';
+const AVATAR_BUCKET = AVATARS_BUCKET;
 const REMOVE_CHUNK = 80;
 
 function publicUrl(): string {

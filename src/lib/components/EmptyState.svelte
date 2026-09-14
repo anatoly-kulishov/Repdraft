@@ -36,7 +36,7 @@
 
 <AppPanel
 	dashed
-	class="empty-state flex flex-col gap-3 py-6 {centered
+	class="empty-state flex flex-col {centered
 		? 'empty-state--centered items-center text-center'
 		: 'items-start text-left'} {className}"
 >
@@ -54,7 +54,7 @@
 		{/if}
 	</div>
 	{#if (actionHref && actionLabel) || (actionLabel && actionOnclick) || actions}
-		<div class="empty-state__actions mt-1 flex w-full flex-col gap-2 items-stretch">
+		<div class="empty-state__actions flex w-full flex-col items-stretch">
 			{#if actionHref && actionLabel}
 				<AppButton block href={actionHref} class="empty-state__action">{actionLabel}</AppButton>
 			{:else if actionLabel && actionOnclick}

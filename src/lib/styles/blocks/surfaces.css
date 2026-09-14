@@ -27,11 +27,12 @@
 
 /* EmptyState uses AppPanel: beat the 1rem !important above. */
 .panel.empty-state[data-slot='card'] {
-	padding: 1.5rem 1.125rem !important;
+	padding: var(--empty-state-pad-block) var(--empty-state-pad-inline) !important;
+	gap: var(--empty-state-gap);
 }
 
 .panel.empty-state--centered[data-slot='card'] {
-	padding: 2.5rem 1.25rem !important;
+	padding: var(--empty-state-pad-block) var(--empty-state-pad-inline) !important;
 }
 
 .panel.onboarding-checklist[data-slot='card'] {
@@ -208,13 +209,12 @@ button.exercise-card-media {
 .empty-state--centered {
 	border-style: solid;
 	border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
-	padding: 2.5rem 1.25rem;
 }
 
 .empty-state__copy {
 	display: flex;
 	flex-direction: column;
-	gap: 0.35rem;
+	gap: 0.4rem;
 	min-width: 0;
 }
 
@@ -239,12 +239,12 @@ button.exercise-card-media {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 4.25rem;
-	height: 4.25rem;
+	width: 3.5rem;
+	height: 3.5rem;
 	border-radius: 999px;
 	background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-muted));
 	color: var(--color-accent-text);
-	animation: kineticsRingPop 0.5s var(--ease-spring) both;
+	/* No enter pop: remount on every visit looked like jitter. */
 }
 
 .empty-state--centered .empty-state__title {
@@ -261,6 +261,8 @@ button.exercise-card-media {
 
 .empty-state__actions {
 	width: 100%;
+	margin-top: 0.15rem;
+	gap: 0.5rem;
 }
 
 .empty-state--centered .empty-state__actions {

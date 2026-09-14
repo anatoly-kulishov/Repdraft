@@ -7,6 +7,7 @@
 	import { outboxCount } from '$lib/storage/syncOutbox';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { outboxSyncUi, type OutboxSyncPhase } from '$lib/stores/outboxSyncUi';
+	import { toasts } from '$lib/stores/toasts';
 	import { AlertCircle, Check } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
@@ -14,6 +15,8 @@
 	let phase = $derived($outboxSyncUi);
 	let online = $state(true);
 	let pending = $state(0);
+	/** Undo / status toasts sit in the same band; do not stack "Успешно сохранено" under them. */
+	let toastCueActive = $derived($toasts.length > 0);
 
 	function refresh() {
 		if (typeof navigator === 'undefined') return;
@@ -57,7 +60,7 @@
 		}
 	});
 
-	let visible = $derived(mode !== 'hidden');
+	let visible = $derived(mode !== 'hidden' && !toastCueActive);
 
 	function retry() {
 		void flushSyncOutbox();

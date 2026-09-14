@@ -4,16 +4,21 @@
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { translate } from '$lib/i18n/messages';
+	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { syncState } from '$lib/stores/syncState';
 	import { Check } from '@lucide/svelte';
 
 	let lang = $derived($resolvedLocale);
 	let status = $derived($syncState);
+	let signedIn = $derived(!!$auth.user);
 	let sheetOpen = $state(false);
 
 	let visible = $derived(status === 'saving' || status === 'saved' || status === 'error');
 	let clickable = $derived(status === 'saved');
+	let savedLabel = $derived(
+		signedIn ? translate(lang, 'sync.saved') : translate(lang, 'sync.savedLocally')
+	);
 
 	function openSheet() {
 		if (!clickable) return;
@@ -24,13 +29,17 @@
 {#if visible}
 	{#if status === 'saving'}
 		<span class="live-local-save-cue" role="status" aria-live="polite">
-			<Spinner size="sm" block={false} label={translate(lang, 'sync.savingLocally')} />
+			<Spinner
+				size="sm"
+				block={false}
+				label={translate(lang, signedIn ? 'sync.saving' : 'sync.savingLocally')}
+			/>
 		</span>
 	{:else if status === 'saved'}
 		<button
 			type="button"
 			class="live-local-save-cue live-local-save-cue--saved"
-			aria-label={translate(lang, 'sync.savedLocally')}
+			aria-label={savedLabel}
 			onclick={openSheet}
 		>
 			<LucideIcon icon={Check} size={ICON_SMALL} />
