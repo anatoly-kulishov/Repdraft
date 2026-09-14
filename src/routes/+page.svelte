@@ -376,21 +376,20 @@
 					{/if}
 					{#if !isGuest}
 						<p class="home-header__subtitle">{mockupSubtitle}</p>
-						{#if nextPlan}
-							<p class="home-header__plan">{nextPlan.name}</p>
-							<p class="home-header__meta" aria-busy={!indexReady}>
-								{indexReady ? nextPlanMeta : '\u00a0'}
+						{#if hasPlans}
+							<p class="home-header__plan">{nextPlan?.name ?? '\u00a0'}</p>
+							<p class="home-header__meta" aria-busy={!nextPlan || !indexReady}>
+								{nextPlan && indexReady ? nextPlanMeta : '\u00a0'}
 							</p>
-						{/if}
-						{#if isFirstTimeHome}
+						{:else if isFirstTimeHome}
 							<BrandTagline class="brand-tagline--home-header" />
 						{/if}
 					{:else}
 						<p class="home-header__subtitle">{translate(lang, 'home.readyTitle')}</p>
-						{#if nextPlan}
-							<p class="home-header__plan">{nextPlan.name}</p>
-							<p class="home-header__meta" aria-busy={!indexReady}>
-								{indexReady ? nextPlanMeta : '\u00a0'}
+						{#if hasPlans}
+							<p class="home-header__plan">{nextPlan?.name ?? '\u00a0'}</p>
+							<p class="home-header__meta" aria-busy={!nextPlan || !indexReady}>
+								{nextPlan && indexReady ? nextPlanMeta : '\u00a0'}
 							</p>
 						{/if}
 					{/if}

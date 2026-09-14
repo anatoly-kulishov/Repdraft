@@ -495,9 +495,9 @@
 				{/if}
 			</div>
 		{:else}
-			<span class="media-well workout-ex-head__media is-placeholder animate-pulse" aria-hidden="true"></span>
+			<span class="media-well workout-ex-head__media is-placeholder" aria-hidden="true"></span>
 			<div class="workout-ex-head__copy" aria-busy="true">
-				<div class="h-4 w-3/4 max-w-[14rem] animate-pulse rounded bg-[var(--color-surface-muted)]"></div>
+				<div class="h-4 w-3/4 max-w-[14rem] rounded bg-[var(--color-surface-muted)]"></div>
 				<span class="sr-only">{translate(lang, 'common.loading')}</span>
 			</div>
 		{/if}
