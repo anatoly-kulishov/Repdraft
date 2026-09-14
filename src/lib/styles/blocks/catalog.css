@@ -2885,49 +2885,6 @@ body:has(.sticky-actions) .draft-dock {
 	padding-bottom: calc(var(--sticky-actions-h) + var(--safe-bottom) + 0.35rem);
 }
 
-@media (prefers-reduced-motion: reduce) {
-	*,
-	*::before,
-	*::after {
-		animation-duration: 0.01ms !important;
-		animation-iteration-count: 1 !important;
-		transition-duration: 0.01ms !important;
-		scroll-behavior: auto !important;
-	}
-
-	.soft-enter,
-	.exercise-card img,
-	.exercise-card-img,
-	.page-skeleton-row,
-	.page-skeleton-field,
-	.skeleton-shimmer,
-	.loader-spinner,
-	.feed-skel,
-	.account-avatar.is-skeleton,
-	.toast-stack > *,
-	.toast-item,
-	.live-rest,
-	.live-rest-value,
-	.live-rest__bar::after,
-	.live-set-done-btn--done,
-	.live-set-row.is-done,
-	.live-set-row.is-just-done,
-	.field.is-invalid,
-	input[data-slot='input'][aria-invalid='true'],
-		.clip-lightbox,
-		.clip-lightbox__panel,
-		.summary-check,
-		.summary-stat,
-		.cloud-sync-banner,
-		.empty-state__icon,
-		.exercise-card-add.is-just-added .exercise-card-add-icon {
-		animation: none !important;
-		transition: none !important;
-		opacity: 1 !important;
-		transform: none !important;
-	}
-}
-
 @media (min-width: 1024px) {
 	.sticky-actions {
 		display: none;
@@ -3235,7 +3192,7 @@ body:has(.sticky-actions) .draft-dock {
 	flex-direction: column;
 	gap: 0.55rem;
 	padding: 0;
-	margin-bottom: 0.75rem;
+	margin-bottom: var(--list-search-content-gap);
 	min-width: 0;
 }
 
@@ -3561,7 +3518,7 @@ body:has(.sticky-actions) .draft-dock {
 		align-items: stretch;
 		gap: 0.55rem;
 		padding: 0;
-		margin-bottom: 0.75rem;
+		margin-bottom: var(--list-search-content-gap);
 	}
 
 	.catalog-hub-toolbar__search {
@@ -3615,7 +3572,7 @@ body:has(.sticky-actions) .draft-dock {
 .catalog-list-layout {
 	display: flex;
 	flex-direction: column;
-	gap: 0.75rem;
+	gap: var(--list-search-content-gap);
 	width: 100%;
 	min-width: 0;
 }
@@ -3634,15 +3591,17 @@ body:has(.sticky-actions) .draft-dock {
 	margin-bottom: 0;
 }
 
-/* Catalog list: sticky search + facets under ScreenHeader (History-matched).
+/* Catalog list: one sticky chrome (ScreenHeader + search/filters).
  * Sticky MUST be on __filters (sibling of __main), not on the shell inside:
  * a short parent (~search height) gives sticky nowhere to travel. */
 @media (max-width: 1023px) {
+	.content-page--catalog.catalog-page--list:has(.catalog-list-layout__filters--monolith),
+	.content-page--catalog.records-page:has(.catalog-list-layout__filters--monolith),
 	.content-page--catalog.catalog-page--list:has(.catalog-filters-shell),
 	.content-page--catalog.records-page:has(.catalog-filters-shell),
 	.content-page--catalog.catalog-page--list:has(.catalog-list-layout__filters--search-only),
 	.content-page--catalog.records-page:has(.catalog-list-layout__filters--search-only) {
-		/* Flush under header; sticky strip carries the chrome (same as History). */
+		/* Flush: sticky strip carries title + search (no dual sticky layers). */
 		--screen-header-content-gap: 0px;
 	}
 
@@ -3655,27 +3614,37 @@ body:has(.sticky-actions) .draft-dock {
 		margin-top: 1.15rem;
 	}
 
-	.shell-main--subroute .content-page--catalog.catalog-page--list .screen-header,
-	.shell-main--subroute .content-page--catalog.records-page .screen-header {
-		/* One chrome with sticky filters: no hairline seam, lift lives on filters strip. */
-		border-bottom: none;
-		box-shadow: none;
-	}
-
+	.content-page--catalog .catalog-list-layout__filters--monolith,
 	.content-page--catalog .catalog-list-layout__filters--search-only,
 	.content-page--catalog .catalog-list-layout__filters:has(.catalog-filters-shell) {
 		position: sticky;
-		top: var(--screen-header-chrome-h);
-		z-index: 20;
+		top: 0;
+		z-index: 40;
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
 		width: auto;
 		max-width: none;
 		align-self: stretch;
 		margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
 		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
-		padding: var(--screen-header-pad-block) max(var(--page-pad-x), var(--safe-right))
+		padding: calc(var(--screen-header-pad-block) + var(--safe-top)) max(var(--page-pad-x), var(--safe-right))
 			var(--screen-header-pad-block) max(var(--page-pad-x), var(--safe-left));
 		background: var(--chrome-header-bg);
+		box-shadow: none;
+		transition: box-shadow 160ms ease;
+	}
+
+	.content-page--catalog .catalog-list-layout__filters.is-scrolled {
 		box-shadow: var(--shadow-screen-header);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.content-page--catalog .catalog-list-layout__filters--monolith,
+		.content-page--catalog .catalog-list-layout__filters--search-only,
+		.content-page--catalog .catalog-list-layout__filters:has(.catalog-filters-shell) {
+			transition: none;
+		}
 	}
 
 	.content-page--catalog .catalog-list-layout__filters--search-only > :global(label),

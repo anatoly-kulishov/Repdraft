@@ -59,6 +59,8 @@
 	--screen-header-pad-block: 0.35rem;
 	/* Space between ScreenHeader bottom and first content block. */
 	--screen-header-content-gap: 1.15rem;
+	/* Gap below list search chrome before content (Exercises / catalog standard). */
+	--list-search-content-gap: 0.75rem;
 	--screen-header-chrome-h: calc(
 		var(--screen-header-stacked-h) + 2 * var(--screen-header-pad-block) + var(--safe-top)
 	);
@@ -76,7 +78,7 @@
 	--sidebar-w: 13.25rem;
 	--sticky-actions-h: 4.5rem;
 	--draft-dock-clearance: 4rem;
-	/* Extra lift for FAB / draft-dock while undo snackbar is visible (set on body:has). */
+	/* Reserved for sticky/FAB lift overrides; undo toasts clear FAB via ToastStack bottom. */
 	--toast-undo-clearance: 0px;
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 	--safe-top: env(safe-area-inset-top, 0px);
