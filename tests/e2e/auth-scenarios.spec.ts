@@ -172,10 +172,10 @@ test('backup: valid file opens confirm sheet, cancel keeps data', async ({ page 
 
 test('12.6.17 language toggle updates auth copy', async ({ page }) => {
 	await gotoAuth(page);
-	const langTabs = () => page.getByRole('tablist', { name: /^(Язык|Language)$/ });
-	await langTabs().getByRole('tab', { name: /^English$/ }).click();
+	const langRow = page.getByRole('button', { name: /^(Язык|Language):/ });
+	await langRow.click();
 	await expect(page.getByRole('tab', { name: /^Sign in$/ })).toBeVisible();
-	await langTabs().getByRole('tab', { name: /^Русский$/ }).click();
+	await page.getByRole('button', { name: /^Language:/ }).click();
 	await expect(page.getByRole('tab', { name: /^Вход$/ })).toBeVisible();
 });
 

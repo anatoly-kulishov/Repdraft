@@ -193,39 +193,49 @@
 			</header>
 
 			<div class="page-skeleton-auth__stack">
-				<div class="page-skeleton-card page-skeleton-card--auth">
-					<AppSkeleton class="page-skeleton-auth-group-title" />
-					<AppSkeleton class="page-skeleton-field" />
-					<AppSkeleton class="page-skeleton-auth-hint" />
-					<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
+				<!-- Mirror live /auth: two independent stacks, then full-width cards. -->
+				<div class="profile-settings-cols">
+					<div class="profile-settings-col">
+						<div class="page-skeleton-card page-skeleton-card--auth">
+							<AppSkeleton class="page-skeleton-auth-group-title" />
+							<AppSkeleton class="page-skeleton-field" />
+							<AppSkeleton class="page-skeleton-auth-hint" />
+							<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
+						</div>
+						<div class="page-skeleton-card page-skeleton-card--auth">
+							<AppSkeleton class="page-skeleton-auth-group-title" />
+							<div class="page-skeleton-auth-pref-row page-skeleton-auth-pref-row--toggle">
+								<AppSkeleton class="page-skeleton-auth-pref-icon" />
+								<AppSkeleton class="page-skeleton-auth-pref-label" />
+								<AppSkeleton class="page-skeleton-auth-pref-toggle" />
+							</div>
+							<AppSkeleton class="page-skeleton-auth-hint" />
+						</div>
+					</div>
+					<div class="profile-settings-col">
+						<div class="page-skeleton-card page-skeleton-card--auth">
+							<AppSkeleton class="page-skeleton-auth-group-title" />
+							<div class="page-skeleton-auth-pref-row">
+								<AppSkeleton class="page-skeleton-auth-pref-icon" />
+								<AppSkeleton class="page-skeleton-auth-pref-label" />
+								<AppSkeleton class="page-skeleton-auth-pref-value" />
+							</div>
+							<div class="page-skeleton-auth-pref-row">
+								<AppSkeleton class="page-skeleton-auth-pref-icon" />
+								<AppSkeleton class="page-skeleton-auth-pref-label" />
+								<AppSkeleton class="page-skeleton-auth-pref-value" />
+							</div>
+							<AppSkeleton class="page-skeleton-auth-hint" />
+						</div>
+						<div class="page-skeleton-card page-skeleton-card--auth">
+							<AppSkeleton class="page-skeleton-auth-group-title" />
+							<AppSkeleton class="page-skeleton-auth-hint page-skeleton-auth-hint--lead" />
+							<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
+						</div>
+					</div>
 				</div>
 
-				<div class="page-skeleton-card page-skeleton-card--auth">
-					<AppSkeleton class="page-skeleton-auth-group-title" />
-					<div class="page-skeleton-auth-pref-row">
-						<AppSkeleton class="page-skeleton-auth-pref-icon" />
-						<AppSkeleton class="page-skeleton-auth-pref-label" />
-						<AppSkeleton class="page-skeleton-auth-pref-value" />
-					</div>
-					<div class="page-skeleton-auth-pref-row">
-						<AppSkeleton class="page-skeleton-auth-pref-icon" />
-						<AppSkeleton class="page-skeleton-auth-pref-label" />
-						<AppSkeleton class="page-skeleton-auth-pref-value" />
-					</div>
-					<AppSkeleton class="page-skeleton-auth-hint" />
-				</div>
-
-				<div class="page-skeleton-card page-skeleton-card--auth">
-					<AppSkeleton class="page-skeleton-auth-group-title" />
-					<div class="page-skeleton-auth-pref-row page-skeleton-auth-pref-row--toggle">
-						<AppSkeleton class="page-skeleton-auth-pref-icon" />
-						<AppSkeleton class="page-skeleton-auth-pref-label" />
-						<AppSkeleton class="page-skeleton-auth-pref-toggle" />
-					</div>
-					<AppSkeleton class="page-skeleton-auth-hint" />
-				</div>
-
-				<div class="page-skeleton-card page-skeleton-card--auth">
+				<div class="page-skeleton-card page-skeleton-card--auth profile-settings-stack-full">
 					<AppSkeleton class="page-skeleton-auth-group-title" />
 					<AppSkeleton class="page-skeleton-auth-hint page-skeleton-auth-hint--lead" />
 					<div class="page-skeleton-auth-dual-actions">
@@ -234,7 +244,9 @@
 					</div>
 				</div>
 
-				<div class="page-skeleton-card page-skeleton-card--auth page-skeleton-card--auth-danger">
+				<div
+					class="page-skeleton-card page-skeleton-card--auth page-skeleton-card--auth-danger profile-settings-stack-full"
+				>
 					<AppSkeleton class="page-skeleton-auth-danger-eyebrow" />
 					<AppSkeleton class="page-skeleton-auth-danger-title" />
 					<AppSkeleton class="page-skeleton-auth-hint page-skeleton-auth-hint--lead" />
@@ -242,7 +254,7 @@
 					<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
 				</div>
 
-				<div class="page-skeleton-card page-skeleton-card--auth">
+				<div class="page-skeleton-card page-skeleton-card--auth profile-settings-stack-full">
 					<AppSkeleton class="page-skeleton-auth-group-title" />
 					<div class="page-skeleton-auth-pref-row">
 						<AppSkeleton class="page-skeleton-auth-pref-icon" />

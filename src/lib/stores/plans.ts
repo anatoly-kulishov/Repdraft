@@ -127,6 +127,8 @@ import { resolvedLocale } from './locale';
 					: undefined,
 				cloudId: current.id,
 				label: 'plans.saveCurrent',
+				/* Builder already shows builder.savedToast — skip sync.saved duplicate. */
+				announceLocalSave: false,
 				outboxOnFail: isCloudPersistableId(current.id)
 					? { kind: 'plan.save', id: current.id }
 					: undefined

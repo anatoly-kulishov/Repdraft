@@ -22,7 +22,6 @@ import type { WorkoutExercise, WorkoutPlan, WorkoutSession } from '$lib/domain/t
 import { planDraftFromSession } from '$lib/domain/session';
 import { readDraft, writeDraft, syncBuilderDraftBootCookie } from '$lib/storage/localWorkoutRepository';
 import { clampPlanName } from '$lib/domain/inputLimits';
-import { syncState } from '$lib/stores/syncState';
 import { writable } from 'svelte/store';
 
 /**
@@ -37,13 +36,8 @@ function createDraftStore() {
 	if (browser) {
 		subscribe((plan) => {
 			if (!persist) return;
-			syncState.beginLocalSave();
-			try {
-				writeDraft(plan);
-				syncState.markLocalSaved();
-			} catch {
-				syncState.markLocalSaveError();
-			}
+			/* Draft is ephemeral until explicit Save — no sync.saved toast spam. */
+			writeDraft(plan);
 		});
 	}
 

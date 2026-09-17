@@ -16,8 +16,12 @@ Repdraft is **mobile/PWA first**. Layout changes must survive real phone viewpor
 |--------|-------|--------|-----|
 | iPhone SE | 375 | 667 | Minimum supported width |
 | iPhone 13–15 | 390 | 844 | Default Playwright `mobile-dark` project |
+| iPad portrait (tablet band) | 768 | 1024 | Tabbar era; Playwright `tablet-dark` |
+| Desktop | 1280 | 900 | Sidebar; Playwright `desktop-dark` |
 
-Reference: `playwright.config.ts` → project `mobile-dark`.
+Reference: `playwright.config.ts` → projects `mobile-dark`, `tablet-dark`, `desktop-dark`.
+
+Release audit matrix (v0.17.8+): [`.cursor/product/v0.17.8-desktop-tablet-audit.md`](../product/v0.17.8-desktop-tablet-audit.md).
 
 ## Routes to test (priority)
 
@@ -32,7 +36,7 @@ Reference: `playwright.config.ts` → project `mobile-dark`.
 ### With Playwright MCP (preferred)
 
 1. Ensure dev server: `npm run dev` (background).
-2. For each viewport (375, 390):
+2. For each viewport (375, 390, **768**, **1280**):
    - Navigate to route under test.
    - `browser_resize` or set viewport to width×height.
    - `browser_snapshot` + `browser_take_screenshot`.
