@@ -323,6 +323,11 @@ body:has(.workouts-fab:not(.workouts-fab--hidden)):has(.draft-dock-wrap__hint) {
 	margin-bottom: 1.15rem;
 }
 
+.profile-settings-stack > .onboarding-profile-block,
+.profile-settings-stack > .profile-settings-stack-full {
+	margin-bottom: 0;
+}
+
 .onboarding-auth-help.profile-settings-group.panel {
 	gap: 0.65rem;
 }

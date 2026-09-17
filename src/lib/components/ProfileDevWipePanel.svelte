@@ -95,7 +95,7 @@
 	}
 </script>
 
-<div class="profile-dev-wipe panel">
+<div class="profile-dev-wipe panel profile-settings-stack-full">
 	<div class="profile-dev-wipe__head">
 		<span class="profile-dev-wipe__icon" aria-hidden="true">
 			<LucideIcon icon={Eraser} size={ICON_SMALL} />

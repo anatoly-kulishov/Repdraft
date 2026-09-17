@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.17.8',
+		highlights: {
+			ru: [
+				'Аккаунт: ровная сетка, отступы и компактный шит фото',
+				'Конструктор: без тоста «Сохранено» на каждый чих и при открытии',
+				'Избранное: один тост, без второго «Сохранено»',
+				'Планшет и десктоп: выровнены ключевые экраны'
+			],
+			en: [
+				'Account: even grid, spacing, and a compact photo sheet',
+				'Builder: no Saved toast on every edit or on open',
+				'Favorites: one toast, no extra Saved banner',
+				'Tablet and desktop: key screens cleaned up'
+			]
+		}
+	},
+	{
 		version: '0.17.7',
 		highlights: {
 			ru: [

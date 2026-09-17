@@ -10,7 +10,12 @@ const ROUTES: { id: string; path: string; ready?: string }[] = [
 	{ id: 'saved', path: '/exercises/saved', ready: '.content-page, .page-title' },
 	{ id: 'builder-empty', path: '/builder?new', ready: '.builder-page, .builder-empty-state, .page-title' },
 	{ id: 'settings', path: '/settings', ready: '.content-page, .page-title' },
-	{ id: 'auth', path: '/auth', ready: '.auth-page, form' }
+	{ id: 'auth', path: '/auth', ready: '.auth-page, form' },
+	{
+		id: 'auth-account-skeleton',
+		path: '/auth?skeleton=account',
+		ready: '.auth-page--booting-account, .page-skeleton-auth'
+	}
 ];
 
 test.beforeEach(async ({ page }) => {

@@ -1,4 +1,4 @@
-import bodyMd from '../../../static/content/user-scenarios.md?raw';
+import bodyMd from '$lib/content/user-scenarios.md?raw';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = () => {

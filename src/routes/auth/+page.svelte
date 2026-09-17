@@ -46,7 +46,6 @@
 	import { isIosDevice } from '$lib/domain/pwaInstall';
 	import { restSoundEnabled, testerModeEnabled } from '$lib/stores/prefs';
 	import { testerToolsVisible } from '$lib/domain/prefs';
-	import { get } from 'svelte/store';
 	import { tick } from 'svelte';
 	import { Camera, FileText, LogOut, Timer, Shield, ClipboardList } from '@lucide/svelte';
 
@@ -470,7 +469,8 @@
 	);
 
 	$effect(() => {
-		if (accountMode) greetingNameInput = get(greetingName);
+		if (!accountMode) return;
+		greetingNameInput = $greetingName;
 	});
 
 	let greetingNameDirty = $derived(
@@ -642,37 +642,39 @@
 						disabled={avatarBusy || !$auth.configured}
 						onclick={openAvatarSheet}
 					>
-						{#if showProfilePhoto && profileAvatar}
-							<img
-								class="account-avatar is-photo profile-hero__avatar"
-								src={profileAvatar}
-								alt=""
-								width="96"
-								height="96"
-								referrerpolicy="no-referrer"
-								decoding="async"
-								onerror={() => {
-									profileAvatarBroken = true;
-								}}
-							/>
-						{:else if profileInitials}
-							<span class="account-avatar profile-hero__avatar" aria-hidden="true"
-								>{profileInitials}</span
-							>
-						{:else}
-							<span class="account-avatar is-guest profile-hero__avatar" aria-hidden="true">
-								{profileName?.charAt(0)?.toUpperCase() ?? '?'}
-							</span>
-						{/if}
-						{#if avatarBusy}
-							<span class="profile-hero__avatar-busy" aria-hidden="true">
-								<Spinner size="sm" block={false} label="" />
-							</span>
-						{:else}
-							<span class="profile-hero__camera-badge" aria-hidden="true">
-								<LucideIcon icon={Camera} size={ICON_SMALL} />
-							</span>
-						{/if}
+						<span class="profile-hero__avatar-wrap">
+							{#if showProfilePhoto && profileAvatar}
+								<img
+									class="account-avatar is-photo profile-hero__avatar"
+									src={profileAvatar}
+									alt=""
+									width="96"
+									height="96"
+									referrerpolicy="no-referrer"
+									decoding="async"
+									onerror={() => {
+										profileAvatarBroken = true;
+									}}
+								/>
+							{:else if profileInitials}
+								<span class="account-avatar profile-hero__avatar" aria-hidden="true"
+									>{profileInitials}</span
+								>
+							{:else}
+								<span class="account-avatar is-guest profile-hero__avatar" aria-hidden="true">
+									{profileName?.charAt(0)?.toUpperCase() ?? '?'}
+								</span>
+							{/if}
+							{#if avatarBusy}
+								<span class="profile-hero__avatar-busy" aria-hidden="true">
+									<Spinner size="sm" block={false} label="" />
+								</span>
+							{:else}
+								<span class="profile-hero__camera-badge" aria-hidden="true">
+									<LucideIcon icon={Camera} size={ICON_SMALL} />
+								</span>
+							{/if}
+						</span>
 					</button>
 					<input
 						bind:this={avatarFileInput}
@@ -708,70 +710,79 @@
 			/>
 
 			<div class="profile-settings-stack">
-				<form
-					id="auth-greeting-panel"
-					class="profile-settings-group panel"
-					onsubmit={(e) => {
-						e.preventDefault();
-						void saveGreetingName();
-					}}
-				>
-					<p class="profile-settings-group__title">{translate(lang, 'auth.greetingNameLabel')}</p>
-					<AppInput
-						id="auth-greeting-name"
-						class="profile-settings-group__field"
-						type="text"
-						autocomplete="nickname"
-						maxlength={GREETING_NAME_MAX}
-						placeholder={translate(lang, 'auth.greetingNamePh')}
-						value={greetingNameInput}
-						aria-label={translate(lang, 'auth.greetingNameLabel')}
-						oninput={(e) => {
-							const el = e.currentTarget as HTMLInputElement;
-							const next = clampGreetingName(el.value);
-							greetingNameInput = next;
-							if (el.value !== next) el.value = next;
-						}}
-					/>
-					<p class="profile-settings-group__hint">{translate(lang, 'auth.greetingNameHint')}</p>
-					<AppButton
-						type="submit"
-						variant="secondary"
-						class="profile-settings-group__action"
-						disabled={greetingNameSaving || !greetingNameDirty}
-					>
-						{#if greetingNameSaving}
-							<span class="inline-flex items-center gap-2">
-								<Spinner size="sm" block={false} />
-								{translate(lang, 'auth.wait')}
-							</span>
-						{:else}
-							{translate(lang, 'auth.greetingNameSave')}
-						{/if}
-					</AppButton>
-				</form>
-
-				{@render onboardingHelpPanel()}
-
-				<AuthInterfacePrefs surface="panel" />
-
-				<div class="profile-settings-group panel">
-					<p class="profile-settings-group__title">{translate(lang, 'settings.sessionTitle')}</p>
-					<ProfileSettingsRow icon={Timer} label={translate(lang, 'settings.restSound')}>
-						<input
-							type="checkbox"
-							class="auth-pref-toggle__input profile-settings-row__toggle"
-							checked={$restSoundEnabled}
-							aria-label={translate(lang, 'settings.restSound')}
-							onchange={(e) => {
-								restSoundEnabled.set((e.currentTarget as HTMLInputElement).checked);
+				<div class="profile-settings-cols">
+					<div class="profile-settings-col">
+						<form
+							id="auth-greeting-panel"
+							class="profile-settings-group panel"
+							onsubmit={(e) => {
+								e.preventDefault();
+								void saveGreetingName();
 							}}
-						/>
-					</ProfileSettingsRow>
-					<p class="profile-settings-group__hint">{translate(lang, restSoundHintKey)}</p>
+						>
+							<p class="profile-settings-group__title">{translate(lang, 'auth.greetingNameLabel')}</p>
+							<AppInput
+								id="auth-greeting-name"
+								class="profile-settings-group__field"
+								type="text"
+								autocomplete="nickname"
+								maxlength={GREETING_NAME_MAX}
+								placeholder={translate(lang, 'auth.greetingNamePh')}
+								value={greetingNameInput}
+								aria-label={translate(lang, 'auth.greetingNameLabel')}
+								oninput={(e) => {
+									const el = e.currentTarget as HTMLInputElement;
+									const next = clampGreetingName(el.value);
+									greetingNameInput = next;
+									if (el.value !== next) el.value = next;
+								}}
+							/>
+							<p class="profile-settings-group__hint">{translate(lang, 'auth.greetingNameHint')}</p>
+							<AppButton
+								type="submit"
+								variant={greetingNameDirty ? 'primary' : 'secondary'}
+								class="profile-settings-group__action"
+								disabled={greetingNameSaving || !greetingNameDirty}
+							>
+								{#if greetingNameSaving}
+									<span class="inline-flex items-center gap-2">
+										<Spinner size="sm" block={false} />
+										{translate(lang, 'auth.wait')}
+									</span>
+								{:else}
+									{translate(lang, 'auth.greetingNameSave')}
+								{/if}
+							</AppButton>
+						</form>
+
+						<div class="profile-settings-group panel">
+							<p class="profile-settings-group__title">{translate(lang, 'settings.sessionTitle')}</p>
+							<ProfileSettingsRow icon={Timer} label={translate(lang, 'settings.restSound')}>
+								<input
+									type="checkbox"
+									class="auth-pref-toggle__input profile-settings-row__toggle"
+									checked={$restSoundEnabled}
+									aria-label={translate(lang, 'settings.restSound')}
+									onchange={(e) => {
+										restSoundEnabled.set((e.currentTarget as HTMLInputElement).checked);
+									}}
+								/>
+							</ProfileSettingsRow>
+							<p class="profile-settings-group__hint">{translate(lang, restSoundHintKey)}</p>
+						</div>
+					</div>
+
+					<div class="profile-settings-col">
+						<AuthInterfacePrefs surface="panel" />
+						{@render onboardingAuthHelpCard()}
+					</div>
 				</div>
 
-				<div class="profile-settings-group panel profile-settings-group--data">
+				<div class="profile-settings-stack-full">
+					<OnboardingChecklist readonly onTryDemo={() => {}} />
+				</div>
+
+				<div class="profile-settings-group panel profile-settings-group--data profile-settings-stack-full">
 					<p class="profile-settings-group__title">{translate(lang, 'settings.exportTitle')}</p>
 					<p class="profile-settings-group__hint">{translate(lang, 'settings.exportHint')}</p>
 					<DataExportSection embedded />
@@ -781,7 +792,7 @@
 					<ProfileDevWipePanel />
 				{/if}
 
-				<div class="auth-danger-zone" aria-labelledby="auth-danger-title">
+				<div class="auth-danger-zone profile-settings-stack-full" aria-labelledby="auth-danger-title">
 					<p class="auth-danger-zone__eyebrow">{translate(lang, 'auth.deleteZoneLabel')}</p>
 					<p id="auth-danger-title" class="auth-danger-zone__title">{translate(lang, 'auth.deleteTitle')}</p>
 					<p class="auth-danger-zone__lead">{translate(lang, 'auth.deleteLead')}</p>
@@ -855,7 +866,7 @@
 				</div>
 
 				<div
-					class="profile-settings-group panel"
+					class="profile-settings-group profile-settings-group--account panel profile-settings-stack-full"
 					class:profile-settings-group--busy={accountLocked}
 					aria-busy={accountLocked || undefined}
 				>
@@ -1232,15 +1243,19 @@
 	<WhatsNewSheet />
 {/snippet}
 
+{#snippet onboardingAuthHelpCard()}
+	<div class="profile-settings-group panel onboarding-auth-help">
+		<p class="profile-settings-group__title">{translate(lang, 'onboarding.authHelp')}</p>
+		<p class="profile-settings-group__hint">{translate(lang, 'onboarding.authHelpLead')}</p>
+		<AppButton variant="secondary" block href="/articles">
+			{translate(lang, 'articles.viewAll')}
+		</AppButton>
+	</div>
+{/snippet}
+
 {#snippet onboardingHelpPanel()}
 	<div class="onboarding-profile-block">
-		<div class="profile-settings-group panel onboarding-auth-help">
-			<p class="profile-settings-group__title">{translate(lang, 'onboarding.authHelp')}</p>
-			<p class="profile-settings-group__hint">{translate(lang, 'onboarding.authHelpLead')}</p>
-			<AppButton variant="secondary" block href="/articles">
-				{translate(lang, 'articles.viewAll')}
-			</AppButton>
-		</div>
+		{@render onboardingAuthHelpCard()}
 		<OnboardingChecklist readonly onTryDemo={() => {}} />
 	</div>
 {/snippet}

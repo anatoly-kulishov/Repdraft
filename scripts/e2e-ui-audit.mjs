@@ -48,6 +48,7 @@ const E2E_ONBOARDING_DONE = JSON.stringify({
 
 const VIEWPORTS = {
 	mobile: { width: 390, height: 844, isMobile: true, hasTouch: true },
+	tablet: { width: 768, height: 1024, isMobile: true, hasTouch: true },
 	desktop: { width: 1280, height: 900, isMobile: false, hasTouch: false }
 };
 
@@ -112,10 +113,11 @@ async function boxOverflows(page, selector) {
 
 /**
  * @param {import('playwright').Page} page
- * @param {'mobile'|'desktop'} viewport
+ * @param {'mobile'|'tablet'|'desktop'} viewport
  */
 async function auditViewport(page, viewport) {
-	const isMobile = viewport === 'mobile';
+	const isDesktop = viewport === 'desktop';
+	const isMobileChrome = !isDesktop;
 
 	// ——— Home ———
 	{
@@ -126,7 +128,7 @@ async function auditViewport(page, viewport) {
 		const hasHome = await visible(page, '.home-page');
 		hasHome ? pass(viewport, 'home.shell') : fail(viewport, 'home.shell', 'missing .home-page');
 
-		if (isMobile) {
+		if (!isDesktop) {
 			const tabbar = await visible(page, '.shell-nav-tabbar');
 			const sidebarHidden = await page
 				.locator('.shell-sidebar')
@@ -135,7 +137,7 @@ async function auditViewport(page, viewport) {
 			tabbar ? pass(viewport, 'home.tabbar') : fail(viewport, 'home.tabbar', 'tabbar hidden');
 			sidebarHidden
 				? pass(viewport, 'home.no-sidebar')
-				: fail(viewport, 'home.no-sidebar', 'sidebar visible on mobile');
+				: fail(viewport, 'home.no-sidebar', 'sidebar visible on mobile chrome');
 		} else {
 			const sidebar = await visible(page, '.shell-sidebar');
 			const tabbarHidden =
@@ -180,7 +182,7 @@ async function auditViewport(page, viewport) {
 				: fail(viewport, 'catalog.nav-fit', JSON.stringify(info));
 		}
 
-		if (isMobile) {
+		if (isMobileChrome) {
 			const primary = page.locator('.catalog-hub-chips .catalog-hub-chip').first();
 			const box = await primary.boundingBox({ timeout: 5000 }).catch(() => null);
 			box && box.width >= 44 && box.height >= 44
@@ -208,7 +210,7 @@ async function auditViewport(page, viewport) {
 			? pass(viewport, 'zone.header')
 			: fail(viewport, 'zone.header', 'no title');
 
-		if (isMobile) {
+		if (isMobileChrome) {
 			const back = page.locator(HEADER_BACK);
 			(await back.isVisible())
 				? pass(viewport, 'zone.mobile-back')
@@ -231,7 +233,7 @@ async function auditViewport(page, viewport) {
 			: fail(viewport, 'zone.search-stable', `wiped to "${value}"`);
 
 		// List thumbs size on mobile
-		if (isMobile) {
+		if (isMobileChrome) {
 			const media = page.locator('.exercise-card--list .exercise-card-media').first();
 			if ((await media.count()) > 0) {
 				const box = await media.boundingBox();
@@ -252,7 +254,7 @@ async function auditViewport(page, viewport) {
 			fail(viewport, 'exercise.id', 'no chest exercise');
 		} else {
 			await goto(page, `/exercise/${chest.id}`);
-			if (isMobile) {
+			if (isMobileChrome) {
 				(await visible(page, HEADER_BACK))
 					? pass(viewport, 'exercise.mobile-back')
 					: fail(viewport, 'exercise.mobile-back', 'missing');
@@ -282,7 +284,7 @@ async function auditViewport(page, viewport) {
 	// ——— Saved ———
 	{
 		await goto(page, '/exercises/saved');
-		if (isMobile) {
+		if (isMobileChrome) {
 			(await visible(page, HEADER_BACK))
 				? pass(viewport, 'saved.mobile-back')
 				: fail(viewport, 'saved.mobile-back', 'missing');
@@ -300,7 +302,7 @@ async function auditViewport(page, viewport) {
 			? pass(viewport, 'workouts.page')
 			: fail(viewport, 'workouts.page', 'missing');
 
-		if (isMobile) {
+		if (isMobileChrome) {
 			const fab = page.locator('.app-fab:not(.app-fab--hidden)');
 			const hasPlans = (await page.locator('.entity-row__main[href^="/workouts/"]').count()) > 0;
 			if (!hasPlans) {
@@ -327,7 +329,7 @@ async function auditViewport(page, viewport) {
 		if ((await planLink.count()) > 0) {
 			const href = await planLink.getAttribute('href');
 			await goto(page, href);
-			if (isMobile) {
+			if (isMobileChrome) {
 				(await visible(page, HEADER_BACK))
 					? pass(viewport, 'plan.mobile-back')
 					: fail(viewport, 'plan.mobile-back', 'missing');
@@ -360,7 +362,7 @@ async function auditViewport(page, viewport) {
 	// ——— Builder create ———
 	{
 		await goto(page, '/builder');
-		if (isMobile) {
+		if (isMobileChrome) {
 			(await visible(page, '.builder-chrome__back'))
 				? pass(viewport, 'builder.mobile-back')
 				: fail(viewport, 'builder.mobile-back', 'missing');
@@ -397,7 +399,7 @@ async function auditViewport(page, viewport) {
 	// ——— Settings ———
 	{
 		await goto(page, '/settings');
-		if (isMobile) {
+		if (isMobileChrome) {
 			(await visible(page, HEADER_BACK))
 				? pass(viewport, 'settings.mobile-back')
 				: fail(viewport, 'settings.mobile-back', 'missing');
@@ -433,7 +435,7 @@ async function auditViewport(page, viewport) {
 		const footer = page.locator('.shell-footer-inner');
 		if ((await footer.count()) > 0) {
 			const align = await footer.evaluate((el) => getComputedStyle(el).textAlign);
-			const expected = isMobile ? 'center' : 'start';
+			const expected = isMobileChrome ? 'center' : 'start';
 			align === expected
 				? pass(viewport, 'footer.align', `${expected}`)
 				: fail(viewport, 'footer.align', `expected ${expected}, got ${align}`);
@@ -468,7 +470,7 @@ async function auditViewport(page, viewport) {
 			pick = pickFab;
 		} else if ((await pickLink.count()) > 0 && (await pickLink.isVisible())) {
 			pick = pickLink;
-		} else if (!isMobile) {
+		} else if (!isMobileChrome) {
 			await goto(page, '/exercises?from=%2Fbuilder');
 			pick = { click: async () => {} };
 		}
@@ -516,7 +518,7 @@ async function auditViewport(page, viewport) {
 		}
 
 		// Mobile save lives in sticky-actions; desktop in builder-toolbar.
-		const saveBtn = isMobile
+		const saveBtn = isMobileChrome
 			? page.locator('.sticky-actions button.btn-primary')
 			: page.locator('.builder-chrome__save, .builder-toolbar-save').first();
 		if ((await saveBtn.count()) === 0) {
@@ -546,7 +548,7 @@ async function auditViewport(page, viewport) {
 		await page.waitForTimeout(400);
 		pass(viewport, 'flow.preview', page.url());
 
-		const startBtn = isMobile
+		const startBtn = isMobileChrome
 			? page.locator('.workout-preview .sticky-actions button.btn-primary')
 			: page.locator('.workout-preview-start button.btn-primary');
 		await startBtn.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => null);
@@ -599,7 +601,7 @@ async function auditViewport(page, viewport) {
 
 		/* After last set, finish offer may open a beat later than sticky/desktop CTA. */
 		const offer = page.locator('.bottom-sheet[aria-labelledby="live-finish-offer-title"]');
-		const finish = isMobile
+		const finish = isMobileChrome
 			? page.locator('.live-sticky-actions button.btn-primary').filter({ hasText: /заверш|finish/i })
 			: page.locator('.live-desktop-actions button.btn-primary').filter({ hasText: /заверш|finish/i });
 		await Promise.race([
@@ -660,7 +662,7 @@ async function main() {
 			const page = await context.newPage();
 			page.setDefaultTimeout(15_000);
 			try {
-				await auditViewport(page, /** @type {'mobile'|'desktop'} */ (name));
+				await auditViewport(page, /** @type {'mobile'|'tablet'|'desktop'} */ (name));
 			} catch (err) {
 				fail(name, 'suite.crash', err instanceof Error ? err.message : String(err));
 			}
