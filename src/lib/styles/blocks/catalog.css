@@ -3671,6 +3671,17 @@ body:has(.sticky-actions) .draft-dock {
 	}
 }
 
+/* Desktop: monolith chrome is not sticky; keep title → search spacing. */
+@media (min-width: 1024px) {
+	.content-page--catalog .catalog-list-layout__filters--monolith,
+	.content-page--catalog .catalog-list-layout__filters--search-only,
+	.content-page--catalog .catalog-list-layout__filters:has(.catalog-filters-shell) {
+		display: flex;
+		flex-direction: column;
+		gap: 0.65rem;
+	}
+}
+
 .catalog-list-layout__main {
 	min-width: 0;
 	width: 100%;

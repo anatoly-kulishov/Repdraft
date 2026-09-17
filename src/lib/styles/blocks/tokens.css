@@ -269,6 +269,7 @@
 		--page-content-wide: 48rem;
 		--page-content-catalog: 56rem;
 		--page-content-exercise: 44rem;
+		--page-content-home: 44rem;
 		--draft-dock-clearance: 0rem;
 	}
 }
@@ -279,6 +280,7 @@
 		--page-content-wide: 52rem;
 		--page-content-catalog: 60rem;
 		--page-content-exercise: 46rem;
+		--page-content-home: 48rem;
 	}
 }
 
