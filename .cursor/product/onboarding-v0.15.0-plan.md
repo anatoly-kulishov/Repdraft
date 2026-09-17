@@ -5,7 +5,7 @@
 **North star:** не «ещё экранов», а **time-to-first-completed-set** и **activation rate** (первая завершённая тренировка за 24 ч)
 
 Сверка с [`GOAL.md`](../../GOAL.md): онбординг ускоряет священный цикл, не отвлекает от него.  
-Сценарии QA: [`.cursor/product/user-scenarios.md`](user-scenarios.md) (короткие шаги, sync с `static/content/`).
+Сценарии QA: [`.cursor/product/user-scenarios.md`](user-scenarios.md) (короткие шаги, sync с `src/lib/content/user-scenarios.md`).
 
 ---
 

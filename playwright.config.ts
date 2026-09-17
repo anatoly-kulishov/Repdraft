@@ -37,6 +37,15 @@ export default defineConfig({
 			}
 		},
 		{
+			name: 'tablet-dark',
+			testMatch: '**/visual.routes.spec.ts',
+			use: {
+				viewport: { width: 768, height: 1024 },
+				isMobile: true,
+				hasTouch: true
+			}
+		},
+		{
 			name: 'desktop-dark',
 			use: {
 				viewport: { width: 1280, height: 900 },

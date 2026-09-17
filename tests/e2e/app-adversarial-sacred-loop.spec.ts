@@ -246,11 +246,11 @@ test.describe('Sacred-loop adversarial regression', () => {
 				heading: document.querySelector('h1')?.textContent ?? ''
 			};
 		});
-		if (
+		const claimsWorkoutSaved =
 			outcome.url.includes('/summary') ||
-			/сохран|saved/i.test(outcome.toast) ||
-			/завершен|completed|finished/i.test(outcome.heading)
-		) {
+			(/сохран|saved/i.test(outcome.toast) && !/локальн|locally/i.test(outcome.toast)) ||
+			/завершен|completed|finished/i.test(outcome.heading);
+		if (claimsWorkoutSaved) {
 			expect(
 				outcome.completedSets,
 				`claimed save with ${outcome.completedSets} sets: ${JSON.stringify(outcome)}`

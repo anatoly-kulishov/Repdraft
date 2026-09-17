@@ -42,14 +42,44 @@ function slugifyHeading(text: string, used: Set<string>): string {
 	return id;
 }
 
+function decodeHrefOnce(href: string): string {
+	try {
+		return decodeURIComponent(href);
+	} catch {
+		return href;
+	}
+}
+
+/** Allow http(s), mailto, hash, and relative paths. Drop other schemes. */
+function sanitizeHref(raw: string): string | null {
+	const href = raw.trim();
+	if (!href) return null;
+	if (href.startsWith('//')) return null;
+
+	const decoded = decodeHrefOnce(href).trim();
+	const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(decoded)?.[1]?.toLowerCase();
+	if (scheme) {
+		if (scheme === 'http' || scheme === 'https' || scheme === 'mailto') {
+			return escapeHtml(href);
+		}
+		return null;
+	}
+	return escapeHtml(href);
+}
+
 function inlineMarkdown(text: string): string {
 	let out = escapeHtml(text);
+	const anchors: string[] = [];
+	// Stash anchors before bold/code so backticks inside hrefs cannot mutate attributes.
 	out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, href) => {
-		const safeHref = String(href).replace(/"/g, '&quot;');
-		return `<a href="${safeHref}">${label}</a>`;
+		const safeHref = sanitizeHref(String(href));
+		const slot = `\u0000A${anchors.length}\u0000`;
+		anchors.push(safeHref === null ? String(label) : `<a href="${safeHref}">${label}</a>`);
+		return slot;
 	});
 	out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 	out = out.replace(/`([^`]+)`/g, '<code>$1</code>');
+	out = out.replace(/\u0000A(\d+)\u0000/g, (_m, index) => anchors[Number(index)] ?? '');
 	return out;
 }
 
