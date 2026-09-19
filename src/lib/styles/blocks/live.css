@@ -338,11 +338,11 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 		gap: 0.35rem;
 		padding-top: 0.55rem;
 		/* Safe-area inside the fixed bar so the chrome reaches the screen edge. */
-		padding-bottom: calc(0.65rem + var(--vv-bottom-pad, var(--safe-bottom)));
+		padding-bottom: max(0.65rem, var(--vv-bottom-pad, var(--safe-bottom)));
 	}
 
 	.live-sticky-actions.sticky-actions:not(.live-sticky-actions--rest) {
-		padding-bottom: calc(0.65rem + var(--vv-bottom-pad, var(--safe-bottom)));
+		padding-bottom: max(0.65rem, var(--vv-bottom-pad, var(--safe-bottom)));
 	}
 }
 

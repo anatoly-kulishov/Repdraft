@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.17.9',
+		highlights: {
+			ru: [
+				'Каталог: фото упражнений без тёмных рамок вокруг картинки',
+				'Клипы техники: повтор при сбое загрузки',
+				'Меньше лишних тостов при добавлении в план и локальном сохранении',
+				'Нижние кнопки ближе к краю экрана, без двойного отступа'
+			],
+			en: [
+				'Catalog: exercise photos without dark frames around the image',
+				'Technique clips: retry when loading fails',
+				'Fewer extra toasts when adding to a plan or saving locally',
+				'Bottom buttons sit closer to the screen edge'
+			]
+		}
+	},
+	{
 		version: '0.17.8',
 		highlights: {
 			ru: [

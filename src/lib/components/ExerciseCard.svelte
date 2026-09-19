@@ -87,7 +87,7 @@
 		if (inDraft) {
 			draft.removeFromDraft(exercise.id);
 			justAdded = false;
-			toasts.show(translate(lang, 'exercise.removed'), 'info', 2600, undefined, 'draft');
+			// Catalog: card + / dock badge already confirm; toast stacks with the dock.
 			return;
 		}
 		const result = draft.addToDraft(exercise.id, {
@@ -96,7 +96,8 @@
 		});
 		if (result.added) {
 			justAdded = true;
-			toasts.show(translate(lang, 'exercise.added'), 'success', 2600, undefined, 'draft');
+			// Catalog: card check + draft-dock badge already confirm. A toast
+			// stacks with the dock coachmark into a bottom pyramid.
 		} else {
 			toasts.show(translate(lang, 'exercise.already'), 'info', 2600, undefined, 'draft');
 		}
@@ -281,15 +282,13 @@
 		>
 			<a
 				href={exerciseHref(exercise.id)}
-				class="exercise-card-media-link absolute inset-0 flex items-center justify-center active:bg-[var(--color-surface-muted)]"
+				class="exercise-card-media-link absolute inset-0 active:bg-[var(--color-surface-muted)]"
 				aria-label={title}
 			>
 				<img
 					bind:this={imgEl}
 					src={`/${exercise.image}`}
 					alt=""
-					width="180"
-					height="180"
 					sizes="(min-width: 1024px) 180px, (min-width: 768px) 33vw, 45vw"
 					loading={imgLoading}
 					fetchpriority={priority ? 'high' : 'auto'}

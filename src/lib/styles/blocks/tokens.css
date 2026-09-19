@@ -231,24 +231,25 @@
 	--catalog-grid-exercise-card-bg: color-mix(in srgb, var(--color-surface) 94%, #000);
 	--catalog-grid-exercise-card-title-color: rgb(255 255 255 / 0.94);
 	--catalog-hub-zone-card-border: color-mix(in srgb, var(--color-border) 70%, transparent);
-	--catalog-hub-zone-card-bg: var(--color-surface);
+	/* Gym Visual plates are white — keep the whole hub tile on the plate. */
+	--catalog-hub-zone-card-bg: var(--media-plate-bg);
 	--catalog-hub-zone-card-shadow: var(--shadow-panel);
-	--catalog-hub-zone-media-bg: var(--catalog-card-media-bg);
+	--catalog-hub-zone-media-bg: var(--media-plate-bg);
 	--catalog-hub-zone-img-top: 0;
 	--catalog-hub-zone-img-bg: transparent;
 	--catalog-hub-zone-img-radius: 0;
 	--catalog-hub-zone-img-shadow: none;
 	--catalog-hub-zone-scrim: linear-gradient(
 		180deg,
-		rgb(0 0 0 / 0) 0%,
-		color-mix(in srgb, var(--color-surface) 55%, transparent) 42%,
-		var(--color-surface) 100%
+		rgb(255 255 255 / 0) 0%,
+		rgb(255 255 255 / 0.72) 42%,
+		rgb(255 255 255 / 0.96) 100%
 	);
-	--catalog-hub-zone-title-color: var(--color-ink);
-	--catalog-hub-zone-count-color: var(--color-muted);
-	--catalog-category-skeleton-card-bg: var(--color-surface);
+	--catalog-hub-zone-title-color: #0f1012;
+	--catalog-hub-zone-count-color: #636366;
+	--catalog-category-skeleton-card-bg: var(--media-plate-bg);
 	--catalog-category-skeleton-card-shadow: var(--shadow-panel);
-	--catalog-category-skeleton-media-bg: var(--catalog-card-media-bg);
+	--catalog-category-skeleton-media-bg: var(--media-plate-bg);
 }
 
 @media (min-width: 768px) {
@@ -458,7 +459,7 @@ html[data-theme='light'] {
 	--catalog-hub-zone-card-bg: var(--media-plate-bg);
 	--catalog-hub-zone-card-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset;
 	--catalog-hub-zone-media-bg: var(--media-plate-bg);
-	--catalog-hub-zone-img-top: 0.35rem;
+	--catalog-hub-zone-img-top: 0;
 	--catalog-hub-zone-img-bg: transparent;
 	--catalog-hub-zone-img-radius: 0;
 	--catalog-hub-zone-img-shadow: none;

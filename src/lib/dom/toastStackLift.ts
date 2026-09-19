@@ -3,8 +3,14 @@ const TOAST_LIFT_GAP_PX = 10;
 /*
  * Do not lift above bottom-sheet cards: toast z sits under sheets, and parking
  * the snackbar on the sheet rim looked like a toaster on top of the modal.
+ * FABs are included so clearance tracks real position (PWA banner, etc.), not
+ * only the static --fab-size CSS estimate.
  */
-const TOAST_LIFT_SELECTORS = ['.draft-dock-wrap__hint'] as const;
+const TOAST_LIFT_SELECTORS = [
+	'.draft-dock-wrap__hint',
+	'.app-fab:not(.app-fab--hidden)',
+	'.workouts-fab:not(.workouts-fab--hidden)'
+] as const;
 
 export function isToastLiftTargetVisible(el: Element): boolean {
 	const rect = el.getBoundingClientRect();
