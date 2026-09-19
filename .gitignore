@@ -45,6 +45,11 @@ scripts/set-vercel-env.mjs
 .cursor/skills/ui-ux-pro-max/
 .opencode/
 
+# Competitor UI captures / local mockups (keep on disk, not in public git)
+.cursor/product/competitor-screens/
+.cursor/product/*-mockup.png
+.cursor/product/*-mockup.jpg
+
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
