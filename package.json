@@ -2,7 +2,7 @@
 	"name": "repdraft",
 	"private": true,
 	"version": "0.17.8",
-	"description": "Каталог упражнений и конструктор тренировок",
+	"description": "Gym workout log, exercise catalog, and workout builder - mobile-first PWA",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev --host",
