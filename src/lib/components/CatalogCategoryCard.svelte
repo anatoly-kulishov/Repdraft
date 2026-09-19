@@ -67,11 +67,9 @@
 		{#if coverImage}
 			<img
 				bind:this={imgEl}
-				class={`zone-card__img block h-full w-full ${loaded ? 'is-loaded' : ''}`}
+				class={`zone-card__img block ${loaded ? 'is-loaded' : ''}`}
 				src={`/${coverImage}`}
 				alt=""
-				width="180"
-				height="180"
 				sizes="(min-width: 1024px) 180px, (min-width: 768px) 25vw, 45vw"
 				loading={imgLoading}
 				fetchpriority={priority ? 'high' : 'auto'}
@@ -86,6 +84,5 @@
 				<p class="zone-card__grid-count truncate">{countLabel}</p>
 			{/if}
 		</div>
-		<span class="zone-card__focus" aria-hidden="true"></span>
 	</div>
 </a>

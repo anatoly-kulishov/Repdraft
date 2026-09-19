@@ -46,6 +46,8 @@ import {
 	let clips = $state<TechniqueClip[]>([]);
 	let loading = $state(false);
 	let settled = $state(false);
+	/** True after a failed feed fetch (inline retry; toast only when online). */
+	let loadError = $state(false);
 	/** False until IO/scroll/`?clip=` arms the feed fetch (UI shell still renders). */
 	let loadArmed = $state(false);
 	let refreshGen = 0;
@@ -92,8 +94,8 @@ import {
 
 	async function refresh(id: string) {
 		const gen = ++refreshGen;
-		const blocking = !settled;
-		if (blocking) loading = true;
+		loading = true;
+		loadError = false;
 		try {
 			const list = await withTimeout(listClipsForExercise(id), CLIPS_LOAD_MS);
 			if (gen !== refreshGen) return;
@@ -102,8 +104,12 @@ import {
 		} catch (err) {
 			if (gen !== refreshGen) return;
 			console.error(err);
-			toasts.show(translateError(lang, err, 'clips.loadFail'), 'error');
+			loadError = true;
 			clips = [];
+			// Offline already has the network chip; avoid a second alarm toast.
+			if (typeof navigator === 'undefined' || navigator.onLine) {
+				toasts.show(translateError(lang, err, 'clips.loadFail'), 'error');
+			}
 		} finally {
 			if (gen !== refreshGen) return;
 			loading = false;
@@ -124,6 +130,7 @@ import {
 		settled = false;
 		loading = false;
 		loadArmed = false;
+		loadError = false;
 		clips = [];
 	});
 
@@ -601,10 +608,28 @@ import {
 
 	{#if !loadArmed}
 		<!-- Shell only: feed fetch waits for scroll / IO / ?clip= -->
-	{:else if loading && !settled}
+	{:else if loading}
 		<div class="flex justify-center py-3 md:py-8">
 			<Spinner label={translate(lang, 'clips.loadingFeed')} size="sm" block={false} />
 		</div>
+	{:else if loadError}
+		<AppPanel dashed class="mb-3 py-4 text-center md:mb-4 md:py-5">
+			<p class="m-0 text-sm font-medium text-[var(--color-ink)]">
+				{translate(lang, 'clips.loadFail')}
+			</p>
+			<p class="mt-1 text-xs text-[var(--color-muted)] text-pretty">
+				{typeof navigator !== 'undefined' && !navigator.onLine
+					? translate(lang, 'network.offlineChip')
+					: translate(lang, 'clips.loadFailHint')}
+			</p>
+			<AppButton
+				variant="secondary"
+				class="mt-3 min-h-[48px] min-w-[48px] text-sm md:mt-4"
+				onclick={() => void refresh(exerciseId)}
+			>
+				{translate(lang, 'sync.retry')}
+			</AppButton>
+		</AppPanel>
 	{:else if clips.length === 0}
 		{#if !composerOpen}
 			<AppPanel dashed class="mb-3 py-4 text-center md:mb-4 md:py-5">

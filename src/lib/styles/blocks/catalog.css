@@ -2,7 +2,8 @@
 .content-page--catalog {
 	--catalog-card-action: var(--color-accent-fill);
 	--catalog-card-action-ink: var(--color-accent-ink);
-	--catalog-card-media-bg: color-mix(in srgb, var(--hero-card-media-bg) 88%, var(--color-surface));
+	/* Gym Visual plates are white — match the well so contain letterbox disappears. */
+	--catalog-card-media-bg: var(--media-plate-bg);
 }
 
 .content-page--catalog .catalog-grid {
@@ -14,11 +15,15 @@
 	display: flex;
 	flex-direction: column;
 	height: 100%;
+	min-width: 0;
 	overflow: hidden;
 	border-radius: 1rem;
 	border-color: var(--catalog-grid-exercise-card-border);
 	background: var(--catalog-grid-exercise-card-bg);
 	box-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset;
+	/* Samsung One UI / large font scale: keep glyphs inside the card shell. */
+	text-size-adjust: 100%;
+	-webkit-text-size-adjust: 100%;
 }
 
 .content-page--catalog .catalog-grid .exercise-card-media--grid {
@@ -27,8 +32,18 @@
 	background: var(--catalog-card-media-bg);
 }
 
+.content-page--catalog .catalog-grid .exercise-card-media--grid .exercise-card-media-link {
+	display: block;
+	padding: 0;
+}
+
 .content-page--catalog .catalog-grid .exercise-card-media--grid .exercise-card-img {
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	max-height: none;
 	object-fit: contain;
+	object-position: center;
 }
 
 .content-page--catalog .catalog-grid .exercise-card-bookmark:not(.exercise-card-bookmark--inline) {
@@ -113,14 +128,26 @@
 .content-page--catalog .catalog-grid .exercise-card-body--grid {
 	padding: 0.7rem 0.75rem 0.8rem;
 	gap: 0.45rem;
+	min-width: 0;
+	max-width: 100%;
 }
 
 .content-page--catalog .catalog-grid .exercise-card-grid-title {
 	/* Always reserve 2 lines so short titles don't shrink the card vs long ones. */
+	min-width: 0;
+	max-width: 100%;
 	min-height: calc(1.25em * 2);
+	overflow: hidden;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
 	font-size: 0.8125rem;
-	font-weight: 650;
+	/* 600 synthesizes cleanly if Inter Variable has not swapped in yet (Samsung). */
+	font-weight: 600;
 	line-height: 1.25;
+	letter-spacing: normal;
 	color: var(--catalog-grid-exercise-card-title-color);
 }
 
@@ -230,23 +257,22 @@
 
 .content-page--catalog .catalog-hub-grid .zone-card--grid .zone-card__img {
 	position: absolute;
-	left: 50%;
-	top: var(--catalog-hub-zone-img-top);
+	inset: 0;
 	z-index: 1;
-	width: min(100%, var(--media-cap));
-	height: min(calc(100% - 2.85rem), var(--media-cap));
-	max-width: var(--media-cap);
-	max-height: var(--media-cap);
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	max-height: none;
 	padding: 0;
 	object-fit: contain;
 	object-position: center;
 	background: var(--catalog-hub-zone-img-bg);
-	border-radius: var(--catalog-hub-zone-img-radius);
-	box-shadow: var(--catalog-hub-zone-img-shadow);
+	border-radius: 0;
+	box-shadow: none;
 	opacity: 0;
 	filter: none;
 	mix-blend-mode: normal;
-	transform: translateX(-50%);
+	transform: none;
 	transition: opacity 180ms ease;
 }
 
@@ -272,32 +298,25 @@
 	display: flex;
 	flex-direction: column;
 	gap: 0.1rem;
-	/* Right pad clears the fixed bottom-right focus marker. */
-	padding: 0.65rem 2rem 0.75rem 0.7rem;
+	padding: 0.65rem 0.75rem 0.75rem 0.7rem;
 	pointer-events: none;
-}
-
-.content-page--catalog .catalog-hub-grid .zone-card__focus {
-	position: absolute;
-	right: 0.7rem;
-	bottom: 0.75rem;
-	z-index: 4;
-	width: 0.6rem;
-	height: 0.6rem;
-	border-radius: 999px;
-	pointer-events: none;
-	background: var(--color-accent);
-	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 28%, transparent),
-		0 0 10px var(--color-accent-glow);
 }
 
 .content-page--catalog .catalog-hub-grid .zone-card__grid-title {
 	margin: 0;
+	min-width: 0;
+	max-width: 100%;
 	min-height: 0;
+	overflow: hidden;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
 	font-size: 0.875rem;
 	font-weight: 700;
 	line-height: 1.2;
-	letter-spacing: -0.02em;
+	letter-spacing: normal;
 	color: var(--catalog-hub-zone-title-color);
 }
 
@@ -339,18 +358,7 @@
 	flex-direction: column;
 	gap: 0.45rem;
 	/* Match zone-card caption pad so skeleton → card does not jump. */
-	padding: 0.75rem 2rem 0.85rem 0.75rem;
-}
-
-.catalog-category-skeleton__focus {
-	position: absolute;
-	right: 0.7rem;
-	bottom: 0.75rem;
-	z-index: 1;
-	width: 0.6rem;
-	height: 0.6rem;
-	border-radius: 999px;
-	background: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+	padding: 0.75rem 0.75rem 0.85rem 0.75rem;
 }
 
 .catalog-category-skeleton__title {
@@ -905,7 +913,12 @@
 }
 
 .exercise-card-list-title {
+	min-width: 0;
+	max-width: 100%;
 	min-height: 0;
+	overflow: hidden;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 	font-size: 0.9375rem;
 	line-height: 1.3;
 }
@@ -2448,8 +2461,9 @@ html[data-nav-back] .zone-card__media-skel {
 	z-index: 30;
 	border-top: 1px solid var(--color-border);
 	background: var(--color-surface);
+	/* Bottom: safe-area alone (or 0.65rem if inset is 0). Do not stack both. */
 	padding: 0.65rem max(1rem, var(--safe-right))
-		calc(0.65rem + var(--vv-bottom-pad, var(--safe-bottom))) max(1rem, var(--safe-left));
+		max(0.65rem, var(--vv-bottom-pad, var(--safe-bottom))) max(1rem, var(--safe-left));
 	max-width: 100%;
 	overflow: hidden;
 	box-shadow: var(--shadow-float-top);
@@ -2505,7 +2519,7 @@ body:has(.summary-page__done-sticky) {
 
 .summary-page__done-sticky.sticky-actions {
 	padding-block: 0.4rem;
-	padding-bottom: calc(0.4rem + var(--vv-bottom-pad, var(--safe-bottom)));
+	padding-bottom: max(0.4rem, var(--vv-bottom-pad, var(--safe-bottom)));
 }
 
 .summary-page__done-sticky .summary-actions {

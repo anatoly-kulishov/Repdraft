@@ -83,9 +83,10 @@ button.exercise-card-media {
 	object-position: center;
 }
 
-/* Gym Visual: never render exercise thumbs larger than 180×180. */
+/* Gym Visual: never render exercise thumbs larger than 180×180.
+   Catalog grid tiles size to the column; plates fill the well. */
 :is(
-	.exercise-card-media,
+	.exercise-card-media:not(.exercise-card-media--grid),
 	.exercise-card--list .exercise-card-media,
 	.catalog-exercise-list .exercise-card--list .exercise-card-media,
 	.history-exercise__thumb,
@@ -96,10 +97,15 @@ button.exercise-card-media {
 
 .exercise-card-img,
 .exercise-technique-sheet__img,
-.exercise-media-native,
-.content-page--catalog .catalog-hub-grid .zone-card--grid .zone-card__img {
+.exercise-media-native {
 	max-width: var(--media-cap);
 	max-height: var(--media-cap);
+}
+
+/* Hub zone tiles: fill the card well (Gym Visual plates are already ~square). */
+.content-page--catalog .catalog-hub-grid .zone-card--grid .zone-card__img {
+	max-width: none;
+	max-height: none;
 }
 
 .catalog-grid .exercise-card-media--grid {
@@ -111,8 +117,8 @@ button.exercise-card-media {
 .catalog-grid .exercise-card-media--grid .exercise-card-img {
 	width: 100%;
 	height: 100%;
-	max-width: var(--media-cap);
-	max-height: var(--media-cap);
+	max-width: none;
+	max-height: none;
 }
 
 .media-well.is-placeholder,

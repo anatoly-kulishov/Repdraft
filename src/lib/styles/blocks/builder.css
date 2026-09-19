@@ -630,7 +630,7 @@
 		max-width: none;
 		transform: translateZ(0);
 		-webkit-backface-visibility: hidden;
-		padding-bottom: calc(0.65rem + var(--vv-bottom-pad, var(--safe-bottom)));
+		padding-bottom: max(0.65rem, var(--vv-bottom-pad, var(--safe-bottom)));
 		box-shadow: var(--shadow-float-top);
 	}
 

@@ -223,7 +223,7 @@
 									<LucideIcon icon={Check} size={ICON_BUTTON} />
 								</span>
 							{/if}
-							<span class="block max-w-full min-w-0 text-left">{toast.message}</span>
+							<span class="toast-item__text">{toast.message}</span>
 						</span>
 						{#if toast.action}
 							<a class="toast-action" href={toast.action.href} onclick={() => toasts.dismiss(toast.id)}>
@@ -256,8 +256,16 @@
 	.toast-item {
 		flex: 0 0 auto;
 		align-self: stretch;
+		min-width: 0;
+		max-width: 100%;
 		min-height: 2.5rem;
+		overflow: hidden;
 		touch-action: pan-y;
+	}
+
+	.toast-item__body {
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	.toast-item--swiping {
@@ -283,6 +291,17 @@
 		align-items: flex-start;
 		gap: 0.45rem;
 		min-width: 0;
+		max-width: 100%;
+	}
+
+	/* Clipboard fallback toasts may show a raw URL with no spaces. */
+	.toast-item__text {
+		display: block;
+		min-width: 0;
+		max-width: 100%;
+		text-align: left;
+		overflow-wrap: anywhere;
+		word-break: break-word;
 	}
 
 	.toast-item__icon {
@@ -299,14 +318,15 @@
 	.toast-item__close {
 		position: absolute;
 		top: 50%;
-		right: 0.125rem;
+		right: 0.35rem;
 		transform: translateY(-50%);
 		display: grid;
 		place-items: center;
-		width: 2.75rem;
-		height: 2.75rem;
-		min-width: 2.75rem;
-		min-height: 2.75rem;
+		/* Visual size fits inside the toast; 48px hit via ::before. */
+		width: 2rem;
+		height: 2rem;
+		min-width: 2rem;
+		min-height: 2rem;
 		margin: 0;
 		padding: 0;
 		border: 0;
@@ -323,7 +343,8 @@
 	.toast-item__close::before {
 		content: '';
 		position: absolute;
-		inset: -0.35rem;
+		/* 2rem + 0.5rem*2 = 3rem (48px) touch target */
+		inset: -0.5rem;
 	}
 
 	.toast-item--accent .toast-item__close:hover,
