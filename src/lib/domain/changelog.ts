@@ -14,6 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.18.2',
+		highlights: {
+			ru: [
+				'Поля входа: текст больше не съезжает на iPhone',
+				'Лимит писем: одно сообщение, без красной подсветки email'
+			],
+			en: [
+				'Sign-in fields: text no longer shifts on iPhone',
+				'Email send limit: one message, no red highlight on the email field'
+			]
+		}
+	},
+	{
 		version: '0.18.1',
 		highlights: {
 			ru: [

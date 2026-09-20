@@ -26,7 +26,7 @@
 		bind:files
 		bind:value
 		type="file"
-		class={cn('h-12 min-h-12 px-3.5 py-3 text-base leading-normal', className)}
+		class={cn('h-12 min-h-12 box-border px-3.5 py-0 text-base leading-normal', className)}
 		{...rest}
 	/>
 {:else}
@@ -34,7 +34,7 @@
 		bind:ref
 		bind:value
 		{type}
-		class={cn('h-12 min-h-12 px-3.5 py-3 text-base leading-normal', className)}
+		class={cn('h-12 min-h-12 box-border px-3.5 py-0 text-base leading-normal', className)}
 		{...rest}
 	/>
 {/if}

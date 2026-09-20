@@ -297,11 +297,10 @@ select.field:focus-visible {
 	border-color: var(--color-danger);
 }
 
-/* shadcn AppInput: same danger feedback as .field.is-invalid */
+/* shadcn AppInput: danger border only — no transform shake (iOS shifts caret/text). */
 input[data-slot='input'][aria-invalid='true'] {
 	border-color: var(--color-danger);
 	box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 22%, transparent);
-	animation: kineticsShake 0.42s ease both;
 }
 
 input[data-slot='input'][aria-invalid='true']:focus,

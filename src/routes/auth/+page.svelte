@@ -200,6 +200,21 @@
 		return translateError(lang, err, 'auth.error');
 	}
 
+	/** Rate limit / soft errors: toast only. Field shake is for bad credentials, not “wait a minute”. */
+	function reportAuthError(err: unknown) {
+		const text = mapErr(err);
+		const key = authErrorMessageKey(err);
+		if (key === 'auth.errors.rateLimit') {
+			message = null;
+			fieldsInvalid = false;
+			toasts.show(text, 'error');
+			return;
+		}
+		message = text;
+		toasts.show(text, 'error');
+		void flashInvalid();
+	}
+
 	function openCheckEmail(kind: typeof checkEmailKind) {
 		checkEmailKind = kind;
 		panel = 'check-email';
@@ -250,10 +265,7 @@
 			}
 		} catch (err) {
 			bumpCaptcha();
-			const text = mapErr(err);
-			message = text;
-			toasts.show(text, 'error');
-			void flashInvalid();
+			reportAuthError(err);
 		} finally {
 			loading = false;
 		}
@@ -276,10 +288,7 @@
 			openCheckEmail('magic');
 		} catch (err) {
 			bumpCaptcha();
-			const text = mapErr(err);
-			message = text;
-			toasts.show(text, 'error');
-			void flashInvalid();
+			reportAuthError(err);
 		} finally {
 			loading = false;
 		}
@@ -301,10 +310,7 @@
 			openCheckEmail('reset');
 		} catch (err) {
 			bumpCaptcha();
-			const text = mapErr(err);
-			message = text;
-			toasts.show(text, 'error');
-			void flashInvalid();
+			reportAuthError(err);
 		} finally {
 			loading = false;
 		}
@@ -334,10 +340,7 @@
 			redirected = true;
 			await goto(nextPath, { replaceState: true });
 		} catch (err) {
-			const text = mapErr(err);
-			message = text;
-			toasts.show(text, 'error');
-			void flashInvalid();
+			reportAuthError(err);
 		} finally {
 			loading = false;
 		}
