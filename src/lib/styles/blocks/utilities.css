@@ -71,7 +71,6 @@ html.e2e-stable *::after {
 	.live-set-row.is-done,
 	.live-set-row.is-just-done,
 	.field.is-invalid,
-	input[data-slot='input'][aria-invalid='true'],
 	.clip-lightbox,
 	.clip-lightbox__panel,
 	.summary-check,
