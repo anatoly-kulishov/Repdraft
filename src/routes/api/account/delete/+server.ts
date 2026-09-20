@@ -44,13 +44,8 @@ function corsHeaders(request: Request): HeadersInit {
 		'Access-Control-Allow-Headers': 'Authorization, Content-Type, Accept',
 		'Access-Control-Max-Age': '86400'
 	};
-	/* Capacitor / custom-scheme clients may omit Origin or send capacitor:// / ionic:// */
-	if (
-		!origin ||
-		origin.startsWith('capacitor://') ||
-		origin.startsWith('ionic://') ||
-		allow.includes(origin)
-	) {
+	/* Same-origin or allowlisted PUBLIC_SITE_URL / PUBLIC_WEB_ORIGIN. */
+	if (!origin || allow.includes(origin)) {
 		headers['Access-Control-Allow-Origin'] = origin || '*';
 		if (origin) headers.Vary = 'Origin';
 	}
@@ -109,7 +104,7 @@ async function removeStoragePaths(
 	}
 }
 
-/** Preflight for native shell (absolute PUBLIC_WEB_ORIGIN fetch). */
+/** Preflight for cross-origin account delete (PUBLIC_WEB_ORIGIN). */
 export const OPTIONS: RequestHandler = async ({ request }) =>
 	new Response(null, { status: 204, headers: corsHeaders(request) });
 

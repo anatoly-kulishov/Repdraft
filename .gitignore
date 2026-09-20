@@ -11,18 +11,8 @@ node_modules
 # Native route mask leftovers (should never persist)
 *.__web_only__
 
-# Capacitor local overrides
+# Capacitor local overrides (legacy; shells removed)
 capacitor.config.local.ts
-ios/App/Pods
-ios/DerivedData
-android/.gradle
-android/build
-android/app/build
-android/local.properties
-android/.idea
-android/captures
-*.jks
-*.keystore
 
 # OS
 .DS_Store

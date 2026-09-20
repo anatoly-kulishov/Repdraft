@@ -10,7 +10,7 @@
  * In-app BrandMark / boot splash must use the same MARK_INSET as icon.svg.
  */
 import sharp from 'sharp';
-import { copyFileSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -265,72 +265,3 @@ console.log('generate-brand-icons: ok', {
 	markBBox: { minX, minY, maxX, maxY, bw, bh },
 	appleSplash: APPLE_SPLASH.length
 });
-
-/* Capacitor Assets CLI expects ./assets/icon.png + splash.png (see @capacitor/assets). */
-const capAssets = join(root, 'assets');
-mkdirSync(capAssets, { recursive: true });
-copyFileSync(join(root, 'static/icon-512-v3.png'), join(capAssets, 'icon.png'));
-const capSplash = await sharp({
-	create: { width: 2732, height: 2732, channels: 3, background: SPLASH_BG }
-})
-	.composite([
-		{
-			input: await sharp(join(root, 'static/icon-512-v3.png')).resize(512, 512).png().toBuffer(),
-			top: Math.round((2732 - 512) / 2),
-			left: Math.round((2732 - 512) / 2)
-		}
-	])
-	.png()
-	.toBuffer();
-await sharp(capSplash).toFile(join(capAssets, 'splash.png'));
-console.log('generate-brand-icons: capacitor assets/icon.png + splash.png');
-
-/* Android Capacitor splash drawables (scaffold defaults were white → cold-start flash). */
-async function writeDarkSplash(outPath, w, h) {
-	const markSize = Math.round(Math.min(w, h) * 0.22);
-	const mark = await sharp(join(root, 'static/icon-512-v3.png')).resize(markSize, markSize).png().toBuffer();
-	await sharp({
-		create: { width: w, height: h, channels: 3, background: SPLASH_BG }
-	})
-		.composite([
-			{
-				input: mark,
-				top: Math.round((h - markSize) / 2),
-				left: Math.round((w - markSize) / 2)
-			}
-		])
-		.png()
-		.toFile(outPath);
-}
-const androidRes = join(root, 'android/app/src/main/res');
-try {
-	let androidSplashCount = 0;
-	for (const dir of readdirSync(androidRes)) {
-		if (!dir.startsWith('drawable')) continue;
-		const splashPath = join(androidRes, dir, 'splash.png');
-		try {
-			if (!statSync(splashPath).isFile()) continue;
-		} catch {
-			continue;
-		}
-		const meta = await sharp(splashPath).metadata();
-		const w = meta.width || 480;
-		const h = meta.height || 320;
-		await writeDarkSplash(splashPath, w, h);
-		androidSplashCount += 1;
-	}
-	console.log('generate-brand-icons: android splash.png', androidSplashCount);
-} catch (androidSplashErr) {
-	console.warn('generate-brand-icons: skip android splash', androidSplashErr);
-}
-
-/* iOS Capacitor splash imageset (same white-default trap). */
-const iosSplashDir = join(root, 'ios/App/App/Assets.xcassets/Splash.imageset');
-try {
-	for (const file of ['splash-2732x2732.png', 'splash-2732x2732-1.png', 'splash-2732x2732-2.png']) {
-		await sharp(capSplash).toFile(join(iosSplashDir, file));
-	}
-	console.log('generate-brand-icons: ios Splash.imageset');
-} catch (iosSplashErr) {
-	console.warn('generate-brand-icons: skip ios splash', iosSplashErr);
-}

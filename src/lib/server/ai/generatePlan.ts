@@ -1,11 +1,13 @@
 import { clampPlanName, sanitizeAiBrief } from '$lib/domain/inputLimits';
-import type { WorkoutExercise } from '$lib/domain/types';
+import type { ExerciseIndexItem, WorkoutExercise } from '$lib/domain/types';
 import {
 	catalogPromptLines,
 	catalogWhitelist,
+	desiredExerciseCountFromBrief,
 	hintsFromBrief,
 	loadExerciseIndex,
-	slimCatalogForBrief
+	slimCatalogForBrief,
+	targetsFromBrief
 } from './catalog';
 import { chatCompletion } from './chat';
 import { resolveAiConfig, type AiProvider } from './config';
@@ -72,6 +74,8 @@ const SYSTEM_TEMPLATE = `Ты — API генерации плана тренир
 13. Не дублируй почти одинаковые движения (две тяги в наклоне, три сгибания на бицепс со штангой). Один паттерн — одно упражнение; смена плоскости/оборудования только если даёт явный смысл.
 14. Если ниже есть РЕФЕРЕНС СПЛИТ — следуй его слотам (role + bodyPart + нагрузка). Без референса: сплит из двух зон = 2–3 базы + 1–2 изоляции на вторую зону; изоляция одной мышцы — не больше ~40% списка.
 15. Если brief задаёт зону (руки/грудь/ноги/…) — бери ТОЛЬКО упражнения этой зоны (и явно названных соседних). Не подмешивай присед/ягодицы в план на руки и т.п.
+16. Если brief называет НЕСКОЛЬКО зон (например «спина и трицепс») — в плане ОБЯЗАНЫ быть упражнения КАЖДОЙ зоны (не меньше 1–2 на вторичную). Не оставляй только первую зону.
+17. Если brief называет мышцу изоляции (трицепс/бицепс/…) — для upper arms бери target этой мышцы, не соседнюю.
 
 {template}
 
@@ -186,13 +190,15 @@ export function padToMinExercises(
 	plan: AiPlan,
 	slim: ReturnType<typeof slimCatalogForBrief>,
 	allowed: Set<string>,
-	fallback: ReturnType<typeof slimCatalogForBrief> = []
+	fallback: ReturnType<typeof slimCatalogForBrief> = [],
+	minCount: number = MIN_EXERCISES
 ): AiPlan {
+	const targetMin = Math.min(MAX_EXERCISES, Math.max(1, Math.round(minCount)));
 	const have = new Set(plan.exercises.map((e) => e.exerciseId));
 	const exercises = [...plan.exercises];
 	const pool = [...slim, ...fallback].filter((ex) => allowed.has(ex.id));
 	for (const ex of pool) {
-		if (exercises.length >= MIN_EXERCISES) break;
+		if (exercises.length >= targetMin) break;
 		if (have.has(ex.id)) continue;
 		have.add(ex.id);
 		exercises.push({ exerciseId: ex.id, sets: 3, reps: 10, restSec: 90 });
@@ -202,13 +208,114 @@ export function padToMinExercises(
 	if (exercises.length === 0) {
 		throw new Error('План слишком короткий после добора: 0');
 	}
-	const need = Math.min(MIN_EXERCISES, poolIds.size);
+	const need = Math.min(targetMin, poolIds.size);
 	if (exercises.length < need) {
 		throw new Error(
 			`План слишком короткий после добора: ${exercises.length} (нужно ≥${need})`
 		);
 	}
 	return { name: plan.name, exercises: exercises.slice(0, MAX_EXERCISES) };
+}
+
+/**
+ * Multi-zone briefs must not collapse to one body_part (model often keeps only the first).
+ * Swap from the over-represented zone; prefer target muscles when brief names them.
+ */
+export function ensureHintCoverage(
+	plan: AiPlan,
+	index: ExerciseIndexItem[],
+	parts: string[],
+	slim: ExerciseIndexItem[],
+	allowed: Set<string>,
+	targets: string[] = []
+): AiPlan {
+	if (parts.length < 2) return plan;
+	const byId = new Map(index.map((ex) => [ex.id, ex]));
+	const exercises = [...plan.exercises];
+
+	const partOf = (id: string) => byId.get(id)?.body_part ?? '';
+	const presentParts = () => new Set(exercises.map((e) => partOf(e.exerciseId)).filter(Boolean));
+
+	const pickForPart = (part: string): ExerciseIndexItem | null => {
+		const used = new Set(exercises.map((e) => e.exerciseId));
+		let candidates = slim.filter(
+			(ex) => ex.body_part === part && allowed.has(ex.id) && !used.has(ex.id)
+		);
+		if (!candidates.length) {
+			candidates = index.filter(
+				(ex) => ex.body_part === part && allowed.has(ex.id) && !used.has(ex.id)
+			);
+		}
+		if (!candidates.length) return null;
+		if (targets.length && part === 'upper arms') {
+			const pref = candidates.filter((ex) => targets.includes(ex.target));
+			if (pref.length) return pref[0]!;
+		}
+		return candidates[0]!;
+	};
+
+	const countByPart = () => {
+		const c = new Map<string, number>();
+		for (const e of exercises) {
+			const p = partOf(e.exerciseId);
+			if (!p) continue;
+			c.set(p, (c.get(p) ?? 0) + 1);
+		}
+		return c;
+	};
+
+	for (const part of parts) {
+		if (presentParts().has(part)) continue;
+		const pick = pickForPart(part);
+		if (!pick) continue;
+		const counts = countByPart();
+		let overPart = '';
+		let overCount = -1;
+		for (const p of parts) {
+			const n = counts.get(p) ?? 0;
+			if (n > overCount) {
+				overCount = n;
+				overPart = p;
+			}
+		}
+		const replaceIdx =
+			overPart && overCount > 1
+				? exercises.map((e) => partOf(e.exerciseId)).lastIndexOf(overPart)
+				: -1;
+		const row = {
+			exerciseId: pick.id,
+			sets: 3,
+			reps: targets.includes('triceps') || targets.includes('biceps') ? 12 : 10,
+			restSec: 60
+		};
+		if (replaceIdx >= 0) {
+			exercises[replaceIdx] = row;
+		} else if (exercises.length < MAX_EXERCISES) {
+			exercises.push(row);
+		} else if (exercises.length) {
+			exercises[exercises.length - 1] = row;
+		}
+	}
+
+	/* Named isolation muscle: at least one matching target among upper-arms rows. */
+	if (targets.length && parts.includes('upper arms')) {
+		const hasTarget = exercises.some((e) => {
+			const ex = byId.get(e.exerciseId);
+			return ex?.body_part === 'upper arms' && targets.includes(ex.target);
+		});
+		if (!hasTarget) {
+			const pick = pickForPart('upper arms');
+			if (pick && targets.includes(pick.target)) {
+				const armsIdx = exercises.findIndex((e) => partOf(e.exerciseId) === 'upper arms');
+				const row = { exerciseId: pick.id, sets: 3, reps: 12, restSec: 60 };
+				if (armsIdx >= 0) exercises[armsIdx] = row;
+				else if (exercises.length < MAX_EXERCISES) exercises.push(row);
+				else if (exercises.length) exercises[exercises.length - 1] = row;
+			}
+		}
+	}
+
+	return { name: plan.name, exercises };
 }
 
 export function toWorkoutExercises(plan: AiPlan): WorkoutExercise[] {
@@ -238,6 +345,8 @@ export async function generateWorkoutPlan(briefRaw: string): Promise<GeneratePla
 		? retrieved.exercises
 		: slimCatalogForBrief(index, brief);
 	const { parts } = hintsFromBrief(brief);
+	const targets = targetsFromBrief(brief);
+	const wantCount = desiredExerciseCountFromBrief(brief, MIN_EXERCISES);
 	const slim = parts.length
 		? slimRaw.filter((ex) => parts.includes(ex.body_part))
 		: slimRaw;
@@ -251,10 +360,12 @@ export async function generateWorkoutPlan(briefRaw: string): Promise<GeneratePla
 	const templateBlock = retrieved.template
 		? formatTemplateForPrompt(retrieved.template)
 		: '';
-	const system = SYSTEM_TEMPLATE.replace('{catalog}', catalogPromptLines(slim)).replace(
-		'{template}',
-		templateBlock
-	);
+	const targetHint =
+		targets.length > 0
+			? `\nЦелевые мышцы (target): ${targets.join(', ')}. Для рук предпочитай эти target.`
+			: '';
+	const system = SYSTEM_TEMPLATE.replace('{catalog}', catalogPromptLines(slim))
+		.replace('{template}', templateBlock + targetHint);
 
 	try {
 		let raw: unknown;
@@ -301,7 +412,8 @@ export async function generateWorkoutPlan(briefRaw: string): Promise<GeneratePla
 		plan = filterKnownIds(plan, allowed);
 		const droppedUnknownIds = beforeKnown - plan.exercises.length;
 		plan = filterToBodyHints(plan, index, parts);
-		plan = padToMinExercises(plan, slim, allowed, parts.length ? [] : index);
+		plan = padToMinExercises(plan, slim, allowed, parts.length ? [] : index, wantCount);
+		plan = ensureHintCoverage(plan, index, parts, slim, allowed, targets);
 		return {
 			ok: true,
 			provider: cfg.provider,

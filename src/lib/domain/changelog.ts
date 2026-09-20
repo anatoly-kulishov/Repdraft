@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.18.1',
+		highlights: {
+			ru: [
+				'Только сайт и PWA: убрали оболочки магазинов приложений',
+				'Черновик с ИИ на большом экране не растягивается на всю ширину',
+				'Подсказка установки приложения только на главной сверху',
+				'Диктовка: отдельные сообщения, если микрофон занят или недоступен'
+			],
+			en: [
+				'Web and PWA only: app-store shells removed',
+				'Draft with AI no longer stretches full width on large screens',
+				'Install tip only on Home, at the top',
+				'Dictation: clearer messages when the mic is busy or unavailable'
+			]
+		}
+	},
+	{
 		version: '0.18.0',
 		highlights: {
 			ru: [

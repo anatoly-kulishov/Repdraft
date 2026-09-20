@@ -30,8 +30,8 @@ Open → Pick workout → Preview → Start → Set → Weight × reps → Next 
 - Visual: dark minimal premium, Lucide only, one primary CTA per screen
 - No blocking full-screen loaders — skeletons / optimistic UI
 - Performance budget for low-end: no unbounded full-list renders, avoid main-thread jank
-- Capacitor shell is a delivery path (same UI); store submit only via `native-store-checklist.md` after the web loop feels excellent
-- Web analytics (Vercel) is opt-in and web-only; never inject in native shell
+- Web analytics (Vercel) is opt-in
+- Delivery is the mobile-first PWA; do not add store shells without an explicit request
 
 ## Do not build without explicit user request
 

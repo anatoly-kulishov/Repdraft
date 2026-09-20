@@ -236,7 +236,9 @@ const ru: Dict = {
 	'aiDraft.dictateInsecure': 'Нужен HTTPS. Пока диктуй через микрофон на клавиатуре.',
 	'aiDraft.dictateError': 'Не удалось начать диктовку. Разреши микрофон во всплывающем окне.',
 	'aiDraft.dictateDenied':
-		'Микрофон запрещён. Разреши в настройках сайта (замок в адресной строке) и нажми снова.',
+		'Микрофон запрещён. Разреши доступ в настройках сайта и нажми снова.',
+	'aiDraft.dictateUnavailable':
+		'Микрофон недоступен (нет устройства или занят другим приложением).',
 	'aiDraft.addToBuilder': 'В редактор',
 	'aiDraft.addedToast': 'План в черновике',
 	'aiDraft.unavailable': 'ИИ недоступен (офлайн или нет ключа)',
@@ -1234,8 +1236,8 @@ const en: Dict = {
 	'aiDraft.dictateUnsupported': 'In-app dictation unavailable. Use the keyboard mic.',
 	'aiDraft.dictateInsecure': 'HTTPS required. Use the keyboard mic for now.',
 	'aiDraft.dictateError': 'Could not start dictation. Allow the mic in the browser prompt.',
-	'aiDraft.dictateDenied':
-		'Microphone blocked. Allow it in site settings (lock icon) and try again.',
+	'aiDraft.dictateDenied': 'Microphone blocked. Allow access in site settings and try again.',
+	'aiDraft.dictateUnavailable': 'Microphone unavailable (no device or in use by another app).',
 	'aiDraft.addToBuilder': 'To editor',
 	'aiDraft.addedToast': 'Plan in draft',
 	'aiDraft.unavailable': 'AI unavailable (offline or missing key)',

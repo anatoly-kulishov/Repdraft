@@ -29,6 +29,8 @@ type SpeechRecognitionLike = {
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
+export type MicPermission = 'granted' | 'denied' | 'unsupported' | 'unavailable';
+
 function getCtor(): SpeechRecognitionCtor | null {
 	if (typeof window === 'undefined') return null;
 	const w = window as Window & {
@@ -38,18 +40,22 @@ function getCtor(): SpeechRecognitionCtor | null {
 	return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
+function hasGetUserMedia(): boolean {
+	return typeof navigator !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia);
+}
+
 export function speechDictationSupported(): boolean {
 	if (typeof window === 'undefined') return false;
 	// Mic / SpeechRecognition need a secure context (https or localhost).
-	// Opening via http://192.168.x.x on a phone usually fails this check.
 	if (!window.isSecureContext) return false;
+	if (!hasGetUserMedia()) return false;
 	return getCtor() !== null;
 }
 
 export function speechDictationBlockReason(): 'insecure' | 'unsupported' | null {
 	if (typeof window === 'undefined') return 'unsupported';
 	if (!window.isSecureContext) return 'insecure';
-	if (!getCtor()) return 'unsupported';
+	if (!hasGetUserMedia() || !getCtor()) return 'unsupported';
 	return null;
 }
 
@@ -65,8 +71,8 @@ export type DictationSession = {
  * Triggers the browser mic permission prompt, then releases the stream.
  * SpeechRecognition alone often fails with not-allowed without a dialog.
  */
-export async function ensureMicrophonePermission(): Promise<'granted' | 'denied' | 'unsupported'> {
-	if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+export async function ensureMicrophonePermission(): Promise<MicPermission> {
+	if (!hasGetUserMedia()) {
 		return 'unsupported';
 	}
 
@@ -75,9 +81,8 @@ export async function ensureMicrophonePermission(): Promise<'granted' | 'denied'
 		if (perms?.query) {
 			try {
 				const status = await perms.query({ name: 'microphone' as PermissionName });
-				if (status.state === 'granted') return 'granted';
 				if (status.state === 'denied') return 'denied';
-				// 'prompt' → fall through to getUserMedia to show the dialog
+				/* 'granted' / 'prompt' → still call getUserMedia (stale grant / show dialog). */
 			} catch {
 				/* Safari / some Chromium builds reject microphone PermissionName */
 			}
@@ -91,7 +96,33 @@ export async function ensureMicrophonePermission(): Promise<'granted' | 'denied'
 		if (name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError') {
 			return 'denied';
 		}
-		return 'denied';
+		if (
+			name === 'NotFoundError' ||
+			name === 'DevicesNotFoundError' ||
+			name === 'NotReadableError' ||
+			name === 'TrackStartError' ||
+			name === 'OverconstrainedError'
+		) {
+			return 'unavailable';
+		}
+		return 'unavailable';
+	}
+}
+
+function permToError(perm: MicPermission): string {
+	switch (perm) {
+		case 'unsupported':
+			return 'unsupported';
+		case 'denied':
+			return 'not-allowed';
+		case 'unavailable':
+			return 'unavailable';
+		case 'granted':
+			return 'unknown';
+		default: {
+			const _exhaustive: never = perm;
+			return _exhaustive;
+		}
 	}
 }
 
@@ -103,15 +134,23 @@ export async function startSpeechDictation(opts: {
 	onError?: (code: string) => void;
 	onEnd?: () => void;
 }): Promise<DictationSession | null> {
+	if (typeof window === 'undefined' || !window.isSecureContext) {
+		opts.onError?.('insecure');
+		opts.onEnd?.();
+		return null;
+	}
+
 	const Ctor = getCtor();
-	if (!Ctor) {
+	if (!Ctor || !hasGetUserMedia()) {
 		opts.onError?.('unsupported');
+		opts.onEnd?.();
 		return null;
 	}
 
 	const perm = await ensureMicrophonePermission();
 	if (perm !== 'granted') {
-		opts.onError?.(perm === 'unsupported' ? 'unsupported' : 'not-allowed');
+		opts.onError?.(permToError(perm));
+		opts.onEnd?.();
 		return null;
 	}
 
@@ -121,7 +160,21 @@ export async function startSpeechDictation(opts: {
 	rec.interimResults = true;
 
 	let lastFinal = '';
-	let stopped = false;
+	let lastInterim = '';
+	let finished = false;
+
+	const finish = () => {
+		if (finished) return;
+		finished = true;
+		opts.onEnd?.();
+	};
+
+	const promoteInterimIfNeeded = () => {
+		const text = lastInterim.trim();
+		if (!text || lastFinal) return;
+		lastFinal = text;
+		opts.onFinal(text);
+	};
 
 	rec.onresult = (ev) => {
 		let interim = '';
@@ -135,30 +188,35 @@ export async function startSpeechDictation(opts: {
 		const trimmedFinal = finalText.trim();
 		if (trimmedFinal && trimmedFinal !== lastFinal) {
 			lastFinal = trimmedFinal;
+			lastInterim = '';
 			opts.onFinal(trimmedFinal);
-		} else if (interim.trim() && opts.onInterim) {
-			opts.onInterim(interim.trim());
+		} else if (interim.trim()) {
+			lastInterim = interim.trim();
+			opts.onInterim?.(lastInterim);
 		}
 	};
 
 	rec.onerror = (ev) => {
 		opts.onError?.(ev.error || 'unknown');
+		/* Engines sometimes omit onend after error — always close lifecycle. */
+		finish();
 	};
 
 	rec.onend = () => {
-		if (!stopped) opts.onEnd?.();
+		promoteInterimIfNeeded();
+		finish();
 	};
 
 	try {
 		rec.start();
 	} catch {
 		opts.onError?.('start_failed');
+		finish();
 		return null;
 	}
 
 	return {
 		stop: () => {
-			stopped = true;
 			try {
 				rec.stop();
 			} catch {
@@ -168,7 +226,8 @@ export async function startSpeechDictation(opts: {
 					/* ignore */
 				}
 			}
-			opts.onEnd?.();
+			/* stop() may sync-fire onend → finish(); if not, finish here once. */
+			finish();
 		}
 	};
 }

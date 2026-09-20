@@ -96,6 +96,23 @@ attack('regex.chest-triceps-template', () => {
 	assertNoLeak('грудь+три', r.exercises, ['upper legs'], ['glutes']);
 });
 
+attack('regex.back-triceps-template', () => {
+	const brief = 'Спина и трицепс 1 час';
+	const h = hintsFromBrief(brief);
+	if (!h.parts.includes('back') || !h.parts.includes('upper arms')) {
+		throw new Error(`hints ${JSON.stringify(h.parts)}`);
+	}
+	const r = retrieveRegexOnly(brief, index);
+	if (r.template?.id !== 'pull') {
+		throw new Error(`want pull for back+triceps, got ${r.template?.id}`);
+	}
+	const arms = r.exercises.filter((e) => e.body_part === 'upper arms').length;
+	const backs = r.exercises.filter((e) => e.body_part === 'back').length;
+	if (arms < 5 || backs < 5) {
+		throw new Error(`slim imbalance arms=${arms} back=${backs}`);
+	}
+});
+
 const BRIEF_CASES: Array<{
 	brief: string;
 	forbidParts: string[];

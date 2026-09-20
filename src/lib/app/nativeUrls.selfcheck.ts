@@ -27,20 +27,16 @@ assert(
 );
 assert(resolveWebApiOrigin({}) === '', 'empty when nothing configured');
 
-assert(isAuthDeepLinkUrl('repdraft://auth'), 'custom scheme host auth');
-assert(isAuthDeepLinkUrl('repdraft://auth?code=abc'), 'custom scheme with query');
-assert(isAuthDeepLinkUrl('repdraft:///auth#access_token=x'), 'custom scheme path auth');
 assert(isAuthDeepLinkUrl('https://repdraft-zeta.vercel.app/auth'), 'https /auth');
 assert(isAuthDeepLinkUrl('http://127.0.0.1:5173/auth?recovery=1'), 'http /auth local');
 assert(
 	!isAuthDeepLinkUrl('https://repdraft-zeta.vercel.app/workouts'),
 	'https non-auth ignored'
 );
-assert(!isAuthDeepLinkUrl('repdraft://workouts'), 'custom scheme other host ignored');
+assert(!isAuthDeepLinkUrl('repdraft://auth'), 'custom scheme ignored');
 assert(!isAuthDeepLinkUrl('not a url'), 'junk ignored');
 
-assert(webAnalyticsAvailable({ browser: true, native: false }) === true, 'web may show analytics');
-assert(webAnalyticsAvailable({ browser: true, native: true }) === false, 'native never analytics');
-assert(webAnalyticsAvailable({ browser: false, native: false }) === false, 'SSR never analytics');
+assert(webAnalyticsAvailable({ browser: true }) === true, 'web may show analytics');
+assert(webAnalyticsAvailable({ browser: false }) === false, 'SSR never analytics');
 
 console.log('nativeUrls.selfcheck: ok');

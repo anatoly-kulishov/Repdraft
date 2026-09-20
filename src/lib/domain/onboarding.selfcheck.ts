@@ -17,9 +17,7 @@ if (!shouldShowChecklist(fresh)) {
 	throw new Error('fresh state should show checklist');
 }
 if (shouldDeferPwaHint(fresh)) {
-	/* ok */
-} else {
-	throw new Error('fresh state should defer PWA');
+	throw new Error('fresh state must not defer home-only PWA tip');
 }
 
 let stepped = markChecklistStep(fresh, 'homeSeen');

@@ -5,6 +5,7 @@
 	import {
 		isDesktopChromiumInstallSurface,
 		isInstalledDisplayMode,
+		needsChromiumMobileInstallGuide,
 		resolvePwaManualGuide,
 		type PwaManualGuide
 	} from '$lib/domain/pwaInstall';
@@ -17,7 +18,6 @@
 	} from '$lib/domain/prefs';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { onboarding } from '$lib/stores/onboarding';
 	import {
 		ChevronDown,
 		ChevronRight,
@@ -35,7 +35,7 @@
 		userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 	};
 
-	type InstallMode = 'prompt' | 'desktop' | PwaManualGuide;
+	type InstallMode = 'prompt' | 'desktop' | 'android-chrome' | PwaManualGuide;
 
 	type BipHost = Window & {
 		__repdraftBip?: BeforeInstallPromptEvent | null;
@@ -85,7 +85,6 @@
 	}
 
 	function applyBip(ev: BeforeInstallPromptEvent) {
-		if (onboarding.deferPwaHint()) return;
 		deferred = ev;
 		mode = 'prompt';
 	}
@@ -174,12 +173,18 @@
 
 			const manual = readManualGuide();
 			const desktop = !manual && readDesktopSurface();
-			if (!manual && !desktop) return;
+			const androidChrome =
+				!manual &&
+				!desktop &&
+				needsChromiumMobileInstallGuide({
+					hasChromiumRuntime: chromiumRuntime(),
+					ua: navigator.userAgent
+				});
+			if (!manual && !desktop && !androidChrome) return;
 
 			revealTimer = setTimeout(() => {
 				if (cancelled || deferred || isPwaInstalledPref() || isInstallHintDismissed()) return;
-				if (onboarding.deferPwaHint()) return;
-				mode = manual ?? 'desktop';
+				mode = manual ?? (androidChrome ? 'android-chrome' : 'desktop');
 			}, 500);
 		})();
 
@@ -211,12 +216,16 @@
 	}
 
 	let steps = $derived(
-		mode === 'ios-chrome' ? chromeSteps : mode === 'desktop' ? desktopSteps : safariSteps
+		mode === 'ios-chrome' || mode === 'android-chrome'
+			? chromeSteps
+			: mode === 'desktop'
+				? desktopSteps
+				: safariSteps
 	);
 	let stepsAria = $derived(
 		translate(
 			lang,
-			mode === 'ios-chrome'
+			mode === 'ios-chrome' || mode === 'android-chrome'
 				? 'pwa.installHintChrome'
 				: mode === 'desktop'
 					? 'pwa.installHintDesktop'
@@ -229,7 +238,11 @@
 </script>
 
 {#if visible && mode}
-	{@const showGuide = mode === 'ios-safari' || mode === 'ios-chrome' || (mode === 'desktop' && !canInstall)}
+	{@const showGuide =
+		mode === 'ios-safari' ||
+		mode === 'ios-chrome' ||
+		mode === 'android-chrome' ||
+		(mode === 'desktop' && !canInstall)}
 	{@const showInstall = mode === 'prompt' || (mode === 'desktop' && canInstall)}
 	<div
 		class="pwa-install"
