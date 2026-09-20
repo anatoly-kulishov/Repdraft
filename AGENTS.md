@@ -21,6 +21,7 @@ npm install
 cp .env.example .env
 npm run dev
 npm run check    # before finishing a task
+npm run check:ai # AI draft selfchecks (retrieve / adversarial)
 npm run build
 npm run build:native          # Capacitor Mode B static SPA + cap sync
 npm run build:native:assets   # static SPA only (CI)
@@ -54,7 +55,7 @@ Keys in `.env` / hosting only. SQL ops scripts stay out of public git (see `.git
 
 Supabase Auth setup: [`.cursor/rules/supabase-auth.mdc`](.cursor/rules/supabase-auth.mdc).
 
-Experimental AI lab (`/lab/ai`, `POST /api/ai/plan`): private `AI_PROVIDER` + `GIGACHAT_*` or `OLLAMA_*`. Optional; offline / missing keys degrade the lab UI only — sacred loop unchanged.
+Draft with AI (`/ai`, `POST /api/ai/plan`): private `AI_PROVIDER` + `GIGACHAT_*` or `OLLAMA_*`. Optional; offline / missing keys degrade the AI UI only — sacred loop unchanged. Legacy `/lab/ai` redirects to `/ai`.
 
 ## Releases
 

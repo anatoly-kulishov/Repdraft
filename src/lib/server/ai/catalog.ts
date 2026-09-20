@@ -23,23 +23,31 @@ export function hintsFromBrief(brief: string): BodyHint {
 	const parts: string[] = [];
 	const equipment: string[] = [];
 
+	// Hinge / deadlift family → legs (also may match «тяга»→back below; both OK).
+	if (
+		/румын|rdl|deadlift|мертв[а-яё]*\s*тяг|станова[а-яё]*\s*тяг|тяги?\s*на\s*прям/.test(t)
+	) {
+		parts.push('upper legs', 'lower legs');
+	}
+
 	const partRules: Array<[RegExp, string[]]> = [
 		[/груд|chest|pec/, ['chest']],
-		[/спин|back(?!ward)|тяга/, ['back']],
-		[/плеч|shoulder|дельт/, ['shoulders']],
+		// «back» as word only (not feedback); «тяга» still maps pull/back days
+		[/спин|\bbacks?\b|тяга|крыл/, ['back']],
+		// «плеч» but not inside «предплечье»
+		[/(?<!пред)плеч|shoulder|дельт/, ['shoulders']],
 		[/трицеп|triceps/, ['upper arms']],
-		[/бицеп|biceps/, ['upper arms']],
-		// «руки» / arms — без этого brief вроде «хочу руки» уходит в topPopular (присед и т.д.)
+		[/бицеп|biceps|бицух|банк[аиу]/, ['upper arms']],
 		[/рук[аиуеы]?|\barms?\b/, ['upper arms']],
-		[/ног|leg|квадр|ягод|glute|бедр/, ['upper legs', 'lower legs']],
+		// «leg(s)» as word (not college); RU slang булки/галифе
+		[/ног|\blegs?\b|квадр|ягод|glute|бедр|ляшк|галифе|булк/, ['upper legs', 'lower legs']],
 		[/пресс|core|waist|абдом/, ['waist']],
-		[/икр|calf/, ['lower legs']],
+		[/икр|\bcalf\b|\bcalves\b/, ['lower legs']],
 		[/предплеч|forearm|wrist/, ['lower arms']],
 		[/шея|neck/, ['neck']],
 		[/кардио|cardio|бег/, ['cardio']],
-		// Upper / lower / full-body templates (avoid matching bare "тело" alone)
-		[/(?:^|[\s,])верх(?:\s+тела)?(?:$|[\s,])|upper/, ['chest', 'back', 'shoulders', 'upper arms']],
-		[/(?:^|[\s,])низ(?:\s+тела)?(?:$|[\s,])|lower/, ['upper legs', 'lower legs', 'waist']],
+		[/(?:^|[\s,])верх(?:\s+тела)?(?:$|[\s,])|\bupper\b/, ['chest', 'back', 'shoulders', 'upper arms']],
+		[/(?:^|[\s,])низ(?:\s+тела)?(?:$|[\s,])|\blower\b/, ['upper legs', 'lower legs', 'waist']],
 		[/вс[её]\s+тело|full\s*body|фулбади/, ['chest', 'back', 'shoulders', 'upper arms', 'upper legs', 'lower legs', 'waist']]
 	];
 	for (const [re, vals] of partRules) {
@@ -63,7 +71,7 @@ export function hintsFromBrief(brief: string): BodyHint {
 	return { parts: [...new Set(parts)], equipment: [...new Set(equipment)] };
 }
 
-function popularity(ex: ExerciseIndexItem): number {
+export function popularity(ex: ExerciseIndexItem): number {
 	return typeof ex.globalPopularity === 'number' ? ex.globalPopularity : 25;
 }
 
@@ -74,8 +82,8 @@ function topPopular(index: ExerciseIndexItem[], cap = PROMPT_CAP): ExerciseIndex
 const SLIM_MIN = 8;
 
 /** Slim catalog for the LLM prompt; whitelist stays full-index.
- *  Interleaves by requested body part so neither zone dominates by popularity.
- *  Never returns empty when the index has items (AND → OR → popular fallback). */
+ *  Zone briefs stay inside body_part (relax equipment, never OR foreign zones).
+ *  Equipment-only briefs may OR; tiny zones may return < SLIM_MIN. */
 export function slimCatalogForBrief(
 	index: ExerciseIndexItem[],
 	brief: string
@@ -88,18 +96,33 @@ export function slimCatalogForBrief(
 		return topPopular(index);
 	}
 
-	const match = (mode: 'and' | 'or') =>
+	const byParts = () =>
+		parts.length ? index.filter((ex) => parts.includes(ex.body_part)) : [];
+
+	const matchAnd = () =>
 		index.filter((ex) => {
 			const partOk = !parts.length || parts.includes(ex.body_part);
 			const eqOk =
 				!equipment.length ||
 				equipment.some((eq) => ex.equipment.toLowerCase().includes(eq.toLowerCase()));
-			return mode === 'and' ? partOk && eqOk : partOk || eqOk;
+			return partOk && eqOk;
 		});
 
-	let matches = match('and');
-	if (matches.length < SLIM_MIN) matches = match('or');
-	if (matches.length < SLIM_MIN) return topPopular(index);
+	let matches = matchAnd();
+	if (matches.length < SLIM_MIN && parts.length) {
+		// Keep zone; drop equipment constraint (never pull foreign body_parts via OR).
+		matches = byParts();
+	} else if (matches.length < SLIM_MIN && equipment.length && !parts.length) {
+		matches = index.filter((ex) =>
+			equipment.some((eq) => ex.equipment.toLowerCase().includes(eq.toLowerCase()))
+		);
+	}
+	if (matches.length < SLIM_MIN && !parts.length) {
+		return topPopular(index);
+	}
+	if (!matches.length) {
+		return parts.length ? byParts() : topPopular(index);
+	}
 
 	// Group by body part, sort each by popularity, then interleave round-robin
 	// so a brief like "back and biceps" gets both zones represented at the top.
@@ -125,7 +148,7 @@ export function slimCatalogForBrief(
 			if (interleaved.length >= PROMPT_CAP) break;
 		}
 	}
-	return interleaved.length >= SLIM_MIN
+	return interleaved.length
 		? interleaved
 		: [...matches].sort((a, b) => popularity(b) - popularity(a)).slice(0, PROMPT_CAP);
 }

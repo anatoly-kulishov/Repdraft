@@ -24,6 +24,7 @@ disable-model-invocation: true
 ```bash
 npm run check
 npm run check:domain
+npm run check:ai
 npm run build
 npm run smoke:catalog-hub
 npm run test:e2e

@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.17.8-0B0F14?style=flat-square" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.18.0-0B0F14?style=flat-square" />
   <img alt="SvelteKit" src="https://img.shields.io/badge/SvelteKit-5-FF3E00?style=flat-square&logo=svelte&logoColor=white" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white" />
   <img alt="PWA" src="https://img.shields.io/badge/PWA-ready-111111?style=flat-square" />

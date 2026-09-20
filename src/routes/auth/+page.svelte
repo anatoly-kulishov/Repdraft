@@ -47,7 +47,7 @@
 	import { restSoundEnabled, testerModeEnabled } from '$lib/stores/prefs';
 	import { testerToolsVisible } from '$lib/domain/prefs';
 	import { tick } from 'svelte';
-	import { Camera, FileText, LogOut, Timer, Shield, ClipboardList, Sparkles } from '@lucide/svelte';
+	import { Camera, FileText, LogOut, Timer, Shield, ClipboardList } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -871,22 +871,13 @@
 					aria-busy={accountLocked || undefined}
 				>
 					<p class="profile-settings-group__title">{translate(lang, 'settings.accountTitle')}</p>
-					{#if showTesterTools}
-						<ProfileSettingsRow
-							icon={ClipboardList}
-							iconTone="accent"
-							label={translate(lang, 'scenarios.link')}
-							href="/scenarios"
-							disabled={accountLocked}
-						/>
-						<ProfileSettingsRow
-							icon={Sparkles}
-							iconTone="accent"
-							label={translate(lang, 'labAi.link')}
-							href="/lab/ai"
-							disabled={accountLocked}
-						/>
-					{/if}
+					<ProfileSettingsRow
+						icon={ClipboardList}
+						iconTone="accent"
+						label={translate(lang, 'scenarios.link')}
+						href="/scenarios"
+						disabled={accountLocked}
+					/>
 					<ProfileSettingsRow
 						icon={FileText}
 						iconTone="accent"
@@ -1230,20 +1221,12 @@
 		<div class="auth-account__section auth-account__section--legal">
 			<p class="auth-prefs__title">{translate(lang, 'auth.privacyHint')}</p>
 			<div class="auth-prefs__stack">
-				{#if showTesterTools}
-					<ProfileSettingsRow
-						icon={ClipboardList}
-						iconTone="accent"
-						label={translate(lang, 'scenarios.link')}
-						href="/scenarios"
-					/>
-					<ProfileSettingsRow
-						icon={Sparkles}
-						iconTone="accent"
-						label={translate(lang, 'labAi.link')}
-						href="/lab/ai"
-					/>
-				{/if}
+				<ProfileSettingsRow
+					icon={ClipboardList}
+					iconTone="accent"
+					label={translate(lang, 'scenarios.link')}
+					href="/scenarios"
+				/>
 				<ProfileSettingsRow
 					icon={FileText}
 					iconTone="accent"

@@ -1,4 +1,4 @@
-import { clampPlanName } from '$lib/domain/inputLimits';
+import { clampPlanName, sanitizeAiBrief } from '$lib/domain/inputLimits';
 import type { WorkoutExercise } from '$lib/domain/types';
 import {
 	catalogPromptLines,
@@ -9,6 +9,8 @@ import {
 } from './catalog';
 import { chatCompletion } from './chat';
 import { resolveAiConfig, type AiProvider } from './config';
+import { retrieve } from './retrieve';
+import { formatTemplateForPrompt } from './splitTemplates';
 
 export type AiPlanExercise = {
 	exerciseId: string;
@@ -68,8 +70,10 @@ const SYSTEM_TEMPLATE = `Ты — API генерации плана тренир
 11. В одном плане минимум 3 разных комбинации (sets,reps,restSec). Не ставь всем одинаковые 3×10×90.
 12. Диапазоны чисел: sets 2–5, reps 5–20, restSec 30–180 (целые).
 13. Не дублируй почти одинаковые движения (две тяги в наклоне, три сгибания на бицепс со штангой). Один паттерн — одно упражнение; смена плоскости/оборудования только если даёт явный смысл.
-14. Сплит из двух зон (например спина+бицепс): 2–3 тяги/базы + 1–2 изоляции на вторую зону. Изоляция одной мышцы — не больше ~40% списка.
+14. Если ниже есть РЕФЕРЕНС СПЛИТ — следуй его слотам (role + bodyPart + нагрузка). Без референса: сплит из двух зон = 2–3 базы + 1–2 изоляции на вторую зону; изоляция одной мышцы — не больше ~40% списка.
 15. Если brief задаёт зону (руки/грудь/ноги/…) — бери ТОЛЬКО упражнения этой зоны (и явно названных соседних). Не подмешивай присед/ягодицы в план на руки и т.п.
+
+{template}
 
 КАТАЛОГ (id | название | зона | оборудование | target):
 {catalog}`;
@@ -176,7 +180,8 @@ export function filterToBodyHints(
 	return { name: plan.name, exercises: kept };
 }
 
-/** If the model under-delivers, pad from slim then optional fallback pool (whitelist-only). */
+/** If the model under-delivers, pad from slim then optional fallback pool (whitelist-only).
+ *  Need is capped by available pool size so tiny zones (e.g. neck) do not pull foreign ids. */
 export function padToMinExercises(
 	plan: AiPlan,
 	slim: ReturnType<typeof slimCatalogForBrief>,
@@ -185,13 +190,19 @@ export function padToMinExercises(
 ): AiPlan {
 	const have = new Set(plan.exercises.map((e) => e.exerciseId));
 	const exercises = [...plan.exercises];
-	for (const ex of [...slim, ...fallback]) {
+	const pool = [...slim, ...fallback].filter((ex) => allowed.has(ex.id));
+	for (const ex of pool) {
 		if (exercises.length >= MIN_EXERCISES) break;
-		if (!allowed.has(ex.id) || have.has(ex.id)) continue;
+		if (have.has(ex.id)) continue;
 		have.add(ex.id);
 		exercises.push({ exerciseId: ex.id, sets: 3, reps: 10, restSec: 90 });
 	}
-	const need = Math.min(MIN_EXERCISES, allowed.size);
+	const poolIds = new Set(pool.map((ex) => ex.id));
+	for (const id of have) poolIds.add(id);
+	if (exercises.length === 0) {
+		throw new Error('План слишком короткий после добора: 0');
+	}
+	const need = Math.min(MIN_EXERCISES, poolIds.size);
 	if (exercises.length < need) {
 		throw new Error(
 			`План слишком короткий после добора: ${exercises.length} (нужно ≥${need})`
@@ -210,11 +221,7 @@ export function toWorkoutExercises(plan: AiPlan): WorkoutExercise[] {
 }
 
 export async function generateWorkoutPlan(briefRaw: string): Promise<GeneratePlanOk | GeneratePlanErr> {
-	const brief = briefRaw
-		.replace(/[\u200B-\u200D\uFEFF]/g, '')
-		.trim()
-		.replace(/\s+/g, ' ')
-		.slice(0, 500);
+	const brief = sanitizeAiBrief(briefRaw);
 	if (!brief) {
 		return { ok: false, code: 'invalid_brief', error: 'Empty brief' };
 	}
@@ -226,9 +233,28 @@ export async function generateWorkoutPlan(briefRaw: string): Promise<GeneratePla
 
 	const index = loadExerciseIndex();
 	const allowed = catalogWhitelist(index);
-	const slim = slimCatalogForBrief(index, brief);
+	const retrieved = await retrieve(brief, index);
+	const slimRaw = retrieved.exercises.length
+		? retrieved.exercises
+		: slimCatalogForBrief(index, brief);
 	const { parts } = hintsFromBrief(brief);
-	const system = SYSTEM_TEMPLATE.replace('{catalog}', catalogPromptLines(slim));
+	const slim = parts.length
+		? slimRaw.filter((ex) => parts.includes(ex.body_part))
+		: slimRaw;
+	if (parts.length && slim.length === 0) {
+		return {
+			ok: false,
+			code: 'invalid_plan',
+			error: 'Нет упражнений каталога в запрошенной зоне'
+		};
+	}
+	const templateBlock = retrieved.template
+		? formatTemplateForPrompt(retrieved.template)
+		: '';
+	const system = SYSTEM_TEMPLATE.replace('{catalog}', catalogPromptLines(slim)).replace(
+		'{template}',
+		templateBlock
+	);
 
 	try {
 		let raw: unknown;
@@ -271,22 +297,28 @@ export async function generateWorkoutPlan(briefRaw: string): Promise<GeneratePla
 		}
 
 		let plan = parsePlanPayload(raw);
-		const before = plan.exercises.length;
+		const beforeKnown = plan.exercises.length;
 		plan = filterKnownIds(plan, allowed);
+		const droppedUnknownIds = beforeKnown - plan.exercises.length;
 		plan = filterToBodyHints(plan, index, parts);
-		const afterFilter = plan.exercises.length;
-		// Zone briefs: pad only from slim. Untargeted briefs may fall back to full index.
 		plan = padToMinExercises(plan, slim, allowed, parts.length ? [] : index);
 		return {
 			ok: true,
 			provider: cfg.provider,
 			model: cfg.model,
 			plan,
-			droppedUnknownIds: before - afterFilter
+			droppedUnknownIds
 		};
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
-		if (message.includes('whitelist') || message.includes('Plan ') || message.includes('parse')) {
+		if (
+			message.includes('whitelist') ||
+			message.includes('Plan ') ||
+			message.includes('parse') ||
+			message.includes('зоны') ||
+			message.includes('добора') ||
+			message.includes('каталога')
+		) {
 			return { ok: false, code: 'invalid_plan', error: message };
 		}
 		return { ok: false, code: 'upstream', error: message };

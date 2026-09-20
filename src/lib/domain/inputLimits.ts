@@ -175,9 +175,18 @@ export function sanitizeNote(raw: string, maxLen = NOTE_MAX): string {
 	return clampCodePoints(clampNote(raw, maxLen).replace(/\s+/g, ' ').trim(), maxLen);
 }
 
-/** Lab AI brief before submit: drop ZWSP then same recipe as sanitizeNote. */
+/** AI brief before submit: drop ZWSP, collapse ws.
+ *  Overlong: keep head + trailing window so zone words at the end survive. */
 export function sanitizeAiBrief(raw: string, maxLen = AI_BRIEF_MAX): string {
-	return sanitizeNote(raw.replace(/[\u200B-\u200D\uFEFF]/g, ''), maxLen);
+	const cleaned = raw
+		.replace(/[\u200B-\u200D\uFEFF]/g, '')
+		.replace(/[\u0000-\u001F\u007F]/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim();
+	const points = [...cleaned];
+	if (points.length <= maxLen) return cleaned;
+	const tailKeep = Math.min(80, Math.floor(maxLen / 4));
+	return [...points.slice(0, maxLen - tailKeep), ...points.slice(-tailKeep)].join('');
 }
 
 /** While typing: strip control chars and hard-cap length (no trim — keeps caret stable). */

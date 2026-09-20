@@ -4,16 +4,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import { gotoReady, seedGuestStorage } from './helpers/app-ready';
 
-async function seedTesterMode(page: Page, on: boolean): Promise<void> {
-	await page.addInitScript((enabled) => {
-		if (enabled) localStorage.setItem('repdraft:tester-mode', '1');
-		else localStorage.removeItem('repdraft:tester-mode');
-	}, on);
-}
-
 async function openScenarios(page: Page): Promise<void> {
 	await seedGuestStorage(page);
-	await seedTesterMode(page, true);
 	await gotoReady(page, '/scenarios');
 	await page.locator('.scenarios-page__toc-link, .scenarios-doc').first().waitFor({
 		state: 'visible',

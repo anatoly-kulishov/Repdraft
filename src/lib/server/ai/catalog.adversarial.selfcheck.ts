@@ -21,7 +21,7 @@ function attack(id: string, run: () => void) {
 
 const index = loadExerciseIndex();
 
-/** AND that matched nothing must still yield a usable slim (≥ MIN). */
+/** Zone+equipment: stay inside zone (may be < MIN when catalog zone is tiny). */
 attack('slim.and-impossible-falls-back', () => {
 	const brief = 'шея штанга';
 	const hints = hintsFromBrief(brief);
@@ -29,15 +29,19 @@ attack('slim.and-impossible-falls-back', () => {
 		throw new Error(`precondition hints: ${JSON.stringify(hints)}`);
 	}
 	const slim = slimCatalogForBrief(index, brief);
-	if (slim.length < MIN_EXERCISES) {
-		throw new Error(`slim length ${slim.length} < MIN=${MIN_EXERCISES}`);
+	if (!slim.length) throw new Error('slim empty for neck');
+	const leaked = slim.filter((ex) => ex.body_part !== 'neck');
+	if (leaked.length) {
+		throw new Error(`neck brief leaked foreign zones: ${leaked.map((x) => x.body_part).join(',')}`);
 	}
 });
 
 attack('slim.cardio-barbell-falls-back', () => {
 	const slim = slimCatalogForBrief(index, 'кардио штанга');
-	if (slim.length < MIN_EXERCISES) {
-		throw new Error(`slim length ${slim.length} < MIN=${MIN_EXERCISES}`);
+	if (!slim.length) throw new Error('slim empty for cardio');
+	const leaked = slim.filter((ex) => ex.body_part !== 'cardio');
+	if (leaked.length) {
+		throw new Error(`cardio brief leaked: ${leaked.map((x) => x.body_part).join(',')}`);
 	}
 });
 

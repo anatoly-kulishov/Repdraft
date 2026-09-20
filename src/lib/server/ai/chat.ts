@@ -186,6 +186,41 @@ function isExpiredTokenError(status: number, body: string): boolean {
 	return /expired|invalid.?token|unauthorized/i.test(body);
 }
 
+/** Authenticated JSON POST to `{baseUrl}{path}` (chat, embeddings, …). */
+export async function authenticatedJsonPost(
+	cfg: AiConfig,
+	path: string,
+	payload: unknown
+): Promise<HttpResult> {
+	const sslVerify = cfg.provider === 'gigachat' ? cfg.sslVerify : true;
+	const body = JSON.stringify(payload);
+	const url = `${cfg.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+
+	const run = async (forceRefresh: boolean) => {
+		const token = await bearer(cfg, forceRefresh);
+		return aiFetchWithRetry(
+			url,
+			{
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json',
+					Accept: 'application/json'
+				},
+				body
+			},
+			sslVerify
+		);
+	};
+
+	let res = await run(false);
+	if (cfg.provider === 'gigachat' && isExpiredTokenError(res.status, res.text)) {
+		cachedToken = null;
+		res = await run(true);
+	}
+	return res;
+}
+
 export async function chatCompletion(
 	cfg: AiConfig,
 	opts: {
@@ -208,32 +243,7 @@ export async function chatCompletion(
 		payload.response_format = { type: 'json_object' };
 	}
 
-	const sslVerify = cfg.provider === 'gigachat' ? cfg.sslVerify : true;
-	const body = JSON.stringify(payload);
-
-	const run = async (forceRefresh: boolean) => {
-		const token = await bearer(cfg, forceRefresh);
-		return aiFetchWithRetry(
-			`${cfg.baseUrl}/chat/completions`,
-			{
-				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${token}`,
-					'Content-Type': 'application/json',
-					Accept: 'application/json'
-				},
-				body
-			},
-			sslVerify
-		);
-	};
-
-	let res = await run(false);
-	if (cfg.provider === 'gigachat' && isExpiredTokenError(res.status, res.text)) {
-		cachedToken = null;
-		res = await run(true);
-	}
-
+	const res = await authenticatedJsonPost(cfg, '/chat/completions', payload);
 	if (res.status < 200 || res.status >= 300) {
 		throw new Error(`LLM chat failed (${extractUpstreamMessage(res.status, res.text)})`);
 	}

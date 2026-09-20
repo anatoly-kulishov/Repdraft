@@ -28,10 +28,10 @@
 	import { scrollFieldIntoView } from '$lib/dom/scrollFieldIntoView';
 	import { AI_BRIEF_MAX, sanitizeAiBrief } from '$lib/domain/inputLimits';
 	import { withFromParam } from '$lib/domain/navigation';
-	import { Mic, MicOff, RefreshCw, Sparkles } from '@lucide/svelte';
+	import { Mic, MicOff, RefreshCw, Sparkles, X } from '@lucide/svelte';
 	import { onMount, tick } from 'svelte';
 	import type { Snapshot } from './$types';
-	import '$lib/styles/blocks/lab-ai.css';
+	import '$lib/styles/blocks/ai-draft.css';
 
 	type PlanExercise = {
 		exerciseId: string;
@@ -45,20 +45,23 @@
 		exercises: PlanExercise[];
 	};
 
-	type LabAiSnap = {
+	type AiDraftSnap = {
 		brief: string;
 		plan: PlanPayload | null;
 		planMeta: { provider: string; model: string; dropped: number } | null;
 	};
 
-	const LAB_AI_SESSION_KEY = 'repdraft:lab-ai:v1';
+	const AI_DRAFT_SESSION_KEY = 'repdraft:ai-draft:v1';
+	const AI_DRAFT_SESSION_LEGACY = 'repdraft:lab-ai:v1';
 
-	function readLabAiSession(): LabAiSnap | null {
+	function readAiDraftSession(): AiDraftSnap | null {
 		if (!browser) return null;
 		try {
-			const raw = sessionStorage.getItem(LAB_AI_SESSION_KEY);
+			const raw =
+				sessionStorage.getItem(AI_DRAFT_SESSION_KEY) ??
+				sessionStorage.getItem(AI_DRAFT_SESSION_LEGACY);
 			if (!raw) return null;
-			const parsed = JSON.parse(raw) as LabAiSnap;
+			const parsed = JSON.parse(raw) as AiDraftSnap;
 			if (typeof parsed?.brief !== 'string') return null;
 			return parsed;
 		} catch {
@@ -66,10 +69,11 @@
 		}
 	}
 
-	function writeLabAiSession(snap: LabAiSnap): void {
+	function writeAiDraftSession(snap: AiDraftSnap): void {
 		if (!browser) return;
 		try {
-			sessionStorage.setItem(LAB_AI_SESSION_KEY, JSON.stringify(snap));
+			sessionStorage.setItem(AI_DRAFT_SESSION_KEY, JSON.stringify(snap));
+			sessionStorage.removeItem(AI_DRAFT_SESSION_LEGACY);
 		} catch {
 			/* quota / private mode */
 		}
@@ -165,7 +169,7 @@
 	}
 
 	let lang = $derived($resolvedLocale);
-	let title = $derived(translate(lang, 'labAi.title'));
+	let title = $derived(translate(lang, 'aiDraft.title'));
 
 	// Empty on SSR; session/snapshot restore on client (avoids hydration mismatch).
 	let brief = $state('');
@@ -185,16 +189,16 @@
 
 	$effect(() => {
 		if (!sessionReady) return;
-		writeLabAiSession({ brief, plan, planMeta });
+		writeAiDraftSession({ brief, plan, planMeta });
 	});
 
-	export const snapshot: Snapshot<LabAiSnap> = {
+	export const snapshot: Snapshot<AiDraftSnap> = {
 		capture: () => ({ brief, plan, planMeta }),
 		restore: (value) => {
 			brief = value.brief;
 			plan = value.plan;
 			planMeta = value.planMeta;
-			writeLabAiSession(value);
+			writeAiDraftSession(value);
 			sessionReady = true;
 		}
 	};
@@ -229,8 +233,17 @@
 
 	function focusBrief() {
 		if (!browser) return;
-		const el = document.getElementById('lab-ai-brief') as HTMLTextAreaElement | null;
+		const el = document.getElementById('ai-draft-brief') as HTMLTextAreaElement | null;
 		el?.focus();
+	}
+
+	function clearBrief() {
+		stopDictation();
+		brief = '';
+		plan = null;
+		planMeta = null;
+		fieldError = null;
+		void tick().then(focusBrief);
 	}
 
 	function onBriefFocus(e: FocusEvent) {
@@ -248,8 +261,8 @@
 			focusBrief();
 			toasts.show(
 				dictationBlock === 'insecure'
-					? translate(lang, 'labAi.dictateInsecure')
-					: translate(lang, 'labAi.dictateUnsupported'),
+					? translate(lang, 'aiDraft.dictateInsecure')
+					: translate(lang, 'aiDraft.dictateUnsupported'),
 				'info'
 			);
 			return;
@@ -269,11 +282,11 @@
 				listening = false;
 				dictationSession = null;
 				if (code === 'not-allowed' || code === 'service-not-allowed') {
-					fieldError = translate(lang, 'labAi.dictateDenied');
+					fieldError = translate(lang, 'aiDraft.dictateDenied');
 					focusBrief();
 					return;
 				}
-				fieldError = translate(lang, 'labAi.dictateError');
+				fieldError = translate(lang, 'aiDraft.dictateError');
 			},
 			onEnd: () => {
 				listening = false;
@@ -296,20 +309,20 @@
 	function localizeError(err: GenerateErr): string {
 		switch (err.code) {
 			case 'unavailable':
-				return translate(lang, 'labAi.unavailable');
+				return translate(lang, 'aiDraft.unavailable');
 			case 'invalid_brief':
-				return translate(lang, 'labAi.emptyBrief');
+				return translate(lang, 'aiDraft.emptyBrief');
 			case 'invalid_plan':
-				return err.error || translate(lang, 'labAi.generateFailed');
+				return err.error || translate(lang, 'aiDraft.generateFailed');
 			case 'upstream':
 			default:
-				return translate(lang, 'labAi.upstreamError');
+				return translate(lang, 'aiDraft.upstreamError');
 		}
 	}
 
 	onMount(() => {
 		if (!sessionReady) {
-			const snap = readLabAiSession();
+			const snap = readAiDraftSession();
 			if (snap && (snap.brief || snap.plan)) {
 				brief = snap.brief;
 				plan = snap.plan;
@@ -355,12 +368,12 @@
 		planMeta = null;
 		refreshOnline();
 		if (offline || available === false) {
-			fieldError = translate(lang, 'labAi.unavailable');
+			fieldError = translate(lang, 'aiDraft.unavailable');
 			return;
 		}
 		const text = sanitizeAiBrief(brief);
 		if (!text) {
-			fieldError = translate(lang, 'labAi.emptyBrief');
+			fieldError = translate(lang, 'aiDraft.emptyBrief');
 			await tick();
 			focusBrief();
 			return;
@@ -390,11 +403,11 @@
 			await tick();
 			const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 			document
-				.getElementById('lab-ai-plan')
+				.getElementById('ai-draft-plan')
 				?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' });
 		} catch {
 			available = false;
-			fieldError = translate(lang, 'labAi.unavailable');
+			fieldError = translate(lang, 'aiDraft.unavailable');
 		} finally {
 			busy = false;
 		}
@@ -413,7 +426,7 @@
 				restSec: e.restSec
 			}))
 		});
-		toasts.show(translate(lang, 'labAi.addedToast'), 'success');
+		toasts.show(translate(lang, 'aiDraft.addedToast'), 'success');
 		void goto('/builder');
 	}
 
@@ -449,40 +462,40 @@
 
 <SeoHead {title} noindex />
 
-<div class="content-page content-page--catalog lab-ai-page">
-	<ScreenHeader {title} backHref="/auth" preferHistoryBack={false} />
+<div class="content-page content-page--catalog ai-draft-page">
+	<ScreenHeader {title} backHref="/workouts" preferHistoryBack />
 
 	{#if checking}
-		<div class="lab-ai-page__checking" aria-live="polite">
-			<Spinner label={translate(lang, 'labAi.providerChecking')} size="sm" />
+		<div class="ai-draft-page__checking" aria-live="polite">
+			<Spinner label={translate(lang, 'aiDraft.providerChecking')} size="sm" />
 		</div>
 	{:else if blocked}
 		<EmptyState
 			centered
-			title={translate(lang, 'labAi.unavailable')}
-			description={translate(lang, 'labAi.lead')}
-			actionHref="/auth"
-			actionLabel={translate(lang, 'labAi.back')}
+			title={translate(lang, 'aiDraft.unavailable')}
+			description={translate(lang, 'aiDraft.lead')}
+			actionHref="/workouts"
+			actionLabel={translate(lang, 'aiDraft.back')}
 		/>
 	{:else}
-		<div class="lab-ai-page__ai-bar" class:lab-ai-page__ai-bar--compact={Boolean(plan)} aria-live="polite">
-			<span class="lab-ai-page__ai-badge">
+		<div class="ai-draft-page__ai-bar" class:ai-draft-page__ai-bar--compact={Boolean(plan)} aria-live="polite">
+			<span class="ai-draft-page__ai-badge">
 				<LucideIcon icon={Sparkles} size={ICON_SMALL} />
-				{plan ? translate(lang, 'labAi.cueShort') : translate(lang, 'labAi.cue')}
+				{plan ? translate(lang, 'aiDraft.cueShort') : translate(lang, 'aiDraft.cue')}
 			</span>
 			{#if available && providerName}
-				<span class="lab-ai-page__provider" translate="no">
+				<span class="ai-draft-page__provider" translate="no">
 					{providerName === 'gigachat' ? 'GigaChat' : providerName}
 				</span>
 			{/if}
 		</div>
 
-		<section class="lab-ai-page__examples" aria-label={translate(lang, 'labAi.examplesTitle')}>
-			<div class="catalog-filter-chips lab-ai-page__chips">
+		<section class="ai-draft-page__examples" aria-label={translate(lang, 'aiDraft.examplesTitle')}>
+			<div class="catalog-filter-chips ai-draft-page__chips">
 				{#each EXAMPLES as ex (ex.key)}
 					<button
 						type="button"
-						class="catalog-filter-chip lab-ai-page__chip"
+						class="catalog-filter-chip ai-draft-page__chip"
 						class:is-active={brief.trim() === exampleBrief(ex, lang)}
 						onclick={() => applyExample(exampleBrief(ex, lang))}
 					>
@@ -493,60 +506,76 @@
 		</section>
 
 		<form
-			class="lab-ai-page__form"
+			class="ai-draft-page__form"
 			onsubmit={(e) => {
 				e.preventDefault();
 				void generate();
 			}}
 		>
-			<div class="lab-ai-page__field">
-				<div class="lab-ai-page__label-row">
-					<AppLabel for="lab-ai-brief">{translate(lang, 'labAi.briefLabel')}</AppLabel>
-					<span class="lab-ai-page__counter" aria-hidden="true"
-						>{translate(lang, 'labAi.chars', { n: String(charCount) })}</span
+			<div class="ai-draft-page__field">
+				<div class="ai-draft-page__label-row">
+					<AppLabel for="ai-draft-brief">{translate(lang, 'aiDraft.briefLabel')}</AppLabel>
+					<span class="ai-draft-page__counter" aria-hidden="true"
+						>{translate(lang, 'aiDraft.chars', { n: String(charCount) })}</span
 					>
 				</div>
-				<div class="lab-ai-page__composer" class:lab-ai-page__composer--listening={listening}>
+				<div
+					class="ai-draft-page__composer"
+					class:ai-draft-page__composer--listening={listening}
+					class:ai-draft-page__composer--has-clear={brief.length > 0}
+				>
 					<AppTextarea
-						id="lab-ai-brief"
-						class="pr-note-field lab-ai-page__brief"
+						id="ai-draft-brief"
+						class="pr-note-field ai-draft-page__brief"
 						name="brief"
 						autocomplete="off"
 						bind:value={brief}
 						rows={1}
 						maxlength={AI_BRIEF_MAX}
 						disabled={busy}
-						placeholder={translate(lang, 'labAi.briefPlaceholder')}
+						placeholder={translate(lang, 'aiDraft.briefPlaceholder')}
 						aria-invalid={fieldError ? 'true' : undefined}
 						aria-describedby={fieldError
-							? 'lab-ai-error'
+							? 'ai-draft-error'
 							: plan || listening
 								? undefined
-								: 'lab-ai-hint'}
+								: 'ai-draft-hint'}
 						onkeydown={onKeydown}
 						onfocus={onBriefFocus}
 					/>
+					{#if brief.length > 0}
+						<button
+							type="button"
+							class="ai-draft-page__clear"
+							disabled={busy}
+							aria-label={translate(lang, 'a11y.clearField')}
+							title={translate(lang, 'a11y.clearField')}
+							onclick={clearBrief}
+						>
+							<LucideIcon icon={X} size={ICON_SMALL} />
+						</button>
+					{/if}
 					<button
 						type="button"
-						class="lab-ai-page__mic"
-						class:lab-ai-page__mic--active={listening}
+						class="ai-draft-page__mic"
+						class:ai-draft-page__mic--active={listening}
 						disabled={busy}
 						aria-pressed={listening}
 						aria-label={listening
-							? translate(lang, 'labAi.dictateStop')
-							: translate(lang, 'labAi.dictate')}
+							? translate(lang, 'aiDraft.dictateStop')
+							: translate(lang, 'aiDraft.dictate')}
 						onclick={() => void toggleDictation()}
 					>
 						<LucideIcon icon={listening ? MicOff : Mic} size={ICON_BUTTON} />
 					</button>
 				</div>
 				{#if listening}
-					<p class="lab-ai-page__listening" aria-live="polite">{translate(lang, 'labAi.listening')}</p>
+					<p class="ai-draft-page__listening" aria-live="polite">{translate(lang, 'aiDraft.listening')}</p>
 				{:else if !plan}
-					<p id="lab-ai-hint" class="lab-ai-page__hint">{translate(lang, 'labAi.briefHint')}</p>
+					<p id="ai-draft-hint" class="ai-draft-page__hint">{translate(lang, 'aiDraft.briefHint')}</p>
 				{/if}
 				{#if fieldError}
-					<p id="lab-ai-error" class="lab-ai-page__error" role="alert">{fieldError}</p>
+					<p id="ai-draft-error" class="ai-draft-page__error" role="alert">{fieldError}</p>
 				{/if}
 			</div>
 
@@ -555,68 +584,68 @@
 					{#if !busy}
 						<LucideIcon icon={RefreshCw} size={ICON_BUTTON} />
 					{/if}
-					{busy ? translate(lang, 'labAi.generating') : translate(lang, 'labAi.regenerate')}
+					{busy ? translate(lang, 'aiDraft.generating') : translate(lang, 'aiDraft.regenerate')}
 				</AppButton>
 			{:else}
 				<AppButton type="submit" variant="primary" block disabled={busy || !brief.trim()}>
 					{#if !busy}
 						<LucideIcon icon={Sparkles} size={ICON_BUTTON} />
 					{/if}
-					{busy ? translate(lang, 'labAi.generating') : translate(lang, 'labAi.generate')}
+					{busy ? translate(lang, 'aiDraft.generating') : translate(lang, 'aiDraft.generate')}
 				</AppButton>
 			{/if}
 		</form>
 
 		{#if busy}
 			<div
-				class="lab-ai-page__skeleton"
+				class="ai-draft-page__skeleton"
 				aria-busy="true"
 				aria-live="polite"
-				aria-label={translate(lang, 'labAi.generating')}
+				aria-label={translate(lang, 'aiDraft.generating')}
 			>
-				<div class="lab-ai-page__skeleton-line lab-ai-page__skeleton-line--title"></div>
-				<div class="lab-ai-page__skeleton-line lab-ai-page__skeleton-line--meta"></div>
+				<div class="ai-draft-page__skeleton-line ai-draft-page__skeleton-line--title"></div>
+				<div class="ai-draft-page__skeleton-line ai-draft-page__skeleton-line--meta"></div>
 				{#each [0, 1, 2, 3, 4] as row (row)}
-					<div class="lab-ai-page__skeleton-line lab-ai-page__skeleton-line--row"></div>
+					<div class="ai-draft-page__skeleton-line ai-draft-page__skeleton-line--row"></div>
 				{/each}
 			</div>
 		{:else if plan}
-			<section id="lab-ai-plan" class="lab-ai-page__plan panel" aria-live="polite">
-				<div class="lab-ai-page__plan-head">
-					<h2 class="lab-ai-page__plan-title">{plan.name}</h2>
-					<p class="lab-ai-page__plan-meta">
-						{translate(lang, 'labAi.planSummary', {
+			<section id="ai-draft-plan" class="ai-draft-page__plan panel" aria-live="polite">
+				<div class="ai-draft-page__plan-head">
+					<h2 class="ai-draft-page__plan-title">{plan.name}</h2>
+					<p class="ai-draft-page__plan-meta">
+						{translate(lang, 'aiDraft.planSummary', {
 							min: String(planMinutes),
 							n: String(plan.exercises.length)
 						})}
 					</p>
 					{#if planMeta && planMeta.dropped > 0}
-						<p class="lab-ai-page__plan-meta-sub">
-							{translate(lang, 'labAi.dropped', { n: String(planMeta.dropped) })}
+						<p class="ai-draft-page__plan-meta-sub">
+							{translate(lang, 'aiDraft.dropped', { n: String(planMeta.dropped) })}
 						</p>
 					{/if}
 				</div>
-				<ol class="lab-ai-page__list">
+				<ol class="ai-draft-page__list">
 					{#each plan.exercises as ex, i (ex.exerciseId + i)}
 						{@const meta = exerciseMeta(ex.exerciseId)}
-						<li class="lab-ai-page__exercise">
-							<span class="lab-ai-page__exercise-num" aria-hidden="true">{i + 1}</span>
-							<div class="lab-ai-page__exercise-body">
+						<li class="ai-draft-page__exercise">
+							<span class="ai-draft-page__exercise-num" aria-hidden="true">{i + 1}</span>
+							<div class="ai-draft-page__exercise-body">
 								<a
-									class="lab-ai-page__exercise-title"
-									href={withFromParam(`/exercise/${ex.exerciseId}`, '/lab/ai')}
-									aria-label={translate(lang, 'labAi.openExercise', {
+									class="ai-draft-page__exercise-title"
+									href={withFromParam(`/exercise/${ex.exerciseId}`, '/ai')}
+									aria-label={translate(lang, 'aiDraft.openExercise', {
 										name: meta?.title ?? ex.exerciseId
 									})}
 								>
 									{meta?.title ?? ex.exerciseId}
 								</a>
-								<div class="lab-ai-page__exercise-meta">
+								<div class="ai-draft-page__exercise-meta">
 									{#if meta?.targetLabel}
-										<span class="lab-ai-page__exercise-badge">{meta.targetLabel}</span>
+										<span class="ai-draft-page__exercise-badge">{meta.targetLabel}</span>
 									{/if}
-									<span class="lab-ai-page__exercise-spec"
-										>{translate(lang, 'labAi.exerciseSpec', {
+									<span class="ai-draft-page__exercise-spec"
+										>{translate(lang, 'aiDraft.exerciseSpec', {
 											sets: String(ex.sets),
 											reps: String(ex.reps),
 											rest: String(ex.restSec)
@@ -627,9 +656,9 @@
 						</li>
 					{/each}
 				</ol>
-				<div class="lab-ai-page__plan-actions">
+				<div class="ai-draft-page__plan-actions">
 					<AppButton type="button" variant="primary" block onclick={applyToDraft}>
-						{translate(lang, 'labAi.addToBuilder')}
+						{translate(lang, 'aiDraft.addToBuilder')}
 					</AppButton>
 				</div>
 			</section>

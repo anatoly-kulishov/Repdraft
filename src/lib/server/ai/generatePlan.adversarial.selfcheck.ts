@@ -34,20 +34,16 @@ function ex(id: string): AiPlan['exercises'][number] {
 const index = loadExerciseIndex();
 const allowed = catalogWhitelist(index);
 
-/** Short slim alone: pad throws. With full-index fallback, recovers to MIN. */
+/** Empty pool + empty plan → throw. Tiny pool caps need (no foreign fill). */
 attack('pad.throws-when-cannot-reach-min', () => {
-	const slim = index.slice(0, 4);
-	const plan: AiPlan = {
-		name: 'Short',
-		exercises: slim.map((x) => ex(x.id))
-	};
+	const plan: AiPlan = { name: 'Empty', exercises: [] };
 	let threw = false;
 	try {
-		padToMinExercises(plan, slim, allowed);
+		padToMinExercises(plan, [], allowed, []);
 	} catch {
 		threw = true;
 	}
-	if (!threw) throw new Error('expected throw when pad cannot reach MIN=5');
+	if (!threw) throw new Error('expected throw when pad pool empty');
 });
 
 attack('pad.recovers-via-fallback-pool', () => {
@@ -62,36 +58,37 @@ attack('pad.recovers-via-fallback-pool', () => {
 	}
 });
 
-/** Impossible AND briefs fall back so slim can pad to MIN. */
+/** Zone slim may be tiny; pad stays inside pool, never invents foreign ids. */
 attack('pad.fills-from-relaxed-slim', () => {
 	const slim = slimCatalogForBrief(index, 'шея штанга');
-	if (slim.length < MIN_EXERCISES) {
-		throw new Error(`slim too small after fallback: ${slim.length}`);
+	if (!slim.length) throw new Error('slim empty for neck');
+	if (slim.some((ex) => ex.body_part !== 'neck')) {
+		throw new Error('neck slim leaked foreign zones');
 	}
-	const plan: AiPlan = { name: 'One', exercises: [ex(index[0]!.id)] };
+	const plan: AiPlan = { name: 'One', exercises: [ex(slim[0]!.id)] };
 	const out = padToMinExercises(plan, slim, allowed);
-	if (out.exercises.length < MIN_EXERCISES) {
-		throw new Error(`got ${out.exercises.length}, want ≥${MIN_EXERCISES}`);
+	if (out.exercises.length < 1) throw new Error('pad emptied plan');
+	if (out.exercises.length > slim.length) {
+		throw new Error(`pad grew past zone pool: ${out.exercises.length}>${slim.length}`);
 	}
 	for (const row of out.exercises) {
 		if (!allowed.has(row.exerciseId)) throw new Error(`unknown id ${row.exerciseId}`);
+		const item = index.find((x) => x.id === row.exerciseId);
+		if (item && item.body_part !== 'neck') throw new Error(`foreign ${item.body_part}`);
 	}
 });
 
-/** slim.length=3 alone cannot satisfy MIN — throw. */
+/** slim.length=3 caps pad at 3 (no throw, no invent). */
 attack('pad.throws-when-slim-shorter-than-min', () => {
 	const slim = index.slice(0, 3);
 	const plan: AiPlan = {
 		name: 'Tiny',
 		exercises: [ex(slim[0]!.id), ex(slim[1]!.id)]
 	};
-	let threw = false;
-	try {
-		padToMinExercises(plan, slim, allowed);
-	} catch {
-		threw = true;
+	const out = padToMinExercises(plan, slim, allowed);
+	if (out.exercises.length !== 3) {
+		throw new Error(`expected cap at pool size 3, got ${out.exercises.length}`);
 	}
-	if (!threw) throw new Error('expected throw for slim.length=3');
 });
 
 /** All-unknown stays fail-closed (filter throws; no invented pad). */
@@ -115,15 +112,15 @@ attack('pipeline.all-unknown-stays-fail-closed', () => {
 	if (!threw) throw new Error('expected filterKnownIds throw on all-unknown');
 });
 
-/** Dropped unknowns + previously-empty AND brief → pad reaches MIN via fallback slim. */
+/** Dropped unknowns + zone slim → pad stays whitelist-only inside pool. */
 attack('pipeline.pad-recovers-after-drops', () => {
-	const slim = slimCatalogForBrief(index, 'кардио штанга');
+	const slim = slimCatalogForBrief(index, 'грудь штанга');
 	if (slim.length < MIN_EXERCISES) {
 		throw new Error(`slim too small: ${slim.length}`);
 	}
 	let plan = parsePlanPayload({
 		name: 'Mixed',
-		exercises: [ex(index[0]!.id), ex('ghost-1'), ex(index[1]!.id), ex('ghost-2')]
+		exercises: [ex(slim[0]!.id), ex('ghost-1'), ex(slim[1]!.id), ex('ghost-2')]
 	});
 	plan = filterKnownIds(plan, allowed);
 	plan = padToMinExercises(plan, slim, allowed);
