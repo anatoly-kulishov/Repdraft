@@ -47,7 +47,7 @@
 	import { restSoundEnabled, testerModeEnabled } from '$lib/stores/prefs';
 	import { testerToolsVisible } from '$lib/domain/prefs';
 	import { tick } from 'svelte';
-	import { Camera, FileText, LogOut, Timer, Shield, ClipboardList } from '@lucide/svelte';
+	import { Camera, FileText, LogOut, Timer, Shield, ClipboardList, Sparkles } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -874,19 +874,29 @@
 					{#if showTesterTools}
 						<ProfileSettingsRow
 							icon={ClipboardList}
+							iconTone="accent"
 							label={translate(lang, 'scenarios.link')}
 							href="/scenarios"
+							disabled={accountLocked}
+						/>
+						<ProfileSettingsRow
+							icon={Sparkles}
+							iconTone="accent"
+							label={translate(lang, 'labAi.link')}
+							href="/lab/ai"
 							disabled={accountLocked}
 						/>
 					{/if}
 					<ProfileSettingsRow
 						icon={FileText}
+						iconTone="accent"
 						label={translate(lang, 'terms.link')}
 						href="/terms"
 						disabled={accountLocked}
 					/>
 					<ProfileSettingsRow
 						icon={Shield}
+						iconTone="accent"
 						label={translate(lang, 'privacy.link')}
 						href="/privacy"
 						disabled={accountLocked}
@@ -1223,17 +1233,26 @@
 				{#if showTesterTools}
 					<ProfileSettingsRow
 						icon={ClipboardList}
+						iconTone="accent"
 						label={translate(lang, 'scenarios.link')}
 						href="/scenarios"
+					/>
+					<ProfileSettingsRow
+						icon={Sparkles}
+						iconTone="accent"
+						label={translate(lang, 'labAi.link')}
+						href="/lab/ai"
 					/>
 				{/if}
 				<ProfileSettingsRow
 					icon={FileText}
+					iconTone="accent"
 					label={translate(lang, 'terms.link')}
 					href="/terms"
 				/>
 				<ProfileSettingsRow
 					icon={Shield}
+					iconTone="accent"
 					label={translate(lang, 'privacy.link')}
 					href="/privacy"
 				/>

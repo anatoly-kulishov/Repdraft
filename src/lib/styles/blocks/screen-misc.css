@@ -1028,6 +1028,13 @@ button.live-local-save-cue {
 	border-radius: 0.55rem;
 }
 
+.auth-account__section--legal .profile-settings-row__icon.icon-plate--accent {
+	border-color: color-mix(in srgb, var(--color-accent) 28%, var(--color-border));
+	background: var(--icon-plate-accent-bg);
+	color: var(--color-accent-text);
+	box-shadow: none;
+}
+
 .auth-account__section--legal .profile-settings-row__label {
 	font-size: 0.8125rem;
 	font-weight: 600;

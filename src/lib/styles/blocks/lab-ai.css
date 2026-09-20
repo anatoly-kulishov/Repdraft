@@ -1,0 +1,511 @@
+/* /lab/ai — experimental; imported only by that route */
+
+.lab-ai-page {
+	--screen-header-content-gap: 0.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	/* Reclaim shell --page-pad-y so title sits closer to RP chrome */
+	margin-top: -0.5rem;
+	/* Tabbar + FAB clearance (matches catalog FAB lift). */
+	padding-bottom: calc(
+		var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + var(--fab-size) + 0.75rem +
+			var(--vv-fixed-bottom, 0px)
+	);
+}
+
+/* Avoid margin-bottom + flex gap stacking under the title */
+.lab-ai-page .screen-header {
+	margin-bottom: 0;
+}
+
+.lab-ai-page__ai-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	min-width: 0;
+}
+
+.lab-ai-page__ai-bar--compact {
+	gap: 0.35rem;
+}
+
+.lab-ai-page__ai-bar--compact .lab-ai-page__ai-badge {
+	padding: 0.15rem 0.45rem 0.15rem 0.35rem;
+	font-size: 0.6875rem;
+	background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.lab-ai-page__ai-bar--compact .lab-ai-page__provider {
+	padding: 0.1rem 0.4rem;
+	border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
+	background: transparent;
+	font-weight: 500;
+}
+
+.lab-ai-page__ai-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	min-width: 0;
+	padding: 0.2rem 0.55rem 0.2rem 0.4rem;
+	border-radius: 999px;
+	background: var(--color-accent-muted);
+	color: var(--color-accent-text);
+	font-size: 0.75rem;
+	font-weight: 500;
+	line-height: 1.3;
+}
+
+.lab-ai-page__ai-badge .lucide-icon-wrap {
+	flex-shrink: 0;
+	color: var(--color-accent-text);
+}
+
+.lab-ai-page__provider {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.15rem 0.5rem;
+	border-radius: 999px;
+	border: 1px solid var(--color-border);
+	background: color-mix(in srgb, var(--color-muted) 8%, var(--color-surface));
+	font-size: 0.6875rem;
+	font-weight: 500;
+	line-height: 1.3;
+	letter-spacing: 0.01em;
+	color: var(--color-muted);
+}
+
+.lab-ai-page__examples {
+	min-width: 0;
+}
+
+.lab-ai-page__chips {
+	margin: 0;
+	min-height: 0;
+	gap: 0.375rem;
+	/* Soft edge without a solid overlay (overlay color fought the page surface) */
+	-webkit-mask-image: linear-gradient(
+		to right,
+		#000 0%,
+		#000 calc(100% - 1.25rem),
+		transparent 100%
+	);
+	mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 1.25rem), transparent 100%);
+}
+
+.lab-ai-page__chip {
+	min-height: 2.25rem;
+	min-width: 0;
+	padding-inline: 0.875rem;
+	font-size: 0.8125rem;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.lab-ai-page__chip:active:not(:disabled) {
+	transform: scale(0.98);
+	transition-duration: 0s;
+}
+
+.lab-ai-page__form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.lab-ai-page__field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.lab-ai-page__label-row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 0.5rem;
+	min-width: 0;
+}
+
+.lab-ai-page__counter {
+	font-size: 0.6875rem;
+	color: var(--color-muted);
+	font-variant-numeric: tabular-nums;
+	flex: 0 0 auto;
+}
+
+.lab-ai-page__composer {
+	position: relative;
+	border-radius: var(--radius-control);
+}
+
+/* Glow on shell — survives controls.css textarea focus box-shadow reset */
+.lab-ai-page__composer::before {
+	content: '';
+	position: absolute;
+	inset: -1px;
+	z-index: 0;
+	border-radius: calc(var(--radius-control) + 1px);
+	pointer-events: none;
+	box-shadow:
+		0 0 0 1.5px color-mix(in srgb, var(--color-accent) 42%, transparent),
+		0 0 14px color-mix(in srgb, var(--color-accent) 32%, transparent),
+		0 0 32px color-mix(in srgb, var(--color-accent) 18%, transparent);
+	transition: box-shadow 150ms ease;
+}
+
+html[data-theme='light'] .lab-ai-page__composer::before {
+	box-shadow:
+		0 0 0 1.5px color-mix(in srgb, var(--color-accent) 34%, transparent),
+		0 0 12px color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.lab-ai-page__composer:focus-within::before,
+.lab-ai-page__composer--listening::before {
+	box-shadow:
+		0 0 0 2px color-mix(in srgb, var(--color-accent) 58%, transparent),
+		0 0 18px color-mix(in srgb, var(--color-accent) 42%, transparent),
+		0 0 44px color-mix(in srgb, var(--color-accent) 26%, transparent);
+}
+
+html[data-theme='light'] .lab-ai-page__composer:focus-within::before,
+html[data-theme='light'] .lab-ai-page__composer--listening::before {
+	box-shadow:
+		0 0 0 2px color-mix(in srgb, var(--color-accent) 45%, transparent),
+		0 0 16px color-mix(in srgb, var(--color-accent) 24%, transparent);
+}
+
+/* Same grow/center recipe as PR notes; mic inset like pr-note-field--has-clear */
+textarea.pr-note-field.lab-ai-page__brief {
+	position: relative;
+	z-index: 1;
+	padding-right: 3rem;
+	scroll-margin-top: 5rem;
+	scroll-margin-bottom: 6rem;
+	/* Neon lives on ::before — no solid field border (avoids double outline) */
+	border-color: transparent;
+	box-shadow: none;
+	background: color-mix(in srgb, var(--color-accent) 5%, var(--color-field));
+}
+
+textarea.pr-note-field.lab-ai-page__brief:focus,
+textarea.pr-note-field.lab-ai-page__brief:focus-visible,
+.lab-ai-page__composer--listening textarea.pr-note-field.lab-ai-page__brief {
+	border-color: transparent;
+	box-shadow: none;
+}
+
+.lab-ai-page__mic {
+	position: absolute;
+	top: 50%;
+	inset-inline-end: 0.4rem;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	min-width: 2.25rem;
+	min-height: 2.25rem;
+	border: 0;
+	border-radius: 0.55rem;
+	background: transparent;
+	color: var(--color-muted);
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+	transform: translateY(-50%);
+	transition:
+		background 150ms ease,
+		color 150ms ease,
+		transform 100ms ease;
+}
+
+@media (hover: hover) {
+	.lab-ai-page__mic:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+		color: var(--color-accent-text);
+	}
+}
+
+.lab-ai-page__mic:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+
+.lab-ai-page__mic:active:not(:disabled) {
+	transform: translateY(-50%) scale(0.96);
+	transition-duration: 0s;
+}
+
+.lab-ai-page__mic:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Recording only — solid plate stays inside the field */
+.lab-ai-page__mic--active {
+	background: var(--color-accent-fill);
+	color: var(--color-accent-ink);
+}
+
+.lab-ai-page__hint,
+.lab-ai-page__listening {
+	margin: 0;
+	font-size: 0.75rem;
+	line-height: 1.35;
+}
+
+.lab-ai-page__hint {
+	color: var(--color-muted);
+}
+
+.lab-ai-page__listening {
+	color: var(--color-accent-text);
+	font-weight: 500;
+}
+
+.lab-ai-page__error {
+	margin: 0;
+	font-size: 0.8125rem;
+	line-height: 1.35;
+	color: var(--color-danger, #c44);
+}
+
+.lab-ai-page__checking {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	min-height: 3rem;
+	padding: 0.5rem 0;
+	color: var(--color-muted);
+	font-size: 0.8125rem;
+}
+
+.lab-ai-page__skeleton {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 0.875rem;
+	border-radius: var(--radius-panel);
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+}
+
+.lab-ai-page__skeleton-line {
+	border-radius: 0.375rem;
+	background: linear-gradient(
+		90deg,
+		var(--skeleton-base) 0%,
+		var(--skeleton-shine) 45%,
+		var(--skeleton-base) 100%
+	);
+	background-size: 200% 100%;
+	animation: lab-ai-shimmer 1.6s linear infinite;
+	animation-delay: 280ms;
+	opacity: 0;
+	animation-fill-mode: forwards;
+}
+
+.lab-ai-page__skeleton-line--title {
+	width: 48%;
+	height: 1.05rem;
+}
+
+.lab-ai-page__skeleton-line--meta {
+	width: 28%;
+	height: 0.75rem;
+}
+
+.lab-ai-page__skeleton-line--row {
+	width: 100%;
+	height: 2.75rem;
+	border-radius: 0.5rem;
+}
+
+.lab-ai-page__skeleton-line--row:nth-child(4) {
+	width: 92%;
+}
+
+.lab-ai-page__skeleton-line--row:nth-child(5) {
+	width: 96%;
+}
+
+.lab-ai-page__skeleton-line--row:nth-child(6) {
+	width: 88%;
+}
+
+@keyframes lab-ai-shimmer {
+	0% {
+		opacity: 1;
+		background-position: 100% 0;
+	}
+	100% {
+		opacity: 1;
+		background-position: -100% 0;
+	}
+}
+
+.lab-ai-page__plan {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 0.875rem;
+	scroll-margin-top: 5rem;
+}
+
+.lab-ai-page__plan-head {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	min-width: 0;
+}
+
+.lab-ai-page__plan-title {
+	margin: 0;
+	font-size: 1.0625rem;
+	font-weight: 600;
+	line-height: 1.3;
+	letter-spacing: -0.01em;
+	text-wrap: balance;
+	overflow-wrap: anywhere;
+}
+
+.lab-ai-page__plan-meta {
+	margin: 0;
+	font-size: 0.75rem;
+	line-height: 1.35;
+	color: var(--color-muted);
+}
+
+.lab-ai-page__plan-meta-sub {
+	margin: 0;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem;
+	font-size: 0.6875rem;
+	line-height: 1.35;
+	color: var(--color-muted);
+}
+
+.lab-ai-page__list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	border-top: 1px solid var(--color-border);
+}
+
+.lab-ai-page__exercise {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.625rem;
+	min-width: 0;
+	padding: 0.625rem 0.125rem;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.lab-ai-page__exercise-num {
+	flex: 0 0 1.375rem;
+	width: 1.375rem;
+	height: 1.375rem;
+	margin-top: 0.125rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	background: var(--color-accent-muted);
+	color: var(--color-accent-text);
+	font-size: 0.6875rem;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.lab-ai-page__exercise-body {
+	flex: 1 1 auto;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	min-width: 0;
+}
+
+.lab-ai-page__exercise-title {
+	font-size: 0.875rem;
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+	color: inherit;
+	text-decoration: none;
+}
+
+a.lab-ai-page__exercise-title:hover {
+	color: var(--color-accent-text);
+}
+
+a.lab-ai-page__exercise-title:focus-visible {
+	outline: none;
+	border-radius: 0.25rem;
+	box-shadow: var(--focus-ring);
+}
+
+.lab-ai-page__exercise-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem 0.5rem;
+	min-width: 0;
+}
+
+.lab-ai-page__exercise-badge {
+	display: inline-block;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	padding: 0.0625rem 0.375rem;
+	border-radius: 0.25rem;
+	border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+	background: color-mix(in srgb, var(--color-muted) 12%, var(--color-surface));
+	font-size: 0.625rem;
+	color: color-mix(in srgb, var(--color-muted) 55%, var(--color-ink));
+}
+
+.lab-ai-page__exercise-spec {
+	font-size: 0.75rem;
+	line-height: 1.3;
+	color: var(--color-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.lab-ai-page__plan-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.lab-ai-page__composer::before,
+	.lab-ai-page__mic,
+	.lab-ai-page__chip {
+		transition: none;
+	}
+
+	.lab-ai-page__chip:active:not(:disabled) {
+		transform: none;
+	}
+
+	.lab-ai-page__mic:active:not(:disabled) {
+		transform: translateY(-50%);
+	}
+
+	.lab-ai-page__skeleton-line {
+		animation: none;
+		opacity: 1;
+	}
+}

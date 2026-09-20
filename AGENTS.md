@@ -54,6 +54,8 @@ Keys in `.env` / hosting only. SQL ops scripts stay out of public git (see `.git
 
 Supabase Auth setup: [`.cursor/rules/supabase-auth.mdc`](.cursor/rules/supabase-auth.mdc).
 
+Experimental AI lab (`/lab/ai`, `POST /api/ai/plan`): private `AI_PROVIDER` + `GIGACHAT_*` or `OLLAMA_*`. Optional; offline / missing keys degrade the lab UI only — sacred loop unchanged.
+
 ## Releases
 
 Branch `cursor/vX.Y.Z-slug`, GitHub Release with same tag, bump `package.json` `version` in the same PR.

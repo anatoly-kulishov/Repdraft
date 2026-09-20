@@ -13,6 +13,8 @@ export const NOTE_MAX = 60;
 export const PLAN_NAME_MAX = 48;
 /** Catalog / workouts / articles search — soft cap while typing. */
 export const SEARCH_QUERY_MAX = 80;
+/** Lab AI brief — matches /api/ai/plan body cap. */
+export const AI_BRIEF_MAX = 500;
 
 /** Max digits while typing (derived from bounds — fits chip inputs without overflow). */
 export const SETS_INPUT_MAX_LEN = String(SETS.max).length;
@@ -173,6 +175,11 @@ export function sanitizeNote(raw: string, maxLen = NOTE_MAX): string {
 	return clampCodePoints(clampNote(raw, maxLen).replace(/\s+/g, ' ').trim(), maxLen);
 }
 
+/** Lab AI brief before submit: drop ZWSP then same recipe as sanitizeNote. */
+export function sanitizeAiBrief(raw: string, maxLen = AI_BRIEF_MAX): string {
+	return sanitizeNote(raw.replace(/[\u200B-\u200D\uFEFF]/g, ''), maxLen);
+}
+
 /** While typing: strip control chars and hard-cap length (no trim — keeps caret stable). */
 export function clampPlanName(raw: string, maxLen = PLAN_NAME_MAX): string {
 	return clampCodePoints(raw.replace(/[\u0000-\u001F\u007F]/g, ''), maxLen);
@@ -284,6 +291,12 @@ export function runInputLimitsSelfCheck(): void {
 	if (sanitizeNote('  a\nb  ') !== 'a b') throw new Error('sanitizeNote whitespace');
 	if (sanitizeNote('x'.repeat(150)).length !== NOTE_MAX) {
 		throw new Error('sanitizeNote max length');
+	}
+	if (sanitizeAiBrief('  a\u200B\nb  ') !== 'a b') {
+		throw new Error('sanitizeAiBrief strips ZWSP + whitespace');
+	}
+	if (sanitizeAiBrief('x'.repeat(600)).length !== AI_BRIEF_MAX) {
+		throw new Error('sanitizeAiBrief max length');
 	}
 	if (clampNote('  a\nb  ') !== '  a b  ') {
 		throw new Error('clampNote keeps edges while typing');
