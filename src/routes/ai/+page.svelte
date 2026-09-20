@@ -272,17 +272,35 @@
 		const session = await startSpeechDictation({
 			lang: speechLangFromLocale(lang),
 			onInterim: (text) => {
-				brief = text;
+				brief = text.slice(0, AI_BRIEF_MAX);
 			},
 			onFinal: (text) => {
 				brief = text.slice(0, AI_BRIEF_MAX);
 			},
 			onError: (code) => {
-				if (code === 'aborted' || code === 'no-speech') return;
 				listening = false;
 				dictationSession = null;
+				if (code === 'aborted' || code === 'no-speech') {
+					fieldError = null;
+					return;
+				}
 				if (code === 'not-allowed' || code === 'service-not-allowed') {
 					fieldError = translate(lang, 'aiDraft.dictateDenied');
+					focusBrief();
+					return;
+				}
+				if (code === 'unavailable') {
+					fieldError = translate(lang, 'aiDraft.dictateUnavailable');
+					focusBrief();
+					return;
+				}
+				if (code === 'insecure') {
+					fieldError = translate(lang, 'aiDraft.dictateInsecure');
+					focusBrief();
+					return;
+				}
+				if (code === 'unsupported') {
+					fieldError = translate(lang, 'aiDraft.dictateUnsupported');
 					focusBrief();
 					return;
 				}
@@ -462,7 +480,7 @@
 
 <SeoHead {title} noindex />
 
-<div class="content-page content-page--catalog ai-draft-page">
+<div class="content-page content-page--narrow ai-draft-page">
 	<ScreenHeader {title} backHref="/workouts" preferHistoryBack />
 
 	{#if checking}

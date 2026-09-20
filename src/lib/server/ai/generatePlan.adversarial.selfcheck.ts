@@ -5,6 +5,7 @@
  *   node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/server/ai/generatePlan.adversarial.selfcheck.ts
  */
 import {
+	ensureHintCoverage,
 	filterKnownIds,
 	filterToBodyHints,
 	generateWorkoutPlan,
@@ -14,8 +15,11 @@ import {
 } from './generatePlan.ts';
 import {
 	catalogWhitelist,
+	desiredExerciseCountFromBrief,
+	hintsFromBrief,
 	loadExerciseIndex,
-	slimCatalogForBrief
+	slimCatalogForBrief,
+	targetsFromBrief
 } from './catalog.ts';
 
 const MIN_EXERCISES = 5;
@@ -155,6 +159,59 @@ attack('brief.zwsp-is-invalid-brief', async () => {
 	const result = await generateWorkoutPlan('\u200b');
 	if (result.ok || result.code !== 'invalid_brief') {
 		throw new Error(`expected invalid_brief, got ${JSON.stringify(result)}`);
+	}
+});
+
+/** «спина и трицепс»: all-back model output must gain upper-arms/triceps coverage. */
+attack('pipeline.back-triceps-covers-both-zones', () => {
+	const brief = 'Спина и трицепс 1 час';
+	const { parts } = hintsFromBrief(brief);
+	const targets = targetsFromBrief(brief);
+	if (!parts.includes('back') || !parts.includes('upper arms')) {
+		throw new Error(`hints want back+arms, got ${JSON.stringify(parts)}`);
+	}
+	if (!targets.includes('triceps')) {
+		throw new Error(`targets want triceps, got ${JSON.stringify(targets)}`);
+	}
+	if (desiredExerciseCountFromBrief(brief) < 7) {
+		throw new Error(`1 час should want ≥7, got ${desiredExerciseCountFromBrief(brief)}`);
+	}
+	const slim = slimCatalogForBrief(index, brief);
+	const backs = slim.filter((e) => e.body_part === 'back');
+	if (backs.length < 5) throw new Error('need ≥5 back in slim');
+	let plan: AiPlan = {
+		name: 'Спина и трицепс',
+		exercises: backs.slice(0, 5).map((x) => ex(x.id))
+	};
+	plan = padToMinExercises(
+		plan,
+		slim,
+		allowed,
+		[],
+		desiredExerciseCountFromBrief(brief)
+	);
+	plan = ensureHintCoverage(plan, index, parts, slim, allowed, targets);
+	const rows = plan.exercises.map((e) => index.find((x) => x.id === e.exerciseId));
+	const hasBack = rows.some((r) => r?.body_part === 'back');
+	const hasArms = rows.some((r) => r?.body_part === 'upper arms');
+	const hasTriceps = rows.some((r) => r?.target === 'triceps');
+	if (!hasBack || !hasArms) {
+		throw new Error(
+			`missing zone after cover: back=${hasBack} arms=${hasArms} parts=${rows
+				.map((r) => r?.body_part)
+				.join(',')}`
+		);
+	}
+	if (!hasTriceps) {
+		throw new Error(
+			`want triceps target, got ${rows
+				.filter((r) => r?.body_part === 'upper arms')
+				.map((r) => r?.target)
+				.join(',')}`
+		);
+	}
+	if (plan.exercises.length < 7) {
+		throw new Error(`1 час pad want ≥7, got ${plan.exercises.length}`);
 	}
 });
 

@@ -193,9 +193,9 @@ export function shouldShowCoachmark(state: OnboardingState, id: CoachmarkId): bo
 	return state.coachmarks[id] !== true;
 }
 
-export function shouldDeferPwaHint(state: OnboardingState): boolean {
-	if (isOnboardingActivated(state)) return false;
-	return state.visitCount < 2;
+export function shouldDeferPwaHint(_state: OnboardingState): boolean {
+	/* Home-only install tip should appear on the first visit; do not wait for visit 2. */
+	return false;
 }
 
 const DEMO_EXERCISE_IDS = ['0025', '0043', '1350'] as const;

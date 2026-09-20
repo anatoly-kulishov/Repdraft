@@ -1,8 +1,6 @@
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
 import { CLOUD_REQUEST_MS } from '$lib/domain/networkTimeouts';
-import { isNativeApp } from '$lib/app/native';
-import { createPreferencesAuthStorage } from '$lib/supabase/preferencesStorage';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 let client: SupabaseClient | null = null;
@@ -46,8 +44,7 @@ export function getSupabase(): SupabaseClient | null {
 				persistSession: true,
 				autoRefreshToken: true,
 				detectSessionInUrl: true,
-				flowType: 'pkce',
-				...(isNativeApp() ? { storage: createPreferencesAuthStorage() } : {})
+				flowType: 'pkce'
 			},
 			global: {
 				fetch: fetchWithTimeout

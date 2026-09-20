@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { isNativeApp, webApiOrigin } from '$lib/app/native';
+import { webApiOrigin } from '$lib/app/native';
 import { resolveAuthBootSession } from '$lib/domain/authBoot';
 import { userCustomAvatarPath } from '$lib/domain/authFlow';
 import type { LocalCacheUserAction } from '$lib/domain/localCacheUser';
@@ -60,20 +60,12 @@ type AuthState = {
 };
 
 function authCallbackUrl(next?: string | null): string {
-	if (isNativeApp()) {
-		return next
-			? `repdraft://auth?next=${encodeURIComponent(next)}`
-			: 'repdraft://auth';
-	}
 	const url = new URL('/auth', window.location.origin);
 	if (next) url.searchParams.set('next', next);
 	return url.toString();
 }
 
 function recoveryCallbackUrl(): string {
-	if (isNativeApp()) {
-		return 'repdraft://auth?recovery=1';
-	}
 	const url = new URL('/auth', window.location.origin);
 	url.searchParams.set('recovery', '1');
 	return url.toString();

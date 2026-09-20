@@ -1,30 +1,12 @@
 import { browser } from '$app/environment';
-import { Capacitor } from '@capacitor/core';
-import {
-	resolveWebApiOrigin,
-	webAnalyticsAvailable
-} from '$lib/app/nativeUrls';
+import { resolveWebApiOrigin, webAnalyticsAvailable } from '$lib/app/nativeUrls';
 
-/**
- * Native Capacitor shell (iOS/Android WebView).
- * Prefer runtime Capacitor.isNativePlatform(); PUBLIC_APP_NATIVE is a build-time override.
- */
-export function isNativeApp(): boolean {
-	if (!browser) return false;
-	try {
-		if (Capacitor.isNativePlatform()) return true;
-	} catch {
-		/* Capacitor not injected (web) */
-	}
-	return import.meta.env.PUBLIC_APP_NATIVE === '1' || import.meta.env.PUBLIC_APP_NATIVE === 'true';
-}
-
-/** Vercel Analytics / Speed Insights — web/PWA only, never native shell. */
+/** Vercel Analytics / Speed Insights — browser only. */
 export function isWebAnalyticsAvailable(): boolean {
-	return webAnalyticsAvailable({ browser, native: isNativeApp() });
+	return webAnalyticsAvailable({ browser });
 }
 
-/** Absolute origin for web-only APIs (account delete) when the app is a static native shell. */
+/** Absolute origin for account APIs (delete/avatar). Prefers PUBLIC_WEB_ORIGIN / PUBLIC_SITE_URL. */
 export function webApiOrigin(): string {
 	return resolveWebApiOrigin({
 		webOrigin: import.meta.env.PUBLIC_WEB_ORIGIN,

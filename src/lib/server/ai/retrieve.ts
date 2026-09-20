@@ -109,7 +109,8 @@ export async function retrieve(
 
 	const merged = [...scoreMap.values()].sort((a, b) => b.score - a.score);
 	const exercises = merged.slice(0, topK).map((s) => s.exercise);
-	const parts = majorityParts(exercises);
+	/* Prefer brief zone votes over cosine majority (back can drown arms). */
+	const parts = hints.parts.length ? hints.parts : majorityParts(exercises);
 	return {
 		exercises,
 		template: matchTemplate(parts, hints.parts),

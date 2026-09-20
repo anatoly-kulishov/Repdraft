@@ -48,6 +48,16 @@ export function isInstalledDisplayMode(
 	return INSTALLED_DISPLAY_MODES.some((mode) => matches(`(display-mode: ${mode})`));
 }
 
+/** Android Chrome / DevTools mobile Chromium when BIP never fires. */
+export function needsChromiumMobileInstallGuide(input: {
+	hasChromiumRuntime: boolean;
+	ua: string;
+}): boolean {
+	if (!input.hasChromiumRuntime) return false;
+	// Real iOS browsers do not expose window.chrome; this catches Android + DevTools.
+	return /Android|Mobile/i.test(input.ua);
+}
+
 /**
  * Manual Share / Home Screen tips are only for real iOS browsers.
  * Desktop Chromium (incl. Chrome DevTools with an iPhone UA) must not get them —

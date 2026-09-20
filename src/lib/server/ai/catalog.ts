@@ -71,6 +71,43 @@ export function hintsFromBrief(brief: string): BodyHint {
 	return { parts: [...new Set(parts)], equipment: [...new Set(equipment)] };
 }
 
+/** Fine-grained muscle targets (catalog `target`) from brief slang. */
+export function targetsFromBrief(brief: string): string[] {
+	const t = brief.toLowerCase();
+	const targets: string[] = [];
+	if (/трицеп|triceps/.test(t)) targets.push('triceps');
+	if (/бицеп|biceps|бицух|банк[аиу]/.test(t)) targets.push('biceps');
+	if (/дельт|боков(ая|ые)|средн(яя|ие)\s*дельт|lateral/.test(t)) targets.push('delts');
+	if (/квадр|quad/.test(t)) targets.push('quads');
+	if (/ягод|glute|булк|галифе/.test(t)) targets.push('glutes');
+	if (/икр|\bcalf\b|\bcalves\b/.test(t)) targets.push('calves');
+	if (/пресс|абдом|abs?\b|core/.test(t)) targets.push('abs');
+	return [...new Set(targets)];
+}
+
+/**
+ * Target plan size from duration words in brief.
+ * ~45 мин → 6, ~60 мин / «час» → 7, 75+ → 8; otherwise leave to caller default.
+ */
+export function desiredExerciseCountFromBrief(brief: string, fallback = 5): number {
+	const t = brief.toLowerCase();
+	const hourish = /(\d+)\s*(?:час|часа|часов|h\b|hour|hours)/.exec(t);
+	const minish = /(\d+)\s*(?:мин|минуты|минут|min|mins|minutes)/.exec(t);
+	let minutes = 0;
+	if (hourish) {
+		minutes = Number(hourish[1]) * 60;
+	} else if (minish) {
+		minutes = Number(minish[1]);
+	} else if (/(?:^|[\s,])час(?:$|[\s,.!?]|$)/.test(t) || /\bhour\b/.test(t)) {
+		minutes = 60;
+	}
+	if (minutes <= 0) return fallback;
+	if (minutes >= 75) return 8;
+	if (minutes >= 55) return 7;
+	if (minutes >= 40) return 6;
+	return fallback;
+}
+
 export function popularity(ex: ExerciseIndexItem): number {
 	return typeof ex.globalPopularity === 'number' ? ex.globalPopularity : 25;
 }

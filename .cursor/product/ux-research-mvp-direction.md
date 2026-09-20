@@ -195,7 +195,7 @@ Observe hesitation, wrong taps, backtracking, search behavior and time-to-comple
 
 ## 16. Native iOS / Android decision
 
-Native store distribution is **not** a substitute for MVP polish. Capacitor Mode B already wraps the same sacred-loop UI; shipping to App Store / Play still waits on evidence that the web loop feels excellent, plus the legal and store checklist (privacy operator env, Terms, consent, analytics off in shell).
+Native store distribution is **not** part of the MVP path. Delivery is the installable PWA. App Store / Play shells stay out unless product explicitly brings them back.
 
 Do not invent native-only features ahead of loop quality.
 

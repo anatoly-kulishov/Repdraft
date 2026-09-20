@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.18.0-0B0F14?style=flat-square" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.18.1-0B0F14?style=flat-square" />
   <img alt="SvelteKit" src="https://img.shields.io/badge/SvelteKit-5-FF3E00?style=flat-square&logo=svelte&logoColor=white" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white" />
   <img alt="PWA" src="https://img.shields.io/badge/PWA-ready-111111?style=flat-square" />
@@ -45,7 +45,7 @@
 | **Account sync** | Optional Supabase auth + cloud sync; local-first without keys |
 | **Community technique** | Upload video → GIF clips for form reference |
 | **Articles & SEO** | Guides, sitemap, robots, Open Graph for discoverability |
-| **Native shells** | Capacitor iOS / Android (Mode B) for store builds |
+| **Installable PWA** | Add to home screen; works offline-first in the browser |
 
 ## Quick start
 
@@ -72,7 +72,7 @@ On production, set the same variables and add your site URL to Supabase Auth (**
 | UI | [SvelteKit](https://svelte.dev/) + TypeScript |
 | Styles | Tailwind CSS 4 |
 | Backend | [Supabase](https://supabase.com/) (optional auth & sync) |
-| Delivery | PWA · Capacitor (iOS / Android) |
+| Delivery | PWA (install to home screen) |
 | Hosting | Vercel (canonical: [repdraft-zeta.vercel.app](https://repdraft-zeta.vercel.app)) |
 
 Architecture and coding rules for contributors: **[AGENTS.md](./AGENTS.md)**.

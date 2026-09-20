@@ -3,6 +3,7 @@ import {
 	isDesktopChromiumInstallSurface,
 	isInstalledDisplayMode,
 	isIosDevice,
+	needsChromiumMobileInstallGuide,
 	resolvePwaManualGuide
 } from './pwaInstall.ts';
 
@@ -12,11 +13,29 @@ const chromeIos =
 	'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.6099.119 Mobile/15E148 Safari/604.1';
 const chromeDesktop =
 	'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const chromeAndroid =
+	'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
 
 assert.equal(resolvePwaManualGuide({ ua: safariIphone }), 'ios-safari');
 assert.equal(resolvePwaManualGuide({ ua: chromeIos }), 'ios-chrome');
 assert.equal(resolvePwaManualGuide({ ua: chromeDesktop }), null);
 assert.equal(resolvePwaManualGuide({ ua: safariIphone, hasChromiumRuntime: true }), null);
+assert.equal(
+	needsChromiumMobileInstallGuide({ hasChromiumRuntime: true, ua: safariIphone }),
+	true
+);
+assert.equal(
+	needsChromiumMobileInstallGuide({ hasChromiumRuntime: true, ua: chromeAndroid }),
+	true
+);
+assert.equal(
+	needsChromiumMobileInstallGuide({ hasChromiumRuntime: true, ua: chromeDesktop }),
+	false
+);
+assert.equal(
+	needsChromiumMobileInstallGuide({ hasChromiumRuntime: false, ua: chromeAndroid }),
+	false
+);
 assert.equal(
 	isDesktopChromiumInstallSurface({ hasChromiumRuntime: true, finePointerHover: true }),
 	true

@@ -45,4 +45,4 @@
 
 ## Email confirm → standalone PWA / native (partially shipped)
 
-Confirm link redirects to origin `/auth` (web). Capacitor Mode B uses custom scheme `repdraft://auth` (patched at build). Opening the **Home Screen standalone PWA** from Mail is still unreliable on iOS. Universal Links / Android App Links are **not** required for store Mode B; revisit only if product insists on https→app without custom scheme.
+Confirm link redirects to origin `/auth` (web). Opening the **Home Screen standalone PWA** from Mail is still unreliable on iOS. Universal Links / Android App Links are out of scope unless product asks.

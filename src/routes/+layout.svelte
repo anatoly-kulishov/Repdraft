@@ -35,8 +35,6 @@
 	import { flushSyncOutbox, purgeUnsyncableOutboxEntries } from '$lib/storage/flushSyncOutbox';
 	import { whenIdle } from '$lib/browser/idle';
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
-	import { installNativeAuthDeepLinks } from '$lib/app/nativeAuthDeepLinks';
-	import { hideNativeSplash, initNativeChrome } from '$lib/app/nativeChrome';
 	import { isWebAnalyticsAvailable } from '$lib/app/native';
 	import { page } from '$app/stores';
 	import { onNavigate } from '$app/navigation';
@@ -120,8 +118,6 @@
 	});
 
 	onMount(() => {
-		const removeDeepLinks = installNativeAuthDeepLinks();
-		void initNativeChrome();
 		ensureWebAnalyticsInjected();
 		const unsubAnalytics = webAnalyticsEnabled.subscribe((on) => {
 			if (on) ensureWebAnalyticsInjected();
@@ -136,15 +132,7 @@
 		void auth.init();
 
 		/* Signal app hydrate — splash waits max(ready, MIN) then fades (see app.html). */
-		const win = window as Window & {
-			__repdraftHideBoot?: () => void;
-			__repdraftOnBootDismiss?: () => void;
-		};
-		/* Native: hide Capacitor splash when #pwa-boot actually dismisses (not on mount). */
-		win.__repdraftOnBootDismiss = () => {
-			void hideNativeSplash();
-		};
-		const hideBoot = win.__repdraftHideBoot;
+		const hideBoot = (window as Window & { __repdraftHideBoot?: () => void }).__repdraftHideBoot;
 		if (typeof hideBoot === 'function') {
 			hideBoot();
 		} else {
@@ -154,7 +142,6 @@
 				boot.classList.add('is-done');
 				window.setTimeout(() => boot.remove(), 220);
 			}
-			void hideNativeSplash();
 		}
 
 		const onOnline = () => {
@@ -199,7 +186,6 @@
 
 		return () => {
 			unsubAnalytics();
-			removeDeepLinks();
 			window.removeEventListener('online', onOnline);
 			window.removeEventListener('repdraft:outbox', onOutbox);
 			document.removeEventListener('visibilitychange', onVisible);
@@ -303,11 +289,11 @@
 			class:shell-main--flow={hideMobileHeader}
 			tabindex="-1"
 		>
-			{@render children()}
-			{#if path === '/' || !hideMobileHeader}
-				<!-- Footer slot: after page content, above tab bar. -->
+			{#if path === '/'}
+				<!-- Home only: one high-visibility install prompt, not on every tab. -->
 				<PwaInstallHint />
 			{/if}
+			{@render children()}
 		</main>
 
 		{#if showMediaAttribution}

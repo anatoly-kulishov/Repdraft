@@ -7,12 +7,7 @@ import {
 	type AppLocale
 } from '$lib/i18n/locale';
 
-/**
- * Capacitor static SPA: no SSR (PUBLIC_APP_NATIVE is inlined by vite define).
- * Do not use process.env.APP_TARGET here — Vite replaces process.env with {} and ssr stays true.
- */
-export const ssr =
-	import.meta.env.PUBLIC_APP_NATIVE !== '1' && import.meta.env.PUBLIC_APP_NATIVE !== 'true';
+export const ssr = true;
 
 function clientLocale(): AppLocale {
 	if (!browser) return 'ru';
@@ -27,10 +22,7 @@ function clientLocale(): AppLocale {
 	return detectBrowserLocale();
 }
 
-/**
- * Web: seoLocale from +layout.server (cookie / Accept-Language).
- * Native SPA: no server layout — use localStorage / navigator.
- */
+/** seoLocale from +layout.server (cookie / Accept-Language), else client locale. */
 export const load: LayoutLoad = ({ data }) => ({
 	...data,
 	seoLocale: data.seoLocale ?? clientLocale()

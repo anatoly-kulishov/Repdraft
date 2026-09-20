@@ -39,12 +39,7 @@ function corsHeaders(request: Request): HeadersInit {
 		'Access-Control-Allow-Headers': 'Authorization, Content-Type, Accept',
 		'Access-Control-Max-Age': '86400'
 	};
-	if (
-		!origin ||
-		origin.startsWith('capacitor://') ||
-		origin.startsWith('ionic://') ||
-		allow.includes(origin)
-	) {
+	if (!origin || allow.includes(origin)) {
 		headers['Access-Control-Allow-Origin'] = origin || '*';
 		if (origin) headers.Vary = 'Origin';
 	}
