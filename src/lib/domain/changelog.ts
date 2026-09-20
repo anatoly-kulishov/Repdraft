@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.18.0',
+		highlights: {
+			ru: [
+				'Черновик с ИИ: опиши тренировку словами - соберём план из каталога',
+				'Вход с пустых тренировок и из конструктора',
+				'Шаблоны зон (грудь+трицепс, спина+бицепс) и фильтр по мышцам',
+				'Сценарии в профиле для всех; нативный splash без белой вспышки'
+			],
+			en: [
+				'Draft with AI: describe a workout in words - we build a catalog plan',
+				'Entry from empty workouts and from the builder',
+				'Zone templates (chest+triceps, back+biceps) and muscle filtering',
+				'Scenarios in profile for everyone; native splash without a white flash'
+			]
+		}
+	},
+	{
 		version: '0.17.9',
 		highlights: {
 			ru: [

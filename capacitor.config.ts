@@ -12,7 +12,8 @@ const config: CapacitorConfig = {
 	webDir: 'build',
 	plugins: {
 		SplashScreen: {
-			launchAutoHide: true,
+			/* Keep native splash until web boot dismisses (avoids white→dark double screen). */
+			launchAutoHide: false,
 			backgroundColor: '#0B0B0C',
 			showSpinner: false
 		},

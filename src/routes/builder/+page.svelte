@@ -13,7 +13,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
-	import { BUILDER_ADD_EXERCISE_HREF, WORKOUTS_HREF } from '$lib/domain/catalogLinks';
+	import { AI_DRAFT_HREF, BUILDER_ADD_EXERCISE_HREF, WORKOUTS_HREF } from '$lib/domain/catalogLinks';
 	import { PLAN_NAME_MAX, clampPlanName } from '$lib/domain/inputLimits';
 	import type { ExerciseIndexItem, WorkoutExercise } from '$lib/domain/types';
 	import { altGroupMemberRole, groupMemberRole, workoutPlanContentEqual } from '$lib/domain/workout';
@@ -33,7 +33,7 @@
 	import { browser } from '$app/environment';
 	import { createDelayedTrue } from '$lib/browser/delayedTrue.svelte';
 	import { readDraft, peekBuilderDraftExerciseCount } from '$lib/storage/localWorkoutRepository';
-	import { Plus, Save, Trash2, ArrowLeft, Layers, ListTree } from '@lucide/svelte';
+	import { Plus, Save, Trash2, ArrowLeft, Layers, ListTree, Sparkles } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -354,7 +354,14 @@
 					description={translate(lang, 'builder.emptyDesc')}
 					actionHref={BUILDER_ADD_EXERCISE_HREF}
 					actionLabel={translate(lang, 'builder.addExerciseShort')}
-				/>
+				>
+					{#snippet actions()}
+						<AppButton href={AI_DRAFT_HREF} variant="secondary" block>
+							<LucideIcon icon={Sparkles} size={ICON_SMALL} />
+							{translate(lang, 'builder.createWithAi')}
+						</AppButton>
+					{/snippet}
+				</EmptyState>
 			{:else}
 				<div class="builder-section-head hidden lg:flex">
 					<p class="section-title">{translate(lang, 'builder.exercisesSection')}</p>

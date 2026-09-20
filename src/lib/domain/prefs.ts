@@ -3,7 +3,7 @@
 export const REST_SOUND_STORAGE_KEY = 'repdraft:rest-sound';
 export const WEB_ANALYTICS_STORAGE_KEY = 'repdraft:web-analytics';
 export const TESTER_MODE_STORAGE_KEY = 'repdraft:tester-mode';
-/** Tap app version this many times to unlock wipe / scenarios tools. */
+/** Tap app version this many times to unlock wipe / stress backup tools. */
 export const TESTER_MODE_UNLOCK_TAPS = 7;
 export const INSTALL_HINT_DISMISSED_KEY = 'repdraft:install-hint-dismissed';
 export const PWA_INSTALLED_KEY = 'repdraft:pwa-installed';
@@ -18,7 +18,7 @@ export function parseWebAnalyticsEnabled(raw: string | null | undefined): boolea
 	return raw === '1' || raw === 'true';
 }
 
-/** Opt-in tester tools (wipe, stress backup, scenarios). Off by default. */
+/** Opt-in tester tools (wipe, stress backup). Off by default. */
 export function parseTesterModeEnabled(raw: string | null | undefined): boolean {
 	return raw === '1' || raw === 'true';
 }

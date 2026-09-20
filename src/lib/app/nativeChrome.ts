@@ -2,7 +2,7 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { isNativeApp } from '$lib/app/native';
 
-/** Status bar + splash polish for Apple 4.2 / store shells. */
+/** Status bar polish for Apple 4.2 / store shells. Splash stays until hideNativeSplash. */
 export async function initNativeChrome(): Promise<void> {
 	if (!isNativeApp()) return;
 	try {
@@ -11,8 +11,13 @@ export async function initNativeChrome(): Promise<void> {
 	} catch {
 		/* web or unsupported */
 	}
+}
+
+/** Hide Capacitor splash after web boot is ready (paired with launchAutoHide: false). */
+export async function hideNativeSplash(): Promise<void> {
+	if (!isNativeApp()) return;
 	try {
-		await SplashScreen.hide();
+		await SplashScreen.hide({ fadeOutDuration: 150 });
 	} catch {
 		/* already hidden */
 	}

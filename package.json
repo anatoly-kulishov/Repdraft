@@ -1,7 +1,7 @@
 {
 	"name": "repdraft",
 	"private": true,
-	"version": "0.17.9",
+	"version": "0.18.0",
 	"description": "Gym workout log, exercise catalog, and workout builder - mobile-first PWA",
 	"type": "module",
 	"scripts": {
@@ -22,6 +22,9 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"check:domain": "node ./scripts/run-domain-selfchecks.mjs",
+		"check:ai": "node ./scripts/run-ai-selfchecks.mjs",
+		"check:retrieve": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/server/ai/retrieve.selfcheck.ts",
+		"build:embeddings": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./scripts/build-embeddings.ts",
 		"check:filters": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/filters.selfcheck.ts",
 		"check:workout": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/workout.selfcheck.ts",
 		"check:session": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/session.selfcheck.ts",

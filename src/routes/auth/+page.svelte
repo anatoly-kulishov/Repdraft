@@ -871,22 +871,23 @@
 					aria-busy={accountLocked || undefined}
 				>
 					<p class="profile-settings-group__title">{translate(lang, 'settings.accountTitle')}</p>
-					{#if showTesterTools}
-						<ProfileSettingsRow
-							icon={ClipboardList}
-							label={translate(lang, 'scenarios.link')}
-							href="/scenarios"
-							disabled={accountLocked}
-						/>
-					{/if}
+					<ProfileSettingsRow
+						icon={ClipboardList}
+						iconTone="accent"
+						label={translate(lang, 'scenarios.link')}
+						href="/scenarios"
+						disabled={accountLocked}
+					/>
 					<ProfileSettingsRow
 						icon={FileText}
+						iconTone="accent"
 						label={translate(lang, 'terms.link')}
 						href="/terms"
 						disabled={accountLocked}
 					/>
 					<ProfileSettingsRow
 						icon={Shield}
+						iconTone="accent"
 						label={translate(lang, 'privacy.link')}
 						href="/privacy"
 						disabled={accountLocked}
@@ -1220,20 +1221,21 @@
 		<div class="auth-account__section auth-account__section--legal">
 			<p class="auth-prefs__title">{translate(lang, 'auth.privacyHint')}</p>
 			<div class="auth-prefs__stack">
-				{#if showTesterTools}
-					<ProfileSettingsRow
-						icon={ClipboardList}
-						label={translate(lang, 'scenarios.link')}
-						href="/scenarios"
-					/>
-				{/if}
+				<ProfileSettingsRow
+					icon={ClipboardList}
+					iconTone="accent"
+					label={translate(lang, 'scenarios.link')}
+					href="/scenarios"
+				/>
 				<ProfileSettingsRow
 					icon={FileText}
+					iconTone="accent"
 					label={translate(lang, 'terms.link')}
 					href="/terms"
 				/>
 				<ProfileSettingsRow
 					icon={Shield}
+					iconTone="accent"
 					label={translate(lang, 'privacy.link')}
 					href="/privacy"
 				/>

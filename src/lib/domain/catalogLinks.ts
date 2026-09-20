@@ -118,6 +118,9 @@ export const BUILDER_ADD_EXERCISE_HREF = '/exercises?from=%2Fbuilder';
 /** Start a blank draft (clears leftover name/exercises from a previous edit). */
 export const BUILDER_NEW_HREF = '/builder?new=1';
 
+/** Product AI draft (brief → plan → builder). */
+export const AI_DRAFT_HREF = '/ai';
+
 export const WORKOUTS_HREF = '/workouts';
 export const WORKOUTS_HISTORY_HREF = '/workouts?tab=history';
 

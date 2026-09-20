@@ -81,7 +81,7 @@ export const webAnalyticsEnabled = createLocalBoolPref({
 	fallback: false
 });
 
-/** Opt-in local tester tools (wipe / stress backup / scenarios). Default off. */
+/** Opt-in local tester tools (wipe / stress backup). Default off. */
 export const testerModeEnabled = createLocalBoolPref({
 	key: TESTER_MODE_STORAGE_KEY,
 	parse: parseTesterModeEnabled,

@@ -36,7 +36,7 @@
 	import { whenIdle } from '$lib/browser/idle';
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { installNativeAuthDeepLinks } from '$lib/app/nativeAuthDeepLinks';
-	import { initNativeChrome } from '$lib/app/nativeChrome';
+	import { hideNativeSplash, initNativeChrome } from '$lib/app/nativeChrome';
 	import { isWebAnalyticsAvailable } from '$lib/app/native';
 	import { page } from '$app/stores';
 	import { onNavigate } from '$app/navigation';
@@ -70,6 +70,7 @@
 	function mobileFlowChrome(pathname: string, from: string | null, tab: string | null): boolean {
 		if (pathname.startsWith('/live/')) return true;
 		if (pathname.startsWith('/builder')) return true;
+		if (pathname === '/ai' || pathname.startsWith('/ai/')) return true;
 		if (pathname.startsWith('/exercise/')) return true;
 		if (pathname.startsWith('/catalog')) return true;
 		if (pathname.startsWith('/articles')) return true;
@@ -135,7 +136,15 @@
 		void auth.init();
 
 		/* Signal app hydrate — splash waits max(ready, MIN) then fades (see app.html). */
-		const hideBoot = (window as Window & { __repdraftHideBoot?: () => void }).__repdraftHideBoot;
+		const win = window as Window & {
+			__repdraftHideBoot?: () => void;
+			__repdraftOnBootDismiss?: () => void;
+		};
+		/* Native: hide Capacitor splash when #pwa-boot actually dismisses (not on mount). */
+		win.__repdraftOnBootDismiss = () => {
+			void hideNativeSplash();
+		};
+		const hideBoot = win.__repdraftHideBoot;
 		if (typeof hideBoot === 'function') {
 			hideBoot();
 		} else {
@@ -145,6 +154,7 @@
 				boot.classList.add('is-done');
 				window.setTimeout(() => boot.remove(), 220);
 			}
+			void hideNativeSplash();
 		}
 
 		const onOnline = () => {

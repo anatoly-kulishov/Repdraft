@@ -139,6 +139,10 @@
 			#pwa-boot.is-done {
 				opacity: 0;
 			}
+			/* Capacitor native: solid dark under OS splash — no second logo animation. */
+			#pwa-boot.is-native-shell .pwa-boot-icon-wrap {
+				display: none;
+			}
 		</style>
 		<script>
 			(function () {
@@ -601,6 +605,20 @@
 				 */
 				var MIN_MS = 900;
 				var MAX_MS = 2500;
+				var isNativeShell = false;
+				try {
+					isNativeShell = !!(
+						window.Capacitor &&
+						typeof window.Capacitor.isNativePlatform === 'function' &&
+						window.Capacitor.isNativePlatform()
+					);
+				} catch (capErr) {}
+				if (isNativeShell) {
+					boot.classList.add('is-native-shell');
+					/* OS splash covers until dismiss; no second animated boot. */
+					MIN_MS = 0;
+					MAX_MS = 1200;
+				}
 				/* Lock icon to visualViewport center after height stabilizes (iOS grows after first paint). */
 				var iconRevealed = false;
 				var applyBootIconPos = function () {
@@ -614,19 +632,19 @@
 					wrap.style.transform = 'translate(-50%, -50%)';
 				};
 				var revealBootIcon = function () {
-					if (iconRevealed) return;
+					if (iconRevealed || isNativeShell) return;
 					applyBootIconPos();
 					boot.classList.add('is-positioned');
 					iconRevealed = true;
 				};
 				var quietTimer = null;
 				var armQuietReveal = function () {
-					if (iconRevealed) return;
+					if (iconRevealed || isNativeShell) return;
 					if (quietTimer) window.clearTimeout(quietTimer);
 					quietTimer = window.setTimeout(revealBootIcon, 100);
 				};
 				var onViewportMaybeChanged = function () {
-					if (iconRevealed) return;
+					if (iconRevealed || isNativeShell) return;
 					applyBootIconPos();
 					armQuietReveal();
 				};
@@ -640,11 +658,24 @@
 					window.visualViewport.addEventListener('scroll', onViewportMaybeChanged);
 				}
 				window.addEventListener('resize', onViewportMaybeChanged);
+				var hideCapSplash = function () {
+					try {
+						if (typeof window.__repdraftOnBootDismiss === 'function') {
+							window.__repdraftOnBootDismiss();
+							return;
+						}
+						var Cap = window.Capacitor;
+						if (Cap && Cap.Plugins && Cap.Plugins.SplashScreen) {
+							Cap.Plugins.SplashScreen.hide({ fadeOutDuration: 150 });
+						}
+					} catch (splashErr) {}
+				};
 				var dismiss = function () {
 					if (done) return;
 					done = true;
 					boot.classList.add('is-done');
 					document.documentElement.removeAttribute('data-boot-pending');
+					hideCapSplash();
 					window.setTimeout(function () {
 						if (boot && boot.parentNode) boot.remove();
 						if (typeof window.__repdraftSyncVvChrome === 'function') {
@@ -671,8 +702,8 @@
 					if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 						var anims = boot.querySelectorAll('animate');
 						for (var i = 0; i < anims.length; i++) anims[i].remove();
-						MIN_MS = 120;
-						MAX_MS = 600;
+						MIN_MS = isNativeShell ? 0 : 120;
+						MAX_MS = isNativeShell ? 600 : 600;
 					}
 				} catch (rmErr) {}
 				window.setTimeout(function () {
