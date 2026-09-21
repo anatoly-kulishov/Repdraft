@@ -1,8 +1,9 @@
+import { PRERENDER_PUBLIC } from '$lib/seo/prerenderPublic';
 import { resolveSiteOrigin } from '$lib/seo/site';
 import type { RequestHandler } from './$types';
 
-/** SSR so Sitemap uses the live request origin (never sveltekit-prerender). */
-export const prerender = false;
+/** Prerender with resolveSiteOrigin (env or production fallback). */
+export const prerender = PRERENDER_PUBLIC;
 
 /** App-only routes: meta noindex plus robots Disallow belt-and-suspenders. */
 const ROBOTS_DISALLOW = [
