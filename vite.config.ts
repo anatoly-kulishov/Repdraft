@@ -9,11 +9,13 @@ const pkg = JSON.parse(readFileSync(fileURLToPath(new URL('./package.json', impo
 	version: string;
 };
 
-// Production prerender bakes canonical/og into HTML; without this env they become
-// http://sveltekit-prerender/... and search engines will not index the real site.
+// Production prerender bakes canonical/og into HTML. Without PUBLIC_SITE_URL those
+// tags are omitted (sveltekit-prerender is rejected). robots/sitemap are SSR and use
+// the live request origin. Warn instead of failing so a missing shared-env link cannot
+// block Production; set the var on the project and redeploy for full SEO.
 if (process.env.VERCEL_ENV === 'production' && !process.env.PUBLIC_SITE_URL?.trim()) {
-	throw new Error(
-		'PUBLIC_SITE_URL is required for Vercel production builds (SEO canonical / sitemap). Example: https://www.repdraft.xyz'
+	console.warn(
+		'[seo] PUBLIC_SITE_URL is unset on this Production build. Set https://www.repdraft.xyz on the Vercel project (not only Shared) and redeploy for canonical/og URLs.'
 	);
 }
 
