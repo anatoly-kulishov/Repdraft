@@ -74,6 +74,16 @@ if (sitemapResult.status !== 0) {
 	process.exit(sitemapResult.status ?? 1);
 }
 
+const siteOriginCheck = join(root, 'src/lib/seo/site.selfcheck.ts');
+const siteOriginResult = spawnSync(
+	process.execPath,
+	['--import', register, '--experimental-strip-types', siteOriginCheck],
+	{ stdio: 'inherit', cwd: root }
+);
+if (siteOriginResult.status !== 0) {
+	process.exit(siteOriginResult.status ?? 1);
+}
+
 const nativeUrlsCheck = join(root, 'src/lib/app/nativeUrls.selfcheck.ts');
 const nativeUrlsResult = spawnSync(
 	process.execPath,

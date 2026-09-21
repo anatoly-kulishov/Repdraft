@@ -1,14 +1,14 @@
 import { buildSitemapXml, collectSitemapEntries } from '$lib/seo/sitemap';
-import { PRERENDER_PUBLIC } from '$lib/seo/prerenderPublic';
-import { configuredSiteOrigin } from '$lib/seo/site';
+import { resolveSiteOrigin } from '$lib/seo/site';
 import type { RequestHandler } from './$types';
 
-export const prerender = PRERENDER_PUBLIC;
+/** SSR so <loc> uses the live request origin (never sveltekit-prerender). */
+export const prerender = false;
 
 export const GET: RequestHandler = async ({ url }) => {
-	const origin = configuredSiteOrigin() || url.origin;
+	const origin = resolveSiteOrigin(url.origin);
 	if (!origin) {
-		return new Response('Sitemap unavailable', { status: 404 });
+		return new Response('Sitemap unavailable: set PUBLIC_SITE_URL', { status: 503 });
 	}
 
 	const entries = await collectSitemapEntries();

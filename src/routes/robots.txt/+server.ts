@@ -1,8 +1,8 @@
-import { configuredSiteOrigin } from '$lib/seo/site';
-import { PRERENDER_PUBLIC } from '$lib/seo/prerenderPublic';
+import { resolveSiteOrigin } from '$lib/seo/site';
 import type { RequestHandler } from './$types';
 
-export const prerender = PRERENDER_PUBLIC;
+/** SSR so Sitemap uses the live request origin (never sveltekit-prerender). */
+export const prerender = false;
 
 /** App-only routes: meta noindex plus robots Disallow belt-and-suspenders. */
 const ROBOTS_DISALLOW = [
@@ -16,11 +16,11 @@ const ROBOTS_DISALLOW = [
 ] as const;
 
 export const GET: RequestHandler = async ({ url }) => {
-	const origin = configuredSiteOrigin() || url.origin;
+	const origin = resolveSiteOrigin(url.origin);
 	const lines = ['User-agent: *', ...ROBOTS_DISALLOW.map((path) => `Disallow: ${path}`)];
 
 	if (origin) {
-		lines.push('', `Sitemap: ${origin.replace(/\/$/, '')}/sitemap.xml`);
+		lines.push('', `Sitemap: ${origin}/sitemap.xml`);
 	}
 
 	return new Response(`${lines.join('\n')}\n`, {
