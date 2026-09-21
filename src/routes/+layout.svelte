@@ -20,7 +20,7 @@
 		ICON_TAB_STROKE,
 		ICON_TAB_STROKE_ACTIVE
 	} from '$lib/components/icons/sizes';
-	import { BookOpen, ClipboardList, Dumbbell, House } from '@lucide/svelte';
+	import { BookOpen, Dumbbell, House } from '@lucide/svelte';
 	import { isBuilderReturnPath } from '$lib/domain/catalogLinks';
 	import { showsExerciseMediaAttribution } from '$lib/domain/mediaAttribution';
 	import { translate } from '$lib/i18n/messages';
@@ -38,6 +38,9 @@
 	import { isWebAnalyticsAvailable } from '$lib/app/native';
 	import { page } from '$app/stores';
 	import { onNavigate } from '$app/navigation';
+	import { clearArmedExerciseMediaViewTransition } from '$lib/dom/exerciseMediaViewTransition';
+	import { clearArmedHierarchyViewTransitions } from '$lib/dom/hierarchyViewTransition';
+	import { shouldUseSharedViewTransition } from '$lib/dom/listDetailViewTransition';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { browser, dev } from '$app/environment';
@@ -65,6 +68,8 @@
 	let lang = $derived($resolvedLocale);
 	let isLight = $derived($appTheme === 'light');
 	let hasActiveSession = $derived(Boolean($live.ready && $live.session && !$live.session.finishedAt));
+
+	/** Immersive: hide logo header + tabbar together; back is the escape. */
 	function mobileFlowChrome(pathname: string, from: string | null, tab: string | null): boolean {
 		if (pathname.startsWith('/live/')) return true;
 		if (pathname.startsWith('/builder')) return true;
@@ -109,10 +114,25 @@
 		}
 		if (!document.startViewTransition) return;
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		const fromPath = navigation.from?.url.pathname ?? '';
+		const toPath = navigation.to?.url.pathname ?? '';
+		/* Unrelated routes: no root crossfade (light theme especially flashes). */
+		if (!shouldUseSharedViewTransition(fromPath, toPath)) {
+			clearArmedExerciseMediaViewTransition();
+			clearArmedHierarchyViewTransitions(toPath);
+			return;
+		}
 		return new Promise<void>((resolve) => {
-			document.startViewTransition(async () => {
+			const transition = document.startViewTransition(async () => {
 				resolve();
 				await navigation.complete;
+			});
+			void transition.finished.finally(() => {
+				/* Keep armed on detail destinations so reverse morph can match the list row. */
+				if (!toPath.startsWith('/exercise/')) {
+					clearArmedExerciseMediaViewTransition();
+				}
+				clearArmedHierarchyViewTransitions(toPath);
 			});
 		});
 	});
@@ -138,10 +158,7 @@
 		} else {
 			document.documentElement.removeAttribute('data-boot-pending');
 			const boot = document.getElementById('pwa-boot');
-			if (boot) {
-				boot.classList.add('is-done');
-				window.setTimeout(() => boot.remove(), 220);
-			}
+			if (boot) boot.remove();
 		}
 
 		const onOnline = () => {

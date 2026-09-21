@@ -161,6 +161,7 @@ export const SEARCH_SYNONYMS: Record<string, string[]> = {
 	бег: ['run', 'cardio', 'treadmill'],
 	беговая: ['run', 'cardio'],
 	велосипед: ['bike', 'cardio'],
+	велосипедные: ['bicycle', 'crunch', 'abs'],
 	велотренажер: ['bike', 'cardio'],
 	эллипс: ['elliptical', 'cardio'],
 	эллипсоид: ['elliptical', 'cardio'],

@@ -224,7 +224,10 @@
 			dirty = false;
 			syncedKey = `${exerciseId}:empty`;
 			toasts.showUndo(translate(lang, 'pr.deleted'), async () => {
-				await records.save(snapshot, noteOnly ? { allowNoteOnly: true } : undefined);
+				await records.save(snapshot, {
+					preserveUpdatedAt: true,
+					...(noteOnly ? { allowNoteOnly: true } : {})
+				});
 			}, 'info');
 		} catch (err) {
 			toasts.show(err instanceof Error ? err.message : translate(lang, 'pr.deleteFail'), 'error');

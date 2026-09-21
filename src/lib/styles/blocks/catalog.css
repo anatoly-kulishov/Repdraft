@@ -114,9 +114,11 @@
 	height: 0.9rem;
 }
 
-.content-page--catalog .catalog-grid .exercise-card-add:not(.exercise-card-add--inline):hover {
-	background: color-mix(in srgb, var(--catalog-card-action) 88%, #ffffff);
-	color: var(--catalog-card-action-ink);
+@media (hover: hover) and (pointer: fine) {
+	.content-page--catalog .catalog-grid .exercise-card-add:not(.exercise-card-add--inline):hover {
+		background: color-mix(in srgb, var(--catalog-card-action) 88%, #ffffff);
+		color: var(--catalog-card-action-ink);
+	}
 }
 
 .content-page--catalog .catalog-grid .exercise-card-add.is-in-draft:not(.exercise-card-add--inline) {
@@ -137,18 +139,17 @@
 	min-width: 0;
 	max-width: 100%;
 	min-height: calc(1.25em * 2);
-	overflow: hidden;
-	overflow-wrap: anywhere;
-	word-break: break-word;
-	display: -webkit-box;
-	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 2;
 	font-size: 0.8125rem;
 	/* 600 synthesizes cleanly if Inter Variable has not swapped in yet (Samsung). */
 	font-weight: 600;
 	line-height: 1.25;
 	letter-spacing: normal;
 	color: var(--catalog-grid-exercise-card-title-color);
+}
+
+.content-page--catalog .catalog-grid .exercise-card-grid-title__text {
+	min-width: 0;
+	max-width: 100%;
 }
 
 .content-page--catalog .catalog-grid .exercise-card-grid-meta {
@@ -657,10 +658,12 @@
 	display: block;
 }
 
-.exercise-card-add:hover {
-	background: var(--exercise-card-add-hover-bg);
-	color: var(--exercise-card-add-hover-color);
-	box-shadow: var(--exercise-card-add-hover-shadow);
+@media (hover: hover) and (pointer: fine) {
+	.exercise-card-add:hover {
+		background: var(--exercise-card-add-hover-bg);
+		color: var(--exercise-card-add-hover-color);
+		box-shadow: var(--exercise-card-add-hover-shadow);
+	}
 }
 
 .exercise-card-add:active {
@@ -916,7 +919,6 @@
 	min-width: 0;
 	max-width: 100%;
 	min-height: 0;
-	overflow: hidden;
 	overflow-wrap: anywhere;
 	word-break: break-word;
 	font-size: 0.9375rem;
@@ -2147,12 +2149,12 @@ html[data-nav-back] .zone-card__media-skel {
 }
 
 .soft-enter {
-	animation: softEnter 200ms ease;
+	animation: softEnter 160ms ease;
 }
 
 @keyframes softEnter {
 	from {
-		opacity: 0.55;
+		opacity: 0.88;
 	}
 	to {
 		opacity: 1;

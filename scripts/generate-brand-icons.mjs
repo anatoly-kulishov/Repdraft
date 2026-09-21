@@ -10,7 +10,7 @@
  * In-app BrandMark / boot splash must use the same MARK_INSET as icon.svg.
  */
 import sharp from 'sharp';
-import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -224,44 +224,111 @@ const maskableSvg = `<?xml version="1.0" encoding="UTF-8"?>
 `;
 writeFileSync(join(brandDir, 'app-icon-maskable.svg'), maskableSvg);
 
-/* iOS standalone launch: without these Safari shows a blank white screen before HTML. */
-const SPLASH_BG = { r: 11, g: 11, b: 12 }; // #0B0B0C
+/*
+ * iOS standalone launch: themed bg + boot-matched mark (same SVG as HTML #pwa-boot).
+ * Light OS → #F2F2F7; dark OS → #0B0B0C.
+ * Limit: media queries use prefers-color-scheme (OS), not in-app theme.
+ */
+const SPLASH_BG_DARK = { r: 11, g: 11, b: 12 }; // #0B0B0C
+const SPLASH_BG_LIGHT = { r: 242, g: 242, b: 247 }; // #F2F2F7
+const SPLASH_CACHE_BUST = '12';
 const splashDir = join(root, 'static/splash');
 mkdirSync(splashDir, { recursive: true });
+
 /** CSS width×height @ DPR → PNG pixel size. Portrait only (gym phone). */
 const APPLE_SPLASH = [
-	{ w: 1320, h: 2868, file: 'apple-splash-1320x2868.png' },
-	{ w: 1206, h: 2622, file: 'apple-splash-1206x2622.png' },
-	{ w: 1290, h: 2796, file: 'apple-splash-1290x2796.png' },
-	{ w: 1179, h: 2556, file: 'apple-splash-1179x2556.png' },
-	{ w: 1170, h: 2532, file: 'apple-splash-1170x2532.png' },
-	{ w: 1284, h: 2778, file: 'apple-splash-1284x2778.png' },
-	{ w: 1125, h: 2436, file: 'apple-splash-1125x2436.png' },
-	{ w: 1242, h: 2688, file: 'apple-splash-1242x2688.png' },
-	{ w: 828, h: 1792, file: 'apple-splash-828x1792.png' },
-	{ w: 750, h: 1334, file: 'apple-splash-750x1334.png' },
-	{ w: 640, h: 1136, file: 'apple-splash-640x1136.png' }
+	{ w: 1320, h: 2868, dw: 440, dh: 956, dpr: 3, file: '1320x2868' },
+	{ w: 1206, h: 2622, dw: 402, dh: 874, dpr: 3, file: '1206x2622' },
+	{ w: 1290, h: 2796, dw: 430, dh: 932, dpr: 3, file: '1290x2796' },
+	{ w: 1179, h: 2556, dw: 393, dh: 852, dpr: 3, file: '1179x2556' },
+	{ w: 1170, h: 2532, dw: 390, dh: 844, dpr: 3, file: '1170x2532' },
+	{ w: 1284, h: 2778, dw: 428, dh: 926, dpr: 3, file: '1284x2778' },
+	{ w: 1125, h: 2436, dw: 375, dh: 812, dpr: 3, file: '1125x2436' },
+	{ w: 1242, h: 2688, dw: 414, dh: 896, dpr: 3, file: '1242x2688' },
+	{ w: 828, h: 1792, dw: 414, dh: 896, dpr: 2, file: '828x1792' },
+	{ w: 750, h: 1334, dw: 375, dh: 667, dpr: 2, file: '750x1334' },
+	{ w: 640, h: 1136, dw: 320, dh: 568, dpr: 2, file: '640x1136' }
 ];
-for (const s of APPLE_SPLASH) {
-	const markSize = Math.round(Math.min(s.w, s.h) * 0.22);
-	const mark = await sharp(join(root, 'static/icon-512-v3.png')).resize(markSize, markSize).png().toBuffer();
-	await sharp({
-		create: { width: s.w, height: s.h, channels: 3, background: SPLASH_BG }
-	})
-		.composite([
-			{
-				input: mark,
-				top: Math.round((s.h - markSize) / 2),
-				left: Math.round((s.w - markSize) / 2)
-			}
-		])
-		.png()
-		.toFile(join(splashDir, s.file));
+const pulseB64 = mark512.toString('base64');
+/* Same plate as app.html #pwa-boot SVG (gradient + RP, rx 114). */
+async function bootMatchedMark(size) {
+	const svg = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="512" y2="512">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="62%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#c4b5fd"/>
+    </linearGradient>
+    <clipPath id="c"><rect width="512" height="512" rx="114" ry="114"/></clipPath>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect width="512" height="512" fill="url(#g)"/>
+    <image href="data:image/png;base64,${pulseB64}" x="0" y="0" width="512" height="512" preserveAspectRatio="xMidYMid meet"/>
+  </g>
+</svg>`);
+	return sharp(svg).png().toBuffer();
 }
+const splashLinks = [];
+for (const s of APPLE_SPLASH) {
+	const markSize = Math.round(120 * s.dpr);
+	const mark = await bootMatchedMark(markSize);
+	const darkFile = `apple-splash-${s.file}-dark.png`;
+	const lightFile = `apple-splash-${s.file}-light.png`;
+	const legacyFile = `apple-splash-${s.file}.png`;
+	const writeSplash = async (out, bg) => {
+		await sharp({
+			create: {
+				width: s.w,
+				height: s.h,
+				channels: 4,
+				background: { ...bg, alpha: 1 }
+			}
+		})
+			.composite([
+				{
+					input: mark,
+					top: Math.round((s.h - markSize) / 2),
+					left: Math.round((s.w - markSize) / 2)
+				}
+			])
+			.png()
+			.toFile(join(splashDir, out));
+	};
+	await writeSplash(darkFile, SPLASH_BG_DARK);
+	await writeSplash(lightFile, SPLASH_BG_LIGHT);
+	await writeSplash(legacyFile, SPLASH_BG_DARK);
+	const mediaBase = `(device-width: ${s.dw}px) and (device-height: ${s.dh}px) and (-webkit-device-pixel-ratio: ${s.dpr})`;
+	splashLinks.push(
+		`\t\t<link rel="apple-touch-startup-image" href="/splash/${lightFile}?v=${SPLASH_CACHE_BUST}" media="(prefers-color-scheme: light) and ${mediaBase}" />`,
+		`\t\t<link rel="apple-touch-startup-image" href="/splash/${darkFile}?v=${SPLASH_CACHE_BUST}" media="(prefers-color-scheme: dark) and ${mediaBase}" />`,
+		`\t\t<link rel="apple-touch-startup-image" href="/splash/${darkFile}?v=${SPLASH_CACHE_BUST}" media="${mediaBase}" />`
+	);
+}
+
+const appHtmlPath = join(root, 'src/app.html');
+const appHtml = readFileSync(appHtmlPath, 'utf8');
+const splashBlock = [
+	'\t\t<!-- apple-splash-links:start -->',
+	'\t\t<!-- iOS PWA launch: OS light/dark + boot-matched mark. Regenerated by npm run icons:pwa. -->',
+	...splashLinks,
+	'\t\t<!-- apple-splash-links:end -->'
+].join('\n');
+if (!appHtml.includes('<!-- apple-splash-links:start -->')) {
+	throw new Error('generate-brand-icons: missing apple-splash-links markers in src/app.html');
+}
+writeFileSync(
+	appHtmlPath,
+	appHtml.replace(
+		/<!-- apple-splash-links:start -->[\s\S]*?<!-- apple-splash-links:end -->/,
+		splashBlock
+	)
+);
 
 console.log('generate-brand-icons: ok', {
 	MARK_INSET,
 	ANY_ZOOM,
 	markBBox: { minX, minY, maxX, maxY, bw, bh },
-	appleSplash: APPLE_SPLASH.length
+	appleSplash: APPLE_SPLASH.length,
+	splashThemes: ['light', 'dark'],
+	splashCacheBust: SPLASH_CACHE_BUST
 });

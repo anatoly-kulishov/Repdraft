@@ -25,6 +25,7 @@ const checks = [
 	'localMergeConflict',
 	'catalogCover',
 	'exerciseName',
+	'exerciseInstructions',
 	'articles',
 	'cloudSync',
 	'prefs',

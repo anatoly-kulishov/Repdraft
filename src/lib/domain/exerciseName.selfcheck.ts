@@ -39,27 +39,27 @@ export function runExerciseNameSelfCheck(): void {
 	const smith = index.find((item) => item.id === '0770');
 	const smithFull = index.find((item) => item.id === '3281');
 	const smithSumo = index.find((item) => item.id === '3142');
-	if (!smith || exerciseName(smith, 'ru') !== 'Присед в машине Смита') {
-		throw new Error('smith squat should stay Присед в машине Смита');
+	if (!smith || exerciseName(smith, 'ru') !== 'Приседания в тренажёре Смита') {
+		throw new Error('smith squat should be Приседания в тренажёре Смита');
 	}
-	if (!smithFull || exerciseName(smithFull, 'ru') !== 'Полный присед в машине Смита') {
-		throw new Error('smith full squat should be Полный присед в машине Смита');
+	if (!smithFull || exerciseName(smithFull, 'ru') !== 'Полные приседания в тренажёре Смита') {
+		throw new Error('smith full squat should be Полные приседания в тренажёре Смита');
 	}
-	if (!smithSumo || exerciseName(smithSumo, 'ru') !== 'Сумо-присед в машине Смита') {
-		throw new Error('smith sumo squat should be Сумо-присед в машине Смита');
+	if (!smithSumo || exerciseName(smithSumo, 'ru') !== 'Сумо-приседания в тренажёре Смита') {
+		throw new Error('smith sumo squat should be Сумо-приседания в тренажёре Смита');
 	}
 
 	const smithSeatedPress = index.find((item) => item.id === '0765');
 	const smithPressDup = index.find((item) => item.id === '0766');
 	if (
 		!smithSeatedPress ||
-		exerciseName(smithSeatedPress, 'ru') !== 'Сидя жим плечами в машине Смита'
+		exerciseName(smithSeatedPress, 'ru') !== 'Жим штанги сидя в тренажёре Смита'
 	) {
-		throw new Error('0765 should stay Сидя жим плечами в машине Смита');
+		throw new Error('0765 should be Жим штанги сидя в тренажёре Смита');
 	}
 	if (
 		!smithPressDup ||
-		exerciseName(smithPressDup, 'ru') !== 'Сидя жим плечами в машине Смита (другой ракурс)'
+		exerciseName(smithPressDup, 'ru') !== 'Жим штанги сидя в тренажёре Смита (другой ракурс)'
 	) {
 		throw new Error('0766 should be marked as другой ракурс of seated smith press');
 	}
@@ -104,9 +104,9 @@ export function runExerciseNameSelfCheck(): void {
 	}
 
 	const lateral = index.find((item) => item.id === '0150');
-	if (!lateral || exerciseName(lateral, 'ru') !== 'Тяга верхнего блока с грифом') {
+	if (!lateral || exerciseName(lateral, 'ru') !== 'Вертикальная тяга широким хватом') {
 		throw new Error(
-			`cable bar lateral pulldown should be «Тяга верхнего блока с грифом», got ${lateral ? exerciseName(lateral, 'ru') : 'missing'}`
+			`cable bar lateral pulldown should be «Вертикальная тяга широким хватом», got ${lateral ? exerciseName(lateral, 'ru') : 'missing'}`
 		);
 	}
 	const wideAngle = index.find((item) => item.id === '1587');
@@ -124,10 +124,43 @@ export function runExerciseNameSelfCheck(): void {
 		throw new Error(`тяга must agree in gender, got ${exerciseName(lowRow, 'ru')}`);
 	}
 
+	const delavierNames: Array<[string, string]> = [
+		['0025', 'Жим штанги лёжа'],
+		['0052', 'JM-жим со штангой'],
+		['0201', 'Жим к низу в блочном тренажёре'],
+		['0031', 'Подъём штанги на бицепс стоя'],
+		['0042', 'Приседания со штангой на груди'],
+		['0043', 'Приседания со штангой'],
+		['0180', 'Горизонтальная тяга в блочном тренажёре'],
+		['0861', 'Горизонтальная тяга в блочном тренажёре (другой ракурс)'],
+		['0334', 'Разведение гантелей стоя'],
+		['0060', 'Французский жим лёжа'],
+		['0044', 'Гудморнинг'],
+		['0203', 'Тяга блока на заднюю дельту'],
+		['0003', 'Велосипедные скручивания'],
+		['0662', 'Отжимания от пола'],
+		['0284', 'Подъёмы на носки в наклоне']
+	];
+	for (const [id, expected] of delavierNames) {
+		const item = index.find((row) => row.id === id);
+		const got = item ? exerciseName(item, 'ru') : 'missing';
+		if (got !== expected) {
+			throw new Error(`${id} should be «${expected}», got ${got}`);
+		}
+	}
+
+	const pushdown = index.find((item) => item.id === '0201');
+	if (!pushdown || !exerciseName(pushdown, 'ru').includes('к низу')) {
+		throw new Error('cable pushdown must use spaced «к низу», not «книзу»');
+	}
+	if (exerciseName(pushdown!, 'ru').includes('книзу')) {
+		throw new Error('cable pushdown must not contain glued «книзу»');
+	}
+
 	const donkey = index.find((item) => item.id === '0284');
-	if (!donkey || exerciseName(donkey, 'ru') !== 'Подъём на носки «ослик»') {
+	if (!donkey || exerciseName(donkey, 'ru') !== 'Подъёмы на носки в наклоне') {
 		throw new Error(
-			`donkey calf raise should be «Подъём на носки «ослик»», got ${donkey ? exerciseName(donkey, 'ru') : 'missing'}`
+			`donkey calf raise should be «Подъёмы на носки в наклоне», got ${donkey ? exerciseName(donkey, 'ru') : 'missing'}`
 		);
 	}
 }

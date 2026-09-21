@@ -24,12 +24,14 @@
 		reorderOver,
 		busyId,
 		busyOp,
+		exiting = false,
 		leadingActions,
 		trailingActions,
 		onOpen,
 		onPin,
 		onDuplicate,
 		onRemove,
+		onExitComplete,
 		onPreview,
 		onReorder
 	}: {
@@ -43,18 +45,20 @@
 		reorderOver: number | null;
 		busyId: string | null;
 		busyOp: 'copy' | 'delete' | null;
+		exiting?: boolean;
 		leadingActions: SwipeRowAction[];
 		trailingActions: SwipeRowAction[];
 		onOpen: (plan: WorkoutPlan) => void;
 		onPin: (planId: string, planName: string) => void;
 		onDuplicate: (planId: string) => void;
 		onRemove: (planId: string, planName: string) => void;
+		onExitComplete?: (planId: string) => void;
 		onPreview: (plan: WorkoutPlan) => void;
 		onReorder: (from: number, to: number) => void;
 	} = $props();
 
 	let muscles = $derived(planTargetSummary(plan, indexById, lang));
-	let rowBusy = $derived(busyId !== null);
+	let rowBusy = $derived(busyId !== null || exiting);
 </script>
 
 <li
@@ -65,11 +69,17 @@
 >
 	<SwipeToDelete
 		disabled={rowBusy || reorderFrom !== null}
+		{exiting}
+		onExitComplete={() => onExitComplete?.(plan.id)}
 		{leadingActions}
 		actions={trailingActions}
 	>
 		<div class="entity-row">
-			<a class="entity-row__main" href={`/workouts/${plan.id}`} onclick={() => onPreview(plan)}>
+			<a
+				class="entity-row__main"
+				href={`/workouts/${plan.id}`}
+				onclick={() => onPreview(plan)}
+			>
 				<span class="entity-row__title">{plan.name}</span>
 				{#if muscles}
 					<span class="entity-row__meta">{muscles}</span>

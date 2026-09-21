@@ -16,6 +16,11 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { page } from '$app/stores';
+	import {
+		armArticleCoverViewTransition,
+		armedArticleCoverVtId,
+		articleCoverViewTransitionName
+	} from '$lib/dom/hierarchyViewTransition';
 
 	let { data } = $props();
 
@@ -42,6 +47,15 @@
 	let tone = $derived(article.coverTone ?? 'lime');
 	let siteOrigin = $derived(resolveSiteOrigin($page.url.origin));
 	let articleJsonLd = $derived(buildArticleJsonLd(siteOrigin, seoArticle, seoLang));
+	let coverVtName = $derived(
+		$armedArticleCoverVtId === article.slug
+			? articleCoverViewTransitionName(article.slug)
+			: undefined
+	);
+
+	$effect(() => {
+		armArticleCoverViewTransition(article.slug);
+	});
 </script>
 
 <SeoHead
@@ -61,7 +75,9 @@
 
 	<div class="article-page__hero panel" data-tone={tone}>
 		<div class="article-page__hero-inner">
-			<ArticleCover {article} />
+			<div class="article-page__cover-vt" style:view-transition-name={coverVtName}>
+				<ArticleCover {article} />
+			</div>
 			<div class="article-page__hero-text">
 				<p class="article-page__excerpt">{article.excerpt}</p>
 			</div>

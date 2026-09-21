@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.18.5',
+		highlights: {
+			ru: [
+				'Удаление из списка: «Отменить» возвращает строку на то же место',
+				'Длинные названия: тап по обрезанному тексту показывает полное имя',
+				'Плавные переходы к упражнению, плану и истории',
+				'Запуск: светлый и тёмный splash совпадают с темой'
+			],
+			en: [
+				'List delete: Undo puts the row back in the same spot',
+				'Long names: tap a truncated title to show the full name',
+				'Smoother transitions into exercise, plan, and history',
+				'Launch: light and dark splash match the theme'
+			]
+		}
+	},
+	{
 		version: '0.18.4',
 		highlights: {
 			ru: [

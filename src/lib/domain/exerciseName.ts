@@ -105,7 +105,9 @@ const AGREEMENT_PAIRS: Array<[string, string]> = [
 	['обратный скручивание', 'обратное скручивание'],
 	['боковой скручивание', 'боковое скручивание'],
 	['с канатом рукоятью', 'с канатной рукоятью'],
-	['осла подъём на носки', 'подъём на носки «ослик»']
+	['осла подъём на носки', 'подъём на носки «ослик»'],
+	['в машине смита', 'в тренажёре Смита'],
+	['книзу', 'к низу']
 ];
 
 function replacePhrasePreserveCap(hay: string, from: string, to: string): string {
@@ -129,13 +131,21 @@ function polishRuDisplayName(ruName: string, englishRaw: string): string {
 		.replace(/силовой планка/gi, 'планка на прямых руках')
 		.replace(/передний планка/gi, 'планка')
 		.replace(/обратный планка/gi, 'обратная планка')
-		.replace(/сидя широкий под углом поза/gi, 'поза широкого угла сидя');
+		.replace(/сидя широкий под углом поза/gi, 'поза широкого угла сидя')
+		.replace(/\bв машине Смита\b/gi, 'в тренажёре Смита')
+		.replace(/\bкнизу\b/gi, 'к низу');
 	for (const [from, to] of AGREEMENT_PAIRS) {
 		normalized = replacePhrasePreserveCap(normalized, from, to);
 	}
-	normalized = normalized.replace(/\s{2,}/g, ' ').trim();
+	normalized = normalized
+		.replace(/\s{2,}/g, ' ')
+		.replace(/(?<=\S)-\s+(?=\S)/g, '-')
+		.trim();
 	if (normalized) {
-		normalized = normalized[0]!.toUpperCase() + normalized.slice(1);
+		// Keep leading Latin acronyms (JM-жим); only title-case Cyrillic starts.
+		if (!/^[A-Za-z]{1,3}(?=-|\b)/.test(normalized)) {
+			normalized = normalized[0]!.toUpperCase() + normalized.slice(1);
+		}
 	}
 	const qualified = withTechniqueQualifier(normalized, englishRaw);
 	return qualified.replace(/(?:\s*\(другой ракурс\))+/gi, ' (другой ракурс)');
@@ -147,6 +157,11 @@ function withTechniqueQualifier(ruName: string, englishRaw: string): string {
 	for (const marker of TECHNIQUE_MARKERS) {
 		if (!marker.test.test(englishRaw)) continue;
 		if (ruNorm.includes(marker.ru.toLowerCase())) continue;
+		// «полный» / «полные приседания» already cover full-squat marker.
+		if (marker.ru === 'полный' && /полн/.test(ruNorm)) continue;
+		// Delavier canonical barbell squat is just «Приседания со штангой» (EN still says full squat).
+		if (marker.ru === 'полный' && /^приседания со штангой/.test(ruNorm)) continue;
+		if (marker.ru === 'чуть согнутые ноги' && /прям/.test(ruNorm)) continue;
 		extras.push(marker.ru);
 	}
 	if (extras.length === 0) return ruName;

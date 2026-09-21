@@ -28,30 +28,34 @@ function readStoredTheme(): AppTheme {
 	}
 }
 
-/** Safari often ignores setAttribute on an existing theme-color tag. */
+/** Update meta in place — remove/recreate flashes the iOS status bar. */
 function writeMeta(name: string, content: string) {
-	document.querySelectorAll(`meta[name="${name}"]`).forEach((el) => el.remove());
+	const existing = document.querySelector(`meta[name="${name}"]`);
+	if (existing) {
+		if (existing.getAttribute('content') !== content) {
+			existing.setAttribute('content', content);
+		}
+		return;
+	}
 	const meta = document.createElement('meta');
 	meta.setAttribute('name', name);
 	meta.setAttribute('content', content);
 	document.head.appendChild(meta);
 }
 
-/** Applies theme to `documentElement`, meta theme-color, and boot splash if present. */
+/** Applies theme to `documentElement` and meta theme-color. */
 export function applyAppTheme(theme: AppTheme) {
 	if (!browser) return;
 	const root = document.documentElement;
 	root.dataset.theme = theme;
 	root.classList.toggle('dark', theme === 'dark');
-	root.style.colorScheme = theme;
 	const bg = THEME_META_COLORS[theme];
+	root.style.setProperty('--boot-bg', bg);
+	root.style.colorScheme = theme;
 	root.style.backgroundColor = bg;
 	document.body.style.backgroundColor = bg;
 	writeMeta('theme-color', bg);
-	// Page paints the bar; iOS won't live-update an opaque system bar.
 	writeMeta('apple-mobile-web-app-status-bar-style', 'black-translucent');
-	const boot = document.getElementById('pwa-boot');
-	if (boot) boot.style.background = bg;
 	try {
 		document.cookie = `${THEME_COOKIE}=${theme}; path=/; Max-Age=31536000; SameSite=Lax`;
 	} catch {

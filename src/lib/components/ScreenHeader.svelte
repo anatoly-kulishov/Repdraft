@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ExpandableText from '$lib/components/ExpandableText.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_PRIMARY } from '$lib/components/icons/sizes';
 	import { backLabelForHref } from '$lib/i18n/backLabel';
@@ -18,6 +19,8 @@
 		fixed = false,
 		/** Nested inside CatalogListStickyChrome: no own sticky/bg/shadow. */
 		embedded = false,
+		/** Collapsed line clamp for long titles (tap expands). */
+		titleLines = 2,
 		actions
 	}: {
 		title: string;
@@ -32,14 +35,35 @@
 		/** Pin to viewport top on mobile sub-routes (long scroll lists). */
 		fixed?: boolean;
 		embedded?: boolean;
+		titleLines?: number;
 		actions?: import('svelte').Snippet;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
 	let crumbLabel = $derived(backLabel ?? backLabelForHref(backHref, lang));
+	let headerEl = $state<HTMLElement | null>(null);
+	let spacerPx = $state<number | null>(null);
+
+	$effect(() => {
+		if (!fixed || embedded) {
+			spacerPx = null;
+			return;
+		}
+		const node = headerEl;
+		if (!node || typeof ResizeObserver === 'undefined') return;
+		const sync = () => {
+			/* Chrome only; gap added in style via CSS var (rem-safe). */
+			spacerPx = Math.ceil(node.getBoundingClientRect().height);
+		};
+		sync();
+		const ro = new ResizeObserver(sync);
+		ro.observe(node);
+		return () => ro.disconnect();
+	});
 </script>
 
 <header
+	bind:this={headerEl}
 	class="screen-header {className}"
 	class:screen-header--fixed={fixed && !embedded}
 	class:screen-header--embedded={embedded}
@@ -78,8 +102,21 @@
 			</div>
 		{/if}
 	</div>
-	<h1 class="screen-header-title" id={titleId}>{title}</h1>
+	<ExpandableText
+		as="h1"
+		id={titleId}
+		text={title}
+		lines={titleLines}
+		class="screen-header-title"
+		titleAttr
+	/>
 </header>
 {#if fixed && !embedded}
-	<div class="screen-header-spacer lg:hidden" aria-hidden="true"></div>
+	<div
+		class="screen-header-spacer lg:hidden"
+		aria-hidden="true"
+		style:height={spacerPx != null
+			? `calc(${spacerPx}px + var(--screen-header-content-gap))`
+			: undefined}
+	></div>
 {/if}

@@ -36,6 +36,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, untrack, type Snippet } from 'svelte';
+	import { get } from 'svelte/store';
 	import { Bookmark, Trash2 } from '@lucide/svelte';
 
 	let {
@@ -183,7 +184,14 @@
 	let equipmentOptions = $derived(catalogFiltered.equipment);
 	let targetOptions = $derived(catalogFiltered.targets);
 	let filtered = $derived(catalogFiltered.items);
-	let visible = $derived(filtered);
+	/** Saved: bookmark array order so undo hits the same hole. */
+	let visible = $derived.by(() => {
+		if (!savedOnly) return filtered;
+		const order = new Map($bookmarks.map((id, i) => [id, i]));
+		return [...filtered].sort(
+			(a, b) => (order.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(b.id) ?? Number.MAX_SAFE_INTEGER)
+		);
+	});
 	let useSections = $derived(!savedOnly && !filters.query.trim() && visible.length > 0);
 	let frequentItems = $derived(useSections ? pickFrequent(visible, statsMap, 12) : []);
 	let frequentIds = $derived(new Set(frequentItems.map((ex) => ex.id)));
@@ -449,15 +457,38 @@
 	}
 
 	let unbookmarkBusyId = $state<string | null>(null);
+	let exitingIds = $state<Set<string>>(new Set());
+	let pendingUnbookmarks = new Map<string, { bookmarkIndex: number; displayIndex: number }>();
 
-	async function unbookmark(exerciseId: string) {
-		if (unbookmarkBusyId) return;
+	function requestUnbookmark(exerciseId: string) {
+		if (unbookmarkBusyId || exitingIds.has(exerciseId) || pendingUnbookmarks.has(exerciseId)) {
+			return;
+		}
+		pendingUnbookmarks.set(exerciseId, {
+			bookmarkIndex: get(bookmarks).indexOf(exerciseId),
+			displayIndex: visible.findIndex((ex) => ex.id === exerciseId)
+		});
+		exitingIds = new Set(exitingIds).add(exerciseId);
+	}
+
+	async function onUnbookmarkExitComplete(exerciseId: string) {
+		const pending = pendingUnbookmarks.get(exerciseId);
+		if (!pending) {
+			exitingIds = new Set([...exitingIds].filter((x) => x !== exerciseId));
+			return;
+		}
+		pendingUnbookmarks.delete(exerciseId);
 		unbookmarkBusyId = exerciseId;
 		try {
 			await bookmarks.toggle(exerciseId);
 			toasts.showUndo(
 				translate(lang, 'bookmarks.removed'),
-				() => void bookmarks.toggle(exerciseId),
+				() => {
+					if (pending.displayIndex >= 0) {
+						visibleLimit = Math.max(visibleLimit, pending.displayIndex + 1);
+					}
+					return bookmarks.restoreAt(exerciseId, pending.bookmarkIndex);
+				},
 				'info',
 				undefined,
 				'bookmark'
@@ -466,6 +497,7 @@
 			toasts.show(translate(lang, 'errors.generic'), 'error');
 		} finally {
 			unbookmarkBusyId = null;
+			exitingIds = new Set([...exitingIds].filter((x) => x !== exerciseId));
 		}
 	}
 
@@ -756,8 +788,10 @@
 					<SwipeToDelete
 						label={translate(lang, 'bookmarks.remove')}
 						busy={unbookmarkBusyId === exercise.id}
-						disabled={unbookmarkBusyId !== null && unbookmarkBusyId !== exercise.id}
-						onDelete={() => void unbookmark(exercise.id)}
+						disabled={unbookmarkBusyId !== null || exitingIds.has(exercise.id)}
+						exiting={exitingIds.has(exercise.id)}
+						onDelete={() => requestUnbookmark(exercise.id)}
+						onExitComplete={() => void onUnbookmarkExitComplete(exercise.id)}
 					>
 						<div class="records-list-card">
 							<div class="records-list-body">
@@ -795,11 +829,11 @@
 							<AppButton
 								variant="danger"
 								class="records-list-delete"
-								disabled={unbookmarkBusyId !== null}
+								disabled={unbookmarkBusyId !== null || exitingIds.has(exercise.id)}
 								aria-busy={unbookmarkBusyId === exercise.id}
 								aria-label={translate(lang, 'bookmarks.remove')}
 								title={translate(lang, 'bookmarks.remove')}
-								onclick={() => void unbookmark(exercise.id)}
+								onclick={() => requestUnbookmark(exercise.id)}
 							>
 								{#if unbookmarkBusyId === exercise.id}
 									<Spinner size="sm" block={false} />

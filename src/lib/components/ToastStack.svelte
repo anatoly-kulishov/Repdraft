@@ -364,23 +364,26 @@
 	}
 
 	.toast-action {
-		align-self: flex-start;
-		font-size: 0.8125rem;
-		font-weight: 700;
-		text-decoration: underline;
-		text-underline-offset: 0.12em;
-		color: inherit;
-		opacity: 0.95;
+		align-self: center;
+		flex-shrink: 0;
 		margin: 0;
-		padding: 0;
+		padding: 0.35rem 0;
+		min-height: 2rem;
 		border: 0;
 		background: transparent;
-		cursor: pointer;
 		font: inherit;
+		font-size: 0.8125rem;
+		font-weight: 650;
+		letter-spacing: -0.01em;
+		color: var(--color-accent-text);
+		text-decoration: none;
+		cursor: pointer;
+		white-space: nowrap;
 	}
 
 	.toast-action:hover {
-		opacity: 1;
+		text-decoration: underline;
+		text-underline-offset: 0.12em;
 	}
 
 	/* Telegram-style undo snackbar */

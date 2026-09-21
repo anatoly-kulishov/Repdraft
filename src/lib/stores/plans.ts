@@ -149,8 +149,8 @@ import { resolvedLocale } from './locale';
 			});
 			await refresh({ cloud: cloudOk && isCloudMode() });
 		},
-		async restorePlan(plan: WorkoutPlan, orderIndex = -1) {
-			const cloudOk = await mirrorCloudWrite({
+		async restorePlan(plan: WorkoutPlan, orderIndex = -1, orderSnapshot?: string[]) {
+			await mirrorCloudWrite({
 				localWrite: () => localWorkoutRepository.save(plan),
 				cloudWrite: isCloudPersistableId(plan.id)
 					? () => supabaseWorkoutRepository.save(plan)
@@ -159,11 +159,43 @@ import { resolvedLocale } from './locale';
 				label: 'plans.restorePlan',
 				outboxOnFail: isCloudPersistableId(plan.id)
 					? { kind: 'plan.save', id: plan.id }
-					: undefined
+					: undefined,
+				announceLocalSave: false
 			});
-			if (orderIndex >= 0) planOrder.insertAt(plan.id, orderIndex);
-			else planOrder.prepend(plan.id);
-			await refresh({ cloud: cloudOk && isCloudMode() });
+			const applyOrder = () => {
+				if (orderSnapshot && orderSnapshot.length > 0) {
+					const order = [...orderSnapshot];
+					if (!order.includes(plan.id)) {
+						const at = Math.max(0, Math.min(orderIndex >= 0 ? orderIndex : 0, order.length));
+						order.splice(at, 0, plan.id);
+					}
+					planOrder.setOrder(order);
+				} else if (orderIndex >= 0) {
+					planOrder.insertAt(plan.id, orderIndex);
+				} else {
+					planOrder.prepend(plan.id);
+				}
+			};
+			applyOrder();
+			store.update((items) =>
+				sortPlansByUserOrder(
+					[...items.filter((p) => p.id !== plan.id), plan],
+					get(planOrder)
+				)
+			);
+			/* Skip cloud refresh: merge can append restored id at end if cloud lags. */
+			await refresh({ cloud: false });
+			/* Prior cloud refresh may have replaceAllPlans'd without this row — re-seed local. */
+			if (!get(store).some((p) => p.id === plan.id)) {
+				await localWorkoutRepository.save(plan);
+			}
+			applyOrder();
+			store.update((items) =>
+				sortPlansByUserOrder(
+					[...items.filter((p) => p.id !== plan.id), plan],
+					get(planOrder)
+				)
+			);
 		},
 		async duplicate(id: string): Promise<{ plan: WorkoutPlan; synced: boolean } | null> {
 			const plan =

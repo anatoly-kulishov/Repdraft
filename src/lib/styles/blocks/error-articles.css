@@ -230,6 +230,12 @@
 	margin-top: 0.05rem;
 }
 
+.article-card__cover-vt {
+	flex-shrink: 0;
+	align-self: flex-start;
+	line-height: 0;
+}
+
 .article-card .entity-row__chevron {
 	align-self: center;
 }
