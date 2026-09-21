@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://repdraft-zeta.vercel.app">Live app</a>
+  <a href="https://www.repdraft.xyz">Live app</a>
   ·
   <a href="#features">Features</a>
   ·
@@ -58,7 +58,7 @@ npm run dev
 Without `.env`, plans, sessions, and records stay in **`localStorage`**. With Supabase configured, the same UI syncs across devices.
 
 ```env
-PUBLIC_SITE_URL=https://repdraft-zeta.vercel.app
+PUBLIC_SITE_URL=https://www.repdraft.xyz
 PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 PUBLIC_SUPABASE_ANON_KEY=your_anon_or_publishable_key
 ```
@@ -73,7 +73,7 @@ On production, set the same variables and add your site URL to Supabase Auth (**
 | Styles | Tailwind CSS 4 |
 | Backend | [Supabase](https://supabase.com/) (optional auth & sync) |
 | Delivery | PWA (install to home screen) |
-| Hosting | Vercel (canonical: [repdraft-zeta.vercel.app](https://repdraft-zeta.vercel.app)) |
+| Hosting | Vercel (canonical: [www.repdraft.xyz](https://www.repdraft.xyz)) |
 
 Architecture and coding rules for contributors: **[AGENTS.md](./AGENTS.md)**.
 
@@ -94,7 +94,7 @@ Exercise thumbnails and GIFs © [Gym visual](https://gymvisual.com/). See [NOTIC
 
 ## Links
 
-- **App:** https://repdraft-zeta.vercel.app  
+- **App:** https://www.repdraft.xyz  
 - **Product goal:** [GOAL.md](./GOAL.md)  
 - **Privacy / Terms:** `/privacy` · `/terms` (in the running app)
 

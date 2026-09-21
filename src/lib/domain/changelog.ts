@@ -14,6 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.18.3',
+		highlights: {
+			ru: [
+				'Поиск: исправлены ссылки сайта в sitemap и карточках страниц',
+				'Заголовок главной без двойного имени приложения'
+			],
+			en: [
+				'Search: fixed site links in the sitemap and page cards',
+				'Home title no longer repeats the app name'
+			]
+		}
+	},
+	{
 		version: '0.18.2',
 		highlights: {
 			ru: [

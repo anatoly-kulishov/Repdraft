@@ -22,15 +22,30 @@ test('robots.txt disallows app routes and points at sitemap', async ({ request }
 	for (const path of ['/auth', '/builder', '/live/', '/workouts/', '/exercises/records', '/exercises/saved', '/scenarios']) {
 		expect(body).toContain(`Disallow: ${path}`);
 	}
-	expect(body).toMatch(/Sitemap:\s*https?:\/\/.+\/sitemap\.xml/i);
+	expect(body).not.toMatch(/sveltekit-prerender/i);
+	const sitemapMatch = body.match(/Sitemap:\s*(\S+)/i);
+	expect(sitemapMatch?.[1]).toMatch(/^https?:\/\/[^/\s]+\/sitemap\.xml$/i);
+	expect(sitemapMatch?.[1]).not.toMatch(/sveltekit-prerender/i);
 });
 
 test('sitemap.xml includes legal and hub paths', async ({ request }) => {
 	const res = await request.get('/sitemap.xml');
 	expect(res.ok()).toBeTruthy();
 	const body = await res.text();
-	for (const path of ['/privacy', '/terms', '/exercises', '/articles']) {
-		expect(body).toContain(path);
+	expect(body).not.toMatch(/sveltekit-prerender/i);
+	for (const path of ['/privacy', '/terms', '/exercises', '/articles'] as const) {
+		expect(body).toMatch(new RegExp(`<loc>https?://[^<]+${path.replace(/\//g, '\\/')}</loc>`));
+	}
+});
+
+test('public hub pages do not bake prerender placeholder canonical', async ({ page }) => {
+	for (const path of ['/', '/articles', '/privacy'] as const) {
+		await gotoReady(page, path);
+		const canonical = page.locator('link[rel="canonical"]');
+		if ((await canonical.count()) === 0) continue;
+		const href = (await canonical.first().getAttribute('href')) ?? '';
+		expect(href, `canonical on ${path}`).not.toMatch(/sveltekit-prerender/i);
+		expect(href, `canonical on ${path}`).toMatch(/^https?:\/\//);
 	}
 });
 

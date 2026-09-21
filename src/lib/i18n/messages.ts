@@ -29,7 +29,7 @@ const ru: Dict = {
 		'Политика конфиденциальности Repdraft: что хранится на устройстве и в облаке.',
 	'seo.termsDescription':
 		'Условия использования Repdraft: сайт, PWA и нативное приложение.',
-	'seo.homeTitle': 'Repdraft - дневник тренировок в зале',
+	'seo.homeTitle': 'Дневник тренировок в зале',
 	'nav.tabHome': 'Главная',
 	'nav.exercises': 'Упражнения',
 	'nav.liveActive': 'Есть незавершённая тренировка',
@@ -1031,7 +1031,7 @@ const en: Dict = {
 		'Repdraft privacy policy: what is stored on your device and in the cloud.',
 	'seo.termsDescription':
 		'Repdraft terms of use for the website, PWA, and native app.',
-	'seo.homeTitle': 'Repdraft - gym workout log',
+	'seo.homeTitle': 'Gym workout log',
 	'nav.tabHome': 'Home',
 	'nav.exercises': 'Exercises',
 	'nav.liveActive': 'Active workout in progress',

@@ -9,6 +9,14 @@ const pkg = JSON.parse(readFileSync(fileURLToPath(new URL('./package.json', impo
 	version: string;
 };
 
+// Production prerender bakes canonical/og into HTML; without this env they become
+// http://sveltekit-prerender/... and search engines will not index the real site.
+if (process.env.VERCEL_ENV === 'production' && !process.env.PUBLIC_SITE_URL?.trim()) {
+	throw new Error(
+		'PUBLIC_SITE_URL is required for Vercel production builds (SEO canonical / sitemap). Example: https://www.repdraft.xyz'
+	);
+}
+
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
 	resolve: {
