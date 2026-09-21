@@ -36,7 +36,7 @@ export function hintsFromBrief(brief: string): BodyHint {
 		[/спин|\bbacks?\b|тяга|крыл/, ['back']],
 		// «плеч» but not inside «предплечье»
 		[/(?<!пред)плеч|shoulder|дельт/, ['shoulders']],
-		[/трицеп|triceps/, ['upper arms']],
+		[/трицеп|триц|triceps|tricep/, ['upper arms']],
 		[/бицеп|biceps|бицух|банк[аиу]/, ['upper arms']],
 		[/рук[аиуеы]?|\barms?\b/, ['upper arms']],
 		// «leg(s)» as word (not college); RU slang булки/галифе
@@ -75,7 +75,7 @@ export function hintsFromBrief(brief: string): BodyHint {
 export function targetsFromBrief(brief: string): string[] {
 	const t = brief.toLowerCase();
 	const targets: string[] = [];
-	if (/трицеп|triceps/.test(t)) targets.push('triceps');
+	if (/трицеп|триц|triceps|tricep/.test(t)) targets.push('triceps');
 	if (/бицеп|biceps|бицух|банк[аиу]/.test(t)) targets.push('biceps');
 	if (/дельт|боков(ая|ые)|средн(яя|ие)\s*дельт|lateral/.test(t)) targets.push('delts');
 	if (/квадр|quad/.test(t)) targets.push('quads');
@@ -91,17 +91,21 @@ export function targetsFromBrief(brief: string): string[] {
  */
 export function desiredExerciseCountFromBrief(brief: string, fallback = 5): number {
 	const t = brief.toLowerCase();
+	/* Decimal hours first («0.5 часа») so integer capture does not eat «5» from «0.5». */
+	const decimalHour = /(\d+[.,]\d+)\s*(?:час|часа|часов|h\b|hour|hours)/.exec(t);
 	const hourish = /(\d+)\s*(?:час|часа|часов|h\b|hour|hours)/.exec(t);
 	const minish = /(\d+)\s*(?:мин|минуты|минут|min|mins|minutes)/.exec(t);
 	let minutes = 0;
-	if (hourish) {
+	if (decimalHour) {
+		minutes = Number(decimalHour[1]!.replace(',', '.')) * 60;
+	} else if (hourish) {
 		minutes = Number(hourish[1]) * 60;
 	} else if (minish) {
 		minutes = Number(minish[1]);
 	} else if (/(?:^|[\s,])час(?:$|[\s,.!?]|$)/.test(t) || /\bhour\b/.test(t)) {
 		minutes = 60;
 	}
-	if (minutes <= 0) return fallback;
+	if (!Number.isFinite(minutes) || minutes <= 0) return fallback;
 	if (minutes >= 75) return 8;
 	if (minutes >= 55) return 7;
 	if (minutes >= 40) return 6;

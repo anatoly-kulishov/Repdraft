@@ -210,16 +210,25 @@ export function matchTemplate(
 
 	let best: SplitTemplate | null = null;
 	let bestScore = -1;
+	const uniqueHints = [...new Set(hintParts)];
+	const uniqueVoted = [...votes.keys()];
+	const multiZone = uniqueHints.length >= 2 || uniqueVoted.length >= 2;
 	for (const t of SPLIT_TEMPLATES) {
 		const overlap = t.triggerParts.filter((p) => votes.has(p)).length;
 		if (!overlap) continue;
 		const cover = overlap / t.triggerParts.length;
 		const hintHit = hintParts.filter((p) => t.triggerParts.includes(p)).length;
+		const coversAllHints =
+			uniqueHints.length > 0 && uniqueHints.every((h) => t.triggerParts.includes(h));
+		const coversAllVotes =
+			uniqueVoted.length > 0 && uniqueVoted.every((h) => t.triggerParts.includes(h));
 		const score =
 			cover * 10 +
 			overlap +
 			hintHit * 3 +
-			(SPECIFICITY[t.id] ?? 0) * 0.1;
+			(SPECIFICITY[t.id] ?? 0) * 0.1 +
+			(multiZone && (coversAllHints || coversAllVotes) ? 5 : 0) -
+			(multiZone && t.triggerParts.length === 1 ? 4 : 0);
 		if (score > bestScore) {
 			bestScore = score;
 			best = t;

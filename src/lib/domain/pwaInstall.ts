@@ -9,12 +9,9 @@ export function isIosDevice(input: {
 	coarsePointer?: boolean;
 }): boolean {
 	if (/iPhone|iPad|iPod/i.test(input.ua)) return true;
-	// iPadOS 13+ desktop UA — require coarse pointer so Mac desktops stay out.
-	return (
-		input.platform === 'MacIntel' &&
-		(input.maxTouchPoints ?? 0) > 1 &&
-		input.coarsePointer === true
-	);
+	// iPadOS 13+ desktop UA (no iPad token). maxTouchPoints ≥ 5 distinguishes iPad from Mac.
+	// Do not require (pointer: coarse): Magic Keyboard / mouse often reports fine pointer.
+	return input.platform === 'MacIntel' && (input.maxTouchPoints ?? 0) >= 5;
 }
 
 /** Chrome/Edge on desktop — Install via BIP or menu fallback (not phone Chrome). */
@@ -23,8 +20,21 @@ export function isDesktopChromiumInstallSurface(input: {
 	/** `(hover: hover) and (pointer: fine)` — preferred desktop signal. */
 	finePointerHover: boolean;
 	ua?: string;
+	platform?: string;
+	maxTouchPoints?: number;
+	coarsePointer?: boolean;
 }): boolean {
 	const ua = input.ua ?? '';
+	if (
+		isIosDevice({
+			ua,
+			platform: input.platform,
+			maxTouchPoints: input.maxTouchPoints,
+			coarsePointer: input.coarsePointer
+		})
+	) {
+		return false;
+	}
 	const chromiumUa = /(?:Chrome|Chromium|Edg)\//i.test(ua) && !/CriOS|FxiOS|EdgiOS/i.test(ua);
 	if (!input.hasChromiumRuntime && !chromiumUa) return false;
 	// Phones (incl. Chrome Android / DevTools mobile UA) use BIP or iOS guides instead.
@@ -72,16 +82,26 @@ export function resolvePwaManualGuide(input: {
 	/** True when `window.chrome` exists (desktop/Android Chromium runtime). */
 	hasChromiumRuntime?: boolean;
 }): PwaManualGuide | null {
+	// DevTools / desktop Chromium runtime with spoofed UA — never show iOS Share tips.
+	if (input.hasChromiumRuntime) return null;
+
+	if (isIosDevice(input)) {
+		const { ua } = input;
+		if (/CriOS/i.test(ua)) return 'ios-chrome';
+		// Chrome-on-iPad "Request Desktop Website" UA has Chrome/ but no CriOS/Mobile.
+		if (/(?:Chrome|Chromium|Edg)\//i.test(ua) && !/FxiOS|EdgiOS|OPiOS/i.test(ua)) {
+			return 'ios-chrome';
+		}
+		if (/FxiOS|EdgiOS|OPiOS/i.test(ua)) return null;
+		if (/Safari/i.test(ua) && !/Chrome\//i.test(ua) && !/Chromium\//i.test(ua)) {
+			return 'ios-safari';
+		}
+		return null;
+	}
+
 	const chromiumDesktopUa =
 		/(?:Chrome|Chromium|Edg)\//i.test(input.ua) &&
 		!/CriOS|FxiOS|EdgiOS|Android|iPhone|iPad|iPod|Mobile/i.test(input.ua);
-	if (input.hasChromiumRuntime || chromiumDesktopUa) return null;
-	if (!isIosDevice(input)) return null;
-	const { ua } = input;
-	if (/CriOS/i.test(ua)) return 'ios-chrome';
-	if (/FxiOS|EdgiOS|OPiOS/i.test(ua)) return null;
-	if (/Safari/i.test(ua) && !/Chrome\//i.test(ua) && !/Chromium\//i.test(ua)) {
-		return 'ios-safari';
-	}
+	if (chromiumDesktopUa) return null;
 	return null;
 }

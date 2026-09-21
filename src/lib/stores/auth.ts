@@ -65,9 +65,10 @@ function authCallbackUrl(next?: string | null): string {
 	return url.toString();
 }
 
-function recoveryCallbackUrl(): string {
+function recoveryCallbackUrl(next?: string | null): string {
 	const url = new URL('/auth', window.location.origin);
 	url.searchParams.set('recovery', '1');
+	if (next) url.searchParams.set('next', next);
 	return url.toString();
 }
 
@@ -446,11 +447,15 @@ function createAuthStore() {
 			});
 			if (error) throw error;
 		},
-		async resetPasswordForEmail(email: string, captchaToken?: string) {
+		async resetPasswordForEmail(
+			email: string,
+			captchaToken?: string,
+			next?: string | null
+		) {
 			const supabase = getSupabase();
 			if (!supabase) throw new Error('errors.cloudOff');
 			const { error } = await supabase.auth.resetPasswordForEmail(email, {
-				redirectTo: recoveryCallbackUrl(),
+				redirectTo: recoveryCallbackUrl(next),
 				...(captchaToken ? { captchaToken } : {})
 			});
 			if (error) throw error;

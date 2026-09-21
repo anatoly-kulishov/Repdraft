@@ -1,5 +1,14 @@
 import { newId } from './id';
-import { NOTE_MAX, REPS, REST_SEC, SETS, sanitizeNote } from './inputLimits';
+import {
+	NOTE_MAX,
+	LIVE_REPS,
+	REPS,
+	REST_SEC,
+	SETS,
+	WEIGHT_KG,
+	clampStoredWeightKg,
+	sanitizeNote
+} from './inputLimits';
 import type {
 	LastPerformance,
 	LoggedSet,
@@ -243,16 +252,21 @@ function nextIncompleteInGroup(
  * advance to the next visible exercise (user intent — even if current sets are open).
  */
 export function nextManualExerciseFocus(session: WorkoutSession, exerciseIndex: number): number {
-	const bounds = groupBounds(session.exercises, exerciseIndex);
+	const n = session.exercises.length;
+	if (n === 0) return 0;
+	const idx = Number.isFinite(exerciseIndex)
+		? Math.max(0, Math.min(Math.trunc(exerciseIndex), n - 1))
+		: 0;
+	const bounds = groupBounds(session.exercises, idx);
 	if (bounds && bounds.start !== bounds.end) {
-		const inside = nextIncompleteInGroup(session, bounds, exerciseIndex);
+		const inside = nextIncompleteInGroup(session, bounds, idx);
 		if (inside != null) return inside;
 		return nextVisibleAfterGroupEnd(session, bounds.end);
 	}
 
-	const next = nextVisibleAfterIndex(session, exerciseIndex);
+	const next = nextVisibleAfterIndex(session, idx);
 	if (next != null) return next;
-	return exerciseIndex;
+	return idx;
 }
 
 /**
@@ -304,9 +318,31 @@ export function updateLoggedSet(
 	setIndex: number,
 	patch: Partial<Pick<LoggedSet, 'weightKg' | 'reps' | 'completed' | 'kind'>>
 ): WorkoutSession {
+	const cleaned: typeof patch = { ...patch };
+	if ('weightKg' in cleaned && cleaned.weightKg !== undefined) {
+		if (cleaned.weightKg === null) {
+			/* clear */
+		} else if (!Number.isFinite(cleaned.weightKg)) {
+			cleaned.weightKg = null;
+		} else {
+			cleaned.weightKg = clampStoredWeightKg(cleaned.weightKg);
+		}
+	}
+	if ('reps' in cleaned && cleaned.reps !== undefined) {
+		if (cleaned.reps === null) {
+			/* clear */
+		} else if (!Number.isFinite(cleaned.reps)) {
+			cleaned.reps = null;
+		} else {
+			cleaned.reps = Math.min(
+				LIVE_REPS.max,
+				Math.max(LIVE_REPS.min, Math.round(cleaned.reps))
+			);
+		}
+	}
 	const exercises = session.exercises.map((ex, ei) => {
 		if (ei !== exerciseIndex) return ex;
-		const sets = ex.sets.map((s, si) => (si === setIndex ? { ...s, ...patch } : s));
+		const sets = ex.sets.map((s, si) => (si === setIndex ? { ...s, ...cleaned } : s));
 		return { ...ex, sets };
 	});
 	return { ...session, exercises };
@@ -341,13 +377,15 @@ export function applyWeightToOpenSets(
 	exerciseIndex: number,
 	weightKg: number
 ): WorkoutSession {
+	const clamped =
+		Number.isFinite(weightKg) ? clampStoredWeightKg(weightKg) : WEIGHT_KG.min;
 	const ex = session.exercises[exerciseIndex];
 	if (!ex) return session;
 	let next = session;
 	for (let si = 0; si < ex.sets.length; si++) {
 		const set = ex.sets[si]!;
-		if (set.completed || set.weightKg === weightKg) continue;
-		next = updateLoggedSet(next, exerciseIndex, si, { weightKg });
+		if (set.completed || set.weightKg === clamped) continue;
+		next = updateLoggedSet(next, exerciseIndex, si, { weightKg: clamped });
 	}
 	return next;
 }
@@ -359,13 +397,16 @@ export function applyRepsToOpenSets(
 	exerciseIndex: number,
 	reps: number
 ): WorkoutSession {
+	const clamped = Number.isFinite(reps)
+		? Math.min(LIVE_REPS.max, Math.max(LIVE_REPS.min, Math.round(reps)))
+		: LIVE_REPS.min;
 	const ex = session.exercises[exerciseIndex];
 	if (!ex) return session;
 	let next = session;
 	for (let si = 0; si < ex.sets.length; si++) {
 		const set = ex.sets[si]!;
-		if (set.completed || set.reps === reps) continue;
-		next = updateLoggedSet(next, exerciseIndex, si, { reps });
+		if (set.completed || set.reps === clamped) continue;
+		next = updateLoggedSet(next, exerciseIndex, si, { reps: clamped });
 	}
 	return next;
 }
@@ -377,6 +418,7 @@ export function addLoggedSet(
 ): WorkoutSession {
 	const exercises = session.exercises.map((ex, ei) => {
 		if (ei !== exerciseIndex) return ex;
+		if (ex.sets.length >= SETS.max) return ex;
 		const prev = ex.sets[ex.sets.length - 1];
 		return {
 			...ex,
@@ -517,6 +559,7 @@ function pruneSkippedEmpty(session: WorkoutSession): WorkoutSession {
 }
 
 export function finishSession(session: WorkoutSession): WorkoutSession {
+	if (session.finishedAt) return session;
 	return {
 		...pruneSkippedEmpty(pruneUnchosenAlts(session)),
 		finishedAt: new Date().toISOString()

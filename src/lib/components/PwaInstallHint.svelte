@@ -73,15 +73,20 @@
 		return isDesktopChromiumInstallSurface({
 			hasChromiumRuntime: chromiumRuntime(),
 			finePointerHover: window.matchMedia('(hover: hover) and (pointer: fine)').matches,
-			ua: navigator.userAgent
+			ua: navigator.userAgent,
+			platform: navigator.platform,
+			maxTouchPoints: navigator.maxTouchPoints,
+			coarsePointer: window.matchMedia('(pointer: coarse)').matches
 		});
 	}
 
+	/** Peek only — clearing on take would lose BIP on Home remount (browser won't re-fire). */
 	function takeCapturedBip(): BeforeInstallPromptEvent | null {
-		const host = window as BipHost;
-		const ev = host.__repdraftBip ?? null;
-		if (ev) host.__repdraftBip = null;
-		return ev;
+		return (window as BipHost).__repdraftBip ?? null;
+	}
+
+	function clearCapturedBip() {
+		(window as BipHost).__repdraftBip = null;
 	}
 
 	function applyBip(ev: BeforeInstallPromptEvent) {
@@ -116,6 +121,7 @@
 
 	function hideInstalled() {
 		markPwaInstalled();
+		clearCapturedBip();
 		deferred = null;
 		mode = null;
 	}
@@ -163,13 +169,12 @@
 					}
 					// API available and empty → app not installed; drop stale flag.
 					if (isPwaInstalledPref()) clearPwaInstalledPref();
-				} else if (isPwaInstalledPref()) {
-					return;
 				}
+				/* relatedApps unavailable (iOS): ignore stale pwa-installed pref in browser tab. */
 			} catch {
-				if (isPwaInstalledPref()) return;
+				/* ignore related-apps errors; still show tip when not in installed shell */
 			}
-			if (cancelled || deferred || isInstallHintDismissed() || isPwaInstalledPref()) return;
+			if (cancelled || deferred || isInstallHintDismissed()) return;
 
 			const manual = readManualGuide();
 			const desktop = !manual && readDesktopSurface();
@@ -183,7 +188,7 @@
 			if (!manual && !desktop && !androidChrome) return;
 
 			revealTimer = setTimeout(() => {
-				if (cancelled || deferred || isPwaInstalledPref() || isInstallHintDismissed()) return;
+				if (cancelled || deferred || isInstallHintDismissed()) return;
 				mode = manual ?? (androidChrome ? 'android-chrome' : 'desktop');
 			}, 500);
 		})();
@@ -201,6 +206,7 @@
 		if (!deferred) return;
 		await deferred.prompt();
 		const choice = await deferred.userChoice.catch(() => null);
+		clearCapturedBip();
 		deferred = null;
 		mode = null;
 		if (choice?.outcome === 'accepted') {
@@ -210,6 +216,7 @@
 	}
 
 	function dismiss() {
+		clearCapturedBip();
 		mode = null;
 		deferred = null;
 		dismissInstallHint();

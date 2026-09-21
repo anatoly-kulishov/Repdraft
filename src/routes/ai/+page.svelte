@@ -185,6 +185,7 @@
 	let dictationBlock = $state<'insecure' | 'unsupported' | null>(null);
 	let listening = $state(false);
 	let dictationSession: DictationSession | null = null;
+	let dictationGen = 0;
 	let sessionReady = $state(false);
 
 	$effect(() => {
@@ -226,6 +227,7 @@
 	}
 
 	function stopDictation() {
+		dictationGen += 1;
 		dictationSession?.stop();
 		dictationSession = null;
 		listening = false;
@@ -268,16 +270,20 @@
 			return;
 		}
 		fieldError = null;
+		const gen = ++dictationGen;
 		listening = true;
 		const session = await startSpeechDictation({
 			lang: speechLangFromLocale(lang),
 			onInterim: (text) => {
+				if (gen !== dictationGen) return;
 				brief = text.slice(0, AI_BRIEF_MAX);
 			},
 			onFinal: (text) => {
+				if (gen !== dictationGen) return;
 				brief = text.slice(0, AI_BRIEF_MAX);
 			},
 			onError: (code) => {
+				if (gen !== dictationGen) return;
 				listening = false;
 				dictationSession = null;
 				if (code === 'aborted' || code === 'no-speech') {
@@ -307,10 +313,15 @@
 				fieldError = translate(lang, 'aiDraft.dictateError');
 			},
 			onEnd: () => {
+				if (gen !== dictationGen) return;
 				listening = false;
 				dictationSession = null;
 			}
 		});
+		if (gen !== dictationGen) {
+			session?.stop();
+			return;
+		}
 		if (!session) {
 			listening = false;
 			return;

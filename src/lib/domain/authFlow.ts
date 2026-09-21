@@ -18,10 +18,46 @@ export {
 /** Same-origin path for post-login redirect (blocks open redirects). */
 export function safeRedirectPath(raw: string | null | undefined, fallback = '/workouts'): string {
 	if (!raw) return fallback;
-	const path = raw.trim();
-	if (!path.startsWith('/') || path.startsWith('//') || path.includes('\\')) return fallback;
-	if (path.startsWith('/auth')) return fallback;
-	return path;
+	/* WHATWG strips C0 controls in URL parsing; remove them before `//` checks. */
+	const cleaned = raw.trim().replace(/[\u0000-\u001F\u007F]/g, '');
+	if (!cleaned.startsWith('/') || cleaned.startsWith('//') || cleaned.includes('\\')) {
+		return fallback;
+	}
+
+	let resolved: URL;
+	try {
+		resolved = new URL(cleaned, 'https://safe.invalid');
+	} catch {
+		return fallback;
+	}
+	/* Absolute / protocol-relative input must not escape the dummy origin. */
+	if (resolved.origin !== 'https://safe.invalid') return fallback;
+
+	const pathname = resolved.pathname;
+	if (pathname.startsWith('/auth')) return fallback;
+
+	return `${pathname}${resolved.search}${resolved.hash}`;
+}
+
+/**
+ * True when `/auth` URL looks like an email/PKCE login callback (not recovery, not empty code).
+ */
+export function isAuthEmailCallback(search: string, hash: string): boolean {
+	const query = search.startsWith('?') ? search.slice(1) : search;
+	const params = new URLSearchParams(query);
+	const code = params.get('code');
+	if (code != null && code.length > 0) return true;
+
+	const fragment = hash.startsWith('#') ? hash.slice(1) : hash;
+	if (!fragment) return false;
+	const hashParams = new URLSearchParams(fragment);
+	const type = (hashParams.get('type') ?? '').toLowerCase();
+	if (type === 'recovery') return false;
+	if (type === 'signup' || type === 'magiclink' || type === 'email' || type === 'invite') {
+		return true;
+	}
+	/* Legacy implicit grant: access_token without an explicit type. */
+	return hashParams.has('access_token') && type === '';
 }
 
 export function passwordsMatch(a: string, b: string): boolean {
@@ -75,7 +111,9 @@ export function authErrorMessageKey(err: unknown): string | null {
 		code === 'over_request_rate_limit' ||
 		status === 429 ||
 		message.includes('rate limit') ||
-		message.includes('too many requests')
+		message.includes('too many requests') ||
+		/* GoTrue frequency limiter prose (status sometimes stripped by wrappers). */
+		message.includes('only request this after')
 	) {
 		return 'auth.errors.rateLimit';
 	}
@@ -214,6 +252,34 @@ export function runAuthFlowSelfCheck(): void {
 	}
 	if (safeRedirectPath('/exercise/1') !== '/exercise/1') {
 		throw new Error('safeRedirectPath allows app paths');
+	}
+	if (safeRedirectPath('/workouts?tab=history') !== '/workouts?tab=history') {
+		throw new Error('safeRedirectPath keeps query string');
+	}
+	if (safeRedirectPath('/\t/evil.com') !== '/workouts') {
+		throw new Error('safeRedirectPath rejects C0 whitespace open redirect');
+	}
+	if (safeRedirectPath('/../auth') !== '/workouts') {
+		throw new Error('safeRedirectPath rejects /../auth loop');
+	}
+	if (safeRedirectPath('/workouts/../auth') !== '/workouts') {
+		throw new Error('safeRedirectPath rejects nested auth loop');
+	}
+	if (
+		authErrorMessageKey({
+			message: 'For security purposes, you can only request this after 60 seconds.'
+		}) !== 'auth.errors.rateLimit'
+	) {
+		throw new Error('auth error map: frequency prose');
+	}
+	if (isAuthEmailCallback('code=', '#access_token=x&type=recovery')) {
+		throw new Error('isAuthEmailCallback must reject empty code and recovery');
+	}
+	if (!isAuthEmailCallback('code=pkce-abc', '')) {
+		throw new Error('isAuthEmailCallback must accept non-empty PKCE code');
+	}
+	if (!isAuthEmailCallback('', '#access_token=x&type=magiclink')) {
+		throw new Error('isAuthEmailCallback must accept magiclink hash');
 	}
 	if (!passwordsMatch('abc123', 'abc123') || passwordsMatch('a', 'b')) {
 		throw new Error('passwordsMatch broken');
