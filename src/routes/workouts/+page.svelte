@@ -26,7 +26,7 @@
 	import { peekLocalPlanCount, syncPreviewExerciseRowsPeek } from '$lib/storage/localWorkoutRepository';
 	import { peekLocalHistoryCount } from '$lib/storage/localSessionRepository';
 	import type { WorkoutsSkeletonVariant } from '$lib/components/WorkoutsPageSkeleton.svelte';
-	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
+	import type { ExerciseIndexItem, WorkoutPlan, WorkoutSession } from '$lib/domain/types';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
 	import {
 		collectPlanTargetFacets,
@@ -425,6 +425,13 @@
 	let historyClearBusy = $state(false);
 	let planBusyId = $state<string | null>(null);
 	let planBusyOp = $state<'copy' | 'delete' | null>(null);
+	let exitingPlanIds = $state<Set<string>>(new Set());
+	let exitingSessionIds = $state<Set<string>>(new Set());
+	let pendingPlanDeletes = new Map<
+		string,
+		{ plan: WorkoutPlan; orderSnapshot: string[]; displayIndex: number }
+	>();
+	let pendingSessionDeletes = new Map<string, WorkoutSession>();
 
 	let clearHistoryOfferOpen = $state(false);
 	let demoBusy = $state(false);
@@ -506,20 +513,59 @@
 		}
 	}
 
-	async function onRemove(id: string, _name: string) {
-		if (planBusyId) return;
-		const plan = get(plans).find((p) => p.id === id) ?? (await plans.getPlan(id));
-		if (!plan) return;
-		const orderIndex = get(planOrder).indexOf(id);
+	function onRemove(id: string, _name: string) {
+		if (planBusyId || exitingPlanIds.has(id) || pendingPlanDeletes.has(id)) return;
+		const orderSnapshot = (() => {
+			const fromOrder = get(planOrder);
+			if (fromOrder.includes(id)) return [...fromOrder];
+			/* Fallback: store order (already sorted by planOrder when in sync). */
+			return get(plans).map((p) => p.id);
+		})();
+		const displayIndex = listPlans.findIndex((p) => p.id === id);
+		const cached = get(plans).find((p) => p.id === id);
+		if (cached) {
+			pendingPlanDeletes.set(id, {
+				plan: structuredClone(cached),
+				orderSnapshot,
+				displayIndex
+			});
+			exitingPlanIds = new Set(exitingPlanIds).add(id);
+			return;
+		}
+		void (async () => {
+			const plan = await plans.getPlan(id);
+			if (!plan) return;
+			if (exitingPlanIds.has(id) || pendingPlanDeletes.has(id)) return;
+			pendingPlanDeletes.set(id, {
+				plan: structuredClone(plan),
+				orderSnapshot,
+				displayIndex
+			});
+			exitingPlanIds = new Set(exitingPlanIds).add(id);
+		})();
+	}
 
+	async function onPlanExitComplete(id: string) {
+		const pending = pendingPlanDeletes.get(id);
+		if (!pending) {
+			exitingPlanIds = new Set([...exitingPlanIds].filter((x) => x !== id));
+			return;
+		}
+		pendingPlanDeletes.delete(id);
 		planBusyId = id;
 		planBusyOp = 'delete';
 		try {
 			await plans.removePlan(id);
+			const restoreAt = Math.max(0, pending.orderSnapshot.indexOf(id));
 			toasts.showUndo(
 				translate(lang, 'workouts.deleted'),
 				async () => {
-					await plans.restorePlan(plan, orderIndex);
+					if (pending.displayIndex >= 0) {
+						plansVisibleLimit = Math.max(plansVisibleLimit, pending.displayIndex + 1);
+					} else {
+						plansVisibleLimit = Math.max(plansVisibleLimit, restoreAt + 1);
+					}
+					await plans.restorePlan(pending.plan, restoreAt, pending.orderSnapshot);
 				},
 				'info'
 			);
@@ -528,6 +574,7 @@
 		} finally {
 			planBusyId = null;
 			planBusyOp = null;
+			exitingPlanIds = new Set([...exitingPlanIds].filter((x) => x !== id));
 		}
 	}
 
@@ -572,12 +619,24 @@
 		}
 	}
 
-	async function onRemoveSession(session: (typeof history)[number]) {
-		if (historyBusyId) return;
-		const snapshot = structuredClone(session);
-		historyBusyId = session.id;
+	function onRemoveSession(session: WorkoutSession) {
+		if (historyBusyId || exitingSessionIds.has(session.id) || pendingSessionDeletes.has(session.id)) {
+			return;
+		}
+		pendingSessionDeletes.set(session.id, structuredClone(session));
+		exitingSessionIds = new Set(exitingSessionIds).add(session.id);
+	}
+
+	async function onSessionExitComplete(id: string) {
+		const snapshot = pendingSessionDeletes.get(id);
+		if (!snapshot) {
+			exitingSessionIds = new Set([...exitingSessionIds].filter((x) => x !== id));
+			return;
+		}
+		pendingSessionDeletes.delete(id);
+		historyBusyId = id;
 		try {
-			await live.removeFromHistory(session.id);
+			await live.removeFromHistory(id);
 			toasts.showUndo(
 				translate(lang, 'workouts.sessionDeleted'),
 				async () => {
@@ -589,6 +648,7 @@
 			toasts.show(translateError(lang, err, 'workouts.sessionDeleteFail'), 'error');
 		} finally {
 			historyBusyId = null;
+			exitingSessionIds = new Set([...exitingSessionIds].filter((x) => x !== id));
 		}
 	}
 
@@ -786,12 +846,14 @@
 								{reorderOver}
 								busyId={planBusyId}
 								busyOp={planBusyOp}
+								exiting={exitingPlanIds.has(plan.id)}
 								leadingActions={planLeadingSwipeActions(plan)}
 								trailingActions={planTrailingSwipeActions(plan)}
 								onOpen={onOpen}
 								onPin={pinNextPlan}
 								onDuplicate={(id) => void onDuplicate(id)}
-								onRemove={(id, name) => void onRemove(id, name)}
+								onRemove={(id, name) => onRemove(id, name)}
+								onExitComplete={(id) => void onPlanExitComplete(id)}
 								onPreview={rememberPreviewRows}
 								onReorder={reorderPlan}
 							/>
@@ -873,12 +935,17 @@
 						<li>
 							<SwipeToDelete
 								label={translate(lang, 'workouts.deleteSession')}
-								disabled={historyBusyId !== null}
+								disabled={historyBusyId !== null || exitingSessionIds.has(session.id)}
 								busy={historyBusyId === session.id}
-								onDelete={() => void onRemoveSession(session)}
+								exiting={exitingSessionIds.has(session.id)}
+								onDelete={() => onRemoveSession(session)}
+								onExitComplete={() => void onSessionExitComplete(session.id)}
 							>
 								<div class="entity-row">
-									<a class="entity-row__main" href={`/workouts/history/${session.id}`}>
+									<a
+										class="entity-row__main"
+										href={`/workouts/history/${session.id}`}
+									>
 										<span class="entity-row__eyebrow">
 											{formatRelativeDay(session.finishedAt ?? session.startedAt, lang)}
 										</span>

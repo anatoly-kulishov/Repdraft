@@ -38,5 +38,9 @@ export const localBookmarkRepository: BookmarkRepository = {
 
 	async remove(exerciseId: string) {
 		writeIds(readIds().filter((id) => id !== exerciseId));
+	},
+
+	async replaceAll(ids: string[]) {
+		writeIds(ids);
 	}
 };

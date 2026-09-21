@@ -556,6 +556,15 @@ a.entity-row--link:hover,
 	overflow: clip;
 	border-radius: 0;
 	isolation: isolate;
+	transition:
+		height 0.22s ease,
+		opacity 0.18s ease,
+		margin-block 0.22s ease,
+		padding-block 0.22s ease;
+}
+
+.swipe-to-delete.is-exiting {
+	pointer-events: none;
 }
 
 .swipe-to-delete__rail {

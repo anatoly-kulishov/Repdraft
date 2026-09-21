@@ -23,8 +23,14 @@ import { truncateMeta } from '$lib/seo/site';
 	import { cn } from '$lib/utils.js';
 	import { draft } from '$lib/stores/draft';
 	import { bookmarks } from '$lib/stores/bookmarks';
+	import { get } from 'svelte/store';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { blurActiveElement } from '$lib/dom/blurActiveElement';
+	import {
+		armExerciseMediaViewTransition,
+		armedExerciseMediaVtId,
+		exerciseMediaViewTransitionName
+	} from '$lib/dom/exerciseMediaViewTransition';
 	import { horizontalTabSwipe } from '$lib/dom/horizontalTabSwipe';
 	import { onboarding } from '$lib/stores/onboarding';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
@@ -58,6 +64,11 @@ import { truncateMeta } from '$lib/seo/site';
 			: data.relatedArticles.filter((a) => a.locale === 'ru');
 	});
 	let title = $derived(exercise ? exerciseName(exercise, lang) : '');
+	let mediaVtName = $derived(
+		exercise && $armedExerciseMediaVtId === exercise.id
+			? exerciseMediaViewTransitionName(exercise.id)
+			: undefined
+	);
 	let draftCount = $derived($draft.exercises.length);
 	let steps = $derived.by(() => {
 		if (!exercise) return [] as string[];
@@ -104,6 +115,12 @@ import { truncateMeta } from '$lib/seo/site';
 		void bookmarks.refresh();
 	});
 
+	$effect(() => {
+		if (!exercise) return;
+		/* Keep armed while on detail so catalog reverse morph can match the card. */
+		armExerciseMediaViewTransition(exercise.id);
+	});
+
 	function goToDetailTab(tab: ExerciseDetailTab, dir: 'next' | 'prev' | null = null) {
 		if (tab === activeTab) return;
 		if (dir) {
@@ -126,18 +143,22 @@ import { truncateMeta } from '$lib/seo/site';
 	function toggleBookmark() {
 		if (!exercise || bookmarkBusy) return;
 		bookmarkBusy = true;
+		const restoreIndex = get(bookmarks).indexOf(exercise.id);
 		void bookmarks
 			.toggle(exercise.id)
 			.then((saved) => {
 				if (saved) {
 					onboarding.dismissCoachmark('exercise.bookmark');
 					onboarding.dismissCoachmark('bookmarks.empty');
-					toasts.show(translate(lang, 'bookmarks.saved'), 'info', 2600, undefined, 'bookmark');
+					toasts.show(translate(lang, 'bookmarks.saved'), 'info', 2600, {
+						href: '/exercises/saved',
+						label: translate(lang, 'bookmarks.title')
+					}, 'bookmark');
 					return;
 				}
 				toasts.showUndo(
 					translate(lang, 'bookmarks.removed'),
-					() => void bookmarks.toggle(exercise.id),
+					() => void bookmarks.restoreAt(exercise.id, restoreIndex),
 					'info',
 					undefined,
 					'bookmark'
@@ -232,7 +253,7 @@ import { truncateMeta } from '$lib/seo/site';
 		<div class="exercise-detail-page__layout">
 			<div class="exercise-detail-page__primary">
 				<div class="exercise-detail-page__hero">
-					<div class="exercise-detail-page__media">
+					<div class="exercise-detail-page__media" style:view-transition-name={mediaVtName}>
 						<div class="exercise-media-frame">
 							<img
 								src={`/${exercise.gif_url}`}

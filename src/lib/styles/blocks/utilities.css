@@ -70,6 +70,7 @@ html.e2e-stable *::after {
 	.live-set-done-btn--done,
 	.live-set-row.is-done,
 	.live-set-row.is-just-done,
+	.swipe-to-delete.is-exiting,
 	.field.is-invalid,
 	.clip-lightbox,
 	.clip-lightbox__panel,
@@ -83,4 +84,38 @@ html.e2e-stable *::after {
 		opacity: 1 !important;
 		transform: none !important;
 	}
+
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
+}
+
+/*
+ * View Transitions — only for list ↔ detail (see shouldUseSharedViewTransition).
+ * Root stays opaque (no fade-to-0): mid-crossfade showed a blank flash on light theme.
+ * Named shared elements still morph.
+ */
+@supports (view-transition-name: none) {
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation: none;
+		mix-blend-mode: normal;
+	}
+}
+
+/* soft-enter stacks with VT and double-fades (worse on light). */
+html:active-view-transition .soft-enter {
+	animation: none !important;
+	opacity: 1 !important;
+}
+
+html.e2e-stable .exercise-card-media,
+html.e2e-stable .exercise-detail-page__media,
+html.e2e-stable .records-list-thumb,
+html.e2e-stable .workout-ex-head__media-btn,
+html.e2e-stable .article-card__cover-vt,
+html.e2e-stable .article-page__cover-vt {
+	view-transition-name: none !important;
 }

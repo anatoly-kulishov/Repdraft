@@ -3115,7 +3115,23 @@ button.live-panel-thumb {
 }
 
 .live-set-row.is-just-done {
-	animation: kineticsDigitBump 0.38s var(--ease-spring) both;
+	animation: liveSetDoneBump 0.42s var(--ease-spring) both;
+	transform-origin: center center;
+}
+
+@keyframes liveSetDoneBump {
+	0% {
+		transform: scale(1);
+		background: transparent;
+	}
+	30% {
+		transform: scale(1.02);
+		background: color-mix(in srgb, var(--color-accent-muted) 35%, transparent);
+	}
+	100% {
+		transform: scale(1);
+		background: transparent;
+	}
 }
 
 .live-set-done-btn--done,

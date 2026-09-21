@@ -27,6 +27,11 @@
 	import { records, recordsSync } from '$lib/stores/records';
 	import { isCloudListUncertain } from '$lib/domain/cloudSync';
 	import { linkWithFrom } from '$lib/domain/navigation';
+	import {
+		armExerciseMediaViewTransition,
+		armedExerciseMediaVtId,
+		exerciseMediaViewTransitionName
+	} from '$lib/dom/exerciseMediaViewTransition';
 	import { onboarding } from '$lib/stores/onboarding';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { toasts } from '$lib/stores/toasts';
@@ -43,6 +48,8 @@
 	let indexReady = $state(false);
 	let busyId = $state<string | null>(null);
 	let bookmarkBusyId = $state<string | null>(null);
+	let exitingIds = $state<Set<string>>(new Set());
+	let pendingDeletes = new Map<string, { snapshot: PersonalRecord; displayIndex: number }>();
 	let expandedNoteId = $state<string | null>(null);
 	let filters = $state<ExerciseFilters>(emptyCatalogFilters());
 	let visibleLimit = $state(CATALOG_PAGE_SIZE);
@@ -129,6 +136,15 @@
 		return linkWithFrom(`/exercise/${exerciseId}`, RECORDS_PATH);
 	}
 
+	function armRecordMediaVt(exerciseId: string, event: PointerEvent) {
+		armExerciseMediaViewTransition(exerciseId);
+		const row = (event.currentTarget as HTMLElement).closest('.records-list-body');
+		const thumb = row?.querySelector('.records-list-thumb') as HTMLElement | null;
+		if (thumb) {
+			thumb.style.viewTransitionName = exerciseMediaViewTransitionName(exerciseId);
+		}
+	}
+
 	function loadMore() {
 		if (!hasMore) return;
 		visibleLimit = Math.min(filteredRecords.length, visibleLimit + CATALOG_PAGE_SIZE);
@@ -184,17 +200,34 @@
 		}
 	}
 
-	async function onRemove(exerciseId: string) {
-		if (busyId) return;
+	function onRemove(exerciseId: string) {
+		if (busyId || exitingIds.has(exerciseId) || pendingDeletes.has(exerciseId)) return;
 		const snapshot = get(records).find((r) => r.exerciseId === exerciseId);
 		if (!snapshot) return;
+		pendingDeletes.set(exerciseId, {
+			snapshot,
+			displayIndex: filteredRecords.findIndex((r) => r.exerciseId === exerciseId)
+		});
+		exitingIds = new Set(exitingIds).add(exerciseId);
+	}
+
+	async function onExitComplete(exerciseId: string) {
+		const pending = pendingDeletes.get(exerciseId);
+		if (!pending) {
+			exitingIds = new Set([...exitingIds].filter((x) => x !== exerciseId));
+			return;
+		}
+		pendingDeletes.delete(exerciseId);
 		busyId = exerciseId;
 		try {
 			await records.remove(exerciseId);
 			toasts.showUndo(
 				translate(lang, 'records.deleted'),
 				async () => {
-					await records.save(snapshot);
+					if (pending.displayIndex >= 0) {
+						visibleLimit = Math.max(visibleLimit, pending.displayIndex + 1);
+					}
+					await records.save(pending.snapshot, { preserveUpdatedAt: true });
 				},
 				'info'
 			);
@@ -202,20 +235,25 @@
 			toasts.show(translateError(lang, err, 'records.deleteFail'), 'error');
 		} finally {
 			busyId = null;
+			exitingIds = new Set([...exitingIds].filter((x) => x !== exerciseId));
 		}
 	}
 
 	async function onToggleBookmark(exerciseId: string) {
 		if (bookmarkBusyId) return;
 		bookmarkBusyId = exerciseId;
+		const restoreIndex = get(bookmarks).indexOf(exerciseId);
 		try {
 			const saved = await bookmarks.toggle(exerciseId);
 			if (saved) {
-				toasts.show(translate(lang, 'bookmarks.saved'), 'info', 2600, undefined, 'bookmark');
+				toasts.show(translate(lang, 'bookmarks.saved'), 'info', 2600, {
+					href: '/exercises/saved',
+					label: translate(lang, 'bookmarks.title')
+				}, 'bookmark');
 			} else {
 				toasts.showUndo(
 					translate(lang, 'bookmarks.removed'),
-					() => void bookmarks.toggle(exerciseId),
+					() => void bookmarks.restoreAt(exerciseId, restoreIndex),
 					'info',
 					undefined,
 					'bookmark'
@@ -247,7 +285,7 @@
 				icon: Trash2,
 				variant: 'danger',
 				busy: busyId === record.exerciseId,
-				onAction: () => void onRemove(record.exerciseId)
+				onAction: () => onRemove(record.exerciseId)
 			}
 		];
 	}
@@ -352,9 +390,13 @@
 							{@const saved = $bookmarks.includes(record.exerciseId)}
 							<li>
 								<SwipeToDelete
-									disabled={busyId !== null || bookmarkBusyId !== null}
+									disabled={busyId !== null ||
+										bookmarkBusyId !== null ||
+										exitingIds.has(record.exerciseId)}
+									exiting={exitingIds.has(record.exerciseId)}
 									leadingActions={recordLeadingSwipeActions(record, saved)}
 									actions={recordTrailingSwipeActions(record)}
+									onExitComplete={() => void onExitComplete(record.exerciseId)}
 								>
 									<div class="records-list-card">
 										<div
@@ -364,6 +406,11 @@
 											<a
 												class="records-list-thumb"
 												href={exerciseHref(record.exerciseId)}
+												style:view-transition-name={$armedExerciseMediaVtId ===
+												record.exerciseId
+													? exerciseMediaViewTransitionName(record.exerciseId)
+													: undefined}
+												onpointerdown={(e) => armRecordMediaVt(record.exerciseId, e)}
 												draggable="false"
 												tabindex="-1"
 												aria-hidden="true"
@@ -383,6 +430,7 @@
 												<a
 													class="records-list-text"
 													href={exerciseHref(record.exerciseId)}
+													onpointerdown={(e) => armRecordMediaVt(record.exerciseId, e)}
 													draggable="false"
 												>
 													<span class="records-preview__name">{recordTitle}</span>
@@ -412,9 +460,9 @@
 											class="records-list-delete"
 											aria-label={translate(lang, 'records.delete')}
 											title={translate(lang, 'records.delete')}
-											disabled={busyId !== null}
+											disabled={busyId !== null || exitingIds.has(record.exerciseId)}
 											aria-busy={busyId === record.exerciseId}
-											onclick={() => void onRemove(record.exerciseId)}
+											onclick={() => onRemove(record.exerciseId)}
 										>
 											{#if busyId === record.exerciseId}
 												<Spinner size="sm" block={false} />

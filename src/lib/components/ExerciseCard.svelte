@@ -5,17 +5,25 @@
 	import { translate } from '$lib/i18n/messages';
 	import { draft } from '$lib/stores/draft';
 	import { bookmarks } from '$lib/stores/bookmarks';
+	import { get } from 'svelte/store';
 	import { records } from '$lib/stores/records';
 	import { techniqueClipHints } from '$lib/stores/techniqueClipHints';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import AppIconButton from '$lib/components/AppIconButton.svelte';
+	import ExpandableText from '$lib/components/ExpandableText.svelte';
 	import { cn } from '$lib/utils.js';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { linkWithFrom } from '$lib/domain/navigation';
 	import { hasFadedInMedia, markFadedInMedia } from '$lib/media/mediaFadeCache';
+	import { blurActiveElement } from '$lib/dom/blurActiveElement';
+	import {
+		armExerciseMediaViewTransition,
+		armedExerciseMediaVtId,
+		exerciseMediaViewTransitionName
+	} from '$lib/dom/exerciseMediaViewTransition';
 	import { Bookmark, Check, Dumbbell, Film, Plus, StickyNote, Target } from '@lucide/svelte';
 
 	let {
@@ -36,6 +44,12 @@
 
 	let lang = $derived($resolvedLocale);
 	let title = $derived(exerciseName(exercise, lang));
+	let mediaVtName = $derived(
+		$armedExerciseMediaVtId === exercise.id
+			? exerciseMediaViewTransitionName(exercise.id)
+			: undefined
+	);
+	let mediaEl = $state<HTMLElement | null>(null);
 	let imageSrc = $derived(`/${exercise.image}`);
 	let inDraft = $derived($draft.exercises.some((ex) => ex.exerciseId === exercise.id));
 	let bookmarked = $derived($bookmarks.includes(exercise.id));
@@ -81,6 +95,15 @@
 		return linkWithFrom(`/exercise/${id}`, detailFrom);
 	}
 
+	/** Arm shared VT before navigation so startViewTransition captures the named card. */
+	function armMediaVt() {
+		armExerciseMediaViewTransition(exercise.id);
+		/* Imperative: store→DOM may not flush before click → onNavigate capture. */
+		if (mediaEl) {
+			mediaEl.style.viewTransitionName = exerciseMediaViewTransitionName(exercise.id);
+		}
+	}
+
 	function toggleDraft(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
@@ -88,19 +111,23 @@
 			draft.removeFromDraft(exercise.id);
 			justAdded = false;
 			// Catalog: card + / dock badge already confirm; toast stacks with the dock.
-			return;
-		}
-		const result = draft.addToDraft(exercise.id, {
-			name: exercise.name,
-			equipment: exercise.equipment
-		});
-		if (result.added) {
-			justAdded = true;
-			// Catalog: card check + draft-dock badge already confirm. A toast
-			// stacks with the dock coachmark into a bottom pyramid.
 		} else {
-			toasts.show(translate(lang, 'exercise.already'), 'info', 2600, undefined, 'draft');
+			const result = draft.addToDraft(exercise.id, {
+				name: exercise.name,
+				equipment: exercise.equipment
+			});
+			if (result.added) {
+				justAdded = true;
+				// Catalog: card check + draft-dock badge already confirm. A toast
+				// stacks with the dock coachmark into a bottom pyramid.
+			} else {
+				toasts.show(translate(lang, 'exercise.already'), 'info', 2600, undefined, 'draft');
+			}
 		}
+		/* iOS keeps :hover/:focus fill on the + after tap (looks “stuck” after cancel/remove). */
+		const target = event.currentTarget;
+		if (target instanceof HTMLElement) target.blur();
+		else blurActiveElement();
 	}
 
 	function toggleBookmark(event: MouseEvent) {
@@ -108,16 +135,20 @@
 		event.stopPropagation();
 		if (bookmarkBusy) return;
 		bookmarkBusy = true;
+		const restoreIndex = get(bookmarks).indexOf(exercise.id);
 		void bookmarks
 			.toggle(exercise.id)
 			.then((saved) => {
 				if (saved) {
-					toasts.show(translate(lang, 'bookmarks.saved'), 'info', 2600, undefined, 'bookmark');
+					toasts.show(translate(lang, 'bookmarks.saved'), 'info', 2600, {
+						href: '/exercises/saved',
+						label: translate(lang, 'bookmarks.title')
+					}, 'bookmark');
 					return;
 				}
 				toasts.showUndo(
 					translate(lang, 'bookmarks.removed'),
-					() => void bookmarks.toggle(exercise.id),
+					() => void bookmarks.restoreAt(exercise.id, restoreIndex),
 					'info',
 					undefined,
 					'bookmark'
@@ -218,8 +249,11 @@
 		<div class="exercise-card-list-main">
 			<div class="exercise-card-list-thumb">
 				<a
+					bind:this={mediaEl}
 					href={exerciseHref(exercise.id)}
 					class="exercise-card-media media-well relative shrink-0 overflow-hidden"
+					style:view-transition-name={mediaVtName}
+					onpointerdown={armMediaVt}
 					aria-label={title}
 				>
 					<img
@@ -246,10 +280,11 @@
 			<a
 				href={exerciseHref(exercise.id)}
 				class="exercise-card-body flex min-w-0 flex-col gap-0.5"
+				onpointerdown={armMediaVt}
 				aria-label={title}
 			>
-				<span class="exercise-card-list-title line-clamp-2 font-semibold leading-snug text-[var(--color-ink)]">
-					{title}
+				<span class="exercise-card-list-title font-semibold leading-snug text-[var(--color-ink)]">
+					<ExpandableText text={title} lines={2} class="exercise-card-list-title__text" />
 				</span>
 				{#if recordChips.length > 0}
 					<span
@@ -278,11 +313,14 @@
 		{@render listActions()}
 	{:else}
 		<div
+			bind:this={mediaEl}
 			class="exercise-card-media exercise-card-media--grid media-well relative aspect-square min-w-0 overflow-hidden"
+			style:view-transition-name={mediaVtName}
 		>
 			<a
 				href={exerciseHref(exercise.id)}
 				class="exercise-card-media-link absolute inset-0 active:bg-[var(--color-surface-muted)]"
+				onpointerdown={armMediaVt}
 				aria-label={title}
 			>
 				<img
@@ -322,9 +360,10 @@
 		<a
 			href={exerciseHref(exercise.id)}
 			class="exercise-card-body exercise-card-body--grid flex min-w-0 flex-1 flex-col gap-1 p-2.5 active:bg-[var(--color-surface-muted)]"
+			onpointerdown={armMediaVt}
 		>
-			<h2 class="exercise-card-grid-title line-clamp-2 text-[13px] font-semibold leading-snug">
-				{title}
+			<h2 class="exercise-card-grid-title text-[13px] font-semibold leading-snug">
+				<ExpandableText text={title} lines={2} as="span" class="exercise-card-grid-title__text" />
 			</h2>
 			<div class="exercise-card-grid-meta">
 				<span class="exercise-card-grid-meta-item" title={labelTarget(exercise.target, lang)}>

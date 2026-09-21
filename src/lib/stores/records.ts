@@ -109,7 +109,12 @@ function createRecordsStore() {
 			const sanitized = sanitizePersonalRecord(
 				{
 					...record,
-					updatedAt: new Date().toISOString()
+					updatedAt:
+						options?.preserveUpdatedAt === true
+							? record.updatedAt?.trim() ||
+								get(store).find((r) => r.exerciseId === record.exerciseId)?.updatedAt ||
+								'1970-01-01T00:00:00.000Z'
+							: new Date().toISOString()
 				},
 				{
 					allowNoteOnly: options?.allowNoteOnly === true || noteShaped
@@ -118,13 +123,29 @@ function createRecordsStore() {
 			if (!sanitized.ok) return false;
 			const next = sanitized.record;
 			const existing = get(store).find((r) => r.exerciseId === next.exerciseId);
-			if (existing && personalRecordContentEqual(existing, next)) return true;
+			const restoring = options?.preserveUpdatedAt === true;
+			/* Content-equal ignores updatedAt — must not skip undo restore that only repairs stamp/order. */
+			if (!restoring && existing && personalRecordContentEqual(existing, next)) return true;
 			const cloudOk = await mirrorCloudWrite({
 				localWrite: () => localRecordRepository.save(next),
 				cloudWrite: () => supabaseRecordRepository.save(next),
 				label: 'records.save',
-				outboxOnFail: { kind: 'record.save', exerciseId: next.exerciseId }
+				outboxOnFail: { kind: 'record.save', exerciseId: next.exerciseId },
+				announceLocalSave: !restoring
 			});
+			/* Undo: keep updatedAt order; skip cloud list merge. */
+			if (restoring) {
+				store.update((items) => {
+					const rest = items.filter((r) => r.exerciseId !== next.exerciseId);
+					return [...rest, next].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+				});
+				await refresh({ cloud: false });
+				store.update((items) => {
+					const rest = items.filter((r) => r.exerciseId !== next.exerciseId);
+					return [...rest, next].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+				});
+				return true;
+			}
 			await refresh({ cloud: cloudOk && isCloudMode() });
 			return true;
 		},

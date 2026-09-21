@@ -331,6 +331,10 @@
 			},
 			setJustDoneSetIndex: (si: number | null) => {
 				justDoneSetIndex = si;
+				if (si == null || typeof window === 'undefined') return;
+				window.setTimeout(() => {
+					if (justDoneSetIndex === si) justDoneSetIndex = null;
+				}, 420);
 			},
 			setRestChimeArmed: (armed: boolean) => {
 				restChimeArmed = armed;

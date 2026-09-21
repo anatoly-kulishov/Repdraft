@@ -5,6 +5,7 @@
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
+	import ExpandableText from '$lib/components/ExpandableText.svelte';
 	import ExerciseReorderHandle from '$lib/components/ExerciseReorderHandle.svelte';
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -34,6 +35,11 @@
 		hasLadderScheme
 	} from '$lib/domain/workout';
 	import { scrollFieldIntoView } from '$lib/dom/scrollFieldIntoView';
+	import {
+		armExerciseMediaViewTransition,
+		armedExerciseMediaVtId,
+		exerciseMediaViewTransitionName
+	} from '$lib/dom/exerciseMediaViewTransition';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { page } from '$app/stores';
@@ -77,6 +83,22 @@
 
 	let lang = $derived($resolvedLocale);
 	let techniqueOpen = $state(false);
+	let mediaVtName = $derived(
+		$armedExerciseMediaVtId === item.exerciseId
+			? exerciseMediaViewTransitionName(item.exerciseId)
+			: undefined
+	);
+
+	function armMediaVt() {
+		armExerciseMediaViewTransition(item.exerciseId);
+		const el = document.querySelector(
+			`[data-ex-media-vt="${CSS.escape(item.exerciseId)}"]`
+		) as HTMLElement | null;
+		if (el) {
+			el.style.viewTransitionName = exerciseMediaViewTransitionName(item.exerciseId);
+		}
+	}
+
 	let actionsOpen = $state(false);
 	let ladderOpen = $state(false);
 	let ladderFromDraft = $state('');
@@ -348,6 +370,8 @@
 			<AppButton
 				variant="ghost"
 				class="workout-ex-head__media-btn media-well workout-ex-head__media !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+				data-ex-media-vt={item.exerciseId}
+				style={mediaVtName ? `view-transition-name: ${mediaVtName}` : undefined}
 				aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
 				onclick={() => {
 					techniqueOpen = true;
@@ -356,9 +380,13 @@
 				<img src={`/${meta.image}`} alt="" width="120" height="120" />
 			</AppButton>
 			<div class="workout-ex-head__copy">
-				<a class="workout-ex-head__title" href={detailHref}>
-					{title}
-				</a>
+				<ExpandableText
+					class="workout-ex-head__title"
+					text={title}
+					lines={2}
+					href={detailHref}
+					onpointerdown={armMediaVt}
+				/>
 				{#if inGroup}
 					<div class="workout-ex-fields workout-ex-fields--group">
 						{#if ladderOn}

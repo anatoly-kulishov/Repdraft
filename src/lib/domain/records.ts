@@ -72,6 +72,8 @@ export type RecordSanitizeResult =
 export type SanitizePersonalRecordOptions = {
 	/** Cardio MVP: note alone is a valid personal record (no new storage fields). */
 	allowNoteOnly?: boolean;
+	/** Undo restore: keep original updatedAt so list order does not jump. */
+	preserveUpdatedAt?: boolean;
 };
 
 /** Normalize + validate before persist. */

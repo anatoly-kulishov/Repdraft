@@ -35,7 +35,9 @@
 		label,
 		disabled = false,
 		busy = false,
+		exiting = false,
 		onDelete,
+		onExitComplete,
 		leadingActions = null,
 		actions = null,
 		children
@@ -43,7 +45,10 @@
 		label?: string;
 		disabled?: boolean;
 		busy?: boolean;
+		/** Collapse height then call onExitComplete (list remove after animation). */
+		exiting?: boolean;
 		onDelete?: () => void;
+		onExitComplete?: () => void;
 		leadingActions?: SwipeRowAction[] | null;
 		actions?: SwipeRowAction[] | null;
 		children: Snippet;
@@ -78,12 +83,14 @@
 	let axis = $state<'undecided' | 'h' | 'v'>('undecided');
 	let moved = false;
 	let sheetEl = $state<HTMLDivElement | null>(null);
+	let rootEl = $state<HTMLDivElement | null>(null);
 	let lastX = 0;
 	let lastT = 0;
 	let velocityX = 0;
 	let ignoreScrollUntil = 0;
 	let claimed = false;
 	let suppressClickUntil = 0;
+	let exitStarted = false;
 
 	function close() {
 		offset = 0;
@@ -153,8 +160,70 @@
 		};
 	});
 
+	$effect(() => {
+		if (!exiting) {
+			exitStarted = false;
+			const el = rootEl;
+			if (el) {
+				el.classList.remove('is-exiting');
+				el.style.removeProperty('height');
+				el.style.removeProperty('opacity');
+				el.style.removeProperty('overflow');
+				el.style.removeProperty('margin-block');
+				el.style.removeProperty('padding-block');
+			}
+			return;
+		}
+		if (exitStarted) return;
+		exitStarted = true;
+		close();
+		const el = rootEl;
+		const finish = () => {
+			onExitComplete?.();
+		};
+		let reduced = false;
+		try {
+			reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		} catch {
+			/* ignore */
+		}
+		if (!el || reduced || typeof el.getBoundingClientRect !== 'function') {
+			finish();
+			return;
+		}
+		const height = el.getBoundingClientRect().height;
+		if (!(height > 0)) {
+			finish();
+			return;
+		}
+		el.style.height = `${height}px`;
+		el.style.overflow = 'hidden';
+		void el.offsetHeight;
+		el.classList.add('is-exiting');
+		el.style.height = '0px';
+		el.style.opacity = '0';
+		el.style.marginBlock = '0px';
+		el.style.paddingBlock = '0px';
+		let done = false;
+		const onEnd = (event: TransitionEvent) => {
+			if (event.target !== el) return;
+			if (event.propertyName !== 'height' && event.propertyName !== 'opacity') return;
+			if (done) return;
+			done = true;
+			el.removeEventListener('transitionend', onEnd);
+			finish();
+		};
+		el.addEventListener('transitionend', onEnd);
+		window.setTimeout(() => {
+			if (done) return;
+			done = true;
+			el.removeEventListener('transitionend', onEnd);
+			finish();
+		}, 280);
+	});
+
 	function onPointerDown(event: PointerEvent) {
-		if (!swipeOk || disabled) return;
+		if (!swipeOk || disabled || exiting) return;
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
 		if (event.isPrimary === false) return;
 		if (event.target instanceof Element && event.target.closest('[data-swipe-pass]')) return;
@@ -278,6 +347,7 @@
 </script>
 
 <div
+	bind:this={rootEl}
 	class="swipe-to-delete"
 	class:is-enabled={swipeOk}
 	class:is-open={open !== false}
@@ -287,6 +357,7 @@
 	class:is-dragging-h={axisLockedH}
 	class:is-revealed-leading={showLeadingRail}
 	class:is-revealed-trailing={showTrailingRail}
+	class:is-exiting={exiting}
 	class:swipe-to-delete--leading={leadingRail.length > 0}
 	class:swipe-to-delete--trailing={trailingActions.length > 0}
 	class:swipe-to-delete--multi={trailingActions.length > 1}

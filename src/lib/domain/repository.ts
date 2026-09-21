@@ -35,4 +35,6 @@ export interface BookmarkRepository {
 	list(): Promise<string[]>;
 	add(exerciseId: string): Promise<void>;
 	remove(exerciseId: string): Promise<void>;
+	/** Replace ordered id list (undo restore keeps prior index). */
+	replaceAll(ids: string[]): Promise<void>;
 }

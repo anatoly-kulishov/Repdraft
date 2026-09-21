@@ -10,41 +10,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INDEX_PATH = ROOT / "static/data/exercises.index.json"
 FULL_PATH = ROOT / "data/exercises.full.json"
+FULL_STATIC_PATH = ROOT / "static/data/exercises.full.json"
 OVERRIDES_PATH = ROOT / "static/data/exercise-names.ru.overrides.json"
 SRC_OVERRIDES_PATH = ROOT / "src/lib/data/exerciseNamesRuOverrides.json"
 LATIN_SCRUB_PATH = Path(__file__).resolve().parent / "exercise-latin-scrub.json"
 
 # Leading equipment → natural Russian adjunct (usually at the end).
+# Bodyweight is omitted (gym-standard: name the movement, add the tool only when it disambiguates).
 EQUIPMENT_PREFIX: list[tuple[str, str]] = [
-	("olympic barbell", "с олимпийской штангой"),
-	("ez barbell", "с EZ-грифом"),
-	("trap bar", "с трэп-грифом"),
-	("smith machine", "в машине Смита"),
-	("leverage machine", "в рычажном тренажёре"),
-	("sled machine", "на санях"),
-	("skierg machine", "на SkiErg"),
-	("elliptical machine", "на эллипсе"),
-	("stepmill machine", "на степмилле"),
-	("stationary bike", "на велотренажёре"),
-	("upper body ergometer", "на арм-эргометре"),
-	("stability ball", "с фитболом"),
-	("medicine ball", "с медболом"),
-	("bosu ball", "на босу"),
-	("resistance band", "с эспандером"),
-	("wheel roller", "с колесом"),
-	("body weight", "с собственным весом"),
-	("kettlebell", "с гирей"),
-	("dumbbell", "с гантелями"),
-	"barbell",
-]
-
-# Fix: keep list of tuples only
-EQUIPMENT_PREFIX = [
 	("olympic barbell", "с олимпийской штангой"),
 	("ez barbell", "с EZ-грифом"),
 	("ez bar", "с EZ-грифом"),
 	("trap bar", "с трэп-грифом"),
-	("smith machine", "в машине Смита"),
+	("smith machine", "в тренажёре Смита"),
 	("leverage machine", "в рычажном тренажёре"),
 	("sled machine", "на санях"),
 	("skierg machine", "на SkiErg"),
@@ -57,20 +35,21 @@ EQUIPMENT_PREFIX = [
 	("bosu ball", "на босу"),
 	("resistance band", "с эспандером"),
 	("wheel roller", "с колесом"),
-	("body weight", "с собственным весом"),
 	("kettlebell", "с гирей"),
 	("dumbbell", "с гантелями"),
 	("barbell", "со штангой"),
 	("cable", "на блоке"),
 	("band", "с резинкой"),
 	("lever", "в рычажном тренажёре"),
-	("smith", "в машине Смита"),
+	("smith", "в тренажёре Смита"),
 	("ez", "с EZ-грифом"),
 	("rope", "с канатом"),
 	("tire", "с покрышкой"),
 	("roller", "с роллером"),
 	("weighted", "с отягощением"),
 	("assisted", "с поддержкой"),
+	("bodyweight", ""),
+	("body weight", ""),
 ]
 
 PHRASES: list[tuple[str, str]] = [
@@ -89,20 +68,29 @@ PHRASES: list[tuple[str, str]] = [
 	("single arm", "одной рукой"),
 	("single leg", "на одной ноге"),
 	("alternate arm", "поочерёдно руками"),
+	("guillotine bench press", "жим «гильотина» лёжа"),
+	("jm bench press", "JM-жим"),
+	("close-grip bench press", "жим узким хватом лёжа"),
+	("close grip bench press", "жим узким хватом лёжа"),
+	("incline bench press", "жим на наклонной скамье"),
+	("decline bench press", "жим на наклонной скамье вниз"),
 	("bench press", "жим лёжа"),
-	("guillotine bench press", "жим лёжа «гильотина»"),
 	("shoulder press", "жим плечами"),
 	("military press", "армейский жим"),
 	("overhead press", "жим над головой"),
-	("chest press", "жим на грудь"),
+	("chest press", "жим от груди"),
 	("leg press", "жим ногами"),
 	("calf raise", "подъём на носки"),
 	("calf raises", "подъёмы на носки"),
-	("front raise", "подъём вперёд"),
-	("lateral raise", "разведение в стороны"),
-	("rear delt raise", "подъём задних дельт"),
-	("rear delt row", "тяга задних дельт"),
-	("rear delt", "задние дельты"),
+	("front raise", "подъём перед собой"),
+	("rear lateral raise", "разведение на заднюю дельту"),
+	("lateral raise", "разведение стоя"),
+	("rear delt raise", "разведение на заднюю дельту"),
+	("cable kneeling rear delt row", "тяга блока на заднюю дельту на коленях"),
+	("cable standing rear delt row", "тяга блока на заднюю дельту стоя"),
+	("cable rear delt row", "тяга блока на заднюю дельту"),
+	("rear delt row", "тяга на заднюю дельту"),
+	("rear delt", "заднюю дельту"),
 	("straight back", "прямой спины"),
 	("side bend", "наклон в сторону"),
 	("side bends", "наклоны в сторону"),
@@ -112,17 +100,23 @@ PHRASES: list[tuple[str, str]] = [
 	("leg curl", "сгибание ног"),
 	("preacher curl", "сгибание на скамье Скотта"),
 	("concentration curl", "концентрированное сгибание"),
-	("bicep curl", "сгибание на бицепс"),
-	("biceps curl", "сгибание на бицепс"),
+	("bicep curl", "подъём на бицепс"),
+	("biceps curl", "подъём на бицепс"),
+	("lying triceps extension skull crusher", "французский жим лёжа"),
+	("skull crusher", "французский жим лёжа"),
+	("lying triceps extension", "французский жим лёжа"),
 	("triceps extension", "разгибание на трицепс"),
-	("skull crusher", "французский жим"),
 	("face pull", "тяга к лицу"),
 	("upright row", "тяга к подбородку"),
 	("bent over row", "тяга в наклоне"),
 	("bent-over row", "тяга в наклоне"),
-	("seated row", "тяга сидя"),
+	("cable low seated row", "горизонтальная тяга в блочном тренажёре"),
+	("low seated row", "горизонтальная тяга в блочном тренажёре"),
+	("cable seated row", "горизонтальная тяга в блочном тренажёре"),
+	("seated row", "горизонтальная тяга"),
 	("inverted row", "горизонтальные подтягивания"),
-	("lat pulldown", "тяга верхнего блока"),
+	("lat pulldown", "вертикальная тяга"),
+	("lateral pulldown", "вертикальная тяга"),
 	("romanian deadlift", "румынская тяга"),
 	("sumo deadlift", "становая тяга сумо"),
 	("stiff leg deadlift", "тяга на прямых ногах"),
@@ -159,7 +153,6 @@ PHRASES: list[tuple[str, str]] = [
 	("incline bench", "на наклонной скамье"),
 	("flat bench", "на горизонтальной скамье"),
 	("sissy squat", "сисси-присед"),
-	("hack squat", "гакк-присед"),
 	("bulgarian split squat", "болгарский сплит-присед"),
 	("single leg split squat", "болгарский сплит-присед"),
 	("split squats", "сплит-приседания"),
@@ -176,24 +169,25 @@ PHRASES: list[tuple[str, str]] = [
 	("stretch lunge", "растяжка в выпаде"),
 	("lunge with swing", "выпад с махами"),
 	("sprint lunge", "спринтовый выпад"),
-	("rear lunge", "выпад назад"),
 	("45в°", "45°"),
 	("v. 2", "вариант 2"),
 	("goblet squat", "гоблет-присед"),
-	("front squat", "фронтальный присед"),
-	("back squat", "присед со штангой на спине"),
+	("front squat", "приседания на груди"),
+	("back squat", "приседания со штангой на спине"),
 	("overhead squat", "присед над головой"),
 	("pistol squat", "пистолетик"),
 	("pistol", "пистолетик"),
 	("cossack squat", "казачий присед"),
 	("jump squat", "прыжковый присед"),
+	("full squat", "приседания"),
 	("walking lunge", "выпады в ходьбе"),
-	("reverse lunge", "выпад назад"),
-	("forward lunge", "выпад вперёд"),
+	("reverse lunge", "выпады назад"),
+	("forward lunge", "выпады вперёд"),
 	("lateral lunge", "выпад в сторону"),
 	("curtsy lunge", "выпад крест-накрест"),
-	("step-up", "зашагивание"),
-	("step up", "зашагивание"),
+	("rear lunge", "выпады назад"),
+	("step-up", "вышагивания на платформу"),
+	("step up", "вышагивания на платформу"),
 	("donkey kick", "отведение ноги назад"),
 	("one leg donkey calf raise", "подъём на носки «ослик» на одной ноге"),
 	("donkey calf raise", "подъём на носки «ослик»"),
@@ -206,16 +200,26 @@ PHRASES: list[tuple[str, str]] = [
 	("bent arm", "согнутой рукой"),
 	("straight arm", "прямой рукой"),
 	("straight leg", "на прямой ноге"),
-	("pushdown", "разгибание вниз"),
-	("push-down", "разгибание вниз"),
-	("pulldown", "тяга"),
+	("triceps pushdown", "жим к низу"),
+	("reverse-grip pushdown", "жим к низу обратным хватом"),
+	("reverse grip pushdown", "жим к низу обратным хватом"),
+	("pushdown", "жим к низу"),
+	("push-down", "жим к низу"),
+	("pulldown", "вертикальная тяга"),
 	("pullover", "пуловер"),
 	("pull-over", "пуловер"),
-	("kickback", "отведение назад"),
-	("kickbacks", "отведения назад"),
+	("kickback", "разгибание в наклоне"),
+	("kickbacks", "разгибания в наклоне"),
 	("deadlift", "становая тяга"),
 	("hyperextension", "гиперэкстензия"),
+	("hyper extension", "гиперэкстензия"),
+	("reverse hyper extension", "обратная гиперэкстензия"),
+	("reverse hyper", "обратная гиперэкстензия"),
 	("jumping jack", "прыжки джекинг"),
+	("jack burpee", "джек-берпи"),
+	("jack jump", "джек-прыжок"),
+	("anti gravity press", "антигравитационный жим"),
+	("anti-gravity press", "антигравитационный жим"),
 	("burpee", "берпи"),
 	("thruster", "трастер"),
 	("thrusters", "трастеры"),
@@ -225,6 +229,8 @@ PHRASES: list[tuple[str, str]] = [
 	("archer push up", "отжимания лучника"),
 	("chest dip", "отжимания на брусьях на грудь"),
 	("wide-grip chest dip", "отжимания на брусьях широким хватом на грудь"),
+	("bench dip", "отжимания от скамьи"),
+	("hack squat", "гак-приседания"),
 	("stability ball", "с фитболом"),
 	("with stability ball", "с фитболом"),
 	("medicine ball", "с медболом"),
@@ -234,7 +240,7 @@ PHRASES: list[tuple[str, str]] = [
 	("incline press", "жим на наклонной скамье"),
 	("incline fly", "разведение на наклонной скамье"),
 	("decline fly", "разведение вниз головой"),
-	("front raise and pullover", "подъём вперёд и пуловер"),
+	("front raise and pullover", "подъём перед собой и пуловер"),
 	("guillotine", "гильотина"),
 	("archer", "лучника"),
 	("diamond", "алмазные"),
@@ -253,7 +259,6 @@ PHRASES: list[tuple[str, str]] = [
 	("side-to-side chin", "подтягивания из стороны в сторону"),
 	("pectoralis major", "большой грудной"),
 	("pectoralis minor", "малой грудной"),
-	("full squat", "присед"),
 	("side pov", "вид сбоку"),
 	("back pov", "вид сзади"),
 	("front pov", "вид спереди"),
@@ -292,6 +297,18 @@ PHRASES: list[tuple[str, str]] = [
 	("pike-to-cobra", "пайк-кобра"),
 	("kettlebell windmill", "мельница с гирей"),
 	("knee touch crunch", "скручивание с касанием колен"),
+	# avoid «со скручиванием скручивание» from twisting + crunch/sit-up
+	("twisting crunch", "скручивание с поворотом"),
+	("twisting crunches", "скручивания с поворотом"),
+	("twisting sit-up", "скручивания с поворотом"),
+	("twisting sit up", "скручивания с поворотом"),
+	("twisting chest press", "жим от груди с поворотом"),
+	("twisting seated row", "горизонтальная тяга с поворотом"),
+	("twisting overhead press", "жим над головой с поворотом"),
+	("twisting bench press", "жим лёжа с поворотом"),
+	("twisting pull", "тяга с поворотом"),
+	("twisting leg hip raise", "подъём бедра с поворотом"),
+	("decline crunch", "скручивания на наклонной скамье вниз"),
 	("l-sit on floor", "L-сед на полу"),
 	("landmine 180", "поворот штанги на 180°"),
 	("lean planche", "наклонный планш"),
@@ -305,7 +322,7 @@ PHRASES: list[tuple[str, str]] = [
 	("pelvic tilt", "наклон таза"),
 	("cable judo flip", "бросок дзюдо на блоке"),
 	("russian twist", "русское скручивание"),
-	("bicycle crunch", "велосипедное скручивание"),
+	("bicycle crunch", "велосипедные скручивания"),
 	("crab twist toe touch", "скручивание «краб» с касанием носков"),
 	("cocoons", "коконы"),
 	("bottoms-up", "упор снизу вверх"),
@@ -329,7 +346,6 @@ PHRASES: list[tuple[str, str]] = [
 	("lateral pulldown", "тяга верхнего блока"),
 	("upper row", "верхняя тяга"),
 	("narrow row", "тяга узким хватом"),
-	("low seated row", "низкая тяга сидя"),
 	("rear pulldown", "задняя тяга"),
 	("with rope attachment", "с канатной рукоятью"),
 	("cuban press", "кубинский жим"),
@@ -337,7 +353,8 @@ PHRASES: list[tuple[str, str]] = [
 	("catch and overhead throw", "захват и бросок над головой"),
 	("muscle up", "выход силой"),
 	("muscle-up", "выход силой"),
-	("air bike", "велосипед с вентилятором"),
+	("air bike", "велосипедные скручивания"),
+	("arnold press", "жим Арнольда"),
 	("kipping muscle up", "выход силой с киппингом"),
 	("kipping muscle-up", "выход силой с киппингом"),
 	("skater hops", "прыжки конькобежца"),
@@ -406,14 +423,14 @@ PHRASES: list[tuple[str, str]] = [
 	("rotary calf", "ротационный подъём на носки"),
 	("calf press", "жим носками"),
 	("tennis ball", "теннисным мячом"),
-	("triceps pushdown", "разгибание на трицепс"),
 	("inverse leg curl", "обратное сгибание ног"),
-	("good morning", "наклон корпуса"),
+	("stiff leg good morning", "гудморнинг на прямых ногах"),
+	("good morning", "гудморнинг"),
 	("drag curl", "тяговое сгибание"),
 	("zercher squat", "присед с грифом в локтях"),
 	("pendlay row", "тяга Пендлея"),
-	("skull crusher", "французский жим"),
-	("skullcrusher", "французский жим"),
+	("skull crusher", "французский жим лёжа"),
+	("skullcrusher", "французский жим лёжа"),
 	("jack knife", "ножницы"),
 	("jackknife", "ножницы"),
 	("3/4 sit-up", "скручивания на 3/4"),
@@ -424,7 +441,7 @@ PHRASES: list[tuple[str, str]] = [
 	("cycle cross trainer", "кросс-тренажёр (велосипед)"),
 	("arm slingers", "разведение рук"),
 	("spider curl", "сгибание «паука»"),
-	("stiff leg good morning", "наклон корпуса на прямых ногах"),
+	("stiff leg good morning", "гудморнинг на прямых ногах"),
 	("close grip to skull press", "жим узким хватом на трицепс"),
 	("decline close grip to skull press", "жим узким хватом на трицепс вниз головой"),
 	("calf press on leg press", "жим носками в тренажёре жима ногами"),
@@ -481,7 +498,6 @@ PHRASES: list[tuple[str, str]] = [
 	("arm blaster", "бластером для рук"),
 	("ez-bar", "с EZ-грифом"),
 	("ez bar", "с EZ-грифом"),
-	("jm bench press", "JM-жим лёжа"),
 	("with rope", "с канатом"),
 	("with towel", "с полотенцем"),
 	("v-bar", "V-грифом"),
@@ -539,8 +555,8 @@ PHRASES: list[tuple[str, str]] = [
 
 WORDS: dict[str, str] = {
 	"press": "жим",
-	"curl": "сгибание на бицепс",
-	"curls": "сгибания на бицепс",
+	"curl": "подъём на бицепс",
+	"curls": "подъёмы на бицепс",
 	"row": "тяга",
 	"rows": "тяги",
 	"raise": "подъём",
@@ -839,8 +855,40 @@ def normalize_spaces(text: str) -> str:
 	text = re.sub(r"\s+", " ", text).strip(" -–—,/")
 	text = re.sub(r"\s+([,.:;)])", r"\1", text)
 	text = re.sub(r"([(])\s+", r"\1", text)
+	# Compound prefixes from latin scrub ("джек-", "анти-", "гипер-"): drop space after hyphen.
+	# Keep "слово - слово" (spaces on both sides) as a separator.
+	text = re.sub(r"(?<=\S)-\s+(?=\S)", "-", text)
 	text = re.sub(r"\s{2,}", " ", text)
 	return text
+
+
+# Acronyms that must keep their case after phrase substitution (JM-жим, EZ-гриф, …).
+ACRONYM_CANON: dict[str, str] = {
+	"JM": "JM",
+	"EZ": "EZ",
+	"SZ": "SZ",
+	"V": "V",
+	"T": "T",
+	"W": "W",
+	"Y": "Y",
+}
+_ACRONYM_RE = re.compile(r"\b(?:JM|EZ|SZ|[VTWY])(?=-|\b)", re.IGNORECASE)
+
+
+def lower_preserving_acronyms(text: str) -> str:
+	parts: list[str] = []
+	i = 0
+	for match in _ACRONYM_RE.finditer(text):
+		parts.append(text[i : match.start()].lower())
+		parts.append(ACRONYM_CANON[match.group(0).upper()])
+		i = match.end()
+	parts.append(text[i:].lower())
+	return "".join(parts)
+
+
+def only_protected_latin(text: str) -> bool:
+	stripped = _ACRONYM_RE.sub("", text)
+	return not re.search(r"[A-Za-z]", stripped)
 
 
 def split_parens(name: str) -> tuple[str, str]:
@@ -853,14 +901,14 @@ def split_parens(name: str) -> tuple[str, str]:
 
 
 def translate_tokens(text: str) -> str:
-	text = text.lower().strip()
+	text = lower_preserving_acronyms(text).strip()
 	text = re.sub(r"\b(male|female|man|woman)\b", " ", text)
 	text = normalize_spaces(text)
 
 	for eng, rus in PHRASES:
 		text = re.sub(rf"(?<![\w-]){re.escape(eng)}(?![\w-])", rus, text)
 
-	parts = re.findall(r"[a-z0-9°'/+-]+|[^a-z0-9°'/+\-\s]+|\s+", text)
+	parts = re.findall(r"[A-Za-z0-9°'/+-]+|[^A-Za-z0-9°'/+\-\s]+|\s+", text)
 	out: list[str] = []
 	for part in parts:
 		if part.isspace():
@@ -872,8 +920,18 @@ def translate_tokens(text: str) -> str:
 			if val:
 				out.append(val)
 			continue
+		canon = ACRONYM_CANON.get(part.upper())
+		if canon and part.upper() in ACRONYM_CANON:
+			out.append(canon)
+			continue
 		out.append(part)
 	return normalize_spaces("".join(out))
+
+
+def _apply_phrases(text: str) -> str:
+	for eng, rus in PHRASES:
+		text = re.sub(rf"(?<![\w-]){re.escape(eng)}(?![\w-])", rus, text)
+	return text
 
 
 def translate_name(name: str) -> str:
@@ -882,18 +940,31 @@ def translate_name(name: str) -> str:
 	core_l = re.sub(r"\b(male|female|man|woman)\b", " ", core_l)
 	core_l = normalize_spaces(core_l)
 
+	# Gym phrases first so "cable seated row" is not split into "seated row" + "на блоке".
+	phrased = _apply_phrases(core_l)
+
 	equip_ru = ""
 	for eng, rus in EQUIPMENT_PREFIX:
-		if core_l.startswith(eng + " ") or core_l == eng:
+		if phrased.startswith(eng + " ") or phrased == eng:
 			equip_ru = rus
-			core_l = core_l[len(eng) :].strip()
+			phrased = phrased[len(eng) :].strip()
 			break
 
-	body = translate_tokens(core_l)
+	if re.search(r"[A-Za-z]", phrased) and not only_protected_latin(phrased):
+		body = translate_tokens(phrased)
+	else:
+		body = phrased
 	note_ru = translate_tokens(note) if note else ""
+	# движение → позиция → снаряд: "сидя жим плечами" + "в Смите" → "жим плечами сидя в Смите"
+	body = re.sub(
+		r"^(сидя|стоя|лёжа|на коленях)\s+(.+)$",
+		lambda m: f"{m.group(2)} {m.group(1).lower()}",
+		body,
+		flags=re.IGNORECASE,
+	)
 
 	# Avoid doubling "на блоке" when the body already mentions a block/pulley.
-	if equip_ru == "на блоке" and re.search(r"\b(блоке|блока)\b", body):
+	if equip_ru == "на блоке" and re.search(r"\b(блоке|блока|блочном)\b", body):
 		equip_ru = ""
 	chunks = [c for c in [body, equip_ru] if c]
 	result = normalize_spaces(" ".join(chunks))
@@ -942,6 +1013,7 @@ def translate_name(name: str) -> str:
 		(r"^С грифом (.+)", r"\1 с грифом"),
 		(r"^лучника отжимания\b", "отжимания лучника"),
 		(r"^лучника подтягивания\b", "подтягивания лучника"),
+		(r"^Арнольда жим\b", "Жим Арнольда"),
 		(r"^на грудь отжимания на брусьях\b", "отжимания на брусьях на грудь"),
 		(r"^широким хватом на грудь отжимания на брусьях\b", "отжимания на брусьях широким хватом на грудь"),
 		(r"^лёжа сгибание ног\b", "сгибание ног лёжа"),
@@ -984,16 +1056,61 @@ def translate_name(name: str) -> str:
 		(r"задний разведение", "заднее разведение"),
 		(r"обратный скручивание", "обратное скручивание"),
 		(r"боковой скручивание", "боковое скручивание"),
+		(r"со скручиванием скручивания", "скручивания с поворотом"),
+		(r"со скручиванием скручивание", "скручивание с поворотом"),
+		(r"наклонный скручивания с поворотом", "наклонные скручивания с поворотом"),
+		(r"^Наклонный скручивания", "Наклонные скручивания"),
+		(r"^наклонный скручивания", "наклонные скручивания"),
 		(r"с канатом рукоятью", "с канатной рукоятью"),
 		(r"сидя широкий под углом поза", "поза широкого угла сидя"),
 		(r"осла подъём на носки", "подъём на носки «ослик»"),
+		(r"\bв машине Смита\b", "в тренажёре Смита"),
+		(r"\bмахи в стороны\b", "разведение стоя"),
+		(r"\bмахи на заднюю дельту\b", "разведение на заднюю дельту"),
+		(r"^тяга верхнего блока\b", "вертикальная тяга"),
+		(r"^тяга нижнего блока сидя\b", "горизонтальная тяга в блочном тренажёре"),
+		(r"^разгибание на трицепс на блоке\b", "жим к низу в блочном тренажёре"),
+		(r"^разгибание вниз на блоке\b", "жим к низу в блочном тренажёре"),
+		(r"\bкнизу\b", "к низу"),
+		(r"^фронтальный присед\b", "приседания на груди"),
+		(r"^присед со штангой\b", "приседания со штангой"),
+		(r"^приседания на груди со штангой\b", "приседания со штангой на груди"),
+		(r"^присед в тренажёре Смита\b", "приседания в тренажёре Смита"),
+		(r"^гакк-присед\b", "гак-приседания"),
+		(r"^подъём на бицепс со штангой\b", "подъём штанги на бицепс стоя"),
+		(r"^сгибание на бицепс со штангой\b", "подъём штанги на бицепс стоя"),
+		(r"^жим лёжа со штангой\b", "жим штанги лёжа"),
+		(r"^жим лёжа узким хватом со штангой\b", "жим штанги узким хватом лёжа"),
+		(r"^жим лёжа на наклонной скамье со штангой\b", "жим штанги на наклонной скамье"),
+		(r"^жим лёжа на наклонной скамье вниз со штангой\b", "жим штанги на наклонной скамье вниз"),
+		(r"^жим лёжа с гантелями\b", "жим гантелей лёжа"),
+		(r"^жим на наклонной скамье с гантелями\b", "жим гантелей на наклонной скамье"),
+		(r"^жим на наклонной скамье вниз с гантелями\b", "жим гантелей на наклонной скамье вниз"),
+		(r"^разведение стоя с гантелями\b", "разведение гантелей стоя"),
+		(r"^подъём перед собой с гантелями\b", "подъём гантелей перед собой"),
+		(r"^жим к низу на блоке\b", "жим к низу в блочном тренажёре"),
+		(r"^жим к низу обратным хватом на блоке\b", "жим к низу обратным хватом в блочном тренажёре"),
+		(r"^жим к низу с канатом на блоке\b", "жим к низу с канатом в блочном тренажёре"),
+		(r"^становая тяга со штангой\b", "становая тяга"),
+		(r"^тяга в наклоне со штангой\b", "тяга штанги в наклоне"),
+		(r"^тяга в наклоне с гантелями\b", "тяга гантели одной рукой в наклоне"),
+		(r"^тяга к подбородку со штангой\b", "тяга штанги к подбородку"),
+		(r"^выпад со штангой\b", "выпады со штангой"),
+		(r"^выпады назад со штангой\b", "выпады назад со штангой"),
+		(r"^выпад назад со штангой\b", "выпады назад со штангой"),
 	]
 	for pattern, repl in fixes:
 		result = re.sub(pattern, repl, result, flags=re.IGNORECASE)
 
 	result = scrub_leftover_latin(result)
 	result = normalize_spaces(result)
-	return result[:1].upper() + result[1:] if result else result
+	# Preserve leading acronyms (JM-жим), only title-case plain Cyrillic starts.
+	if result:
+		if _ACRONYM_RE.match(result):
+			pass
+		else:
+			result = result[:1].upper() + result[1:]
+	return result
 
 
 def resolve_ru_name(name: str, override: str | None = None) -> str:
@@ -1003,16 +1120,149 @@ def resolve_ru_name(name: str, override: str | None = None) -> str:
 	if not has_long_latin(ru):
 		return ru
 	# Retry: translate full English title without equipment split.
-	body = translate_tokens(name.lower())
+	body = translate_tokens(name)
 	body = scrub_leftover_latin(body)
 	if body and not has_long_latin(body):
+		if _ACRONYM_RE.match(body):
+			return body
 		return body[:1].upper() + body[1:]
 	# Last resort: drop unknown English tokens, keep Russian skeleton.
 	stripped = scrub_leftover_latin(ru)
 	stripped = normalize_spaces(re.sub(r"[A-Za-z]{4,}", " ", stripped))
 	if stripped and re.search(r"[а-яё]", stripped, re.IGNORECASE):
+		if _ACRONYM_RE.match(stripped):
+			return stripped
 		return stripped[:1].upper() + stripped[1:]
 	return ru
+
+
+# Delavier / powermens canonical titles. Win over generated calques.
+GYM_STANDARD_OVERRIDES: dict[str, str] = {
+	# Abs / misc
+	"0003": "Велосипедные скручивания",
+	"0001": "Скручивания на 3/4",
+	"0277": "Скручивания на наклонной скамье вниз",
+	"1001": "Сплит-присед с резинкой",
+	# Chest
+	"0025": "Жим штанги лёжа",
+	"0030": "Жим штанги узким хватом лёжа",
+	"0055": "Жим штанги узким хватом лёжа (другой ракурс)",
+	"0033": "Жим штанги на наклонной скамье вниз",
+	"0047": "Жим штанги на наклонной скамье",
+	"0045": "Жим штанги лёжа «гильотина»",
+	"0289": "Жим гантелей лёжа",
+	"0314": "Жим гантелей на наклонной скамье",
+	"0301": "Жим гантелей на наклонной скамье вниз",
+	"0308": "Разведение гантелей лёжа",
+	"0319": "Разведение гантелей на наклонной скамье",
+	"1275": "Отжимания с возвышения",
+	"0129": "Отжимания от скамьи",
+	"0251": "Отжимания на брусьях на грудь",
+	# Arms / triceps / biceps
+	"0052": "JM-жим со штангой",
+	"0450": "JM-жим с EZ-грифом",
+	"0060": "Французский жим лёжа",
+	"0061": "Французский жим лёжа (другой ракурс)",
+	"0351": "Французский жим лёжа с гантелями",
+	"0453": "Французский жим с EZ-штангой сидя",
+	"1749": "Французский жим с EZ-штангой стоя",
+	"0201": "Жим к низу в блочном тренажёре",
+	"0200": "Жим к низу с канатом в блочном тренажёре",
+	"0241": "Жим к низу с V-грифом в блочном тренажёре",
+	"0207": "Жим к низу одной рукой обратным хватом",
+	"1723": "Жим к низу одной рукой в блочном тренажёре",
+	"0031": "Подъём штанги на бицепс стоя",
+	"0447": "Подъём EZ-штанги на бицепс стоя",
+	"0285": "Поочерёдный подъём гантелей на бицепс",
+	"0313": "Молотковые сгибания с гантелями",
+	"0814": "Отжимания на брусьях на трицепс",
+	# Legs
+	"0043": "Приседания со штангой",
+	"0042": "Приседания со штангой на груди",
+	"0770": "Приседания в тренажёре Смита",
+	"3281": "Полные приседания в тренажёре Смита",
+	"3142": "Сумо-приседания в тренажёре Смита",
+	"1433": "Приседания со штангой на груди в тренажёре Смита",
+	"0046": "Гак-приседания со штангой",
+	"0743": "Гак-приседания",
+	"0755": "Гак-приседания в тренажёре Смита",
+	"0739": "Жим ногами",
+	"0054": "Выпады со штангой",
+	"0078": "Выпады назад со штангой",
+	"0077": "Выпады назад со штангой (другой ракурс)",
+	"1460": "Выпады в ходьбе",
+	"0585": "Разгибания ног",
+	"0586": "Сгибание ног лёжа",
+	"0599": "Сгибание ног сидя",
+	"1760": "Гоблет-присед с гантелью",
+	# Back
+	"0032": "Становая тяга",
+	"0085": "Румынская тяга со штангой",
+	"0027": "Тяга штанги в наклоне",
+	"0293": "Тяга гантели одной рукой в наклоне",
+	"0606": "Тяга Т-штанги",
+	"0652": "Подтягивания на перекладине",
+	"1326": "Подтягивания обратным хватом",
+	"0150": "Вертикальная тяга широким хватом",
+	"2330": "Вертикальная тяга с полной амплитудой",
+	"0245": "Вертикальная тяга обратным хватом",
+	"0198": "Вертикальная тяга",
+	"0180": "Горизонтальная тяга в блочном тренажёре",
+	"0861": "Горизонтальная тяга в блочном тренажёре (другой ракурс)",
+	"0238": "Пуловер в блочном тренажёре стоя",
+	"0237": "Пуловер с канатом в блочном тренажёре стоя",
+	# Delts / traps
+	"0334": "Разведение гантелей стоя",
+	"0396": "Разведение гантелей сидя",
+	"0395": "Разведение гантелей сидя (другой ракурс)",
+	"0310": "Подъём гантелей перед собой",
+	"0380": "Разведение гантелей в наклоне",
+	"2292": "Разведение гантелей в наклоне (другой ракурс)",
+	"0178": "Разведение на блоке стоя",
+	"2137": "Жим Арнольда",
+	"0287": "Жим Арнольда (другой ракурс)",
+	"0523": "Жим Арнольда с гирей",
+	"0091": "Жим штанги сидя",
+	"1456": "Армейский жим узким хватом стоя",
+	"1457": "Жим штанги стоя (армейский жим)",
+	"0095": "Шраги со штангой",
+	"0406": "Шраги с гантелями",
+	"0120": "Тяга штанги к подбородку",
+	"0119": "Тяга штанги к подбородку (другой ракурс)",
+	"0121": "Тяга штанги к подбородку (вариант 3)",
+	"0203": "Тяга блока на заднюю дельту",
+	"0202": "Тяга блока на заднюю дельту (стремена)",
+	"0233": "Тяга блока на заднюю дельту стоя",
+	"3697": "Тяга блока на заднюю дельту на коленях",
+	# Abs (powermens)
+	"0872": "Обратные скручивания",
+	"0472": "Подъёмы ног в висе",
+	"0011": "Подъёмы коленей в висе с поддержкой",
+	# Good mornings / smith press
+	"0044": "Гудморнинг",
+	"0090": "Гудморнинг сидя",
+	"0115": "Гудморнинг на прямых ногах",
+	"0749": "Гудморнинг в тренажёре Смита",
+	"0765": "Жим штанги сидя в тренажёре Смита",
+	"0766": "Жим штанги сидя в тренажёре Смита (другой ракурс)",
+	"3759": "Гудморнинг сидя в рычажном тренажёре",
+	"1489": "Сисси-присед",
+	# Delavier OCR gaps
+	"0297": "Концентрированное сгибание одной руки",
+	"0070": "Сгибание рук на скамье Скотта со штангой",
+	"0372": "Сгибание рук на скамье Скотта с гантелью",
+	"0073": "Пуловер со штангой",
+	"0375": "Пуловер с гантелью",
+	"0086": "Жим штанги из-за головы сидя",
+	"0662": "Отжимания от пола",
+	"0284": "Подъёмы на носки в наклоне",
+	"1253": "Подъёмы на носки в наклоне в тренажёре",
+	"0599": "Сгибание ног сидя",
+	"0311": "Разведение гантелей стоя (большой палец вверх)",
+	"0294": "Подъём гантелей на бицепс",
+	"1411": "Сгибание запястий со штангой хватом сверху",
+	"1412": "Сгибание запястий со штангой хватом снизу",
+}
 
 
 def main() -> None:
@@ -1023,6 +1273,7 @@ def main() -> None:
 	if SRC_OVERRIDES_PATH.exists():
 		src = json.loads(SRC_OVERRIDES_PATH.read_text(encoding="utf-8"))
 		overrides = {**src, **overrides}
+	overrides = {**overrides, **GYM_STANDARD_OVERRIDES}
 
 	for item in index:
 		oid = str(item.get("id", ""))
@@ -1051,10 +1302,12 @@ def main() -> None:
 				stripped = normalize_spaces(re.sub(r"[A-Za-z]{4,}", " ", item["name_ru"]))
 				if stripped and re.search(r"[а-яё]", stripped, re.IGNORECASE):
 					item["name_ru"] = stripped[:1].upper() + stripped[1:]
-		FULL_PATH.write_text(
-			json.dumps(full, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8"
-		)
+		payload = json.dumps(full, ensure_ascii=False, separators=(",", ":")) + "\n"
+		FULL_PATH.write_text(payload, encoding="utf-8")
 		print(f"updated full catalog → {FULL_PATH.relative_to(ROOT)}")
+		if FULL_STATIC_PATH.exists():
+			FULL_STATIC_PATH.write_text(payload, encoding="utf-8")
+			print(f"synced full catalog → {FULL_STATIC_PATH.relative_to(ROOT)}")
 	else:
 		print(f"skip full catalog (missing {FULL_PATH.relative_to(ROOT)})")
 
@@ -1069,6 +1322,14 @@ def main() -> None:
 		"3/4 sit-up",
 		"dumbbell curl",
 		"cable seated row",
+		"cable low seated row",
+		"barbell good morning",
+		"barbell lying triceps extension skull crusher",
+		"cable rear delt row (with rope)",
+		"dumbbell lateral raise",
+		"air bike",
+		"dumbbell arnold press",
+		"smith seated shoulder press",
 		"barbell guillotine bench press",
 	]
 	print("samples:")

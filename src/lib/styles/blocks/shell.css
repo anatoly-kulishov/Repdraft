@@ -12,6 +12,45 @@
 	background-position: top center;
 	background-size: 100% min(100dvh, 56rem);
 }
+
+/*
+ * Boot → app handoff (synced with #pwa-boot FADE_MS in app.html).
+ * While data-boot-pending: chrome sits under the splash, invisible.
+ * On clear: soft rise + fade-in as the splash dissolves.
+ */
+.app-shell,
+.shell-nav-tabbar,
+.toast-stack,
+.draft-dock-wrap {
+	transition:
+		opacity 0.44s cubic-bezier(0.22, 1, 0.36, 1),
+		transform 0.44s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-boot-pending] .app-shell,
+html[data-boot-pending] .shell-nav-tabbar,
+html[data-boot-pending] .toast-stack,
+html[data-boot-pending] .draft-dock-wrap {
+	opacity: 0;
+	transform: translate3d(0, 10px, 0);
+	pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.app-shell,
+	.shell-nav-tabbar,
+	.toast-stack,
+	.draft-dock-wrap {
+		transition-duration: 0.12s;
+	}
+
+	html[data-boot-pending] .app-shell,
+	html[data-boot-pending] .shell-nav-tabbar,
+	html[data-boot-pending] .toast-stack,
+	html[data-boot-pending] .draft-dock-wrap {
+		transform: none;
+	}
+}
 .shell-body {
 	width: 100%;
 	min-width: 0;
