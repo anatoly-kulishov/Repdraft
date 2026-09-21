@@ -1,5 +1,8 @@
 export const SITE_NAME = 'Repdraft';
 
+/** Public production host (apex redirects here). Used when env/request origin is unusable. */
+export const CANONICAL_SITE_ORIGIN = 'https://www.repdraft.xyz';
+
 const DEFAULT_OG_IMAGE = '/icon-512-v3.png';
 
 /** SvelteKit placeholder host baked into prerender HTML when PUBLIC_SITE_URL is unset. */
@@ -37,6 +40,10 @@ export function isUsableSiteOrigin(origin: string): boolean {
 	return true;
 }
 
+function isVercelProductionBuild(): boolean {
+	return process.env.VERCEL_ENV === 'production';
+}
+
 /** Configured canonical origin, or empty when unset / unusable. */
 export function configuredSiteOrigin(): string {
 	const raw =
@@ -48,12 +55,17 @@ export function configuredSiteOrigin(): string {
 	return isUsableSiteOrigin(origin) ? origin : '';
 }
 
-/** Absolute origin: env override, else current request origin when usable. */
+/**
+ * Absolute origin: env override, else usable request origin.
+ * On Vercel Production prerender (placeholder / empty), falls back to CANONICAL_SITE_ORIGIN.
+ */
 export function resolveSiteOrigin(requestOrigin = ''): string {
 	const configured = configuredSiteOrigin();
 	if (configured) return configured;
 	const cleaned = requestOrigin.trim().replace(/\/$/, '');
-	return isUsableSiteOrigin(cleaned) ? cleaned : '';
+	if (isUsableSiteOrigin(cleaned)) return cleaned;
+	if (isVercelProductionBuild()) return CANONICAL_SITE_ORIGIN;
+	return '';
 }
 
 export function absoluteUrl(path: string, requestOrigin = ''): string {

@@ -1,9 +1,13 @@
 import { buildSitemapXml, collectSitemapEntries } from '$lib/seo/sitemap';
+import { PRERENDER_PUBLIC } from '$lib/seo/prerenderPublic';
 import { resolveSiteOrigin } from '$lib/seo/site';
 import type { RequestHandler } from './$types';
 
-/** SSR so <loc> uses the live request origin (never sveltekit-prerender). */
-export const prerender = false;
+/**
+ * Prerender at build time: sitemap reads `static/` via fs (unavailable in Vercel serverless SSR).
+ * Origin comes from PUBLIC_SITE_URL or production fallback (never sveltekit-prerender).
+ */
+export const prerender = PRERENDER_PUBLIC;
 
 export const GET: RequestHandler = async ({ url }) => {
 	const origin = resolveSiteOrigin(url.origin);
