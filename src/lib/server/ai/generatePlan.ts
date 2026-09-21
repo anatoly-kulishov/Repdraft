@@ -193,7 +193,8 @@ export function padToMinExercises(
 	fallback: ReturnType<typeof slimCatalogForBrief> = [],
 	minCount: number = MIN_EXERCISES
 ): AiPlan {
-	const targetMin = Math.min(MAX_EXERCISES, Math.max(1, Math.round(minCount)));
+	const rounded = Number.isFinite(minCount) ? Math.round(minCount) : MIN_EXERCISES;
+	const targetMin = Math.min(MAX_EXERCISES, Math.max(1, rounded));
 	const have = new Set(plan.exercises.map((e) => e.exerciseId));
 	const exercises = [...plan.exercises];
 	const pool = [...slim, ...fallback].filter((ex) => allowed.has(ex.id));
@@ -230,6 +231,9 @@ export function ensureHintCoverage(
 	targets: string[] = []
 ): AiPlan {
 	if (parts.length < 2) return plan;
+	if (index.length === 0) {
+		throw new Error('ensureHintCoverage: empty catalog');
+	}
 	const byId = new Map(index.map((ex) => [ex.id, ex]));
 	const exercises = [...plan.exercises];
 
@@ -238,20 +242,20 @@ export function ensureHintCoverage(
 
 	const pickForPart = (part: string): ExerciseIndexItem | null => {
 		const used = new Set(exercises.map((e) => e.exerciseId));
-		let candidates = slim.filter(
-			(ex) => ex.body_part === part && allowed.has(ex.id) && !used.has(ex.id)
-		);
-		if (!candidates.length) {
-			candidates = index.filter(
-				(ex) => ex.body_part === part && allowed.has(ex.id) && !used.has(ex.id)
-			);
-		}
-		if (!candidates.length) return null;
+		const fromPool = (pool: ExerciseIndexItem[]) =>
+			pool.filter((ex) => ex.body_part === part && allowed.has(ex.id) && !used.has(ex.id));
+
 		if (targets.length && part === 'upper arms') {
-			const pref = candidates.filter((ex) => targets.includes(ex.target));
-			if (pref.length) return pref[0]!;
+			const prefSlim = fromPool(slim).filter((ex) => targets.includes(ex.target));
+			if (prefSlim.length) return prefSlim[0]!;
+			const prefIndex = fromPool(index).filter((ex) => targets.includes(ex.target));
+			if (prefIndex.length) return prefIndex[0]!;
 		}
-		return candidates[0]!;
+
+		const fromSlim = fromPool(slim);
+		if (fromSlim.length) return fromSlim[0]!;
+		const fromIndex = fromPool(index);
+		return fromIndex[0] ?? null;
 	};
 
 	const countByPart = () => {
@@ -264,30 +268,29 @@ export function ensureHintCoverage(
 		return c;
 	};
 
-	for (const part of parts) {
-		if (presentParts().has(part)) continue;
-		const pick = pickForPart(part);
-		if (!pick) continue;
-		const counts = countByPart();
-		let overPart = '';
-		let overCount = -1;
-		for (const p of parts) {
-			const n = counts.get(p) ?? 0;
-			if (n > overCount) {
-				overCount = n;
-				overPart = p;
-			}
-		}
-		const replaceIdx =
-			overPart && overCount > 1
-				? exercises.map((e) => partOf(e.exerciseId)).lastIndexOf(overPart)
-				: -1;
+	const placeRow = (pick: ExerciseIndexItem, preferReplacePart: string | null) => {
 		const row = {
 			exerciseId: pick.id,
 			sets: 3,
 			reps: targets.includes('triceps') || targets.includes('biceps') ? 12 : 10,
 			restSec: 60
 		};
+		const counts = countByPart();
+		let overPart = preferReplacePart ?? '';
+		let overCount = preferReplacePart ? (counts.get(preferReplacePart) ?? 0) : -1;
+		if (!preferReplacePart) {
+			for (const p of parts) {
+				const n = counts.get(p) ?? 0;
+				if (n > overCount) {
+					overCount = n;
+					overPart = p;
+				}
+			}
+		}
+		const replaceIdx =
+			overPart && overCount > 1
+				? exercises.map((e) => partOf(e.exerciseId)).lastIndexOf(overPart)
+				: -1;
 		if (replaceIdx >= 0) {
 			exercises[replaceIdx] = row;
 		} else if (exercises.length < MAX_EXERCISES) {
@@ -295,6 +298,13 @@ export function ensureHintCoverage(
 		} else if (exercises.length) {
 			exercises[exercises.length - 1] = row;
 		}
+	};
+
+	for (const part of parts) {
+		if (presentParts().has(part)) continue;
+		const pick = pickForPart(part);
+		if (!pick) continue;
+		placeRow(pick, null);
 	}
 
 	/* Named isolation muscle: at least one matching target among upper-arms rows. */
@@ -309,9 +319,31 @@ export function ensureHintCoverage(
 				const armsIdx = exercises.findIndex((e) => partOf(e.exerciseId) === 'upper arms');
 				const row = { exerciseId: pick.id, sets: 3, reps: 12, restSec: 60 };
 				if (armsIdx >= 0) exercises[armsIdx] = row;
-				else if (exercises.length < MAX_EXERCISES) exercises.push(row);
-				else if (exercises.length) exercises[exercises.length - 1] = row;
+				else placeRow(pick, null);
 			}
+		}
+	}
+
+	/* Secondary zones: aim for ≥2 slots when the pool has room (prompt rule 16). */
+	const countsAfter = countByPart();
+	let primary = '';
+	let primaryN = -1;
+	for (const p of parts) {
+		const n = countsAfter.get(p) ?? 0;
+		if (n > primaryN) {
+			primaryN = n;
+			primary = p;
+		}
+	}
+	for (const part of parts) {
+		if (part === primary) continue;
+		while ((countByPart().get(part) ?? 0) < 2) {
+			const pick = pickForPart(part);
+			if (!pick) break;
+			const before = exercises.map((e) => e.exerciseId).join(',');
+			placeRow(pick, primary);
+			const after = exercises.map((e) => e.exerciseId).join(',');
+			if (before === after) break;
 		}
 	}
 

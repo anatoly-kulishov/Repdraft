@@ -5,6 +5,7 @@
 	import { page } from '$app/stores';
 	import {
 		authErrorMessageKey,
+		isAuthEmailCallback,
 		passwordsMatch,
 		safeRedirectPath,
 		userAuthProvider,
@@ -171,10 +172,7 @@
 		if (!$auth.ready || !$auth.sessionKnown || !$auth.user || recoveryMode || redirected) return;
 		const params = $page.url.searchParams;
 		const hash = typeof window !== 'undefined' ? window.location.hash : '';
-		const fromCallback =
-			params.has('code') ||
-			/access_token|type=signup|type=magiclink|type=email|type=invite/.test(hash);
-		if (!fromCallback) return;
+		if (!isAuthEmailCallback(params.toString(), hash)) return;
 		redirected = true;
 		const emailConfirmed =
 			/type=signup/.test(hash) || params.get('type') === 'signup';
@@ -304,7 +302,7 @@
 		fieldsInvalid = false;
 		try {
 			const captcha = requireCaptchaToken();
-			await auth.resetPasswordForEmail(email.trim(), captcha);
+			await auth.resetPasswordForEmail(email.trim(), captcha, nextPath);
 			bumpCaptcha();
 			toasts.show(translate(lang, 'auth.resetToast'), 'success');
 			openCheckEmail('reset');

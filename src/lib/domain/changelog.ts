@@ -14,6 +14,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.18.4',
+		highlights: {
+			ru: [
+				'Вход и восстановление пароля: безопаснее редиректы и лимит писем',
+				'Подсказка установки: iPad и повторный показ после ухода с главной',
+				'Диктовка и живая сессия: меньше сбоев на краю (вес, микрофон, ИИ-зоны)'
+			],
+			en: [
+				'Sign-in and password recovery: safer redirects and email rate limits',
+				'Install tip: iPad and show again after leaving Home',
+				'Dictation and live session: fewer edge failures (weight, mic, AI zones)'
+			]
+		}
+	},
+	{
 		version: '0.18.3',
 		highlights: {
 			ru: [

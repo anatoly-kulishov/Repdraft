@@ -227,13 +227,22 @@ export function updateExercise(
 	const { groupId: _g, altGroupId: _a, ...safePatch } = patch;
 	const clamped: typeof safePatch = { ...safePatch };
 	if (clamped.sets != null) {
-		clamped.sets = Math.min(SETS.max, Math.max(SETS.min, Math.round(clamped.sets)));
+		const n = Math.round(clamped.sets);
+		clamped.sets = Number.isFinite(n)
+			? Math.min(SETS.max, Math.max(SETS.min, n))
+			: SETS.min;
 	}
 	if (clamped.reps != null) {
-		clamped.reps = Math.min(REPS.max, Math.max(REPS.min, Math.round(clamped.reps)));
+		const n = Math.round(clamped.reps);
+		clamped.reps = Number.isFinite(n)
+			? Math.min(REPS.max, Math.max(REPS.min, n))
+			: REPS.min;
 	}
 	if (clamped.restSec != null) {
-		clamped.restSec = Math.min(REST_SEC.max, Math.max(REST_SEC.min, Math.round(clamped.restSec)));
+		const n = Math.round(clamped.restSec);
+		clamped.restSec = Number.isFinite(n)
+			? Math.min(REST_SEC.max, Math.max(REST_SEC.min, n))
+			: REST_SEC.min;
 	}
 
 	const patchingScheme = Object.prototype.hasOwnProperty.call(patch, 'repsScheme');

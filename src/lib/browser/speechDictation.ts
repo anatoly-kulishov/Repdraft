@@ -29,7 +29,7 @@ type SpeechRecognitionLike = {
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
-export type MicPermission = 'granted' | 'denied' | 'unsupported' | 'unavailable';
+export type MicPermission = 'granted' | 'denied' | 'unsupported' | 'unavailable' | 'aborted';
 
 function getCtor(): SpeechRecognitionCtor | null {
 	if (typeof window === 'undefined') return null;
@@ -60,7 +60,7 @@ export function speechDictationBlockReason(): 'insecure' | 'unsupported' | null 
 }
 
 export function speechLangFromLocale(locale: AppLocale): string {
-	return locale === 'en' ? 'en-US' : 'ru-RU';
+	return locale === 'ru' ? 'ru-RU' : 'en-US';
 }
 
 export type DictationSession = {
@@ -93,10 +93,14 @@ export async function ensureMicrophonePermission(): Promise<MicPermission> {
 		return 'granted';
 	} catch (err) {
 		const name = err instanceof DOMException ? err.name : '';
-		if (name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError') {
+		if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
 			return 'denied';
 		}
+		if (name === 'AbortError') {
+			return 'aborted';
+		}
 		if (
+			name === 'SecurityError' ||
 			name === 'NotFoundError' ||
 			name === 'DevicesNotFoundError' ||
 			name === 'NotReadableError' ||
@@ -117,6 +121,8 @@ function permToError(perm: MicPermission): string {
 			return 'not-allowed';
 		case 'unavailable':
 			return 'unavailable';
+		case 'aborted':
+			return 'aborted';
 		case 'granted':
 			return 'unknown';
 		default: {
@@ -140,6 +146,13 @@ export async function startSpeechDictation(opts: {
 		return null;
 	}
 
+	const lang = opts.lang.trim();
+	if (!lang) {
+		opts.onError?.('unsupported');
+		opts.onEnd?.();
+		return null;
+	}
+
 	const Ctor = getCtor();
 	if (!Ctor || !hasGetUserMedia()) {
 		opts.onError?.('unsupported');
@@ -155,7 +168,7 @@ export async function startSpeechDictation(opts: {
 	}
 
 	const rec = new Ctor();
-	rec.lang = opts.lang;
+	rec.lang = lang;
 	rec.continuous = false;
 	rec.interimResults = true;
 
@@ -170,6 +183,7 @@ export async function startSpeechDictation(opts: {
 	};
 
 	const promoteInterimIfNeeded = () => {
+		if (finished) return;
 		const text = lastInterim.trim();
 		if (!text || lastFinal) return;
 		lastFinal = text;
@@ -177,6 +191,7 @@ export async function startSpeechDictation(opts: {
 	};
 
 	rec.onresult = (ev) => {
+		if (finished) return;
 		let interim = '';
 		let finalText = '';
 		for (let i = ev.resultIndex; i < ev.results.length; i++) {
@@ -186,23 +201,26 @@ export async function startSpeechDictation(opts: {
 			else interim += piece;
 		}
 		const trimmedFinal = finalText.trim();
-		if (trimmedFinal && trimmedFinal !== lastFinal) {
+		/* One-shot: at most one onFinal (continuous=false). */
+		if (trimmedFinal && !lastFinal) {
 			lastFinal = trimmedFinal;
 			lastInterim = '';
 			opts.onFinal(trimmedFinal);
-		} else if (interim.trim()) {
+		} else if (!lastFinal && interim.trim()) {
 			lastInterim = interim.trim();
 			opts.onInterim?.(lastInterim);
 		}
 	};
 
 	rec.onerror = (ev) => {
+		if (finished) return;
 		opts.onError?.(ev.error || 'unknown');
 		/* Engines sometimes omit onend after error — always close lifecycle. */
 		finish();
 	};
 
 	rec.onend = () => {
+		if (finished) return;
 		promoteInterimIfNeeded();
 		finish();
 	};
@@ -217,6 +235,7 @@ export async function startSpeechDictation(opts: {
 
 	return {
 		stop: () => {
+			promoteInterimIfNeeded();
 			try {
 				rec.stop();
 			} catch {
