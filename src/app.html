@@ -183,27 +183,31 @@
 					var meta = document.querySelector('meta[name="theme-color"]');
 					if (meta) meta.setAttribute('content', bg);
 					/*
-					 * Pin boot mark to screen center BEFORE body paints.
+					 * Pin boot mark BEFORE body paints — only in standalone PWA.
 					 * iPhone PWA: innerHeight starts ~812 then grows to screen.height 874.
+					 * Browser / desktop: keep CSS 50%/50% (screen max/min assumes phone portrait
+					 * and pushes the mark below the viewport on wide displays).
 					 */
-					try {
-						var sh = window.screen && window.screen.height ? window.screen.height : 0;
-						var sw = window.screen && window.screen.width ? window.screen.width : 0;
-						var bootScreenH = Math.max(sh, sw) || 0;
-						var bootScreenW = Math.min(sh, sw) || 0;
-						if (bootScreenH > 0) {
-							document.documentElement.style.setProperty(
-								'--boot-icon-cy',
-								bootScreenH / 2 + 'px'
-							);
-						}
-						if (bootScreenW > 0) {
-							document.documentElement.style.setProperty(
-								'--boot-icon-cx',
-								bootScreenW / 2 + 'px'
-							);
-						}
-					} catch (bootPinErr) {}
+					if (isPwaStandalone) {
+						try {
+							var sh = window.screen && window.screen.height ? window.screen.height : 0;
+							var sw = window.screen && window.screen.width ? window.screen.width : 0;
+							var bootScreenH = Math.max(sh, sw) || 0;
+							var bootScreenW = Math.min(sh, sw) || 0;
+							if (bootScreenH > 0) {
+								document.documentElement.style.setProperty(
+									'--boot-icon-cy',
+									bootScreenH / 2 + 'px'
+								);
+							}
+							if (bootScreenW > 0) {
+								document.documentElement.style.setProperty(
+									'--boot-icon-cx',
+									bootScreenW / 2 + 'px'
+								);
+							}
+						} catch (bootPinErr) {}
+					}
 					try {
 						document.cookie =
 							themeKey + '=' + theme + '; path=/; Max-Age=31536000; SameSite=Lax';
@@ -653,21 +657,41 @@
 				var pinned = false;
 				var iconShown = false;
 				var sizeBootToScreen = function () {
+					var isStandalone = document.documentElement.hasAttribute('data-pwa-standalone');
 					var sh = window.screen && window.screen.height ? window.screen.height : 0;
 					var sw = window.screen && window.screen.width ? window.screen.width : 0;
-					var screenH = Math.max(sh, sw) || window.innerHeight || 0;
-					var screenW = Math.min(sh, sw) || window.innerWidth || 0;
-					if (!(screenH > 0 && screenW > 0)) return;
+					var vv = window.visualViewport;
+					var iw = (vv && vv.width) || window.innerWidth || 0;
+					var ih = (vv && vv.height) || window.innerHeight || 0;
+					var coverH;
+					var coverW;
+					if (isStandalone && sh > 0 && sw > 0) {
+						/* iPhone PWA: cover full screen; portrait-oriented dims. */
+						coverH = Math.max(sh, sw);
+						coverW = Math.min(sh, sw);
+					} else {
+						/* Browser / desktop: match the visible viewport. */
+						coverH = ih;
+						coverW = iw;
+					}
+					if (!(coverH > 0 && coverW > 0)) return;
 					boot.style.top = '0px';
 					boot.style.left = '0px';
-					boot.style.width = screenW + 'px';
-					boot.style.height = screenH + 'px';
-					if (iconWrap && !pinned) {
-						iconWrap.style.left = screenW / 2 + 'px';
-						iconWrap.style.top = screenH / 2 + 'px';
-						iconWrap.style.transform = 'translate3d(-50%, -50%, 0)';
-						pinned = true;
+					boot.style.width = coverW + 'px';
+					boot.style.height = coverH + 'px';
+					if (!iconWrap || pinned) return;
+					if (isStandalone) {
+						iconWrap.style.left = coverW / 2 + 'px';
+						iconWrap.style.top = coverH / 2 + 'px';
+					} else {
+						/* CSS defaults (50%/50%) — clear any leftover pixel pin. */
+						iconWrap.style.left = '';
+						iconWrap.style.top = '';
+						document.documentElement.style.removeProperty('--boot-icon-cx');
+						document.documentElement.style.removeProperty('--boot-icon-cy');
 					}
+					iconWrap.style.transform = 'translate3d(-50%, -50%, 0)';
+					pinned = true;
 				};
 				sizeBootToScreen();
 				requestAnimationFrame(sizeBootToScreen);
