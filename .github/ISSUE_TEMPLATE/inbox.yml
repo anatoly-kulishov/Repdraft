@@ -1,0 +1,68 @@
+name: Inbox (phone dump)
+description: Fast capture from the gym. Messy text + screenshot is fine. Agent will triage later.
+title: "[inbox] "
+labels: ["inbox"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Dump raw. Attach a screenshot below if you have one.
+        Later in Cursor say: `оформи inbox` or `triage issue #N`.
+
+  - type: textarea
+    id: raw
+    attributes:
+      label: Raw note
+      description: Whatever you typed on the phone. Keep it raw.
+      placeholder: "Кнопка Далее не жмётся после подхода, скрин во вложении"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Guess (optional)
+      options:
+        - unsure
+        - bug
+        - idea
+        - ux-polish
+      default: 0
+    validations:
+      required: false
+
+  - type: dropdown
+    id: loop_step
+    attributes:
+      label: Sacred loop step (optional)
+      description: Where in Open → Finish this sits.
+      options:
+        - unsure
+        - open
+        - pick-workout
+        - preview
+        - start
+        - set
+        - weight-reps
+        - next
+        - finish
+        - saved-result
+        - outside-loop
+      default: 0
+    validations:
+      required: false
+
+  - type: input
+    id: route
+    attributes:
+      label: Screen / route (optional)
+      description: URL path or screen name if you know it.
+      placeholder: "/workouts or Active Workout"
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Attach screenshot
+        Use the GitHub image button / paste / photo from camera roll.
