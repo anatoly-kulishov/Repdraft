@@ -431,8 +431,15 @@ PHRASES: list[tuple[str, str]] = [
 	("pendlay row", "тяга Пендлея"),
 	("skull crusher", "французский жим лёжа"),
 	("skullcrusher", "французский жим лёжа"),
-	("jack knife", "ножницы"),
-	("jackknife", "ножницы"),
+	("jack knife", "складной нож"),
+	("jackknife", "складной нож"),
+	("scissor jumps", "прыжки-ножницы"),
+	("scissor jump", "прыжки-ножницы"),
+	("scissors jumps", "прыжки-ножницы"),
+	("scissors jump", "прыжки-ножницы"),
+	("jackknife sit-up", "скручивания «складной нож»"),
+	("jack knife sit-up", "скручивания «складной нож»"),
+	("band jack knife sit-up", "скручивания «складной нож» с резинкой"),
 	("3/4 sit-up", "скручивания на 3/4"),
 	("exercise ball", "на фитболе"),
 	("balance board", "балансировка на доске"),
@@ -1029,6 +1036,7 @@ def translate_name(name: str) -> str:
 	# Full-title phrases first (e.g. "run (equipment)") before paren split.
 	full_l = normalize_spaces(lower_preserving_acronyms(name).strip())
 	full_l = re.sub(r"\b(male|female|man|woman)\b", " ", full_l)
+	full_l = re.sub(r"\(\s*\)", " ", full_l)
 	full_l = normalize_spaces(full_l)
 	for eng, rus in PHRASES:
 		if full_l == eng:
@@ -1476,6 +1484,9 @@ GYM_STANDARD_OVERRIDES: dict[str, str] = {
 	"2141": "Ходьба на эллипсе",
 	"2311": "Ходьба на степмилле",
 	"2318": "Жим плечами в рычажном тренажёре (вариант 3)",
+	"3219": "Прыжки-ножницы",
+	"0507": "Скручивания «складной нож»",
+	"0981": "Скручивания «складной нож» с резинкой",
 	# Delavier OCR gaps
 	"0297": "Концентрированное сгибание одной руки",
 	"0070": "Сгибание рук на скамье Скотта со штангой",
