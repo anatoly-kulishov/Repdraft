@@ -14,6 +14,17 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.18.8',
+		highlights: {
+			ru: [
+				'Обновления приложения только с основной ветки: меньше лишних тестовых сборок'
+			],
+			en: [
+				'App updates ship from the main branch only: fewer leftover test builds'
+			]
+		}
+	},
+	{
 		version: '0.18.7',
 		highlights: {
 			ru: [
