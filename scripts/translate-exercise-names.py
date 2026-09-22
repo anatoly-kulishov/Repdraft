@@ -601,6 +601,14 @@ PHRASES: list[tuple[str, str]] = [
 	("reverse dip", "обратные отжимания на брусьях"),
 	("dumbbell incline twisted flyes", "наклонные разведения с гантелями"),
 	("cable pulldown bicep curl", "подъём на бицепс на верхнем блоке"),
+	("walking on incline treadmill", "ходьба под наклоном на беговой дорожке"),
+	("run (equipment)", "бег на беговой дорожке"),
+	("stationary bike run v. 3", "езда на велотренажёре (вариант 3)"),
+	("stationary bike walk", "езда на велотренажёре в спокойном темпе"),
+	("walk elliptical cross trainer", "ходьба на эллипсе"),
+	("walking on stepmill", "ходьба на степмилле"),
+	("lever shoulder press v. 3", "жим плечами в рычажном тренажёре (вариант 3)"),
+	("run", "бег на месте"),
 	("side hip abduction", "отведение бедра в сторону"),
 	("side hip", "бедро боком"),
 	("parallel bars", "на параллельных брусьях"),
@@ -794,6 +802,7 @@ WORDS: dict[str, str] = {
 	"floor": "на полу",
 	"wall": "у стены",
 	"box": "на тумбу",
+	"equipment": "тренажёр",
 	"machine": "в тренажёре",
 	"bar": "с грифом",
 	"hammer": "молотковый",
@@ -1017,6 +1026,17 @@ def _apply_phrases(text: str) -> str:
 
 
 def translate_name(name: str) -> str:
+	# Full-title phrases first (e.g. "run (equipment)") before paren split.
+	full_l = normalize_spaces(lower_preserving_acronyms(name).strip())
+	full_l = re.sub(r"\b(male|female|man|woman)\b", " ", full_l)
+	full_l = normalize_spaces(full_l)
+	for eng, rus in PHRASES:
+		if full_l == eng:
+			result = rus
+			if result:
+				result = result[:1].upper() + result[1:]
+			return result
+
 	core, note = split_parens(name)
 	core_l = core.lower().strip()
 	core_l = re.sub(r"\b(male|female|man|woman)\b", " ", core_l)
@@ -1448,6 +1468,14 @@ GYM_STANDARD_OVERRIDES: dict[str, str] = {
 	"0672": "Обратные отжимания на брусьях",
 	"0331": "Наклонные разведения с гантелями",
 	"1638": "Подъём на бицепс на верхнем блоке",
+	"3666": "Ходьба под наклоном на беговой дорожке",
+	"0684": "Бег на беговой дорожке",
+	"0685": "Бег на месте",
+	"2138": "Езда на велотренажёре (вариант 3)",
+	"0798": "Езда на велотренажёре в спокойном темпе",
+	"2141": "Ходьба на эллипсе",
+	"2311": "Ходьба на степмилле",
+	"2318": "Жим плечами в рычажном тренажёре (вариант 3)",
 	# Delavier OCR gaps
 	"0297": "Концентрированное сгибание одной руки",
 	"0070": "Сгибание рук на скамье Скотта со штангой",
