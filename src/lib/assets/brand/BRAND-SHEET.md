@@ -17,4 +17,4 @@ In-app chrome (`BrandMark`, boot splash, `icon.svg`) shares `MARK_INSET` from th
 | `lockup-*.svg` | Wordmark lockups |
 
 ## Static (cache-busted `-v3`)
-`/icon-192-v3.png`, `/icon-512-v3.png`, `/icon-maskable-512-v3.png`, `/apple-touch-icon-v3.png`, `/favicon.ico`, `/icon.svg`, `/brand-mark-pulse.png`
+`/icon-192-v3.png`, `/icon-512-v3.png`, `/icon-maskable-512-v3.png`, `/apple-touch-icon-v3.png`, `/favicon.ico`, `/favicon-16x16.png`, `/favicon-32x32.png`, `/favicon-48x48.png`, `/icon.svg`, `/brand-mark-pulse.png`

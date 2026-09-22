@@ -14,6 +14,17 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.18.7',
+		highlights: {
+			ru: [
+				'Иконка сайта лучше видна во вкладке и в поиске'
+			],
+			en: [
+				'Site icon shows more reliably in the tab and search'
+			]
+		}
+	},
+	{
 		version: '0.18.6',
 		highlights: {
 			ru: [
