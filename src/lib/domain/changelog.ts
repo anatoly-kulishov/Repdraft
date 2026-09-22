@@ -18,11 +18,11 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		highlights: {
 			ru: [
 				'История и списки: ровнее отступ под строкой поиска',
-				'Названия упражнений: «Боковая растяжка шеи» и похожие кальки'
+				'Каталог: поправили кривые русские названия вроде «Шеи боковой растяжка»'
 			],
 			en: [
 				'History and lists: more even space under the search row',
-				'Exercise names: fixed awkward Russian titles like neck side stretch'
+				'Catalog: fixed awkward Russian titles (word order and gender)'
 			]
 		}
 	},
