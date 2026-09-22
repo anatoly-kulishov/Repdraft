@@ -14,6 +14,17 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.18.9',
+		highlights: {
+			ru: [
+				'Запуск на компьютере: логотип снова по центру экрана'
+			],
+			en: [
+				'Desktop launch: logo stays centered in the window'
+			]
+		}
+	},
+	{
 		version: '0.18.8',
 		highlights: {
 			ru: [
