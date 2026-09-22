@@ -14,7 +14,12 @@
 		<meta name="application-name" content="Repdraft" />
 		<meta name="format-detection" content="telephone=no" />
 		<link rel="manifest" href="/manifest.webmanifest" />
-		<link rel="icon" href="/favicon.ico" sizes="48x48" />
+		<!-- Yandex / classic crawlers: root ICO + explicit PNG sizes -->
+		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+		<link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="any" />
+		<link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
+		<link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+		<link rel="icon" href="/favicon-48x48.png" type="image/png" sizes="48x48" />
 		<link rel="icon" href="/icon-192-v3.png" type="image/png" sizes="192x192" />
 		<link rel="icon" href="/icon.svg" type="image/svg+xml" />
 		<link rel="apple-touch-icon" href="/apple-touch-icon-v3.png" sizes="180x180" />

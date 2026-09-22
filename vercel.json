@@ -53,6 +53,50 @@
 					"value": "public, max-age=86400"
 				}
 			]
+		},
+		{
+			"source": "/favicon\\.ico",
+			"headers": [
+				{
+					"key": "Cache-Control",
+					"value": "public, max-age=86400"
+				},
+				{
+					"key": "Content-Type",
+					"value": "image/x-icon"
+				}
+			]
+		},
+		{
+			"source": "/favicon-(16x16|32x32|48x48)\\.png",
+			"headers": [
+				{
+					"key": "Cache-Control",
+					"value": "public, max-age=86400"
+				}
+			]
+		},
+		{
+			"source": "/sitemap\\.xml",
+			"headers": [
+				{
+					"key": "Cache-Control",
+					"value": "public, max-age=3600"
+				},
+				{
+					"key": "Content-Type",
+					"value": "application/xml; charset=utf-8"
+				}
+			]
+		},
+		{
+			"source": "/robots\\.txt",
+			"headers": [
+				{
+					"key": "Cache-Control",
+					"value": "public, max-age=3600"
+				}
+			]
 		}
 	]
 }

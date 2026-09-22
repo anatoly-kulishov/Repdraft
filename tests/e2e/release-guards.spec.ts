@@ -28,6 +28,19 @@ test('robots.txt disallows app routes and points at sitemap', async ({ request }
 	expect(sitemapMatch?.[1]).not.toMatch(/sveltekit-prerender/i);
 });
 
+test('favicon.ico and sized PNG icons are reachable', async ({ request }) => {
+	for (const path of ['/favicon.ico', '/favicon-16x16.png', '/favicon-32x32.png', '/favicon-48x48.png'] as const) {
+		const res = await request.get(path);
+		expect(res.ok(), path).toBeTruthy();
+		const ctype = (res.headers()['content-type'] ?? '').toLowerCase();
+		if (path.endsWith('.ico')) {
+			expect(ctype).toMatch(/icon|octet-stream|image\//);
+		} else {
+			expect(ctype).toMatch(/image\/png/);
+		}
+	}
+});
+
 test('sitemap.xml includes legal and hub paths', async ({ request }) => {
 	const res = await request.get('/sitemap.xml');
 	expect(res.ok()).toBeTruthy();
