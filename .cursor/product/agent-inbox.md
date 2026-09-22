@@ -40,6 +40,7 @@ Any of these prompts:
 - `оформи inbox` / `triage inbox` - list open `inbox` + `needs-triage`, rewrite into Agent card format.
 - `оформи issue #12` / `triage #12` - one issue.
 - `сделай issue #12` / `implement #12` - execute a `ready` issue (or triage then implement).
+- Weird catalog title / screenshot of `name_ru`: follow [`.cursor/skills/ru-gym-names/SKILL.md`](../skills/ru-gym-names/SKILL.md).
 
 ## Agent card (canonical body)
 

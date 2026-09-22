@@ -1519,6 +1519,7 @@ def main() -> None:
 
 	latin = sum(1 for x in index if _re.search(r"[A-Za-z]{4,}", x["name_ru"]))
 	print(f"updated {len(index)}; overrides {len(overrides)}; still have 4+ latin letters: {latin}")
+	print("naming rubric: .cursor/skills/ru-gym-names/SKILL.md")
 
 	if overrides:
 		payload = json.dumps(overrides, ensure_ascii=False, indent="\t") + "\n"

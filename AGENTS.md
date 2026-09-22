@@ -43,6 +43,8 @@ Legal before public: set real `PUBLIC_PRIVACY_*` in Vercel (not placeholders); h
 | `refactor-guardrails.mdc` | Large CSS/architecture refactors (on demand) |
 | `tech-debt.mdc` | Backlog pointer (on demand) |
 | `agent-inbox.mdc` | Phone dumps → Issues triage / implement (on demand) |
+| `ru-gym-names.mdc` | Catalog `name_ru` gym jargon (on demand) |
+| `.cursor/skills/ru-gym-names/` | Full rubric for Russian exercise titles |
 
 Product: [`.cursor/product/mvp-spec.md`](.cursor/product/mvp-spec.md). Legal: `/privacy` + `/terms`.
 
@@ -51,6 +53,8 @@ Product: [`.cursor/product/mvp-spec.md`](.cursor/product/mvp-spec.md). Legal: `/
 Capture in **GitHub Issues** (templates: Inbox / Bug / Idea). Workflow + Agent card format: [`.cursor/product/agent-inbox.md`](.cursor/product/agent-inbox.md).
 
 In Cursor: `оформи inbox` · `оформи issue #N` · `сделай issue #N`.
+
+Bad exercise title on a screenshot: fix with [`.cursor/skills/ru-gym-names/SKILL.md`](.cursor/skills/ru-gym-names/SKILL.md) (`npm run translate:names`).
 
 ## Secrets
 

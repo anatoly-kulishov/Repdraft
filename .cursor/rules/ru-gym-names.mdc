@@ -1,0 +1,12 @@
+---
+description: Russian gym jargon for exercise name_ru. Read when fixing catalog titles, translate:names, or phone reports of awkward RU names.
+alwaysApply: false
+---
+
+# RU gym names
+
+Follow skill: [`.cursor/skills/ru-gym-names/SKILL.md`](../skills/ru-gym-names/SKILL.md).
+
+Triggers: bad `name_ru`, `translate:names`, stretch/dip/pull-up calques, inbox screenshot of a weird title.
+
+Bake via `npm run translate:names`. Prefer id overrides + full EN `PHRASES` over raw token glue. Gym order: movement → position → equipment.

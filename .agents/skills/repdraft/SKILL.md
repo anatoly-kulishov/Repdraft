@@ -51,6 +51,7 @@ npm run check:domain   # domain selfchecks
 | `src/lib/app/` | web helpers (API origin, analytics gate) |
 | `src/routes/` | SvelteKit pages (`/privacy`, `/terms`, …) |
 | `.cursor/product/` | MVP spec, UX research, [agent inbox](../../.cursor/product/agent-inbox.md) |
+| `.cursor/skills/ru-gym-names/` | Russian gym titles for `name_ru` |
 | `tests/e2e/` | Playwright (sacred loop, auth consent, history) |
 
 ## UX guardrails
