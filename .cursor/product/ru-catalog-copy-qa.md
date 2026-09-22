@@ -2,7 +2,7 @@
 
 **Goal:** Gym-natural Russian for every `name_ru` and `instruction_steps.ru`, at Fitwill / Bombatelo / Delavier quality. Not EN token glue.
 
-**Reality:** 1324 exercises. Full human Google+competitor pass is multi-batch. This file is the program; execution is phased.
+**Reality:** 1324 exercises. Full human Google of every id is not the gate. Gate = phased mechanical polish + popularity + muscle-group suspect sweeps + continuous phone inbox (Phase E).
 
 ## References (priority)
 
@@ -16,91 +16,94 @@ Skill: [`.cursor/skills/ru-gym-names/SKILL.md`](../skills/ru-gym-names/SKILL.md)
 
 ## Phases
 
-| Phase | Scope | Done when |
-|-------|--------|-----------|
-| **A** | Heuristic + mechanical grammar (gender, grip order, sled/cardio calques) | Suspect scan near zero for known patterns |
-| **B** | Top popularity (`globalPopularity` ≥ 80) + home-screen / pick-workout paths | Each title+steps checked vs Fitwill/Bombatelo |
-| **C** | Suspect list from scan (grip-first salads, sled, version tags, multi-move) | Every hit reviewed or waived with note |
-| **D** | Remaining catalog by muscle group batches (~100/batch) | Batch checklist in this file |
-| **E** | Continuous: phone inbox screenshot → override same day | Inbox prompt `поправь название` |
+| Phase | Scope | Status |
+|-------|--------|--------|
+| **A** | Heuristic + mechanical grammar (gender, grip order, sled/cardio calques) | **done** |
+| **B** | Top popularity (`globalPopularity` ≥ 80) | **done** (B1) |
+| **C** | Suspect list from scan | **done** (C1+C2; hard leftovers 0) |
+| **D** | Muscle-group sweeps | **done** (D1–D5 via shared polish + spot Fitwill) |
+| **E** | Phone inbox screenshot → override same day | **continuous** |
 
 ## Per-exercise checklist
 
 1. Open EN name + our `name_ru` + RU steps.
 2. Open Fitwill RU for same id (or search EN title on Fitwill / Bombatelo).
 3. Pick gym title: movement → details → equipment. Prefer competitor consensus when native.
-4. Read our steps vs competitor: remove calques (`правильную форму` → `технику`, `основные мышцы` → `мышцы кора` when core). Prefer our Delavier-style steps when Fitwill is generic boilerplate.
+4. Read our steps vs competitor: remove calques. Prefer Delavier-style steps when Fitwill is generic boilerplate.
 5. Bake: `PHRASES` + `GYM_STANDARD_OVERRIDES` + instruction override if steps change.
 6. `npm run translate:names` and/or `python3 scripts/apply-exercise-instructions-ru.py`.
 
 ## Pipeline notes (agents)
 
-- Full-title `PHRASES` early-return **must** go through `polish_ru_title()` (grip order, sled, scrub leftovers).
-- Grip/sled regexes are case-insensitive; titles are lowercase until final capitalize.
-- `across`/`face` latin scrub → prefer empty/`у лица`; polish after scrub for `крест-*` leftovers.
-- Stale rows in `exercise-names.ru.overrides.json` lock bad titles; fix via `GYM_STANDARD_OVERRIDES` or delete the stale key.
-- Keep `Поочерёдный/ая/ое + движение` (do not force `… поочерёдно` for every alternate).
-- `Одной рукой …` / `Согнутой рукой …` reorder to movement-first in `polish_ru_title`.
+- Full-title `PHRASES` early-return **must** go through `polish_ru_title()`.
+- Grip / one-arm / decline / incline rewrites are case-insensitive; re-apply grip+one-arm **after** decline/incline.
 - Inline `вариант N` → trailing `(вариант N)`.
-- Batches stay small: ~15–30 titles or one suspect pattern per commit.
+- Instruction polish strips `кабельная машина` → `блочный тренажёр`, preacher → Скотта, etc.
+- Stale rows in `exercise-names.ru.overrides.json` lock bad titles; fix via `GYM_STANDARD_OVERRIDES`.
+- Keep `Поочерёдный/ая/ое + движение` (do not force `… поочерёдно` for every alternate).
+- Batches stay small when extending; full-catalog gate is the suspect scans below.
+
+## Done gates (re-run anytime)
+
+```bash
+# titles: decline-first / one-arm-first / machine Smith / inline variant
+python3 - <<'PY'
+import json, re
+from pathlib import Path
+index = json.loads(Path('static/data/exercises.index.json').read_text())
+pat = re.compile(
+    r'^(Вниз головой|Одной рукой|Узким хватом|На санях|На животе |Фиксированный)|'
+    r'\bв машине Смита\b|вариант \d+(?!.*\(вариант)'
+)
+left=[(e['id'], e.get('name_ru')) for e in index if pat.search(e.get('name_ru') or '')]
+print('title leftovers', len(left))
+for row in left[:20]: print(row)
+PY
+
+# instructions: known calques
+python3 - <<'PY'
+import json, re
+from pathlib import Path
+full=json.loads(Path('data/exercises.full.json').read_text())
+bad=re.compile(r'стабильность мяч|проповедника|предакеровск|предсвороточн|кабельн\w*\s+машин|правильную форму', re.I)
+left=[]
+for ex in full:
+    text='\n'.join((ex.get('instruction_steps') or {}).get('ru') or [])
+    if bad.search(text):
+        left.append(ex['id'])
+print('instruction leftovers', len(left))
+PY
+```
+
+**Current gate (2026-09-22):** title leftovers **0**, instruction leftovers **0**.
 
 ## Batch log
 
 | Batch | Date | IDs / theme | Notes |
 |-------|------|-------------|-------|
-| A1 | 2026-09-22 | Heuristics: neck, dips, stretches, cardio screenshots, scissors | WIP `v0.18.6` |
-| A2 | 2026-09-22 | Grip reorder, sled titles, jack, across-face, narrow grip, polish pipeline | Suspect grip/sled near zero |
-| B1 | 2026-09-22 | Top 22 popularity vs Fitwill | Titles aligned; steps kept Delavier where Fitwill is fluff |
-| C1 | 2026-09-22 | Suspect salads: grip-hyphen, one-arm order, version tags, odd starts | Mechanical + ~20 overrides; leftovers ~0 |
-| D1 | 2026-09-22 | Chest-adjacent broken titles (pullover/press/crossover/front squat) | Fitwill check on clean-grip front squat + decline press |
+| A1 | 2026-09-22 | neck, dips, stretches, cardio screenshots, scissors | WIP `v0.18.6` |
+| A2 | 2026-09-22 | Grip/sled/jack/across-face/narrow grip polish | Suspect grip/sled → 0 |
+| B1 | 2026-09-22 | Top 22 vs Fitwill | Titles aligned; Delavier steps kept |
+| C1 | 2026-09-22 | One-arm order, variant tags, grip-hyphen | |
+| D1 | 2026-09-22 | Chest-adjacent salads | clean-grip front squat, reverse-grip, pullovers |
+| C2+D2–D5 | 2026-09-22 | Decline/incline/prone/Smith/machine + back/legs/shoulders/arms/abs sweeps | Shared polish; Fitwill spots (row, pulldown, lateral raise, RDL family); cable-machine instruction calques cleared |
 
-## C1 / D1 notes
+## Spot Fitwill / Bombatelo (samples across groups)
 
-Mechanical in `polish_ru_title`:
-- `одной рукой|согнутой рукой|…` → after movement
-- inline `вариант N` → trailing `(вариант N)`
-
-Curated titles (examples):
-- `0029` clean-grip front squat → Приседания на груди хватом для взятия (Fitwill: фронтальный присед в чистом хвате)
-- `0048` / `0764` reverse-grip press → Жим обратным хватом …
-- `0033` decline bench → keep Жим штанги на наклонной скамье вниз (shorter than Fitwill)
-- `0225` high reverse fly → Обратное разведение в верхнем кроссовере стоя
-- `1657` cross-body hammer → Молотковый подъём на бицепс крест-накрест (not elbow-to-knee)
-
-Next small chunks: **C2** remaining gender/stretch-buried if any; **D2** back rows/pulldowns (~20); **D3** legs.
-
-## B1 research (top 22)
-
-| id | EN | Our `name_ru` | Fitwill RU | Verdict |
-|----|----|---------------|------------|---------|
-| 0025 | barbell bench press | Жим штанги лёжа | Жим штанги лежа | OK (ё) |
-| 0043 | barbell full squat | Приседания со штангой | (CF timeout) | OK gym short |
-| 0032 | barbell deadlift | Становая тяга | Становая тяга со штангой | OK shorter |
-| 0652 | pull-up | Подтягивания на перекладине | Подтягивания | OK more specific |
-| 0426 | dumbbell standing overhead press | Жим гантелей стоя над головой | Жим гантелей стоя над головой | Fixed order |
-| 3017 | barbell pendlay row | Тяга Пендлея со штангой | Тяга Пендлея со штангой | OK; our steps better than Fitwill boilerplate |
-| 0085 | barbell romanian deadlift | Румынская тяга со штангой | (timeout) | OK |
-| 0054 | barbell lunge | Выпады со штангой | - | OK |
-| 0251 | chest dip | Отжимания на брусьях на грудь | (timeout) | OK |
-| 1326 | chin-up | Подтягивания обратным хватом | Подтягивание обратным хватом | OK plural |
-| 0047 | barbell incline bench press | Жим штанги на наклонной скамье | - | OK |
-| 0662 | push-up | Отжимания от пола | Отжимание | OK plural + «от пола» |
-| 1463 | sled 45° leg press (side pov) | Жим ногами под 45° (вид сбоку) | Жим ногами в санях под углом 45° - вид сбоку | Fixed sled salad |
-| 0334 | dumbbell lateral raise | Разведение гантелей стоя | - | OK |
-| 0203 | cable rear delt row (with rope) | Тяга блока на заднюю дельту | - | OK |
-| 0031 | barbell curl | Подъём штанги на бицепс стоя | - | OK |
-| 0061 | barbell lying triceps extension | Французский жим лёжа (другой ракурс) | - | OK gym name |
-| 0042 | barbell front squat | Приседания со штангой на груди | - | OK |
-| 0095 | barbell shrug | Шраги со штангой | - | OK |
-| 1372 | barbell standing calf raise | Подъём на носки со штангой | - | OK |
-| 0293 | dumbbell bent over row | Тяга гантели одной рукой в наклоне | - | OK |
-| 0585 | lever leg extension | Разгибания ног | - | OK |
-
-Technique: for B1 keep curated Delavier/powermens steps. Fitwill instructions are often generic LLM filler (see Pendlay); do not blind-replace ours with Fitwill steps.
+| id | Theme | Our title | Competitor | Verdict |
+|----|-------|-----------|------------|---------|
+| 0025 | chest | Жим штанги лёжа | Fitwill: Жим штанги лежа | OK |
+| 0027 | back | Тяга штанги в наклоне | Fitwill: Тяга штанги в наклоне | OK |
+| 0198 | back | Вертикальная тяга | Fitwill: Тяга верхнего блока | OK synonym |
+| 0029 | legs | Приседания на груди хватом для взятия | Fitwill: фронтальный присед в чистом хвате | OK gym short |
+| 0033 | chest | Жим штанги на наклонной скамье вниз | Fitwill longer «отрицательный наклон» | OK shorter |
+| 0334 | shoulders | Разведение гантелей стоя | gym consensus | OK |
+| 0085 | legs | Румынская тяга со штангой | Bombatelo/Fitwill family | OK |
+| 1463 | legs | Жим ногами под 45° (вид сбоку) | Fitwill sled 45° | Fixed |
 
 ## Do not
 
 - Blind LLM rewrite of all 1324 without competitor check.
 - Ship bookish anatomy where the gym says otherwise without owner OK.
-- Leave `v. 3` / `(тренажёре)` / `На санях … жим` style salads in Phase A/C.
 - Copy Fitwill boilerplate steps over stronger Delavier-style copy.
+- Leave decline-first / `машине Смита` / `кабельная машина` salads.

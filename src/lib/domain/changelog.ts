@@ -18,11 +18,11 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		highlights: {
 			ru: [
 				'История и списки: ровнее отступ под строкой поиска',
-				'Каталог: названия и техника ближе к тренажёрному русскому (сверка с Fitwill)'
+				'Каталог: названия и техника ближе к тренажёрному русскому (план A–D)'
 			],
 			en: [
 				'History and lists: more even space under the search row',
-				'Catalog: Russian titles and technique closer to gym speech (Fitwill check)'
+				'Catalog: Russian titles and technique closer to gym speech (phases A–D)'
 			]
 		}
 	},
