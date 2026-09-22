@@ -103,6 +103,7 @@ Semver: patch = polish/багфиксы; minor = пользовательска�
 ## Не делать сейчас
 
 - AI-коуч как Fitbod
+- Per-exercise «подобрать подходы/повторы/отдых с ИИ» из меню билдера - идея зафиксирована, не в работе: [ideas/builder-ai-tune-prescription.md](ideas/builder-ai-tune-prescription.md)
 - Instagram-соцсеть / follow всех
 - Питание / макросы
 - Native Expo до стабильного live web

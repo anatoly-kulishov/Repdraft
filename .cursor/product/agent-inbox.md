@@ -2,6 +2,14 @@
 
 Phone → GitHub Issue → Cursor agent → branch / PR in Repdraft.
 
+Local backlog files (when Issues are not used yet) live under `.cursor/product/ideas/`.
+
+## Active backlog files
+
+| File | Topic | Status |
+|------|--------|--------|
+| [ideas/builder-ai-tune-prescription.md](./ideas/builder-ai-tune-prescription.md) | Builder menu: AI suggest sets/reps/rest | backlog |
+
 ## Capture (human, phone)
 
 1. GitHub app → **Repdraft** → **New issue**.
