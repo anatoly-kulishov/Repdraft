@@ -40,6 +40,9 @@ Skill: [`.cursor/skills/ru-gym-names/SKILL.md`](../skills/ru-gym-names/SKILL.md)
 - `across`/`face` latin scrub → prefer empty/`у лица`; polish after scrub for `крест-*` leftovers.
 - Stale rows in `exercise-names.ru.overrides.json` lock bad titles; fix via `GYM_STANDARD_OVERRIDES` or delete the stale key.
 - Keep `Поочерёдный/ая/ое + движение` (do not force `… поочерёдно` for every alternate).
+- `Одной рукой …` / `Согнутой рукой …` reorder to movement-first in `polish_ru_title`.
+- Inline `вариант N` → trailing `(вариант N)`.
+- Batches stay small: ~15–30 titles or one suspect pattern per commit.
 
 ## Batch log
 
@@ -48,8 +51,23 @@ Skill: [`.cursor/skills/ru-gym-names/SKILL.md`](../skills/ru-gym-names/SKILL.md)
 | A1 | 2026-09-22 | Heuristics: neck, dips, stretches, cardio screenshots, scissors | WIP `v0.18.6` |
 | A2 | 2026-09-22 | Grip reorder, sled titles, jack, across-face, narrow grip, polish pipeline | Suspect grip/sled near zero |
 | B1 | 2026-09-22 | Top 22 popularity vs Fitwill | Titles aligned; steps kept Delavier where Fitwill is fluff |
-| C1 | pending | Remaining suspect scan | |
-| D1 | pending | Chest / back / legs batches | |
+| C1 | 2026-09-22 | Suspect salads: grip-hyphen, one-arm order, version tags, odd starts | Mechanical + ~20 overrides; leftovers ~0 |
+| D1 | 2026-09-22 | Chest-adjacent broken titles (pullover/press/crossover/front squat) | Fitwill check on clean-grip front squat + decline press |
+
+## C1 / D1 notes
+
+Mechanical in `polish_ru_title`:
+- `одной рукой|согнутой рукой|…` → after movement
+- inline `вариант N` → trailing `(вариант N)`
+
+Curated titles (examples):
+- `0029` clean-grip front squat → Приседания на груди хватом для взятия (Fitwill: фронтальный присед в чистом хвате)
+- `0048` / `0764` reverse-grip press → Жим обратным хватом …
+- `0033` decline bench → keep Жим штанги на наклонной скамье вниз (shorter than Fitwill)
+- `0225` high reverse fly → Обратное разведение в верхнем кроссовере стоя
+- `1657` cross-body hammer → Молотковый подъём на бицепс крест-накрест (not elbow-to-knee)
+
+Next small chunks: **C2** remaining gender/stretch-buried if any; **D2** back rows/pulldowns (~20); **D3** legs.
 
 ## B1 research (top 22)
 
