@@ -38,10 +38,13 @@ After editing polish rules or generated/overrides: `python3 scripts/apply-exerci
 2. **Full EN phrase** in `PHRASES` (longer phrases before shorter).
 3. Token pipeline + post-fixes in the script (last resort).
 4. External check only when unsure:
+   - Fitwill RU (`https://fitwill.app/ru/exercise/{id}/{slug}/`) - titles; steps often generic, do not blind-replace Delavier
    - Delavier RU atlas (bookish baseline)
    - Bombatelo / SportWiki / powermens (gym speech)
-   - Lyfta / Fitwill RU (stretches, odd mobility)
+   - Lyfta (stretches, odd mobility)
 5. **Human / product owner** is final arbiter for jargon (`махи` vs `разведения`).
+
+Program: [`.cursor/product/ru-catalog-copy-qa.md`](../../product/ru-catalog-copy-qa.md) (phased A→E research).
 
 ## Gym Russian grammar (short)
 

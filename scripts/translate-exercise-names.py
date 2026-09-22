@@ -59,6 +59,8 @@ PHRASES: list[tuple[str, str]] = [
 	("close grip", "узким хватом"),
 	("wide grip", "широким хватом"),
 	("neutral grip", "нейтральным хватом"),
+	("narrow grip", "узким хватом"),
+	("narrow-grip", "узким хватом"),
 	("overhand grip", "прямым хватом"),
 	("underhand grip", "обратным хватом"),
 	("reverse grip", "обратным хватом"),
@@ -215,7 +217,27 @@ PHRASES: list[tuple[str, str]] = [
 	("hyper extension", "гиперэкстензия"),
 	("reverse hyper extension", "обратная гиперэкстензия"),
 	("reverse hyper", "обратная гиперэкстензия"),
-	("jumping jack", "прыжки джекинг"),
+	("jumping jack", "прыжки «джек»"),
+	("across face", "у лица"),
+	("cross body", "с касанием локтя к колену"),
+	("close grip chin-up", "подтягивания узким обратным хватом"),
+	("close-grip chin-up", "подтягивания узким обратным хватом"),
+	("mixed grip chin-up", "подтягивания смешанным хватом"),
+	("sled 45° leg press", "жим ногами под 45°"),
+	("sled 45в° leg press", "жим ногами под 45°"),
+	("sled 45° calf press", "жим носками под 45°"),
+	("sled 45в° calf press", "жим носками под 45°"),
+	("sled 45° leg wide press", "широкий жим ногами под 45°"),
+	("sled 45в° leg wide press", "широкий жим ногами под 45°"),
+	("sled calf press on leg press", "жим носками в тренажёре для жима ногами"),
+	("sled one leg calf press on leg press", "жим носками одной ногой в тренажёре"),
+	("sled forward angled calf raise", "подъём на носки в наклонных санях"),
+	("sled lying calf press", "жим носками лёжа в тренажёре"),
+	("sled lying squat", "приседания лёжа в санях"),
+	("sled closer hack squat", "гак-приседания с узкой постановкой"),
+	("band fixed back underhand pulldown", "вертикальная тяга обратным хватом с резинкой"),
+	("alternate lateral pulldown", "поочерёдная вертикальная тяга"),
+	("fixed back underhand pulldown", "вертикальная тяга обратным хватом"),
 	("jack burpee", "джек-берпи"),
 	("jack jump", "джек-прыжок"),
 	("anti gravity press", "антигравитационный жим"),
@@ -1040,10 +1062,7 @@ def translate_name(name: str) -> str:
 	full_l = normalize_spaces(full_l)
 	for eng, rus in PHRASES:
 		if full_l == eng:
-			result = rus
-			if result:
-				result = result[:1].upper() + result[1:]
-			return result
+			return polish_ru_title(rus)
 
 	core, note = split_parens(name)
 	core_l = core.lower().strip()
@@ -1252,9 +1271,78 @@ def translate_name(name: str) -> str:
 	for pattern, repl in fixes:
 		result = re.sub(pattern, repl, result, flags=re.IGNORECASE)
 
+	return polish_ru_title(result)
+
+
+def polish_ru_title(result: str) -> str:
+	"""Gym word order + leftover calques. Titles are lowercase until the end."""
+	result = normalize_spaces(result)
+
+	# Grip first → after the movement (gym order). Case-insensitive:
+	# pipeline still has lowercase before final capitalize.
+	result = re.sub(
+		r"^(узким|узкий|широким|широкий|обратным|обратный|молотковым|молотковый|прямым|прямой|нейтральным|нейтральный) хватом (.+)$",
+		lambda m: f"{m.group(2)} {m.group(1).lower().replace('узкий','узким').replace('широкий','широким').replace('обратный','обратным').replace('молотковый','молотковым').replace('прямой','прямым').replace('нейтральный','нейтральным')} хватом",
+		result,
+		flags=re.IGNORECASE,
+	)
+	# Keep «поочерёдный/ая/ое + движение» (gym speech). Only fix gender mismatches.
+	pooch_gender = [
+		(r"\bпоочерёдный (тяга|складка)\b", r"поочерёдная \1"),
+		(r"\bпоочерёдный (сгибание|разгибание|взятие|отведение)\b", r"поочерёдное \1"),
+		(r"\bпоочерёдный (молотковое|сидя)\b", r"поочерёдное \1"),
+		(r"\bпоочерёдный плеча\b", "поочерёдный жим плечами"),
+	]
+	for pattern, repl in pooch_gender:
+		result = re.sub(pattern, repl, result, flags=re.IGNORECASE)
+	result = re.sub(r" взятие с виса с гирей\b", " взятие гири с виса", result, flags=re.I)
+	sled_fixes = [
+		(r"^на санях 45° жим ногами\b", "жим ногами под 45°"),
+		(r"^на санях 45° жим носками\b", "жим носками под 45°"),
+		(r"^на санях 45° ногой широкий жим\b", "широкий жим ногами под 45°"),
+		(r"^на санях жим носками в тренажёре жима ногами\b", "жим носками в тренажёре для жима ногами"),
+		(r"^на санях на одной жим ноге носками в тренажёре жима ногами\b", "жим носками одной ногой в тренажёре"),
+		(r"^на санях жим носками\b", "жим носками в тренажёре"),
+		(r"^на санях лёжа жим носками\b", "жим носками лёжа в тренажёре"),
+		(r"^на санях вперёд под углом подъём на носки\b", "подъём на носки в наклонных санях"),
+		(r"^на санях ближе гак-приседания\b", "гак-приседания с узкой постановкой"),
+		(r"^на санях лёжа присед\b", "приседания лёжа в санях"),
+	]
+	for pattern, repl in sled_fixes:
+		result = re.sub(pattern, repl, result, flags=re.IGNORECASE)
+
+	result = re.sub(r"^подъём одной рукой отжимания\b", "отжимания с подъёмом руки", result, flags=re.I)
+	result = re.sub(
+		r"^модифицированный отжимания нижний руками\b",
+		"облегчённые отжимания с опорой на предплечья",
+		result,
+		flags=re.I,
+	)
+	result = re.sub(r"^прыжки джекинг\b", "прыжки «джек»", result, flags=re.I)
+	result = re.sub(r"подтягивания обратным хватом узким хватом\b", "подтягивания узким обратным хватом", result, flags=re.I)
+	result = re.sub(r"подтягивания обратным хватом смешанный хватом\b", "подтягивания смешанным хватом", result, flags=re.I)
+	result = re.sub(r"\bсмешанный хватом\b", "смешанным хватом", result, flags=re.I)
+	result = re.sub(r"\bузкий хватом\b", "узким хватом", result, flags=re.I)
+	result = re.sub(
+		r"^фиксированный спины\s+(обратным хватом\s+)?вертикальная тяга",
+		lambda m: f"вертикальная тяга {m.group(1) or ''}".strip(),
+		result,
+		flags=re.I,
+	)
+	result = re.sub(r"^вертикальная тяга обратным хватом\s*$", "вертикальная тяга обратным хватом", result, flags=re.I)
+
 	result = scrub_leftover_latin(result)
 	result = normalize_spaces(result)
-	# Preserve leading acronyms (JM-жим), only title-case plain Cyrillic starts.
+
+	# After latin scrub: across/face/cross/body leftovers.
+	result = re.sub(r"крест-накрест лицу", "у лица", result, flags=re.I)
+	result = re.sub(r"крест-накрест корпуса", "с касанием локтя к колену", result, flags=re.I)
+	result = re.sub(r"крест-\s*корпуса", "с касанием локтя к колену", result, flags=re.I)
+	result = re.sub(r"\(у лица\)", "(у лица)", result)
+	result = re.sub(r"\bджек-\b", "джек", result)
+	result = re.sub(r"\bпрыжки джек\b", "прыжки «джек»", result, flags=re.I)
+	result = normalize_spaces(result)
+
 	if result:
 		if _ACRONYM_RE.match(result):
 			pass
@@ -1323,6 +1411,19 @@ GYM_STANDARD_OVERRIDES: dict[str, str] = {
 	"1723": "Жим к низу одной рукой в блочном тренажёре",
 	"0031": "Подъём штанги на бицепс стоя",
 	"0447": "Подъём EZ-штанги на бицепс стоя",
+	"0296": "Жим с гантелями узким хватом (другой ракурс)",
+	"1731": "Жим с гантелями узким хватом",
+	"0588": "Горизонтальная тяга узким хватом в рычажном тренажёре",
+	"0426": "Жим гантелей стоя над головой",
+	"1463": "Жим ногами под 45° (вид сбоку)",
+	"1464": "Жим ногами под 45° (вид сзади)",
+	"0738": "Жим носками под 45°",
+	"0740": "Широкий жим ногами под 45°",
+	"1327": "Подтягивания узким обратным хватом",
+	"0627": "Подтягивания смешанным хватом",
+	"0674": "Подтягивания обратным хватом",
+	"3116": "Вертикальная тяга обратным хватом с резинкой",
+	"3546": "Поочерёдный жим плечами сидя с гантелями",
 	"0285": "Поочерёдный подъём гантелей на бицепс",
 	"0313": "Молотковые сгибания с гантелями",
 	"0814": "Отжимания на брусьях на трицепс",
