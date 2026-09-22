@@ -13,8 +13,8 @@
 	position: sticky;
 	top: 0;
 	z-index: 6;
-	/* Equal block pad so the row sits mid-strip (matches ScreenHeader pad-block). */
-	padding: var(--screen-header-pad-block) 0;
+	/* Top matches ScreenHeader; bottom has a bit more air under the input. */
+	padding: var(--screen-header-pad-block) 0 var(--list-search-chrome-pad-block-end);
 	background: color-mix(in srgb, var(--color-bg) 94%, transparent);
 	backdrop-filter: blur(10px);
 	-webkit-backdrop-filter: blur(10px);
@@ -123,10 +123,10 @@
 		max-width: none;
 		margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
 		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
-		/* Keep list gap outside the chrome so pad-block can stay visually centered. */
+		/* Keep list gap outside the chrome; bottom pad gives air under the input. */
 		margin-bottom: var(--list-search-content-gap);
 		padding: var(--screen-header-pad-block) max(var(--page-pad-x), var(--safe-right))
-			var(--screen-header-pad-block) max(var(--page-pad-x), var(--safe-left));
+			var(--list-search-chrome-pad-block-end) max(var(--page-pad-x), var(--safe-left));
 		background: var(--chrome-header-bg);
 		box-shadow: var(--shadow-screen-header);
 		backdrop-filter: none;

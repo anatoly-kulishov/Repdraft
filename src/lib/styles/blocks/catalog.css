@@ -3647,7 +3647,7 @@ body:has(.sticky-actions) .draft-dock {
 		margin-left: calc(-1 * max(var(--page-pad-x), var(--safe-left)));
 		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
 		padding: calc(var(--screen-header-pad-block) + var(--safe-top)) max(var(--page-pad-x), var(--safe-right))
-			var(--screen-header-pad-block) max(var(--page-pad-x), var(--safe-left));
+			var(--list-search-chrome-pad-block-end) max(var(--page-pad-x), var(--safe-left));
 		background: var(--chrome-header-bg);
 		box-shadow: none;
 		transition: box-shadow 160ms ease;
