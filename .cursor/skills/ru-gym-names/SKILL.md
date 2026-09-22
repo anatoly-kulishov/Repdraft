@@ -14,12 +14,16 @@ Canonical bake path: [`scripts/translate-exercise-names.py`](../../scripts/trans
 Overrides: `static/data/exercise-names.ru.overrides.json` + `src/lib/data/exerciseNamesRuOverrides.json`  
 Command: `npm run translate:names` (script + `build:data`)
 
+Technique / steps RU: [`scripts/apply-exercise-instructions-ru.py`](../../scripts/apply-exercise-instructions-ru.py)  
+Sources: `static/data/exercise-instructions.ru.generated.json` + curated `…ru.overrides.json` (overrides win).  
+After editing polish rules or generated/overrides: `python3 scripts/apply-exercise-instructions-ru.py`
+
 ## When to use
 
 - User reports a weird Russian title (screenshot / inbox).
-- Sweep or patch `name_ru` in the catalog.
+- Sweep or patch `name_ru` **or** technique steps (`instruction_steps.ru` / `instructions.ru`).
 - Adding PHRASES / `GYM_STANDARD_OVERRIDES` / id overrides.
-- Prompt: `поправь название` · `ru gym names` · `translate:names`.
+- Prompt: `поправь название` · `ru gym names` · `translate:names` · `техника` · `описания упражнений`.
 
 ## Do not
 
@@ -58,7 +62,41 @@ Stretches: title should **start** with `Растяжка` / `Боковая ра
 
 Bodyweight: name the movement; add tool only when it disambiguates (script already omits default body weight).
 
-## Fix algorithm
+## Technique steps (`instruction_steps.ru`)
+
+Same gym voice. Prefer curated overrides for popular lifts.
+
+Polish in `apply-exercise-instructions-ru.py` must catch calques such as:
+
+| Bad | Good |
+|-----|------|
+| стабильность мяча | фитбол |
+| скамья проповедника | скамья Скотта |
+| предакеровский валик | валик скамьи Скотта |
+| кабельная машина | блочный тренажёр |
+
+Do not strip intentional «гантель или гиря» from curated goblet overrides.
+
+Scan:
+
+```bash
+python3 <<'PY'
+import json, re
+from pathlib import Path
+full = json.loads(Path('data/exercises.full.json').read_text())
+bad = re.compile(r'стабильность мяч|проповедника|предакеровск|предсвороточн|[A-Za-z]{5,}', re.I)
+left = []
+for ex in full:
+    text = '\n'.join((ex.get('instruction_steps') or {}).get('ru') or [])
+    if bad.search(text):
+        left.append((ex['id'], ex.get('name_ru'), bad.findall(text)[:5]))
+print('instruction leftovers', len(left))
+for row in left[:30]:
+    print(row)
+PY
+```
+
+## Fix algorithm (titles)
 
 1. Read EN `name` + current `name_ru` + id (from index or screenshot route).
 2. If instructions exist in `data/exercises.full.json`, skim EN steps when the EN title is nonsense (`incline breeding` → fly).
