@@ -17,10 +17,12 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.18.6',
 		highlights: {
 			ru: [
-				'История и списки: ровнее отступ под строкой поиска'
+				'История и списки: ровнее отступ под строкой поиска',
+				'Названия упражнений: «Боковая растяжка шеи» и похожие кальки'
 			],
 			en: [
-				'History and lists: more even space under the search row'
+				'History and lists: more even space under the search row',
+				'Exercise names: fixed awkward Russian titles like neck side stretch'
 			]
 		}
 	},
