@@ -14,6 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.18.6',
+		highlights: {
+			ru: [
+				'История и списки: ровнее отступ под строкой поиска',
+				'Каталог: названия упражнений на нормальном тренажёрном русском'
+			],
+			en: [
+				'History and lists: more even space under the search row',
+				'Catalog: cleaner Russian exercise titles'
+			]
+		}
+	},
+	{
 		version: '0.18.5',
 		highlights: {
 			ru: [

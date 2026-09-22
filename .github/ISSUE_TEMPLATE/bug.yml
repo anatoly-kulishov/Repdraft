@@ -1,0 +1,102 @@
+name: Bug
+description: Something broken or wrong in the sacred loop. Prefer this when you already know it is a bug.
+title: "[bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Structured bug for agent execution. Attach a screenshot if possible.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What went wrong
+      placeholder: "After logging a set, Next stays disabled"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: loop_step
+    attributes:
+      label: Sacred loop step
+      options:
+        - unsure
+        - open
+        - pick-workout
+        - preview
+        - start
+        - set
+        - weight-reps
+        - next
+        - finish
+        - saved-result
+        - outside-loop
+      default: 0
+    validations:
+      required: true
+
+  - type: input
+    id: route
+    attributes:
+      label: Screen / route
+      placeholder: "/session or Active Workout"
+    validations:
+      required: false
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: One step per line. Rough is ok.
+      placeholder: |
+        1. Open a plan
+        2. Start workout
+        3. Enter weight and reps
+        4. Tap Next
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      placeholder: "Next advances to the next exercise"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+      placeholder: "Button does nothing / stays grey"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity vs sacred loop
+      options:
+        - p0-blocks-set
+        - p1-friction
+        - p2-edge
+        - unsure
+      default: 3
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device / context
+      description: Phone model, PWA vs Safari/Chrome, locale if relevant.
+      placeholder: "iPhone 12, installed PWA, ru"
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Attach screenshot
+        Paste or upload under the issue after create if the form blocks it.

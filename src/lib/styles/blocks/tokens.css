@@ -60,7 +60,13 @@
 	/* Space between ScreenHeader bottom and first content block. */
 	--screen-header-content-gap: 1.15rem;
 	/* Gap below list search chrome before content (Exercises / catalog standard). */
-	--list-search-content-gap: 0.75rem;
+	--list-search-content-gap: 0.85rem;
+	/*
+	 * Bottom pad inside sticky search chrome (History / catalog filters).
+	 * Slightly taller than --screen-header-pad-block so the input is not flush
+	 * against the chrome edge / shadow while the top still matches the header.
+	 */
+	--list-search-chrome-pad-block-end: 0.6rem;
 	/* Empty card under sticky title-only chrome (records/saved with no search). */
 	--list-empty-gap: 1rem;
 	/* Shared empty-state rhythm (Workouts / Records / Saved). */

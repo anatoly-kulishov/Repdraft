@@ -1,0 +1,78 @@
+name: Idea / UX polish
+description: Feature or comfort improvement. Agent will check it against the sacred loop before building.
+title: "[idea] "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Prefer polish that speeds up phone → completed set. Attach a sketch or screenshot if useful.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / friction
+      description: What feels slow, unclear, or annoying today.
+      placeholder: "Hard to see last weight while typing reps"
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Idea (rough ok)
+      placeholder: "Show last set weight above the weight field"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: loop_step
+    attributes:
+      label: Sacred loop step
+      options:
+        - unsure
+        - open
+        - pick-workout
+        - preview
+        - start
+        - set
+        - weight-reps
+        - next
+        - finish
+        - saved-result
+        - outside-loop
+      default: 0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: loop_fit
+    attributes:
+      label: Does this speed up the sacred loop?
+      options:
+        - yes-clearly
+        - maybe
+        - no-backlog-only
+        - unsure
+      default: 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: done_when
+    attributes:
+      label: Done when (optional)
+      description: How we know it shipped. One or two checks.
+      placeholder: |
+        - Last weight visible without leaving the set row
+        - Works on 375px phone, 48px targets
+    validations:
+      required: false
+
+  - type: input
+    id: route
+    attributes:
+      label: Screen / route (optional)
+      placeholder: "/session"
+    validations:
+      required: false
