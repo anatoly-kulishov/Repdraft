@@ -42,8 +42,15 @@ Legal before public: set real `PUBLIC_PRIVACY_*` in Vercel (not placeholders); h
 | `supabase-auth.mdc` | Auth dashboard checklist (on demand) |
 | `refactor-guardrails.mdc` | Large CSS/architecture refactors (on demand) |
 | `tech-debt.mdc` | Backlog pointer (on demand) |
+| `agent-inbox.mdc` | Phone dumps → Issues triage / implement (on demand) |
 
 Product: [`.cursor/product/mvp-spec.md`](.cursor/product/mvp-spec.md). Legal: `/privacy` + `/terms`.
+
+## Bugs / ideas from phone (agent inbox)
+
+Capture in **GitHub Issues** (templates: Inbox / Bug / Idea). Workflow + Agent card format: [`.cursor/product/agent-inbox.md`](.cursor/product/agent-inbox.md).
+
+In Cursor: `оформи inbox` · `оформи issue #N` · `сделай issue #N`.
 
 ## Secrets
 
