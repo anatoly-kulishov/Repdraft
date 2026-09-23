@@ -35,6 +35,8 @@ function ollamaConfig(model: string): AiConfig {
 function gigachatConfig(model: string): AiConfig | null {
 	const apiKey = trim(privateEnv.GIGACHAT_API_KEY || privateEnv.LLM_API_KEY).replace(/^sk-/, '');
 	if (!apiKey) return null;
+	// GigaChat OAuth expects Basic credentials (often already base64), never a URL.
+	if (/^https?:\/\//i.test(apiKey)) return null;
 	return {
 		provider: 'gigachat',
 		baseUrl: (trim(privateEnv.GIGACHAT_BASE_URL) || 'https://api.giga.chat/v1').replace(

@@ -1,0 +1,308 @@
+{
+  "generatedAt": "2026-09-23T10:45:59.217Z",
+  "count": 43,
+  "note": "Copies for RAG. Edit originals, then npm run docs:rag.",
+  "entries": [
+    {
+      "source": ".agents/skills/repdraft/SKILL.md",
+      "corpus": "corpus/agents/skills/repdraft/SKILL.md",
+      "title": "Repdraft",
+      "bytes": 3829,
+      "sha256_12": "dc8cebbd79e0"
+    },
+    {
+      "source": ".cursor/agents/auditor.md",
+      "corpus": "corpus/cursor/agents/auditor.md",
+      "title": "Auditor — Security & performance (Repdraft)",
+      "bytes": 2471,
+      "sha256_12": "fbce59a867f3"
+    },
+    {
+      "source": ".cursor/agents/debugger.md",
+      "corpus": "corpus/cursor/agents/debugger.md",
+      "title": "Debugger — Repdraft failure specialist",
+      "bytes": 2323,
+      "sha256_12": "08591f0590d1"
+    },
+    {
+      "source": ".cursor/agents/verifier.md",
+      "corpus": "corpus/cursor/agents/verifier.md",
+      "title": "Verifier — Repdraft acceptance gate",
+      "bytes": 2163,
+      "sha256_12": "e6e8cc862631"
+    },
+    {
+      "source": ".cursor/product/agent-inbox.md",
+      "corpus": "corpus/cursor/product/agent-inbox.md",
+      "title": "Agent inbox (GitHub Issues)",
+      "bytes": 3472,
+      "sha256_12": "e37b2f3c3095"
+    },
+    {
+      "source": ".cursor/product/copy-onboarding-kimi-brief.md",
+      "corpus": "corpus/cursor/product/copy-onboarding-kimi-brief.md",
+      "title": "Copy + onboarding brief (for Kimi / team)",
+      "bytes": 8678,
+      "sha256_12": "3f5f2da35707"
+    },
+    {
+      "source": ".cursor/product/design-system-MASTER.md",
+      "corpus": "corpus/cursor/product/design-system-MASTER.md",
+      "title": "Repdraft design system (MASTER)",
+      "bytes": 2028,
+      "sha256_12": "381c190b5f8a"
+    },
+    {
+      "source": ".cursor/product/ideas/builder-ai-tune-prescription.md",
+      "corpus": "corpus/cursor/product/ideas/builder-ai-tune-prescription.md",
+      "title": "Inbox: AI tune sets / reps / rest (builder menu)",
+      "bytes": 928,
+      "sha256_12": "0ce009b604e0"
+    },
+    {
+      "source": ".cursor/product/market-roadmap.md",
+      "corpus": "corpus/cursor/product/market-roadmap.md",
+      "title": "Repdraft: рынок и roadmap релизов",
+      "bytes": 8097,
+      "sha256_12": "72c2f77b756c"
+    },
+    {
+      "source": ".cursor/product/mvp-spec.md",
+      "corpus": "corpus/cursor/product/mvp-spec.md",
+      "title": "REPdraft — MVP Product & UI/UX Specification",
+      "bytes": 7651,
+      "sha256_12": "e46e7f0db173"
+    },
+    {
+      "source": ".cursor/product/onboarding-v0.15.0-plan.md",
+      "corpus": "corpus/cursor/product/onboarding-v0.15.0-plan.md",
+      "title": "v0.15.0 — Онбординг: план",
+      "bytes": 22978,
+      "sha256_12": "47ee23a5b33a"
+    },
+    {
+      "source": ".cursor/product/reference-ui-plan.md",
+      "corpus": "corpus/cursor/product/reference-ui-plan.md",
+      "title": "REPdraft — план UI по референсам",
+      "bytes": 11678,
+      "sha256_12": "ecd14c1f231f"
+    },
+    {
+      "source": ".cursor/product/ru-catalog-copy-qa.md",
+      "corpus": "corpus/cursor/product/ru-catalog-copy-qa.md",
+      "title": "RU catalog copy QA (names + technique)",
+      "bytes": 6011,
+      "sha256_12": "875285991dd1"
+    },
+    {
+      "source": ".cursor/product/tech-debt.md",
+      "corpus": "corpus/cursor/product/tech-debt.md",
+      "title": "Tech debt (вернуться позже)",
+      "bytes": 4021,
+      "sha256_12": "37d6d78b5389"
+    },
+    {
+      "source": ".cursor/product/telegram-ux-borrow-v0.15.1.md",
+      "corpus": "corpus/cursor/product/telegram-ux-borrow-v0.15.1.md",
+      "title": "Telegram UI/UX — что одолжить (v0.15.1 backlog)",
+      "bytes": 4759,
+      "sha256_12": "ba383a58954d"
+    },
+    {
+      "source": ".cursor/product/user-scenarios.md",
+      "corpus": "corpus/cursor/product/user-scenarios.md",
+      "title": "Сценарии QA",
+      "bytes": 28646,
+      "sha256_12": "e6abfac1c67a"
+    },
+    {
+      "source": ".cursor/product/ux-research-mvp-direction.md",
+      "corpus": "corpus/cursor/product/ux-research-mvp-direction.md",
+      "title": "REPdraft — Product, UX Research & MVP Direction",
+      "bytes": 9050,
+      "sha256_12": "a1e6a8a3f439"
+    },
+    {
+      "source": ".cursor/product/v0.17.8-desktop-tablet-audit.md",
+      "corpus": "corpus/cursor/product/v0.17.8-desktop-tablet-audit.md",
+      "title": "v0.17.8 Desktop & Tablet audit (living)",
+      "bytes": 4644,
+      "sha256_12": "951db1ebd983"
+    },
+    {
+      "source": ".cursor/product/yandex-webmaster.md",
+      "corpus": "corpus/cursor/product/yandex-webmaster.md",
+      "title": "Yandex Webmaster (оператор)",
+      "bytes": 1575,
+      "sha256_12": "8da297a39cda"
+    },
+    {
+      "source": ".cursor/rules/agent-inbox.mdc",
+      "corpus": "corpus/cursor/rules/agent-inbox.md",
+      "title": "Agent inbox (Issues)",
+      "bytes": 1055,
+      "sha256_12": "efa8c1b31e19"
+    },
+    {
+      "source": ".cursor/rules/architecture.mdc",
+      "corpus": "corpus/cursor/rules/architecture.md",
+      "title": "Архитектура Repdraft",
+      "bytes": 2719,
+      "sha256_12": "f135cdd29890"
+    },
+    {
+      "source": ".cursor/rules/mvp.mdc",
+      "corpus": "corpus/cursor/rules/mvp.md",
+      "title": "MVP (north star + scope)",
+      "bytes": 1786,
+      "sha256_12": "2fe905335274"
+    },
+    {
+      "source": ".cursor/rules/refactor-guardrails.mdc",
+      "corpus": "corpus/cursor/rules/refactor-guardrails.md",
+      "title": "Refactor guardrails (read before large diffs)",
+      "bytes": 4045,
+      "sha256_12": "399f2735f3bf"
+    },
+    {
+      "source": ".cursor/rules/release-branches.mdc",
+      "corpus": "corpus/cursor/rules/release-branches.md",
+      "title": "Ветки и релизы",
+      "bytes": 2572,
+      "sha256_12": "42f57cf674d8"
+    },
+    {
+      "source": ".cursor/rules/ru-gym-names.mdc",
+      "corpus": "corpus/cursor/rules/ru-gym-names.md",
+      "title": "RU gym names",
+      "bytes": 530,
+      "sha256_12": "9fe6b3afcc27"
+    },
+    {
+      "source": ".cursor/rules/supabase-auth.mdc",
+      "corpus": "corpus/cursor/rules/supabase-auth.md",
+      "title": "Supabase Auth ops",
+      "bytes": 2567,
+      "sha256_12": "3e82c13e3290"
+    },
+    {
+      "source": ".cursor/rules/svelte-ts.mdc",
+      "corpus": "corpus/cursor/rules/svelte-ts.md",
+      "title": "Кодстайл Svelte / TS",
+      "bytes": 2317,
+      "sha256_12": "f1b6201772c5"
+    },
+    {
+      "source": ".cursor/rules/tech-debt.mdc",
+      "corpus": "corpus/cursor/rules/tech-debt.md",
+      "title": "Tech debt pointer",
+      "bytes": 776,
+      "sha256_12": "ec015416d0de"
+    },
+    {
+      "source": ".cursor/skills/grinding-until-pass/SKILL.md",
+      "corpus": "corpus/cursor/skills/grinding-until-pass/SKILL.md",
+      "title": "Grinding Until Pass",
+      "bytes": 2567,
+      "sha256_12": "c64304f27a1e"
+    },
+    {
+      "source": ".cursor/skills/release-gate/SKILL.md",
+      "corpus": "corpus/cursor/skills/release-gate/SKILL.md",
+      "title": "Release Gate (Repdraft)",
+      "bytes": 5185,
+      "sha256_12": "1f464ed4bd3a"
+    },
+    {
+      "source": ".cursor/skills/responsive-testing/SKILL.md",
+      "corpus": "corpus/cursor/skills/responsive-testing/SKILL.md",
+      "title": "Visual QA & Mobile Ergonomics",
+      "bytes": 2591,
+      "sha256_12": "ea18471791e8"
+    },
+    {
+      "source": ".cursor/skills/ru-gym-names/SKILL.md",
+      "corpus": "corpus/cursor/skills/ru-gym-names/SKILL.md",
+      "title": "Russian gym exercise titles (`name_ru`)",
+      "bytes": 9197,
+      "sha256_12": "86c6158d2d0c"
+    },
+    {
+      "source": ".cursor/skills/suggesting-cursor-rules/SKILL.md",
+      "corpus": "corpus/cursor/skills/suggesting-cursor-rules/SKILL.md",
+      "title": "Suggesting Cursor Rules",
+      "bytes": 2241,
+      "sha256_12": "53779961722a"
+    },
+    {
+      "source": ".cursorrules",
+      "corpus": "corpus/cursorrules.txt",
+      "title": ".cursorrules",
+      "bytes": 3084,
+      "sha256_12": "44f6dedd0734"
+    },
+    {
+      "source": "AGENTS.md",
+      "corpus": "corpus/AGENTS.md",
+      "title": "Repdraft — guide for humans and agents",
+      "bytes": 3176,
+      "sha256_12": "9a8dff9faae6"
+    },
+    {
+      "source": "GOAL.md",
+      "corpus": "corpus/GOAL.md",
+      "title": "Главная цель Repdraft",
+      "bytes": 2748,
+      "sha256_12": "f3463011acfc"
+    },
+    {
+      "source": "NOTICE.md",
+      "corpus": "corpus/NOTICE.md",
+      "title": "Media Attribution",
+      "bytes": 1330,
+      "sha256_12": "7a365696a813"
+    },
+    {
+      "source": "README.md",
+      "corpus": "corpus/README.md",
+      "title": "README.md",
+      "bytes": 3956,
+      "sha256_12": "72d09130273a"
+    },
+    {
+      "source": "TASK_SPEC.md",
+      "corpus": "corpus/TASK_SPEC.md",
+      "title": "🚀 TECHNICAL TASK (ТЗ): Repdraft MVP — UI/UX Optimization & Native-Ready Architecture",
+      "bytes": 12051,
+      "sha256_12": "1f28fb220324"
+    },
+    {
+      "source": "docs/agent-ecosystem.md",
+      "corpus": "corpus/docs/agent-ecosystem.md",
+      "title": "Agent Ecosystem — Repdraft",
+      "bytes": 3267,
+      "sha256_12": "21801121603b"
+    },
+    {
+      "source": "docs/agent-skills.md",
+      "corpus": "corpus/docs/agent-skills.md",
+      "title": "Agent Skills — Repdraft",
+      "bytes": 2317,
+      "sha256_12": "5bee05dfc7bb"
+    },
+    {
+      "source": "src/lib/assets/brand/BRAND-SHEET.md",
+      "corpus": "corpus/src/lib/assets/brand/BRAND-SHEET.md",
+      "title": "REPdraft — logo assets (pulse RP)",
+      "bytes": 1019,
+      "sha256_12": "0c1df128933b"
+    },
+    {
+      "source": "src/lib/content/user-scenarios.md",
+      "corpus": "corpus/src/lib/content/user-scenarios.md",
+      "title": "Сценарии QA",
+      "bytes": 28646,
+      "sha256_12": "e6abfac1c67a"
+    }
+  ]
+}

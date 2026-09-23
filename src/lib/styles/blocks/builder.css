@@ -796,22 +796,22 @@
 
 	/*
 	 * Phone: dissolve the actions cluster into the card grid.
-	 * Menu stays in the header (row 1), grip drops to the fields row (row 2)
-	 * so it aligns with the prescription chips instead of floating in empty space.
+	 * Grip stays in the header (row 1) — away from set/reps/rest inputs.
+	 * Menu drops to the fields row (row 2); accidental menu open is cheaper than reorder.
 	 */
 	.builder-exercise-list .workout-ex-head__actions {
 		display: contents;
 	}
 
-	.builder-exercise-list .workout-ex-head__menu {
+	.builder-exercise-list .workout-ex-head__actions .exercise-reorder-handle {
 		grid-row: 1;
 		grid-column: 4;
 		align-self: start;
 		z-index: 1;
 	}
 
-	/* Bottom-align with chip inputs (labels sit above; center would float the grip). */
-	.builder-exercise-list .workout-ex-head__actions .exercise-reorder-handle {
+	/* Bottom-align with chip inputs (labels sit above; center would float the control). */
+	.builder-exercise-list .workout-ex-head__menu {
 		grid-row: 2;
 		grid-column: 4;
 		align-self: end;
@@ -820,9 +820,19 @@
 		z-index: 1;
 	}
 
-	/* Skeleton has no fields row: hide the grip so it does not open an empty row. */
+	/*
+	 * Loading / no fields row: hide grip; keep menu on the title row so it does not
+	 * open an empty second row under the placeholder.
+	 */
 	.builder-exercise-list .workout-ex-head:has(.workout-ex-head__media.is-placeholder) .exercise-reorder-handle {
 		display: none;
+	}
+
+	.builder-exercise-list .workout-ex-head:has(.workout-ex-head__media.is-placeholder) .workout-ex-head__menu {
+		grid-row: 1;
+		align-self: start;
+		height: auto;
+		min-height: var(--control-height, 3rem);
 	}
 
 	.builder-exercise-list .workout-ex-head__title {
@@ -902,7 +912,7 @@
 		align-self: start;
 	}
 
-	/* Group rows reuse the split actions from above: menu in header, grip beside the reps chip. */
+	/* Group rows reuse the split actions from above: grip in header, menu beside the reps chip. */
 
 	/* Full-width prescription row: equal chips, no overflow. */
 	.builder-exercise-list .workout-ex-fields {
@@ -1425,6 +1435,63 @@ button.workout-ex-chip--ladder {
 	padding-bottom: 0.05rem;
 	font-size: 1rem;
 	font-weight: 650;
+	color: var(--color-muted);
+}
+
+.builder-ai-tune {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	margin-top: 0.35rem;
+}
+
+.builder-ai-tune__goals {
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.builder-ai-tune__field {
+	margin-bottom: -0.25rem;
+}
+
+.builder-ai-tune__note {
+	min-height: 4.5rem;
+	width: 100%;
+}
+
+.builder-ai-tune__cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+}
+
+.builder-ai-tune__result {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	padding: 0.75rem 0.85rem;
+	border-radius: var(--radius-control);
+	background: var(--color-surface-muted);
+}
+
+.builder-ai-tune__numbers {
+	margin: 0;
+	font-size: 1.25rem;
+	font-weight: 700;
+	line-height: 1.3;
+	color: var(--color-ink);
+}
+
+.builder-ai-tune__rest {
+	font-weight: 650;
+	color: var(--color-muted);
+}
+
+.builder-ai-tune__why {
+	margin: 0;
+	font-size: 0.875rem;
+	line-height: 1.35;
 	color: var(--color-muted);
 }
 

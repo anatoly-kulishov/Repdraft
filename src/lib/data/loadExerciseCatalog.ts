@@ -1,4 +1,5 @@
 import type { Exercise } from '$lib/domain/types';
+import { getIndexItemById } from './loadExercises';
 
 const FULL_CATALOG_URL = '/data/exercises.full.json';
 
@@ -26,10 +27,22 @@ async function catalog(fetchFn: typeof fetch): Promise<Map<string, Exercise>> {
 	return loadPromise;
 }
 
+/**
+ * Full payload for technique / media. Title fields follow the slim index so list
+ * and detail never diverge when SW serves a stale full.json (SWR + 15MB).
+ */
 export async function getExerciseById(
 	id: string,
 	fetchFn: typeof fetch = fetch
 ): Promise<Exercise | null> {
 	const map = await catalog(fetchFn);
-	return map.get(id) ?? null;
+	const exercise = map.get(id) ?? null;
+	if (!exercise) return null;
+	const indexItem = await getIndexItemById(id);
+	if (!indexItem) return exercise;
+	return {
+		...exercise,
+		name: indexItem.name,
+		name_ru: indexItem.name_ru ?? exercise.name_ru
+	};
 }

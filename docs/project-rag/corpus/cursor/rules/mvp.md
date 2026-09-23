@@ -1,0 +1,41 @@
+<!-- source: .cursor/rules/mvp.mdc -->
+<!-- synced: 2026-09-23 -->
+
+---
+description: MVP north star, scope, and release planning — read before new features
+alwaysApply: true
+---
+
+# MVP (north star + scope)
+
+**Sources:** [`GOAL.md`](../../GOAL.md) · [`.cursor/product/mvp-spec.md`](../product/mvp-spec.md) · [`.cursor/product/ux-research-mvp-direction.md`](../product/ux-research-mvp-direction.md)
+
+**MANTRA:** IMPROVE THE EXPERIENCE. NOT THE FEATURE COUNT.  
+Maximum UI/UX comfort of the basic loop above new features.  
+**FAST ON WEAK DEVICES** - usable on old/low-end phones; optimize lists, media, import, and live session for weak CPU/RAM.
+
+```text
+Open → Pick workout → Preview → Start → Set → Weight × reps → Next → Finish → Saved result
+```
+
+**Metric:** phone → completed set. **Active Workout** gets the most UX attention.
+
+## Before coding
+
+1. Does this make an existing step faster / clearer / simpler?
+2. Will it stay smooth on a weak/old phone (pagination, deferred work, lean DOM)?
+3. Audit vs `mvp-spec.md` (Agent workflow) — implement only P0 gaps, no redesign from scratch.
+4. Release semver ideas: `.cursor/product/market-roadmap.md` (backlog, not a distraction).
+
+## Non-negotiables
+
+- Nav: Home, Workouts, Exercises (+ Profile low emphasis)
+- Visual: dark minimal premium, Lucide only, one primary CTA per screen
+- No blocking full-screen loaders — skeletons / optimistic UI
+- Performance budget for low-end: no unbounded full-list renders, avoid main-thread jank
+- Web analytics (Vercel) is opt-in
+- Delivery is the mobile-first PWA; do not add store shells without an explicit request
+
+## Do not build without explicit user request
+
+Product analytics/charts dashboards, AI coach, social/gamification, wearables, feature parity with Hevy/JEFIT/Boostcamp, side sections that do not speed up the sacred loop.

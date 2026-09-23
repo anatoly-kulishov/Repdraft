@@ -137,6 +137,7 @@ function polishRuDisplayName(ruName: string, englishRaw: string): string {
 	for (const [from, to] of AGREEMENT_PAIRS) {
 		normalized = replacePhrasePreserveCap(normalized, from, to);
 	}
+	normalized = gymWordOrderRu(normalized);
 	normalized = normalized
 		.replace(/\s{2,}/g, ' ')
 		.replace(/(?<=\S)-\s+(?=\S)/g, '-')
@@ -149,6 +150,33 @@ function polishRuDisplayName(ruName: string, englishRaw: string): string {
 	}
 	const qualified = withTechniqueQualifier(normalized, englishRaw);
 	return qualified.replace(/(?:\s*\(другой ракурс\))+/gi, ' (другой ракурс)');
+}
+
+/**
+ * Gym RU: movement first, then position / setup.
+ * Catches stale full.json calques ("Стоя подъём…") and place-first salads.
+ * Note: JS `\b` is ASCII-only - do not use it on Cyrillic tokens.
+ */
+function gymWordOrderRu(ru: string): string {
+	let s = ru.trim();
+	// "Стоя подъём на носки (по лестнице)" → "подъём на носки стоя (по лестнице)"
+	s = s.replace(
+		/^(Сидя|Стоя|Лёжа|На коленях)\s+(.+?)(\s*\([^)]+\))?$/iu,
+		(_m, pos: string, rest: string, paren: string | undefined) =>
+			`${rest} ${pos.toLowerCase()}${paren ?? ''}`
+	);
+	// "Двумя ногами подъём…" / "Одной ногой жим…" → movement first
+	s = s.replace(
+		/^(Двумя ногами|Одной ногой|Двумя руками|Одной рукой)\s+(.+)$/iu,
+		(_m, how: string, rest: string) => `${rest} ${how.toLowerCase()}`
+	);
+	// "На полу подъём на носки со штангой" → "подъём на носки со штангой на полу"
+	s = s.replace(
+		/^На (полу|фитболе у стены|фитболе|одной ноге на полу)\s+(подъём|подъёмы|жим|тяга|разведение|сгибание|разгибание)(?=\s|$|[(-])(.*)$/iu,
+		(_m, place: string, action: string, rest: string) =>
+			`${action}${rest} на ${place}`
+	);
+	return s.replace(/\s{2,}/g, ' ').trim();
 }
 
 function withTechniqueQualifier(ruName: string, englishRaw: string): string {

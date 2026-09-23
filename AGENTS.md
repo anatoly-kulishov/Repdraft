@@ -38,6 +38,7 @@ Legal before public: set real `PUBLIC_PRIVACY_*` in Vercel (not placeholders); h
 | `architecture.mdc` | Where code belongs (always) |
 | `release-branches.mdc` | Branches, semver, `package.json` version (always) |
 | `.cursor/skills/release-gate/` | Pre-release gate — say `release gate` or `релиз-гейт` |
+| [`docs/project-rag/`](docs/project-rag/) | Снимок всей доки для RAG (`npm run docs:rag`) |
 | `svelte-ts.mdc` | TS/Svelte conventions (`src/**`) |
 | `supabase-auth.mdc` | Auth dashboard checklist (on demand) |
 | `refactor-guardrails.mdc` | Large CSS/architecture refactors (on demand) |

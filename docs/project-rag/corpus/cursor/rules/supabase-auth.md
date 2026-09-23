@@ -1,0 +1,32 @@
+<!-- source: .cursor/rules/supabase-auth.mdc -->
+<!-- synced: 2026-09-23 -->
+
+---
+description: Supabase Auth dashboard checklist for magic link, password reset, Turnstile
+alwaysApply: false
+---
+
+# Supabase Auth ops
+
+При любых изменениях `/auth`, magic link, reset password, Turnstile - **сначала сверь dashboard**, не только код.
+
+Код (`auth` store) шлёт `redirectTo` / `emailRedirectTo` на `{origin}/auth` (+ `?next=` / `?recovery=1`).
+
+## Checklist
+
+1. Providers: **Email** ON. Phone можно оставить выключенным (в приложении входа по SMS нет).
+2. Password policy: min length **10** (совпадает с `PASSWORD_MIN_LENGTH` в коде).
+3. URL Configuration:
+   - Site URL = production origin
+   - Redirect allow-list includes `/auth` for prod + local (`localhost:5173`, `127.0.0.1:5173`)
+   - Confirm / magic / recovery должны открывать **тот же origin** `/auth`. Не жди открытия standalone PWA с Home Screen из письма: Mail → Safari/WebView; на iOS это ограничение ОС.
+4. Email templates must honor redirect / Site URL (confirm, magic link, recovery). Keep `{{ .ConfirmationURL }}` (or equivalent) so `emailRedirectTo` from the app is used.
+5. Bot protection (prod): Cloudflare Turnstile ON; secret in Supabase; `PUBLIC_TURNSTILE_SITE_KEY` in Vercel.
+6. Vercel env: `PUBLIC_SUPABASE_*`, plus **server-only** `SUPABASE_SERVICE_ROLE_KEY` for account deletion (`POST /api/account/delete`). Never put service role in `PUBLIC_*`.
+7. Legal (app UI, not dashboard): signup and magic link require Terms + Privacy consent (`AuthLegalConsent`). Links: `/terms`, `/privacy`. Block submit until accepted.
+8. After deploy: confirm delete-account works once while signed in. Spot-check «Выйти везде» on a second browser.
+9. Spot-check email confirm: signup → open link from mail → lands on `/auth` → session + redirect to `next`. On iPhone, if the user confirmed in Safari but uses the Home Screen icon, storage may not match: open the icon and sign in again if still a guest.
+
+Симптомы «забыли dashboard»: `provider is not enabled`, письмо не приходит, после клика по ссылке белый экран / ошибка redirect, Captcha rejected.
+Симптом без service role: «Удаление аккаунта пока не настроено на сервере».
+PWA caveat: «подтвердил в Safari, в иконке всё ещё гость» - не баг redirect URL; разные storage contexts на iOS.
