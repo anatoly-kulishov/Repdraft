@@ -1,0 +1,119 @@
+<!-- source: .cursor/product/market-roadmap.md -->
+<!-- synced: 2026-09-23 -->
+
+# Repdraft: рынок и roadmap релизов
+
+**Сначала:** [`GOAL.md`](../../GOAL.md) - полировка священного цикла. Этот файл - backlog идей, не лицензия плодить фичи.
+
+Снимок конкурентного анализа (2025–2026). Источник идей для следующих semver-релизов.
+Обновляй таблицу и приоритеты, когда статус фичи меняется.
+
+**Pitch:** русскоязычный PWA «план + техника + сессия» - не клон Strong.
+
+**Вывод:** люди переключаются не из-за каталога - из-за быстрого лога в зале, «прошлый раз», rest timer и видимого прогресса. Сейчас Repdraft ближе к planner; спрос уходит в logger.
+
+## Категории рынка
+
+| Категория | Игроки | Суть | Для нас |
+|---|---|---|---|
+| Manual loggers | Strong, Hevy | Скорость записи, history, charts. Hevy + social | Основная gym-аудитория |
+| AI programmers | Fitbod (+ Hevy Trainer) | «Что делать сегодня», дорого | Не копировать первым |
+| Program libraries | Boostcamp, JEFIT | Готовые циклы (PPL, 5/3/1) | Mid-term слой |
+| Technique / education | MuscleWiki, community clips | Обучение технике | Наш клин уже здесь |
+
+## Матрица фич
+
+Статусы: есть / частично / нет.
+
+| Фича | Repdraft | Hevy | Strong | Fitbod | Комментарий |
+|---|---|---|---|---|---|
+| Каталог + поиск | есть | есть | есть | есть | ~1300, RU/EN |
+| Конструктор планов | есть | есть | есть | частично | Fitbod больше генерирует день |
+| Суперсеты | есть | есть | есть | частично | Уже в продукте |
+| Live-лог подхода | есть | есть | есть | есть | v0.4.0 live mode |
+| Rest timer в зале | есть | есть | есть | есть | Countdown после подхода |
+| «Прошлый раз» | есть | есть | есть | есть | Из истории сессий |
+| Личные рекорды | есть | есть | есть | есть | Слабее без истории сессий |
+| Графики объёма / силы | частично | есть | есть | есть | v0.5.0: weekly volume + session PRs on /workouts |
+| Warm-up / drop / failure | частично | есть | есть | да | Live kind + UI; failure = «в отказ» |
+| RPE / RIR | нет | есть | частично | частично | Power-user |
+| AI / автогенерация | нет | частично | нет | есть | Категория Fitbod |
+| Соцсеть / follow | нет | есть | нет | нет | Дифференциатор Hevy |
+| Community technique GIF | есть | частично | нет | частично | Сильная уникальность |
+| Cloud sync + web/PWA | есть | есть | частично | частично | PWA-first |
+| RU-first UX | есть | частично | частично | частично | Локальный wedge |
+| Onboarding / first-run | частично | есть | частично | есть | Empty states + hints; **v0.15.0** progressive onboarding **shipped** |
+| Watch / wearable | нет | есть | есть | есть | После стабильного web-лога |
+| CSV export / backup | есть | есть | есть | частично | JSON + CSV сессий с /auth |
+
+## Почему уходят с конкурентов
+
+- **Strong → Hevy:** скудный free tier (history / routines) → ищут щедрый free и современный UX.
+- **Hevy:** соцсеть шумит → окно для «тихого логгера» с техникой.
+- **Fitbod:** дорого за AI → платят, только если не хотят сами программировать.
+
+## Сильные стороны сейчас
+
+- Каталог + умный RU/EN поиск
+- Конструктор + суперсеты
+- Community technique GIF
+- Cloud sync + мобильный web/PWA
+- Личные рекорды
+
+## Почему пока не переходят
+
+- ~~Нет live workout~~ → v0.4.0
+- ~~Нет истории сессий / «прошлый раз»~~ → v0.4.0 (local; cloud table optional)
+- Rest timer в live-сессии
+- Нет export → страх lock-in → **JSON/CSV backup in v0.9.0**
+
+## Приоритеты релизов
+
+Порядок = влияние на ежедневную привычку, не «интересность фичи».
+Semver: patch = polish/багфиксы; minor = пользовательская фича из списка ниже.
+
+### P0 - switch-ready
+
+1. **Live Workout Mode** — **shipped in v0.4.0**  
+   Старт плана → вес×reps → авто rest timer → сохранить сессию.
+
+2. **Previous performance + session history** — **shipped in v0.4.0 (local)**  
+   «В прошлый раз». Cloud: таблица `workout_sessions` локально у оператора (не в публичном git).
+
+### P1
+
+3. **Мини-аналитика** - **shipped in v0.5.0 (local sessions)**  
+   Недельный объём, частота, лучшие веса из сессий на `/workouts`.
+4. **Усилить technique wedge** - клипы в live-сессии, модерация; не копия Hevy social.
+5. **Сквозной онбординг (v0.15.0)** - **shipped**  
+   Progressive disclosure: checklist, coachmarks, demo path, guest journey, undo snackbar. QA: [`/scenarios`](/scenarios). План: [onboarding-v0.15.0-plan.md](onboarding-v0.15.0-plan.md).
+6. **Telegram UX borrow (v0.15.2)** - **shipped**  
+   Snackbar polish, list cell density, swipe+undo parity, search empty states, tab contrast, typography tokens. Спека: [telegram-ux-borrow-v0.15.1.md](telegram-ux-borrow-v0.15.1.md).
+
+### P2
+
+5. **Trust и power features** - ~~CSV export~~ (**v0.9.0**), ~~warm-up/drop sets~~ (**v0.10.0** live kind), ~~exercise “or” alternatives~~ (**v0.11.0**), optional RPE, шаблоны PPL.  
+   Watch - только после стабильного web-лога.
+
+### Later (не сейчас)
+
+6. **Шаринг плана ссылкой / QR** - отдать один план другу без файлов и без общего аккаунта.  
+   Между своими телефонами уже хватает cloud sync (один аккаунт). JSON/CSV остаются бэкапом.
+
+7. **Доп. способы авторизации** (Google / Apple и др. через Supabase Auth) - не только email.  
+   Аватар снова из metadata провайдера; email остаётся с initials. См. [tech-debt.md](tech-debt.md) § Auth providers.
+
+## Не делать сейчас
+
+- AI-коуч как Fitbod
+- Per-exercise «подобрать подходы/повторы/отдых с ИИ» из меню билдера - идея зафиксирована, не в работе: [ideas/builder-ai-tune-prescription.md](ideas/builder-ai-tune-prescription.md)
+- Instagram-соцсеть / follow всех
+- Питание / макросы
+- Native Expo до стабильного live web
+- Шаринг всей истории сессий публичной ссылкой (приватность; избыточно vs аккаунт)
+
+## Как пользоваться этим файлом
+
+- Перед новым `cursor/vX.Y.Z-*` сверяйся с P0→P2.
+- После шипа фичи обнови статус в матрице (нет → частично/есть).
+- Canvas-визуализация (опционально): Cursor canvas `repdraft-market-analysis`.

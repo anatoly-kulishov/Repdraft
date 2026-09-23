@@ -1,0 +1,36 @@
+<!-- source: .cursor/rules/release-branches.mdc -->
+<!-- synced: 2026-09-23 -->
+
+---
+description: Feature work goes on release-numbered branches, then PR and GitHub release
+alwaysApply: true
+---
+
+# Ветки и релизы
+
+- Фичи и фиксы - **в отдельной ветке**, не напрямую в `main` / `develop`.
+- Имя ветки с **следующим semver** и коротким slug:
+
+```text
+cursor/v0.2.1-clips-rename
+cursor/v0.3.0-supersets-ui
+```
+
+- Префикс `cursor/`, затем `vMAJOR.MINOR.PATCH`, затем `-` и kebab-case.
+- Смотри последний тег (`gh release list` / `git tag`) и выбирай **следующий** номер:
+  - **patch** (`0.2.1`) - багфиксы, UX/UI polish, мелкие правки
+  - **minor** (`0.3.0`) - новая пользовательская фича
+  - **major** (`1.0.0`) - ломающие изменения
+- Не прыгай через номера без причины. Не возвращайся на старую линию (после `v0.2.0` не делай `v0.1.1`).
+- После мержа в `main` по запросу - GitHub Release с **тем же** тегом, что в имени ветки.
+- Не пушь / PR / release без явной просьбы (кроме явных commit-and-push / create PR / create release).
+
+## Версия в `package.json` (футер профиля)
+
+**Не забывать поднимать `version` в `package.json` в том же PR/релизе**, что и GitHub Release / имя ветки.
+
+- UI показывает **`v{version}`** на `/auth` (профиль), `/privacy` и `/terms` через `APP_VERSION_LABEL` → `import.meta.env.PUBLIC_APP_VERSION` → **`package.json` `version`** (см. `vite.config.ts`, `src/lib/appVersion.ts`).
+- Тап по версии открывает Whats new (`WhatsNewSheet` + [`src/lib/domain/changelog.ts`](../../src/lib/domain/changelog.ts)): **в том же PR** добавь блок сверху (newest first), 2–4 коротких пункта RU/EN.
+- Число в `package.json` **должно совпадать** с тегом релиза **без префикса `v`**: релиз `v0.14.6` → `"version": "0.14.6"`.
+- **Перед merge / release:** проверь `git tag --sort=-v:refname | head -1` (или `gh release list`) и обнови `package.json`, если отстаёт.
+- Ветка `cursor/v0.14.6-*`, тег `v0.14.6`, а в `package.json` всё ещё `0.14.4` — **ошибка**: в профиле будет старая версия до следующего деплоя.

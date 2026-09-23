@@ -1,0 +1,77 @@
+<!-- source: .cursor/rules/refactor-guardrails.mdc -->
+<!-- synced: 2026-09-23 -->
+
+---
+description: Guardrails before CSS/architecture refactors — visual baseline, codestyle, phased migration
+alwaysApply: false
+---
+
+# Refactor guardrails (read before large diffs)
+
+## Gate: tests first
+
+Do **not** start CSS split / architecture refactors until:
+
+1. `npm run test:e2e:update` — visual snapshots committed on `main`
+2. `npm run e2e:ui` — functional audit green (mobile + desktop)
+3. `npm run check:domain` + `npm run check` — green
+
+After each refactor phase: `npm run test:e2e` (compare snapshots) + sacred loop spec.
+
+## Codestyle (TS / Svelte)
+
+- **Layers:** routes/components → stores/domain → storage (see `architecture.mdc`). No Supabase in components except established panel paths.
+- **No `any`.** Exhaustive switches on unions (`never` default).
+- **Imports** at top of file only.
+- **Touch targets** ≥ 48×48px for interactive controls.
+- **i18n:** user strings via `translate()` only.
+- **One primary CTA** per viewport block (MVP).
+- Prefer **extend** existing components/stores over parallel abstractions.
+
+## CSS layout (current)
+
+Monolith split in **v0.14.6** — cascade order preserved (contiguous line chunks).
+
+| File | Contents |
+|------|----------|
+| `routes/layout.css` | Imports shadcn + **tokens** + app aggregator |
+| `styles/blocks/tokens.css` | `:root`, `[data-theme='light']` token overrides |
+| `styles/blocks/shell.css` | App shell, sidebar, tabbar, header |
+| `styles/blocks/typography.css` | `.page-title`, `.page-lead`, … |
+| `styles/blocks/surfaces.css` | `.panel`, `.media-well`, … |
+| `styles/blocks/shared-lists.css` | `.entity-row`, swipe rows, card lists |
+| `styles/blocks/controls.css` | `.btn-*`, fields, kinetics keyframes |
+| `styles/blocks/catalog.css` | Catalog grid, exercise cards, zones |
+| `styles/blocks/home.css` | Home page |
+| `styles/blocks/live.css` | Active workout / live log |
+| `styles/blocks/builder.css` | Workout builder — import in `builder/+layout` |
+| `styles/blocks/workouts.css` | Workouts list/history — global import (after `controls`; route bundle order broke `.btn-*` overrides) |
+| `styles/blocks/screen-misc.css` | ScreenHeader, auth layout, records, settings |
+| `styles/blocks/error-articles.css` | 404, articles / prose |
+| `styles/blocks/utilities.css` | `html.e2e-stable` (tests) |
+| `styles/app.css` | Core `@import` aggregator (always-on blocks) |
+| `styles/blocks/home.css` | Home only — import in `routes/+page.svelte` |
+| `styles/blocks/live.css` | Live + workout preview/history — `live/+layout`, `workouts/+layout` |
+| `styles/blocks/error-articles.css` | Articles + `+error` — route layouts |
+
+Regenerate from monolith backup: `node scripts/split-app-css.mjs` (needs `scripts/app.css.monolith.bak` — gitignored).
+
+**Selector rules:**
+
+- Max **2–3** levels of nesting; avoid `html[data-theme='light'] .a .b .c .d`.
+- Prefer **BEM-ish blocks**: `.block`, `.block__el`, `.block--mod` — match existing names.
+- No new `!important` unless documenting why (PWA safe-area edge cases).
+- **Do not** rename classes in bulk without snapshot update in the same PR.
+
+## Phased refactor status
+
+1. **P0** — Visual + e2e baseline ✅ (`v0.14.5`)
+2. **P1–P3** — CSS split into blocks ✅ (`cursor/v0.14.6-css-split`)
+3. **P4** — Tokenize `html[data-theme='light']` overrides ✅ (`cursor/v0.14.7-css-p4`; light rules only in `tokens.css`)
+4. **P4b** — Tokenize `html[data-theme='dark']` component overrides ✅ (dark = `:root`, light = `html[data-theme='light']`; only `color-scheme` on `html[data-theme='dark']` remains)
+5. **P5** — Route-scoped CSS (incremental) 🔄 — home, error-articles, live, **builder** done; filters/records/subroute → catalog/screen-misc; `workouts.css` split out (global import); `catalog.css` still global
+6. **Defer** — Domain/store renames, folder FSD migration, dependency adds, route-split `catalog.css`, bottom-sheet base out of `live.css`
+
+## Sacred loop
+
+Any refactor that touches live/builder/workouts must keep the loop in `GOAL.md` faster or neutral — not slower.

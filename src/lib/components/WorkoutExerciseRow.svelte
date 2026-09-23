@@ -5,6 +5,7 @@
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
+	import BuilderAiTuneSheet from '$lib/components/builder/BuilderAiTuneSheet.svelte';
 	import ExpandableText from '$lib/components/ExpandableText.svelte';
 	import ExerciseReorderHandle from '$lib/components/ExerciseReorderHandle.svelte';
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
@@ -43,7 +44,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { page } from '$app/stores';
-	import { ListOrdered, SlidersHorizontal, Trash2, Unlink } from '@lucide/svelte';
+	import { ListOrdered, SlidersHorizontal, Sparkles, Trash2, Unlink } from '@lucide/svelte';
 
 	let {
 		item,
@@ -51,6 +52,7 @@
 		index,
 		selected = false,
 		canReorder = true,
+		aiTuneAvailable = false,
 		groupRole = 'solo',
 		altRole = 'solo',
 		onupdate,
@@ -68,6 +70,7 @@
 		index: number;
 		selected?: boolean;
 		canReorder?: boolean;
+		aiTuneAvailable?: boolean;
 		groupRole?: 'solo' | 'first' | 'middle' | 'last';
 		altRole?: 'solo' | 'first' | 'middle' | 'last';
 		onupdate: (patch: Partial<Omit<WorkoutExercise, 'exerciseId' | 'groupId' | 'altGroupId'>>) => void;
@@ -83,6 +86,7 @@
 
 	let lang = $derived($resolvedLocale);
 	let techniqueOpen = $state(false);
+	let aiTuneOpen = $state(false);
 	let mediaVtName = $derived(
 		$armedExerciseMediaVtId === item.exerciseId
 			? exerciseMediaViewTransitionName(item.exerciseId)
@@ -203,6 +207,13 @@
 	function openLadderFromMenu() {
 		actionsOpen = false;
 		queueMicrotask(() => openLadderSheet());
+	}
+
+	function openAiTuneFromMenu() {
+		actionsOpen = false;
+		queueMicrotask(() => {
+			aiTuneOpen = true;
+		});
 	}
 
 	function removeFromMenu() {
@@ -583,6 +594,14 @@
 					<span class="builder-ex-action__meta tabular-nums">{ladderLabel}</span>
 				{/if}
 			</button>
+			{#if aiTuneAvailable}
+				<button type="button" class="builder-ex-action" onclick={openAiTuneFromMenu}>
+					<span class="builder-ex-action__well" aria-hidden="true">
+						<LucideIcon icon={Sparkles} size={ICON_BUTTON} />
+					</span>
+					<span class="builder-ex-action__label">{translate(lang, 'builder.aiTune')}</span>
+				</button>
+			{/if}
 			<button
 				type="button"
 				class="builder-ex-action builder-ex-action--danger"
@@ -684,4 +703,20 @@
 			{/if}
 		</div>
 	</BottomSheet>
+{/if}
+
+{#if aiTuneAvailable && aiTuneOpen}
+	<BuilderAiTuneSheet
+		open={aiTuneOpen}
+		exerciseId={item.exerciseId}
+		titleId={`builder-ai-tune-${item.exerciseId}`}
+		sets={item.sets}
+		reps={item.reps}
+		restSec={item.restSec}
+		{lang}
+		onDismiss={() => {
+			aiTuneOpen = false;
+		}}
+		onApply={(patch) => onupdate(patch)}
+	/>
 {/if}

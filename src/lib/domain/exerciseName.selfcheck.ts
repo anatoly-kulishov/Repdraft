@@ -163,6 +163,38 @@ export function runExerciseNameSelfCheck(): void {
 			`donkey calf raise should be «Подъёмы на носки в наклоне», got ${donkey ? exerciseName(donkey, 'ru') : 'missing'}`
 		);
 	}
+
+	// Stale full.json calques must still display gym order (list ≡ detail).
+	const staleStair = exerciseName(
+		{
+			id: '__no_override__',
+			name: 'standing calf raise (on a staircase)',
+			name_ru: 'Стоя подъём на носки (по лестнице)'
+		},
+		'ru'
+	);
+	if (staleStair !== 'Подъём на носки стоя (по лестнице)') {
+		throw new Error(`stale stair calque → «${staleStair}»`);
+	}
+	const staleFloor = exerciseName(
+		{ id: '__no_override__', name: 'barbell floor calf raise', name_ru: 'На полу подъём на носки со штангой' },
+		'ru'
+	);
+	if (staleFloor !== 'Подъём на носки со штангой на полу') {
+		throw new Error(`stale floor calque → «${staleFloor}»`);
+	}
+
+	const stair = index.find((item) => item.id === '1490');
+	if (!stair || exerciseName(stair, 'ru') !== 'Подъём на носки стоя (по лестнице)') {
+		throw new Error(`1490 should be staircase calf raise, got ${stair ? exerciseName(stair, 'ru') : 'missing'}`);
+	}
+	const bandTwo = index.find((item) => item.id === '1369');
+	if (
+		!bandTwo ||
+		exerciseName(bandTwo, 'ru') !== 'Подъём на носки с резинкой двумя ногами (другой ракурс)'
+	) {
+		throw new Error(`1369 band two-leg calf → «${bandTwo ? exerciseName(bandTwo, 'ru') : 'missing'}»`);
+	}
 }
 
 runExerciseNameSelfCheck();

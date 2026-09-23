@@ -14,6 +14,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.19.0',
+		highlights: {
+			ru: [
+				'В конструкторе: «Подобрать с ИИ» для подходов, повторов и отдыха',
+				'ИИ опирается на шаблоны и похожие упражнения из каталога',
+				'Русские названия упражнений: один порядок слов в списке и в карточке'
+			],
+			en: [
+				'Builder: «Tune with AI» for sets, reps, and rest',
+				'AI uses templates and similar catalog exercises',
+				'Russian exercise titles: same word order in list and detail'
+			]
+		}
+	},
+	{
 		version: '0.18.9',
 		highlights: {
 			ru: [

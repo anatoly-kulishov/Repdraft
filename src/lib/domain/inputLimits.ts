@@ -15,6 +15,8 @@ export const PLAN_NAME_MAX = 48;
 export const SEARCH_QUERY_MAX = 80;
 /** Lab AI brief — matches /api/ai/plan body cap. */
 export const AI_BRIEF_MAX = 500;
+/** Builder AI tune note — short goal/refine text for /api/ai/tune. */
+export const AI_TUNE_NOTE_MAX = 200;
 
 /** Max digits while typing (derived from bounds — fits chip inputs without overflow). */
 export const SETS_INPUT_MAX_LEN = String(SETS.max).length;

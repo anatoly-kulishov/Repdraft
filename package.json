@@ -1,7 +1,7 @@
 {
 	"name": "repdraft",
 	"private": true,
-	"version": "0.18.9",
+	"version": "0.19.0",
 	"description": "Gym workout log, exercise catalog, and workout builder - mobile-first PWA",
 	"type": "module",
 	"scripts": {
@@ -27,6 +27,7 @@
 		"check:clips": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/clips.selfcheck.ts",
 		"check:input": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/inputLimits.selfcheck.ts",
 		"check:auth": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/authFlow.selfcheck.ts",
+		"docs:rag": "node ./scripts/sync-project-rag.mjs",
 		"smoke:catalog-hub": "node ./scripts/smoke-catalog-hub.mjs",
 		"smoke:mvp": "node ./scripts/smoke-catalog-hub.mjs",
 		"icons:pwa": "node ./scripts/generate-brand-icons.mjs",

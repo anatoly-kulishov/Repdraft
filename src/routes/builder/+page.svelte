@@ -46,6 +46,7 @@
 	let freshStartConsumed = $state(false);
 	let reorderFrom = $state<number | null>(null);
 	let reorderOver = $state<number | null>(null);
+	let aiTuneAvailable = $state(false);
 	let lang = $derived($resolvedLocale);
 	let showBuilderSupersetCoachmark = $derived(shouldShowCoachmark($onboarding, 'builder.superset'));
 	let selectedCount = $derived(selectedIds.length);
@@ -120,6 +121,20 @@
 			.finally(() => {
 				indexReady = true;
 			});
+
+		void (async () => {
+			if (!browser || !navigator.onLine) {
+				aiTuneAvailable = false;
+				return;
+			}
+			try {
+				const res = await fetch('/api/ai/plan');
+				const data = (await res.json()) as { available?: boolean };
+				aiTuneAvailable = Boolean(data.available);
+			} catch {
+				aiTuneAvailable = false;
+			}
+		})();
 
 		return () => {
 			document.removeEventListener('repdraft:builder-reorder', onReorder);
@@ -414,6 +429,7 @@
 									{meta}
 									selected={selectedIds.includes(item.exerciseId)}
 									canReorder={$draft.exercises.length >= 2}
+									{aiTuneAvailable}
 									groupRole={role}
 									{altRole}
 									onupdate={(patch) => draft.updateExercise(item.exerciseId, patch)}
