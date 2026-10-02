@@ -6,6 +6,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { clampSearchQuery, SEARCH_QUERY_MAX } from '$lib/domain/inputLimits';
+	import { onDestroy } from 'svelte';
 	import { Search, X } from '@lucide/svelte';
 
 	let {
@@ -55,6 +56,8 @@
 		local = '';
 		commit('');
 	}
+
+	onDestroy(() => clearTimeout(timer));
 </script>
 
 <label class="relative block w-full min-w-0">

@@ -38,8 +38,8 @@
 		noindex = false,
 		ogType = 'website',
 		image,
-		imageWidth = 512,
-		imageHeight = 512,
+		imageWidth = 1200,
+		imageHeight = 630,
 		imageAlt
 	}: Props = $props();
 
@@ -58,7 +58,7 @@
 		if (!image) return defaultOgImage(origin);
 		return image.startsWith('http') ? image : absoluteUrl(image, origin);
 	});
-	let twitterCard = $derived(image && imageWidth >= 600 ? 'summary_large_image' : 'summary');
+	let twitterCard = $derived(imageWidth >= 600 && ogImage ? 'summary_large_image' : 'summary');
 	let resolvedImageAlt = $derived(imageAlt?.trim() || resolvedTitle);
 	let ogLocale = $derived(seoLang === 'ru' ? 'ru_RU' : 'en_US');
 	let ogLocaleAlt = $derived(seoLang === 'ru' ? 'en_US' : 'ru_RU');

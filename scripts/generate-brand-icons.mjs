@@ -3,7 +3,7 @@
  *
  * Source: src/lib/assets/brand/app-icon-master-pulse.png (full-bleed 1600)
  * Output: static/*-v3.png, favicon.ico, brand-mark-pulse.png, mark-pulse.png,
- *         icon.svg, mark.svg, app-icon-master.svg
+ *         icon.svg, mark.svg, app-icon-master.svg, og-image.jpg
  *
  * Usage: npm run icons:pwa
  *
@@ -24,6 +24,13 @@ const MARK_INSET = { x: 0, y: 0, width: 512, height: 512 };
 
 /** Slight zoom so RP reads at home-screen / favicon sizes without looking cramped. */
 const ANY_ZOOM = 1.12;
+
+/*
+ * Search engines render the favicon at 16px: at ANY_ZOOM the RP mark is a
+ * blurry smudge. Extra zoom for the small favicon renders only (larger icons
+ * keep ANY_ZOOM); 1.6 starts clipping the italic P at the right edge.
+ */
+const FAVICON_ZOOM = 1.45;
 
 function pngsToIco(pngBuffers) {
 	const count = pngBuffers.length;
@@ -63,8 +70,8 @@ async function zoomedSquare(input, size, zoom) {
 		.toBuffer();
 }
 
-async function anyIcon(fullBleed, size, out) {
-	const zoomed = await zoomedSquare(fullBleed, size, ANY_ZOOM);
+async function anyIcon(fullBleed, size, out, zoom = ANY_ZOOM) {
+	const zoomed = await zoomedSquare(fullBleed, size, zoom);
 	/* Optical Y: italic forms sit slightly high in the mass; nudge down less than before. */
 	const shift = Math.round(size * 0.004);
 	await sharp({
@@ -196,13 +203,44 @@ const mark512 = await sharp({
 writeFileSync(join(brandDir, 'mark-pulse.png'), mark512);
 writeFileSync(join(root, 'static/brand-mark-pulse.png'), mark512);
 
+/* Small favicons: render from the master at FAVICON_ZOOM (not a downscale of
+ * icon-192) so the RP strokes survive the 16px render in search results. */
 const favPngs = [];
 for (const s of [16, 32, 48]) {
-	favPngs.push(await sharp(join(root, 'static/icon-192-v3.png')).resize(s, s).png().toBuffer());
+	const out = join(root, `static/favicon-${s}x${s}.png`);
+	await anyIcon(fullBleed, s, out, FAVICON_ZOOM);
+	favPngs.push(await sharp(out).png().toBuffer());
 }
 writeFileSync(join(root, 'static/favicon.ico'), pngsToIco(favPngs));
 
 const markB64 = mark512.toString('base64');
+
+/* Social share card (og:image / twitter:image): 1200×630, JPEG — gradients
+ * compress far better than PNG. Plate matches the app icon (deep purple). */
+{
+	const ogSvg = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="og-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="0.62" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#c4b5fd"/>
+    </linearGradient>
+    <linearGradient id="og-plate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <clipPath id="og-clip"><rect x="110" y="135" width="360" height="360" rx="80" ry="80"/></clipPath>
+  </defs>
+  <rect width="1200" height="630" fill="url(#og-bg)"/>
+  <g clip-path="url(#og-clip)">
+    <rect x="110" y="135" width="360" height="360" fill="url(#og-plate)"/>
+    <image href="data:image/png;base64,${markB64}" x="110" y="135" width="360" height="360" preserveAspectRatio="xMidYMid meet"/>
+  </g>
+  <text x="530" y="355" font-family="Helvetica, Arial, sans-serif" font-size="150" font-weight="700" fill="#4c1d95" letter-spacing="-3">Repdraft</text>
+</svg>`);
+	await sharp(ogSvg).jpeg({ quality: 85 }).toFile(join(root, 'static/og-image.jpg'));
+}
+
 writeFileSync(join(root, 'static/icon.svg'), svgPlate(markB64, { embedBase64: true }));
 writeFileSync(join(brandDir, 'mark.svg'), svgPlate('./mark-pulse.png'));
 writeFileSync(join(brandDir, 'app-icon-master.svg'), svgPlate('./mark-pulse.png'));

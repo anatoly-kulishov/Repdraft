@@ -206,5 +206,31 @@
 		"ctaHref": "/auth",
 		"ctaLabelKey": "nav.signIn",
 		"bodyMd": "Repdraft works **without an account**: plans and history stay on your phone.\n\n## When to sign in\n\n- After your first workout (hint on the summary screen)\n- Before switching phones or browsers\n- When you want JSON/CSV backup from [Profile](/auth)\n\n## What transfers\n\nOn sign-in, local plans and history **merge** with the cloud. Guest data is not lost."
+	},
+	{
+		"slug": "ai-workout-draft",
+		"title": "Тренировка с ИИ: черновик за минуту",
+		"excerpt": "Опишите зоны, время и оборудование — ИИ соберёт план из каталога на 1300+ упражнений.",
+		"coverTone": "purple",
+		"locale": "ru",
+		"tags": ["ai", "план", "getting-started"],
+		"exerciseIds": [],
+		"coverIcon": "sparkles",
+		"ctaHref": "/ai",
+		"ctaLabelKey": "articles.ctaAi",
+		"bodyMd": "ИИ-черновик собирает план из каталога Repdraft: не выдумывает упражнения, а подбирает реальные позиции с подходами, повторами и отдыхом.\n\n## Как открыть\n\nРаздел «Тренировки» → «Черновик с ИИ». Нужен интернет: запрос уходит к приватному провайдеру (GigaChat), история тренировок при этом остаётся на телефоне.\n\n![Форма запроса](/images/articles/ai-draft-form.jpg)\n\n## Что написать в запросе\n\n- **Зоны**: спина и бицепс, ноги, всё тело\n- **Время**: 45 минут\n- **Оборудование**: штанга, гантели, только резинка\n\nМожно диктовать голосом — кнопка микрофона в поле запроса.\n\n## Черновик плана\n\nИИ возвращает план из каталога: названия на русском, целевые мышцы, схема подходов и отдых.\n\n![Черновик плана](/images/articles/ai-draft-result.jpg)\n\nНе подошло — «Ещё раз» пересобирает вариант. Кнопка «В редактор» переносит план в конструктор, дальше священный цикл: live-сессия → запись подходов → история.\n\n## Важно\n\n- План — стартовая точка, а не предписание: веса и технику подбирайте под себя\n- Перед первым подходом откройте упражнение и посмотрите технику\n- ИИ работает только онлайн — без сети соберите план вручную в конструкторе"
+	},
+	{
+		"slug": "ai-workout-draft",
+		"title": "AI workout: a draft in a minute",
+		"excerpt": "Describe muscle zones, time, and equipment — the AI drafts a plan from the 1300+ exercise catalog.",
+		"coverTone": "purple",
+		"locale": "en",
+		"tags": ["ai", "plan", "getting-started"],
+		"exerciseIds": [],
+		"coverIcon": "sparkles",
+		"ctaHref": "/ai",
+		"ctaLabelKey": "articles.ctaAi",
+		"bodyMd": "The AI draft builds a plan from the Repdraft catalog: it never invents exercises, it picks real entries with sets, reps, and rest.\n\n## How to open\n\nWorkouts tab → \"Draft with AI\". It needs internet: the request goes to a private provider (GigaChat), while your workout history stays on the phone.\n\n![Request form](/images/articles/ai-draft-form.jpg)\n\n## What to write\n\n- **Zones**: back and biceps, legs, full body\n- **Time**: 45 minutes\n- **Equipment**: barbell, dumbbells, resistance band only\n\nYou can dictate instead of typing — the mic button is inside the field.\n\n## The draft\n\nThe AI returns a catalog-based plan: Russian names, target muscles, set schemes, and rest.\n\n![Plan draft](/images/articles/ai-draft-result.jpg)\n\nNot quite right — \"Regenerate\" builds another variant. \"Send to builder\" moves the plan into the editor; from there it is the sacred loop: live session → log sets → history.\n\n## Keep in mind\n\n- The plan is a starting point, not a prescription: adjust weights and technique to yourself\n- Before the first set, open the exercise and check the technique\n- The AI needs a connection — offline, build the plan manually in the builder"
 	}
 ]

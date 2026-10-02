@@ -36,6 +36,34 @@ export function buildWebSiteJsonLd(origin: string, description: string): JsonLd 
 	};
 }
 
+/*
+ * App identity for rich results / AI answers (Яндекс, Google, Алиса).
+ * Free offer — do not invent a price.
+ */
+export function buildWebApplicationJsonLd(origin: string, description: string): JsonLd {
+	const base = origin.replace(/\/$/, '');
+	return {
+		'@context': 'https://schema.org',
+		'@type': 'WebApplication',
+		name: SITE_NAME,
+		url: `${base}/`,
+		description,
+		applicationCategory: 'HealthApplication',
+		operatingSystem: 'Any (web browser)',
+		browserRequirements: 'Requires JavaScript',
+		isAccessibleForFree: true,
+		inLanguage: ['ru', 'en'],
+		image: absoluteUrl('/og-image.jpg', origin),
+		icon: absoluteUrl('/icon-512-v3.png', origin),
+		offers: {
+			'@type': 'Offer',
+			price: '0',
+			priceCurrency: 'RUB'
+		},
+		publisher: orgPublisher(origin)
+	};
+}
+
 export function buildArticleJsonLd(
 	origin: string,
 	article: Pick<Article, 'title' | 'excerpt' | 'slug'>,
