@@ -8,7 +8,8 @@ export type ArticleCoverIcon =
 	| 'clipboard-list'
 	| 'library'
 	| 'flame'
-	| 'history';
+	| 'history'
+	| 'sparkles';
 
 export type Article = {
 	slug: string;
@@ -36,8 +37,9 @@ function escapeHtml(value: string): string {
 }
 
 const ORDERED_ITEM = /^(\d+)\.\s+(.*)$/;
+const IMAGE_LINE = /^!\[([^\]]*)\]\(([^)\s]+)\)$/;
 
-/** ponytail: minimal markdown — headings, ul/ol, paragraphs, links only. */
+/** ponytail: minimal markdown — headings, ul/ol, images, paragraphs, links only. */
 export function renderArticleBody(markdown: string): string {
 	const lines = markdown.replace(/\r\n/g, '\n').split('\n');
 	const out: string[] = [];
@@ -67,6 +69,16 @@ export function renderArticleBody(markdown: string): string {
 		if (line.startsWith('## ')) {
 			closeList();
 			out.push(`<h2>${inlineMarkdown(line.slice(3))}</h2>`);
+			continue;
+		}
+		const image = IMAGE_LINE.exec(line.trim());
+		if (image) {
+			closeList();
+			const alt = escapeHtml(image[1] ?? '');
+			const src = escapeHtml(image[2] ?? '');
+			out.push(
+				`<img class="article-body__img" src="${src}" alt="${alt}" loading="lazy" decoding="async">`
+			);
 			continue;
 		}
 		if (line.startsWith('- ')) {
@@ -118,7 +130,8 @@ const SLUG_COVER_ICONS: Partial<Record<string, ArticleCoverIcon>> = {
 	'technique-clips': 'library',
 	'legs-split': 'dumbbell',
 	'first-session': 'history',
-	'getting-started-quick-demo': 'play'
+	'getting-started-quick-demo': 'play',
+	'ai-workout-draft': 'sparkles'
 };
 
 export function resolveArticleCoverIcon(article: Article): ArticleCoverIcon {
@@ -157,7 +170,9 @@ export function sortArticlesForHub(articles: Article[]): Article[] {
 }
 
 export function runArticlesSelfCheck(): void {
-	const html = renderArticleBody('## Title\n\nHello **world**.\n\n- one\n- two\n\n1. first\n2. second');
+	const html = renderArticleBody(
+		'## Title\n\nHello **world**.\n\n- one\n- two\n\n1. first\n2. second\n\n![Форма](/images/articles/ai-draft-form.jpg)'
+	);
 	if (!html.includes('<h2>Title</h2>') || !html.includes('<strong>world</strong>')) {
 		throw new Error('renderArticleBody failed');
 	}
@@ -166,6 +181,13 @@ export function runArticlesSelfCheck(): void {
 	}
 	if (!html.includes('<ol><li>first</li><li>second</li></ol>')) {
 		throw new Error('renderArticleBody ol failed');
+	}
+	if (
+		!html.includes(
+			'<img class="article-body__img" src="/images/articles/ai-draft-form.jpg" alt="Форма" loading="lazy" decoding="async">'
+		)
+	) {
+		throw new Error('renderArticleBody image failed');
 	}
 	const articles: Article[] = [
 		{

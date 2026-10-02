@@ -11,7 +11,7 @@
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
-	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
+	import SwipeToDelete, { type SwipeRowAction } from '$lib/components/SwipeToDelete.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { filterCatalogWithFacets, isBodyPart, isFilterConflict } from '$lib/domain/filters';
 	import { exerciseName } from '$lib/domain/exerciseName';
@@ -27,6 +27,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import { CATALOG_PAGE_SIZE } from '$lib/stores/catalogUi';
 	import { bookmarks } from '$lib/stores/bookmarks';
+	import { draft } from '$lib/stores/draft';
 	import { exerciseStats } from '$lib/stores/exerciseStats';
 	import { onboarding } from '$lib/stores/onboarding';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -37,7 +38,7 @@
 	import { page } from '$app/stores';
 	import { onMount, untrack, type Snippet } from 'svelte';
 	import { get } from 'svelte/store';
-	import { Bookmark, Trash2 } from '@lucide/svelte';
+	import { Bookmark, Plus, Trash2 } from '@lucide/svelte';
 
 	let {
 		equipment: equipmentFacets,
@@ -457,6 +458,38 @@
 	}
 
 	let unbookmarkBusyId = $state<string | null>(null);
+
+	/** Swipe-left rail on saved rows: add to builder draft, then remove bookmark. */
+	function savedRowActions(exercise: ExerciseIndexItem): SwipeRowAction[] {
+		return [
+			{
+				label: translate(lang, 'builder.addExerciseShort'),
+				ariaLabel: translate(lang, 'builder.addExercise'),
+				icon: Plus,
+				variant: 'accent',
+				onAction: () => {
+					const result = draft.addToDraft(exercise.id, {
+						name: exercise.name,
+						equipment: exercise.equipment
+					});
+					toasts.show(
+						translate(lang, result.added ? 'exercise.added' : 'exercise.already'),
+						result.added ? 'success' : 'info',
+						2600,
+						undefined,
+						'draft'
+					);
+				}
+			},
+			{
+				label: translate(lang, 'bookmarks.remove'),
+				icon: Trash2,
+				variant: 'danger',
+				busy: unbookmarkBusyId === exercise.id,
+				onAction: () => requestUnbookmark(exercise.id)
+			}
+		];
+	}
 	let exitingIds = $state<Set<string>>(new Set());
 	let pendingUnbookmarks = new Map<string, { bookmarkIndex: number; displayIndex: number }>();
 
@@ -786,11 +819,10 @@
 				{@const href = linkWithFrom(`/exercise/${exercise.id}`, detailFrom)}
 				<li>
 					<SwipeToDelete
-						label={translate(lang, 'bookmarks.remove')}
+						actions={savedRowActions(exercise)}
 						busy={unbookmarkBusyId === exercise.id}
 						disabled={unbookmarkBusyId !== null || exitingIds.has(exercise.id)}
 						exiting={exitingIds.has(exercise.id)}
-						onDelete={() => requestUnbookmark(exercise.id)}
 						onExitComplete={() => void onUnbookmarkExitComplete(exercise.id)}
 					>
 						<div class="records-list-card">

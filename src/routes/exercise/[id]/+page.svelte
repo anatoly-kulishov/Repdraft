@@ -82,6 +82,23 @@ import { truncateMeta } from '$lib/seo/site';
 		return translate(seoLang, 'seo.exerciseDescription', { name: title });
 	});
 	let seoImage = $derived(exerciseOgImagePath(exercise));
+	/*
+	 * Offline: GIFs cache on view only (see service-worker). A never-viewed
+	 * exercise offline falls back to its precached JPG thumb; if that is
+	 * missing too, hide the frame instead of showing a broken image icon.
+	 */
+	let mediaPhase = $state<'gif' | 'jpg' | 'none'>('gif');
+	let mediaSrc = $derived(
+		!exercise || mediaPhase === 'none'
+			? undefined
+			: mediaPhase === 'jpg'
+				? `/${exercise.image}`
+				: `/${exercise.gif_url}`
+	);
+	function onMediaError() {
+		if (mediaPhase === 'gif') mediaPhase = 'jpg';
+		else if (mediaPhase === 'jpg') mediaPhase = 'none';
+	}
 	let seoPath = $derived(exercise ? `/exercise/${encodeURIComponent(exercise.id)}` : undefined);
 	let siteOrigin = $derived(resolveSiteOrigin($page.url.origin));
 	let exerciseJsonLd = $derived.by(() => {
@@ -232,7 +249,7 @@ import { truncateMeta } from '$lib/seo/site';
 {/if}
 
 <svelte:head>
-	{#if exercise}
+	{#if exercise && mediaPhase === 'gif'}
 		<link rel="preload" as="image" href={`/${exercise.gif_url}`} fetchpriority="high" />
 	{/if}
 </svelte:head>
@@ -254,18 +271,21 @@ import { truncateMeta } from '$lib/seo/site';
 			<div class="exercise-detail-page__primary">
 				<div class="exercise-detail-page__hero">
 					<div class="exercise-detail-page__media" style:view-transition-name={mediaVtName}>
-						<div class="exercise-media-frame">
-							<img
-								src={`/${exercise.gif_url}`}
-								alt={title}
-								width="180"
-								height="180"
-								loading="eager"
-								fetchpriority="high"
-								decoding="async"
-								class="exercise-media-native block"
-							/>
-						</div>
+						{#if mediaSrc}
+							<div class="exercise-media-frame">
+								<img
+									src={mediaSrc}
+									alt={title}
+									width="180"
+									height="180"
+									loading="eager"
+									fetchpriority="high"
+									decoding="async"
+									class="exercise-media-native block"
+									onerror={onMediaError}
+								/>
+							</div>
+						{/if}
 					</div>
 
 					<div class="exercise-detail-page__intro">

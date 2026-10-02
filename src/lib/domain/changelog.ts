@@ -17,11 +17,17 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.19.0',
 		highlights: {
 			ru: [
+				'В Справочнике: статья «Тренировка с ИИ» со скриншотами',
+				'В Сохранённых: свайп влево — быстрый перенос упражнения в конструктор',
+				'Упражнения без сети: фотография подстраховывает, если гифку ещё не скачали',
 				'В конструкторе: «Подобрать с ИИ» для подходов, повторов и отдыха',
 				'ИИ опирается на шаблоны и похожие упражнения из каталога',
 				'Русские названия упражнений: один порядок слов в списке и в карточке'
 			],
 			en: [
+				'Guide: new «Training with AI» article with screenshots',
+				'Saved: swipe left to move an exercise into the builder',
+				'Exercises offline: the photo backs up if the GIF is not downloaded yet',
 				'Builder: «Tune with AI» for sets, reps, and rest',
 				'AI uses templates and similar catalog exercises',
 				'Russian exercise titles: same word order in list and detail'

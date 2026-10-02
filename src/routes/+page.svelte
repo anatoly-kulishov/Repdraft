@@ -27,7 +27,7 @@
 	import { translate, translateError } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import JsonLd from '$lib/seo/JsonLd.svelte';
-	import { buildWebSiteJsonLd } from '$lib/seo/jsonLd';
+	import { buildWebApplicationJsonLd, buildWebSiteJsonLd } from '$lib/seo/jsonLd';
 	import { resolveSeoLang } from '$lib/seo/seoLang';
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { resolveSiteOrigin } from '$lib/seo/site';
@@ -77,6 +77,9 @@
 	let siteOrigin = $derived(resolveSiteOrigin($page.url.origin));
 	let websiteJsonLd = $derived(
 		buildWebSiteJsonLd(siteOrigin, translate(seoLang, 'app.metaDescription'))
+	);
+	let webAppJsonLd = $derived(
+		buildWebApplicationJsonLd(siteOrigin, translate(seoLang, 'app.metaDescription'))
 	);
 	let active = $derived.by(() => {
 		const fromStore = $live.session;
@@ -328,21 +331,30 @@
 				/* ignore */
 			}
 		}
-		void (async () => {
-			while (!$auth.ready) {
-				await new Promise((r) => setTimeout(r, 20));
-			}
-			if (!indexReady) {
+		let destroyed = false;
+		let unsubIndex = () => {};
+		/* Wait for auth readiness without tight polling (battery) or post-teardown work. */
+		unsubIndex = auth.subscribe(async (state) => {
+			if (!state.ready || destroyed || indexReady) return;
+			unsubIndex();
+			try {
 				const index = await loadExerciseIndex();
+				if (destroyed) return;
 				indexById = new Map(index.map((item) => [item.id, item]));
 				indexReady = true;
+			} catch {
+				/* catalog load failures surface later in the lists */
 			}
-		})();
+		});
+		return () => {
+			destroyed = true;
+			unsubIndex();
+		};
 	});
 </script>
 
 <SeoHead titleKey="seo.homeTitle" descriptionKey="app.metaDescription" path="/" />
-<JsonLd data={websiteJsonLd} />
+<JsonLd data={[websiteJsonLd, webAppJsonLd]} />
 
 <section
 	class="home-page content-page"

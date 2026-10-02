@@ -38,7 +38,7 @@ export async function getExerciseById(
 	const map = await catalog(fetchFn);
 	const exercise = map.get(id) ?? null;
 	if (!exercise) return null;
-	const indexItem = await getIndexItemById(id);
+	const indexItem = await getIndexItemById(id, fetchFn);
 	if (!indexItem) return exercise;
 	return {
 		...exercise,

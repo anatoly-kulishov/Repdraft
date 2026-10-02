@@ -3,7 +3,7 @@ export const SITE_NAME = 'Repdraft';
 /** Public production host (apex redirects here). Used when env/request origin is unusable. */
 export const CANONICAL_SITE_ORIGIN = 'https://www.repdraft.xyz';
 
-const DEFAULT_OG_IMAGE = '/icon-512-v3.png';
+const DEFAULT_OG_IMAGE = '/og-image.jpg';
 
 /** SvelteKit placeholder host baked into prerender HTML when PUBLIC_SITE_URL is unset. */
 const PRERENDER_PLACEHOLDER_HOST = 'sveltekit-prerender';

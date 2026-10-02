@@ -4,6 +4,8 @@ import { isSupabaseConfigured } from '$lib/supabase/client';
 import { get, writable } from 'svelte/store';
 
 const STORAGE_KEY = 'repdraft.technique-clip-hints';
+/** Skip re-fetch when loaded recently — refresh fires on every app foreground. */
+const CLIP_HINTS_TTL_MS = 10 * 60 * 1000;
 
 function readCachedIds(): Set<string> {
 	if (!browser) return new Set();
@@ -31,6 +33,7 @@ function createTechniqueClipHintsStore() {
 	const store = writable<ReadonlySet<string>>(new Set());
 	const ready = writable(false);
 	let inflight: Promise<void> | null = null;
+	let lastFetchedAt = 0;
 
 	function hydrate() {
 		if (!browser) {
@@ -44,10 +47,12 @@ function createTechniqueClipHintsStore() {
 
 	async function refresh() {
 		if (!browser || !isSupabaseConfigured()) return;
+		if (Date.now() - lastFetchedAt < CLIP_HINTS_TTL_MS) return;
 		while (inflight) await inflight;
 		const run = (async () => {
 			try {
 				const ids = await listExerciseIdsWithPublicClips();
+				lastFetchedAt = Date.now();
 				const next = new Set(ids);
 				store.set(next);
 				writeCachedIds(next);

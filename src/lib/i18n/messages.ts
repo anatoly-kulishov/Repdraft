@@ -18,7 +18,7 @@ const ru: Dict = {
 	'nav.home': 'Repdraft: на главную',
 	'brand.tagline': 'ЗАПИСЬ. ПОДХОД. ГОТОВО.',
 	'app.metaDescription':
-		'Repdraft: дневник тренировок в зале. Планы, запись подходов и каталог упражнений. Работает офлайн на телефоне.',
+		'Repdraft — бесплатный дневник тренировок в зале: планы упражнений, запись подходов с весом, каталог с техникой. Работает офлайн в браузере телефона.',
 	'seo.exercisesDescription':
 		'Каталог упражнений с GIF и техникой: зоны по группам мышц и поиск по названию на RU и EN.',
 	'seo.catalogZoneDescription':
@@ -309,6 +309,7 @@ const ru: Dict = {
 	'articles.ctaWorkouts': 'К тренировкам',
 	'articles.ctaExercises': 'К упражнениям',
 	'articles.ctaLegs': 'Каталог ног',
+	'articles.ctaAi': 'Собрать с ИИ',
 	'bookmarks.title': 'Сохранённые',
 	'bookmarks.lead': 'Упражнения, которые вы отметили закладкой.',
 	'bookmarks.add': 'В сохранённые',
@@ -1045,7 +1046,7 @@ const en: Dict = {
 	'nav.home': 'Repdraft: home',
 	'brand.tagline': 'LOG. SET. CONQUER.',
 	'app.metaDescription':
-		'Repdraft: gym workout log. Plans, set tracking, and exercise catalog. Works offline on your phone.',
+		'Repdraft — free gym workout log: exercise plans, set-by-set logging with weight, and a technique catalog. Works offline in your phone browser.',
 	'seo.exercisesDescription':
 		'Exercise catalog with GIF demos and technique: muscle zones and RU/EN search.',
 	'seo.catalogZoneDescription':
@@ -1332,6 +1333,7 @@ const en: Dict = {
 	'articles.ctaWorkouts': 'Go to workouts',
 	'articles.ctaExercises': 'Browse exercises',
 	'articles.ctaLegs': 'Legs catalog',
+	'articles.ctaAi': 'Draft with AI',
 	'bookmarks.title': 'Saved',
 	'bookmarks.lead': 'Exercises you bookmarked for quick access.',
 	'bookmarks.add': 'Save exercise',

@@ -53,7 +53,7 @@
 		};
 
 		tick();
-		const id = window.setInterval(tick, 50);
+		const id = window.setInterval(tick, 100);
 		return () => window.clearInterval(id);
 	});
 

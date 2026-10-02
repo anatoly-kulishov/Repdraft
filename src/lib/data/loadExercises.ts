@@ -4,9 +4,9 @@ let indexPromise: Promise<ExerciseIndexItem[]> | null = null;
 let cachedIndex: ExerciseIndexItem[] | null = null;
 
 /** Catalog metadata only (~380KB). Full payloads load on demand via `loadExerciseCatalog`. */
-export function loadExerciseIndex(): Promise<ExerciseIndexItem[]> {
+export function loadExerciseIndex(fetchFn: typeof fetch = fetch): Promise<ExerciseIndexItem[]> {
 	if (!indexPromise) {
-		indexPromise = fetch('/data/exercises.index.json')
+		indexPromise = fetchFn('/data/exercises.index.json')
 			.then(async (res) => {
 				if (!res.ok) {
 					throw new Error('errors.catalogLoad');
@@ -34,7 +34,10 @@ export function peekExerciseIndex(): ExerciseIndexItem[] | null {
 	return cachedIndex;
 }
 
-export async function getIndexItemById(id: string): Promise<ExerciseIndexItem | null> {
-	const index = await loadExerciseIndex();
+export async function getIndexItemById(
+	id: string,
+	fetchFn: typeof fetch = fetch
+): Promise<ExerciseIndexItem | null> {
+	const index = await loadExerciseIndex(fetchFn);
 	return index.find((item) => item.id === id) ?? null;
 }

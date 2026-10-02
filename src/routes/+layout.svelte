@@ -196,16 +196,18 @@
 			}
 		};
 		document.addEventListener('visibilitychange', onVisible);
-		window.addEventListener('pageshow', () => {
+		const onPageshow = () => {
 			syncVvChrome?.();
 			recoverOverflow();
-		});
+		};
+		window.addEventListener('pageshow', onPageshow);
 
 		return () => {
 			unsubAnalytics();
 			window.removeEventListener('online', onOnline);
 			window.removeEventListener('repdraft:outbox', onOutbox);
 			document.removeEventListener('visibilitychange', onVisible);
+			window.removeEventListener('pageshow', onPageshow);
 		};
 	});
 

@@ -458,6 +458,16 @@
 	margin: 0 0 0.75rem;
 }
 
+/* App screenshots inside guide articles. */
+.prose-article .article-body__img {
+	display: block;
+	width: min(100%, 16rem);
+	margin: 0.9rem auto;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-panel, 0.9rem);
+	overflow: hidden;
+}
+
 .prose-article p:last-child,
 .prose-article ul:last-child,
 .prose-article ol:last-child {

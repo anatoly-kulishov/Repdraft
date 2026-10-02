@@ -214,12 +214,17 @@
 			finish();
 		};
 		el.addEventListener('transitionend', onEnd);
-		window.setTimeout(() => {
+		const fallback = window.setTimeout(() => {
 			if (done) return;
 			done = true;
 			el.removeEventListener('transitionend', onEnd);
 			finish();
 		}, 280);
+		return () => {
+			done = true;
+			el.removeEventListener('transitionend', onEnd);
+			window.clearTimeout(fallback);
+		};
 	});
 
 	function onPointerDown(event: PointerEvent) {
