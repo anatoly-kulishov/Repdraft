@@ -4,7 +4,7 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { blurActiveElement } from '$lib/dom/blurActiveElement';
-	import { recentExerciseLogs, setKindMessageKey } from '$lib/domain/session';
+	import { recentExerciseLogs, setKindMessageKey, exerciseLogWeightDelta } from '$lib/domain/session';
 	import type { SetKind } from '$lib/domain/types';
 	import { formatRelativeDay } from '$lib/i18n/format';
 	import { translate } from '$lib/i18n/messages';
@@ -129,12 +129,27 @@
 			{/if}
 		{/snippet}
 		<ul class="exercise-history__list">
-			{#each logs as log (log.sessionId)}
+			{#each logs as log, li (log.sessionId)}
+				{@const delta =
+					li + 1 < logs.length ? exerciseLogWeightDelta(log, logs[li + 1]) : null}
 				<li class="exercise-history__row">
 					{#if linkRows}
 						<a class="exercise-history__link" href={`/workouts/history/${log.sessionId}`}>
 							<span class="exercise-history__when">{formatRelativeDay(log.finishedAt, lang)}</span>
 							<span class="exercise-history__plan">{log.planName}</span>
+							{#if delta != null && delta !== 0}
+								<span
+									class="exercise-history__delta"
+									class:is-up={delta > 0}
+									class:is-down={delta < 0}
+								>
+									{translate(
+										lang,
+										delta > 0 ? 'exercise.deltaUp' : 'exercise.deltaDown',
+										{ delta: Math.abs(delta) }
+									)}
+								</span>
+							{/if}
 							{#if log.note}
 								<span class="exercise-history__note">{log.note}</span>
 							{/if}
@@ -144,6 +159,19 @@
 						<div class="exercise-history__card">
 							<span class="exercise-history__when">{formatRelativeDay(log.finishedAt, lang)}</span>
 							<span class="exercise-history__plan">{log.planName}</span>
+							{#if delta != null && delta !== 0}
+								<span
+									class="exercise-history__delta"
+									class:is-up={delta > 0}
+									class:is-down={delta < 0}
+								>
+									{translate(
+										lang,
+										delta > 0 ? 'exercise.deltaUp' : 'exercise.deltaDown',
+										{ delta: Math.abs(delta) }
+									)}
+								</span>
+							{/if}
 							{#if log.note}
 								<span class="exercise-history__note">{log.note}</span>
 							{/if}

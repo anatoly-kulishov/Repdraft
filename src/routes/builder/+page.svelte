@@ -12,7 +12,7 @@
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { AI_DRAFT_HREF, BUILDER_ADD_EXERCISE_HREF, WORKOUTS_HREF } from '$lib/domain/catalogLinks';
 	import { PLAN_NAME_MAX, clampPlanName } from '$lib/domain/inputLimits';
 	import type { ExerciseIndexItem, WorkoutExercise } from '$lib/domain/types';
@@ -114,7 +114,7 @@
 		};
 		document.addEventListener('repdraft:builder-reorder', onReorder);
 
-		loadExerciseIndex()
+		loadExerciseIndexWithCustoms()
 			.then((items) => {
 				indexById = new Map(items.map((item) => [item.id, item]));
 			})

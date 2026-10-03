@@ -52,6 +52,7 @@ Last reviewed: 2026-08-17 (branch v0.10.3 home / live / catalog / builder polish
 | Rest timer sound/haptics | 26–30 | Prefs + chime/vibrate; Wake Lock on live (v0.9.0) |
 | Local data export | trust | JSON backup + sessions CSV from `/auth` (v0.9.0) |
 | Last-time one-tap prefill | live | Chip applies weight×reps to open set (v0.9.0) |
+| Local custom exercises | 18–25 | «Мои» в пикере: CTA «Создать «запрос»» при пустом поиске; localStorage + backup export; без техники/детейлов |
 
 ### Explicitly out of MVP
 

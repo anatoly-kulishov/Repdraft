@@ -20,7 +20,7 @@
 	import { translate, translateError } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import type { ExerciseFilters, ExerciseIndexItem, PersonalRecord } from '$lib/domain/types';
-	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { CATALOG_PAGE_SIZE, emptyCatalogFilters } from '$lib/stores/catalogUi';
 	import { bookmarks } from '$lib/stores/bookmarks';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -156,7 +156,7 @@
 
 	onMount(() => {
 		void records.refresh();
-		loadExerciseIndex()
+		loadExerciseIndexWithCustoms()
 			.then((items) => {
 				indexById = new Map(items.map((item) => [item.id, item]));
 			})

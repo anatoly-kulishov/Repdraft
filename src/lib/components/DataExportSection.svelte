@@ -6,6 +6,7 @@
 	} from '$lib/domain/exportData';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import { downloadBlob } from '$lib/media/downloadBlob';
+	import { peekLocalCustomExercises } from '$lib/storage/localCustomExerciseRepository';
 	import { localRecordRepository } from '$lib/storage/localRecordRepository';
 	import { localSessionRepository } from '$lib/storage/localSessionRepository';
 	import { localWorkoutRepository } from '$lib/storage/localWorkoutRepository';
@@ -38,11 +39,17 @@
 		exportBusy = true;
 		try {
 			const { plans: plansList, sessions, records: recordsList } = await loadLocalBundle();
-			if (plansList.length === 0 && sessions.length === 0 && recordsList.length === 0) {
+			const customs = peekLocalCustomExercises();
+			if (
+				plansList.length === 0 &&
+				sessions.length === 0 &&
+				recordsList.length === 0 &&
+				customs.length === 0
+			) {
 				toasts.show(translate(lang, 'settings.exportEmpty'), 'info');
 				return;
 			}
-			const payload = buildExportPayload(plansList, sessions, recordsList);
+			const payload = buildExportPayload(plansList, sessions, recordsList, undefined, customs);
 			const blob = new Blob([exportPayloadToJson(payload)], {
 				type: 'application/json;charset=utf-8'
 			});

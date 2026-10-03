@@ -1389,3 +1389,16 @@ html.is-plan-reorder-active .reorder-handle {
 	}
 }
 
+
+/* Tonnage delta vs previous same-plan session. */
+.summary-stat__delta {
+	margin: 0.15rem 0 0;
+	font-size: 0.75rem;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	color: var(--color-accent);
+}
+
+.summary-stat__delta.is-down {
+	color: color-mix(in srgb, var(--color-danger) 72%, var(--color-muted));
+}

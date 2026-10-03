@@ -4727,3 +4727,16 @@ body:has(.toast-stack) .scroll-to-top-fab.is-visible {
 .scroll-to-top-fab :global(svg) {
 	display: block;
 }
+
+/* Weight progression vs previous session (text-only trend, no chart). */
+.exercise-history__delta {
+	justify-self: start;
+	font-size: 0.75rem;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	color: var(--color-accent);
+}
+
+.exercise-history__delta.is-down {
+	color: color-mix(in srgb, var(--color-danger) 72%, var(--color-muted));
+}

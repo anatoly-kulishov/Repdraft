@@ -16,6 +16,7 @@ const checks = [
 	'session',
 	'records',
 	'clips',
+	'customExercises',
 	'inputLimits',
 	'authFlow',
 	'avatarImage',

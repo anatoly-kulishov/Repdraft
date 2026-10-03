@@ -28,6 +28,7 @@
 		SETS_INPUT_MAX_LEN
 	} from '$lib/domain/inputLimits';
 	import { exerciseName } from '$lib/domain/exerciseName';
+	import { isCustomExerciseId } from '$lib/domain/customExercises';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { linkWithFrom, currentReturnPath } from '$lib/domain/navigation';
 	import {
@@ -85,6 +86,8 @@
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
+	/** Local exercises: no technique sheet, no detail page, no AI tune (catalog-bound). */
+	let isCustom = $derived(isCustomExerciseId(item.exerciseId));
 	let techniqueOpen = $state(false);
 	let aiTuneOpen = $state(false);
 	let mediaVtName = $derived(
@@ -378,24 +381,34 @@
 				`/exercise/${item.exerciseId}`,
 				currentReturnPath($page.url.pathname, $page.url.searchParams)
 			)}
-			<AppButton
-				variant="ghost"
-				class="workout-ex-head__media-btn media-well workout-ex-head__media !h-auto !min-h-[48px] !min-w-[48px] !p-0"
-				data-ex-media-vt={item.exerciseId}
-				style={mediaVtName ? `view-transition-name: ${mediaVtName}` : undefined}
-				aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
-				onclick={() => {
-					techniqueOpen = true;
-				}}
-			>
-				<img src={`/${meta.image}`} alt="" width="120" height="120" />
-			</AppButton>
+			{#if isCustom}
+				<div
+					class="workout-ex-head__media-btn media-well workout-ex-head__media !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+					data-ex-media-vt={item.exerciseId}
+					aria-hidden="true"
+				>
+					<img src={`/${meta.image}`} alt="" width="120" height="120" />
+				</div>
+			{:else}
+				<AppButton
+					variant="ghost"
+					class="workout-ex-head__media-btn media-well workout-ex-head__media !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+					data-ex-media-vt={item.exerciseId}
+					style={mediaVtName ? `view-transition-name: ${mediaVtName}` : undefined}
+					aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+					onclick={() => {
+						techniqueOpen = true;
+					}}
+				>
+					<img src={`/${meta.image}`} alt="" width="120" height="120" />
+				</AppButton>
+			{/if}
 			<div class="workout-ex-head__copy">
 				<ExpandableText
 					class="workout-ex-head__title"
 					text={title}
 					lines={2}
-					href={detailHref}
+					href={isCustom ? undefined : detailHref}
 					onpointerdown={armMediaVt}
 				/>
 				{#if inGroup}
@@ -594,7 +607,7 @@
 					<span class="builder-ex-action__meta tabular-nums">{ladderLabel}</span>
 				{/if}
 			</button>
-			{#if aiTuneAvailable}
+			{#if aiTuneAvailable && !isCustom}
 				<button type="button" class="builder-ex-action" onclick={openAiTuneFromMenu}>
 					<span class="builder-ex-action__well" aria-hidden="true">
 						<LucideIcon icon={Sparkles} size={ICON_BUTTON} />
@@ -616,7 +629,7 @@
 	</BottomSheet>
 {/if}
 
-{#if meta && techniqueOpen}
+{#if meta && techniqueOpen && !isCustom}
 	<ExerciseTechniqueSheet
 		open={techniqueOpen}
 		titleId={`builder-technique-${item.exerciseId}`}
