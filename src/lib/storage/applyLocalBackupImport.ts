@@ -3,6 +3,7 @@ import {
 	type RepdraftExportPayload
 } from '$lib/domain/exportData';
 import { isCloudMode } from '$lib/storage/dataAccess';
+import { peekLocalCustomExercises, replaceAllCustomExercises } from '$lib/storage/localCustomExerciseRepository';
 import { localRecordRepository, replaceAllRecords } from '$lib/storage/localRecordRepository';
 import { localSessionRepository, replaceAllSessions } from '$lib/storage/localSessionRepository';
 import { localWorkoutRepository, replaceAllPlans } from '$lib/storage/localWorkoutRepository';
@@ -21,7 +22,7 @@ async function loadLocalBundle() {
 		localSessionRepository.list(),
 		localRecordRepository.list()
 	]);
-	return { plans: plansList, sessions, records: recordsList };
+	return { plans: plansList, sessions, records: recordsList, customs: peekLocalCustomExercises() };
 }
 
 /** Merge payload into local storage (bulk writes) and refresh stores. */
@@ -36,6 +37,7 @@ export async function applyLocalBackupImport(
 		replaceAllPlans(merged.plans);
 		replaceAllSessions(merged.sessions);
 		replaceAllRecords(merged.records);
+		replaceAllCustomExercises(merged.customs ?? []);
 		syncState.markLocalSaved();
 	} catch (err) {
 		syncState.markLocalSaveError();

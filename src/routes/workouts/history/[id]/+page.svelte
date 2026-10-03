@@ -7,10 +7,11 @@
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { WORKOUTS_HISTORY_HREF } from '$lib/domain/catalogLinks';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
+	import { isCustomExerciseId } from '$lib/domain/customExercises';
+	import { exerciseMetaHint } from '$lib/domain/labels.ru';
 	import {
 		addCompletedLoggedSet,
 		completedSetCount,
@@ -105,7 +106,7 @@
 			const found = session ?? (await live.getFinishedSession(id));
 			if (!found) missing = true;
 			else session = found;
-			const index = await loadExerciseIndex();
+			const index = await loadExerciseIndexWithCustoms();
 			indexById = new Map(index.map((ex) => [ex.id, ex]));
 			loading = false;
 		})();
@@ -410,28 +411,37 @@
 							<div class="history-exercise__head is-static is-editing">
 								{#if meta}
 									{@const title = label}
-									<AppButton
-										variant="ghost"
-										class="history-exercise__thumb-btn media-well history-exercise__thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
-										aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
-										onclick={() => {
-											technique = {
-												id: meta.id,
-												title,
-												hint: `${labelTarget(meta.target, lang)} · ${labelEquipment(meta.equipment, lang)}`,
-												image: meta.image
-											};
-										}}
-									>
-										<img
-											src={`/${meta.image}`}
-											alt=""
-											width="180"
-											height="180"
-											loading="lazy"
-											decoding="async"
-										/>
-									</AppButton>
+									{#if isCustomExerciseId(meta.id)}
+										<div
+											class="history-exercise__thumb-btn media-well history-exercise__thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+											aria-hidden="true"
+										>
+											<img src={`/${meta.image}`} alt="" width="180" height="180" loading="lazy" decoding="async" />
+										</div>
+									{:else}
+										<AppButton
+											variant="ghost"
+											class="history-exercise__thumb-btn media-well history-exercise__thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+											aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+											onclick={() => {
+												technique = {
+													id: meta.id,
+													title,
+													hint: exerciseMetaHint(meta, lang),
+													image: meta.image
+												};
+											}}
+										>
+											<img
+												src={`/${meta.image}`}
+												alt=""
+												width="180"
+												height="180"
+												loading="lazy"
+												decoding="async"
+											/>
+										</AppButton>
+									{/if}
 								{:else}
 									<span
 										class="media-well history-exercise__thumb is-placeholder"
@@ -442,7 +452,7 @@
 									<p class="workout-preview-row-title">{label}</p>
 									{#if meta}
 										<p class="workout-preview-row-sub">
-											{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
+											{exerciseMetaHint(meta, lang)}
 										</p>
 									{/if}
 								</div>
@@ -543,40 +553,54 @@
 						</SwipeToDelete>
 					{:else if meta}
 						{@const title = label}
-						{@const detailHref = `/exercise/${meta.id}?from=${encodeURIComponent(fromPath)}`}
+						{@const isCustomMeta = isCustomExerciseId(meta.id)}
+						{@const detailHref = isCustomMeta
+							? undefined
+							: `/exercise/${meta.id}?from=${encodeURIComponent(fromPath)}`}
 						<div class="history-exercise__head">
-							<AppButton
-								variant="ghost"
-								class="history-exercise__thumb-btn media-well history-exercise__thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
-								aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
-								onclick={() => {
-									technique = {
-										id: meta.id,
-										title,
-										hint: `${labelTarget(meta.target, lang)} · ${labelEquipment(meta.equipment, lang)}`,
-										image: meta.image
-									};
-								}}
-							>
-								<img
-									src={`/${meta.image}`}
-									alt=""
-									width="180"
-									height="180"
-									loading="lazy"
-									decoding="async"
-								/>
-							</AppButton>
+							{#if isCustomMeta}
+								<div
+									class="history-exercise__thumb-btn media-well history-exercise__thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+									aria-hidden="true"
+								>
+									<img src={`/${meta.image}`} alt="" width="180" height="180" loading="lazy" decoding="async" />
+								</div>
+							{:else}
+								<AppButton
+									variant="ghost"
+									class="history-exercise__thumb-btn media-well history-exercise__thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+									aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+									onclick={() => {
+										technique = {
+											id: meta.id,
+											title,
+											hint: exerciseMetaHint(meta, lang),
+											image: meta.image
+										};
+									}}
+								>
+									<img
+										src={`/${meta.image}`}
+										alt=""
+										width="180"
+										height="180"
+										loading="lazy"
+										decoding="async"
+									/>
+								</AppButton>
+							{/if}
 							<a class="workout-preview-row-main" href={detailHref}>
 								<div class="workout-preview-row-body">
 									<p class="workout-preview-row-title">{title}</p>
 									<p class="workout-preview-row-sub">
-										{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
+										{exerciseMetaHint(meta, lang)}
 									</p>
 								</div>
-								<span class="workout-preview-chevron" aria-hidden="true">
-									<LucideIcon icon={ChevronRight} size={ICON_BUTTON} />
-								</span>
+								{#if !isCustomMeta}
+									<span class="workout-preview-chevron" aria-hidden="true">
+										<LucideIcon icon={ChevronRight} size={ICON_BUTTON} />
+									</span>
+								{/if}
 							</a>
 						</div>
 

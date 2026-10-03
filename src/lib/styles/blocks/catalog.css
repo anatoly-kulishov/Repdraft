@@ -4034,3 +4034,55 @@ body:has(.sticky-actions) .draft-dock {
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
+/* Local (custom) exercises: delete affordance + «Мои» chip. */
+.exercise-card-bookmark--delete {
+	color: var(--color-danger, #c44);
+}
+
+.exercise-card-custom-badge {
+	display: inline-block;
+	margin-inline-end: 6px;
+	padding: 1px 6px;
+	border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+	border-radius: 999px;
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 1.5;
+	vertical-align: 2px;
+	color: var(--color-accent);
+	background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+/* «Мои упражнения» header + create affordances (local exercises). */
+.catalog-section__title--mine {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.catalog-section-mine-add {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	border: 1px dashed var(--color-border);
+	border-radius: 999px;
+	background: transparent;
+	color: var(--color-muted);
+	cursor: pointer;
+	transition: color 140ms ease, border-color 140ms ease;
+}
+
+.catalog-section-mine-add {
+	width: 2rem;
+	height: 2rem;
+	min-width: 2rem;
+	min-height: 2rem;
+	padding: 0;
+}
+
+.catalog-section-mine-add:hover {
+	color: var(--color-accent);
+	border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+}

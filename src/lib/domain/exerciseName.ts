@@ -1,5 +1,6 @@
 import type { AppLocale } from '$lib/i18n/locale';
 import type { ExerciseIndexItem } from './types';
+import { isCustomExerciseId } from './customExercises';
 import ruOverrides from '$lib/data/exerciseNamesRuOverrides.json' with { type: 'json' };
 
 const RU_OVERRIDES = ruOverrides as Record<string, string>;
@@ -34,6 +35,8 @@ export function exerciseName(
 	item: Pick<ExerciseIndexItem, 'id' | 'name' | 'name_ru'> | Pick<ExerciseIndexItem, 'name' | 'name_ru'>,
 	locale: AppLocale = 'ru'
 ): string {
+	/** Local exercises are user-typed — show exactly what they wrote. */
+	if ('id' in item && isCustomExerciseId(item.id)) return item.name;
 	const english = titleCaseExerciseName(item.name);
 	if (locale !== 'ru') return english;
 

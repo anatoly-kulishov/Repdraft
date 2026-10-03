@@ -17,7 +17,7 @@
 	import { resolveHomeNextPlan, planExerciseSlotCount, planTargetSummary } from '$lib/domain/workout';
 	import { HOME_RECENT_ROW_LIMIT, resolveHomeSkeletonVariant, shouldShowHomeChecklistSkeleton } from '$lib/domain/home';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
-	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
+	import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
 	import { greetingFirstName } from '$lib/domain/greetingName';
@@ -89,7 +89,7 @@
 		return local && !local.finishedAt ? local : null;
 	});
 	let recent = $derived($live.history.slice(0, HOME_RECENT_ROW_LIMIT));
-	const peekedIndex = peekExerciseIndex();
+	const peekedIndex = peekExerciseIndexWithCustoms();
 	let indexById = $state<Map<string, ExerciseIndexItem>>(
 		peekedIndex ? new Map(peekedIndex.map((item) => [item.id, item])) : new Map()
 	);
@@ -338,7 +338,7 @@
 			if (!state.ready || destroyed || indexReady) return;
 			unsubIndex();
 			try {
-				const index = await loadExerciseIndex();
+				const index = await loadExerciseIndexWithCustoms();
 				if (destroyed) return;
 				indexById = new Map(index.map((item) => [item.id, item]));
 				indexReady = true;

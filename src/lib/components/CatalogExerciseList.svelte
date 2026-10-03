@@ -3,6 +3,7 @@
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import CatalogExerciseListSkeleton from '$lib/components/CatalogExerciseListSkeleton.svelte';
+	import CustomExerciseSheet from '$lib/components/CustomExerciseSheet.svelte';
 	import RecordsListSkeleton from '$lib/components/RecordsListSkeleton.svelte';
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -16,7 +17,25 @@
 	import { filterCatalogWithFacets, isBodyPart, isFilterConflict } from '$lib/domain/filters';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { pickFrequent, pickPopular, sortByScore } from '$lib/domain/exerciseScore';
-	import { catalogZoneBodyParts, isCatalogZone } from '$lib/domain/catalogLinks';
+	import {
+		catalogZoneBodyParts,
+		isBuilderReturnPath,
+		isCatalogZone
+	} from '$lib/domain/catalogLinks';
+	import {
+		customExerciseToIndexItem,
+		filterCustomExercises,
+		isCustomExerciseId,
+		normalizeCustomExercise,
+		sortCustomsNewest,
+		type CustomExercise
+	} from '$lib/domain/customExercises';
+	import {
+		addLocalCustomExercise,
+		peekLocalCustomExercises,
+		removeLocalCustomExercise,
+		restoreLocalCustomExercise
+	} from '$lib/storage/localCustomExerciseRepository';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { currentReturnPath, linkWithFrom } from '$lib/domain/navigation';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
@@ -167,6 +186,17 @@
 	let catalog = $derived(indexReady ? items : []);
 	let statsMap = $derived($exerciseStats);
 	let bookmarkSet = $derived(new Set($bookmarks));
+	/** Local user-created exercises — client-only, never in facets/SSR counts. */
+	let customs = $state<CustomExercise[]>([]);
+	let customSheetOpen = $state(false);
+	let customSheetName = $state('');
+	let visibleCustoms = $derived.by(() => {
+		if (savedOnly) return [];
+		const allowed = zoneLocked && zoneBodyParts.length > 0 ? new Set(zoneBodyParts) : null;
+		return filterCustomExercises(customs, filters.query, allowed ?? undefined).map(
+			customExerciseToIndexItem
+		);
+	});
 	let catalogFiltered = $derived.by(() => {
 		const allowed = zoneLocked && zoneBodyParts.length > 0 ? new Set(zoneBodyParts) : null;
 		let scopedCatalog = allowed
@@ -209,7 +239,11 @@
 			: visible
 	);
 	let shownAll = $derived(allSectionItems.slice(0, visibleLimit));
-	let shownFlat = $derived(visible.slice(0, visibleLimit));
+	let shownFlat = $derived(
+		!savedOnly && !useSections
+			? [...visibleCustoms, ...visible.slice(0, visibleLimit)]
+			: visible.slice(0, visibleLimit)
+	);
 	let shownCount = $derived(
 		useSections
 			? frequentItems.length + popularItems.length + shownAll.length
@@ -225,6 +259,9 @@
 	let filterConflict = $derived(
 		visible.length === 0 ? isFilterConflict(catalog, filters, lang) : false
 	);
+	let hasAnyRows = $derived(visible.length > 0 || visibleCustoms.length > 0);
+	/** Query found nothing in 1324-row catalog — offer to save it as a local exercise. */
+	let showCreateCta = $derived(!savedOnly && Boolean(filters.query.trim()));
 	/**
 	 * Saved never uses catalog totalCount as the denominator — that caused «0 из 1324»
 	 * when empty bookmarks skip the skeleton before the index loads.
@@ -265,7 +302,7 @@
 				? visible.length
 				: $bookmarks.length
 			: filtersActive || indexReady
-				? visible.length
+				? visible.length + (filters.query.trim() ? visibleCustoms.length : 0)
 				: totalForCount
 	);
 	let cardVariant = $derived(
@@ -435,6 +472,18 @@
 
 	onMount(() => {
 		void bookmarks.refresh();
+		customs = sortCustomsNewest(peekLocalCustomExercises());
+		if (new URLSearchParams(window.location.search).get('new') === '1') {
+			customSheetName = '';
+			customSheetOpen = true;
+			const url = new URL(window.location.href);
+			url.searchParams.delete('new');
+			void goto(`${url.pathname}${url.search}${url.hash}`, {
+				replaceState: true,
+				keepFocus: true,
+				noScroll: true
+			});
+		}
 		const peekedOnMount = peekExerciseIndex();
 		if (peekedOnMount && !indexReady) {
 			items = peekedOnMount;
@@ -450,6 +499,45 @@
 				indexReady = true;
 			});
 	});
+
+	function openCreateSheet(name = '') {
+		customSheetName = name;
+		customSheetOpen = true;
+		blurActiveElement();
+	}
+
+	function createCustom(name: string, bodyPart: string, equipment: string): CustomExercise | null {
+		const made = normalizeCustomExercise({ name, bodyPart, equipment });
+		if (!made) return null;
+		const res = addLocalCustomExercise(made);
+		if (!res.ok) {
+			const key = res.reason === 'full' ? 'custom.full' : res.reason === 'quota' ? 'live.storageFull' : 'custom.duplicate';
+			toasts.show(translate(lang, key), 'info');
+			return null;
+		}
+		customs = res.items;
+		const chainFrom = $page.url.searchParams.get('from');
+		if (chainFrom && isBuilderReturnPath(chainFrom)) {
+			draft.addToDraft(made.id, { name: made.name, equipment: made.equipment });
+			toasts.show(translate(lang, 'exercise.added'), 'success', 2600, undefined, 'draft');
+		} else {
+			toasts.show(translate(lang, 'custom.created'), 'success', 2600);
+		}
+		return made;
+	}
+
+	function requestDeleteCustom(id: string) {
+		const removed = customs.find((ex) => ex.id === id);
+		if (!removed) return;
+		customs = removeLocalCustomExercise(id);
+		toasts.showUndo(
+			translate(lang, 'custom.deleted'),
+			() => {
+				customs = restoreLocalCustomExercise(removed);
+			},
+			'info'
+		);
+	}
 
 	function loadMore() {
 		const total = useSections ? allSectionItems.length : visible.length;
@@ -665,7 +753,7 @@
 			n: countN
 		})}
 	</p>
-	{#if visible.length === 0}
+	{#if !hasAnyRows}
 		{#if filterConflict}
 			<AppPanel dashed class="flex flex-col items-start gap-3 py-6 text-left md:py-8">
 				<h2 class="section-title">{translate(lang, 'catalog.conflictTitle')}</h2>
@@ -721,38 +809,76 @@
 					</AppButton>
 				</div>
 			</AppPanel>
-		{:else}
-			<EmptyState
-				class={emptyStateClass}
-				centered={savedOnly}
-				icon={savedOnly && !filters.query.trim() ? Bookmark : null}
-				title={translate(
-					lang,
-					savedOnly && !filters.query.trim() ? 'bookmarks.emptyTitle' : 'catalog.emptyTitle'
-				)}
-				description={translate(
-					lang,
-					savedOnly && !filters.query.trim() ? 'bookmarks.emptyDesc' : 'catalog.emptyDesc'
-				)}
-				actionHref={savedOnly && !filters.query.trim() ? '/exercises' : undefined}
-				actionLabel={
-					savedOnly && !filters.query.trim()
+	{:else}
+		<EmptyState
+			class={emptyStateClass}
+			centered={savedOnly}
+			icon={savedOnly && !filters.query.trim() ? Bookmark : null}
+			title={translate(
+				lang,
+				savedOnly && !filters.query.trim() ? 'bookmarks.emptyTitle' : 'catalog.emptyTitle'
+			)}
+			description={translate(
+				lang,
+				savedOnly && !filters.query.trim() ? 'bookmarks.emptyDesc' : 'catalog.emptyDesc'
+			)}
+			actionHref={savedOnly && !filters.query.trim() ? '/exercises' : undefined}
+			actionLabel={
+				showCreateCta
+					? translate(lang, 'custom.createNamed', { name: filters.query.trim() })
+					: savedOnly && !filters.query.trim()
 						? translate(lang, 'bookmarks.browse')
 						: filtersActive
 							? translate(lang, 'catalog.reset')
 							: undefined
-				}
-				actionOnclick={
-					savedOnly && !filters.query.trim()
+			}
+			actionOnclick={
+				showCreateCta
+					? () => openCreateSheet(filters.query.trim())
+					: savedOnly && !filters.query.trim()
 						? undefined
 						: filtersActive
 							? resetCatalogFilters
 							: undefined
-				}
-			/>
+			}
+		>
+			{#snippet actions()}
+				{#if filtersActive && !(savedOnly && filters.query.trim())}
+					<AppButton variant="secondary" class="mt-2 text-sm" onclick={resetCatalogFilters}>
+						{translate(lang, 'catalog.reset')}
+					</AppButton>
+				{/if}
+			{/snippet}
+		</EmptyState>
+	{/if}
+{:else if useSections}
+	<div class="catalog-sections">
+		{#if visibleCustoms.length > 0}
+			<section class="catalog-section" aria-labelledby="catalog-section-mine">
+				<h2 id="catalog-section-mine" class="catalog-section__title catalog-section__title--mine">
+					<span>{translate(lang, 'custom.section')}</span>
+					<button
+						type="button"
+						class="catalog-section-mine-add"
+						aria-label={translate(lang, 'custom.new')}
+						onclick={() => openCreateSheet()}
+					>
+						<LucideIcon icon={Plus} size={ICON_SMALL} />
+					</button>
+				</h2>
+				<div class={listClass}>
+					{#each visibleCustoms as exercise (exercise.id)}
+						<ExerciseCard
+							{exercise}
+							priority={false}
+							variant={cardVariant}
+							{detailFrom}
+							onDelete={requestDeleteCustom}
+						/>
+					{/each}
+				</div>
+			</section>
 		{/if}
-	{:else if useSections}
-		<div class="catalog-sections">
 			{#if frequentItems.length > 0}
 				<section class="catalog-section" aria-labelledby="catalog-section-frequent">
 					<h2 id="catalog-section-frequent" class="catalog-section__title">
@@ -888,7 +1014,13 @@
 	{:else}
 		<div class={listClass}>
 			{#each shownFlat as exercise, i (exercise.id)}
-				<ExerciseCard {exercise} priority={i < 4} variant={cardVariant} {detailFrom} />
+				<ExerciseCard
+					{exercise}
+					priority={i < 4}
+					variant={cardVariant}
+					{detailFrom}
+					onDelete={isCustomExerciseId(exercise.id) ? requestDeleteCustom : null}
+				/>
 			{/each}
 		</div>
 		{#if hasMore}
@@ -900,6 +1032,15 @@
 		{/if}
 	{/if}
 {/if}
+	<CustomExerciseSheet
+		bind:open={customSheetOpen}
+		initialName={customSheetName}
+		existing={customs}
+		onCreate={createCustom}
+		onDismiss={() => {
+			blurActiveElement();
+		}}
+	/>
 	</div>
 </div>
 {/if}

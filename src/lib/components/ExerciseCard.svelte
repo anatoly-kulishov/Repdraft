@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
+	import { isCustomExerciseId } from '$lib/domain/customExercises';
+	import { labelBodyPart, labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { translate } from '$lib/i18n/messages';
 	import { draft } from '$lib/stores/draft';
 	import { bookmarks } from '$lib/stores/bookmarks';
@@ -24,14 +25,15 @@
 		armedExerciseMediaVtId,
 		exerciseMediaViewTransitionName
 	} from '$lib/dom/exerciseMediaViewTransition';
-	import { Bookmark, Check, Dumbbell, Film, Plus, StickyNote, Target } from '@lucide/svelte';
+	import { Bookmark, Check, Dumbbell, Film, Plus, StickyNote, Target, Trash2 } from '@lucide/svelte';
 
 	let {
 		exercise,
 		recordChips = [],
 		priority = false,
 		variant = 'grid',
-		detailFrom = null as string | null
+		detailFrom = null as string | null,
+		onDelete = null as ((id: string) => void) | null
 	}: {
 		exercise: ExerciseIndexItem;
 		recordChips?: string[];
@@ -40,10 +42,18 @@
 		variant?: 'grid' | 'list';
 		/** Catalog return path for exercise detail back link. */
 		detailFrom?: string | null;
+		/** Provided only in the «Мои упражнения» list: trash instead of bookmark. */
+		onDelete?: ((id: string) => void) | null;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
+	let isCustom = $derived(isCustomExerciseId(exercise.id));
 	let title = $derived(exerciseName(exercise, lang));
+	let targetLabel = $derived(
+		exercise.target.trim()
+			? labelTarget(exercise.target, lang)
+			: labelBodyPart(exercise.body_part, lang)
+	);
 	let mediaVtName = $derived(
 		$armedExerciseMediaVtId === exercise.id
 			? exerciseMediaViewTransitionName(exercise.id)
@@ -90,7 +100,9 @@
 		loaded = true;
 	}
 
-	function exerciseHref(id: string): string {
+	function exerciseHref(id: string): string | null {
+		/** Local exercises have no SSR detail page — card stays inert-linked. */
+		if (isCustomExerciseId(id)) return null;
 		if (!detailFrom) return `/exercise/${id}`;
 		return linkWithFrom(`/exercise/${id}`, detailFrom);
 	}
@@ -161,29 +173,46 @@
 </script>
 
 {#snippet bookmarkButton(inline: boolean)}
-	<AppIconButton
-		class={cn(
-			'exercise-card-bookmark p-0 !min-h-0 !min-w-0 size-auto',
-			inline ? 'exercise-card-bookmark--inline' : '',
-			bookmarked && 'is-active'
-		)}
-		onclick={toggleBookmark}
-		disabled={bookmarkBusy}
-		aria-busy={bookmarkBusy}
-		aria-label={translate(lang, bookmarked ? 'bookmarks.remove' : 'bookmarks.add')}
-		aria-pressed={bookmarked}
-	>
-		{#if bookmarkBusy}
-			<Spinner size="sm" block={false} />
-		{:else}
-			<LucideIcon
-				icon={Bookmark}
-				size={ICON_SMALL}
-				class="exercise-card-bookmark-icon"
-				fill={bookmarked ? 'currentColor' : 'none'}
-			/>
-		{/if}
-	</AppIconButton>
+	{#if isCustom && onDelete}
+		<AppIconButton
+			class="exercise-card-bookmark exercise-card-bookmark--delete p-0 !min-h-0 !min-w-0 size-auto"
+			onclick={(event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				onDelete(exercise.id);
+				const target = event.currentTarget;
+				if (target instanceof HTMLElement) target.blur();
+				else blurActiveElement();
+			}}
+			aria-label={translate(lang, 'custom.deleteAria')}
+		>
+			<LucideIcon icon={Trash2} size={ICON_SMALL} class="exercise-card-bookmark-icon" />
+		</AppIconButton>
+	{:else if !isCustom}
+		<AppIconButton
+			class={cn(
+				'exercise-card-bookmark p-0 !min-h-0 !min-w-0 size-auto',
+				inline ? 'exercise-card-bookmark--inline' : '',
+				bookmarked && 'is-active'
+			)}
+			onclick={toggleBookmark}
+			disabled={bookmarkBusy}
+			aria-busy={bookmarkBusy}
+			aria-label={translate(lang, bookmarked ? 'bookmarks.remove' : 'bookmarks.add')}
+			aria-pressed={bookmarked}
+		>
+			{#if bookmarkBusy}
+				<Spinner size="sm" block={false} />
+			{:else}
+				<LucideIcon
+					icon={Bookmark}
+					size={ICON_SMALL}
+					class="exercise-card-bookmark-icon"
+					fill={bookmarked ? 'currentColor' : 'none'}
+				/>
+			{/if}
+		</AppIconButton>
+	{/if}
 {/snippet}
 
 {#snippet noteBadge(placement: 'list' | 'grid')}
@@ -284,14 +313,17 @@
 				aria-label={title}
 			>
 				<span class="exercise-card-list-title font-semibold leading-snug text-[var(--color-ink)]">
+					{#if isCustom}
+						<span class="exercise-card-custom-badge">{translate(lang, 'custom.badge')}</span>
+					{/if}
 					<ExpandableText text={title} lines={2} class="exercise-card-list-title__text" />
 				</span>
 				{#if recordChips.length > 0}
 					<span
 						class="exercise-card-list-meta-stack"
-						title={`${labelTarget(exercise.target, lang)} · ${recordTitle}`}
+						title={`${targetLabel} · ${recordTitle}`}
 					>
-						<span class="exercise-card-list-target">{labelTarget(exercise.target, lang)}</span>
+						<span class="exercise-card-list-target">{targetLabel}</span>
 						<span class="exercise-card-list-records" aria-label={recordTitle}>
 							{#each recordChips as chip, i (chip)}
 								<span
@@ -304,8 +336,8 @@
 						</span>
 					</span>
 				{:else}
-					<span class="exercise-card-list-subline" title={labelTarget(exercise.target, lang)}>
-						<span class="exercise-card-list-target">{labelTarget(exercise.target, lang)}</span>
+					<span class="exercise-card-list-subline" title={targetLabel}>
+						<span class="exercise-card-list-target">{targetLabel}</span>
 					</span>
 				{/if}
 			</a>
@@ -363,12 +395,15 @@
 			onpointerdown={armMediaVt}
 		>
 			<h2 class="exercise-card-grid-title text-[13px] font-semibold leading-snug">
+				{#if isCustom}
+					<span class="exercise-card-custom-badge">{translate(lang, 'custom.badge')}</span>
+				{/if}
 				<ExpandableText text={title} lines={2} as="span" class="exercise-card-grid-title__text" />
 			</h2>
 			<div class="exercise-card-grid-meta">
-				<span class="exercise-card-grid-meta-item" title={labelTarget(exercise.target, lang)}>
+				<span class="exercise-card-grid-meta-item" title={targetLabel}>
 					<LucideIcon icon={Target} size={12} class="exercise-card-grid-meta-icon" />
-					<span class="truncate">{labelTarget(exercise.target, lang)}</span>
+					<span class="truncate">{targetLabel}</span>
 				</span>
 				<span
 					class="exercise-card-grid-meta-item exercise-card-grid-meta-item--equipment"

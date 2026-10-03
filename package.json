@@ -1,7 +1,7 @@
 {
 	"name": "repdraft",
 	"private": true,
-	"version": "0.19.0",
+	"version": "0.19.1",
 	"description": "Gym workout log, exercise catalog, and workout builder - mobile-first PWA",
 	"type": "module",
 	"scripts": {
@@ -24,6 +24,7 @@
 		"check:workout": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/workout.selfcheck.ts",
 		"check:session": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/session.selfcheck.ts",
 		"check:records": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/records.selfcheck.ts",
+		"check:custom": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/customExercises.selfcheck.ts",
 		"check:clips": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/clips.selfcheck.ts",
 		"check:input": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/inputLimits.selfcheck.ts",
 		"check:auth": "node --import ./scripts/register-domain-selfcheck.mjs --experimental-strip-types ./src/lib/domain/authFlow.selfcheck.ts",
@@ -36,6 +37,7 @@
 		"e2e:chaos": "node ./scripts/e2e-chaos-stress.mjs",
 		"gen:stress-backup": "node ./scripts/gen-stress-backup.mjs",
 		"test:e2e": "playwright test",
+		"test:e2e:custom": "playwright test tests/e2e/custom-exercise.spec.ts --project=mobile-dark",
 		"test:e2e:history": "playwright test tests/e2e/history-detail.spec.ts --project=mobile-dark",
 		"test:e2e:guards": "playwright test tests/e2e/release-guards.spec.ts tests/e2e/builder-ladder.spec.ts",
 		"test:e2e:update": "playwright test --update-snapshots",

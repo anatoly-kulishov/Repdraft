@@ -742,6 +742,42 @@ export function sessionVolumeKg(session: WorkoutSession): number {
 	return total;
 }
 
+/** Heaviest logged weight in one exercise block (completed sets). */
+export function exerciseLogTopWeight(sets: { weightKg: number | null }[]): number | null {
+	let top: number | null = null;
+	for (const s of sets) {
+		if (s.weightKg == null) continue;
+		if (top === null || s.weightKg > top) top = s.weightKg;
+	}
+	return top;
+}
+
+/** Top-weight delta vs previous session of the same exercise; null when either lacks weight. */
+export function exerciseLogWeightDelta(
+	current: { sets: { weightKg: number | null }[] },
+	previous: { sets: { weightKg: number | null }[] }
+): number | null {
+	const a = exerciseLogTopWeight(current.sets);
+	const b = exerciseLogTopWeight(previous.sets);
+	if (a === null || b === null) return null;
+	return Math.round((a - b) * 4) / 4;
+}
+
+/** Latest finished session of the same plan strictly before `session` (summary tonnage delta). */
+export function previousPlanSession(
+	sessions: WorkoutSession[],
+	session: WorkoutSession
+): WorkoutSession | null {
+	if (!session.planId || !session.finishedAt) return null;
+	let best: WorkoutSession | null = null;
+	for (const s of sessions) {
+		if (s.id === session.id || s.planId !== session.planId) continue;
+		if (!s.finishedAt || s.finishedAt >= session.finishedAt) continue;
+		if (!best || (best.finishedAt ?? '') < s.finishedAt) best = s;
+	}
+	return best;
+}
+
 /** True when every visible set is logged — ready to finish the session. */
 export function isSessionFullyLogged(session: WorkoutSession): boolean {
 	const visible = visibleSessionExerciseIndices(session);
@@ -1216,5 +1252,51 @@ export function runSessionSelfCheck(): void {
 	}
 	if (nextSetKind('drop') !== 'failure') {
 		throw new Error('nextSetKind should include failure after drop');
+	}
+	const deltaOld: WorkoutSession = {
+		id: 'd1',
+		planId: 'dp',
+		planName: 'P',
+		startedAt: '2026-01-01T10:00:00.000Z',
+		finishedAt: '2026-01-01T11:00:00.000Z',
+		exercises: [
+			{
+				exerciseId: 'e1',
+				targetSets: 1,
+				targetReps: 8,
+				restSec: 60,
+				sets: [{ weightKg: 80, reps: 8, completed: true }]
+			}
+		]
+	};
+	const deltaNew: WorkoutSession = {
+		...deltaOld,
+		id: 'd2',
+		startedAt: '2026-01-03T10:00:00.000Z',
+		finishedAt: '2026-01-03T11:00:00.000Z',
+		exercises: [
+			{
+				exerciseId: 'e1',
+				targetSets: 1,
+				targetReps: 8,
+				restSec: 60,
+				sets: [
+					{ weightKg: 82.5, reps: 8, completed: true },
+					{ weightKg: 40, reps: 10, completed: true }
+				]
+			}
+		]
+	};
+	if (exerciseLogWeightDelta(deltaNew.exercises[0]!, deltaOld.exercises[0]!) !== 2.5) {
+		throw new Error('exerciseLogWeightDelta should diff top weights');
+	}
+	if (exerciseLogWeightDelta({ sets: [{ weightKg: null }] }, deltaOld.exercises[0]!) !== null) {
+		throw new Error('exerciseLogWeightDelta should stay null without weight');
+	}
+	if (previousPlanSession([deltaOld, deltaNew], deltaNew)?.id !== 'd1') {
+		throw new Error('previousPlanSession should find the older same-plan session');
+	}
+	if (previousPlanSession([deltaNew], deltaNew) !== null) {
+		throw new Error('previousPlanSession should exclude self');
 	}
 }

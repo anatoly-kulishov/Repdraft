@@ -2,6 +2,12 @@ import { mergePersonalRecords } from './records';
 import { mergeWorkoutSessions } from './session';
 import type { PersonalRecord, WorkoutPlan, WorkoutSession } from './types';
 import { mergeWorkoutPlans } from './workout';
+import {
+	isCustomExerciseId,
+	mergeCustomExercises,
+	parseStoredCustomExercises,
+	type CustomExercise
+} from './customExercises';
 
 export const EXPORT_VERSION = 1 as const;
 
@@ -11,6 +17,8 @@ export type RepdraftExportPayload = {
 	plans: WorkoutPlan[];
 	sessions: WorkoutSession[];
 	records: PersonalRecord[];
+	/** Additive optional field — backups without it stay version 1. */
+	customExercises?: CustomExercise[];
 };
 
 export type ParseExportResult =
@@ -21,14 +29,16 @@ export function buildExportPayload(
 	plans: WorkoutPlan[],
 	sessions: WorkoutSession[],
 	records: PersonalRecord[],
-	exportedAt = new Date().toISOString()
+	exportedAt = new Date().toISOString(),
+	customs: CustomExercise[] = []
 ): RepdraftExportPayload {
 	return {
 		version: EXPORT_VERSION,
 		exportedAt,
 		plans,
 		sessions,
-		records
+		records,
+		...(customs.length > 0 ? { customExercises: customs } : {})
 	};
 }
 
@@ -89,6 +99,14 @@ function isPersonalRecord(value: unknown): value is PersonalRecord {
 	return true;
 }
 
+function isCustomExercise(value: unknown): value is CustomExercise {
+	if (!isPlainObject(value)) return false;
+	if (typeof value.id !== 'string' || !isCustomExerciseId(value.id)) return false;
+	if (typeof value.name !== 'string' || !value.name.trim()) return false;
+	if (typeof value.bodyPart !== 'string' || typeof value.equipment !== 'string') return false;
+	return typeof value.createdAt === 'string';
+}
+
 /** Parse a Repdraft JSON backup written by `exportPayloadToJson`. */
 export function parseExportJson(raw: string): ParseExportResult {
 	let parsed: unknown;
@@ -110,6 +128,11 @@ export function parseExportJson(raw: string): ParseExportResult {
 	if (!Array.isArray(parsed.records) || !parsed.records.every(isPersonalRecord)) {
 		return { ok: false, reason: 'invalidShape' };
 	}
+	if (parsed.customExercises !== undefined) {
+		if (!Array.isArray(parsed.customExercises) || !parsed.customExercises.every(isCustomExercise)) {
+			return { ok: false, reason: 'invalidShape' };
+		}
+	}
 	return {
 		ok: true,
 		payload: {
@@ -117,7 +140,10 @@ export function parseExportJson(raw: string): ParseExportResult {
 			exportedAt: parsed.exportedAt,
 			plans: parsed.plans,
 			sessions: parsed.sessions,
-			records: parsed.records
+			records: parsed.records,
+			...(parsed.customExercises !== undefined
+				? { customExercises: parseStoredCustomExercises(parsed.customExercises) }
+				: {})
 		}
 	};
 }
@@ -126,6 +152,7 @@ export type LocalDataBundle = {
 	plans: WorkoutPlan[];
 	sessions: WorkoutSession[];
 	records: PersonalRecord[];
+	customs?: CustomExercise[];
 };
 
 /** Merge backup into current local data (backup wins on same id when timestamps are newer/equal). */
@@ -136,7 +163,8 @@ export function mergeLocalWithImport(
 	return {
 		plans: mergeWorkoutPlans(current.plans, imported.plans),
 		sessions: mergeWorkoutSessions(current.sessions, imported.sessions),
-		records: mergePersonalRecords(current.records, imported.records)
+		records: mergePersonalRecords(current.records, imported.records),
+		customs: mergeCustomExercises(current.customs ?? [], imported.customExercises ?? [])
 	};
 }
 
@@ -204,6 +232,37 @@ export function runExportDataSelfCheck(): void {
 	);
 	if (merged.plans.length !== 1 || merged.sessions.length !== 1 || merged.records.length !== 1) {
 		throw new Error('mergeLocalWithImport empty→payload failed');
+	}
+	const customs: CustomExercise[] = [
+		{
+			id: 'custom-abc',
+			name: 'Гоголь-жим',
+			bodyPart: 'shoulders',
+			equipment: 'dumbbell',
+			createdAt: '2026-08-01T00:00:00.000Z'
+		}
+	];
+	const withCustoms = buildExportPayload(plans, sessions, records, '2026-08-15T12:00:00.000Z', customs);
+	if (!JSON.stringify(withCustoms).includes('custom-abc')) {
+		throw new Error('buildExportPayload dropped customs');
+	}
+	const customsRound = parseExportJson(exportPayloadToJson(withCustoms));
+	if (!customsRound.ok || customsRound.payload.customExercises?.[0]?.id !== 'custom-abc') {
+		throw new Error('customExercises round-trip failed');
+	}
+	if (parseExportJson('{"version":1,"exportedAt":"x","plans":[],"sessions":[],"records":[],"customExercises":[{"id":"0001","name":"x","bodyPart":"chest","equipment":"cable","createdAt":"y"}]}').ok) {
+		throw new Error('non-custom id must fail shape check');
+	}
+	const mergedCustoms = mergeLocalWithImport(
+		{ plans: [], sessions: [], records: [], customs: [] },
+		withCustoms
+	);
+	if (mergedCustoms.customs?.length !== 1 || mergedCustoms.customs[0]?.name !== 'Гоголь-жим') {
+		throw new Error('mergeLocalWithImport customs failed');
+	}
+	const legacy = parseExportJson('{"version":1,"exportedAt":"x","plans":[],"sessions":[],"records":[]}');
+	if (!legacy.ok || legacy.payload.customExercises !== undefined) {
+		throw new Error('legacy v1 backup without customs must parse');
 	}
 	if (exportStamp('2026-08-15T12:34:56.789Z') !== '2026-08-15T12-34-56') {
 		throw new Error('exportStamp failed');

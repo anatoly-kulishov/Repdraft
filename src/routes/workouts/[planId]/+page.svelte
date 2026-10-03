@@ -5,9 +5,10 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_PRIMARY } from '$lib/components/icons/sizes';
-	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
+	import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
+	import { isCustomExerciseId } from '$lib/domain/customExercises';
+	import { exerciseMetaHint } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
 	import { altGroupMemberRole, formatExercisePrescription, formatLadderLabel, groupMemberRole, hasLadderScheme, planExerciseSlotCount, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
@@ -28,7 +29,7 @@
 
 	let { params } = $props();
 
-	const peekedIndex = peekExerciseIndex();
+	const peekedIndex = peekExerciseIndexWithCustoms();
 
 	let lang = $derived($resolvedLocale);
 	let showPreviewStartCoachmark = $derived(shouldShowCoachmark($onboarding, 'preview.start'));
@@ -82,7 +83,7 @@
 				return;
 			}
 			try {
-				const [found, index] = await Promise.all([plans.getPlan(id), loadExerciseIndex()]);
+				const [found, index] = await Promise.all([plans.getPlan(id), loadExerciseIndexWithCustoms()]);
 				indexById = new Map(index.map((item) => [item.id, item]));
 				if (!found || found.exercises.length === 0) {
 					missing = true;
@@ -198,30 +199,49 @@
 					{/if}
 					{#if meta}
 						{@const title = exerciseName(meta, lang)}
-						{@const detailHref = `/exercise/${meta.id}?from=${encodeURIComponent(fromPath)}`}
+						{@const isCustomMeta = isCustomExerciseId(meta.id)}
+						{@const detailHref = isCustomMeta
+							? undefined
+							: `/exercise/${meta.id}?from=${encodeURIComponent(fromPath)}`}
 						<div class="workout-preview-row">
-							<AppButton
-								variant="ghost"
-								class="workout-preview-thumb-btn media-well workout-preview-thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
-								aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
-								onclick={() => {
-									technique = {
-										id: meta.id,
-										title,
-										hint: labelTarget(meta.target, lang),
-										image: meta.image
-									};
-								}}
-							>
-								<img
-									src={`/${meta.image}`}
-									alt=""
-									width="120"
-									height="120"
-									loading="lazy"
-									decoding="async"
-								/>
-							</AppButton>
+							{#if isCustomMeta}
+								<div
+									class="workout-preview-thumb-btn media-well workout-preview-thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+									aria-hidden="true"
+								>
+									<img
+										src={`/${meta.image}`}
+										alt=""
+										width="120"
+										height="120"
+										loading="lazy"
+										decoding="async"
+									/>
+								</div>
+							{:else}
+								<AppButton
+									variant="ghost"
+									class="workout-preview-thumb-btn media-well workout-preview-thumb !h-auto !min-h-[48px] !min-w-[48px] !p-0"
+									aria-label={translate(lang, 'exercise.openTechnique', { name: title })}
+									onclick={() => {
+										technique = {
+											id: meta.id,
+											title,
+											hint: exerciseMetaHint(meta, lang),
+											image: meta.image
+										};
+									}}
+								>
+									<img
+										src={`/${meta.image}`}
+										alt=""
+										width="120"
+										height="120"
+										loading="lazy"
+										decoding="async"
+									/>
+								</AppButton>
+							{/if}
 							<a class="workout-preview-row-main" href={detailHref}>
 								<div class="workout-preview-row-body">
 									<p class="workout-preview-row-title">{title}</p>
@@ -243,12 +263,14 @@
 											{item.reps} {translate(lang, 'builder.reps').toLowerCase()}
 										{/if}
 										<span class="workout-preview-row-dot" aria-hidden="true">·</span>
-										{labelTarget(meta.target, lang)} · {labelEquipment(meta.equipment, lang)}
+										{exerciseMetaHint(meta, lang)}
 									</p>
 								</div>
-								<span class="workout-preview-chevron" aria-hidden="true">
-									<LucideIcon icon={ChevronRight} size={ICON_BUTTON} />
-								</span>
+								{#if !isCustomMeta}
+									<span class="workout-preview-chevron" aria-hidden="true">
+										<LucideIcon icon={ChevronRight} size={ICON_BUTTON} />
+									</span>
+								{/if}
 							</a>
 						</div>
 					{:else}

@@ -22,7 +22,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { ArrowLeft, ClipboardList, Clock, Flag, Plus, Trash2 } from '@lucide/svelte';
-	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
+	import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { peekLocalPlanCount, syncPreviewExerciseRowsPeek } from '$lib/storage/localWorkoutRepository';
 	import { peekLocalHistoryCount } from '$lib/storage/localSessionRepository';
 	import type { WorkoutsSkeletonVariant } from '$lib/components/WorkoutsPageSkeleton.svelte';
@@ -90,7 +90,7 @@
 	let searchQuery = $state('');
 	let plansVisibleLimit = $state(PLANS_PAGE_SIZE);
 	let plansLoadMoreSentinel = $state<HTMLElement | null>(null);
-	const peeked = peekExerciseIndex();
+	const peeked = peekExerciseIndexWithCustoms();
 	let indexById = $state<Map<string, ExerciseIndexItem>>(
 		peeked ? new Map(peeked.map((item) => [item.id, item])) : new Map()
 	);
@@ -467,7 +467,7 @@
 		};
 		document.addEventListener('repdraft:plan-reorder', onReorder);
 
-		void loadExerciseIndex()
+		void loadExerciseIndexWithCustoms()
 			.then((items) => {
 				indexById = new Map(items.map((item) => [item.id, item]));
 			})

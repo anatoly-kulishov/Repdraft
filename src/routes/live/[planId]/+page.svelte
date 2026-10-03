@@ -11,7 +11,7 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL, ICON_BUTTON } from '$lib/components/icons/sizes';
-	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
+	import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import {
 		altGroupNeedsPick,
@@ -72,7 +72,7 @@
 
 	$effect.pre(() => {
 		if (!liveSessionMatchesPlan(params.planId)) return;
-		const cached = peekExerciseIndex();
+		const cached = peekExerciseIndexWithCustoms();
 		if (!cached) return;
 		names = new Map(cached.map((ex) => [ex.id, ex]));
 		loading = false;
@@ -222,7 +222,7 @@
 
 			let index: ExerciseIndexItem[] = [];
 			try {
-				index = await loadExerciseIndex();
+				index = await loadExerciseIndexWithCustoms();
 			} catch {
 				index = [];
 			}

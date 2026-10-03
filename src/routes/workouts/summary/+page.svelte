@@ -11,10 +11,11 @@
 		completedExerciseCount,
 		completedSetCount,
 		sessionDurationMs,
-		sessionVolumeKg
+		sessionVolumeKg,
+		previousPlanSession
 	} from '$lib/domain/session';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import type { ExerciseIndexItem, LoggedSet, WorkoutSession } from '$lib/domain/types';
 	import { formatDurationMs } from '$lib/i18n/format';
 	import { translate } from '$lib/i18n/messages';
@@ -75,6 +76,13 @@
 	);
 
 	let volumeKg = $derived(session ? sessionVolumeKg(session) : 0);
+	/** Tons vs the previous finished run of the same plan — text only, no charts. */
+	let volumeDeltaKg = $derived.by(() => {
+		if (!session || volumeKg <= 0) return null;
+		const prev = previousPlanSession($live.history, session);
+		if (!prev) return null;
+		return Math.round(volumeKg - sessionVolumeKg(prev));
+	});
 	let summarySessionId = $derived(readSearchParam($page.url, 'id') ?? '');
 	let skeletonGuestHint = $derived(!$auth.user);
 
@@ -120,7 +128,7 @@
 			if (peeked?.finishedAt) session = peeked;
 			const [found, index] = await Promise.all([
 				session ? Promise.resolve(session) : live.getFinishedSession(id),
-				loadExerciseIndex()
+				loadExerciseIndexWithCustoms()
 			]);
 			if (!found) missing = true;
 			else {
@@ -131,6 +139,7 @@
 				}
 			}
 			indexById = new Map(index.map((ex) => [ex.id, ex]));
+			void live.refreshHistory();
 			loading = false;
 		})();
 	});
@@ -202,6 +211,18 @@
 					<dd class="summary-stat__value tabular-nums">
 						{Math.round(volumeKg)} {translate(lang, 'pr.kg')}
 					</dd>
+					{#if volumeDeltaKg != null && volumeDeltaKg !== 0}
+						<dd
+							class="summary-stat__delta tabular-nums"
+							class:is-down={volumeDeltaKg < 0}
+						>
+							{translate(
+								lang,
+								volumeDeltaKg > 0 ? 'summary.volumeUp' : 'summary.volumeDown',
+								{ delta: Math.abs(volumeDeltaKg) }
+							)}
+						</dd>
+					{/if}
 				</div>
 			{/if}
 		</dl>

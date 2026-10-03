@@ -126,3 +126,16 @@ export function labelEquipment(value: string, locale: AppLocale = 'ru'): string 
 	if (locale === 'en') return titleCaseEn(key);
 	return EQUIPMENT_LABELS[key] ?? value;
 }
+
+/** Meta line for any id-resolved exercise; local exercises (no target) fall back to body part. */
+export function exerciseMetaHint(
+	item: Pick<import('./types').ExerciseIndexItem, 'target' | 'body_part' | 'equipment'>,
+	locale: AppLocale = 'ru'
+): string {
+	const target = item.target.trim()
+		? labelTarget(item.target, locale)
+		: labelBodyPart(item.body_part, locale);
+	const equipment = item.equipment.trim() ? labelEquipment(item.equipment, locale) : '';
+	if (target && equipment) return `${target} · ${equipment}`;
+	return target || equipment;
+}

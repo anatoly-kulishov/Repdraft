@@ -11,7 +11,8 @@
 	import { blurActiveElement } from '$lib/dom/blurActiveElement';
 	import { scrollFieldIntoView } from '$lib/dom/scrollFieldIntoView';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
+	import { isCustomExerciseId } from '$lib/domain/customExercises';
+	import { exerciseMetaHint } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, SessionExercise, SetKind, WorkoutSession } from '$lib/domain/types';
 	import { NOTE_MAX, REPS_INPUT_MAX_LEN, WEIGHT_INPUT_MAX_LEN, clampNote } from '$lib/domain/inputLimits';
 	import { isBodyweightEquipment, isCardioBodyPart } from '$lib/domain/workout';
@@ -131,7 +132,7 @@
 	function metaFor(id: string): string | null {
 		const item = names.get(id);
 		if (!item) return null;
-		return `${labelTarget(item.target, lang)} · ${labelEquipment(item.equipment, lang)}`;
+		return exerciseMetaHint(item, lang) || null;
 	}
 
 	function formatLast(exerciseId: string): string | null {
@@ -268,6 +269,8 @@
 			: translate(lang, 'live.reps')
 	);
 	let exerciseMeta = $derived(names.get(exercise.exerciseId) ?? null);
+	/** Local exercise: no technique sheet content — hero stays static. */
+	let isCustom = $derived(isCustomExerciseId(exercise.exerciseId));
 	let title = $derived(titleFor(exercise.exerciseId));
 	let lastFormatted = $derived(formatLast(exercise.exerciseId));
 	let showLastChip = $derived(
@@ -320,7 +323,7 @@
 
 		<!-- Hybrid Live: technique hero first, then set status (table stays below). -->
 		<div class="live-panel-head">
-			{#if exerciseMeta}
+			{#if exerciseMeta && !isCustom}
 				<AppButton
 					variant="ghost"
 					class="live-panel-thumb media-well !min-w-0 w-auto !p-0"
@@ -329,11 +332,15 @@
 				>
 					<img src={`/${exerciseMeta.image}`} alt="" width="96" height="96" decoding="async" />
 				</AppButton>
+			{:else if exerciseMeta}
+				<div class="live-panel-thumb media-well !min-w-0 w-auto !p-0" aria-hidden="true">
+					<img src={`/${exerciseMeta.image}`} alt="" width="96" height="96" decoding="async" />
+				</div>
 			{:else}
 				<div class="live-panel-thumb live-panel-thumb--placeholder media-well" aria-hidden="true"></div>
 			{/if}
 			<div class="live-panel-head__copy">
-				{#if exerciseMeta}
+				{#if exerciseMeta && !isCustom}
 					<button
 						type="button"
 						class="live-panel-title live-panel-title--tap"
@@ -617,7 +624,7 @@
 		open={techniqueOpen}
 		titleId={`live-technique-${exercise.exerciseId}`}
 		{title}
-		hint={labelTarget(exerciseMeta.target, lang)}
+		hint={exerciseMetaHint(exerciseMeta, lang)}
 		imagePath={exerciseMeta.image}
 		onDismiss={closeOverlay}
 	/>

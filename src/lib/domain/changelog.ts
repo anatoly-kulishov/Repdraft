@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.19.1',
+		highlights: {
+			ru: [
+				'Свои упражнения: создавайте движения которых нет в каталоге — они сохраняются локально и доступны в любом плане',
+				'В истории упражнения: прибавка или потеря веса относительно предыдущей сессии',
+				'На экране результата: тоннаж vs предыдущая тренировка этого же плана',
+				'Свои упражнения входят в резервную копию (экспорт / импорт)'
+			],
+			en: [
+				'Custom exercises: create movements not in the catalog — saved locally, work in any plan',
+				'Exercise history: weight delta vs previous session',
+				'Summary screen: tonnage vs previous workout of the same plan',
+				'Custom exercises are included in data backups (export / import)'
+			]
+		}
+	},
+	{
 		version: '0.19.0',
 		highlights: {
 			ru: [
