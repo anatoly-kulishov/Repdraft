@@ -20,13 +20,15 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 				'Свои упражнения: создавайте движения которых нет в каталоге — они сохраняются локально и доступны в любом плане',
 				'В истории упражнения: прибавка или потеря веса относительно предыдущей сессии',
 				'На экране результата: тоннаж vs предыдущая тренировка этого же плана',
-				'Свои упражнения входят в резервную копию (экспорт / импорт)'
+				'Свои упражнения входят в резервную копию (экспорт / импорт)',
+				'Страница упражнения стала намного легче — быстрее открывается на старых телефонах и слабой сети'
 			],
 			en: [
 				'Custom exercises: create movements not in the catalog — saved locally, work in any plan',
 				'Exercise history: weight delta vs previous session',
 				'Summary screen: tonnage vs previous workout of the same plan',
-				'Custom exercises are included in data backups (export / import)'
+				'Custom exercises are included in data backups (export / import)',
+				'Exercise pages are now much lighter — faster on older phones and weak connections'
 			]
 		}
 	},
