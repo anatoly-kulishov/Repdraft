@@ -68,7 +68,7 @@
 			]
 		},
 		{
-			"source": "/favicon-(16x16|32x32|48x48)\\.png",
+			"source": "/favicon-(16x16|32x32|48x48|120x120)\\.png",
 			"headers": [
 				{
 					"key": "Cache-Control",
