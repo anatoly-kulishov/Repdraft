@@ -29,7 +29,13 @@ test('robots.txt disallows app routes and points at sitemap', async ({ request }
 });
 
 test('favicon.ico and sized PNG icons are reachable', async ({ request }) => {
-	for (const path of ['/favicon.ico', '/favicon-16x16.png', '/favicon-32x32.png', '/favicon-48x48.png'] as const) {
+	for (const path of [
+		'/favicon.ico',
+		'/favicon-16x16.png',
+		'/favicon-32x32.png',
+		'/favicon-48x48.png',
+		'/favicon-120x120.png'
+	] as const) {
 		const res = await request.get(path);
 		expect(res.ok(), path).toBeTruthy();
 		const ctype = (res.headers()['content-type'] ?? '').toLowerCase();
@@ -41,6 +47,22 @@ test('favicon.ico and sized PNG icons are reachable', async ({ request }) => {
 			expect(ctype).toMatch(/image\/png/);
 		}
 	}
+});
+
+test('homepage head points search favicons at absolute www host', async ({ page }) => {
+	await gotoReady(page, '/');
+	const icons = page.locator('link[rel="icon"], link[rel="shortcut icon"]');
+	const hrefs = await icons.evaluateAll((els) =>
+		els.map((el) => el.getAttribute('href') ?? '').filter(Boolean)
+	);
+	expect(hrefs.some((h) => h.includes('https://www.repdraft.xyz/favicon.ico'))).toBeTruthy();
+	expect(hrefs.some((h) => h.includes('https://www.repdraft.xyz/favicon-120x120.png'))).toBeTruthy();
+	expect(hrefs.some((h) => h.includes('https://www.repdraft.xyz/favicon-48x48.png'))).toBeTruthy();
+	/* SVG must not be the only searchable icon; keep it after raster for browsers. */
+	const svgIdx = hrefs.findIndex((h) => h.includes('icon.svg'));
+	const icoIdx = hrefs.findIndex((h) => h.includes('favicon.ico'));
+	expect(icoIdx).toBeGreaterThanOrEqual(0);
+	if (svgIdx >= 0) expect(svgIdx).toBeGreaterThan(icoIdx);
 });
 
 test('sitemap.xml includes legal and hub paths', async ({ request }) => {
