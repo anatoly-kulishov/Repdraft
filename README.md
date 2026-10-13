@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>LOG. SET. CONQUER.</strong><br />
-  Gym workout log, exercise catalog, and workout builder - built for the phone in your hand at the gym.
+  Gym workout log, exercise catalog, and workout builder — built for the phone in your hand at the gym.
 </p>
 
 <p align="center">
@@ -17,21 +17,48 @@
   <a href="#quick-start">Quick start</a>
   ·
   <a href="#stack">Stack</a>
+  ·
+  <a href="#faq">FAQ</a>
 </p>
 
 <p align="center">
+  <a href="https://www.repdraft.xyz"><img alt="Live" src="https://img.shields.io/badge/live-repdraft.xyz-0B0F14?style=flat-square" /></a>
   <img alt="Version" src="https://img.shields.io/badge/version-0.18.1-0B0F14?style=flat-square" />
   <img alt="SvelteKit" src="https://img.shields.io/badge/SvelteKit-5-FF3E00?style=flat-square&logo=svelte&logoColor=white" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white" />
   <img alt="PWA" src="https://img.shields.io/badge/PWA-ready-111111?style=flat-square" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-111111?style=flat-square" />
+  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-optional-3FCF8E?style=flat-square&logo=supabase&logoColor=white" />
 </p>
 
 ---
 
-**Repdraft** is a mobile-first **gym workout tracker**: browse an **exercise catalog with GIFs**, build **workout plans**, log **sets (weight × reps)** during a live session, and keep **personal records** - online with Supabase or fully offline in the browser / PWA.
+**Repdraft** is a mobile-first **gym workout tracker** and **exercise catalog with GIFs**: build **workout plans**, log **sets (weight × reps)** in a live session, and keep **personal records** — online with Supabase or fully offline in the browser / installable PWA.
 
-> North star: make the sacred loop faster - open → pick plan → train → log set → finish - not pile on features. Stays snappy on weak phones.
+> North star: make the sacred loop faster — open → pick plan → train → log set → finish — not pile on features. Stays snappy on weak phones.
+
+**Keywords:** gym workout tracker, workout log, exercise catalog, gym GIF, workout builder, PWA fitness app, offline-first workout, Supabase fitness, SvelteKit gym app, personal records, set tracking.
+
+---
+
+## Why Repdraft?
+
+| Without | With Repdraft |
+| :--- | :--- |
+| Notes app / spreadsheet at the rack | One-handed live session UI |
+| Catalogs without form reference | Exercise cards + technique GIFs |
+| Cloud-only apps that die offline | Local-first; sync when you want |
+| Feature-bloated trackers | Focused gym loop |
+
+```mermaid
+flowchart LR
+  Catalog[Exercise catalog] --> Builder[Workout builder]
+  Builder --> Live[Live training]
+  Live --> PR[Personal records]
+  Live --> Sync[(Local / Supabase)]
+```
+
+---
 
 ## Features
 
@@ -47,9 +74,13 @@
 | **Articles & SEO** | Guides, sitemap, robots, Open Graph for discoverability |
 | **Installable PWA** | Add to home screen; works offline-first in the browser |
 
+---
+
 ## Quick start
 
 ```bash
+git clone https://github.com/anatoly-kulishov/Repdraft.git
+cd Repdraft
 npm install
 cp .env.example .env   # Supabase keys are optional
 npm run dev
@@ -65,17 +96,21 @@ PUBLIC_SUPABASE_ANON_KEY=your_anon_or_publishable_key
 
 On production, set the same variables and add your site URL to Supabase Auth (**Site URL** / **Redirect URLs**). Keep SQL migrations and service-role keys **out of this public repo**.
 
+---
+
 ## Stack
 
 | Layer | Choice |
 | --- | --- |
-| UI | [SvelteKit](https://svelte.dev/) + TypeScript |
+| UI | [SvelteKit](https://svelte.dev/) 5 + TypeScript |
 | Styles | Tailwind CSS 4 |
 | Backend | [Supabase](https://supabase.com/) (optional auth & sync) |
 | Delivery | PWA (install to home screen) |
-| Hosting | Vercel (canonical: [www.repdraft.xyz](https://www.repdraft.xyz)) |
+| Hosting | Vercel — canonical [www.repdraft.xyz](https://www.repdraft.xyz) |
 
 Architecture and coding rules for contributors: **[AGENTS.md](./AGENTS.md)**.
+
+---
 
 ## Project map
 
@@ -88,9 +123,29 @@ src/
 static/           # exercise media, PWA icons, catalog data
 ```
 
+---
+
+## FAQ
+
+**Do I need Supabase to try it?**  
+No. Clone → `npm run dev` works offline with `localStorage`.
+
+**Is it a native iOS/Android app?**  
+It’s a **PWA** — install from the browser to the home screen. Feels app-like on phones.
+
+**Can I self-host?**  
+Yes. Deploy the SvelteKit app anywhere Node/static hosting works; point env vars at your Supabase project (or stay local-only).
+
+**Where is the live product?**  
+https://www.repdraft.xyz
+
+---
+
 ## Media license
 
 Exercise thumbnails and GIFs © [Gym visual](https://gymvisual.com/). See [NOTICE.md](./NOTICE.md). Do not reuse media outside Repdraft without Gym Visual’s permission.
+
+---
 
 ## Links
 
@@ -100,4 +155,6 @@ Exercise thumbnails and GIFs © [Gym visual](https://gymvisual.com/). See [NOTIC
 
 ---
 
-<p align="center"><sub>Built for the gym floor - not the feature backlog.</sub></p>
+<p align="center"><sub>Built for the gym floor — not the feature backlog.</sub></p>
+
+<p align="center">⭐ <a href="https://github.com/anatoly-kulishov/Repdraft">Star on GitHub</a> if Repdraft helps your training.</p>
