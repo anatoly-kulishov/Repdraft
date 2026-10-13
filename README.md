@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>LOG. SET. CONQUER.</strong><br />
-  Gym workout log, exercise catalog, and workout builder — built for the phone in your hand at the gym.
+  Gym workout log, exercise catalog, and workout builder - built for the phone in your hand at the gym.
 </p>
 
 <p align="center">
@@ -33,9 +33,9 @@
 
 ---
 
-**Repdraft** is a mobile-first **gym workout tracker** and **exercise catalog with GIFs**: build **workout plans**, log **sets (weight × reps)** in a live session, and keep **personal records** — online with Supabase or fully offline in the browser / installable PWA.
+**Repdraft** is a mobile-first **gym workout tracker** and **exercise catalog with GIFs**: build **workout plans**, log **sets (weight × reps)** in a live session, and keep **personal records** - online with Supabase or fully offline in the browser / installable PWA.
 
-> North star: make the sacred loop faster — open → pick plan → train → log set → finish — not pile on features. Stays snappy on weak phones.
+> North star: make the sacred loop faster - open → pick plan → train → log set → finish - not pile on features. Stays snappy on weak phones.
 
 **Keywords:** gym workout tracker, workout log, exercise catalog, gym GIF, workout builder, PWA fitness app, offline-first workout, Supabase fitness, SvelteKit gym app, personal records, set tracking.
 
@@ -106,7 +106,7 @@ On production, set the same variables and add your site URL to Supabase Auth (**
 | Styles | Tailwind CSS 4 |
 | Backend | [Supabase](https://supabase.com/) (optional auth & sync) |
 | Delivery | PWA (install to home screen) |
-| Hosting | Vercel — canonical [www.repdraft.xyz](https://www.repdraft.xyz) |
+| Hosting | Vercel - canonical [www.repdraft.xyz](https://www.repdraft.xyz) |
 
 Architecture and coding rules for contributors: **[AGENTS.md](./AGENTS.md)**.
 
@@ -131,7 +131,7 @@ static/           # exercise media, PWA icons, catalog data
 No. Clone → `npm run dev` works offline with `localStorage`.
 
 **Is it a native iOS/Android app?**  
-It’s a **PWA** — install from the browser to the home screen. Feels app-like on phones.
+It’s a **PWA** - install from the browser to the home screen. Feels app-like on phones.
 
 **Can I self-host?**  
 Yes. Deploy the SvelteKit app anywhere Node/static hosting works; point env vars at your Supabase project (or stay local-only).
@@ -155,6 +155,6 @@ Exercise thumbnails and GIFs © [Gym visual](https://gymvisual.com/). See [NOTIC
 
 ---
 
-<p align="center"><sub>Built for the gym floor — not the feature backlog.</sub></p>
+<p align="center"><sub>Built for the gym floor - not the feature backlog.</sub></p>
 
 <p align="center">⭐ <a href="https://github.com/anatoly-kulishov/Repdraft">Star on GitHub</a> if Repdraft helps your training.</p>
