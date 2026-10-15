@@ -2,6 +2,7 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import QuestSummaryCard from '$lib/components/QuestSummaryCard.svelte';
 	import SummaryPageSkeleton from '$lib/components/summary/SummaryPageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -187,6 +188,8 @@
 				</div>
 			</AppPanel>
 		{/if}
+
+		<QuestSummaryCard />
 
 		<dl class="summary-stats" class:summary-stats--with-volume={volumeKg > 0}>
 			<div class="summary-stat">

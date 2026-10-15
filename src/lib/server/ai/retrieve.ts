@@ -1,6 +1,8 @@
 import type { ExerciseIndexItem } from '$lib/domain/types';
+import { isExerciseRagConfigured } from '$lib/server/supabase/admin';
 import { hintsFromBrief, popularity, slimCatalogForBrief } from './catalog';
-import { cosine, embedBrief, loadEmbeddingIndex } from './embeddings';
+import { embedBrief } from './embeddings';
+import { matchExercisesByEmbedding } from './matchExercises';
 import { matchTemplate, type SplitTemplate } from './splitTemplates';
 
 export const RETRIEVE_TOP_K = 40;
@@ -49,8 +51,8 @@ function regexResult(
 }
 
 /**
- * Hybrid retrieve: cosine over precomputed embeddings ∪ regex slim.
- * Falls back to regex-only when embeddings index is empty or embed fails.
+ * Hybrid retrieve: pgvector cosine ∪ regex slim.
+ * Falls back to regex-only when service role / RPC / embed fails.
  */
 export async function retrieve(
 	brief: string,
@@ -62,8 +64,7 @@ export async function retrieve(
 	const regexSlim = slimCatalogForBrief(index, brief);
 	const regexIds = new Set(regexSlim.map((e) => e.id));
 
-	const embIndex = loadEmbeddingIndex();
-	if (!embIndex?.items?.length) {
+	if (!isExerciseRagConfigured()) {
 		return regexResult(brief, index, topK);
 	}
 
@@ -72,21 +73,20 @@ export async function retrieve(
 
 	try {
 		const q = await embedBrief(brief);
-		const embById = new Map(embIndex.items.map((r) => [r.id, r.vec]));
-		const scored: Array<{ id: string; score: number }> = [];
-		for (const [id, vec] of embById) {
-			const exercise = byId.get(id);
-			if (!exercise) continue;
-			if (hints.parts.length && !hints.parts.includes(exercise.body_part)) continue;
-			scored.push({ id, score: cosine(q, vec) });
+		const matched = await matchExercisesByEmbedding(q, {
+			topK,
+			bodyParts: hints.parts.length ? hints.parts : undefined
+		});
+		if (!matched.length) {
+			return regexResult(brief, index, topK);
 		}
-		scored.sort((a, b) => b.score - a.score);
-		for (const row of scored.slice(0, topK)) {
-			const exercise = byId.get(row.id)!;
-			scoreMap.set(row.id, {
+		for (const row of matched) {
+			const exercise = byId.get(row.exerciseId);
+			if (!exercise) continue;
+			scoreMap.set(row.exerciseId, {
 				exercise,
-				score: row.score,
-				source: regexIds.has(row.id) ? 'hybrid' : 'cosine'
+				score: row.similarity,
+				source: regexIds.has(row.exerciseId) ? 'hybrid' : 'cosine'
 			});
 		}
 	} catch {
@@ -109,7 +109,6 @@ export async function retrieve(
 
 	const merged = [...scoreMap.values()].sort((a, b) => b.score - a.score);
 	const exercises = merged.slice(0, topK).map((s) => s.exercise);
-	/* Prefer brief zone votes over cosine majority (back can drown arms). */
 	const parts = hints.parts.length ? hints.parts : majorityParts(exercises);
 	return {
 		exercises,

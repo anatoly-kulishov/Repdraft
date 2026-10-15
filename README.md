@@ -6,73 +6,49 @@
 
 <p align="center">
   <strong>LOG. SET. CONQUER.</strong><br />
-  Gym workout log, exercise catalog, and workout builder - built for the phone in your hand at the gym.
+  Gym workout log for the phone in your hand at the rack.
 </p>
 
 <p align="center">
-  <a href="https://www.repdraft.xyz">Live app</a>
-  ·
-  <a href="#features">Features</a>
+  <a href="https://www.repdraft.xyz">Live (web)</a>
   ·
   <a href="#quick-start">Quick start</a>
   ·
   <a href="#stack">Stack</a>
-  ·
-  <a href="#faq">FAQ</a>
 </p>
 
 <p align="center">
   <a href="https://www.repdraft.xyz"><img alt="Live" src="https://img.shields.io/badge/live-repdraft.xyz-0B0F14?style=flat-square" /></a>
-  <img alt="Version" src="https://img.shields.io/badge/version-0.18.1-0B0F14?style=flat-square" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.21.0-0B0F14?style=flat-square" />
+  <img alt="Expo" src="https://img.shields.io/badge/Expo-RN-000020?style=flat-square&logo=expo&logoColor=white" />
   <img alt="SvelteKit" src="https://img.shields.io/badge/SvelteKit-5-FF3E00?style=flat-square&logo=svelte&logoColor=white" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white" />
-  <img alt="PWA" src="https://img.shields.io/badge/PWA-ready-111111?style=flat-square" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-111111?style=flat-square" />
-  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-optional-3FCF8E?style=flat-square&logo=supabase&logoColor=white" />
 </p>
 
 ---
 
-**Repdraft** is a mobile-first **gym workout tracker** and **exercise catalog with GIFs**: build **workout plans**, log **sets (weight × reps)** in a live session, and keep **personal records** - online with Supabase or fully offline in the browser / installable PWA.
+**Repdraft** logs strength workouts: pick a plan, log weight × reps, finish, see the result.
 
-> North star: make the sacred loop faster - open → pick plan → train → log set → finish - not pile on features. Stays snappy on weak phones.
+We are in a **native-first rewrite**. The gym client is **React Native (Expo)** in [`mobile/`](./mobile/). **SvelteKit web/PWA** stays for browser, SEO, technique, and backup/migration. Shared rules live in [`src/lib/domain`](./src/lib/domain).
 
-**Keywords:** gym workout tracker, workout log, exercise catalog, gym GIF, workout builder, PWA fitness app, offline-first workout, Supabase fitness, SvelteKit gym app, personal records, set tracking.
+> **IMPROVE THE EXPERIENCE. NOT THE FEATURE COUNT.**  
+> Metric: phone → completed set. Stay fast on weak phones. Details: [`.cursor/product/native-rewrite-plan.md`](./.cursor/product/native-rewrite-plan.md).
 
----
-
-## Why Repdraft?
-
-| Without | With Repdraft |
-| :--- | :--- |
-| Notes app / spreadsheet at the rack | One-handed live session UI |
-| Catalogs without form reference | Exercise cards + technique GIFs |
-| Cloud-only apps that die offline | Local-first; sync when you want |
-| Feature-bloated trackers | Focused gym loop |
-
-```mermaid
-flowchart LR
-  Catalog[Exercise catalog] --> Builder[Workout builder]
-  Builder --> Live[Live training]
-  Live --> PR[Personal records]
-  Live --> Sync[(Local / Supabase)]
+```text
+Open → Pick workout → Preview → Start → Set → Weight × reps → Next → Finish → Saved
 ```
 
 ---
 
-## Features
+## Clients
 
-| | |
-| --- | --- |
-| **Exercise catalog** | Search, body-part filters, muscle targets, technique GIFs |
-| **Exercise cards** | Instructions, media, add-to-plan in one tap |
-| **Workout builder** | Compose and reorder plans for real gym sessions |
-| **Live training** | Active workout UI optimized for one-handed set logging |
-| **Personal records** | Track PRs and history without leaving the loop |
-| **Account sync** | Optional Supabase auth + cloud sync; local-first without keys |
-| **Community technique** | Upload video → GIF clips for form reference |
-| **Articles & SEO** | Guides, sitemap, robots, Open Graph for discoverability |
-| **Installable PWA** | Add to home screen; works offline-first in the browser |
+| Client | Path | Role |
+| --- | --- | --- |
+| **Mobile** | `mobile/` (Expo Router) | Primary gym loop |
+| **Web / PWA** | repo root (SvelteKit) | Browser, SEO, media, export/import |
+
+No Capacitor/Cordova shell. Watch UI (later) is a separate native surface, not a shrunk phone screen. Strategy: [`.cursor/product/native-rewrite-plan.md`](./.cursor/product/native-rewrite-plan.md).
 
 ---
 
@@ -82,11 +58,15 @@ flowchart LR
 git clone https://github.com/anatoly-kulishov/Repdraft.git
 cd Repdraft
 npm install
-cp .env.example .env   # Supabase keys are optional
-npm run dev
+cp .env.example .env          # Supabase optional
+
+npm run mobile                # Expo (from repo root)
+# or: cd mobile && npm install && npm start
+
+npm run dev                   # web / PWA
 ```
 
-Without `.env`, plans, sessions, and records stay in **`localStorage`**. With Supabase configured, the same UI syncs across devices.
+Without env keys, plans/sessions/records stay on device (AsyncStorage / localStorage). With Supabase, the same domain can sync.
 
 ```env
 PUBLIC_SITE_URL=https://www.repdraft.xyz
@@ -94,7 +74,15 @@ PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 PUBLIC_SUPABASE_ANON_KEY=your_anon_or_publishable_key
 ```
 
-On production, set the same variables and add your site URL to Supabase Auth (**Site URL** / **Redirect URLs**). Keep SQL migrations and service-role keys **out of this public repo**.
+Mobile env: see [`mobile/.env.example`](./mobile/.env.example) (`EXPO_PUBLIC_*`).  
+On production, set Auth **Site URL** / **Redirect URLs**. Keep SQL and service-role keys out of this public repo.
+
+### Checks
+
+```bash
+npm run check          # web (svelte-check)
+npm run check:mobile   # RN (tsc)
+```
 
 ---
 
@@ -102,59 +90,58 @@ On production, set the same variables and add your site URL to Supabase Auth (**
 
 | Layer | Choice |
 | --- | --- |
-| UI | [SvelteKit](https://svelte.dev/) 5 + TypeScript |
-| Styles | Tailwind CSS 4 |
-| Backend | [Supabase](https://supabase.com/) (optional auth & sync) |
-| Delivery | PWA (install to home screen) |
-| Hosting | Vercel - canonical [www.repdraft.xyz](https://www.repdraft.xyz) |
+| Phone | React Native + Expo Router (`mobile/`) |
+| Web | SvelteKit 5 + TypeScript + Tailwind 4 |
+| Domain | Pure TS `src/lib/domain` (shared) |
+| Backend | Supabase (optional auth & sync) |
+| Web host | Vercel - [www.repdraft.xyz](https://www.repdraft.xyz) |
 
-Architecture and coding rules for contributors: **[AGENTS.md](./AGENTS.md)**.
+Agent context: [`.cursor/INDEX.md`](./.cursor/INDEX.md) (entry: [`AGENTS.md`](./AGENTS.md)).
 
 ---
 
 ## Project map
 
 ```text
-src/
-  lib/domain/     # pure workout / catalog logic
-  lib/storage/    # local + Supabase repos
-  lib/stores/     # cross-page state
-  routes/         # catalog, builder, live, workouts, auth, articles…
-static/           # exercise media, PWA icons, catalog data
+mobile/              # Expo sacred-loop client
+src/lib/domain/      # shared workout / session / records logic
+src/lib/storage/     # web local + Supabase
+src/routes/          # SvelteKit pages
+static/              # catalog media, PWA icons, index JSON
+data/                # full catalog source (build scripts)
+scripts/             # catalog translate/build, icons, RAG sync
 ```
 
 ---
 
 ## FAQ
 
-**Do I need Supabase to try it?**  
-No. Clone → `npm run dev` works offline with `localStorage`.
+**Do I need Supabase?**  
+No. Local-first works for web and Expo.
 
-**Is it a native iOS/Android app?**  
-It’s a **PWA** - install from the browser to the home screen. Feels app-like on phones.
+**Which client should I develop against?**  
+Prefer `mobile/` for the gym loop. Touch web when changing shared domain, SEO, or migration.
 
-**Can I self-host?**  
-Yes. Deploy the SvelteKit app anywhere Node/static hosting works; point env vars at your Supabase project (or stay local-only).
+**Can I self-host the web app?**  
+Yes. Deploy SvelteKit; point env at your Supabase project or stay local-only.
 
-**Where is the live product?**  
+**Where is production web?**  
 https://www.repdraft.xyz
 
 ---
 
 ## Media license
 
-Exercise thumbnails and GIFs © [Gym visual](https://gymvisual.com/). See [NOTICE.md](./NOTICE.md). Do not reuse media outside Repdraft without Gym Visual’s permission.
+Exercise thumbnails and GIFs © [Gym visual](https://gymvisual.com/). See [`NOTICE.md`](./NOTICE.md). Do not reuse that media outside Repdraft without Gym visual permission.
 
 ---
 
 ## Links
 
-- **App:** https://www.repdraft.xyz  
-- **Product goal:** [GOAL.md](./GOAL.md)  
+- **Web app:** https://www.repdraft.xyz  
+- **Rewrite / north star:** [`.cursor/product/native-rewrite-plan.md`](./.cursor/product/native-rewrite-plan.md)  
 - **Privacy / Terms:** `/privacy` · `/terms` (in the running app)
 
 ---
 
 <p align="center"><sub>Built for the gym floor - not the feature backlog.</sub></p>
-
-<p align="center">⭐ <a href="https://github.com/anatoly-kulishov/Repdraft">Star on GitHub</a> if Repdraft helps your training.</p>

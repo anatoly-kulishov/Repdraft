@@ -44,7 +44,7 @@ npm run build
 1. `git diff main...HEAD` or diff from parent task — focus changed files.
 2. Scan security checklist above on touched auth/storage/api paths.
 3. Scan perf on touched routes/components, especially `/live`, `/builder`, `/catalog`.
-4. Cross-check `.cursorrules` and `.cursor/product/mvp-spec.md` for UX regressions (not perf, but release blockers).
+4. Cross-check `.cursorrules` and `.cursor/product/native-rewrite-plan.md` for UX regressions (not perf, but release blockers).
 
 ## Output format
 

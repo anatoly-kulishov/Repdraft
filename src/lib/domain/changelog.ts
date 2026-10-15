@@ -14,6 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.21.0',
+		highlights: {
+			ru: [
+				'Клиент на телефоне (Expo): тот же цикл тренировки, что в веб-приложении',
+				'Импорт бэкапа, избранное, свои упражнения и синхронизация с облаком на телефоне'
+			],
+			en: [
+				'Phone client (Expo): the same workout loop as the web app',
+				'Backup import, saved exercises, custom lifts, and cloud sync on phone'
+			]
+		}
+	},
+	{
 		version: '0.20.2',
 		highlights: {
 			ru: [

@@ -2,11 +2,13 @@
 	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { isWebAnalyticsAvailable } from '$lib/app/native';
+	import { clampWeeklyGoal, MAX_WEEKLY_GOAL, MIN_WEEKLY_GOAL } from '$lib/domain/quest';
 	import { appTheme } from '$lib/stores/theme';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { webAnalyticsEnabled } from '$lib/stores/prefs';
+	import { questEnabled, webAnalyticsEnabled } from '$lib/stores/prefs';
+	import { quest, questState } from '$lib/stores/quest';
 	import { themeToggleStateIcon } from '$lib/components/icons/themeToggle';
-	import { BarChart3, Globe } from '@lucide/svelte';
+	import { BarChart3, Globe, Sparkles } from '@lucide/svelte';
 
 	let {
 		surface = 'section'
@@ -20,6 +22,10 @@
 	let theme = $derived($appTheme);
 	let nextTheme = $derived(theme === 'dark' ? ('light' as const) : ('dark' as const));
 	let showWebAnalytics = $derived(isWebAnalyticsAvailable());
+	let weeklyGoal = $derived($questState.weeklyGoal);
+	let nextWeeklyGoal = $derived(
+		weeklyGoal >= MAX_WEEKLY_GOAL ? MIN_WEEKLY_GOAL : clampWeeklyGoal(weeklyGoal + 1)
+	);
 	let rootClass = $derived(
 		surface === 'panel'
 			? 'profile-settings-group panel profile-settings-group--paired'
@@ -70,8 +76,32 @@
 				/>
 			</ProfileSettingsRow>
 		{/if}
+		<ProfileSettingsRow icon={Sparkles} label={translate(lang, 'settings.quest')}>
+			<input
+				type="checkbox"
+				class="auth-pref-toggle__input profile-settings-row__toggle"
+				checked={$questEnabled}
+				aria-label={translate(lang, 'settings.quest')}
+				onchange={(e) => {
+					questEnabled.set((e.currentTarget as HTMLInputElement).checked);
+				}}
+			/>
+		</ProfileSettingsRow>
+		{#if $questEnabled}
+			<ProfileSettingsRow
+				icon={Sparkles}
+				label={translate(lang, 'settings.questWeeklyGoal')}
+				value={String(weeklyGoal)}
+				ariaLabel={translate(lang, 'settings.questWeeklyGoalCycle', {
+					current: String(weeklyGoal),
+					next: String(nextWeeklyGoal)
+				})}
+				onclick={() => quest.setWeeklyGoal(nextWeeklyGoal)}
+			/>
+		{/if}
 	</div>
 	{#if showWebAnalytics}
 		<p class={hintClass}>{translate(lang, 'settings.webAnalyticsHint')}</p>
 	{/if}
+	<p class={hintClass}>{translate(lang, 'settings.questHint')}</p>
 </div>

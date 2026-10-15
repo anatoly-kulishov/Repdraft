@@ -3,7 +3,7 @@ name: responsive-testing
 description: >-
   Visual QA and mobile ergonomics for Repdraft. Use when changing UI/layout,
   bottom bars, FABs, live workout screen, or keyboard-heavy inputs. Opens pages
-  via Playwright MCP at 375px and 390px, screenshots, checks action buttons visibility.
+  via browser MCP at 375px and 390px, screenshots, checks action buttons visibility.
 ---
 
 # Visual QA & Mobile Ergonomics
@@ -15,54 +15,39 @@ Repdraft is **mobile/PWA first**. Layout changes must survive real phone viewpor
 | Device | Width | Height | Use |
 |--------|-------|--------|-----|
 | iPhone SE | 375 | 667 | Minimum supported width |
-| iPhone 13–15 | 390 | 844 | Default Playwright `mobile-dark` project |
-| iPad portrait (tablet band) | 768 | 1024 | Tabbar era; Playwright `tablet-dark` |
-| Desktop | 1280 | 900 | Sidebar; Playwright `desktop-dark` |
-
-Reference: `playwright.config.ts` → projects `mobile-dark`, `tablet-dark`, `desktop-dark`.
-
-Release audit matrix (v0.17.8+): [`.cursor/product/v0.17.8-desktop-tablet-audit.md`](../product/v0.17.8-desktop-tablet-audit.md).
+| iPhone 13-15 | 390 | 844 | Default phone band |
+| iPad portrait (tablet band) | 768 | 1024 | Manual / MCP spot-check |
+| Desktop | 1280 | 900 | Web desktop |
 
 ## Routes to test (priority)
 
-1. `/` — home, primary CTA
-2. `/builder` — name input, pick exercise FAB
-3. `/live` — **Active Workout** — weight×reps inputs, finish button
-4. `/catalog/*` — scroll, exercise cards
-5. `/auth` — profile, keyboard on inputs
+1. `/` - home, primary CTA
+2. `/builder` - name input, pick exercise FAB
+3. `/live` - **Active Workout** - weight×reps inputs, finish button
+4. `/catalog/*` - scroll, exercise cards
+5. `/auth` - profile, keyboard on inputs
+
+For RN: Expo Go / simulator on Home → plan → live → finish.
 
 ## Algorithm
 
-### With Playwright MCP (preferred)
+### With browser MCP (preferred)
 
 1. Ensure dev server: `npm run dev` (background).
 2. For each viewport (375, 390, **768**, **1280**):
    - Navigate to route under test.
-   - `browser_resize` or set viewport to width×height.
-   - `browser_snapshot` + `browser_take_screenshot`.
+   - Resize viewport to width×height.
+   - Snapshot + screenshot.
    - Check:
      - Primary action visible without horizontal scroll.
      - Bottom bar / FAB not covering inputs or primary CTA.
      - Tap targets ≥ 44px effective (visual estimate from snapshot).
-3. On `/live`, focus weight/reps input — verify finish/complete control still reachable (keyboard overlap check via snapshot after focus).
-
-### With CLI fallback
-
-```bash
-npm run dev   # terminal 1
-BASE_URL=http://127.0.0.1:5173 npm run e2e:ui
-```
-
-Or scoped Playwright:
-
-```bash
-npm run test:e2e -- --project=mobile-dark tests/e2e/visual.routes.spec.ts
-```
+3. On `/live`, focus weight/reps input - verify finish/complete control still reachable.
 
 ## Fail criteria
 
 - Primary CTA clipped or behind fixed chrome.
-- Two competing primary buttons in same viewport (violates GOAL.md).
+- Two competing primary buttons in same viewport (violates mvp.mdc: one primary CTA).
 - Horizontal overflow on 375px.
 - Live logging controls unreachable after input focus.
 

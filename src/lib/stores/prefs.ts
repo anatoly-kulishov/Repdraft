@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { parseQuestEnabled, QUEST_ENABLED_STORAGE_KEY } from '$lib/domain/quest';
 import {
 	parseRestSoundEnabled,
 	parseTesterModeEnabled,
@@ -85,5 +86,12 @@ export const webAnalyticsEnabled = createLocalBoolPref({
 export const testerModeEnabled = createLocalBoolPref({
 	key: TESTER_MODE_STORAGE_KEY,
 	parse: parseTesterModeEnabled,
+	fallback: false
+});
+
+/** Opt-in Repdraft Quest (weekly goal + XP). Default off - quiet diary stays default. */
+export const questEnabled = createLocalBoolPref({
+	key: QUEST_ENABLED_STORAGE_KEY,
+	parse: parseQuestEnabled,
 	fallback: false
 });

@@ -1,9 +1,9 @@
 ---
 name: grinding-until-pass
 description: >-
-  Autonomous fix loop for Repdraft: edit → npm run check → check:domain → Playwright
-  → analyze failure → fix → repeat until all pass. Use when user wants green CI,
-  "fix until tests pass", or after non-trivial code changes before done.
+  Autonomous fix loop for Repdraft: edit → npm run check → check:mobile
+  → analyze failure → fix → repeat until all pass. Use when user wants green
+  typecheck, "fix until checks pass", or after non-trivial code changes before done.
 disable-model-invocation: true
 ---
 
@@ -26,13 +26,7 @@ Autonomous quality loop. Do not claim done until every step exits 0.
        ▼                           │
 ┌─────────────┐     fail           │
 │ npm run     │────────────────────┘
-│ check:domain│
-└──────┬──────┘
-       │ pass
-       ▼
-┌─────────────┐     fail
-│ npm run     │────────────────────┘
-│ test:e2e    │
+│ check:mobile│
 └──────┬──────┘
        │ pass
        ▼
@@ -43,25 +37,16 @@ Autonomous quality loop. Do not claim done until every step exits 0.
 
 ```bash
 npm run check
-npm run check:domain
-npm run test:e2e
-```
-
-Optional scope when parent named files:
-
-```bash
-npm run test:e2e -- tests/e2e/sacred-loop.spec.ts
-npm run test:e2e -- --project=mobile-dark
+npm run check:mobile
 ```
 
 ## Rules
 
 1. **Max iterations:** 5 full loops; then stop and report blocker with logs.
-2. **Minimal diffs** per iteration — one root cause at a time.
-3. **Never** skip checks, `--passWithNoTests` hacks, or commented-out assertions.
-4. **Never** disable domain selfchecks.
-5. If same error repeats twice, spawn `/debugger` with full log.
-6. After loop succeeds, spawn `/verifier` for independent confirmation.
+2. **Minimal diffs** per iteration - one root cause at a time.
+3. **Never** skip checks or comment out type errors to greenwash.
+4. If same error repeats twice, spawn `/debugger` with full log.
+5. After loop succeeds, spawn `/verifier` for independent confirmation.
 
 ## Progress log
 
@@ -71,13 +56,12 @@ After each iteration, append to response:
 ### Iteration N
 - Change: <what>
 - check: pass/fail
-- check:domain: pass/fail
-- test:e2e: pass/fail
+- check:mobile: pass/fail
 - Next: <action>
 ```
 
 ## Stop conditions
 
-- All three commands exit 0 → success.
+- Both commands exit 0 → success.
 - 5 iterations with same failure → escalate to user with debugger report.
-- Failure outside repo control (missing `.env`, dev server port conflict) → document setup step for user.
+- Failure outside repo control (missing `.env`, port conflict) → document setup step for user.

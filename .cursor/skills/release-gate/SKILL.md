@@ -11,53 +11,23 @@ disable-model-invocation: true
 
 **Trigger:** `release gate` · `релиз-гейт` · `готовность к релизу` · `pre-release` · `перед релизом`
 
-Полный прогон перед merge/release. North star: sacred loop (open → pick → preview → train → set → finish → saved). См. `GOAL.md`, `.cursorrules`, `mvp.mdc`, `release-branches.mdc`.
+Полный прогон перед merge/release. North star: sacred loop (open → pick → preview → train → set → finish → saved). См. `.cursorrules`, `mvp.mdc`, `release-branches.mdc`.
 
 ## 1. Release hygiene
 
-- Сверь `git tag --sort=-v:refname | head -1` / `gh release list` с `package.json` `version` и именем ветки (`cursor/vX.Y.Z-slug` → `"version": "X.Y.Z"`).
+- Сверь `git tag --sort=-v:refname | head -1` / `gh release list` с `package.json` `version` и именем ветки (`feat/vX.Y.Z-slug` → `"version": "X.Y.Z"`).
 - Diff ветки vs `main`: только ожидаемые изменения, без `.env`/секретов, без мусора.
-- `npm run build` — exit 0.
+- `npm run build` - exit 0.
 
 ## 2. Автопроверки (все зелёные или явный skip с причиной)
 
 ```bash
 npm run check
-npm run check:domain
-npm run check:ai
+npm run check:mobile
 npm run build
-npm run smoke:catalog-hub
-npm run test:e2e
 ```
 
-**History detail (P0, mutation actions)** — отдельный прогон в составе `test:e2e`, при правках `/workouts/history/[id]` гонять явно:
-
-```bash
-npm run test:e2e:history
-```
-
-Покрытие `tests/e2e/history-detail.spec.ts`:
-
-- **delete** — bottom sheet подтверждение → запись исчезает, редирект на `/workouts?tab=history`
-- **delete undo** — snackbar «Отменить» восстанавливает запись и возвращает на detail
-- **edit save** — правка веса → «Сохранить» → toast + persist в `localStorage`
-
-Новые destructive / persist actions на экранах — добавлять в e2e по тому же шаблону (helper seed → action → assert storage/navigation), не полагаться только на skeleton/visual.
-
-Release guards (SEO / redirects / consent / analytics / ladder):
-
-```bash
-npm run test:e2e -- tests/e2e/release-guards.spec.ts tests/e2e/builder-ladder.spec.ts
-```
-
-При UI/CSS изменениях в ветке — дополнительно:
-
-```bash
-npm run e2e:ui
-npm run e2e:overflow
-```
-
-Падает — почини в ветке, перезапусти до зелёного. Snapshots обновляй только осознанно: `npm run test:e2e:update`.
+Playwright / domain selfchecks удалены из репо. Регрессии sacred loop - ручной QA (§4) и typecheck.
 
 ## 3. Code review (блокеры)
 
@@ -66,35 +36,38 @@ npm run e2e:overflow
 - i18n: `translate()`, без em-dash в UI.
 - URL/SEO: `/exercises/saved`, `/exercises/records`, `/privacy`, `/terms`, redirects, sitemap, robots.
 - Legal: signup/magic consent; real `PUBLIC_PRIVACY_*` before public/store (no placeholders).
+- Delivery: RN (`mobile/`) + web/PWA; без Capacitor.
 
-При сомнениях — `/auditor review diff before release`.
+При сомнениях - `/auditor review diff before release`.
 
-## 4. Ручной QA — матрица
+## 4. Ручной QA - матрица
 
-**Viewports:** 390 mobile · 768 tablet · 1280 desktop. **Тема:** dark (основная) + spot-check light. **Роли:** guest + logged-in где релевантно.
+**Viewports:** 390 mobile · 768 tablet · 1280 desktop (web). **Тема:** dark (основная) + spot-check light. **Роли:** guest + logged-in где релевантно.
 
-**Экраны (минимум):**
+**Web экраны (минимум):**
 
 `/ · /workouts · /workouts/[planId] · /live/[planId] · /builder · /exercises · /catalog/all · /catalog/[zone] · /exercise/[id] · /exercises/saved · /exercises/records · /auth · /privacy · /terms`
+
+**RN (Expo):** Home → plan preview → Start → set (weight×reps) → Next → Finish → history; builder reorder/sets; profile sync.
 
 На каждом: skeleton → контент без layout jump, back/nav, search/filters, empty states.
 
 **Auth legal:** signup + magic link show Terms/Privacy consent; submit disabled until checked; guest profile links to `/terms` + `/privacy`.
 
-**Sacred loop E2E:** pick → preview → start → set (weight×reps) → next → finish → result saved.
+**Sacred loop:** pick → preview → start → set (weight×reps) → next → finish → result saved (web + RN).
 
-**History detail E2E (P0):** `npm run test:e2e:history` — delete + undo + edit save (см. §2).
+**History detail (P0):** delete + undo + edit save persist.
 
 **Edge cases:**
 
-- offline / slow network — мутации local-first
+- offline / slow network - мутации local-first
 - пустые списки, 1 элемент, длинные названия/заметки (`NOTE_MAX`)
 - swipe-to-delete (mobile)
 - deep links `?from=`, redirect `/records` → `/exercises/records`
 - keyboard на live (вес/повторы)
 - safe-area, tabbar, bottom CTA не перекрыты
 
-Skill `responsive-testing` — для UI-изменений в ветке.
+Skill `responsive-testing` - для UI-изменений в ветке.
 
 ## 5. Вердикт (обязательный формат)
 
@@ -108,6 +81,6 @@ Skill `responsive-testing` — для UI-изменений в ветке.
 **Рекомендация:** merge | hold | patch first
 ```
 
-`NOT READY` — не релизить, пока P0 не закрыты.
+`NOT READY` - не релизить, пока P0 не закрыты.
 
-После `READY` — по запросу пользователя: commit, PR, GitHub Release (см. `release-branches.mdc`).
+После `READY` - по запросу пользователя: commit, PR, GitHub Release (см. `release-branches.mdc`).

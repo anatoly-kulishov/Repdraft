@@ -1,0 +1,35 @@
+{
+	"name": "repdraft-mobile",
+	"version": "0.21.0",
+	"main": "expo-router/entry",
+	"private": true,
+	"scripts": {
+		"start": "expo start",
+		"android": "expo start --android",
+		"ios": "expo start --ios",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@react-native-async-storage/async-storage": "2.2.0",
+		"@supabase/supabase-js": "^2.118.0",
+		"expo": "~57.0.29",
+		"expo-clipboard": "^57.0.2",
+		"expo-constants": "~57.0.22",
+		"expo-document-picker": "~57.0.3",
+		"expo-file-system": "^57.0.7",
+		"expo-linking": "~57.0.13",
+		"expo-router": "~57.0.27",
+		"expo-sharing": "^57.0.23",
+		"expo-status-bar": "~57.0.1",
+		"react": "19.2.3",
+		"react-native": "0.86.3",
+		"react-native-gesture-handler": "~2.32.0",
+		"react-native-safe-area-context": "~5.7.0",
+		"react-native-screens": "~4.26.0"
+	},
+	"devDependencies": {
+		"@types/react": "~19.2.2",
+		"babel-preset-expo": "^57.0.15",
+		"typescript": "~6.0.3"
+	}
+}

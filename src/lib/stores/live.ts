@@ -38,6 +38,8 @@ import { exerciseStats } from '$lib/stores/exerciseStats';
 import { homeNextPlan } from '$lib/stores/homeNextPlan';
 import { planOrder } from '$lib/stores/planOrder';
 import { plans } from '$lib/stores/plans';
+import { quest } from '$lib/stores/quest';
+import { questEnabled } from '$lib/stores/prefs';
 import { syncState } from '$lib/stores/syncState';
 import {
 	localSessionRepository,
@@ -433,6 +435,9 @@ function createLiveStore() {
 				.map((ex) => ex.exerciseId);
 			exerciseStats.recordUses(usedIds);
 			await persistSession(done);
+			if (get(questEnabled)) {
+				quest.noteFinishedSession(done);
+			}
 			persistActive(null, null);
 			store.update((s) => ({
 				...s,
