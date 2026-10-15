@@ -1,6 +1,0 @@
-{
-  "provider": "ollama",
-  "model": "nomic-embed-text",
-  "dims": 0,
-  "items": []
-}
