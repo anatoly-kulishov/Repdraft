@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
 	lastPerformance,
@@ -26,15 +26,18 @@ import { useBottomChromePad } from '../../src/layout/safe';
 import { routeParam } from '../../src/nav/params';
 import { useLocale } from '../../src/state/locale';
 import { noteChecklist } from '../../src/state/onboarding';
+import { useAppColors } from '../../src/state/theme';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { readActiveSession, sessionsRepo, writeActiveSession } from '../../src/storage/sessionsRepo';
-import { colors, radius, space, touchMin } from '../../src/theme';
+import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
 export default function PlanPreviewScreen() {
 	const { id: idParam } = useLocalSearchParams<{ id: string }>();
 	const id = routeParam(idParam);
 	const router = useRouter();
 	const { locale, tt } = useLocale();
+	const colors = useAppColors();
+	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const bottomPad = useBottomChromePad(space.md);
 	const [plan, setPlan] = useState<WorkoutPlan | null>(null);
 	const [missing, setMissing] = useState(false);
@@ -176,40 +179,42 @@ export default function PlanPreviewScreen() {
 	);
 }
 
-const styles = StyleSheet.create({
-	root: { flex: 1, backgroundColor: colors.bg },
-	flex: { flex: 1 },
-	scroll: { padding: space.lg, gap: space.sm, paddingBottom: space.xxl },
-	center: {
-		flex: 1,
-		alignItems: 'center',
-		justifyContent: 'center',
-		backgroundColor: colors.bg,
-		padding: space.lg,
-		gap: space.md
-	},
-	missing: { color: colors.muted, textAlign: 'center' },
-	empty: { color: colors.muted, marginTop: space.md, lineHeight: 22 },
-	title: { color: colors.text, fontSize: 24, fontWeight: '800' },
-	lead: { color: colors.muted, marginBottom: 4 },
-	metaLine: { color: colors.muted, fontSize: 14, marginBottom: 4 },
-	card: {
-		backgroundColor: colors.panel,
-		borderRadius: radius.md,
-		borderWidth: 1,
-		borderColor: colors.border,
-		padding: space.md,
-		minHeight: touchMin
-	},
-	badge: { color: colors.accent, fontSize: 11, fontWeight: '800', marginBottom: 4 },
-	cardTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
-	cardMeta: { color: colors.muted, marginTop: 4 },
-	footer: {
-		paddingHorizontal: space.lg,
-		paddingTop: space.md,
-		gap: space.sm,
-		borderTopWidth: 1,
-		borderTopColor: colors.border,
-		backgroundColor: colors.bg
-	}
-});
+function makeStyles(colors: ColorPalette) {
+	return StyleSheet.create({
+		root: { flex: 1, backgroundColor: colors.bg },
+		flex: { flex: 1 },
+		scroll: { padding: space.lg, gap: space.sm, paddingBottom: space.xxl },
+		center: {
+			flex: 1,
+			alignItems: 'center',
+			justifyContent: 'center',
+			backgroundColor: colors.bg,
+			padding: space.lg,
+			gap: space.md
+		},
+		missing: { color: colors.muted, textAlign: 'center' },
+		empty: { color: colors.muted, marginTop: space.md, lineHeight: 22 },
+		title: { color: colors.text, fontSize: 24, fontWeight: '800' },
+		lead: { color: colors.muted, marginBottom: 4 },
+		metaLine: { color: colors.muted, fontSize: 14, marginBottom: 4 },
+		card: {
+			backgroundColor: colors.panel,
+			borderRadius: radius.md,
+			borderWidth: 1,
+			borderColor: colors.border,
+			padding: space.md,
+			minHeight: touchMin
+		},
+		badge: { color: colors.accent, fontSize: 11, fontWeight: '800', marginBottom: 4 },
+		cardTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
+		cardMeta: { color: colors.muted, marginTop: 4 },
+		footer: {
+			paddingHorizontal: space.lg,
+			paddingTop: space.md,
+			gap: space.sm,
+			borderTopWidth: 1,
+			borderTopColor: colors.border,
+			backgroundColor: colors.bg
+		}
+	});
+}

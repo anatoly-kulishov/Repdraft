@@ -1,9 +1,10 @@
 import { localizedChangelog } from '@repdraft/domain/changelog';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
-import { radius, space, touchMin } from '../theme';
+import { radius, space, touchMin, type ColorPalette } from '../theme';
 
 type Props = {
 	visible: boolean;
@@ -13,6 +14,7 @@ type Props = {
 export function WhatsNewSheet({ visible, onClose }: Props) {
 	const { locale, tt } = useLocale();
 	const colors = useAppColors();
+	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const insets = useSafeAreaInsets();
 
 	if (!visible) return null;
@@ -21,27 +23,23 @@ export function WhatsNewSheet({ visible, onClose }: Props) {
 		<View style={styles.wrap} pointerEvents="box-none">
 			<Pressable
 				accessibilityRole="button"
-				style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }]}
+				style={styles.backdrop}
 				onPress={onClose}
 			/>
 			<View
 				style={[
 					styles.sheet,
-					{
-						backgroundColor: colors.panel,
-						borderColor: colors.border,
-						paddingBottom: Math.max(insets.bottom, space.lg)
-					}
+					{ paddingBottom: Math.max(insets.bottom, space.lg) }
 				]}
 			>
-				<Text style={[styles.title, { color: colors.text }]}>{tt('changelog.title')}</Text>
-				<Text style={[styles.lead, { color: colors.muted }]}>{tt('changelog.lead')}</Text>
+				<Text style={styles.title}>{tt('changelog.title')}</Text>
+				<Text style={styles.lead}>{tt('changelog.lead')}</Text>
 				<ScrollView style={styles.scroll} contentContainerStyle={{ gap: space.md }}>
 					{localizedChangelog(locale, 5).map((release) => (
 						<View key={release.version}>
-							<Text style={[styles.version, { color: colors.accent }]}>{release.label}</Text>
+							<Text style={styles.version}>{release.label}</Text>
 							{release.highlights.map((line) => (
-								<Text key={line} style={[styles.bullet, { color: colors.muted }]}>
+								<Text key={line} style={styles.bullet}>
 									{'• '}
 									{line}
 								</Text>
@@ -49,43 +47,49 @@ export function WhatsNewSheet({ visible, onClose }: Props) {
 						</View>
 					))}
 				</ScrollView>
-				<Pressable
-					accessibilityRole="button"
-					style={[styles.closeBtn, { backgroundColor: colors.panelRaised, borderColor: colors.border }]}
-					onPress={onClose}
-				>
-					<Text style={[styles.closeLabel, { color: colors.text }]}>{tt('common.close')}</Text>
+				<Pressable accessibilityRole="button" style={styles.closeBtn} onPress={onClose}>
+					<Text style={styles.closeLabel}>{tt('common.close')}</Text>
 				</Pressable>
 			</View>
 		</View>
 	);
 }
 
-const styles = StyleSheet.create({
-	wrap: {
-		...StyleSheet.absoluteFill,
-		justifyContent: 'flex-end',
-		zIndex: 100
-	},
-	sheet: {
-		maxHeight: '78%',
-		borderTopLeftRadius: radius.xl,
-		borderTopRightRadius: radius.xl,
-		borderWidth: 1,
-		padding: space.lg,
-		gap: space.md
-	},
-	title: { fontSize: 20, fontWeight: '800' },
-	lead: { fontSize: 14, lineHeight: 20 },
-	scroll: { flexGrow: 0 },
-	version: { fontWeight: '800', fontSize: 15, marginBottom: 4 },
-	bullet: { fontSize: 14, lineHeight: 20, marginBottom: 4 },
-	closeBtn: {
-		minHeight: touchMin,
-		borderRadius: radius.md,
-		borderWidth: 1,
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	closeLabel: { fontWeight: '700', fontSize: 16 }
-});
+function makeStyles(colors: ColorPalette) {
+	return StyleSheet.create({
+		wrap: {
+			...StyleSheet.absoluteFill,
+			justifyContent: 'flex-end',
+			zIndex: 100
+		},
+		backdrop: {
+			...StyleSheet.absoluteFill,
+			backgroundColor: 'rgba(0,0,0,0.55)'
+		},
+		sheet: {
+			maxHeight: '78%',
+			borderTopLeftRadius: radius.xl,
+			borderTopRightRadius: radius.xl,
+			borderWidth: 1,
+			backgroundColor: colors.panel,
+			borderColor: colors.border,
+			padding: space.lg,
+			gap: space.md
+		},
+		title: { fontSize: 20, fontWeight: '800', color: colors.text },
+		lead: { fontSize: 14, lineHeight: 20, color: colors.muted },
+		scroll: { flexGrow: 0 },
+		version: { fontWeight: '800', fontSize: 15, marginBottom: 4, color: colors.accent },
+		bullet: { fontSize: 14, lineHeight: 20, marginBottom: 4, color: colors.muted },
+		closeBtn: {
+			minHeight: touchMin,
+			borderRadius: radius.md,
+			borderWidth: 1,
+			alignItems: 'center',
+			justifyContent: 'center',
+			backgroundColor: colors.panelRaised,
+			borderColor: colors.border
+		},
+		closeLabel: { fontWeight: '700', fontSize: 16, color: colors.text }
+	});
+}

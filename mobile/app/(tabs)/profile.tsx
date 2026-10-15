@@ -37,11 +37,22 @@ import { resolveUserAvatarUrl } from '../../src/auth/avatarUrl';
 import { unlockRestAudioFromGesture, playRestDoneChime } from '../../src/audio/restChime';
 import { webOrigin } from '../../src/catalog/mediaUrl';
 import { getSupabase, isSupabaseConfigured } from '../../src/auth/supabase';
+import type { AchievementsState } from '@repdraft/domain/achievements';
+import type { QuestState } from '@repdraft/domain/quest';
+import { AchievementsPanel } from '../../src/components/AchievementsPanel';
 import { BrandMark } from '../../src/components/BrandMark';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
+import { QuestProgressPanel } from '../../src/components/QuestSummaryCard';
 import { WhatsNewSheet } from '../../src/components/WhatsNewSheet';
+import { getHealthAdapter } from '../../src/health';
+import {
+	isAchievementsEnabled,
+	loadAchievementsState,
+	setAchievementsEnabled
+} from '../../src/state/achievements';
 import { loadGreetingName, saveGreetingName as persistGreetingName } from '../../src/state/greetingName';
+import { isHealthReadEnabled, setHealthReadEnabled } from '../../src/state/healthPrefs';
 import { useLocale } from '../../src/state/locale';
 import { useAppColors, useAppTheme } from '../../src/state/theme';
 import {
@@ -85,6 +96,11 @@ export default function ProfileScreen() {
 		[colors]
 	);
 	const [questOn, setQuestOn] = useState(false);
+	const [questState, setQuestState] = useState<QuestState | null>(null);
+	const [achOn, setAchOn] = useState(false);
+	const [achState, setAchState] = useState<AchievementsState | null>(null);
+	const [healthOn, setHealthOn] = useState(false);
+	const healthAvailable = getHealthAdapter().isAvailable();
 	const [weeklyGoal, setWeeklyGoalUi] = useState(2);
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
@@ -120,7 +136,11 @@ export default function ProfileScreen() {
 		void (async () => {
 			setQuestOn(await isQuestEnabled());
 			const st = await loadQuestState();
+			setQuestState(st);
 			setWeeklyGoalUi(st.weeklyGoal);
+			setAchOn(await isAchievementsEnabled());
+			setAchState(await loadAchievementsState());
+			setHealthOn(await isHealthReadEnabled());
 			setRestSound(await isRestSoundEnabled());
 			setHapticRest(await isHapticRestEnabled());
 			const sb = getSupabase();
@@ -145,6 +165,23 @@ export default function ProfileScreen() {
 	async function toggleQuest(next: boolean) {
 		setQuestOn(next);
 		await setQuestEnabled(next);
+		if (next) setQuestState(await loadQuestState());
+	}
+
+	async function toggleAchievements(next: boolean) {
+		setAchOn(next);
+		await setAchievementsEnabled(next);
+		if (next) setAchState(await loadAchievementsState());
+	}
+
+	async function toggleHealth(next: boolean) {
+		setHealthOn(next);
+		await setHealthReadEnabled(next);
+		if (next && healthAvailable) {
+			const adapter = getHealthAdapter();
+			const status = await adapter.getPermissionStatus();
+			if (status === 'not_determined') await adapter.requestReadPermission();
+		}
 	}
 
 	function requireLegal(): boolean {
@@ -216,7 +253,8 @@ export default function ProfileScreen() {
 	async function cycleGoal() {
 		const next = weeklyGoal >= 7 ? 1 : weeklyGoal + 1;
 		setWeeklyGoalUi(next);
-		await setWeeklyGoal(next);
+		const st = await setWeeklyGoal(next);
+		setQuestState(st);
 	}
 
 	async function exportBackup() {
@@ -506,11 +544,49 @@ export default function ProfileScreen() {
 				</View>
 				<Text style={styles.hint}>{tt('profile.questHint')}</Text>
 				{questOn ? (
-					<Pressable style={styles.row} onPress={() => void cycleGoal()}>
-						<Text style={styles.rowText}>{tt('profile.weeklyGoal')}</Text>
-						<Text style={styles.rowValue}>{weeklyGoal}</Text>
-					</Pressable>
+					<>
+						<Pressable style={styles.row} onPress={() => void cycleGoal()}>
+							<Text style={styles.rowText}>{tt('profile.weeklyGoal')}</Text>
+							<Text style={styles.rowValue}>{weeklyGoal}</Text>
+						</Pressable>
+						{questState ? <QuestProgressPanel state={questState} /> : null}
+					</>
 				) : null}
+			</Panel>
+
+			<Panel>
+				<Text style={styles.groupTitle}>{tt('achievements.title')}</Text>
+				<View style={styles.row}>
+					<Text style={styles.rowText} numberOfLines={2}>
+						{tt('achievements.toggle')}
+					</Text>
+					<Switch
+						value={achOn}
+						trackColor={switchColors.trackColor}
+						thumbColor={switchColors.thumbColor}
+						onValueChange={(v) => void toggleAchievements(v)}
+					/>
+				</View>
+				<Text style={styles.hint}>{tt('achievements.hint')}</Text>
+				{achOn && achState ? <AchievementsPanel state={achState} /> : null}
+			</Panel>
+
+			<Panel>
+				<Text style={styles.groupTitle}>{tt('health.title')}</Text>
+				<View style={styles.row}>
+					<Text style={styles.rowText} numberOfLines={2}>
+						{tt('health.toggle')}
+					</Text>
+					<Switch
+						value={healthOn}
+						trackColor={switchColors.trackColor}
+						thumbColor={switchColors.thumbColor}
+						onValueChange={(v) => void toggleHealth(v)}
+					/>
+				</View>
+				<Text style={styles.hint}>
+					{healthAvailable ? tt('health.hint') : tt('health.needDevBuild')}
+				</Text>
 			</Panel>
 
 			{loopSnap ? (

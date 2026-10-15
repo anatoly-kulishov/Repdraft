@@ -14,7 +14,8 @@ import type { WorkoutSession } from '@repdraft/domain/types';
 import { useLocale } from '../../src/state/locale';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { deleteSessionRemote } from '../../src/sync/cloudSync';
-import { colors, touchMin } from '../../src/theme';
+import { useAppColors } from '../../src/state/theme';
+import { touchMin, type ColorPalette } from '../../src/theme';
 
 type Preset = 'all' | '7d' | '30d' | '90d';
 
@@ -29,6 +30,8 @@ function withinPreset(finishedAt: string, preset: Preset): boolean {
 export default function HistoryListScreen() {
 	const router = useRouter();
 	const { tt } = useLocale();
+	const colors = useAppColors();
+	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const [sessions, setSessions] = useState<WorkoutSession[]>([]);
 	const [query, setQuery] = useState('');
 	const [preset, setPreset] = useState<Preset>('all');
@@ -131,7 +134,8 @@ export default function HistoryListScreen() {
 	);
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorPalette) {
+	return StyleSheet.create({
 	root: { flex: 1, padding: 16, backgroundColor: colors.bg, gap: 10 },
 	search: {
 		minHeight: touchMin,
@@ -167,4 +171,5 @@ const styles = StyleSheet.create({
 	},
 	title: { color: colors.text, fontWeight: '700', fontSize: 16 },
 	meta: { color: colors.muted, marginTop: 4 }
-});
+	});
+}

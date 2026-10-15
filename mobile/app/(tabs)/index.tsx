@@ -385,7 +385,13 @@ export default function WorkoutsScreen() {
 								{
 									text: tt('workouts.pinNext'),
 									onPress: () => {
-										void writeHomeNextPlanId(item.id).then(() => reload());
+										void writeHomeNextPlanId(item.id).then(() => {
+											Alert.alert(
+												tt('common.ok'),
+												tt('home.setNextPlanDone', { name: item.name || tt('workouts.duplicate') })
+											);
+											return reload();
+										});
 									}
 								},
 								{

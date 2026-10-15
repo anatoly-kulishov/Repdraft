@@ -63,3 +63,17 @@ export function mergeSessionRecordsInto(
 	}
 	return [...map.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
+
+/** How many session lifts beat the previous stored record. */
+export function countImprovedRecords(
+	existing: PersonalRecord[],
+	fromSession: PersonalRecord[]
+): number {
+	const map = new Map(existing.map((r) => [r.exerciseId, r]));
+	let n = 0;
+	for (const next of fromSession) {
+		const prev = map.get(next.exerciseId) ?? null;
+		if (isBetter(next, prev)) n += 1;
+	}
+	return n;
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
 	fetchExerciseDetail,
@@ -7,7 +7,8 @@ import {
 } from '../catalog/fetchExerciseDetail';
 import { useBottomChromePad } from '../layout/safe';
 import { useLocale } from '../state/locale';
-import { colors, radius, space, touchMin } from '../theme';
+import { useAppColors } from '../state/theme';
+import { radius, space, touchMin, type ColorPalette } from '../theme';
 import { CatalogThumb } from './CatalogThumb';
 import { PrimaryButton } from './PrimaryButton';
 
@@ -18,6 +19,8 @@ type Props = {
 
 export function TechniqueSheet({ exerciseId, onClose }: Props) {
 	const { locale, tt } = useLocale();
+	const colors = useAppColors();
+	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const bottomPad = useBottomChromePad(space.md);
 	const [detail, setDetail] = useState<ExerciseDetailPayload | null>(null);
 	const [loading, setLoading] = useState(false);
@@ -88,7 +91,8 @@ export function TechniqueSheet({ exerciseId, onClose }: Props) {
 	);
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorPalette) {
+	return StyleSheet.create({
 	wrap: {
 		flex: 1,
 		justifyContent: 'flex-end',
@@ -127,4 +131,5 @@ const styles = StyleSheet.create({
 		lineHeight: 22,
 		minHeight: touchMin / 2
 	}
-});
+	});
+}

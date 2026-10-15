@@ -46,42 +46,18 @@ import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { routeParam } from '../../src/nav/params';
 import { useLocale } from '../../src/state/locale';
+import { useAppColors } from '../../src/state/theme';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { deletePlanRemote, pushPlan } from '../../src/sync/cloudSync';
-import { colors, radius, space, touchMin } from '../../src/theme';
-
-function Stepper({
-	label,
-	value,
-	onDec,
-	onInc
-}: {
-	label: string;
-	value: number;
-	onDec: () => void;
-	onInc: () => void;
-}) {
-	return (
-		<View style={styles.stepper}>
-			<Text style={styles.stepLabel}>{label}</Text>
-			<View style={styles.stepRow}>
-				<Pressable accessibilityRole="button" style={styles.stepBtn} onPress={onDec}>
-					<Text style={styles.stepBtnText}>-</Text>
-				</Pressable>
-				<Text style={styles.stepValue}>{value}</Text>
-				<Pressable accessibilityRole="button" style={styles.stepBtn} onPress={onInc}>
-					<Text style={styles.stepBtnText}>+</Text>
-				</Pressable>
-			</View>
-		</View>
-	);
-}
+import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
 export default function BuilderScreen() {
 	const { planId: planIdParam } = useLocalSearchParams<{ planId: string }>();
 	const planId = routeParam(planIdParam);
 	const router = useRouter();
 	const { locale, tt } = useLocale();
+	const colors = useAppColors();
+	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const bottomPad = useBottomChromePad(space.md);
 	const [plan, setPlan] = useState<WorkoutPlan | null>(null);
 	const [bootError, setBootError] = useState(false);
@@ -547,6 +523,7 @@ export default function BuilderScreen() {
 							<View style={styles.steppers}>
 								<View style={styles.stepCell}>
 									<Stepper
+										styles={styles}
 										label={tt('builder.sets')}
 										value={item.sets}
 										onDec={() => {
@@ -571,6 +548,7 @@ export default function BuilderScreen() {
 								</View>
 								<View style={styles.stepCell}>
 									<Stepper
+										styles={styles}
 										label={tt('common.reps')}
 										value={item.reps}
 										onDec={() =>
@@ -587,6 +565,7 @@ export default function BuilderScreen() {
 								</View>
 								<View style={styles.stepCell}>
 									<Stepper
+										styles={styles}
 										label={tt('builder.rest')}
 										value={item.restSec}
 										onDec={() => {
@@ -654,7 +633,39 @@ export default function BuilderScreen() {
 	);
 }
 
-const styles = StyleSheet.create({
+type BuilderStyles = ReturnType<typeof makeStyles>;
+
+function Stepper({
+	styles,
+	label,
+	value,
+	onDec,
+	onInc
+}: {
+	styles: BuilderStyles;
+	label: string;
+	value: number;
+	onDec: () => void;
+	onInc: () => void;
+}) {
+	return (
+		<View style={styles.stepper}>
+			<Text style={styles.stepLabel}>{label}</Text>
+			<View style={styles.stepRow}>
+				<Pressable accessibilityRole="button" style={styles.stepBtn} onPress={onDec}>
+					<Text style={styles.stepBtnText}>-</Text>
+				</Pressable>
+				<Text style={styles.stepValue}>{value}</Text>
+				<Pressable accessibilityRole="button" style={styles.stepBtn} onPress={onInc}>
+					<Text style={styles.stepBtnText}>+</Text>
+				</Pressable>
+			</View>
+		</View>
+	);
+}
+
+function makeStyles(colors: ColorPalette) {
+	return StyleSheet.create({
 	root: { flex: 1, padding: space.lg, gap: space.sm, backgroundColor: colors.bg },
 	flex: { flex: 1 },
 	center: {
@@ -793,4 +804,5 @@ const styles = StyleSheet.create({
 		backgroundColor: colors.bg
 	},
 	stickyRow: { flexDirection: 'row', gap: space.sm }
-});
+	});
+}

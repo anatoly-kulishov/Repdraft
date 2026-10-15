@@ -23,11 +23,14 @@ import { PrimaryButton } from '../src/components/PrimaryButton';
 import { useLocale } from '../src/state/locale';
 import { recordsRepo } from '../src/storage/recordsRepo';
 import { pushRecord, deleteRecordRemote } from '../src/sync/cloudSync';
-import { colors, touchMin } from '../src/theme';
+import { useAppColors } from '../src/state/theme';
+import { touchMin, type ColorPalette } from '../src/theme';
 
 export default function RecordsScreen() {
 	const router = useRouter();
 	const { locale, tt } = useLocale();
+	const colors = useAppColors();
+	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const [records, setRecords] = useState<PersonalRecord[]>([]);
 	const [query, setQuery] = useState('');
 	const [editing, setEditing] = useState<PersonalRecord | null>(null);
@@ -183,7 +186,8 @@ export default function RecordsScreen() {
 	);
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorPalette) {
+	return StyleSheet.create({
 	root: { flex: 1, padding: 16, backgroundColor: colors.bg, gap: 10 },
 	search: {
 		minHeight: touchMin,
@@ -230,4 +234,5 @@ const styles = StyleSheet.create({
 	rowBody: { flex: 1 },
 	title: { color: colors.text, fontWeight: '700' },
 	meta: { color: colors.muted, marginTop: 4, fontVariant: ['tabular-nums'] }
-});
+	});
+}

@@ -29,6 +29,8 @@
 | `native-rewrite-plan.md` | Native-first rewrite, phases, north star |
 | `delivery.md` | RN + web roles |
 | `exercise-rag.md` | `/ai` catalog RAG: pgvector SQL + `npm run build:embeddings` |
+| `watch-session-ownership.md` | Watch companion spike: session lease / finish race |
+| `rn-visual-backlog.md` | Mobile theme + visual QA findings |
 
 ### rules/
 

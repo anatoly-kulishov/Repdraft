@@ -65,10 +65,18 @@ import {
 	isLiveResumePlanId,
 	pickDefaultExerciseIndex
 } from '../../src/live/sessionUi';
-import { mergeSessionRecordsInto, recordsFromFinishedSession } from '../../src/lib/sessionRecords';
+import {
+	countImprovedRecords,
+	mergeSessionRecordsInto,
+	recordsFromFinishedSession
+} from '../../src/lib/sessionRecords';
+import { noteFinishedSessionAchievements } from '../../src/state/achievements';
+import { isHealthReadEnabled } from '../../src/state/healthPrefs';
+import { getHealthAdapter, saveLastHealthSnapshot } from '../../src/health';
 import { useLocale } from '../../src/state/locale';
 import { noteChecklist } from '../../src/state/onboarding';
 import { noteFinishedSession } from '../../src/state/quest';
+import { useAppColors } from '../../src/state/theme';
 import { kvSetJson } from '../../src/storage/kv';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { recordsRepo } from '../../src/storage/recordsRepo';
@@ -79,7 +87,7 @@ import {
 } from '../../src/storage/sessionsRepo';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { pushPlan, pushRecord, pushSession } from '../../src/sync/cloudSync';
-import { colors, radius, space, touchMin } from '../../src/theme';
+import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
 function tapLight(): void {
 	void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
@@ -92,6 +100,8 @@ export default function LiveScreen() {
 	const planId = Array.isArray(planIdParam) ? planIdParam[0] : planIdParam;
 	const router = useRouter();
 	const { locale, tt } = useLocale();
+	const colors = useAppColors();
+	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const bottomPad = useBottomChromePad(space.md);
 
 	const [session, setSession] = useState<WorkoutSession | null>(null);
@@ -446,11 +456,31 @@ export default function LiveScreen() {
 		await sessionsRepo.save(done);
 		const fromSession = recordsFromFinishedSession(done);
 		const existing = await recordsRepo.list();
+		const newPrCount = countImprovedRecords(existing, fromSession);
 		const mergedRecords = mergeSessionRecordsInto(existing, fromSession);
 		await kvSetJson(RECORDS_STORAGE_KEY, mergedRecords);
 		await writeActiveSession(null);
 		await writeRestUntil(null);
-		await noteFinishedSession(done);
+		const questApply = await noteFinishedSession(done);
+		const allSessions = await sessionsRepo.list();
+		await noteFinishedSessionAchievements({
+			justFinished: done,
+			finishedSessions: allSessions,
+			questGoalJustMet: Boolean(questApply?.goalJustMet),
+			newPrCount
+		});
+		if (done.finishedAt && (await isHealthReadEnabled())) {
+			const health = getHealthAdapter();
+			if (health.isAvailable()) {
+				const status = await health.getPermissionStatus();
+				if (status === 'not_determined') await health.requestReadPermission();
+				const snap = await health.readWorkoutWindow({
+					startedAt: done.startedAt,
+					finishedAt: done.finishedAt
+				});
+				if (snap) await saveLastHealthSnapshot(done.id, snap);
+			}
+		}
 		await noteChecklist('sessionFinished');
 		if (done.planId) {
 			const plans = await plansRepo.list();
@@ -858,137 +888,139 @@ export default function LiveScreen() {
 	);
 }
 
-const styles = StyleSheet.create({
-	root: { flex: 1, backgroundColor: colors.bg },
-	flex: { flex: 1 },
-	header: { paddingHorizontal: space.lg, paddingTop: space.sm, gap: 2 },
-	scroll: { padding: space.lg, gap: space.md, paddingBottom: space.xxl },
-	center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
-	plan: { color: colors.text, fontSize: 22, fontWeight: '800' },
-	progress: { color: colors.muted, fontSize: 14, fontWeight: '600' },
-	muted: { color: colors.muted },
-	nav: { paddingHorizontal: space.md, paddingVertical: space.sm, gap: space.sm },
-	navChip: {
-		minHeight: touchMin,
-		maxWidth: 168,
-		paddingHorizontal: space.md,
-		borderRadius: radius.xl,
-		borderWidth: 1,
-		borderColor: colors.border,
-		backgroundColor: colors.panel,
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginRight: space.sm
-	},
-	navChipActive: {
-		borderColor: colors.accent,
-		backgroundColor: colors.accentDim
-	},
-	navChipDone: { opacity: 0.65 },
-	navChipText: { color: colors.muted, fontWeight: '700', fontSize: 13 },
-	navChipTextActive: { color: colors.text },
-	restBox: {
-		backgroundColor: colors.panelRaised,
-		borderRadius: radius.lg,
-		padding: space.lg,
-		alignItems: 'center',
-		gap: space.sm,
-		borderWidth: 1,
-		borderColor: colors.accent
-	},
-	restLabel: {
-		color: colors.muted,
-		fontWeight: '700',
-		letterSpacing: 0.6,
-		textTransform: 'uppercase',
-		fontSize: 12
-	},
-	restValue: {
-		color: colors.accent,
-		fontSize: 48,
-		fontWeight: '800',
-		fontVariant: ['tabular-nums'],
-		lineHeight: 52
-	},
-	restUnit: { color: colors.muted, fontWeight: '600', marginTop: -6 },
-	restBarTrack: {
-		alignSelf: 'stretch',
-		height: 8,
-		borderRadius: 999,
-		backgroundColor: colors.bg,
-		overflow: 'hidden',
-		marginTop: space.xs
-	},
-	restBarFill: { height: '100%', backgroundColor: colors.accent },
-	restActions: { flexDirection: 'row', gap: space.sm, alignSelf: 'stretch', marginTop: space.sm },
-	restAction: { flex: 1 },
-	card: {
-		backgroundColor: colors.panel,
-		borderRadius: radius.lg,
-		padding: space.lg,
-		gap: space.md,
-		borderWidth: 1,
-		borderColor: colors.border
-	},
-	exName: { color: colors.text, fontSize: 22, fontWeight: '800' },
-	exActions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-	setRow: {
-		gap: space.sm,
-		paddingVertical: space.md,
-		borderTopWidth: 1,
-		borderTopColor: colors.border
-	},
-	setRowDone: { opacity: 0.72 },
-	setHead: { flexDirection: 'row', justifyContent: 'space-between', gap: space.sm },
-	setIndex: { color: colors.text, fontWeight: '700' },
-	prev: { color: colors.muted, fontSize: 13, flexShrink: 1, textAlign: 'right' },
-	inputs: { flexDirection: 'row', gap: space.sm },
-	input: {
-		flex: 1,
-		minHeight: 56,
-		borderRadius: radius.md,
-		borderWidth: 1,
-		borderColor: colors.borderStrong,
-		backgroundColor: colors.bg,
-		color: colors.text,
-		paddingHorizontal: space.md,
-		fontSize: 22,
-		fontWeight: '800',
-		textAlign: 'center',
-		fontVariant: ['tabular-nums']
-	},
-	setActions: { gap: space.sm },
-	removeHit: {
-		minHeight: touchMin,
-		minWidth: touchMin,
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	removeHint: {
-		color: colors.danger,
-		fontSize: 12,
-		textAlign: 'center',
-		fontWeight: '600'
-	},
-	note: {
-		minHeight: touchMin,
-		borderRadius: radius.md,
-		borderWidth: 1,
-		borderColor: colors.border,
-		backgroundColor: colors.bg,
-		color: colors.text,
-		paddingHorizontal: space.md,
-		fontSize: 15
-	},
-	footer: {
-		paddingHorizontal: space.lg,
-		paddingTop: space.sm,
-		gap: space.sm,
-		borderTopWidth: 1,
-		borderTopColor: colors.border,
-		backgroundColor: colors.bg
-	},
-	footerRow: { flexDirection: 'row', gap: space.sm, alignItems: 'center' },
-	discard: { minHeight: touchMin, alignItems: 'center', justifyContent: 'center' },
-	discardText: { color: colors.danger, fontWeight: '600' }
-});
+function makeStyles(colors: ColorPalette) {
+	return StyleSheet.create({
+		root: { flex: 1, backgroundColor: colors.bg },
+		flex: { flex: 1 },
+		header: { paddingHorizontal: space.lg, paddingTop: space.sm, gap: 2 },
+		scroll: { padding: space.lg, gap: space.md, paddingBottom: space.xxl },
+		center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
+		plan: { color: colors.text, fontSize: 22, fontWeight: '800' },
+		progress: { color: colors.muted, fontSize: 14, fontWeight: '600' },
+		muted: { color: colors.muted },
+		nav: { paddingHorizontal: space.md, paddingVertical: space.sm, gap: space.sm },
+		navChip: {
+			minHeight: touchMin,
+			maxWidth: 168,
+			paddingHorizontal: space.md,
+			borderRadius: radius.xl,
+			borderWidth: 1,
+			borderColor: colors.border,
+			backgroundColor: colors.panel,
+			alignItems: 'center',
+			justifyContent: 'center',
+			marginRight: space.sm
+		},
+		navChipActive: {
+			borderColor: colors.accent,
+			backgroundColor: colors.accentDim
+		},
+		navChipDone: { opacity: 0.65 },
+		navChipText: { color: colors.muted, fontWeight: '700', fontSize: 13 },
+		navChipTextActive: { color: colors.text },
+		restBox: {
+			backgroundColor: colors.panelRaised,
+			borderRadius: radius.lg,
+			padding: space.lg,
+			alignItems: 'center',
+			gap: space.sm,
+			borderWidth: 1,
+			borderColor: colors.accent
+		},
+		restLabel: {
+			color: colors.muted,
+			fontWeight: '700',
+			letterSpacing: 0.6,
+			textTransform: 'uppercase',
+			fontSize: 12
+		},
+		restValue: {
+			color: colors.accent,
+			fontSize: 48,
+			fontWeight: '800',
+			fontVariant: ['tabular-nums'],
+			lineHeight: 52
+		},
+		restUnit: { color: colors.muted, fontWeight: '600', marginTop: -6 },
+		restBarTrack: {
+			alignSelf: 'stretch',
+			height: 8,
+			borderRadius: 999,
+			backgroundColor: colors.bg,
+			overflow: 'hidden',
+			marginTop: space.xs
+		},
+		restBarFill: { height: '100%', backgroundColor: colors.accent },
+		restActions: { flexDirection: 'row', gap: space.sm, alignSelf: 'stretch', marginTop: space.sm },
+		restAction: { flex: 1 },
+		card: {
+			backgroundColor: colors.panel,
+			borderRadius: radius.lg,
+			padding: space.lg,
+			gap: space.md,
+			borderWidth: 1,
+			borderColor: colors.border
+		},
+		exName: { color: colors.text, fontSize: 22, fontWeight: '800' },
+		exActions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+		setRow: {
+			gap: space.sm,
+			paddingVertical: space.md,
+			borderTopWidth: 1,
+			borderTopColor: colors.border
+		},
+		setRowDone: { opacity: 0.72 },
+		setHead: { flexDirection: 'row', justifyContent: 'space-between', gap: space.sm },
+		setIndex: { color: colors.text, fontWeight: '700' },
+		prev: { color: colors.muted, fontSize: 13, flexShrink: 1, textAlign: 'right' },
+		inputs: { flexDirection: 'row', gap: space.sm },
+		input: {
+			flex: 1,
+			minHeight: 56,
+			borderRadius: radius.md,
+			borderWidth: 1,
+			borderColor: colors.borderStrong,
+			backgroundColor: colors.bg,
+			color: colors.text,
+			paddingHorizontal: space.md,
+			fontSize: 22,
+			fontWeight: '800',
+			textAlign: 'center',
+			fontVariant: ['tabular-nums']
+		},
+		setActions: { gap: space.sm },
+		removeHit: {
+			minHeight: touchMin,
+			minWidth: touchMin,
+			alignItems: 'center',
+			justifyContent: 'center'
+		},
+		removeHint: {
+			color: colors.danger,
+			fontSize: 12,
+			textAlign: 'center',
+			fontWeight: '600'
+		},
+		note: {
+			minHeight: touchMin,
+			borderRadius: radius.md,
+			borderWidth: 1,
+			borderColor: colors.border,
+			backgroundColor: colors.bg,
+			color: colors.text,
+			paddingHorizontal: space.md,
+			fontSize: 15
+		},
+		footer: {
+			paddingHorizontal: space.lg,
+			paddingTop: space.sm,
+			gap: space.sm,
+			borderTopWidth: 1,
+			borderTopColor: colors.border,
+			backgroundColor: colors.bg
+		},
+		footerRow: { flexDirection: 'row', gap: space.sm, alignItems: 'center' },
+		discard: { minHeight: touchMin, alignItems: 'center', justifyContent: 'center' },
+		discardText: { color: colors.danger, fontWeight: '600' }
+	});
+}

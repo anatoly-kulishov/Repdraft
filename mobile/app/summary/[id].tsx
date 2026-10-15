@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
 	Pressable,
@@ -8,6 +8,12 @@ import {
 	Text,
 	View
 } from 'react-native';
+import {
+	achievementTitleKey,
+	type AchievementId,
+	type AchievementsState
+} from '@repdraft/domain/achievements';
+import type { QuestApplyResult, QuestState } from '@repdraft/domain/quest';
 import {
 	completedExerciseCount,
 	completedSetCount,
@@ -18,15 +24,28 @@ import {
 	visibleSessionExerciseIndices
 } from '@repdraft/domain/session';
 import type { WorkoutSession } from '@repdraft/domain/types';
-import { heroLevel } from '@repdraft/domain/quest';
 import { exerciseDisplayName, refreshCustomsCache } from '../../src/catalog/loadIndex';
+import { AchievementsPanel } from '../../src/components/AchievementsPanel';
+import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
+import { QuestSummaryCard } from '../../src/components/QuestSummaryCard';
+import {
+	formatHealthSnapshotLine,
+	loadLastHealthSnapshot,
+	type HealthWorkoutSnapshot
+} from '../../src/health';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { routeParam } from '../../src/nav/params';
+import {
+	isAchievementsEnabled,
+	loadAchievementsState,
+	loadLastAchievementUnlock
+} from '../../src/state/achievements';
 import { useLocale } from '../../src/state/locale';
-import { isQuestEnabled, loadQuestState } from '../../src/state/quest';
+import { isQuestEnabled, loadLastQuestApply, loadQuestState } from '../../src/state/quest';
+import { useAppColors } from '../../src/state/theme';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
-import { colors, radius, space, touchMin } from '../../src/theme';
+import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
 function formatDuration(ms: number): string {
 	const totalSec = Math.max(0, Math.round(ms / 1000));
@@ -40,10 +59,16 @@ export default function SummaryScreen() {
 	const id = routeParam(idParam);
 	const router = useRouter();
 	const { locale, tt } = useLocale();
+	const colors = useAppColors();
+	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const bottomPad = useBottomChromePad(space.md);
 	const [session, setSession] = useState<WorkoutSession | null>(null);
 	const [prevVolume, setPrevVolume] = useState<number | null>(null);
-	const [questLine, setQuestLine] = useState<string | null>(null);
+	const [questApply, setQuestApply] = useState<QuestApplyResult | null>(null);
+	const [questState, setQuestState] = useState<QuestState | null>(null);
+	const [achState, setAchState] = useState<AchievementsState | null>(null);
+	const [newAchIds, setNewAchIds] = useState<AchievementId[] | null>(null);
+	const [healthSnap, setHealthSnap] = useState<HealthWorkoutSnapshot | null>(null);
 	const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
 	useEffect(() => {
@@ -57,19 +82,35 @@ export default function SummaryScreen() {
 				const prev = previousPlanSession(all, found);
 				if (!cancelled) setPrevVolume(prev ? sessionVolumeKg(prev) : null);
 			}
-			if (await isQuestEnabled()) {
-				const st = await loadQuestState();
+			if (id && (await isQuestEnabled())) {
+				const [apply, st] = await Promise.all([
+					loadLastQuestApply(id),
+					loadQuestState()
+				]);
 				if (!cancelled) {
-					setQuestLine(
-						`${tt('quest.summaryTitle')}: Lv ${heroLevel(st.hero.totalXp)} · ${st.week.countedSessionIds.length}/${st.weeklyGoal}`
-					);
+					setQuestApply(apply);
+					setQuestState(st);
 				}
+			}
+			if (await isAchievementsEnabled()) {
+				const [st, unlocked] = await Promise.all([
+					loadAchievementsState(),
+					id ? loadLastAchievementUnlock(id) : Promise.resolve(null)
+				]);
+				if (!cancelled) {
+					setAchState(st);
+					setNewAchIds(unlocked);
+				}
+			}
+			if (id) {
+				const snap = await loadLastHealthSnapshot(id);
+				if (!cancelled) setHealthSnap(snap);
 			}
 		})();
 		return () => {
 			cancelled = true;
 		};
-	}, [id, tt]);
+	}, [id]);
 
 	if (!session) {
 		return (
@@ -80,8 +121,7 @@ export default function SummaryScreen() {
 	}
 
 	const volume = Math.round(sessionVolumeKg(session));
-	const delta =
-		prevVolume != null ? volume - Math.round(prevVolume) : null;
+	const delta = prevVolume != null ? volume - Math.round(prevVolume) : null;
 	const visible = visibleSessionExerciseIndices(session);
 
 	return (
@@ -91,7 +131,28 @@ export default function SummaryScreen() {
 				<Text style={styles.title} numberOfLines={2}>
 					{session.planName}
 				</Text>
-				{questLine ? <Text style={styles.quest}>{questLine}</Text> : null}
+				{questApply && questState ? (
+					<QuestSummaryCard apply={questApply} state={questState} />
+				) : null}
+				{newAchIds && newAchIds.length > 0 ? (
+					<Panel accent>
+						<Text style={styles.achBannerTitle}>{tt('achievements.unlocked')}</Text>
+						{newAchIds.map((aid) => (
+							<Text key={aid} style={styles.achBannerLine}>
+								{'• '}
+								{tt(achievementTitleKey(aid))}
+							</Text>
+						))}
+					</Panel>
+				) : null}
+				{healthSnap ? (
+					<Panel>
+						<Text style={styles.healthTitle}>{tt('health.fromHealth')}</Text>
+						<Text style={styles.healthLine}>
+							{formatHealthSnapshotLine(healthSnap, tt)}
+						</Text>
+					</Panel>
+				) : null}
 				<View style={styles.stats}>
 					<View style={styles.stat}>
 						<Text style={styles.statLabel}>{tt('summary.time')}</Text>
@@ -156,6 +217,12 @@ export default function SummaryScreen() {
 						</View>
 					);
 				})}
+				{achState ? (
+					<Panel>
+						<Text style={styles.sectionTitle}>{tt('achievements.title')}</Text>
+						<AchievementsPanel state={achState} highlightIds={newAchIds} />
+					</Panel>
+				) : null}
 			</ScrollView>
 			<View style={[styles.footer, { paddingBottom: bottomPad }]}>
 				<PrimaryButton label={tt('summary.back')} onPress={() => router.replace('/')} />
@@ -164,55 +231,73 @@ export default function SummaryScreen() {
 	);
 }
 
-const styles = StyleSheet.create({
-	root: { flex: 1, backgroundColor: colors.bg },
-	flex: { flex: 1 },
-	scroll: { padding: space.lg, gap: space.md, paddingBottom: space.xxl },
-	center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
-	kicker: { color: colors.accent, fontWeight: '700', fontSize: 14 },
-	title: { color: colors.text, fontSize: 24, fontWeight: '800' },
-	quest: { color: colors.muted },
-	stats: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.sm },
-	stat: {
-		width: '47%',
-		backgroundColor: colors.panel,
-		borderRadius: radius.md,
-		borderWidth: 1,
-		borderColor: colors.border,
-		padding: space.md
-	},
-	statLabel: { color: colors.muted, fontSize: 12 },
-	statValue: {
-		color: colors.text,
-		fontSize: 22,
-		fontWeight: '800',
-		marginTop: 6,
-		fontVariant: ['tabular-nums']
-	},
-	delta: { color: colors.muted, marginTop: 4, fontSize: 13, fontWeight: '600' },
-	card: {
-		backgroundColor: colors.panel,
-		borderRadius: radius.md,
-		borderWidth: 1,
-		borderColor: colors.border,
-		padding: space.md,
-		gap: 6
-	},
-	cardHead: {
-		minHeight: touchMin,
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		gap: space.sm
-	},
-	cardTitle: { color: colors.text, fontWeight: '800', flex: 1, fontSize: 16 },
-	cardMeta: { color: colors.muted, fontWeight: '600' },
-	setLine: { color: colors.muted, fontSize: 14 },
-	footer: {
-		paddingHorizontal: space.lg,
-		paddingTop: space.md,
-		borderTopWidth: 1,
-		borderTopColor: colors.border,
-		backgroundColor: colors.bg
-	}
-});
+function makeStyles(colors: ColorPalette) {
+	return StyleSheet.create({
+		root: { flex: 1, backgroundColor: colors.bg },
+		flex: { flex: 1 },
+		scroll: { padding: space.lg, gap: space.md, paddingBottom: space.xxl },
+		center: {
+			flex: 1,
+			alignItems: 'center',
+			justifyContent: 'center',
+			backgroundColor: colors.bg
+		},
+		kicker: { color: colors.accent, fontWeight: '700', fontSize: 14 },
+		title: { color: colors.text, fontSize: 24, fontWeight: '800' },
+		sectionTitle: {
+			color: colors.muted,
+			fontWeight: '700',
+			fontSize: 13,
+			letterSpacing: 0.4,
+			textTransform: 'uppercase',
+			marginBottom: space.xs
+		},
+		achBannerTitle: { color: colors.text, fontWeight: '800', fontSize: 16 },
+		achBannerLine: { color: colors.accent, fontWeight: '600', fontSize: 14 },
+		healthTitle: { color: colors.text, fontWeight: '700', fontSize: 15 },
+		healthLine: { color: colors.muted, fontSize: 14, lineHeight: 20 },
+		stats: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.sm },
+		stat: {
+			width: '47%',
+			backgroundColor: colors.panel,
+			borderRadius: radius.md,
+			borderWidth: 1,
+			borderColor: colors.border,
+			padding: space.md
+		},
+		statLabel: { color: colors.muted, fontSize: 12 },
+		statValue: {
+			color: colors.text,
+			fontSize: 22,
+			fontWeight: '800',
+			marginTop: 6,
+			fontVariant: ['tabular-nums']
+		},
+		delta: { color: colors.muted, marginTop: 4, fontSize: 13, fontWeight: '600' },
+		card: {
+			backgroundColor: colors.panel,
+			borderRadius: radius.md,
+			borderWidth: 1,
+			borderColor: colors.border,
+			padding: space.md,
+			gap: 6
+		},
+		cardHead: {
+			minHeight: touchMin,
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			gap: space.sm
+		},
+		cardTitle: { color: colors.text, fontWeight: '800', flex: 1, fontSize: 16 },
+		cardMeta: { color: colors.muted, fontWeight: '600' },
+		setLine: { color: colors.muted, fontSize: 14 },
+		footer: {
+			paddingHorizontal: space.lg,
+			paddingTop: space.md,
+			borderTopWidth: 1,
+			borderTopColor: colors.border,
+			backgroundColor: colors.bg
+		}
+	});
+}

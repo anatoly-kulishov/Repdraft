@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
 	Alert,
 	KeyboardAvoidingView,
@@ -17,7 +17,8 @@ import { useBottomChromePad } from '../src/layout/safe';
 import { useLocale } from '../src/state/locale';
 import { plansRepo } from '../src/storage/plansRepo';
 import { pushPlan } from '../src/sync/cloudSync';
-import { colors, space, type } from '../src/theme';
+import { useAppColors } from '../src/state/theme';
+import { space, type, type ColorPalette } from '../src/theme';
 
 type AiExercise = {
 	exerciseId: string;
@@ -33,6 +34,8 @@ type AiOk = {
 
 export default function AiDraftScreen() {
 	const { tt } = useLocale();
+	const colors = useAppColors();
+	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const router = useRouter();
 	const bottomPad = useBottomChromePad(space.md);
 	const [brief, setBrief] = useState('');
@@ -104,7 +107,8 @@ export default function AiDraftScreen() {
 	);
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorPalette) {
+	return StyleSheet.create({
 	root: { flex: 1, padding: space.lg, gap: space.md, backgroundColor: colors.bg },
 	title: { ...type.title, color: colors.text },
 	input: {
@@ -119,4 +123,5 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 		textAlignVertical: 'top'
 	}
-});
+	});
+}

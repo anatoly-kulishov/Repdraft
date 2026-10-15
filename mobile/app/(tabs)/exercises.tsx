@@ -28,10 +28,13 @@ import { useBottomChromePad } from '../../src/layout/safe';
 import { useLocale } from '../../src/state/locale';
 import { bookmarksRepo } from '../../src/storage/bookmarksRepo';
 import { customsRepo } from '../../src/storage/customsRepo';
-import { colors, radius, space, touchMin } from '../../src/theme';
+import { useAppColors } from '../../src/state/theme';
+import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
 export default function ExercisesScreen() {
 	const { locale, tt } = useLocale();
+	const colors = useAppColors();
+	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const router = useRouter();
 	const bottomPad = useBottomChromePad(space.md);
 	const [query, setQuery] = useState('');
@@ -287,7 +290,8 @@ export default function ExercisesScreen() {
 	);
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorPalette) {
+	return StyleSheet.create({
 	root: { flex: 1, padding: space.lg, gap: space.sm, backgroundColor: colors.bg },
 	search: {
 		minHeight: touchMin,
@@ -378,4 +382,5 @@ const styles = StyleSheet.create({
 	},
 	hubTitle: { color: colors.text, fontWeight: '800', fontSize: 16 },
 	hubMeta: { color: colors.muted, marginTop: 4, fontSize: 13 }
-});
+	});
+}

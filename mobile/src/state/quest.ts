@@ -12,6 +12,13 @@ import {
 import type { WorkoutSession } from '@repdraft/domain/types';
 import { kvGet, kvSet, kvSetJson, kvGetJson } from '../storage/kv';
 
+const QUEST_LAST_APPLY_KEY = 'repdraft:quest-last-apply';
+
+type StoredLastApply = {
+	sessionId: string;
+	apply: QuestApplyResult;
+};
+
 export async function isQuestEnabled(): Promise<boolean> {
 	return parseQuestEnabled(await kvGet(QUEST_ENABLED_STORAGE_KEY));
 }
@@ -35,9 +42,19 @@ export async function setWeeklyGoal(goal: number): Promise<QuestState> {
 	return next;
 }
 
+export async function loadLastQuestApply(sessionId: string): Promise<QuestApplyResult | null> {
+	const raw = await kvGetJson<StoredLastApply | null>(QUEST_LAST_APPLY_KEY, null);
+	if (!raw || raw.sessionId !== sessionId || !raw.apply) return null;
+	return raw.apply;
+}
+
 export async function noteFinishedSession(session: WorkoutSession): Promise<QuestApplyResult | null> {
 	if (!(await isQuestEnabled())) return null;
 	const result = applyFinishedSessionToQuest(await loadQuestState(), session, new Date());
 	await saveQuestState(result.state);
+	await kvSetJson(QUEST_LAST_APPLY_KEY, {
+		sessionId: session.id,
+		apply: result
+	} satisfies StoredLastApply);
 	return result;
 }

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Dumbbell } from 'lucide-react-native';
 import { catalogMediaUrl } from '../catalog/mediaUrl';
-import { colors, radius } from '../theme';
+import { useAppColors } from '../state/theme';
+import { radius, type ColorPalette } from '../theme';
 
 type Props = {
 	imagePath: string | null | undefined;
@@ -22,6 +23,8 @@ export function CatalogThumb({
 	style,
 	rounded = radius.sm
 }: Props) {
+	const colors = useAppColors();
+	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const uri = catalogMediaUrl(imagePath);
 	const [failed, setFailed] = useState(false);
 	const showImage = Boolean(uri) && !failed;
@@ -52,14 +55,16 @@ export function CatalogThumb({
 	);
 }
 
-const styles = StyleSheet.create({
-	wrap: {
-		backgroundColor: colors.panelRaised,
-		borderWidth: 1,
-		borderColor: colors.border,
-		overflow: 'hidden',
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	img: { width: '100%', height: '100%' }
-});
+function makeStyles(colors: ColorPalette) {
+	return StyleSheet.create({
+		wrap: {
+			backgroundColor: colors.panelRaised,
+			borderWidth: 1,
+			borderColor: colors.border,
+			overflow: 'hidden',
+			alignItems: 'center',
+			justifyContent: 'center'
+		},
+		img: { width: '100%', height: '100%' }
+	});
+}

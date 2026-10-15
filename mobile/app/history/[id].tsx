@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
 	addCompletedLoggedSet,
@@ -21,12 +21,15 @@ import { plansRepo } from '../../src/storage/plansRepo';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { clearSessionTombstone } from '../../src/sync/tombstones';
 import { deleteSessionRemote, pushPlan, pushSession } from '../../src/sync/cloudSync';
-import { colors, space, touchMin } from '../../src/theme';
+import { useAppColors } from '../../src/state/theme';
+import { space, touchMin, type ColorPalette } from '../../src/theme';
 
 export default function HistoryDetailScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const router = useRouter();
 	const { locale, tt } = useLocale();
+	const colors = useAppColors();
+	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const bottomPad = useBottomChromePad(space.lg);
 	const [session, setSession] = useState<WorkoutSession | null>(null);
 	const [editing, setEditing] = useState(false);
@@ -233,7 +236,8 @@ export default function HistoryDetailScreen() {
 	);
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorPalette) {
+	return StyleSheet.create({
 	root: { padding: 16, gap: 10, backgroundColor: colors.bg, paddingBottom: 40 },
 	center: {
 		flex: 1,
@@ -285,4 +289,5 @@ const styles = StyleSheet.create({
 		justifyContent: 'center'
 	},
 	undoText: { color: colors.accentText, fontWeight: '700', fontSize: 16 }
-});
+	});
+}
