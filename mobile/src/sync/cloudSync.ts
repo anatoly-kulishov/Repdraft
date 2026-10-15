@@ -61,6 +61,11 @@ export async function deletePlanRemote(id: string): Promise<void> {
 	await flushOutbox();
 }
 
+export async function deleteRecordRemote(exerciseId: string): Promise<void> {
+	await enqueueOutbox({ kind: 'record.delete', exerciseId });
+	await flushOutbox();
+}
+
 async function upsertPlan(plan: WorkoutPlan): Promise<void> {
 	if (!(await isCloudReady()) || !isCloudPersistableId(plan.id)) return;
 	const sb = getSupabase()!;

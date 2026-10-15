@@ -1,31 +1,35 @@
 {
-	"expo": {
-		"name": "Repdraft",
-		"slug": "repdraft",
-		"version": "0.21.0",
-		"orientation": "portrait",
-		"icon": "./assets/icon.png",
-		"userInterfaceStyle": "dark",
-		"scheme": "repdraft",
-		"newArchEnabled": true,
-		"ios": {
-			"supportsTablet": true,
-			"bundleIdentifier": "app.repdraft.mobile"
-		},
-		"android": {
-			"adaptiveIcon": {
-				"backgroundColor": "#0c0c0e",
-				"foregroundImage": "./assets/android-icon-foreground.png",
-				"backgroundImage": "./assets/android-icon-background.png",
-				"monochromeImage": "./assets/android-icon-monochrome.png"
-			},
-			"package": "app.repdraft.mobile",
-			"predictiveBackGestureEnabled": false
-		},
-		"web": {
-			"favicon": "./assets/favicon.png",
-			"bundler": "metro"
-		},
-		"plugins": ["expo-router"]
-	}
+  "expo": {
+    "name": "Repdraft",
+    "slug": "repdraft",
+    "version": "0.21.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "repdraft",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.repdraft.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0c0c0e",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "app.repdraft.mobile",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-audio",
+      "expo-web-browser"
+    ]
+  }
 }

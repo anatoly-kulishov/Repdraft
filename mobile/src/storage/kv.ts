@@ -1,33 +1,21 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export async function kvGet(key: string): Promise<string | null> {
-	try {
-		return await AsyncStorage.getItem(key);
-	} catch {
-		return null;
-	}
+	return AsyncStorage.getItem(key);
 }
 
 export async function kvSet(key: string, value: string): Promise<void> {
-	try {
-		await AsyncStorage.setItem(key, value);
-	} catch {
-		/* ignore quota / disk errors for MVP */
-	}
+	await AsyncStorage.setItem(key, value);
 }
 
 export async function kvRemove(key: string): Promise<void> {
-	try {
-		await AsyncStorage.removeItem(key);
-	} catch {
-		/* ignore */
-	}
+	await AsyncStorage.removeItem(key);
 }
 
 export async function kvGetJson<T>(key: string, fallback: T): Promise<T> {
-	const raw = await kvGet(key);
-	if (!raw) return fallback;
 	try {
+		const raw = await kvGet(key);
+		if (!raw) return fallback;
 		return JSON.parse(raw) as T;
 	} catch {
 		return fallback;

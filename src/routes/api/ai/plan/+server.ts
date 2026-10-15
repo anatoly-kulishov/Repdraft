@@ -1,11 +1,13 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { aiAvailability } from '$lib/server/ai/config';
 import { generateWorkoutPlan } from '$lib/server/ai/generatePlan';
+import { corsJson, corsPreflight } from '$lib/server/cors';
+
+export const OPTIONS: RequestHandler = async () => corsPreflight();
 
 export const GET: RequestHandler = async () => {
 	const status = aiAvailability();
-	return json(status, { status: status.available ? 200 : 503 });
+	return corsJson(status, { status: status.available ? 200 : 503 });
 };
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -13,7 +15,10 @@ export const POST: RequestHandler = async ({ request }) => {
 	try {
 		body = await request.json();
 	} catch {
-		return json({ ok: false, code: 'invalid_brief', error: 'Invalid JSON body' }, { status: 400 });
+		return corsJson(
+			{ ok: false, code: 'invalid_brief', error: 'Invalid JSON body' },
+			{ status: 400 }
+		);
 	}
 
 	const brief =
@@ -31,7 +36,7 @@ export const POST: RequestHandler = async ({ request }) => {
 					: result.code === 'invalid_plan'
 						? 422
 						: 502;
-		return json(result, { status });
+		return corsJson(result, { status });
 	}
-	return json(result);
+	return corsJson(result);
 };

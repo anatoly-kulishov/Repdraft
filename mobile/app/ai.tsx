@@ -1,14 +1,23 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+	Alert,
+	KeyboardAvoidingView,
+	Platform,
+	StyleSheet,
+	Text,
+	TextInput,
+	View
+} from 'react-native';
 import { sanitizeAiBrief } from '@repdraft/domain/inputLimits';
 import { addExercise, createEmptyDraft, updateExercise } from '@repdraft/domain/workout';
 import { aiPlanEndpoint } from '../src/catalog/mediaUrl';
 import { PrimaryButton } from '../src/components/PrimaryButton';
+import { useBottomChromePad } from '../src/layout/safe';
 import { useLocale } from '../src/state/locale';
 import { plansRepo } from '../src/storage/plansRepo';
 import { pushPlan } from '../src/sync/cloudSync';
-import { colors, touchMin } from '../src/theme';
+import { colors, space, type } from '../src/theme';
 
 type AiExercise = {
 	exerciseId: string;
@@ -25,6 +34,7 @@ type AiOk = {
 export default function AiDraftScreen() {
 	const { tt } = useLocale();
 	const router = useRouter();
+	const bottomPad = useBottomChromePad(space.md);
 	const [brief, setBrief] = useState('');
 	const [busy, setBusy] = useState(false);
 
@@ -71,7 +81,10 @@ export default function AiDraftScreen() {
 	}
 
 	return (
-		<View style={styles.root}>
+		<KeyboardAvoidingView
+			style={styles.root}
+			behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+		>
 			<Text style={styles.title}>{tt('ai.title')}</Text>
 			<TextInput
 				style={styles.input}
@@ -86,21 +99,23 @@ export default function AiDraftScreen() {
 				onPress={() => void generate()}
 				disabled={busy}
 			/>
-		</View>
+			<View style={{ height: bottomPad }} />
+		</KeyboardAvoidingView>
 	);
 }
 
 const styles = StyleSheet.create({
-	root: { flex: 1, padding: 16, gap: 12, backgroundColor: colors.bg },
-	title: { color: colors.text, fontSize: 22, fontWeight: '800' },
+	root: { flex: 1, padding: space.lg, gap: space.md, backgroundColor: colors.bg },
+	title: { ...type.title, color: colors.text },
 	input: {
+		flex: 1,
 		minHeight: 160,
 		borderRadius: 14,
 		borderWidth: 1,
 		borderColor: colors.border,
 		backgroundColor: colors.panel,
 		color: colors.text,
-		padding: 14,
+		padding: space.md,
 		fontSize: 16,
 		textAlignVertical: 'top'
 	}

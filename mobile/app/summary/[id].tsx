@@ -1,19 +1,32 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import {
+	ActivityIndicator,
+	Pressable,
+	ScrollView,
+	StyleSheet,
+	Text,
+	View
+} from 'react-native';
 import {
 	completedExerciseCount,
 	completedSetCount,
+	loggedSetKind,
+	previousPlanSession,
 	sessionDurationMs,
-	sessionVolumeKg
+	sessionVolumeKg,
+	visibleSessionExerciseIndices
 } from '@repdraft/domain/session';
 import type { WorkoutSession } from '@repdraft/domain/types';
 import { heroLevel } from '@repdraft/domain/quest';
+import { exerciseDisplayName, refreshCustomsCache } from '../../src/catalog/loadIndex';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
+import { useBottomChromePad } from '../../src/layout/safe';
+import { routeParam } from '../../src/nav/params';
 import { useLocale } from '../../src/state/locale';
 import { isQuestEnabled, loadQuestState } from '../../src/state/quest';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
-import { colors } from '../../src/theme';
+import { colors, radius, space, touchMin } from '../../src/theme';
 
 function formatDuration(ms: number): string {
 	const totalSec = Math.max(0, Math.round(ms / 1000));
@@ -23,17 +36,27 @@ function formatDuration(ms: number): string {
 }
 
 export default function SummaryScreen() {
-	const { id } = useLocalSearchParams<{ id: string }>();
+	const { id: idParam } = useLocalSearchParams<{ id: string }>();
+	const id = routeParam(idParam);
 	const router = useRouter();
-	const { tt } = useLocale();
+	const { locale, tt } = useLocale();
+	const bottomPad = useBottomChromePad(space.md);
 	const [session, setSession] = useState<WorkoutSession | null>(null);
+	const [prevVolume, setPrevVolume] = useState<number | null>(null);
 	const [questLine, setQuestLine] = useState<string | null>(null);
+	const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
 	useEffect(() => {
 		let cancelled = false;
 		void (async () => {
+			await refreshCustomsCache();
 			const found = id ? await sessionsRepo.get(id) : null;
 			if (!cancelled) setSession(found);
+			if (found) {
+				const all = await sessionsRepo.list();
+				const prev = previousPlanSession(all, found);
+				if (!cancelled) setPrevVolume(prev ? sessionVolumeKg(prev) : null);
+			}
 			if (await isQuestEnabled()) {
 				const st = await loadQuestState();
 				if (!cancelled) {
@@ -56,30 +79,85 @@ export default function SummaryScreen() {
 		);
 	}
 
+	const volume = Math.round(sessionVolumeKg(session));
+	const delta =
+		prevVolume != null ? volume - Math.round(prevVolume) : null;
+	const visible = visibleSessionExerciseIndices(session);
+
 	return (
 		<View style={styles.root}>
-			<Text style={styles.kicker}>{tt('summary.saved')}</Text>
-			<Text style={styles.title}>{session.planName}</Text>
-			{questLine ? <Text style={styles.quest}>{questLine}</Text> : null}
-			<View style={styles.stats}>
-				<View style={styles.stat}>
-					<Text style={styles.statLabel}>{tt('summary.time')}</Text>
-					<Text style={styles.statValue}>{formatDuration(sessionDurationMs(session) ?? 0)}</Text>
+			<ScrollView style={styles.flex} contentContainerStyle={styles.scroll}>
+				<Text style={styles.kicker}>{tt('summary.saved')}</Text>
+				<Text style={styles.title} numberOfLines={2}>
+					{session.planName}
+				</Text>
+				{questLine ? <Text style={styles.quest}>{questLine}</Text> : null}
+				<View style={styles.stats}>
+					<View style={styles.stat}>
+						<Text style={styles.statLabel}>{tt('summary.time')}</Text>
+						<Text style={styles.statValue}>
+							{formatDuration(sessionDurationMs(session) ?? 0)}
+						</Text>
+					</View>
+					<View style={styles.stat}>
+						<Text style={styles.statLabel}>{tt('common.exercises')}</Text>
+						<Text style={styles.statValue}>{completedExerciseCount(session)}</Text>
+					</View>
+					<View style={styles.stat}>
+						<Text style={styles.statLabel}>{tt('summary.sets')}</Text>
+						<Text style={styles.statValue}>{completedSetCount(session)}</Text>
+					</View>
+					<View style={styles.stat}>
+						<Text style={styles.statLabel}>{tt('summary.volume')}</Text>
+						<Text style={styles.statValue}>{volume}</Text>
+						{delta != null ? (
+							<Text style={styles.delta}>
+								{delta > 0 ? `+${delta}` : String(delta)}
+							</Text>
+						) : null}
+					</View>
 				</View>
-				<View style={styles.stat}>
-					<Text style={styles.statLabel}>{tt('common.exercises')}</Text>
-					<Text style={styles.statValue}>{completedExerciseCount(session)}</Text>
-				</View>
-				<View style={styles.stat}>
-					<Text style={styles.statLabel}>{tt('summary.sets')}</Text>
-					<Text style={styles.statValue}>{completedSetCount(session)}</Text>
-				</View>
-				<View style={styles.stat}>
-					<Text style={styles.statLabel}>{tt('summary.volume')}</Text>
-					<Text style={styles.statValue}>{Math.round(sessionVolumeKg(session))}</Text>
-				</View>
-			</View>
-			<View style={styles.footer}>
+
+				{visible.map((ei) => {
+					const ex = session.exercises[ei];
+					if (!ex) return null;
+					const key = `${ei}:${ex.exerciseId}`;
+					const open = expanded[key] ?? true;
+					const done = ex.sets.filter((s) => s.completed);
+					return (
+						<View key={key} style={styles.card}>
+							<Pressable
+								style={styles.cardHead}
+								onPress={() => setExpanded((m) => ({ ...m, [key]: !open }))}
+							>
+								<Text style={styles.cardTitle} numberOfLines={2}>
+									{exerciseDisplayName(ex.exerciseId, locale)}
+								</Text>
+								<Text style={styles.cardMeta}>
+									{done.length}/{ex.sets.length}
+								</Text>
+							</Pressable>
+							{open
+								? done.map((set, si) => (
+										<Text key={si} style={styles.setLine}>
+											{si + 1}. {set.weightKg ?? '-'} × {set.reps ?? '-'} ·{' '}
+											{tt(
+												loggedSetKind(set) === 'warmup'
+													? 'live.setKindWarmup'
+													: loggedSetKind(set) === 'drop'
+														? 'live.setKindDrop'
+														: loggedSetKind(set) === 'failure'
+															? 'live.setKindFailure'
+															: 'live.setKindWork'
+											)}
+										</Text>
+									))
+								: null}
+						</View>
+					);
+				})}
+			</ScrollView>
+			<View style={[styles.footer, { paddingBottom: bottomPad }]}>
 				<PrimaryButton label={tt('summary.back')} onPress={() => router.replace('/')} />
 			</View>
 		</View>
@@ -87,19 +165,21 @@ export default function SummaryScreen() {
 }
 
 const styles = StyleSheet.create({
-	root: { flex: 1, padding: 16, gap: 12, backgroundColor: colors.bg },
+	root: { flex: 1, backgroundColor: colors.bg },
+	flex: { flex: 1 },
+	scroll: { padding: space.lg, gap: space.md, paddingBottom: space.xxl },
 	center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
 	kicker: { color: colors.accent, fontWeight: '700', fontSize: 14 },
-	title: { color: colors.text, fontSize: 28, fontWeight: '800' },
+	title: { color: colors.text, fontSize: 24, fontWeight: '800' },
 	quest: { color: colors.muted },
-	stats: { flexDirection: 'row', gap: 10, marginTop: 8 },
+	stats: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.sm },
 	stat: {
-		flex: 1,
+		width: '47%',
 		backgroundColor: colors.panel,
-		borderRadius: 14,
+		borderRadius: radius.md,
 		borderWidth: 1,
 		borderColor: colors.border,
-		padding: 14
+		padding: space.md
 	},
 	statLabel: { color: colors.muted, fontSize: 12 },
 	statValue: {
@@ -109,5 +189,30 @@ const styles = StyleSheet.create({
 		marginTop: 6,
 		fontVariant: ['tabular-nums']
 	},
-	footer: { marginTop: 'auto' }
+	delta: { color: colors.muted, marginTop: 4, fontSize: 13, fontWeight: '600' },
+	card: {
+		backgroundColor: colors.panel,
+		borderRadius: radius.md,
+		borderWidth: 1,
+		borderColor: colors.border,
+		padding: space.md,
+		gap: 6
+	},
+	cardHead: {
+		minHeight: touchMin,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		gap: space.sm
+	},
+	cardTitle: { color: colors.text, fontWeight: '800', flex: 1, fontSize: 16 },
+	cardMeta: { color: colors.muted, fontWeight: '600' },
+	setLine: { color: colors.muted, fontSize: 14 },
+	footer: {
+		paddingHorizontal: space.lg,
+		paddingTop: space.md,
+		borderTopWidth: 1,
+		borderTopColor: colors.border,
+		backgroundColor: colors.bg
+	}
 });

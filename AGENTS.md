@@ -16,12 +16,13 @@ React Native (Expo in `mobile/`) + SvelteKit web/PWA. Shared `src/lib/domain`.
 ```bash
 npm install
 cp .env.example .env
-npm run dev
-npm run check          # web
-npm run build
-
+npm run dev            # web / PWA
 npm run mobile         # Expo (repo root)
+npm run dev:all        # web + Expo together
+npm run check          # web
 npm run check:mobile   # tsc in mobile/
+npm run check:all      # web + mobile
+npm run build
 ```
 
 Legal before public: real `PUBLIC_PRIVACY_*` in Vercel; lawyer review `/privacy` + `/terms`. Web analytics off by default.

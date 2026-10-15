@@ -1,36 +1,128 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { completedSetCount } from '@repdraft/domain/session';
+import { useCallback, useMemo, useState } from 'react';
+import {
+	Alert,
+	FlatList,
+	Pressable,
+	StyleSheet,
+	Text,
+	TextInput,
+	View
+} from 'react-native';
+import { completedSetCount, sessionVolumeKg } from '@repdraft/domain/session';
 import type { WorkoutSession } from '@repdraft/domain/types';
 import { useLocale } from '../../src/state/locale';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
+import { deleteSessionRemote } from '../../src/sync/cloudSync';
 import { colors, touchMin } from '../../src/theme';
+
+type Preset = 'all' | '7d' | '30d' | '90d';
+
+function withinPreset(finishedAt: string, preset: Preset): boolean {
+	if (preset === 'all') return true;
+	const days = preset === '7d' ? 7 : preset === '30d' ? 30 : 90;
+	const t = new Date(finishedAt).getTime();
+	if (!Number.isFinite(t)) return false;
+	return t >= Date.now() - days * 86400000;
+}
 
 export default function HistoryListScreen() {
 	const router = useRouter();
 	const { tt } = useLocale();
 	const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+	const [query, setQuery] = useState('');
+	const [preset, setPreset] = useState<Preset>('all');
+
+	const reload = useCallback(() => {
+		void sessionsRepo.list().then(setSessions);
+	}, []);
 
 	useFocusEffect(
 		useCallback(() => {
-			void sessionsRepo.list().then(setSessions);
-		}, [])
+			reload();
+		}, [reload])
 	);
+
+	const filtered = useMemo(() => {
+		const q = query.trim().toLowerCase().replace(/ё/g, 'е');
+		return sessions
+			.filter((s) => s.finishedAt)
+			.filter((s) => withinPreset(s.finishedAt!, preset))
+			.filter((s) => {
+				if (!q) return true;
+				return s.planName.toLowerCase().replace(/ё/g, 'е').includes(q);
+			});
+	}, [sessions, query, preset]);
+
+	function confirmDelete(item: WorkoutSession) {
+		Alert.alert(tt('history.delete'), item.planName, [
+			{ text: tt('common.cancel'), style: 'cancel' },
+			{
+				text: tt('history.delete'),
+				style: 'destructive',
+				onPress: () => {
+					void (async () => {
+						await sessionsRepo.remove(item.id);
+						try {
+							await deleteSessionRemote(item.id);
+						} catch {
+							/* offline */
+						}
+						reload();
+					})();
+				}
+			}
+		]);
+	}
+
+	const presets: { id: Preset; label: string }[] = [
+		{ id: 'all', label: tt('history.filterAll') },
+		{ id: '7d', label: tt('history.filter7') },
+		{ id: '30d', label: tt('history.filter30') },
+		{ id: '90d', label: tt('history.filter90') }
+	];
 
 	return (
 		<View style={styles.root}>
+			<TextInput
+				value={query}
+				onChangeText={setQuery}
+				placeholder={tt('exercises.search')}
+				placeholderTextColor={colors.muted}
+				style={styles.search}
+			/>
+			<View style={styles.chips}>
+				{presets.map((p) => (
+					<Pressable
+						key={p.id}
+						style={[styles.chip, preset === p.id && styles.chipOn]}
+						onPress={() => setPreset(p.id)}
+					>
+						<Text style={[styles.chipText, preset === p.id && styles.chipTextOn]}>
+							{p.label}
+						</Text>
+					</Pressable>
+				))}
+			</View>
 			<FlatList
-				data={sessions.filter((s) => s.finishedAt)}
+				style={{ flex: 1 }}
+				data={filtered}
 				keyExtractor={(item) => item.id}
 				ListEmptyComponent={<Text style={styles.empty}>{tt('history.empty')}</Text>}
-				contentContainerStyle={{ gap: 8, flexGrow: 1 }}
+				contentContainerStyle={{ gap: 8, flexGrow: 1, paddingBottom: 28 }}
 				renderItem={({ item }) => (
-					<Pressable style={styles.row} onPress={() => router.push(`/history/${item.id}`)}>
-						<Text style={styles.title}>{item.planName}</Text>
-						<Text style={styles.meta}>
+					<Pressable
+						style={styles.row}
+						onPress={() => router.push(`/history/${item.id}`)}
+						onLongPress={() => confirmDelete(item)}
+					>
+						<Text style={styles.title} numberOfLines={2}>
+							{item.planName}
+						</Text>
+						<Text style={styles.meta} numberOfLines={1}>
 							{(item.finishedAt ?? item.startedAt).slice(0, 10)} ·{' '}
-							{completedSetCount(item)} {tt('history.setsCount')}
+							{completedSetCount(item)} {tt('history.setsCount')} ·{' '}
+							{Math.round(sessionVolumeKg(item))} {tt('summary.volume')}
 						</Text>
 					</Pressable>
 				)}
@@ -40,7 +132,30 @@ export default function HistoryListScreen() {
 }
 
 const styles = StyleSheet.create({
-	root: { flex: 1, padding: 16, backgroundColor: colors.bg },
+	root: { flex: 1, padding: 16, backgroundColor: colors.bg, gap: 10 },
+	search: {
+		minHeight: touchMin,
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: colors.border,
+		backgroundColor: colors.panel,
+		color: colors.text,
+		paddingHorizontal: 14
+	},
+	chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+	chip: {
+		minHeight: touchMin,
+		paddingHorizontal: 12,
+		borderRadius: 999,
+		borderWidth: 1,
+		borderColor: colors.border,
+		backgroundColor: colors.panel,
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	chipOn: { borderColor: colors.accent, backgroundColor: colors.bg },
+	chipText: { color: colors.muted, fontWeight: '600', fontSize: 13 },
+	chipTextOn: { color: colors.text },
 	empty: { color: colors.muted, textAlign: 'center', marginTop: 48 },
 	row: {
 		minHeight: touchMin,

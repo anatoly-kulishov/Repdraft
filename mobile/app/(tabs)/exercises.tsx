@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import {
 	Alert,
 	FlatList,
+	Image,
 	Modal,
 	Pressable,
 	StyleSheet,
@@ -11,6 +12,7 @@ import {
 	View
 } from 'react-native';
 import { CUSTOM_EXERCISE_EQUIPMENT } from '@repdraft/domain/customExercises';
+import { labelBodyPart } from '@repdraft/domain/labels.ru';
 import {
 	exerciseDisplayName,
 	filterExercises,
@@ -18,15 +20,20 @@ import {
 	refreshCustomsCache,
 	uniqueBodyParts
 } from '../../src/catalog/loadIndex';
+import { catalogMediaUrl } from '../../src/catalog/mediaUrl';
+import { zoneCoverMap } from '../../src/catalog/zoneCovers';
+import { CatalogThumb } from '../../src/components/CatalogThumb';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
+import { useBottomChromePad } from '../../src/layout/safe';
 import { useLocale } from '../../src/state/locale';
 import { bookmarksRepo } from '../../src/storage/bookmarksRepo';
 import { customsRepo } from '../../src/storage/customsRepo';
-import { colors, touchMin } from '../../src/theme';
+import { colors, radius, space, touchMin } from '../../src/theme';
 
 export default function ExercisesScreen() {
 	const { locale, tt } = useLocale();
 	const router = useRouter();
+	const bottomPad = useBottomChromePad(space.md);
 	const [query, setQuery] = useState('');
 	const [bodyPart, setBodyPart] = useState<string | 'all'>('all');
 	const [savedOnly, setSavedOnly] = useState(false);
@@ -56,6 +63,14 @@ export default function ExercisesScreen() {
 		return loadExerciseIndex();
 	}, [tick]);
 	const parts = useMemo(() => uniqueBodyParts(all), [all]);
+	const covers = useMemo(() => zoneCoverMap(all), [all]);
+	const counts = useMemo(() => {
+		const map = new Map<string, number>();
+		for (const ex of all) {
+			map.set(ex.body_part, (map.get(ex.body_part) ?? 0) + 1);
+		}
+		return map;
+	}, [all]);
 
 	const filtered = useMemo(() => {
 		let list = filterExercises(all, { query, bodyPart, locale });
@@ -67,6 +82,10 @@ export default function ExercisesScreen() {
 	}, [all, query, bodyPart, locale, savedOnly, bookmarks]);
 
 	const bookmarkSet = useMemo(() => new Set(bookmarks), [bookmarks]);
+
+	function zoneLabel(part: string): string {
+		return part === 'all' ? tt('exercises.all') : labelBodyPart(part, locale);
+	}
 
 	async function createCustom() {
 		const result = await customsRepo.create({
@@ -114,63 +133,105 @@ export default function ExercisesScreen() {
 				variant="ghost"
 				onPress={() => setCreating(true)}
 			/>
-			<FlatList
-				horizontal
-				data={['all', ...parts]}
-				keyExtractor={(item) => item}
-				showsHorizontalScrollIndicator={false}
-				contentContainerStyle={styles.chips}
-				renderItem={({ item }) => {
-					const active = bodyPart === item;
-					const label = item === 'all' ? tt('exercises.all') : item;
-					return (
-						<Pressable
-							onPress={() => setBodyPart(item)}
-							style={[styles.chip, active && styles.chipOn]}
-						>
-							<Text style={[styles.chipText, active && styles.chipTextOn]}>{label}</Text>
-						</Pressable>
-					);
-				}}
-			/>
-			<FlatList
-				data={filtered}
-				keyExtractor={(item) => item.id}
-				initialNumToRender={24}
-				windowSize={8}
-				contentContainerStyle={styles.list}
-				renderItem={({ item }) => {
-					const bookmarked = bookmarkSet.has(item.id);
-					return (
-						<Pressable style={styles.row} onPress={() => router.push(`/exercise/${item.id}`)}>
-							<View style={styles.rowCopy}>
-								<Text style={styles.rowTitle} numberOfLines={2}>
-									{exerciseDisplayName(item.id, locale)}
-								</Text>
-								<Text style={styles.rowMeta} numberOfLines={1}>
-									{item.body_part} · {item.equipment}
-								</Text>
-							</View>
+			{query.trim() || savedOnly || bodyPart !== 'all' ? (
+				<>
+					<FlatList
+						horizontal
+						data={['all', ...parts]}
+						keyExtractor={(item) => item}
+						showsHorizontalScrollIndicator={false}
+						contentContainerStyle={styles.chips}
+					renderItem={({ item }) => {
+						const active = bodyPart === item;
+						return (
 							<Pressable
-								accessibilityRole="button"
-								accessibilityLabel={tt('exercises.bookmark')}
-								style={styles.star}
-								onPress={() => {
-									void bookmarksRepo.toggle(item.id).then(reload);
-								}}
+								onPress={() => setBodyPart(item)}
+								style={[styles.chip, active && styles.chipOn]}
 							>
-								<Text style={[styles.starText, bookmarked && styles.starOn]}>
-									{bookmarked ? '★' : '☆'}
+								<Text style={[styles.chipText, active && styles.chipTextOn]}>
+									{zoneLabel(item)}
 								</Text>
 							</Pressable>
+						);
+					}}
+				/>
+				<FlatList
+					style={styles.flexList}
+					data={filtered}
+					keyExtractor={(item) => item.id}
+					initialNumToRender={20}
+					windowSize={7}
+					contentContainerStyle={styles.list}
+					renderItem={({ item }) => {
+						const bookmarked = bookmarkSet.has(item.id);
+						return (
+							<Pressable style={styles.row} onPress={() => router.push(`/exercise/${item.id}`)}>
+								<CatalogThumb imagePath={item.image} size={56} />
+								<View style={styles.rowCopy}>
+									<Text style={styles.rowTitle} numberOfLines={2}>
+										{exerciseDisplayName(item.id, locale)}
+									</Text>
+									<Text style={styles.rowMeta} numberOfLines={1}>
+										{labelBodyPart(item.body_part, locale)} · {item.equipment}
+									</Text>
+								</View>
+								<Pressable
+									accessibilityRole="button"
+									accessibilityLabel={tt('exercises.bookmark')}
+									style={styles.star}
+									onPress={() => {
+										void bookmarksRepo.toggle(item.id).then(reload);
+									}}
+								>
+									<Text style={[styles.starText, bookmarked && styles.starOn]}>
+										{bookmarked ? '★' : '☆'}
+									</Text>
+								</Pressable>
+							</Pressable>
+						);
+					}}
+				/>
+			</>
+		) : (
+			<FlatList
+				style={styles.flexList}
+				data={parts}
+				keyExtractor={(item) => item}
+				numColumns={2}
+				columnWrapperStyle={styles.hubRow}
+				contentContainerStyle={styles.list}
+				ListHeaderComponent={
+					<Text style={styles.hubLead}>{tt('exercises.hubLead')}</Text>
+				}
+				renderItem={({ item }) => {
+					const count = counts.get(item) ?? 0;
+					const coverUri = catalogMediaUrl(covers[item]);
+					return (
+						<Pressable style={styles.hubCard} onPress={() => setBodyPart(item)}>
+							{coverUri ? (
+								<Image source={{ uri: coverUri }} style={styles.hubImage} resizeMode="cover" />
+							) : (
+								<View style={[styles.hubImage, styles.hubFallback]}>
+									<CatalogThumb imagePath={null} size={40} style={styles.hubFallbackThumb} />
+								</View>
+							)}
+							<View style={styles.hubScrim} />
+							<View style={styles.hubCaption}>
+								<Text style={styles.hubTitle} numberOfLines={2}>
+									{labelBodyPart(item, locale)}
+								</Text>
+								<Text style={styles.hubMeta}>
+									{count} {tt('common.exercises')}
+								</Text>
+							</View>
 						</Pressable>
 					);
 				}}
 			/>
-
+		)}
 			<Modal visible={creating} animationType="slide" transparent onRequestClose={() => setCreating(false)}>
 				<View style={styles.sheetWrap}>
-					<View style={styles.sheet}>
+					<View style={[styles.sheet, { paddingBottom: bottomPad }]}>
 						<Text style={styles.sheetTitle}>{tt('exercises.custom')}</Text>
 						<TextInput
 							style={styles.search}
@@ -191,7 +252,7 @@ export default function ExercisesScreen() {
 									style={[styles.chip, customPart === item && styles.chipOn]}
 								>
 									<Text style={[styles.chipText, customPart === item && styles.chipTextOn]}>
-										{item}
+										{labelBodyPart(item, locale)}
 									</Text>
 								</Pressable>
 							)}
@@ -227,22 +288,23 @@ export default function ExercisesScreen() {
 }
 
 const styles = StyleSheet.create({
-	root: { flex: 1, padding: 16, gap: 10, backgroundColor: colors.bg },
+	root: { flex: 1, padding: space.lg, gap: space.sm, backgroundColor: colors.bg },
 	search: {
 		minHeight: touchMin,
-		borderRadius: 12,
+		borderRadius: radius.sm,
 		borderWidth: 1,
 		borderColor: colors.border,
 		backgroundColor: colors.panel,
 		color: colors.text,
-		paddingHorizontal: 14,
+		paddingHorizontal: space.md,
 		fontSize: 16
 	},
-	topActions: { flexDirection: 'row', gap: 8 },
-	chips: { gap: 8, paddingVertical: 4 },
+	topActions: { flexDirection: 'row', gap: space.sm },
+	flexList: { flex: 1 },
+	chips: { gap: space.sm, paddingVertical: 4 },
 	chip: {
 		minHeight: touchMin,
-		paddingHorizontal: 12,
+		paddingHorizontal: space.md,
 		borderRadius: 999,
 		borderWidth: 1,
 		borderColor: colors.border,
@@ -253,17 +315,17 @@ const styles = StyleSheet.create({
 	chipOn: { backgroundColor: colors.accent, borderColor: colors.accent },
 	chipText: { color: colors.muted, fontWeight: '600', fontSize: 13 },
 	chipTextOn: { color: colors.accentText },
-	list: { gap: 8, paddingBottom: 24 },
+	list: { gap: space.sm, paddingBottom: space.xxl },
 	row: {
 		minHeight: touchMin,
 		backgroundColor: colors.panel,
-		borderRadius: 14,
+		borderRadius: radius.md,
 		borderWidth: 1,
 		borderColor: colors.border,
-		padding: 14,
+		padding: space.md,
 		flexDirection: 'row',
 		alignItems: 'center',
-		gap: 8
+		gap: space.sm
 	},
 	rowCopy: { flex: 1, gap: 4 },
 	rowTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
@@ -278,12 +340,42 @@ const styles = StyleSheet.create({
 	},
 	sheet: {
 		backgroundColor: colors.bg,
-		borderTopLeftRadius: 20,
-		borderTopRightRadius: 20,
-		padding: 16,
-		gap: 10,
+		borderTopLeftRadius: radius.xl,
+		borderTopRightRadius: radius.xl,
+		padding: space.lg,
+		gap: space.sm,
 		maxHeight: '85%'
 	},
 	sheetTitle: { color: colors.text, fontSize: 20, fontWeight: '800' },
-	sheetLabel: { color: colors.muted, fontWeight: '600', fontSize: 13 }
+	sheetLabel: { color: colors.muted, fontWeight: '600', fontSize: 13 },
+	hubLead: { color: colors.muted, marginBottom: space.sm, width: '100%' },
+	hubRow: { gap: space.sm },
+	hubCard: {
+		flex: 1,
+		minHeight: 128,
+		aspectRatio: 1.05,
+		backgroundColor: colors.panel,
+		borderRadius: radius.md,
+		borderWidth: 1,
+		borderColor: colors.border,
+		marginBottom: space.sm,
+		overflow: 'hidden',
+		justifyContent: 'flex-end'
+	},
+	hubImage: {
+		...StyleSheet.absoluteFill,
+		backgroundColor: colors.panelRaised
+	},
+	hubFallback: { alignItems: 'center', justifyContent: 'center' },
+	hubFallbackThumb: { borderWidth: 0, backgroundColor: 'transparent' },
+	hubScrim: {
+		...StyleSheet.absoluteFill,
+		backgroundColor: 'rgba(0,0,0,0.45)'
+	},
+	hubCaption: {
+		padding: space.md,
+		zIndex: 1
+	},
+	hubTitle: { color: colors.text, fontWeight: '800', fontSize: 16 },
+	hubMeta: { color: colors.muted, marginTop: 4, fontSize: 13 }
 });

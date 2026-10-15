@@ -1,8 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
 	Alert,
 	FlatList,
+	KeyboardAvoidingView,
+	Platform,
 	Pressable,
 	StyleSheet,
 	Text,
@@ -14,6 +16,7 @@ import {
 	addExercise,
 	altGroupMemberRole,
 	buildLadderScheme,
+	convertAltGroupToSuperset,
 	createEmptyDraft,
 	dissolveOrGroup,
 	dissolveSuperset,
@@ -25,21 +28,27 @@ import {
 	hasLadderScheme,
 	moveByArrow,
 	removeExercise,
-	updateExercise
+	updateExercise,
+	updateGroupRest,
+	updateGroupSets
 } from '@repdraft/domain/workout';
-import type { WorkoutPlan } from '@repdraft/domain/types';
+import type { ExerciseIndexItem, WorkoutPlan } from '@repdraft/domain/types';
 import {
 	exerciseDisplayName,
 	filterExercises,
 	getIndexItem,
 	loadExerciseIndex,
-	refreshCustomsCache
+	refreshCustomsCache,
+	uniqueBodyParts
 } from '../../src/catalog/loadIndex';
+import { CatalogThumb } from '../../src/components/CatalogThumb';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
+import { useBottomChromePad } from '../../src/layout/safe';
+import { routeParam } from '../../src/nav/params';
 import { useLocale } from '../../src/state/locale';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { deletePlanRemote, pushPlan } from '../../src/sync/cloudSync';
-import { colors, touchMin } from '../../src/theme';
+import { colors, radius, space, touchMin } from '../../src/theme';
 
 function Stepper({
 	label,
@@ -69,57 +78,106 @@ function Stepper({
 }
 
 export default function BuilderScreen() {
-	const { planId } = useLocalSearchParams<{ planId: string }>();
+	const { planId: planIdParam } = useLocalSearchParams<{ planId: string }>();
+	const planId = routeParam(planIdParam);
 	const router = useRouter();
 	const { locale, tt } = useLocale();
+	const bottomPad = useBottomChromePad(space.md);
 	const [plan, setPlan] = useState<WorkoutPlan | null>(null);
+	const [bootError, setBootError] = useState(false);
 	const [picking, setPicking] = useState(false);
 	const [query, setQuery] = useState('');
+	const [bodyPart, setBodyPart] = useState<string | 'all'>('all');
 	const [selected, setSelected] = useState<Set<string>>(new Set());
 	const [catalogTick, setCatalogTick] = useState(0);
+	const [flashId, setFlashId] = useState<string | null>(null);
+	const planRef = useRef<WorkoutPlan | null>(null);
+
 	const catalog = useMemo(() => {
 		void catalogTick;
 		return loadExerciseIndex();
 	}, [catalogTick]);
+	const parts = useMemo(() => uniqueBodyParts(catalog), [catalog]);
 	const pickList = useMemo(
-		() => filterExercises(catalog, { query, bodyPart: 'all', locale }).slice(0, 80),
-		[catalog, query, locale]
+		() => filterExercises(catalog, { query, bodyPart, locale }),
+		[catalog, query, bodyPart, locale]
+	);
+	const inPlanIds = useMemo(
+		() => new Set(plan?.exercises.map((e) => e.exerciseId) ?? []),
+		[plan]
+	);
+
+	useEffect(() => {
+		planRef.current = plan;
+	}, [plan]);
+
+	const persist = useCallback(
+		async (next: WorkoutPlan): Promise<boolean> => {
+			const stamped: WorkoutPlan = {
+				...next,
+				updatedAt: new Date().toISOString(),
+				name: clampPlanName(next.name)
+			};
+			setPlan(stamped);
+			planRef.current = stamped;
+			try {
+				await plansRepo.save(stamped);
+				try {
+					await pushPlan(stamped);
+				} catch {
+					/* offline */
+				}
+				return true;
+			} catch {
+				Alert.alert(tt('builder.saveFail'));
+				return false;
+			}
+		},
+		[tt]
 	);
 
 	useEffect(() => {
 		let cancelled = false;
 		void (async () => {
+			setBootError(false);
 			await refreshCustomsCache();
 			if (!cancelled) setCatalogTick((n) => n + 1);
-			if (!planId) return;
-			let found = await plansRepo.get(planId);
-			if (!found && planId === 'new') {
-				found = createEmptyDraft(tt('workouts.newName'));
-				await plansRepo.save(found);
-				if (!cancelled) router.replace(`/builder/${found.id}`);
+
+			if (!planId) {
+				if (!cancelled) {
+					setBootError(true);
+					setPlan(null);
+				}
 				return;
 			}
-			if (!cancelled) setPlan(found);
+
+			try {
+				let found = await plansRepo.get(planId);
+				if (!found && (planId === 'new' || planId === 'draft')) {
+					found = createEmptyDraft(tt('workouts.newName'));
+					await plansRepo.save(found);
+					if (!cancelled) router.replace(`/builder/${found.id}`);
+					return;
+				}
+				if (!found) {
+					if (!cancelled) {
+						setBootError(true);
+						setPlan(null);
+					}
+					return;
+				}
+				if (!cancelled) setPlan(found);
+			} catch {
+				if (!cancelled) {
+					setBootError(true);
+					setPlan(null);
+				}
+			}
 		})();
 		return () => {
 			cancelled = true;
 		};
-	}, [planId, router]);
-
-	async function save(next: WorkoutPlan) {
-		const stamped = {
-			...next,
-			updatedAt: new Date().toISOString(),
-			name: clampPlanName(next.name)
-		};
-		setPlan(stamped);
-		await plansRepo.save(stamped);
-		try {
-			await pushPlan(stamped);
-		} catch {
-			/* offline */
-		}
-	}
+	}, [planId, router, tt]);
 
 	function toggleSelect(exerciseId: string) {
 		setSelected((prev) => {
@@ -130,26 +188,111 @@ export default function BuilderScreen() {
 		});
 	}
 
-	async function removePlan() {
+	async function addFromCatalog(item: ExerciseIndexItem) {
+		const current = planRef.current;
+		if (!current) return;
+		if (inPlanIds.has(item.id)) {
+			Alert.alert(tt('builder.alreadyInPlan'));
+			return;
+		}
+		const { plan: next, added } = addExercise(current, item.id, {
+			name: item.name,
+			equipment: item.equipment
+		});
+		if (!added) {
+			Alert.alert(tt('builder.alreadyInPlan'));
+			return;
+		}
+		const ok = await persist(next);
+		if (ok) {
+			setFlashId(item.id);
+			setTimeout(() => setFlashId(null), 900);
+		}
+	}
+
+	function offerMore() {
 		if (!plan) return;
-		Alert.alert(tt('builder.delete'), plan.name, [
+		Alert.alert(tt('builder.more'), undefined, [
 			{ text: tt('common.cancel'), style: 'cancel' },
+			{
+				text: tt('ai.open'),
+				onPress: () => router.push('/ai')
+			},
+			{
+				text: tt('builder.duplicate'),
+				onPress: () => {
+					void (async () => {
+						try {
+							const copy = duplicatePlan(plan);
+							await plansRepo.save(copy);
+							try {
+								await pushPlan(copy);
+							} catch {
+								/* offline */
+							}
+							router.replace(`/builder/${copy.id}`);
+						} catch {
+							Alert.alert(tt('builder.saveFail'));
+						}
+					})();
+				}
+			},
 			{
 				text: tt('builder.delete'),
 				style: 'destructive',
 				onPress: () => {
-					void (async () => {
-						await plansRepo.remove(plan.id);
-						try {
-							await deletePlanRemote(plan.id);
-						} catch {
-							/* offline */
+					Alert.alert(tt('builder.delete'), plan.name, [
+						{ text: tt('common.cancel'), style: 'cancel' },
+						{
+							text: tt('builder.delete'),
+							style: 'destructive',
+							onPress: () => {
+								void (async () => {
+									await plansRepo.remove(plan.id);
+									try {
+										await deletePlanRemote(plan.id);
+									} catch {
+										/* offline */
+									}
+									router.replace('/');
+								})();
+							}
 						}
-						router.replace('/');
-					})();
+					]);
 				}
 			}
 		]);
+	}
+
+	async function commitSave() {
+		const current = planRef.current;
+		if (!current) return;
+		if (current.exercises.length === 0) {
+			Alert.alert(tt('builder.saveNeedExercises'));
+			return;
+		}
+		const ok = await persist(current);
+		if (ok) router.replace(`/plan/${current.id}`);
+	}
+
+	if (bootError) {
+		return (
+			<View style={styles.center}>
+				<Text style={styles.muted}>{tt('builder.loadFail')}</Text>
+				<PrimaryButton label={tt('workouts.create')} onPress={() => {
+					void (async () => {
+						try {
+							const created = createEmptyDraft(tt('workouts.newName'));
+							await plansRepo.save(created);
+							router.replace(`/builder/${created.id}`);
+						} catch {
+							Alert.alert(tt('builder.saveFail'));
+						}
+					})();
+				}} />
+				<PrimaryButton label={tt('summary.back')} variant="ghost" onPress={() => router.replace('/')} />
+			</View>
+		);
 	}
 
 	if (!plan) {
@@ -162,281 +305,437 @@ export default function BuilderScreen() {
 
 	if (picking) {
 		return (
-			<View style={styles.root}>
+			<KeyboardAvoidingView
+				style={styles.root}
+				behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+			>
 				<TextInput
 					style={styles.input}
 					value={query}
 					onChangeText={setQuery}
 					placeholder={tt('exercises.search')}
 					placeholderTextColor={colors.muted}
+					autoFocus
+				/>
+				<Text style={styles.pickHint}>{tt('builder.pickHint')}</Text>
+				<FlatList
+					horizontal
+					data={['all', ...parts] as const}
+					keyExtractor={(p) => p}
+					showsHorizontalScrollIndicator={false}
+					contentContainerStyle={styles.chips}
+					renderItem={({ item: part }) => {
+						const on = bodyPart === part;
+						const label = part === 'all' ? tt('exercises.all') : part;
+						return (
+							<Pressable
+								style={[styles.chip, on && styles.chipOn]}
+								onPress={() => setBodyPart(part)}
+							>
+								<Text style={[styles.chipText, on && styles.chipTextOn]} numberOfLines={1}>
+									{label}
+								</Text>
+							</Pressable>
+						);
+					}}
 				/>
 				<FlatList
+					style={styles.flex}
 					data={pickList}
 					keyExtractor={(item) => item.id}
-					renderItem={({ item }) => (
-						<Pressable
-							style={styles.row}
-							onPress={() => {
-								void save(
-									addExercise(plan, item.id, {
-										name: item.name,
-										equipment: item.equipment
-									}).plan
-								).then(() => setPicking(false));
-							}}
-						>
-							<Text style={styles.rowTitle}>{exerciseDisplayName(item.id, locale)}</Text>
-						</Pressable>
-					)}
+					keyboardShouldPersistTaps="handled"
+					initialNumToRender={24}
+					windowSize={8}
+					ListEmptyComponent={<Text style={styles.emptyPick}>{tt('builder.noMatches')}</Text>}
+					renderItem={({ item }) => {
+						const inPlan = inPlanIds.has(item.id);
+						const flashed = flashId === item.id;
+						return (
+							<Pressable
+								style={[
+									styles.pickRow,
+									inPlan && styles.pickRowIn,
+									flashed && styles.pickRowFlash
+								]}
+								onPress={() => void addFromCatalog(item)}
+							>
+								<CatalogThumb imagePath={item.image} size={48} />
+								<View style={styles.flex}>
+									<Text style={styles.rowTitle} numberOfLines={2}>
+										{exerciseDisplayName(item.id, locale)}
+									</Text>
+									<Text style={styles.meta} numberOfLines={1}>
+										{item.body_part}
+										{item.equipment ? ` · ${item.equipment}` : ''}
+									</Text>
+								</View>
+								<Text style={[styles.pickMark, inPlan && styles.pickMarkOn]}>
+									{inPlan ? '✓' : '+'}
+								</Text>
+							</Pressable>
+						);
+					}}
 				/>
-				<PrimaryButton label={tt('common.cancel')} variant="ghost" onPress={() => setPicking(false)} />
-			</View>
+				<View style={[styles.sticky, { paddingBottom: bottomPad }]}>
+					<PrimaryButton
+						label={`${tt('builder.done')} (${plan.exercises.length})`}
+						onPress={() => {
+							setPicking(false);
+							setQuery('');
+							setBodyPart('all');
+						}}
+					/>
+				</View>
+			</KeyboardAvoidingView>
 		);
 	}
 
 	const selectedIds = [...selected];
 
 	return (
-		<View style={styles.root}>
+		<KeyboardAvoidingView
+			style={styles.root}
+			behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+			keyboardVerticalOffset={88}
+		>
 			<Text style={styles.label}>{tt('builder.name')}</Text>
 			<TextInput
 				style={styles.input}
 				value={plan.name}
-				onChangeText={(name) => setPlan({ ...plan, name })}
-				onEndEditing={() => void save(plan)}
+				onChangeText={(name) => {
+					const next = { ...plan, name };
+					setPlan(next);
+					planRef.current = next;
+				}}
+				onEndEditing={() => {
+					const current = planRef.current;
+					if (current) void persist(current);
+				}}
 				placeholderTextColor={colors.muted}
 			/>
 			{selectedIds.length >= 2 ? (
 				<View style={styles.groupBar}>
 					<Text style={styles.muted}>{tt('builder.selected', { n: selectedIds.length })}</Text>
 					<View style={styles.groupActions}>
-						<PrimaryButton
-							label={tt('builder.superset')}
-							onPress={() => {
-								void save(formSuperset(plan, selectedIds)).then(() => setSelected(new Set()));
-							}}
-						/>
-						<PrimaryButton
-							label={tt('builder.orGroup')}
-							variant="ghost"
-							onPress={() => {
-								void save(formOrGroup(plan, selectedIds)).then(() => setSelected(new Set()));
-							}}
-						/>
+						<View style={styles.flex}>
+							<PrimaryButton
+								label={tt('builder.superset')}
+								compact
+								onPress={() => {
+									void persist(formSuperset(plan, selectedIds)).then(() => setSelected(new Set()));
+								}}
+							/>
+						</View>
+						<View style={styles.flex}>
+							<PrimaryButton
+								label={tt('builder.orGroup')}
+								variant="ghost"
+								compact
+								onPress={() => {
+									void persist(formOrGroup(plan, selectedIds)).then(() => setSelected(new Set()));
+								}}
+							/>
+						</View>
 					</View>
 				</View>
 			) : null}
-			{plan.exercises.length === 0 ? (
-				<Text style={styles.muted}>{tt('builder.empty')}</Text>
-			) : (
-				<FlatList
-					data={plan.exercises}
-					keyExtractor={(item, i) => `${item.exerciseId}-${i}`}
-					contentContainerStyle={{ gap: 10 }}
-					renderItem={({ item, index }) => {
-						const meta = getIndexItem(item.exerciseId);
-						const gRole = groupMemberRole(plan.exercises, index);
-						const aRole = altGroupMemberRole(plan.exercises, index);
-						const badge =
-							gRole !== 'solo'
-								? tt('preview.superset')
-								: aRole !== 'solo'
-									? tt('preview.or')
-									: null;
-						const on = selected.has(item.exerciseId);
-						return (
-							<View style={[styles.card, on && styles.cardOn]}>
-								<View style={styles.cardHead}>
-									<Pressable
-										accessibilityRole="checkbox"
-										accessibilityState={{ checked: on }}
-										style={styles.check}
-										onPress={() => toggleSelect(item.exerciseId)}
-									>
-										<Text style={styles.checkText}>{on ? '✓' : ''}</Text>
-									</Pressable>
-									<View style={styles.moveCol}>
-										<Pressable
-											accessibilityRole="button"
-											style={styles.moveBtn}
-											disabled={index === 0}
-											onPress={() => void save(moveByArrow(plan, index, -1))}
-										>
-											<Text style={[styles.moveText, index === 0 && styles.moveDisabled]}>↑</Text>
-										</Pressable>
-										<Pressable
-											accessibilityRole="button"
-											style={styles.moveBtn}
-											disabled={index >= plan.exercises.length - 1}
-											onPress={() => void save(moveByArrow(plan, index, 1))}
-										>
-											<Text
-												style={[
-													styles.moveText,
-													index >= plan.exercises.length - 1 && styles.moveDisabled
-												]}
-											>
-												↓
-											</Text>
-										</Pressable>
-									</View>
-									<View style={{ flex: 1 }}>
-										{badge ? <Text style={styles.badge}>{badge}</Text> : null}
-										<Text style={styles.rowTitle}>
-											{exerciseDisplayName(item.exerciseId, locale)}
-										</Text>
-										<Text style={styles.meta}>
-											{formatExercisePrescription(item)}
-											{meta ? ` · ${meta.equipment}` : ''}
-										</Text>
-									</View>
+			<FlatList
+				style={styles.flex}
+				data={plan.exercises}
+				keyExtractor={(item, i) => `${item.exerciseId}-${i}`}
+				contentContainerStyle={styles.list}
+				ListEmptyComponent={<Text style={styles.empty}>{tt('builder.empty')}</Text>}
+				keyboardShouldPersistTaps="handled"
+				renderItem={({ item, index }) => {
+					const meta = getIndexItem(item.exerciseId);
+					const gRole = groupMemberRole(plan.exercises, index);
+					const aRole = altGroupMemberRole(plan.exercises, index);
+					const badge =
+						gRole !== 'solo'
+							? tt('preview.superset')
+							: aRole !== 'solo'
+								? tt('preview.or')
+								: null;
+					const on = selected.has(item.exerciseId);
+					const groupLead = Boolean(
+						(item.groupId && gRole === 'first') || (item.altGroupId && aRole === 'first')
+					);
+					return (
+						<View style={[styles.card, on && styles.cardOn]}>
+							<View style={styles.cardHead}>
+								<Pressable
+									accessibilityRole="checkbox"
+									accessibilityState={{ checked: on }}
+									style={styles.check}
+									onPress={() => toggleSelect(item.exerciseId)}
+								>
+									<Text style={styles.checkText}>{on ? '✓' : ''}</Text>
+								</Pressable>
+								<View style={styles.moveCol}>
 									<Pressable
 										accessibilityRole="button"
-										style={styles.remove}
-										onPress={() => {
-											setSelected((s) => {
-												const n = new Set(s);
-												n.delete(item.exerciseId);
-												return n;
-											});
-											void save(removeExercise(plan, item.exerciseId));
-										}}
+										style={styles.moveBtn}
+										disabled={index === 0}
+										onPress={() => void persist(moveByArrow(plan, index, -1))}
 									>
-										<Text style={styles.removeText}>×</Text>
+										<Text style={[styles.moveText, index === 0 && styles.moveDisabled]}>↑</Text>
+									</Pressable>
+									<Pressable
+										accessibilityRole="button"
+										style={styles.moveBtn}
+										disabled={index >= plan.exercises.length - 1}
+										onPress={() => void persist(moveByArrow(plan, index, 1))}
+									>
+										<Text
+											style={[
+												styles.moveText,
+												index >= plan.exercises.length - 1 && styles.moveDisabled
+											]}
+										>
+											↓
+										</Text>
 									</Pressable>
 								</View>
-								{(item.groupId && gRole === 'first') || (item.altGroupId && aRole === 'first') ? (
+								<View style={styles.flex}>
+									{badge ? <Text style={styles.badge}>{badge}</Text> : null}
+									<Text style={styles.rowTitle}>
+										{exerciseDisplayName(item.exerciseId, locale)}
+									</Text>
+									<Text style={styles.meta}>
+										{formatExercisePrescription(item)}
+										{meta ? ` · ${meta.equipment}` : ''}
+									</Text>
+								</View>
+								<Pressable
+									accessibilityRole="button"
+									style={styles.remove}
+									onPress={() => {
+										setSelected((s) => {
+											const n = new Set(s);
+											n.delete(item.exerciseId);
+											return n;
+										});
+										void persist(removeExercise(plan, item.exerciseId));
+									}}
+								>
+									<Text style={styles.removeText}>×</Text>
+								</Pressable>
+							</View>
+							{groupLead ? (
+								<View style={styles.groupLeadActions}>
 									<PrimaryButton
 										label={tt('builder.dissolve')}
 										variant="ghost"
+										compact
 										onPress={() => {
-											if (item.groupId) void save(dissolveSuperset(plan, item.groupId));
-											else if (item.altGroupId) void save(dissolveOrGroup(plan, item.altGroupId));
+											if (item.groupId) void persist(dissolveSuperset(plan, item.groupId));
+											else if (item.altGroupId) void persist(dissolveOrGroup(plan, item.altGroupId));
 										}}
 									/>
-								) : null}
-								<View style={styles.steppers}>
+									{item.altGroupId && aRole === 'first' ? (
+										<PrimaryButton
+											label={tt('builder.toSuperset')}
+											variant="ghost"
+											compact
+											onPress={() =>
+												void persist(convertAltGroupToSuperset(plan, item.altGroupId!))
+											}
+										/>
+									) : null}
+								</View>
+							) : null}
+							<View style={styles.steppers}>
+								<View style={styles.stepCell}>
 									<Stepper
 										label={tt('builder.sets')}
 										value={item.sets}
-										onDec={() =>
-											void save(updateExercise(plan, item.exerciseId, { sets: item.sets - 1 }))
-										}
-										onInc={() =>
-											void save(updateExercise(plan, item.exerciseId, { sets: item.sets + 1 }))
-										}
+										onDec={() => {
+											if (item.groupId && gRole !== 'solo') {
+												void persist(updateGroupSets(plan, item.groupId, item.sets - 1));
+											} else {
+												void persist(
+													updateExercise(plan, item.exerciseId, { sets: item.sets - 1 })
+												);
+											}
+										}}
+										onInc={() => {
+											if (item.groupId && gRole !== 'solo') {
+												void persist(updateGroupSets(plan, item.groupId, item.sets + 1));
+											} else {
+												void persist(
+													updateExercise(plan, item.exerciseId, { sets: item.sets + 1 })
+												);
+											}
+										}}
 									/>
+								</View>
+								<View style={styles.stepCell}>
 									<Stepper
 										label={tt('common.reps')}
 										value={item.reps}
 										onDec={() =>
-											void save(updateExercise(plan, item.exerciseId, { reps: item.reps - 1 }))
-										}
-										onInc={() =>
-											void save(updateExercise(plan, item.exerciseId, { reps: item.reps + 1 }))
-										}
-									/>
-									<Stepper
-										label={tt('builder.rest')}
-										value={item.restSec}
-										onDec={() =>
-											void save(
-												updateExercise(plan, item.exerciseId, { restSec: item.restSec - 15 })
+											void persist(
+												updateExercise(plan, item.exerciseId, { reps: item.reps - 1 })
 											)
 										}
 										onInc={() =>
-											void save(
-												updateExercise(plan, item.exerciseId, { restSec: item.restSec + 15 })
+											void persist(
+												updateExercise(plan, item.exerciseId, { reps: item.reps + 1 })
 											)
 										}
 									/>
 								</View>
-								<PrimaryButton
-									label={hasLadderScheme(item) ? tt('builder.ladderOff') : tt('builder.ladder')}
-									variant="ghost"
-									onPress={() => {
-										if (hasLadderScheme(item)) {
-											void save(
-												updateExercise(plan, item.exerciseId, {
-													repsScheme: undefined
-												})
-											);
-										} else {
-											const scheme = buildLadderScheme(item.reps, Math.max(1, item.reps - 4));
-											void save(
-												updateExercise(plan, item.exerciseId, { repsScheme: scheme })
-											);
-										}
-									}}
-								/>
+								<View style={styles.stepCell}>
+									<Stepper
+										label={tt('builder.rest')}
+										value={item.restSec}
+										onDec={() => {
+											if (item.groupId && gRole !== 'solo') {
+												void persist(updateGroupRest(plan, item.groupId, item.restSec - 15));
+											} else {
+												void persist(
+													updateExercise(plan, item.exerciseId, {
+														restSec: item.restSec - 15
+													})
+												);
+											}
+										}}
+										onInc={() => {
+											if (item.groupId && gRole !== 'solo') {
+												void persist(updateGroupRest(plan, item.groupId, item.restSec + 15));
+											} else {
+												void persist(
+													updateExercise(plan, item.exerciseId, {
+														restSec: item.restSec + 15
+													})
+												);
+											}
+										}}
+									/>
+								</View>
 							</View>
-						);
-					}}
-				/>
-			)}
-			<PrimaryButton label={tt('builder.add')} onPress={() => setPicking(true)} />
-			<PrimaryButton
-				label={tt('builder.duplicate')}
-				variant="ghost"
-				onPress={() => {
-					void (async () => {
-						const copy = duplicatePlan(plan);
-						await plansRepo.save(copy);
-						try {
-							await pushPlan(copy);
-						} catch {
-							/* offline */
-						}
-						router.replace(`/builder/${copy.id}`);
-					})();
+							<PrimaryButton
+								label={hasLadderScheme(item) ? tt('builder.ladderOff') : tt('builder.ladder')}
+								variant="ghost"
+								compact
+								onPress={() => {
+									if (hasLadderScheme(item)) {
+										void persist(
+											updateExercise(plan, item.exerciseId, {
+												repsScheme: undefined
+											})
+										);
+									} else {
+										const scheme = buildLadderScheme(item.reps, Math.max(1, item.reps - 4));
+										void persist(updateExercise(plan, item.exerciseId, { repsScheme: scheme }));
+									}
+								}}
+							/>
+						</View>
+					);
 				}}
 			/>
-			<PrimaryButton
-				label={tt('builder.save')}
-				variant="ghost"
-				onPress={() => void save(plan).then(() => router.replace(`/plan/${plan.id}`))}
-			/>
-			<PrimaryButton label={tt('builder.delete')} variant="danger" onPress={() => void removePlan()} />
-		</View>
+			<View style={[styles.sticky, { paddingBottom: bottomPad }]}>
+				<PrimaryButton label={tt('builder.add')} onPress={() => setPicking(true)} />
+				<View style={styles.stickyRow}>
+					<View style={styles.flex}>
+						<PrimaryButton label={tt('builder.save')} onPress={() => void commitSave()} />
+					</View>
+					<View style={styles.flex}>
+						<PrimaryButton
+							label={tt('builder.more')}
+							variant="ghost"
+							onPress={offerMore}
+						/>
+					</View>
+				</View>
+			</View>
+		</KeyboardAvoidingView>
 	);
 }
 
 const styles = StyleSheet.create({
-	root: { flex: 1, padding: 16, gap: 10, backgroundColor: colors.bg },
-	center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
-	label: { color: colors.muted, fontWeight: '600' },
+	root: { flex: 1, padding: space.lg, gap: space.sm, backgroundColor: colors.bg },
+	flex: { flex: 1 },
+	center: {
+		flex: 1,
+		alignItems: 'center',
+		justifyContent: 'center',
+		backgroundColor: colors.bg,
+		padding: space.lg,
+		gap: space.md
+	},
+	label: { color: colors.muted, fontWeight: '700', fontSize: 12, letterSpacing: 0.4 },
 	input: {
 		minHeight: touchMin,
-		borderRadius: 12,
+		borderRadius: radius.md,
 		borderWidth: 1,
 		borderColor: colors.border,
 		backgroundColor: colors.panel,
 		color: colors.text,
-		paddingHorizontal: 14,
-		fontSize: 16
+		paddingHorizontal: space.md,
+		fontSize: 17,
+		fontWeight: '700'
 	},
-	row: {
+	pickHint: { color: colors.muted, fontSize: 13, lineHeight: 18 },
+	chips: { gap: space.sm, paddingVertical: 4 },
+	chip: {
 		minHeight: touchMin,
-		backgroundColor: colors.panel,
-		borderRadius: 14,
+		paddingHorizontal: space.md,
+		borderRadius: 999,
 		borderWidth: 1,
 		borderColor: colors.border,
-		padding: 14
+		backgroundColor: colors.panel,
+		alignItems: 'center',
+		justifyContent: 'center',
+		marginRight: space.sm
 	},
+	chipOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+	chipText: { color: colors.muted, fontWeight: '700', fontSize: 13, textTransform: 'capitalize' },
+	chipTextOn: { color: colors.accentText },
+	list: { gap: space.sm, paddingBottom: space.sm, flexGrow: 1 },
+	empty: { color: colors.muted, textAlign: 'center', marginTop: 48, lineHeight: 22 },
+	emptyPick: { color: colors.muted, textAlign: 'center', marginTop: 32 },
+	pickRow: {
+		minHeight: touchMin + 8,
+		backgroundColor: colors.panel,
+		borderRadius: radius.md,
+		borderWidth: 1,
+		borderColor: colors.border,
+		paddingHorizontal: space.md,
+		paddingVertical: space.sm,
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: space.sm,
+		marginBottom: space.sm
+	},
+	pickRowIn: { opacity: 0.55 },
+	pickRowFlash: { borderColor: colors.accent, backgroundColor: colors.accentDim },
+	pickMark: {
+		minWidth: touchMin,
+		minHeight: touchMin,
+		textAlign: 'center',
+		textAlignVertical: 'center',
+		color: colors.accent,
+		fontSize: 22,
+		fontWeight: '800',
+		paddingTop: 10
+	},
+	pickMarkOn: { color: colors.muted },
 	card: {
 		backgroundColor: colors.panel,
-		borderRadius: 14,
+		borderRadius: radius.md,
 		borderWidth: 1,
 		borderColor: colors.border,
-		padding: 12,
-		gap: 10
+		padding: space.md,
+		gap: space.sm
 	},
-	cardOn: { borderColor: colors.accent },
-	cardHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+	cardOn: { borderColor: colors.accent, backgroundColor: colors.accentDim },
+	cardHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
 	check: {
 		minWidth: touchMin,
 		minHeight: touchMin,
-		borderRadius: 10,
+		borderRadius: radius.sm,
 		borderWidth: 1,
 		borderColor: colors.border,
 		alignItems: 'center',
@@ -455,18 +754,19 @@ const styles = StyleSheet.create({
 	moveDisabled: { color: colors.muted, opacity: 0.35 },
 	badge: { color: colors.accent, fontSize: 11, fontWeight: '800', marginBottom: 2 },
 	rowTitle: { color: colors.text, fontWeight: '700', fontSize: 16 },
-	meta: { color: colors.muted, marginTop: 4, fontSize: 13 },
-	muted: { color: colors.muted },
+	meta: { color: colors.muted, marginTop: 2, fontSize: 13 },
+	muted: { color: colors.muted, textAlign: 'center' },
 	remove: { minWidth: touchMin, minHeight: touchMin, alignItems: 'center', justifyContent: 'center' },
 	removeText: { color: colors.danger, fontSize: 28, fontWeight: '300' },
-	steppers: { flexDirection: 'row', gap: 8 },
-	stepper: { flex: 1, gap: 4 },
+	steppers: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+	stepCell: { minWidth: '30%', flexGrow: 1, flexBasis: '30%' },
+	stepper: { gap: 4 },
 	stepLabel: { color: colors.muted, fontSize: 11, fontWeight: '600' },
 	stepRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 	stepBtn: {
 		minWidth: touchMin,
 		minHeight: touchMin,
-		borderRadius: 10,
+		borderRadius: radius.sm,
 		backgroundColor: colors.bg,
 		borderWidth: 1,
 		borderColor: colors.border,
@@ -476,11 +776,21 @@ const styles = StyleSheet.create({
 	stepBtnText: { color: colors.text, fontSize: 20, fontWeight: '700' },
 	stepValue: {
 		flex: 1,
+		minWidth: 28,
 		textAlign: 'center',
 		color: colors.text,
 		fontWeight: '800',
 		fontVariant: ['tabular-nums']
 	},
-	groupBar: { gap: 8 },
-	groupActions: { flexDirection: 'row', gap: 8 }
+	groupBar: { gap: space.sm },
+	groupActions: { flexDirection: 'row', gap: space.sm },
+	groupLeadActions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+	sticky: {
+		gap: space.sm,
+		paddingTop: space.sm,
+		borderTopWidth: 1,
+		borderTopColor: colors.border,
+		backgroundColor: colors.bg
+	},
+	stickyRow: { flexDirection: 'row', gap: space.sm }
 });

@@ -9,7 +9,7 @@
 | A Метрики цикла | в коде | `domain/loopMetrics.ts`, снимок в профиле (tester) |
 | B Opt-in Quest | в коде (PWA) | `domain/quest.ts`, toggle, summary card |
 | C Часы | позже | отдельный native UI + session ownership; не RN-экран |
-| D RN ядро | **активно** | `mobile/` - sacred loop, domain shared, local-first |
+| D RN ядро | **активно** | `mobile/` - live/builder/home/history near web parity; technique via API |
 | E Часы + Quest native | не начат | после стабильного D |
 
 ## Обещание

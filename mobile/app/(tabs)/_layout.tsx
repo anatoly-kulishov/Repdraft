@@ -1,52 +1,65 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import { Dumbbell, Library, UserRound } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocale } from '../../src/state/locale';
-import { colors, touchMin } from '../../src/theme';
-
-function TabLabel({ label, focused }: { label: string; focused: boolean }) {
-	return (
-		<Text style={{ color: focused ? colors.accent : colors.muted, fontSize: 11, fontWeight: '700' }}>
-			{label}
-		</Text>
-	);
-}
+import { useAppColors } from '../../src/state/theme';
+import { touchMin } from '../../src/theme';
 
 export default function TabsLayout() {
 	const { tt } = useLocale();
+	const colors = useAppColors();
+	const insets = useSafeAreaInsets();
+	const bottom = Math.max(insets.bottom, 8);
+
 	return (
 		<Tabs
 			screenOptions={{
 				headerStyle: { backgroundColor: colors.bg },
 				headerTintColor: colors.text,
+				headerTitleStyle: { fontWeight: '800' },
 				headerShadowVisible: false,
 				tabBarStyle: {
 					backgroundColor: colors.bg,
 					borderTopColor: colors.border,
-					minHeight: touchMin + 8
+					minHeight: touchMin + bottom + 8,
+					paddingTop: 6,
+					paddingBottom: bottom,
+					height: touchMin + bottom + 14
 				},
 				tabBarActiveTintColor: colors.accent,
-				tabBarInactiveTintColor: colors.muted
+				tabBarInactiveTintColor: colors.muted,
+				tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+				tabBarShowLabel: true
 			}}
 		>
 			<Tabs.Screen
 				name="index"
 				options={{
 					title: 'Repdraft',
-					tabBarLabel: ({ focused }) => <TabLabel label={tt('tab.workouts')} focused={focused} />
+					tabBarLabel: tt('tab.workouts'),
+					tabBarIcon: ({ color, size }) => (
+						<Dumbbell color={color} size={size} strokeWidth={2.25} />
+					)
 				}}
 			/>
 			<Tabs.Screen
 				name="exercises"
 				options={{
 					title: tt('tab.exercises'),
-					tabBarLabel: ({ focused }) => <TabLabel label={tt('tab.exercises')} focused={focused} />
+					tabBarLabel: tt('tab.exercises'),
+					tabBarIcon: ({ color, size }) => (
+						<Library color={color} size={size} strokeWidth={2.25} />
+					)
 				}}
 			/>
 			<Tabs.Screen
 				name="profile"
 				options={{
 					title: tt('tab.profile'),
-					tabBarLabel: ({ focused }) => <TabLabel label={tt('tab.profile')} focused={focused} />
+					tabBarLabel: tt('tab.profile'),
+					tabBarIcon: ({ color, size }) => (
+						<UserRound color={color} size={size} strokeWidth={2.25} />
+					)
 				}}
 			/>
 		</Tabs>

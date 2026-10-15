@@ -2,12 +2,14 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LocaleProvider, useLocale } from '../src/state/locale';
+import { ThemeProvider, useAppColors, useAppTheme } from '../src/state/theme';
 import { flushOutbox } from '../src/sync/cloudSync';
-import { colors } from '../src/theme';
 
 function RootStack() {
 	const { tt } = useLocale();
+	const colors = useAppColors();
 	return (
 		<Stack
 			screenOptions={{
@@ -15,7 +17,11 @@ function RootStack() {
 				headerTintColor: colors.text,
 				headerTitleStyle: { fontWeight: '700' },
 				contentStyle: { backgroundColor: colors.bg },
-				headerShadowVisible: false
+				headerShadowVisible: false,
+				// Tabs hide their header, so iOS has no previous title and shows only a chevron.
+				headerBackTitle: tt('common.back'),
+				headerBackButtonDisplayMode: 'generic',
+				headerBackTitleStyle: { fontSize: 17 }
 			}}
 		>
 			<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -45,9 +51,18 @@ export default function RootLayout() {
 	}, []);
 
 	return (
-		<LocaleProvider>
-			<StatusBar style="light" />
-			<RootStack />
-		</LocaleProvider>
+		<SafeAreaProvider>
+			<ThemeProvider>
+				<LocaleProvider>
+					<ThemedStatusBar />
+					<RootStack />
+				</LocaleProvider>
+			</ThemeProvider>
+		</SafeAreaProvider>
 	);
+}
+
+function ThemedStatusBar() {
+	const { mode } = useAppTheme();
+	return <StatusBar style={mode === 'light' ? 'dark' : 'light'} />;
 }

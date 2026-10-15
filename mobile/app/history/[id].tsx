@@ -3,30 +3,35 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
 	addCompletedLoggedSet,
-	completedExerciseCount,
 	completedSetCount,
 	planDraftFromSession,
+	removeLoggedExercise,
 	removeLoggedSet,
 	sessionDurationMs,
+	sessionVolumeKg,
 	updateLoggedSet
 } from '@repdraft/domain/session';
 import type { WorkoutSession } from '@repdraft/domain/types';
 import { exerciseDisplayName, refreshCustomsCache } from '../../src/catalog/loadIndex';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
+import { TechniqueSheet } from '../../src/components/TechniqueSheet';
+import { useBottomChromePad } from '../../src/layout/safe';
 import { useLocale } from '../../src/state/locale';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { clearSessionTombstone } from '../../src/sync/tombstones';
 import { deleteSessionRemote, pushPlan, pushSession } from '../../src/sync/cloudSync';
-import { colors, touchMin } from '../../src/theme';
+import { colors, space, touchMin } from '../../src/theme';
 
 export default function HistoryDetailScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const router = useRouter();
 	const { locale, tt } = useLocale();
+	const bottomPad = useBottomChromePad(space.lg);
 	const [session, setSession] = useState<WorkoutSession | null>(null);
 	const [editing, setEditing] = useState(false);
 	const [undo, setUndo] = useState<WorkoutSession | null>(null);
+	const [techniqueId, setTechniqueId] = useState<string | null>(null);
 	const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
@@ -117,21 +122,31 @@ export default function HistoryDetailScreen() {
 	}
 
 	const ms = sessionDurationMs(session) ?? 0;
-	const mins = Math.floor(ms / 60000);
+	const mins = Math.max(1, Math.round(ms / 60000));
+	const dateLabel = new Date(session.finishedAt ?? session.startedAt).toLocaleDateString(
+		locale === 'ru' ? 'ru-RU' : 'en-US',
+		{ day: 'numeric', month: 'short', year: 'numeric' }
+	);
+	const volume = sessionVolumeKg(session);
 
 	return (
-		<ScrollView contentContainerStyle={styles.root}>
-			<Text style={styles.title}>{session.planName}</Text>
-			<Text style={styles.meta}>
-				{mins} {tt('history.min')} · {completedExerciseCount(session)} {tt('common.exercises')} ·{' '}
-				{completedSetCount(session)} {tt('history.setsCount')}
+		<ScrollView contentContainerStyle={[styles.root, { paddingBottom: bottomPad }]}>
+			<Text style={styles.title} numberOfLines={2}>
+				{session.planName || '-'}
+			</Text>
+			<Text style={styles.meta} numberOfLines={2}>
+				{dateLabel} · {mins} {tt('history.min')} · {completedSetCount(session)}{' '}
+				{tt('history.setsCount')}
+				{volume > 0 ? ` · ${Math.round(volume)} ${tt('common.kg')}` : ''}
 			</Text>
 					{session.exercises.map((ex, ei) => {
 				const done = ex.sets.filter((s) => s.completed);
 				if (!editing && done.length === 0) return null;
 				return (
 					<View key={`${ex.exerciseId}-${ei}`} style={styles.card}>
-						<Text style={styles.cardTitle}>{exerciseDisplayName(ex.exerciseId, locale)}</Text>
+						<Pressable onPress={() => setTechniqueId(ex.exerciseId)}>
+							<Text style={styles.cardTitle}>{exerciseDisplayName(ex.exerciseId, locale)}</Text>
+						</Pressable>
 						{editing
 							? ex.sets.map((s, si) => (
 									<View key={si} style={styles.editRow}>
@@ -186,11 +201,18 @@ export default function HistoryDetailScreen() {
 									</Text>
 								))}
 						{editing ? (
-							<PrimaryButton
-								label={tt('history.addSet')}
-								variant="ghost"
-								onPress={() => setSession(addCompletedLoggedSet(session, ei))}
-							/>
+							<>
+								<PrimaryButton
+									label={tt('history.addSet')}
+									variant="ghost"
+									onPress={() => setSession(addCompletedLoggedSet(session, ei))}
+								/>
+								<PrimaryButton
+									label={tt('history.removeExercise')}
+									variant="ghost"
+									onPress={() => setSession(removeLoggedExercise(session, ei))}
+								/>
+							</>
 						) : null}
 					</View>
 				);
@@ -206,6 +228,7 @@ export default function HistoryDetailScreen() {
 				onPress={() => void openAsPlan()}
 			/>
 			<PrimaryButton label={tt('history.delete')} variant="danger" onPress={() => void remove()} />
+			<TechniqueSheet exerciseId={techniqueId} onClose={() => setTechniqueId(null)} />
 		</ScrollView>
 	);
 }

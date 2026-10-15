@@ -61,9 +61,9 @@ npm install
 cp .env.example .env          # Supabase optional
 
 npm run mobile                # Expo (from repo root)
-# or: cd mobile && npm install && npm start
-
 npm run dev                   # web / PWA
+npm run dev:all               # web + Expo together (Ctrl+C stops both)
+# first time mobile: cd mobile && npm install
 ```
 
 Without env keys, plans/sessions/records stay on device (AsyncStorage / localStorage). With Supabase, the same domain can sync.
