@@ -28,10 +28,16 @@ let cloudMode = false;
 let sessionsCloudOk = true;
 
 export function setCloudMode(enabled: boolean) {
-	cloudMode = enabled && isSupabaseConfigured();
+	const next = enabled && isSupabaseConfigured();
+	const becameCloud = next && !cloudMode;
+	cloudMode = next;
 	// Do not flip sessionsCloudOk back to true — PGRST205 sticks until full reload.
 	if (!cloudMode) return;
 	if (isSessionsTableUnavailable()) sessionsCloudOk = false;
+	/* Layout flushes on boot before auth sets cloud mode; re-flush when cloud becomes available. */
+	if (becameCloud && typeof window !== 'undefined') {
+		window.dispatchEvent(new CustomEvent('repdraft:cloud-mode'));
+	}
 }
 
 export function isCloudMode(): boolean {

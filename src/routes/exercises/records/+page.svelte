@@ -266,7 +266,8 @@
 		}
 	}
 
-	function recordLeadingSwipeActions(record: PersonalRecord, saved: boolean): SwipeRowAction[] {
+	/** One swipe left: bookmark then delete (same rail as Saved). */
+	function recordSwipeActions(record: PersonalRecord, saved: boolean): SwipeRowAction[] {
 		return [
 			{
 				label: translate(lang, saved ? 'bookmarks.remove' : 'bookmarks.add'),
@@ -274,12 +275,7 @@
 				variant: 'accent',
 				busy: bookmarkBusyId === record.exerciseId,
 				onAction: () => void onToggleBookmark(record.exerciseId)
-			}
-		];
-	}
-
-	function recordTrailingSwipeActions(record: PersonalRecord): SwipeRowAction[] {
-		return [
+			},
 			{
 				label: translate(lang, 'records.delete'),
 				icon: Trash2,
@@ -394,8 +390,7 @@
 										bookmarkBusyId !== null ||
 										exitingIds.has(record.exerciseId)}
 									exiting={exitingIds.has(record.exerciseId)}
-									leadingActions={recordLeadingSwipeActions(record, saved)}
-									actions={recordTrailingSwipeActions(record)}
+									actions={recordSwipeActions(record, saved)}
 									onExitComplete={() => void onExitComplete(record.exerciseId)}
 								>
 									<div class="records-list-card">

@@ -29,6 +29,7 @@ const checks = [
 	'exerciseInstructions',
 	'articles',
 	'cloudSync',
+	'outboxFlushGate',
 	'prefs',
 	'exportData',
 	'pwaInstall',

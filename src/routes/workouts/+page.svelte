@@ -396,29 +396,26 @@
 		plans.reorderInOrder(fromOrder, toOrder);
 	}
 
-	function planLeadingSwipeActions(plan: (typeof $plans)[number]): SwipeRowAction[] {
-		if (nextPlan?.id === plan.id) return [];
-		return [
-			{
+	/** One swipe left: pin (if not next) then delete — same rail pattern as Saved. */
+	function planSwipeActions(plan: (typeof $plans)[number]): SwipeRowAction[] {
+		const actions: SwipeRowAction[] = [];
+		if (nextPlan?.id !== plan.id) {
+			actions.push({
 				label: translate(lang, 'home.nextPlanBadge'),
 				ariaLabel: translate(lang, 'home.setNextPlan'),
 				icon: Flag,
 				variant: 'success',
 				onAction: () => pinNextPlan(plan.id, plan.name)
-			}
-		];
-	}
-
-	function planTrailingSwipeActions(plan: (typeof $plans)[number]): SwipeRowAction[] {
-		return [
-			{
-				label: translate(lang, 'workouts.delete'),
-				icon: Trash2,
-				variant: 'danger',
-				onAction: () => void onRemove(plan.id, plan.name),
-				busy: planBusyId === plan.id && planBusyOp === 'delete'
-			}
-		];
+			});
+		}
+		actions.push({
+			label: translate(lang, 'workouts.delete'),
+			icon: Trash2,
+			variant: 'danger',
+			onAction: () => void onRemove(plan.id, plan.name),
+			busy: planBusyId === plan.id && planBusyOp === 'delete'
+		});
+		return actions;
 	}
 
 	let historyBusyId = $state<string | null>(null);
@@ -847,8 +844,7 @@
 								busyId={planBusyId}
 								busyOp={planBusyOp}
 								exiting={exitingPlanIds.has(plan.id)}
-								leadingActions={planLeadingSwipeActions(plan)}
-								trailingActions={planTrailingSwipeActions(plan)}
+								trailingActions={planSwipeActions(plan)}
 								onOpen={onOpen}
 								onPin={pinNextPlan}
 								onDuplicate={(id) => void onDuplicate(id)}

@@ -169,8 +169,13 @@
 		const onOutbox = () => {
 			if (navigator.onLine) void flushSyncOutbox();
 		};
+		/* Auth sets cloud mode after first boot flush; without this, outbox stays forever. */
+		const onCloudMode = () => {
+			void flushSyncOutbox();
+		};
 		window.addEventListener('online', onOnline);
 		window.addEventListener('repdraft:outbox', onOutbox);
+		window.addEventListener('repdraft:cloud-mode', onCloudMode);
 		if (navigator.onLine) void flushSyncOutbox();
 
 		const syncVvChrome = (window as Window & { __repdraftSyncVvChrome?: () => void })
@@ -206,6 +211,7 @@
 			unsubAnalytics();
 			window.removeEventListener('online', onOnline);
 			window.removeEventListener('repdraft:outbox', onOutbox);
+			window.removeEventListener('repdraft:cloud-mode', onCloudMode);
 			document.removeEventListener('visibilitychange', onVisible);
 			window.removeEventListener('pageshow', onPageshow);
 		};
