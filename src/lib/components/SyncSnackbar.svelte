@@ -2,7 +2,9 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import { shouldRetryOutboxFlush } from '$lib/domain/outboxFlushGate';
 	import { translate } from '$lib/i18n/messages';
+	import { isCloudMode } from '$lib/storage/dataAccess';
 	import { flushSyncOutbox } from '$lib/storage/flushSyncOutbox';
 	import { outboxCount } from '$lib/storage/syncOutbox';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -11,10 +13,14 @@
 	import { AlertCircle, Check } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
+	/** iOS often skips `online`; keep trying while the chip is visible. */
+	const RETRY_MS = 12_000;
+
 	let lang = $derived($resolvedLocale);
 	let phase = $derived($outboxSyncUi);
 	let online = $state(true);
 	let pending = $state(0);
+	let cloudMode = $state(false);
 	/** Undo / status toasts sit in the same band; do not stack "Успешно сохранено" under them. */
 	let toastCueActive = $derived($toasts.length > 0);
 
@@ -22,20 +28,42 @@
 		if (typeof navigator === 'undefined') return;
 		online = navigator.onLine;
 		pending = outboxCount();
+		cloudMode = isCloudMode();
+	}
+
+	function tryFlush() {
+		refresh();
+		if (!shouldRetryOutboxFlush({ online, cloudMode, pendingCount: pending })) {
+			return;
+		}
+		void flushSyncOutbox();
 	}
 
 	onMount(() => {
 		refresh();
 		const onChange = () => refresh();
-		window.addEventListener('online', onChange);
+		const onOnlineOrCloud = () => {
+			refresh();
+			tryFlush();
+		};
+		const onVisible = () => {
+			onChange();
+			if (document.visibilityState === 'visible') tryFlush();
+		};
+		window.addEventListener('online', onOnlineOrCloud);
 		window.addEventListener('offline', onChange);
-		document.addEventListener('visibilitychange', onChange);
+		document.addEventListener('visibilitychange', onVisible);
 		window.addEventListener('repdraft:outbox', onChange);
+		window.addEventListener('repdraft:cloud-mode', onOnlineOrCloud);
+		const retryTimer = window.setInterval(tryFlush, RETRY_MS);
+		tryFlush();
 		return () => {
-			window.removeEventListener('online', onChange);
+			window.removeEventListener('online', onOnlineOrCloud);
 			window.removeEventListener('offline', onChange);
-			document.removeEventListener('visibilitychange', onChange);
+			document.removeEventListener('visibilitychange', onVisible);
 			window.removeEventListener('repdraft:outbox', onChange);
+			window.removeEventListener('repdraft:cloud-mode', onOnlineOrCloud);
+			window.clearInterval(retryTimer);
 		};
 	});
 
@@ -61,6 +89,9 @@
 	});
 
 	let visible = $derived(mode !== 'hidden' && !toastCueActive);
+	let pendingCanRetry = $derived(
+		mode === 'pending' && shouldRetryOutboxFlush({ online, cloudMode, pendingCount: pending })
+	);
 
 	function retry() {
 		void flushSyncOutbox();
@@ -68,7 +99,10 @@
 </script>
 
 {#if visible}
-	<div class="sync-snackbar" class:sync-snackbar--interactive={mode === 'error'}>
+	<div
+		class="sync-snackbar"
+		class:sync-snackbar--interactive={mode === 'error' || pendingCanRetry}
+	>
 		{#if mode === 'syncing'}
 			<div
 				class="sync-snackbar__pill sync-snackbar__pill--syncing"
@@ -100,6 +134,18 @@
 					<LucideIcon icon={AlertCircle} size={ICON_SMALL} />
 				</span>
 				<span class="sync-snackbar__label">{translate(lang, 'network.syncFailed')}</span>
+			</button>
+		{:else if mode === 'pending' && pendingCanRetry}
+			<button
+				type="button"
+				class="sync-snackbar__pill sync-snackbar__pill--pending"
+				aria-label={translate(lang, 'network.waitingToSave', { n: pending })}
+				title={translate(lang, 'sync.retry')}
+				onclick={retry}
+			>
+				<span class="sync-snackbar__label"
+					>{translate(lang, 'network.waitingToSave', { n: pending })}</span
+				>
 			</button>
 		{:else if mode === 'pending'}
 			<div

@@ -14,6 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.20.2',
+		highlights: {
+			ru: [
+				'Синхронизация: чип «Ждёт сохранения» снова пропадает, когда сеть и облако доступны',
+				'Списки планов и рекордов: один свайп влево открывает оба действия, как в Сохранённых'
+			],
+			en: [
+				'Sync: the waiting-to-save chip clears again when network and cloud are available',
+				'Plans and records lists: one swipe left reveals both actions, same as Saved'
+			]
+		}
+	},
+	{
 		version: '0.20.1',
 		highlights: {
 			ru: [

@@ -25,7 +25,6 @@
 		busyId,
 		busyOp,
 		exiting = false,
-		leadingActions,
 		trailingActions,
 		onOpen,
 		onPin,
@@ -46,7 +45,6 @@
 		busyId: string | null;
 		busyOp: 'copy' | 'delete' | null;
 		exiting?: boolean;
-		leadingActions: SwipeRowAction[];
 		trailingActions: SwipeRowAction[];
 		onOpen: (plan: WorkoutPlan) => void;
 		onPin: (planId: string, planName: string) => void;
@@ -71,7 +69,6 @@
 		disabled={rowBusy || reorderFrom !== null}
 		{exiting}
 		onExitComplete={() => onExitComplete?.(plan.id)}
-		{leadingActions}
 		actions={trailingActions}
 	>
 		<div class="entity-row">
