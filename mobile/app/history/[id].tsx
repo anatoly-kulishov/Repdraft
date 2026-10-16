@@ -238,7 +238,7 @@ export default function HistoryDetailScreen() {
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
-	root: { padding: 16, gap: 10, backgroundColor: colors.bg, paddingBottom: 40 },
+	root: { padding: 16, gap: 10, backgroundColor: colors.bg },
 	center: {
 		flex: 1,
 		alignItems: 'center',

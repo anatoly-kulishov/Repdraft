@@ -49,6 +49,7 @@ import { readHomeNextPlanId, writeHomeNextPlanId } from '../../src/live/homeNext
 import { readPlanOrder, writePlanOrder } from '../../src/live/planOrder';
 import { loadGreetingName } from '../../src/state/greetingName';
 import { useLocale } from '../../src/state/locale';
+import { useTabScreenPad } from '../../src/layout/safe';
 import { useAppColors } from '../../src/state/theme';
 import { dismissChecklist, noteChecklist } from '../../src/state/onboarding';
 import { plansRepo } from '../../src/storage/plansRepo';
@@ -67,6 +68,7 @@ export default function WorkoutsScreen() {
 	const { locale, tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
+	const tabPad = useTabScreenPad(space.lg);
 	const [plans, setPlans] = useState<WorkoutPlan[]>([]);
 	const [active, setActive] = useState<WorkoutSession | null>(null);
 	const [recent, setRecent] = useState<WorkoutSession[]>([]);
@@ -366,7 +368,7 @@ export default function WorkoutsScreen() {
 						{searchActive ? tt('builder.noMatches') : tt('workouts.empty')}
 					</Text>
 				}
-				contentContainerStyle={styles.list}
+				contentContainerStyle={[styles.list, { paddingBottom: tabPad }]}
 				renderItem={({ item }) => (
 					<Pressable
 						accessibilityRole="button"
@@ -446,7 +448,7 @@ function makeStyles(colors: ColorPalette) {
 	root: { flex: 1, backgroundColor: colors.bg },
 	center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
 	flexList: { flex: 1 },
-	list: { flexGrow: 1, padding: space.lg, paddingBottom: space.xxl, gap: space.sm },
+	list: { flexGrow: 1, padding: space.lg, gap: space.sm },
 	headerWrap: { gap: space.md, paddingBottom: space.sm },
 	headerRow: {
 		flexDirection: 'row',

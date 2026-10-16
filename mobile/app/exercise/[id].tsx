@@ -31,6 +31,7 @@ import { plansRepo } from '../../src/storage/plansRepo';
 import { recordsRepo } from '../../src/storage/recordsRepo';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { pushPlan } from '../../src/sync/cloudSync';
+import { useBottomChromePad } from '../../src/layout/safe';
 import { useAppColors } from '../../src/state/theme';
 import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
@@ -41,6 +42,7 @@ export default function ExerciseDetailScreen() {
 	const { locale, tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
+	const bottomPad = useBottomChromePad(space.lg);
 	const [bookmarked, setBookmarked] = useState(false);
 	const [record, setRecord] = useState<PersonalRecord | null>(null);
 	const [history, setHistory] = useState<WorkoutSession[]>([]);
@@ -123,7 +125,7 @@ export default function ExerciseDetailScreen() {
 
 	return (
 		<>
-			<ScrollView contentContainerStyle={styles.root}>
+			<ScrollView contentContainerStyle={[styles.root, { paddingBottom: bottomPad }]}>
 				<Text style={styles.title} numberOfLines={2}>
 					{id ? exerciseDisplayName(id, locale) : tt('exercise.detail')}
 				</Text>
@@ -210,7 +212,7 @@ export default function ExerciseDetailScreen() {
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
-	root: { padding: space.lg, gap: space.md, backgroundColor: colors.bg, paddingBottom: 48 },
+	root: { padding: space.lg, gap: space.md, backgroundColor: colors.bg },
 	title: { color: colors.text, fontSize: 24, fontWeight: '800' },
 	meta: { color: colors.muted },
 	card: {

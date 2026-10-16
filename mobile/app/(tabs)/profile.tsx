@@ -57,6 +57,7 @@ import {
 import { loadGreetingName, saveGreetingName as persistGreetingName } from '../../src/state/greetingName';
 import { isHealthReadEnabled, setHealthReadEnabled } from '../../src/state/healthPrefs';
 import { useLocale } from '../../src/state/locale';
+import { useTabScreenPad } from '../../src/layout/safe';
 import { useAppColors, useAppTheme } from '../../src/state/theme';
 import {
 	isQuestEnabled,
@@ -95,6 +96,7 @@ export default function ProfileScreen() {
 	const colors = useAppColors();
 	const { mode, cycleMode } = useAppTheme();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
+	const tabPad = useTabScreenPad(space.lg);
 	const switchColors = useMemo(
 		() => ({
 			trackColor: { false: colors.border, true: colors.accent } as const,
@@ -493,7 +495,7 @@ export default function ProfileScreen() {
 
 	return (
 		<>
-		<ScrollView contentContainerStyle={styles.root}>
+		<ScrollView contentContainerStyle={[styles.root, { paddingBottom: tabPad }]}>
 			<View style={styles.brandRow}>
 				<Pressable
 					accessibilityRole="button"
@@ -880,7 +882,7 @@ export default function ProfileScreen() {
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
-	root: { padding: space.lg, gap: space.md, backgroundColor: colors.bg, paddingBottom: 48 },
+	root: { padding: space.lg, gap: space.md, backgroundColor: colors.bg },
 	brandRow: {
 		flexDirection: 'row',
 		alignItems: 'center',

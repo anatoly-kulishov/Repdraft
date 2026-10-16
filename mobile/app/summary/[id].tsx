@@ -62,6 +62,7 @@ export default function SummaryScreen() {
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const bottomPad = useBottomChromePad(space.md);
+	const scrollPad = bottomPad + 88;
 	const [session, setSession] = useState<WorkoutSession | null>(null);
 	const [prevVolume, setPrevVolume] = useState<number | null>(null);
 	const [questApply, setQuestApply] = useState<QuestApplyResult | null>(null);
@@ -126,7 +127,10 @@ export default function SummaryScreen() {
 
 	return (
 		<View style={styles.root}>
-			<ScrollView style={styles.flex} contentContainerStyle={styles.scroll}>
+			<ScrollView
+				style={styles.flex}
+				contentContainerStyle={[styles.scroll, { paddingBottom: scrollPad }]}
+			>
 				<Text style={styles.kicker}>{tt('summary.saved')}</Text>
 				<Text style={styles.title} numberOfLines={2}>
 					{session.planName}
@@ -235,7 +239,7 @@ function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 		root: { flex: 1, backgroundColor: colors.bg },
 		flex: { flex: 1 },
-		scroll: { padding: space.lg, gap: space.md, paddingBottom: space.xxl },
+		scroll: { padding: space.lg, gap: space.md },
 		center: {
 			flex: 1,
 			alignItems: 'center',

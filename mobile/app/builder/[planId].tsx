@@ -12,6 +12,7 @@ import {
 	View
 } from 'react-native';
 import { clampPlanName } from '@repdraft/domain/inputLimits';
+import { labelBodyPart } from '@repdraft/domain/labels.ru';
 import {
 	addExercise,
 	altGroupMemberRole,
@@ -43,7 +44,7 @@ import {
 } from '../../src/catalog/loadIndex';
 import { CatalogThumb } from '../../src/components/CatalogThumb';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
-import { useBottomChromePad } from '../../src/layout/safe';
+import { useBottomChromePad, useStackHeaderOffset } from '../../src/layout/safe';
 import { routeParam } from '../../src/nav/params';
 import { useLocale } from '../../src/state/locale';
 import { useAppColors } from '../../src/state/theme';
@@ -59,12 +60,15 @@ export default function BuilderScreen() {
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const bottomPad = useBottomChromePad(space.md);
+	const pickListPad = bottomPad + 80;
+	const headerOffset = useStackHeaderOffset();
 	const [plan, setPlan] = useState<WorkoutPlan | null>(null);
 	const [bootError, setBootError] = useState(false);
 	const [picking, setPicking] = useState(false);
 	const [query, setQuery] = useState('');
 	const [bodyPart, setBodyPart] = useState<string | 'all'>('all');
 	const [selected, setSelected] = useState<Set<string>>(new Set());
+	const listPad = bottomPad + (selected.size > 0 ? 220 : 152);
 	const [catalogTick, setCatalogTick] = useState(0);
 	const [flashId, setFlashId] = useState<string | null>(null);
 	const planRef = useRef<WorkoutPlan | null>(null);
@@ -284,6 +288,7 @@ export default function BuilderScreen() {
 			<KeyboardAvoidingView
 				style={styles.root}
 				behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+				keyboardVerticalOffset={Platform.OS === 'ios' ? headerOffset : 0}
 			>
 				<TextInput
 					style={styles.input}
@@ -302,7 +307,8 @@ export default function BuilderScreen() {
 					contentContainerStyle={styles.chips}
 					renderItem={({ item: part }) => {
 						const on = bodyPart === part;
-						const label = part === 'all' ? tt('exercises.all') : part;
+						const label =
+							part === 'all' ? tt('exercises.all') : labelBodyPart(part, locale);
 						return (
 							<Pressable
 								style={[styles.chip, on && styles.chipOn]}
@@ -322,6 +328,7 @@ export default function BuilderScreen() {
 					keyboardShouldPersistTaps="handled"
 					initialNumToRender={24}
 					windowSize={8}
+					contentContainerStyle={{ paddingBottom: pickListPad, gap: space.sm }}
 					ListEmptyComponent={<Text style={styles.emptyPick}>{tt('builder.noMatches')}</Text>}
 					renderItem={({ item }) => {
 						const inPlan = inPlanIds.has(item.id);
@@ -419,7 +426,7 @@ export default function BuilderScreen() {
 				style={styles.flex}
 				data={plan.exercises}
 				keyExtractor={(item, i) => `${item.exerciseId}-${i}`}
-				contentContainerStyle={styles.list}
+				contentContainerStyle={[styles.list, { paddingBottom: listPad }]}
 				ListEmptyComponent={<Text style={styles.empty}>{tt('builder.empty')}</Text>}
 				keyboardShouldPersistTaps="handled"
 				renderItem={({ item, index }) => {
@@ -702,7 +709,7 @@ function makeStyles(colors: ColorPalette) {
 		marginRight: space.sm
 	},
 	chipOn: { backgroundColor: colors.accent, borderColor: colors.accent },
-	chipText: { color: colors.muted, fontWeight: '700', fontSize: 13, textTransform: 'capitalize' },
+	chipText: { color: colors.muted, fontWeight: '700', fontSize: 13 },
 	chipTextOn: { color: colors.accentText },
 	list: { gap: space.sm, paddingBottom: space.sm, flexGrow: 1 },
 	empty: { color: colors.muted, textAlign: 'center', marginTop: 48, lineHeight: 22 },

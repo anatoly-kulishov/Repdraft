@@ -14,8 +14,9 @@ import type { WorkoutSession } from '@repdraft/domain/types';
 import { useLocale } from '../../src/state/locale';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { deleteSessionRemote } from '../../src/sync/cloudSync';
+import { useBottomChromePad } from '../../src/layout/safe';
 import { useAppColors } from '../../src/state/theme';
-import { touchMin, type ColorPalette } from '../../src/theme';
+import { space, touchMin, type ColorPalette } from '../../src/theme';
 
 type Preset = 'all' | '7d' | '30d' | '90d';
 
@@ -32,6 +33,7 @@ export default function HistoryListScreen() {
 	const { tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
+	const listPad = useBottomChromePad(space.lg);
 	const [sessions, setSessions] = useState<WorkoutSession[]>([]);
 	const [query, setQuery] = useState('');
 	const [preset, setPreset] = useState<Preset>('all');
@@ -112,7 +114,7 @@ export default function HistoryListScreen() {
 				data={filtered}
 				keyExtractor={(item) => item.id}
 				ListEmptyComponent={<Text style={styles.empty}>{tt('history.empty')}</Text>}
-				contentContainerStyle={{ gap: 8, flexGrow: 1, paddingBottom: 28 }}
+				contentContainerStyle={{ gap: space.sm, flexGrow: 1, paddingBottom: listPad }}
 				renderItem={({ item }) => (
 					<Pressable
 						style={styles.row}
@@ -136,7 +138,7 @@ export default function HistoryListScreen() {
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
-	root: { flex: 1, padding: 16, backgroundColor: colors.bg, gap: 10 },
+	root: { flex: 1, padding: space.lg, backgroundColor: colors.bg, gap: space.sm },
 	search: {
 		minHeight: touchMin,
 		borderRadius: 12,
@@ -157,9 +159,9 @@ function makeStyles(colors: ColorPalette) {
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
-	chipOn: { borderColor: colors.accent, backgroundColor: colors.bg },
+	chipOn: { borderColor: colors.accent, backgroundColor: colors.accent },
 	chipText: { color: colors.muted, fontWeight: '600', fontSize: 13 },
-	chipTextOn: { color: colors.text },
+	chipTextOn: { color: colors.accentText, fontWeight: '700' },
 	empty: { color: colors.muted, textAlign: 'center', marginTop: 48 },
 	row: {
 		minHeight: touchMin,

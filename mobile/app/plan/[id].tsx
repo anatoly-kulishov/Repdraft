@@ -39,6 +39,7 @@ export default function PlanPreviewScreen() {
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const bottomPad = useBottomChromePad(space.md);
+	const scrollPad = bottomPad + 132;
 	const [plan, setPlan] = useState<WorkoutPlan | null>(null);
 	const [missing, setMissing] = useState(false);
 	const [busy, setBusy] = useState(false);
@@ -115,7 +116,7 @@ export default function PlanPreviewScreen() {
 		<View style={styles.root}>
 			<ScrollView
 				style={styles.flex}
-				contentContainerStyle={styles.scroll}
+				contentContainerStyle={[styles.scroll, { paddingBottom: scrollPad }]}
 				keyboardShouldPersistTaps="handled"
 			>
 				<Text style={styles.title} numberOfLines={2}>
@@ -183,7 +184,7 @@ function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 		root: { flex: 1, backgroundColor: colors.bg },
 		flex: { flex: 1 },
-		scroll: { padding: space.lg, gap: space.sm, paddingBottom: space.xxl },
+		scroll: { padding: space.lg, gap: space.sm },
 		center: {
 			flex: 1,
 			alignItems: 'center',

@@ -24,7 +24,7 @@ import { catalogMediaUrl } from '../../src/catalog/mediaUrl';
 import { zoneCoverMap } from '../../src/catalog/zoneCovers';
 import { CatalogThumb } from '../../src/components/CatalogThumb';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
-import { useBottomChromePad } from '../../src/layout/safe';
+import { useBottomChromePad, useTabScreenPad } from '../../src/layout/safe';
 import { useLocale } from '../../src/state/locale';
 import { bookmarksRepo } from '../../src/storage/bookmarksRepo';
 import { customsRepo } from '../../src/storage/customsRepo';
@@ -37,6 +37,7 @@ export default function ExercisesScreen() {
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const router = useRouter();
 	const bottomPad = useBottomChromePad(space.md);
+	const tabPad = useTabScreenPad(space.lg);
 	const [query, setQuery] = useState('');
 	const [bodyPart, setBodyPart] = useState<string | 'all'>('all');
 	const [savedOnly, setSavedOnly] = useState(false);
@@ -164,7 +165,7 @@ export default function ExercisesScreen() {
 					keyExtractor={(item) => item.id}
 					initialNumToRender={20}
 					windowSize={7}
-					contentContainerStyle={styles.list}
+					contentContainerStyle={[styles.list, { paddingBottom: tabPad }]}
 					renderItem={({ item }) => {
 						const bookmarked = bookmarkSet.has(item.id);
 						return (
@@ -202,7 +203,7 @@ export default function ExercisesScreen() {
 				keyExtractor={(item) => item}
 				numColumns={2}
 				columnWrapperStyle={styles.hubRow}
-				contentContainerStyle={styles.list}
+				contentContainerStyle={[styles.list, { paddingBottom: tabPad }]}
 				ListHeaderComponent={
 					<Text style={styles.hubLead}>{tt('exercises.hubLead')}</Text>
 				}
@@ -314,12 +315,13 @@ function makeStyles(colors: ColorPalette) {
 		borderColor: colors.border,
 		backgroundColor: colors.panel,
 		alignItems: 'center',
-		justifyContent: 'center'
+		justifyContent: 'center',
+		marginRight: space.sm
 	},
 	chipOn: { backgroundColor: colors.accent, borderColor: colors.accent },
 	chipText: { color: colors.muted, fontWeight: '600', fontSize: 13 },
 	chipTextOn: { color: colors.accentText },
-	list: { gap: space.sm, paddingBottom: space.xxl },
+	list: { gap: space.sm },
 	row: {
 		minHeight: touchMin,
 		backgroundColor: colors.panel,
@@ -340,7 +342,7 @@ function makeStyles(colors: ColorPalette) {
 	sheetWrap: {
 		flex: 1,
 		justifyContent: 'flex-end',
-		backgroundColor: 'rgba(0,0,0,0.55)'
+		backgroundColor: colors.overlayScrim
 	},
 	sheet: {
 		backgroundColor: colors.bg,
@@ -380,7 +382,7 @@ function makeStyles(colors: ColorPalette) {
 		padding: space.md,
 		zIndex: 1
 	},
-	hubTitle: { color: colors.text, fontWeight: '800', fontSize: 16 },
-	hubMeta: { color: colors.muted, marginTop: 4, fontSize: 13 }
+	hubTitle: { color: '#f5f5f7', fontWeight: '800', fontSize: 16 },
+	hubMeta: { color: 'rgba(245,245,247,0.82)', marginTop: 4, fontSize: 13 }
 	});
 }

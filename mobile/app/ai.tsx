@@ -2,8 +2,10 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
 	Alert,
+	Keyboard,
 	KeyboardAvoidingView,
 	Platform,
+	ScrollView,
 	StyleSheet,
 	Text,
 	TextInput,
@@ -13,7 +15,7 @@ import { sanitizeAiBrief } from '@repdraft/domain/inputLimits';
 import { addExercise, createEmptyDraft, updateExercise } from '@repdraft/domain/workout';
 import { aiPlanEndpoint } from '../src/catalog/mediaUrl';
 import { PrimaryButton } from '../src/components/PrimaryButton';
-import { useBottomChromePad } from '../src/layout/safe';
+import { useBottomChromePad, useStackHeaderOffset } from '../src/layout/safe';
 import { useLocale } from '../src/state/locale';
 import { plansRepo } from '../src/storage/plansRepo';
 import { pushPlan } from '../src/sync/cloudSync';
@@ -38,10 +40,12 @@ export default function AiDraftScreen() {
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const router = useRouter();
 	const bottomPad = useBottomChromePad(space.md);
+	const headerOffset = useStackHeaderOffset();
 	const [brief, setBrief] = useState('');
 	const [busy, setBusy] = useState(false);
 
 	async function generate() {
+		Keyboard.dismiss();
 		const cleaned = sanitizeAiBrief(brief);
 		if (!cleaned) {
 			Alert.alert(tt('common.error'), tt('ai.fail'));
@@ -87,41 +91,55 @@ export default function AiDraftScreen() {
 		<KeyboardAvoidingView
 			style={styles.root}
 			behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+			keyboardVerticalOffset={Platform.OS === 'ios' ? headerOffset : 0}
 		>
-			<Text style={styles.title}>{tt('ai.title')}</Text>
-			<TextInput
-				style={styles.input}
-				multiline
-				value={brief}
-				onChangeText={setBrief}
-				placeholder={tt('ai.brief')}
-				placeholderTextColor={colors.muted}
-			/>
-			<PrimaryButton
-				label={busy ? '…' : tt('ai.generate')}
-				onPress={() => void generate()}
-				disabled={busy}
-			/>
-			<View style={{ height: bottomPad }} />
+			<ScrollView
+				style={styles.flex}
+				contentContainerStyle={[styles.scroll, { paddingBottom: bottomPad }]}
+				keyboardShouldPersistTaps="handled"
+				keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+			>
+				<Text style={styles.title}>{tt('ai.title')}</Text>
+				<TextInput
+					style={styles.input}
+					multiline
+					value={brief}
+					onChangeText={setBrief}
+					placeholder={tt('ai.brief')}
+					placeholderTextColor={colors.muted}
+					textAlignVertical="top"
+				/>
+				<PrimaryButton
+					label={tt('live.done')}
+					variant="ghost"
+					onPress={() => Keyboard.dismiss()}
+				/>
+				<PrimaryButton
+					label={busy ? '…' : tt('ai.generate')}
+					onPress={() => void generate()}
+					disabled={busy}
+				/>
+			</ScrollView>
 		</KeyboardAvoidingView>
 	);
 }
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
-	root: { flex: 1, padding: space.lg, gap: space.md, backgroundColor: colors.bg },
-	title: { ...type.title, color: colors.text },
-	input: {
-		flex: 1,
-		minHeight: 160,
-		borderRadius: 14,
-		borderWidth: 1,
-		borderColor: colors.border,
-		backgroundColor: colors.panel,
-		color: colors.text,
-		padding: space.md,
-		fontSize: 16,
-		textAlignVertical: 'top'
-	}
+		root: { flex: 1, backgroundColor: colors.bg },
+		flex: { flex: 1 },
+		scroll: { padding: space.lg, gap: space.md, flexGrow: 1 },
+		title: { ...type.title, color: colors.text },
+		input: {
+			minHeight: 160,
+			borderRadius: 14,
+			borderWidth: 1,
+			borderColor: colors.border,
+			backgroundColor: colors.panel,
+			color: colors.text,
+			padding: space.md,
+			fontSize: 16,
+			textAlignVertical: 'top'
+		}
 	});
 }

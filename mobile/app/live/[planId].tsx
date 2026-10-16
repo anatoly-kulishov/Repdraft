@@ -85,7 +85,7 @@ import {
 	sessionsRepo,
 	writeActiveSession
 } from '../../src/storage/sessionsRepo';
-import { useBottomChromePad } from '../../src/layout/safe';
+import { useBottomChromePad, useStackHeaderOffset } from '../../src/layout/safe';
 import { pushPlan, pushRecord, pushSession } from '../../src/sync/cloudSync';
 import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
@@ -103,6 +103,8 @@ export default function LiveScreen() {
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const bottomPad = useBottomChromePad(space.md);
+	const headerOffset = useStackHeaderOffset();
+	const scrollPad = bottomPad + 200;
 
 	const [session, setSession] = useState<WorkoutSession | null>(null);
 	const [history, setHistory] = useState<WorkoutSession[]>([]);
@@ -592,7 +594,7 @@ export default function LiveScreen() {
 		<KeyboardAvoidingView
 			style={styles.root}
 			behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-			keyboardVerticalOffset={88}
+			keyboardVerticalOffset={Platform.OS === 'ios' ? headerOffset : 0}
 		>
 			<View style={styles.header}>
 				<Text style={styles.plan} numberOfLines={1}>
@@ -632,7 +634,7 @@ export default function LiveScreen() {
 
 			<ScrollView
 				style={styles.flex}
-				contentContainerStyle={styles.scroll}
+				contentContainerStyle={[styles.scroll, { paddingBottom: scrollPad }]}
 				keyboardShouldPersistTaps="handled"
 				keyboardDismissMode="on-drag"
 			>
@@ -893,7 +895,7 @@ function makeStyles(colors: ColorPalette) {
 		root: { flex: 1, backgroundColor: colors.bg },
 		flex: { flex: 1 },
 		header: { paddingHorizontal: space.lg, paddingTop: space.sm, gap: 2 },
-		scroll: { padding: space.lg, gap: space.md, paddingBottom: space.xxl },
+		scroll: { padding: space.lg, gap: space.md },
 		center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
 		plan: { color: colors.text, fontSize: 22, fontWeight: '800' },
 		progress: { color: colors.muted, fontSize: 14, fontWeight: '600' },

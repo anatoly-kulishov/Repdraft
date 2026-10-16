@@ -23,14 +23,16 @@ import { PrimaryButton } from '../src/components/PrimaryButton';
 import { useLocale } from '../src/state/locale';
 import { recordsRepo } from '../src/storage/recordsRepo';
 import { pushRecord, deleteRecordRemote } from '../src/sync/cloudSync';
+import { useBottomChromePad } from '../src/layout/safe';
 import { useAppColors } from '../src/state/theme';
-import { touchMin, type ColorPalette } from '../src/theme';
+import { space, touchMin, type ColorPalette } from '../src/theme';
 
 export default function RecordsScreen() {
 	const router = useRouter();
 	const { locale, tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
+	const listPad = useBottomChromePad(space.lg);
 	const [records, setRecords] = useState<PersonalRecord[]>([]);
 	const [query, setQuery] = useState('');
 	const [editing, setEditing] = useState<PersonalRecord | null>(null);
@@ -152,7 +154,7 @@ export default function RecordsScreen() {
 				data={filtered}
 				keyExtractor={(item) => item.exerciseId}
 				ListEmptyComponent={<Text style={styles.empty}>{tt('records.empty')}</Text>}
-				contentContainerStyle={{ gap: 8, flexGrow: 1, paddingBottom: 28 }}
+				contentContainerStyle={{ gap: space.sm, flexGrow: 1, paddingBottom: listPad }}
 				renderItem={({ item }) => (
 					<Pressable
 						style={styles.row}
