@@ -14,6 +14,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.22.0',
+		highlights: {
+			ru: [
+				'Телефон: светлая тема на всех экранах, Quest и ачивки после тренировки',
+				'Профиль: чеклист знакомства, поиск планов на главной, режим тестировщика',
+				'HealthKit (dev build): чтение пульса и калорий после финиша, если включено'
+			],
+			en: [
+				'Phone: light theme on all screens, Quest and achievements after workouts',
+				'Profile: getting-started checklist, plan search on Home, tester mode',
+				'HealthKit (dev build): read heart rate and calories after finish when enabled'
+			]
+		}
+	},
+	{
 		version: '0.21.0',
 		highlights: {
 			ru: [

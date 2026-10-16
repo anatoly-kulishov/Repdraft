@@ -64,7 +64,7 @@ function makeStyles(colors: ColorPalette) {
 		},
 		backdrop: {
 			...StyleSheet.absoluteFill,
-			backgroundColor: 'rgba(0,0,0,0.55)'
+			backgroundColor: colors.overlayScrim
 		},
 		sheet: {
 			maxHeight: '78%',

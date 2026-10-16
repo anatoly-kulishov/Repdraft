@@ -8,6 +8,7 @@ import {
 	Pressable,
 	StyleSheet,
 	Text,
+	TextInput,
 	View
 } from 'react-native';
 import { ChevronRight, Play, Sparkles } from 'lucide-react-native';
@@ -17,9 +18,7 @@ import {
 } from '@repdraft/domain/greeting';
 import { greetingFirstName } from '@repdraft/domain/greetingName';
 import {
-	ONBOARDING_CHECKLIST_STEPS,
 	buildDemoPlan,
-	checklistProgress,
 	shouldShowChecklist,
 	type OnboardingState
 } from '@repdraft/domain/onboarding';
@@ -41,6 +40,7 @@ import {
 import type { WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { loadExerciseIndex } from '../../src/catalog/loadIndex';
 import { BrandMark } from '../../src/components/BrandMark';
+import { OnboardingChecklistPanel } from '../../src/components/OnboardingChecklistPanel';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { getSupabase, isSupabaseConfigured } from '../../src/auth/supabase';
@@ -75,6 +75,7 @@ export default function WorkoutsScreen() {
 	const [greetingCustom, setGreetingCustom] = useState('');
 	const [authUser, setAuthUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [searchQuery, setSearchQuery] = useState('');
 
 	const reload = useCallback(async () => {
 		setLoading(true);
@@ -160,7 +161,12 @@ export default function WorkoutsScreen() {
 		[plans, recent, pinnedNextId]
 	);
 	const showChecklist = onboarding ? shouldShowChecklist(onboarding) : false;
-	const progress = onboarding ? checklistProgress(onboarding) : null;
+	const filteredPlans = useMemo(() => {
+		const q = searchQuery.trim().toLowerCase();
+		if (!q) return plans;
+		return plans.filter((p) => (p.name ?? '').toLowerCase().includes(q));
+	}, [plans, searchQuery]);
+	const searchActive = searchQuery.trim().length > 0;
 	const greetingName = greetingFirstName(greetingCustom, authUser);
 	const greeting = tt(
 		homeGreetingMessageKey(dayGreetingPeriod(), Boolean(greetingName)),
@@ -243,36 +249,11 @@ export default function WorkoutsScreen() {
 				</Pressable>
 			) : null}
 
-			{showChecklist && onboarding && progress ? (
-				<Panel style={styles.checklist}>
-					<Text style={styles.checkTitle}>
-						{tt('onboarding.title')} ({progress.done}/{progress.total})
-					</Text>
-					{ONBOARDING_CHECKLIST_STEPS.map((step) => (
-						<Text
-							key={step}
-							style={[styles.checkItem, onboarding.checklist[step] && styles.checkDone]}
-						>
-							{onboarding.checklist[step] ? '✓ ' : '○ '}
-							{tt(
-								step === 'homeSeen'
-									? 'onboarding.home'
-									: step === 'planReady'
-										? 'onboarding.plan'
-										: step === 'liveEntered'
-											? 'onboarding.live'
-											: step === 'setLogged'
-												? 'onboarding.set'
-												: 'onboarding.finish'
-							)}
-						</Text>
-					))}
-					<PrimaryButton
-						label={tt('onboarding.dismiss')}
-						variant="ghost"
-						onPress={() => void dismissChecklist().then(setOnboarding)}
-					/>
-				</Panel>
+			{showChecklist && onboarding ? (
+				<OnboardingChecklistPanel
+					state={onboarding}
+					onDismiss={() => void dismissChecklist().then(setOnboarding)}
+				/>
 			) : null}
 
 			{showGuestHero ? (
@@ -346,6 +327,18 @@ export default function WorkoutsScreen() {
 			<View style={styles.sectionHead}>
 				<Text style={styles.sectionTitle}>{tt('workouts.title')}</Text>
 			</View>
+			{hasPlans ? (
+				<TextInput
+					value={searchQuery}
+					onChangeText={setSearchQuery}
+					placeholder={tt('workouts.searchPh')}
+					placeholderTextColor={colors.muted}
+					style={styles.search}
+					autoCapitalize="none"
+					autoCorrect={false}
+					clearButtonMode="while-editing"
+				/>
+			) : null}
 			<View style={styles.rowActions}>
 				<View style={styles.flex}>
 					<PrimaryButton label={tt('workouts.create')} onPress={() => void createBlank()} />
@@ -365,10 +358,14 @@ export default function WorkoutsScreen() {
 		<View style={styles.root}>
 			<FlatList
 				style={styles.flexList}
-				data={plans}
+				data={filteredPlans}
 				keyExtractor={(item) => item.id}
 				ListHeaderComponent={header}
-				ListEmptyComponent={<Text style={styles.empty}>{tt('workouts.empty')}</Text>}
+				ListEmptyComponent={
+					<Text style={styles.empty}>
+						{searchActive ? tt('builder.noMatches') : tt('workouts.empty')}
+					</Text>
+				}
 				contentContainerStyle={styles.list}
 				renderItem={({ item }) => (
 					<Pressable
@@ -487,10 +484,16 @@ function makeStyles(colors: ColorPalette) {
 	},
 	heroCtaText: { color: colors.accentText, fontSize: 16, fontWeight: '700' },
 	pressed: { opacity: 0.85 },
-	checklist: { gap: 6, padding: space.md },
-	checkTitle: { color: colors.text, fontWeight: '800', marginBottom: 4 },
-	checkItem: { color: colors.muted, fontSize: 14 },
-	checkDone: { color: colors.accent },
+	search: {
+		minHeight: touchMin,
+		borderRadius: radius.md,
+		borderWidth: 1,
+		borderColor: colors.border,
+		backgroundColor: colors.panel,
+		color: colors.text,
+		paddingHorizontal: space.md,
+		fontSize: 16
+	},
 	section: { gap: space.sm },
 	sectionHead: {
 		flexDirection: 'row',

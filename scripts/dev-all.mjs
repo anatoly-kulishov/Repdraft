@@ -5,6 +5,10 @@
  */
 import { spawn } from 'node:child_process';
 
+console.log(
+	'[repdraft] Mobile needs Expo Go for SDK 57 from https://expo.dev/go or a development build (Health, native modules).'
+);
+
 const children = [
 	spawn('npm', ['run', 'dev'], { stdio: 'inherit', shell: true }),
 	spawn('npm', ['run', 'mobile'], { stdio: 'inherit', shell: true })

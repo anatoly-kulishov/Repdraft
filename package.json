@@ -1,7 +1,7 @@
 {
 	"name": "repdraft",
 	"private": true,
-	"version": "0.21.0",
+	"version": "0.22.0",
 	"description": "Gym workout log - React Native (mobile/) + SvelteKit web/PWA, shared domain",
 	"type": "module",
 	"scripts": {
@@ -20,6 +20,7 @@
 		"mobile:android": "npm run android --prefix mobile",
 		"check:mobile": "npm run typecheck --prefix mobile",
 		"check:all": "npm run check && npm run check:mobile",
+		"sync-mobile-i18n": "node scripts/sync-mobile-i18n.mjs",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"build:embeddings": "node --env-file=.env --experimental-strip-types ./scripts/build-embeddings.ts",

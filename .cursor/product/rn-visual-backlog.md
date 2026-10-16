@@ -12,7 +12,9 @@ Living list from theme + screen pass. Plan file is not edited; findings land her
 - Light mode: chip/text contrast on `accentDim` rows
 - Keyboard covering weight/reps inputs on live
 - Sheet scrims on TechniqueSheet / WhatsNew in light theme
-- Home long-press pin-next: toast parity (`home.setNextPlanDone`) still open
+- Home long-press pin-next: toast `home.setNextPlanDone` (done)
+- Sheet scrims: `overlayScrim` token on TechniqueSheet / WhatsNew (done)
+- i18n: mobile messages synced from web via `npm run sync-mobile-i18n` (done)
 
 ## Closed for gate
 

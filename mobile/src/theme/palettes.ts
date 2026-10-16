@@ -12,6 +12,8 @@ export type ColorPalette = {
 	accentDim: string;
 	danger: string;
 	dangerBg: string;
+	/** Modal/sheet scrim */
+	overlayScrim: string;
 };
 
 export const darkPalette: ColorPalette = {
@@ -26,7 +28,8 @@ export const darkPalette: ColorPalette = {
 	accentText: '#ffffff',
 	accentDim: 'rgba(139, 92, 246, 0.18)',
 	danger: '#f87171',
-	dangerBg: '#3f1d1d'
+	dangerBg: '#3f1d1d',
+	overlayScrim: 'rgba(0,0,0,0.55)'
 };
 
 export const lightPalette: ColorPalette = {
@@ -41,7 +44,8 @@ export const lightPalette: ColorPalette = {
 	accentText: '#ffffff',
 	accentDim: 'rgba(139, 92, 246, 0.12)',
 	danger: '#dc2626',
-	dangerBg: '#fef2f2'
+	dangerBg: '#fef2f2',
+	overlayScrim: 'rgba(0,0,0,0.35)'
 };
 
 export type AppThemeMode = 'dark' | 'light';

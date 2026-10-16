@@ -2,9 +2,9 @@ import * as Clipboard from 'expo-clipboard';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as WebBrowser from 'expo-web-browser';
 import {
@@ -38,8 +38,11 @@ import { unlockRestAudioFromGesture, playRestDoneChime } from '../../src/audio/r
 import { webOrigin } from '../../src/catalog/mediaUrl';
 import { getSupabase, isSupabaseConfigured } from '../../src/auth/supabase';
 import type { AchievementsState } from '@repdraft/domain/achievements';
+import type { OnboardingState } from '@repdraft/domain/onboarding';
+import { TESTER_MODE_UNLOCK_TAPS } from '@repdraft/domain/prefs';
 import type { QuestState } from '@repdraft/domain/quest';
 import { AchievementsPanel } from '../../src/components/AchievementsPanel';
+import { OnboardingChecklistPanel } from '../../src/components/OnboardingChecklistPanel';
 import { BrandMark } from '../../src/components/BrandMark';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
@@ -72,7 +75,10 @@ import {
 	setHapticRestEnabled,
 	setRestSoundEnabled
 } from '../../src/state/prefs';
+import { loadOnboarding } from '../../src/state/onboarding';
+import { isTesterModeEnabled, setTesterModeEnabled } from '../../src/state/testerPrefs';
 import { outboxCount, pullAndMergeFromCloud } from '../../src/sync/cloudSync';
+import { wipeMobileAppStorage } from '../../src/storage/wipeAppStorage';
 import { radius, space, touchMin, type, type ColorPalette } from '../../src/theme';
 
 const APP_VERSION =
@@ -84,6 +90,7 @@ function boolLabel(tt: (k: string) => string, v: boolean | null): string {
 }
 
 export default function ProfileScreen() {
+	const router = useRouter();
 	const { locale, setLocale, tt } = useLocale();
 	const colors = useAppColors();
 	const { mode, cycleMode } = useAppTheme();
@@ -117,6 +124,10 @@ export default function ProfileScreen() {
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [deleteWord, setDeleteWord] = useState('');
 	const [avatarBusy, setAvatarBusy] = useState(false);
+	const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
+	const [testerOn, setTesterOn] = useState(false);
+	const versionUnlockTaps = useRef(0);
+	const versionUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const cloud = isSupabaseConfigured();
 	const avatarUrl = session?.user ? resolveUserAvatarUrl(session.user) : null;
 	const displayName = userDisplayName(session?.user ?? null);
@@ -128,6 +139,7 @@ export default function ProfileScreen() {
 				setLoopSnap(computeLoopMetrics(list, new Date().toISOString()));
 			});
 			void outboxCount().then(setPendingSync);
+			void loadOnboarding().then(setOnboarding);
 		}, [])
 	);
 
@@ -141,6 +153,8 @@ export default function ProfileScreen() {
 			setAchOn(await isAchievementsEnabled());
 			setAchState(await loadAchievementsState());
 			setHealthOn(await isHealthReadEnabled());
+			const testerPref = await isTesterModeEnabled();
+			setTesterOn(testerPref || __DEV__);
 			setRestSound(await isRestSoundEnabled());
 			setHapticRest(await isHapticRestEnabled());
 			const sb = getSupabase();
@@ -369,20 +383,82 @@ export default function ProfileScreen() {
 			Alert.alert(tt('common.error'), error.message);
 			return;
 		}
-		Alert.alert(tt('common.ok'), tt('profile.magicOk'));
+		Alert.alert(
+			tt('auth.checkEmailTitle'),
+			tt('auth.checkEmailMagic', { email: email.trim() })
+		);
 	}
 
 	async function resetPassword() {
 		const sb = getSupabase();
 		if (!sb) return;
+		const trimmed = email.trim();
+		if (!trimmed) {
+			Alert.alert(tt('common.error'), tt('profile.email'));
+			return;
+		}
 		setBusy(true);
-		const { error } = await sb.auth.resetPasswordForEmail(email.trim());
+		const { error } = await sb.auth.resetPasswordForEmail(trimmed);
 		setBusy(false);
 		if (error) {
 			Alert.alert(tt('common.error'), error.message);
 			return;
 		}
-		Alert.alert(tt('common.ok'), tt('profile.resetOk'));
+		Alert.alert(tt('auth.checkEmailTitle'), tt('auth.checkEmailReset', { email: trimmed }), [
+			{ text: tt('common.ok') }
+		]);
+	}
+
+	function onVersionPress() {
+		if (!testerOn) {
+			if (versionUnlockTimer.current) clearTimeout(versionUnlockTimer.current);
+			versionUnlockTaps.current += 1;
+			if (versionUnlockTaps.current >= TESTER_MODE_UNLOCK_TAPS) {
+				versionUnlockTaps.current = 0;
+				void setTesterModeEnabled(true).then(() => {
+					setTesterOn(true);
+					Alert.alert(tt('common.ok'), tt('settings.testerModeOn'));
+				});
+			} else {
+				versionUnlockTimer.current = setTimeout(() => {
+					versionUnlockTaps.current = 0;
+					versionUnlockTimer.current = null;
+				}, 1600);
+			}
+		}
+		setWhatsNewOpen(true);
+	}
+
+	async function confirmDevWipe() {
+		Alert.alert(tt('settings.devWipeConfirmTitle'), tt('settings.devWipeConfirmHint'), [
+			{ text: tt('settings.devWipeCancel'), style: 'cancel' },
+			{
+				text: tt('settings.devWipeButton'),
+				style: 'destructive',
+				onPress: () => {
+					void (async () => {
+						setBusy(true);
+						try {
+							const sb = getSupabase();
+							if (sb) {
+								try {
+									await sb.auth.signOut({ scope: 'local' });
+								} catch {
+									/* offline ok */
+								}
+							}
+							await wipeMobileAppStorage();
+							setSession(null);
+							router.replace('/');
+						} catch {
+							Alert.alert(tt('common.error'), tt('settings.devWipeFail'));
+						} finally {
+							setBusy(false);
+						}
+					})();
+				}
+			}
+		]);
 	}
 
 	async function signOut() {
@@ -760,7 +836,40 @@ export default function ProfileScreen() {
 				</Panel>
 			) : null}
 
-			<Pressable accessibilityRole="button" onPress={() => setWhatsNewOpen(true)}>
+			{onboarding ? (
+				<Panel>
+					<Text style={styles.groupTitle}>{tt('onboarding.authHelp')}</Text>
+					<Text style={styles.hint}>{tt('onboarding.authHelpLead')}</Text>
+					<PrimaryButton
+						label={tt('articles.viewAll')}
+						variant="ghost"
+						onPress={() => void WebBrowser.openBrowserAsync(`${webOrigin()}/articles`)}
+					/>
+					<OnboardingChecklistPanel state={onboarding} readonly />
+				</Panel>
+			) : null}
+
+			{testerOn ? (
+				<Panel>
+					<Text style={styles.groupTitle}>{tt('settings.devWipeTitle')}</Text>
+					<Text style={styles.hint}>{tt('settings.devWipeLead')}</Text>
+					<PrimaryButton
+						label={tt('settings.devWipeButton')}
+						variant="ghost"
+						onPress={() => void confirmDevWipe()}
+						disabled={busy}
+					/>
+					<PrimaryButton
+						label={tt('settings.testerModeOff')}
+						variant="ghost"
+						onPress={() =>
+							void setTesterModeEnabled(false).then(() => setTesterOn(false))
+						}
+					/>
+				</Panel>
+			) : null}
+
+			<Pressable accessibilityRole="button" onPress={onVersionPress}>
 				<Text style={styles.version}>{tt('profile.version', { v: APP_VERSION })}</Text>
 			</Pressable>
 		</ScrollView>

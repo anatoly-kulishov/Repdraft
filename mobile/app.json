@@ -2,7 +2,7 @@
   "expo": {
     "name": "Repdraft",
     "slug": "repdraft",
-    "version": "0.21.0",
+    "version": "0.22.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -29,7 +29,15 @@
     "plugins": [
       "expo-router",
       "expo-audio",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Repdraft reads workout duration, calories, and heart rate after you finish a session.",
+          "NSHealthUpdateUsageDescription": false,
+          "background": false
+        }
+      ]
     ]
   }
 }

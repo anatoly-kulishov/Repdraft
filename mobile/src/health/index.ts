@@ -1,5 +1,7 @@
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import { kvGetJson, kvSetJson } from '../storage/kv';
+import { iosHealthAdapter } from './iosHealthAdapter';
 import { stubHealthAdapter } from './stubAdapter';
 import type { HealthAdapter, HealthWorkoutSnapshot } from './types';
 
@@ -19,8 +21,14 @@ type StoredHealthSnap = {
  * (not Expo Go). Until plugins are wired, always returns the stub.
  */
 export function getHealthAdapter(): HealthAdapter {
-	// ponytail: native modules need EAS/dev build + config plugins; keep stub until then.
-	void Constants.executionEnvironment;
+	// Expo Go has no native HealthKit module; dev/prod client only.
+	if (Constants.executionEnvironment === 'storeClient') {
+		return stubHealthAdapter;
+	}
+	if (Platform.OS === 'ios') {
+		return iosHealthAdapter;
+	}
+	// ponytail: Android Health Connect adapter is a follow-up; stub until wired.
 	return stubHealthAdapter;
 }
 

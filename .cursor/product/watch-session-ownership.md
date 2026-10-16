@@ -47,6 +47,6 @@ No builder, catalog search, AI, or profile on watch v1.
 
 ## Next engineering step
 
-1. Write a one-page protocol (lease, heartbeat, finish race) as TypeScript types in `domain/watchSession.ts` (no native yet).
+1. Protocol types live in [`src/lib/domain/watchSession.ts`](../../src/lib/domain/watchSession.ts) (`SessionLease`, `WatchSetDelta`, `applyWatchDeltas`).
 2. Prototype watchOS companion **or** Wear module against that protocol.
 3. Keep Expo Go phone app unchanged; companion is a separate native target.
