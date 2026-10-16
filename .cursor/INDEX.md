@@ -37,6 +37,7 @@
 | File | When |
 |------|------|
 | `mvp.mdc` | Scope (always) |
+| `dual-client-parity.mdc` | RN + web/PWA parity (always) |
 | `architecture.mdc` | Layers (always) |
 | `release-branches.mdc` | Semver / branches |
 | `svelte-ts.mdc` | Svelte/TS in `src/**` |

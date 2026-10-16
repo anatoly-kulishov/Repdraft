@@ -301,6 +301,7 @@ export default function BuilderScreen() {
 				<Text style={styles.pickHint}>{tt('builder.pickHint')}</Text>
 				<FlatList
 					horizontal
+					style={styles.chipStrip}
 					data={['all', ...parts] as const}
 					keyExtractor={(p) => p}
 					showsHorizontalScrollIndicator={false}
@@ -657,7 +658,9 @@ function Stepper({
 }) {
 	return (
 		<View style={styles.stepper}>
-			<Text style={styles.stepLabel}>{label}</Text>
+			<Text style={styles.stepLabel} numberOfLines={1}>
+				{label}
+			</Text>
 			<View style={styles.stepRow}>
 				<Pressable accessibilityRole="button" style={styles.stepBtn} onPress={onDec}>
 					<Text style={styles.stepBtnText}>-</Text>
@@ -696,9 +699,10 @@ function makeStyles(colors: ColorPalette) {
 		fontWeight: '700'
 	},
 	pickHint: { color: colors.muted, fontSize: 13, lineHeight: 18 },
-	chips: { gap: space.sm, paddingVertical: 4 },
+	chipStrip: { flexGrow: 0, flexShrink: 0, height: touchMin },
+	chips: { gap: space.sm, alignItems: 'center', paddingVertical: 0 },
 	chip: {
-		minHeight: touchMin,
+		height: touchMin,
 		paddingHorizontal: space.md,
 		borderRadius: 999,
 		borderWidth: 1,
@@ -776,11 +780,16 @@ function makeStyles(colors: ColorPalette) {
 	muted: { color: colors.muted, textAlign: 'center' },
 	remove: { minWidth: touchMin, minHeight: touchMin, alignItems: 'center', justifyContent: 'center' },
 	removeText: { color: colors.danger, fontSize: 28, fontWeight: '300' },
-	steppers: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-	stepCell: { minWidth: '30%', flexGrow: 1, flexBasis: '30%' },
-	stepper: { gap: 4 },
-	stepLabel: { color: colors.muted, fontSize: 11, fontWeight: '600' },
-	stepRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+	steppers: { gap: space.sm },
+	stepCell: { width: '100%' },
+	stepper: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: space.sm,
+		width: '100%'
+	},
+	stepLabel: { flex: 1, color: colors.muted, fontSize: 13, fontWeight: '600' },
+	stepRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, flexShrink: 0 },
 	stepBtn: {
 		minWidth: touchMin,
 		minHeight: touchMin,
@@ -793,8 +802,7 @@ function makeStyles(colors: ColorPalette) {
 	},
 	stepBtnText: { color: colors.text, fontSize: 20, fontWeight: '700' },
 	stepValue: {
-		flex: 1,
-		minWidth: 28,
+		minWidth: 36,
 		textAlign: 'center',
 		color: colors.text,
 		fontWeight: '800',

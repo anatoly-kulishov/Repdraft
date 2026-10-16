@@ -32,7 +32,7 @@ routes / components
 
 - `domain` **не** импортирует `stores`, `components`, `$app`.
 - `storage` не импортирует UI.
-- Новая фича: сначала тип/логика в `domain`, потом store/repo, потом UI.
+- Новая фича: сначала тип/логика в `domain`, потом store/repo, потом UI **на web и RN**, если не native-only (см. `dual-client-parity.mdc`).
 
 ## Данные
 

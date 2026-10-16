@@ -7,7 +7,7 @@ type Props = {
 	label: string;
 	onPress: () => void;
 	disabled?: boolean;
-	variant?: 'primary' | 'ghost' | 'danger';
+	variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'link';
 	compact?: boolean;
 };
 
@@ -30,8 +30,10 @@ export function PrimaryButton({
 				styles.base,
 				compact && styles.compact,
 				variant === 'primary' && styles.primary,
+				variant === 'secondary' && styles.secondary,
 				variant === 'ghost' && styles.ghost,
 				variant === 'danger' && styles.danger,
+				variant === 'link' && styles.link,
 				(disabled || pressed) && styles.dim
 			]}
 		>
@@ -39,8 +41,9 @@ export function PrimaryButton({
 				style={[
 					styles.label,
 					compact && styles.labelCompact,
-					variant === 'primary' && styles.labelOnAccent,
-					variant === 'danger' && styles.labelDanger
+					(variant === 'primary' || variant === 'secondary') && styles.labelOnInk,
+					variant === 'danger' && styles.labelDanger,
+					variant === 'link' && styles.labelLink
 				]}
 				numberOfLines={1}
 			>
@@ -55,7 +58,7 @@ function makeStyles(colors: ColorPalette) {
 		base: {
 			minHeight: touchMin,
 			minWidth: touchMin,
-			borderRadius: radius.md,
+			borderRadius: radius.pill,
 			paddingHorizontal: 18,
 			alignItems: 'center',
 			justifyContent: 'center'
@@ -65,34 +68,51 @@ function makeStyles(colors: ColorPalette) {
 			flexShrink: 1
 		},
 		primary: {
-			backgroundColor: colors.accent
+			backgroundColor: colors.accent,
+			// ponytail: RN linear-gradient requires a separate lib; web uses gradient.
+			// Keep flat accent on mobile until a native gradient dep is justified.
+			borderWidth: 1,
+			borderColor: colors.accent
 		},
-		ghost: {
+		secondary: {
 			backgroundColor: colors.panelRaised,
 			borderWidth: 1,
 			borderColor: colors.border
+		},
+		ghost: {
+			backgroundColor: 'transparent',
+			borderWidth: 1,
+			borderColor: 'transparent'
 		},
 		danger: {
 			backgroundColor: colors.dangerBg,
 			borderWidth: 1,
 			borderColor: colors.danger
 		},
+		link: {
+			backgroundColor: 'transparent',
+			borderWidth: 0
+		},
 		dim: {
 			opacity: 0.72
 		},
 		label: {
 			color: colors.text,
-			fontSize: 16,
+			fontSize: 17,
 			fontWeight: '700'
 		},
 		labelCompact: {
-			fontSize: 14
+			fontSize: 15
 		},
-		labelOnAccent: {
+		labelOnInk: {
 			color: colors.accentText
 		},
 		labelDanger: {
 			color: colors.danger
+		},
+		labelLink: {
+			color: colors.accent,
+			textDecorationLine: 'underline'
 		}
 	});
 }

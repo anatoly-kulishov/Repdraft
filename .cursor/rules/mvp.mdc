@@ -24,7 +24,7 @@ Open → Pick workout → Preview → Start → Set → Weight × reps → Next 
 1. Does this make an existing step faster / clearer / simpler?
 2. Will it stay smooth on a weak/old phone?
 3. Does it align with `native-rewrite-plan.md` (phase D first)?
-4. Prefer domain + RN path over new web-only surface area.
+4. Shared logic in `domain` + i18n; **RN and web/PWA UI** where the feature is not native-only (see `dual-client-parity.mdc`). Do not ship RN-only for Quest, achievements, progress, profile settings, and other storage-backed features without a web counterpart in the same change when reasonable.
 
 ## Non-negotiables
 

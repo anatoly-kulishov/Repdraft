@@ -37,7 +37,12 @@ import { resolveUserAvatarUrl } from '../../src/auth/avatarUrl';
 import { unlockRestAudioFromGesture, playRestDoneChime } from '../../src/audio/restChime';
 import { webOrigin } from '../../src/catalog/mediaUrl';
 import { getSupabase, isSupabaseConfigured } from '../../src/auth/supabase';
-import type { AchievementsState } from '@repdraft/domain/achievements';
+import {
+	countableFinishedSessions,
+	type AchievementsState
+} from '@repdraft/domain/achievements';
+import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
+import type { WorkoutSession } from '@repdraft/domain/types';
 import type { OnboardingState } from '@repdraft/domain/onboarding';
 import { TESTER_MODE_UNLOCK_TAPS } from '@repdraft/domain/prefs';
 import type { QuestState } from '@repdraft/domain/quest';
@@ -46,6 +51,7 @@ import { OnboardingChecklistPanel } from '../../src/components/OnboardingCheckli
 import { BrandMark } from '../../src/components/BrandMark';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
+import { QuestOnboardingModal } from '../../src/components/QuestOnboardingModal';
 import { QuestProgressPanel } from '../../src/components/QuestSummaryCard';
 import { WhatsNewSheet } from '../../src/components/WhatsNewSheet';
 import { getHealthAdapter } from '../../src/health';
@@ -65,6 +71,7 @@ import {
 	setQuestEnabled,
 	setWeeklyGoal
 } from '../../src/state/quest';
+import { needsQuestHeroOnboarding, saveQuestHeroProfile } from '../../src/state/questHero';
 import { applyBackupImport, parseBackupText } from '../../src/storage/backup';
 import { customsRepo } from '../../src/storage/customsRepo';
 import { plansRepo } from '../../src/storage/plansRepo';
@@ -128,6 +135,8 @@ export default function ProfileScreen() {
 	const [avatarBusy, setAvatarBusy] = useState(false);
 	const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
 	const [testerOn, setTesterOn] = useState(false);
+	const [questOnboardOpen, setQuestOnboardOpen] = useState(false);
+	const [sessionList, setSessionList] = useState<WorkoutSession[]>([]);
 	const versionUnlockTaps = useRef(0);
 	const versionUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const cloud = isSupabaseConfigured();
@@ -139,6 +148,7 @@ export default function ProfileScreen() {
 		useCallback(() => {
 			void sessionsRepo.list().then((list) => {
 				setLoopSnap(computeLoopMetrics(list, new Date().toISOString()));
+				setSessionList(list);
 			});
 			void outboxCount().then(setPendingSync);
 			void loadOnboarding().then(setOnboarding);
@@ -148,10 +158,12 @@ export default function ProfileScreen() {
 	useEffect(() => {
 		let unsub: (() => void) | undefined;
 		void (async () => {
-			setQuestOn(await isQuestEnabled());
+			const qOn = await isQuestEnabled();
+			setQuestOn(qOn);
 			const st = await loadQuestState();
 			setQuestState(st);
 			setWeeklyGoalUi(st.weeklyGoal);
+			if (qOn && (await needsQuestHeroOnboarding())) setQuestOnboardOpen(true);
 			setAchOn(await isAchievementsEnabled());
 			setAchState(await loadAchievementsState());
 			setHealthOn(await isHealthReadEnabled());
@@ -181,7 +193,32 @@ export default function ProfileScreen() {
 	async function toggleQuest(next: boolean) {
 		setQuestOn(next);
 		await setQuestEnabled(next);
-		if (next) setQuestState(await loadQuestState());
+		if (next) {
+			setQuestState(await loadQuestState());
+			if (await needsQuestHeroOnboarding()) setQuestOnboardOpen(true);
+		}
+	}
+
+	async function completeQuestOnboard(profile: QuestHeroProfile) {
+		await saveQuestHeroProfile(profile);
+		setQuestOnboardOpen(false);
+		if (profile.displayName) {
+			setGreetingNameInput(profile.displayName);
+			await persistGreetingName(profile.displayName, session?.user ?? null);
+			setGreetingNameState(profile.displayName);
+		}
+	}
+
+	async function skipQuestOnboard() {
+		await saveQuestHeroProfile({
+			displayName: '',
+			sex: null,
+			age: null,
+			heightCm: null,
+			weightKg: null,
+			completedAt: new Date().toISOString()
+		});
+		setQuestOnboardOpen(false);
 	}
 
 	async function toggleAchievements(next: boolean) {
@@ -495,7 +532,10 @@ export default function ProfileScreen() {
 
 	return (
 		<>
-		<ScrollView contentContainerStyle={[styles.root, { paddingBottom: tabPad }]}>
+		<ScrollView
+			style={styles.scroll}
+			contentContainerStyle={[styles.root, { paddingBottom: tabPad + space.lg }]}
+		>
 			<View style={styles.brandRow}>
 				<Pressable
 					accessibilityRole="button"
@@ -554,6 +594,18 @@ export default function ProfileScreen() {
 					onPress={() => void saveGreetingNameField()}
 					disabled={greetingNameInput.trim() === greetingName}
 				/>
+			</Panel>
+
+			<Panel>
+				<Text style={styles.groupTitle}>{tt('progress.sectionTitle')}</Text>
+				<Pressable style={styles.row} onPress={() => router.push('/progress')}>
+					<Text style={styles.rowText}>{tt('nav.progress')}</Text>
+					<Text style={styles.rowValue}>→</Text>
+				</Pressable>
+				<Pressable style={styles.row} onPress={() => router.push('/coach')}>
+					<Text style={styles.rowText}>{tt('nav.coach')}</Text>
+					<Text style={styles.rowValue}>→</Text>
+				</Pressable>
 			</Panel>
 
 			<Panel>
@@ -646,7 +698,20 @@ export default function ProfileScreen() {
 					/>
 				</View>
 				<Text style={styles.hint}>{tt('achievements.hint')}</Text>
-				{achOn && achState ? <AchievementsPanel state={achState} /> : null}
+				{achOn && achState ? (
+					<>
+						<AchievementsPanel
+							state={achState}
+							finishedSessions={countableFinishedSessions(sessionList)}
+							showFilters
+						/>
+						<PrimaryButton
+							label={tt('achievements.viewAll')}
+							variant="ghost"
+							onPress={() => router.push('/achievements')}
+						/>
+					</>
+				) : null}
 			</Panel>
 
 			<Panel>
@@ -876,12 +941,19 @@ export default function ProfileScreen() {
 			</Pressable>
 		</ScrollView>
 		<WhatsNewSheet visible={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
+		<QuestOnboardingModal
+			visible={questOnboardOpen}
+			defaultName={greetingNameInput || displayName || ''}
+			onComplete={(p) => void completeQuestOnboard(p)}
+			onSkip={() => void skipQuestOnboard()}
+		/>
 		</>
 	);
 }
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
+	scroll: { flex: 1, backgroundColor: colors.bg },
 	root: { padding: space.lg, gap: space.md, backgroundColor: colors.bg },
 	brandRow: {
 		flexDirection: 'row',

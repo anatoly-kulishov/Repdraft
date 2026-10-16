@@ -43,6 +43,8 @@ cd mobile && npm install && npm start
 
 Новый код в существующий слой. Не смешивай fetch внутрь `domain`.
 
+**Parity:** для фич без native API добавляй web (`src/routes/` / components) и RN в одной задаче; см. [`dual-client-parity.mdc`](../../rules/dual-client-parity.mdc). Verify: `npm run check:all`.
+
 ### Paths
 
 | Path | Содержимое |

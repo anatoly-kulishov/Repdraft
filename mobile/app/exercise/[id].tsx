@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { lastPerformance, recentExerciseLogs } from '@repdraft/domain/session';
 import type { PersonalRecord, WorkoutSession } from '@repdraft/domain/types';
+import { labelBodyPart } from '@repdraft/domain/labels.ru';
 import { addExercise, createEmptyDraft } from '@repdraft/domain/workout';
 import {
 	fetchExerciseDetail,
@@ -131,7 +132,7 @@ export default function ExerciseDetailScreen() {
 				</Text>
 				{item ? (
 					<Text style={styles.meta} numberOfLines={2}>
-						{item.body_part} · {item.equipment}
+						{labelBodyPart(item.body_part, locale)} · {item.equipment}
 						{item.target ? ` · ${item.target}` : ''}
 					</Text>
 				) : null}

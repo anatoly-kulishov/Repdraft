@@ -1,9 +1,28 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { kvGetJson, kvSetJson } from '../storage/kv';
-import { iosHealthAdapter } from './iosHealthAdapter';
 import { stubHealthAdapter } from './stubAdapter';
 import type { HealthAdapter, HealthWorkoutSnapshot } from './types';
+
+let iosAdapterCache: HealthAdapter | null = null;
+
+function isExpoGo(): boolean {
+	return (
+		Constants.executionEnvironment === 'storeClient' || Constants.appOwnership === 'expo'
+	);
+}
+
+/** Lazy load: `@kingstinct/react-native-healthkit` crashes at import in Expo Go. */
+function getIosHealthAdapter(): HealthAdapter {
+	if (iosAdapterCache) return iosAdapterCache;
+	try {
+		// eslint-disable-next-line @typescript-eslint/no-require-imports
+		iosAdapterCache = require('./iosHealthAdapter').iosHealthAdapter as HealthAdapter;
+		return iosAdapterCache;
+	} catch {
+		return stubHealthAdapter;
+	}
+}
 
 export type { HealthAdapter, HealthPermissionStatus, HealthWorkoutSnapshot } from './types';
 
@@ -21,12 +40,11 @@ type StoredHealthSnap = {
  * (not Expo Go). Until plugins are wired, always returns the stub.
  */
 export function getHealthAdapter(): HealthAdapter {
-	// Expo Go has no native HealthKit module; dev/prod client only.
-	if (Constants.executionEnvironment === 'storeClient') {
+	if (isExpoGo()) {
 		return stubHealthAdapter;
 	}
 	if (Platform.OS === 'ios') {
-		return iosHealthAdapter;
+		return getIosHealthAdapter();
 	}
 	// ponytail: Android Health Connect adapter is a follow-up; stub until wired.
 	return stubHealthAdapter;

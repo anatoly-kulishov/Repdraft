@@ -19,15 +19,17 @@ export const space = {
 
 export const radius = {
 	sm: 10,
-	md: 14,
-	lg: 18,
-	xl: 22
+	md: 16,
+	lg: 20,
+	xl: 24,
+	pill: 999
 } as const;
 
 export const type = {
 	lead: { fontSize: 15, lineHeight: 22, fontWeight: '500' as const },
-	title: { fontSize: 22, lineHeight: 28, fontWeight: '800' as const },
+	title: { fontSize: 28, lineHeight: 34, fontWeight: '800' as const },
+	header: { fontSize: 17, lineHeight: 22, fontWeight: '700' as const },
 	section: { fontSize: 13, lineHeight: 18, fontWeight: '700' as const, letterSpacing: 0.4 },
-	body: { fontSize: 16, lineHeight: 22, fontWeight: '600' as const },
+	body: { fontSize: 17, lineHeight: 22, fontWeight: '600' as const },
 	meta: { fontSize: 13, lineHeight: 18, fontWeight: '500' as const }
 };

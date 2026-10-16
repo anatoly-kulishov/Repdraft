@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { labelBodyPart } from '@repdraft/domain/labels.ru';
 import {
 	fetchExerciseDetail,
 	stepsForLocale,
@@ -48,7 +49,7 @@ export function TechniqueSheet({ exerciseId, onClose }: Props) {
 	const title =
 		locale === 'ru' && detail?.name_ru?.trim()
 			? detail.name_ru.trim()
-			: detail?.name ?? tt('exercise.detail');
+			: detail?.name ?? tt('exercise.techniqueTitle');
 
 	return (
 		<Modal visible={open} animationType="slide" transparent onRequestClose={onClose}>
@@ -60,8 +61,8 @@ export function TechniqueSheet({ exerciseId, onClose }: Props) {
 						{title}
 					</Text>
 					{detail ? (
-						<Text style={styles.meta} numberOfLines={1}>
-							{detail.body_part} · {detail.equipment}
+						<Text style={styles.meta} numberOfLines={2}>
+							{labelBodyPart(detail.body_part, locale)} · {detail.equipment}
 						</Text>
 					) : null}
 					<ScrollView

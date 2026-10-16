@@ -141,6 +141,7 @@ export default function ExercisesScreen() {
 				<>
 					<FlatList
 						horizontal
+						style={styles.chipStrip}
 						data={['all', ...parts]}
 						keyExtractor={(item) => item}
 						showsHorizontalScrollIndicator={false}
@@ -247,6 +248,7 @@ export default function ExercisesScreen() {
 						<Text style={styles.sheetLabel}>{tt('exercises.all')}</Text>
 						<FlatList
 							horizontal
+							style={styles.chipStrip}
 							data={parts.length ? parts : ['upper arms', 'chest', 'back', 'shoulders']}
 							keyExtractor={(item) => item}
 							contentContainerStyle={styles.chips}
@@ -264,6 +266,7 @@ export default function ExercisesScreen() {
 						<Text style={styles.sheetLabel}>{tt('exercises.equipment')}</Text>
 						<FlatList
 							horizontal
+							style={styles.chipStrip}
 							data={[...CUSTOM_EXERCISE_EQUIPMENT]}
 							keyExtractor={(item) => item}
 							contentContainerStyle={styles.chips}
@@ -306,9 +309,10 @@ function makeStyles(colors: ColorPalette) {
 	},
 	topActions: { flexDirection: 'row', gap: space.sm },
 	flexList: { flex: 1 },
-	chips: { gap: space.sm, paddingVertical: 4 },
+	chipStrip: { flexGrow: 0, flexShrink: 0, height: touchMin },
+	chips: { gap: space.sm, alignItems: 'center', paddingVertical: 0 },
 	chip: {
-		minHeight: touchMin,
+		height: touchMin,
 		paddingHorizontal: space.md,
 		borderRadius: 999,
 		borderWidth: 1,

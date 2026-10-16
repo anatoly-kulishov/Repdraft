@@ -14,6 +14,9 @@ export function backLabelForHref(href: string, lang: AppLocale): string {
 	if (path.startsWith('/builder')) return translate(lang, 'builder.title');
 	if (path.startsWith('/exercise/')) return translate(lang, 'a11y.back');
 	if (path === '/exercises') return translate(lang, 'catalog.hubTitle');
+	if (path === '/progress') return translate(lang, 'nav.progress');
+	if (path === '/coach') return translate(lang, 'nav.coach');
+	if (path === '/achievements') return translate(lang, 'achievements.title');
 
 	return translate(lang, 'a11y.back');
 }

@@ -37,9 +37,11 @@ import {
 	resolveHomeNextPlan,
 	sortPlansByUserOrder
 } from '@repdraft/domain/workout';
+import type { QuestState } from '@repdraft/domain/quest';
 import type { WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { loadExerciseIndex } from '../../src/catalog/loadIndex';
 import { BrandMark } from '../../src/components/BrandMark';
+import { QuestHomeBanner } from '../../src/components/QuestHomeBanner';
 import { OnboardingChecklistPanel } from '../../src/components/OnboardingChecklistPanel';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
@@ -52,6 +54,7 @@ import { useLocale } from '../../src/state/locale';
 import { useTabScreenPad } from '../../src/layout/safe';
 import { useAppColors } from '../../src/state/theme';
 import { dismissChecklist, noteChecklist } from '../../src/state/onboarding';
+import { isQuestEnabled, loadQuestState } from '../../src/state/quest';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { readActiveSession, sessionsRepo } from '../../src/storage/sessionsRepo';
 import { deletePlanRemote, pushPlan } from '../../src/sync/cloudSync';
@@ -78,15 +81,19 @@ export default function WorkoutsScreen() {
 	const [authUser, setAuthUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [searchQuery, setSearchQuery] = useState('');
+	const [questOn, setQuestOn] = useState(false);
+	const [questState, setQuestState] = useState<QuestState | null>(null);
 
 	const reload = useCallback(async () => {
 		setLoading(true);
-		const [list, activeSession, sessions, order, pinned] = await Promise.all([
+		const [list, activeSession, sessions, order, pinned, qEnabled, qState] = await Promise.all([
 			plansRepo.list(),
 			readActiveSession(),
 			sessionsRepo.list(),
 			readPlanOrder(),
-			readHomeNextPlanId()
+			readHomeNextPlanId(),
+			isQuestEnabled(),
+			loadQuestState()
 		]);
 		const nextOb = await noteChecklist('homeSeen');
 		const lastFinished = sessions.find((s) => s.finishedAt && s.planId);
@@ -108,6 +115,8 @@ export default function WorkoutsScreen() {
 		const user = sb ? (await sb.auth.getSession()).data.session?.user ?? null : null;
 		setAuthUser(user);
 		setGreetingCustom(await loadGreetingName(user));
+		setQuestOn(qEnabled);
+		setQuestState(qEnabled ? qState : null);
 		setLoading(false);
 	}, []);
 
@@ -213,6 +222,8 @@ export default function WorkoutsScreen() {
 					{greeting}
 				</Text>
 			</View>
+			{questOn && questState ? <QuestHomeBanner state={questState} /> : null}
+
 			<Text style={styles.leadHint}>{tt('workouts.lead')}</Text>
 
 			{active && continueMeta ? (

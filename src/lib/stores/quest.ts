@@ -31,8 +31,39 @@ function writeState(state: QuestState) {
 	}
 }
 
+const QUEST_LAST_APPLY_KEY = 'repdraft:quest-last-apply';
+
+type StoredLastApply = {
+	sessionId: string;
+	apply: QuestApplyResult;
+};
+
+function readLastApply(): QuestApplyResult | null {
+	if (!browser) return null;
+	try {
+		const raw = localStorage.getItem(QUEST_LAST_APPLY_KEY);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw) as StoredLastApply;
+		return parsed?.apply ?? null;
+	} catch {
+		return null;
+	}
+}
+
+function writeLastApply(sessionId: string, apply: QuestApplyResult) {
+	if (!browser) return;
+	try {
+		localStorage.setItem(
+			QUEST_LAST_APPLY_KEY,
+			JSON.stringify({ sessionId, apply } satisfies StoredLastApply)
+		);
+	} catch {
+		/* ignore */
+	}
+}
+
 const stateStore = writable<QuestState>(readState());
-const lastApplyStore = writable<QuestApplyResult | null>(null);
+const lastApplyStore = writable<QuestApplyResult | null>(readLastApply());
 
 if (browser) {
 	stateStore.subscribe((state) => writeState(state));
@@ -58,9 +89,26 @@ export const quest = {
 		const result = applyFinishedSessionToQuest(get(stateStore), session, new Date());
 		stateStore.set(result.state);
 		lastApplyStore.set(result);
+		writeLastApply(session.id, result);
 		return result;
+	},
+	loadLastApplyForSession(sessionId: string): QuestApplyResult | null {
+		if (!browser) return null;
+		try {
+			const raw = localStorage.getItem(QUEST_LAST_APPLY_KEY);
+			if (!raw) return null;
+			const parsed = JSON.parse(raw) as StoredLastApply;
+			if (parsed.sessionId !== sessionId) return null;
+			return parsed.apply;
+		} catch {
+			return null;
+		}
 	},
 	clearLastApply() {
 		lastApplyStore.set(null);
+	},
+	hydrateLastApplyForSession(sessionId: string) {
+		const apply = quest.loadLastApplyForSession(sessionId);
+		if (apply) lastApplyStore.set(apply);
 	}
 };

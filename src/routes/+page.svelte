@@ -38,7 +38,10 @@
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { onboarding, onboardingHydrated } from '$lib/stores/onboarding';
+	import { questEnabled } from '$lib/stores/prefs';
+	import { questState } from '$lib/stores/quest';
 	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
+	import QuestHomeBanner from '$lib/components/QuestHomeBanner.svelte';
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
@@ -449,6 +452,11 @@
 		{#if showOnboardingChecklist}
 			<div class="home-dashboard-top home-dashboard-top--onboarding">
 				<OnboardingChecklist onTryDemo={onTryDemoPlan} {demoBusy} articlesHref="/articles" />
+			</div>
+		{/if}
+		{#if $questEnabled && pageReady}
+			<div class="home-dashboard-top">
+				<QuestHomeBanner state={$questState} />
 			</div>
 		{/if}
 		{#if showGuestCreateHero}

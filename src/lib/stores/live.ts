@@ -38,8 +38,12 @@ import { exerciseStats } from '$lib/stores/exerciseStats';
 import { homeNextPlan } from '$lib/stores/homeNextPlan';
 import { planOrder } from '$lib/stores/planOrder';
 import { plans } from '$lib/stores/plans';
+import { countableFinishedSessions } from '$lib/domain/achievements';
+import { recordsFromFinishedSession, countImprovedRecords } from '$lib/domain/sessionRecords';
+import { noteFinishedSessionAchievements } from '$lib/stores/achievements';
 import { quest } from '$lib/stores/quest';
 import { questEnabled } from '$lib/stores/prefs';
+import { records } from '$lib/stores/records';
 import { syncState } from '$lib/stores/syncState';
 import {
 	localSessionRepository,
@@ -435,9 +439,26 @@ function createLiveStore() {
 				.map((ex) => ex.exerciseId);
 			exerciseStats.recordUses(usedIds);
 			await persistSession(done);
+			let questGoalJustMet = false;
 			if (get(questEnabled)) {
-				quest.noteFinishedSession(done);
+				const q = quest.noteFinishedSession(done);
+				questGoalJustMet = q.goalJustMet;
 			}
+			const finishedList = countableFinishedSessions(
+				mergeWorkoutSessions(
+					[done, ...get(store).history.filter((x) => x.id !== done.id)],
+					[],
+					[]
+				)
+			);
+			const sessionRecords = recordsFromFinishedSession(done);
+			const newPrCount = countImprovedRecords(get(records), sessionRecords);
+			noteFinishedSessionAchievements({
+				justFinished: done,
+				finishedSessions: finishedList,
+				questGoalJustMet,
+				newPrCount
+			});
 			persistActive(null, null);
 			store.update((s) => ({
 				...s,

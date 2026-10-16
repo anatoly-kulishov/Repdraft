@@ -26,6 +26,8 @@
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import AuthInterfacePrefs from '$lib/components/AuthInterfacePrefs.svelte';
+	import ProfileAchievementsPanel from '$lib/components/ProfileAchievementsPanel.svelte';
+	import ProfileInsightsPanel from '$lib/components/ProfileInsightsPanel.svelte';
 	import AuthLegalConsent from '$lib/components/AuthLegalConsent.svelte';
 	import BrandTagline from '$lib/components/BrandTagline.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
@@ -781,6 +783,8 @@
 				</div>
 
 				<div class="profile-settings-stack-full">
+					<ProfileInsightsPanel />
+					<ProfileAchievementsPanel />
 					<OnboardingChecklist readonly onTryDemo={() => {}} />
 				</div>
 
@@ -1210,6 +1214,8 @@
 	<div class="auth-settings panel">
 		{@render onboardingHelpPanel()}
 		<AuthInterfacePrefs />
+		<ProfileInsightsPanel />
+		<ProfileAchievementsPanel />
 		<DataExportSection />
 		{#if showTesterTools}
 			<LoopMetricsPanel />

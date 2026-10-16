@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Dumbbell, Library, UserRound } from 'lucide-react-native';
+import { Dumbbell, House, TrendingUp, UserRound } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocale } from '../../src/state/locale';
 import { useAppColors } from '../../src/state/theme';
@@ -36,9 +36,9 @@ export default function TabsLayout() {
 				name="index"
 				options={{
 					title: 'Repdraft',
-					tabBarLabel: tt('tab.workouts'),
+					tabBarLabel: tt('tab.home'),
 					tabBarIcon: ({ color, size }) => (
-						<Dumbbell color={color} size={size} strokeWidth={2.25} />
+						<House color={color} size={size} strokeWidth={2.25} />
 					)
 				}}
 			/>
@@ -48,7 +48,17 @@ export default function TabsLayout() {
 					title: tt('tab.exercises'),
 					tabBarLabel: tt('tab.exercises'),
 					tabBarIcon: ({ color, size }) => (
-						<Library color={color} size={size} strokeWidth={2.25} />
+						<Dumbbell color={color} size={size} strokeWidth={2.25} />
+					)
+				}}
+			/>
+			<Tabs.Screen
+				name="progress"
+				options={{
+					title: tt('nav.progress'),
+					tabBarLabel: tt('tab.progress'),
+					tabBarIcon: ({ color, size }) => (
+						<TrendingUp color={color} size={size} strokeWidth={2.25} />
 					)
 				}}
 			/>

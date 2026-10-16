@@ -78,6 +78,37 @@ export function heroLevel(totalXp: number): number {
 	return Math.floor(xp / XP_PER_LEVEL) + 1;
 }
 
+export type HeroXpProgress = {
+	level: number;
+	xpInLevel: number;
+	xpForLevel: number;
+};
+
+export function heroXpProgress(totalXp: number): HeroXpProgress {
+	const xp = Math.max(0, Math.floor(totalXp));
+	const level = heroLevel(xp);
+	const xpInLevel = xp - (level - 1) * XP_PER_LEVEL;
+	return { level, xpInLevel, xpForLevel: XP_PER_LEVEL };
+}
+
+export type QuestDailyHint =
+	| { key: 'quest.dailyWeekly'; vars: { n: number } }
+	| { key: 'quest.dailyCampaign' }
+	| { key: 'quest.dailySession'; vars: { xp: number } };
+
+/** One-line home hint from current Quest state (no extra persistence). */
+export function questDailyHint(state: QuestState): QuestDailyHint {
+	const done = state.week.countedSessionIds.length;
+	const remaining = state.weeklyGoal - done;
+	if (remaining > 0) {
+		return { key: 'quest.dailyWeekly', vars: { n: remaining } };
+	}
+	if (state.campaign?.status === 'active') {
+		return { key: 'quest.dailyCampaign' };
+	}
+	return { key: 'quest.dailySession', vars: { xp: XP_PER_COUNTED_SESSION } };
+}
+
 export function weekKeyFromDate(d: Date): string {
 	const day = d.getDay();
 	const diff = day === 0 ? -6 : 1 - day;

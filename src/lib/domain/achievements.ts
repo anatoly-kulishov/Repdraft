@@ -169,6 +169,58 @@ export function achievementTitleKey(id: AchievementId): string {
 	}
 }
 
+export type AchievementCategory = 'all' | 'routine' | 'quest' | 'records';
+
+export function achievementCategory(id: AchievementId): AchievementCategory {
+	switch (id) {
+		case 'first_session':
+		case 'sessions_5':
+		case 'sessions_25':
+			return 'routine';
+		case 'weekly_goal':
+			return 'quest';
+		case 'first_pr':
+			return 'records';
+		default: {
+			const _exhaustive: never = id;
+			return _exhaustive;
+		}
+	}
+}
+
+export type AchievementProgress = {
+	id: AchievementId;
+	current: number;
+	target: number;
+	unlocked: boolean;
+};
+
+export function achievementProgressList(
+	state: AchievementsState,
+	finishedSessions: WorkoutSession[]
+): AchievementProgress[] {
+	const count = countableFinishedSessions(finishedSessions).length;
+	return ACHIEVEMENT_IDS.map((id) => {
+		const unlocked = isUnlocked(state, id);
+		switch (id) {
+			case 'first_session':
+				return { id, current: Math.min(count, 1), target: 1, unlocked };
+			case 'sessions_5':
+				return { id, current: Math.min(count, 5), target: 5, unlocked };
+			case 'sessions_25':
+				return { id, current: Math.min(count, 25), target: 25, unlocked };
+			case 'weekly_goal':
+				return { id, current: unlocked ? 1 : 0, target: 1, unlocked };
+			case 'first_pr':
+				return { id, current: unlocked ? 1 : 0, target: 1, unlocked };
+			default: {
+				const _exhaustive: never = id;
+				return _exhaustive;
+			}
+		}
+	});
+}
+
 export function achievementHintKey(id: AchievementId): string {
 	switch (id) {
 		case 'first_session':

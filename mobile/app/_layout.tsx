@@ -37,6 +37,8 @@ function RootStack() {
 			<Stack.Screen name="records" options={{ title: tt('nav.records') }} />
 			<Stack.Screen name="exercise/[id]" options={{ title: tt('nav.exercise') }} />
 			<Stack.Screen name="ai" options={{ title: tt('nav.ai') }} />
+			<Stack.Screen name="coach" options={{ title: tt('nav.coach') }} />
+			<Stack.Screen name="achievements" options={{ title: tt('achievements.title') }} />
 		</Stack>
 	);
 }

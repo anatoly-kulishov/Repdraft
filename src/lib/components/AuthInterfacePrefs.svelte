@@ -1,14 +1,19 @@
 <script lang="ts">
 	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
+	import QuestOnboardingSheet from '$lib/components/QuestOnboardingSheet.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { isWebAnalyticsAvailable } from '$lib/app/native';
 	import { clampWeeklyGoal, MAX_WEEKLY_GOAL, MIN_WEEKLY_GOAL } from '$lib/domain/quest';
+	import type { QuestHeroProfile } from '$lib/domain/questHeroProfile';
 	import { appTheme } from '$lib/stores/theme';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { questEnabled, webAnalyticsEnabled } from '$lib/stores/prefs';
 	import { quest, questState } from '$lib/stores/quest';
+	import { needsQuestHeroOnboarding, saveQuestHeroProfile } from '$lib/stores/questHero';
 	import { themeToggleStateIcon } from '$lib/components/icons/themeToggle';
 	import { BarChart3, Globe, Sparkles } from '@lucide/svelte';
+	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 
 	let {
 		surface = 'section'
@@ -36,6 +41,31 @@
 	);
 	let stackClass = $derived(surface === 'panel' ? undefined : 'auth-prefs__stack');
 	let hintClass = $derived(surface === 'panel' ? 'profile-settings-group__hint' : 'auth-prefs__hint');
+	let questOnboardOpen = $state(false);
+
+	onMount(() => {
+		if (get(questEnabled) && needsQuestHeroOnboarding()) questOnboardOpen = true;
+	});
+
+	function onQuestToggle(on: boolean) {
+		questEnabled.set(on);
+		if (on && needsQuestHeroOnboarding()) questOnboardOpen = true;
+	}
+
+	function completeQuestOnboard(profile: QuestHeroProfile) {
+		saveQuestHeroProfile(profile);
+	}
+
+	function skipQuestOnboard() {
+		saveQuestHeroProfile({
+			displayName: '',
+			sex: null,
+			age: null,
+			heightCm: null,
+			weightKg: null,
+			completedAt: new Date().toISOString()
+		});
+	}
 </script>
 
 <div class={rootClass}>
@@ -83,7 +113,7 @@
 				checked={$questEnabled}
 				aria-label={translate(lang, 'settings.quest')}
 				onchange={(e) => {
-					questEnabled.set((e.currentTarget as HTMLInputElement).checked);
+					onQuestToggle((e.currentTarget as HTMLInputElement).checked);
 				}}
 			/>
 		</ProfileSettingsRow>
@@ -105,3 +135,9 @@
 	{/if}
 	<p class={hintClass}>{translate(lang, 'settings.questHint')}</p>
 </div>
+
+<QuestOnboardingSheet
+	bind:open={questOnboardOpen}
+	onComplete={completeQuestOnboard}
+	onSkip={skipQuestOnboard}
+/>

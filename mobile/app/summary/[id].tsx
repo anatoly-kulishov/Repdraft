@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
 	ActivityIndicator,
+	Alert,
 	Pressable,
 	ScrollView,
 	StyleSheet,
@@ -10,9 +11,11 @@ import {
 } from 'react-native';
 import {
 	achievementTitleKey,
+	countableFinishedSessions,
 	type AchievementId,
 	type AchievementsState
 } from '@repdraft/domain/achievements';
+import { pickCatalogExerciseForBodyPart } from '@repdraft/domain/trainingLoad';
 import type { QuestApplyResult, QuestState } from '@repdraft/domain/quest';
 import {
 	completedExerciseCount,
@@ -24,8 +27,15 @@ import {
 	visibleSessionExerciseIndices
 } from '@repdraft/domain/session';
 import type { WorkoutSession } from '@repdraft/domain/types';
-import { exerciseDisplayName, refreshCustomsCache } from '../../src/catalog/loadIndex';
+import {
+	exerciseDisplayName,
+	getIndexItem,
+	loadExerciseIndex,
+	refreshCustomsCache
+} from '../../src/catalog/loadIndex';
+import { AchievementUnlockModal } from '../../src/components/AchievementUnlockModal';
 import { AchievementsPanel } from '../../src/components/AchievementsPanel';
+import { SummaryLoadPanel } from '../../src/components/SummaryLoadPanel';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { QuestSummaryCard } from '../../src/components/QuestSummaryCard';
@@ -41,6 +51,7 @@ import {
 	loadAchievementsState,
 	loadLastAchievementUnlock
 } from '../../src/state/achievements';
+import { appendExerciseToHomePlan } from '../../src/lib/planPatch';
 import { useLocale } from '../../src/state/locale';
 import { isQuestEnabled, loadLastQuestApply, loadQuestState } from '../../src/state/quest';
 import { useAppColors } from '../../src/state/theme';
@@ -71,6 +82,8 @@ export default function SummaryScreen() {
 	const [newAchIds, setNewAchIds] = useState<AchievementId[] | null>(null);
 	const [healthSnap, setHealthSnap] = useState<HealthWorkoutSnapshot | null>(null);
 	const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+	const [allSessions, setAllSessions] = useState<WorkoutSession[]>([]);
+	const [achModalDismissed, setAchModalDismissed] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -78,8 +91,9 @@ export default function SummaryScreen() {
 			await refreshCustomsCache();
 			const found = id ? await sessionsRepo.get(id) : null;
 			if (!cancelled) setSession(found);
+			const all = await sessionsRepo.list();
+			if (!cancelled) setAllSessions(all);
 			if (found) {
-				const all = await sessionsRepo.list();
 				const prev = previousPlanSession(all, found);
 				if (!cancelled) setPrevVolume(prev ? sessionVolumeKg(prev) : null);
 			}
@@ -124,9 +138,32 @@ export default function SummaryScreen() {
 	const volume = Math.round(sessionVolumeKg(session));
 	const delta = prevVolume != null ? volume - Math.round(prevVolume) : null;
 	const visible = visibleSessionExerciseIndices(session);
+	const showAchModal = Boolean(newAchIds?.length && !achModalDismissed);
+	const finishedForAch = countableFinishedSessions(allSessions);
+
+	async function addLaggingToPlan(bodyPart: string) {
+		const exerciseId = pickCatalogExerciseForBodyPart(loadExerciseIndex(), bodyPart);
+		if (!exerciseId) {
+			Alert.alert(tt('common.error'), tt('summary.addFail'));
+			return;
+		}
+		const planId = await appendExerciseToHomePlan(exerciseId);
+		if (!planId) {
+			Alert.alert(tt('common.error'), tt('summary.addFail'));
+			return;
+		}
+		router.push(`/builder/${planId}`);
+	}
 
 	return (
 		<View style={styles.root}>
+			<AchievementUnlockModal
+				ids={showAchModal ? newAchIds : null}
+				onClose={() => {
+					setAchModalDismissed(true);
+					router.push('/achievements');
+				}}
+			/>
 			<ScrollView
 				style={styles.flex}
 				contentContainerStyle={[styles.scroll, { paddingBottom: scrollPad }]}
@@ -183,6 +220,13 @@ export default function SummaryScreen() {
 					</View>
 				</View>
 
+				<SummaryLoadPanel
+					session={session}
+					allSessions={allSessions}
+					bodyPartFor={(id) => getIndexItem(id)?.body_part ?? null}
+					onAddLagging={(part) => void addLaggingToPlan(part)}
+				/>
+
 				{visible.map((ei) => {
 					const ex = session.exercises[ei];
 					if (!ex) return null;
@@ -224,7 +268,11 @@ export default function SummaryScreen() {
 				{achState ? (
 					<Panel>
 						<Text style={styles.sectionTitle}>{tt('achievements.title')}</Text>
-						<AchievementsPanel state={achState} highlightIds={newAchIds} />
+						<AchievementsPanel
+							state={achState}
+							finishedSessions={finishedForAch}
+							highlightIds={newAchIds}
+						/>
 					</Panel>
 				) : null}
 			</ScrollView>
