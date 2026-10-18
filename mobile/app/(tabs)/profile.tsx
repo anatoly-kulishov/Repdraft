@@ -45,7 +45,7 @@ import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
 import type { WorkoutSession } from '@repdraft/domain/types';
 import type { OnboardingState } from '@repdraft/domain/onboarding';
 import { TESTER_MODE_UNLOCK_TAPS } from '@repdraft/domain/prefs';
-import type { QuestState } from '@repdraft/domain/quest';
+import { heroLevel, type QuestState } from '@repdraft/domain/quest';
 import { AchievementsPanel } from '../../src/components/AchievementsPanel';
 import { OnboardingChecklistPanel } from '../../src/components/OnboardingChecklistPanel';
 import { BrandMark } from '../../src/components/BrandMark';
@@ -71,7 +71,11 @@ import {
 	setQuestEnabled,
 	setWeeklyGoal
 } from '../../src/state/quest';
-import { needsQuestHeroOnboarding, saveQuestHeroProfile } from '../../src/state/questHero';
+import {
+	loadQuestHeroProfile,
+	needsQuestHeroOnboarding,
+	saveQuestHeroProfile
+} from '../../src/state/questHero';
 import { applyBackupImport, parseBackupText } from '../../src/storage/backup';
 import { customsRepo } from '../../src/storage/customsRepo';
 import { plansRepo } from '../../src/storage/plansRepo';
@@ -136,6 +140,7 @@ export default function ProfileScreen() {
 	const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
 	const [testerOn, setTesterOn] = useState(false);
 	const [questOnboardOpen, setQuestOnboardOpen] = useState(false);
+	const [heroProfile, setHeroProfile] = useState<QuestHeroProfile | null>(null);
 	const [sessionList, setSessionList] = useState<WorkoutSession[]>([]);
 	const versionUnlockTaps = useRef(0);
 	const versionUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -163,6 +168,7 @@ export default function ProfileScreen() {
 			const st = await loadQuestState();
 			setQuestState(st);
 			setWeeklyGoalUi(st.weeklyGoal);
+			setHeroProfile(await loadQuestHeroProfile());
 			if (qOn && (await needsQuestHeroOnboarding())) setQuestOnboardOpen(true);
 			setAchOn(await isAchievementsEnabled());
 			setAchState(await loadAchievementsState());
@@ -201,6 +207,7 @@ export default function ProfileScreen() {
 
 	async function completeQuestOnboard(profile: QuestHeroProfile) {
 		await saveQuestHeroProfile(profile);
+		setHeroProfile(profile);
 		setQuestOnboardOpen(false);
 		if (profile.displayName) {
 			setGreetingNameInput(profile.displayName);
@@ -210,14 +217,16 @@ export default function ProfileScreen() {
 	}
 
 	async function skipQuestOnboard() {
-		await saveQuestHeroProfile({
+		const profile: QuestHeroProfile = {
 			displayName: '',
 			sex: null,
 			age: null,
 			heightCm: null,
 			weightKg: null,
 			completedAt: new Date().toISOString()
-		});
+		};
+		await saveQuestHeroProfile(profile);
+		setHeroProfile(profile);
 		setQuestOnboardOpen(false);
 	}
 
@@ -675,6 +684,14 @@ export default function ProfileScreen() {
 				<Text style={styles.hint}>{tt('profile.questHint')}</Text>
 				{questOn ? (
 					<>
+						{heroProfile?.completedAt ? (
+							<Text style={styles.hint}>
+								{tt('quest.profileHero', {
+									name: heroProfile.displayName.trim() || tt('quest.heroNameless'),
+									level: String(heroLevel(questState?.hero.totalXp ?? 0))
+								})}
+							</Text>
+						) : null}
 						<Pressable style={styles.row} onPress={() => void cycleGoal()}>
 							<Text style={styles.rowText}>{tt('profile.weeklyGoal')}</Text>
 							<Text style={styles.rowValue}>{weeklyGoal}</Text>

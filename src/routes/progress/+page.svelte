@@ -36,6 +36,7 @@
 		<p class="progress-section-title">{translate(lang, 'progress.volumeByWeek')}</p>
 		{#if overview.weeks.length === 0}
 			<p class="progress-muted">{translate(lang, 'progress.empty')}</p>
+			<a href="/" class="btn-primary progress-empty-cta">{translate(lang, 'progress.emptyCta')}</a>
 		{:else}
 			{#each overview.weeks as w (w.weekKey)}
 				<div class="progress-week">
@@ -90,6 +91,12 @@
 	.progress-muted {
 		margin: 0;
 		opacity: 0.75;
+	}
+	.progress-empty-cta {
+		display: inline-flex;
+		margin-top: 0.75rem;
+		min-height: 3rem;
+		align-items: center;
 	}
 	.progress-week {
 		display: flex;

@@ -66,6 +66,10 @@ export default function CoachScreen() {
 			{hints.length === 0 ? (
 				<Panel>
 					<Text style={styles.muted}>{tt('coach.empty')}</Text>
+					<PrimaryButton
+						label={tt('coach.emptyCta')}
+						onPress={() => router.push('/')}
+					/>
 				</Panel>
 			) : (
 				hints.map((hint) => (

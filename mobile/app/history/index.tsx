@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { completedSetCount, sessionVolumeKg } from '@repdraft/domain/session';
 import type { WorkoutSession } from '@repdraft/domain/types';
+import { Chip } from '../../src/components/Chip';
 import { useLocale } from '../../src/state/locale';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { deleteSessionRemote } from '../../src/sync/cloudSync';
@@ -98,15 +99,12 @@ export default function HistoryListScreen() {
 			/>
 			<View style={styles.chips}>
 				{presets.map((p) => (
-					<Pressable
+					<Chip
 						key={p.id}
-						style={[styles.chip, preset === p.id && styles.chipOn]}
+						label={p.label}
+						selected={preset === p.id}
 						onPress={() => setPreset(p.id)}
-					>
-						<Text style={[styles.chipText, preset === p.id && styles.chipTextOn]}>
-							{p.label}
-						</Text>
-					</Pressable>
+					/>
 				))}
 			</View>
 			<FlatList
@@ -149,19 +147,6 @@ function makeStyles(colors: ColorPalette) {
 		paddingHorizontal: 14
 	},
 	chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-	chip: {
-		minHeight: touchMin,
-		paddingHorizontal: 12,
-		borderRadius: 999,
-		borderWidth: 1,
-		borderColor: colors.border,
-		backgroundColor: colors.panel,
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	chipOn: { borderColor: colors.accent, backgroundColor: colors.accent },
-	chipText: { color: colors.muted, fontWeight: '600', fontSize: 13 },
-	chipTextOn: { color: colors.accentText, fontWeight: '700' },
 	empty: { color: colors.muted, textAlign: 'center', marginTop: 48 },
 	row: {
 		minHeight: touchMin,

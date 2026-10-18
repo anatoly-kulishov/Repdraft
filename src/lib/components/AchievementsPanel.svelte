@@ -10,6 +10,7 @@
 		type AchievementId,
 		type AchievementsState
 	} from '$lib/domain/achievements';
+	import Chip from '$lib/components/Chip.svelte';
 	import type { WorkoutSession } from '$lib/domain/types';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -42,16 +43,11 @@
 {#if showFilters}
 	<div class="ach-panel__chips" role="tablist">
 		{#each FILTERS as f (f)}
-			<button
-				type="button"
-				class="ach-panel__chip"
-				class:ach-panel__chip--on={filter === f}
-				role="tab"
-				aria-selected={filter === f}
+			<Chip
+				label={translate(lang, `achievements.filter.${f}`)}
+				selected={filter === f}
 				onclick={() => (filter = f)}
-			>
-				{translate(lang, `achievements.filter.${f}`)}
-			</button>
+			/>
 		{/each}
 	</div>
 	<p class="ach-panel__count">
@@ -105,19 +101,6 @@
 		flex-wrap: wrap;
 		gap: 0.35rem;
 		margin-bottom: 0.65rem;
-	}
-	.ach-panel__chip {
-		min-height: 3rem;
-		padding: 0.35rem 0.75rem;
-		border-radius: var(--radius-md, 10px);
-		border: 1px solid var(--color-border);
-		background: transparent;
-		font-size: 0.8125rem;
-		font-weight: 600;
-	}
-	.ach-panel__chip--on {
-		border-color: var(--color-accent);
-		background: color-mix(in srgb, var(--color-accent) 12%, transparent);
 	}
 	.ach-panel__count {
 		margin: 0 0 0.75rem;

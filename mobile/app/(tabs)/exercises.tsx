@@ -23,6 +23,7 @@ import {
 import { catalogMediaUrl } from '../../src/catalog/mediaUrl';
 import { zoneCoverMap } from '../../src/catalog/zoneCovers';
 import { CatalogThumb } from '../../src/components/CatalogThumb';
+import { Chip } from '../../src/components/Chip';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { useBottomChromePad, useTabScreenPad } from '../../src/layout/safe';
 import { useLocale } from '../../src/state/locale';
@@ -146,19 +147,13 @@ export default function ExercisesScreen() {
 						keyExtractor={(item) => item}
 						showsHorizontalScrollIndicator={false}
 						contentContainerStyle={styles.chips}
-					renderItem={({ item }) => {
-						const active = bodyPart === item;
-						return (
-							<Pressable
-								onPress={() => setBodyPart(item)}
-								style={[styles.chip, active && styles.chipOn]}
-							>
-								<Text style={[styles.chipText, active && styles.chipTextOn]}>
-									{zoneLabel(item)}
-								</Text>
-							</Pressable>
-						);
-					}}
+					renderItem={({ item }) => (
+						<Chip
+							label={zoneLabel(item)}
+							selected={bodyPart === item}
+							onPress={() => setBodyPart(item)}
+						/>
+					)}
 				/>
 				<FlatList
 					style={styles.flexList}
@@ -253,14 +248,11 @@ export default function ExercisesScreen() {
 							keyExtractor={(item) => item}
 							contentContainerStyle={styles.chips}
 							renderItem={({ item }) => (
-								<Pressable
+								<Chip
+									label={labelBodyPart(item, locale)}
+									selected={customPart === item}
 									onPress={() => setCustomPart(item)}
-									style={[styles.chip, customPart === item && styles.chipOn]}
-								>
-									<Text style={[styles.chipText, customPart === item && styles.chipTextOn]}>
-										{labelBodyPart(item, locale)}
-									</Text>
-								</Pressable>
+								/>
 							)}
 						/>
 						<Text style={styles.sheetLabel}>{tt('exercises.equipment')}</Text>
@@ -271,14 +263,11 @@ export default function ExercisesScreen() {
 							keyExtractor={(item) => item}
 							contentContainerStyle={styles.chips}
 							renderItem={({ item }) => (
-								<Pressable
+								<Chip
+									label={item}
+									selected={customEq === item}
 									onPress={() => setCustomEq(item)}
-									style={[styles.chip, customEq === item && styles.chipOn]}
-								>
-									<Text style={[styles.chipText, customEq === item && styles.chipTextOn]}>
-										{item}
-									</Text>
-								</Pressable>
+								/>
 							)}
 						/>
 						<PrimaryButton label={tt('exercises.customCreate')} onPress={() => void createCustom()} />
@@ -311,20 +300,6 @@ function makeStyles(colors: ColorPalette) {
 	flexList: { flex: 1 },
 	chipStrip: { flexGrow: 0, flexShrink: 0, height: touchMin },
 	chips: { gap: space.sm, alignItems: 'center', paddingVertical: 0 },
-	chip: {
-		height: touchMin,
-		paddingHorizontal: space.md,
-		borderRadius: 999,
-		borderWidth: 1,
-		borderColor: colors.border,
-		backgroundColor: colors.panel,
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginRight: space.sm
-	},
-	chipOn: { backgroundColor: colors.accent, borderColor: colors.accent },
-	chipText: { color: colors.muted, fontWeight: '600', fontSize: 13 },
-	chipTextOn: { color: colors.accentText },
 	list: { gap: space.sm },
 	row: {
 		minHeight: touchMin,

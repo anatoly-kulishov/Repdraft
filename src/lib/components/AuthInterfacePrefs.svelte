@@ -3,13 +3,17 @@
 	import QuestOnboardingSheet from '$lib/components/QuestOnboardingSheet.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { isWebAnalyticsAvailable } from '$lib/app/native';
-	import { clampWeeklyGoal, MAX_WEEKLY_GOAL, MIN_WEEKLY_GOAL } from '$lib/domain/quest';
+	import { clampWeeklyGoal, heroLevel, MAX_WEEKLY_GOAL, MIN_WEEKLY_GOAL } from '$lib/domain/quest';
 	import type { QuestHeroProfile } from '$lib/domain/questHeroProfile';
 	import { appTheme } from '$lib/stores/theme';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { questEnabled, webAnalyticsEnabled } from '$lib/stores/prefs';
 	import { quest, questState } from '$lib/stores/quest';
-	import { needsQuestHeroOnboarding, saveQuestHeroProfile } from '$lib/stores/questHero';
+	import {
+		loadQuestHeroProfile,
+		needsQuestHeroOnboarding,
+		saveQuestHeroProfile
+	} from '$lib/stores/questHero';
 	import { themeToggleStateIcon } from '$lib/components/icons/themeToggle';
 	import { BarChart3, Globe, Sparkles } from '@lucide/svelte';
 	import { onMount } from 'svelte';
@@ -42,8 +46,17 @@
 	let stackClass = $derived(surface === 'panel' ? undefined : 'auth-prefs__stack');
 	let hintClass = $derived(surface === 'panel' ? 'profile-settings-group__hint' : 'auth-prefs__hint');
 	let questOnboardOpen = $state(false);
+	let heroProfile = $state<QuestHeroProfile | null>(null);
+	let heroLine = $derived.by(() => {
+		if (!$questEnabled || !heroProfile?.completedAt) return null;
+		const name =
+			heroProfile.displayName.trim() || translate(lang, 'quest.heroNameless');
+		const level = heroLevel($questState.hero.totalXp);
+		return translate(lang, 'quest.profileHero', { name, level: String(level) });
+	});
 
 	onMount(() => {
+		heroProfile = loadQuestHeroProfile();
 		if (get(questEnabled) && needsQuestHeroOnboarding()) questOnboardOpen = true;
 	});
 
@@ -54,17 +67,20 @@
 
 	function completeQuestOnboard(profile: QuestHeroProfile) {
 		saveQuestHeroProfile(profile);
+		heroProfile = profile;
 	}
 
 	function skipQuestOnboard() {
-		saveQuestHeroProfile({
+		const profile: QuestHeroProfile = {
 			displayName: '',
 			sex: null,
 			age: null,
 			heightCm: null,
 			weightKg: null,
 			completedAt: new Date().toISOString()
-		});
+		};
+		saveQuestHeroProfile(profile);
+		heroProfile = profile;
 	}
 </script>
 
@@ -134,6 +150,9 @@
 		<p class={hintClass}>{translate(lang, 'settings.webAnalyticsHint')}</p>
 	{/if}
 	<p class={hintClass}>{translate(lang, 'settings.questHint')}</p>
+	{#if heroLine}
+		<p class={hintClass}>{heroLine}</p>
+	{/if}
 </div>
 
 <QuestOnboardingSheet

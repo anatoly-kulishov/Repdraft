@@ -128,7 +128,7 @@
 		border-color: var(--color-accent);
 		background: color-mix(in srgb, var(--color-accent) 12%, transparent);
 	}
-	.quest-onboard__field {
+	:global(.quest-onboard__field) {
 		margin-bottom: 0.5rem;
 	}
 	.quest-onboard__privacy {

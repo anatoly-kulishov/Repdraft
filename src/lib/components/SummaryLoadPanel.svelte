@@ -145,7 +145,7 @@
 		font-size: 0.9375rem;
 		font-weight: 600;
 	}
-	.summary-load__add {
+	:global(.summary-load__add) {
 		min-height: 3rem;
 		min-width: 3rem;
 	}

@@ -5,6 +5,7 @@ import { stubHealthAdapter } from './stubAdapter';
 import type { HealthAdapter, HealthWorkoutSnapshot } from './types';
 
 let iosAdapterCache: HealthAdapter | null = null;
+let androidAdapterCache: HealthAdapter | null = null;
 
 function isExpoGo(): boolean {
 	return (
@@ -24,6 +25,19 @@ function getIosHealthAdapter(): HealthAdapter {
 	}
 }
 
+/** Lazy load: keeps Expo Go free of Health Connect native deps. */
+function getAndroidHealthAdapter(): HealthAdapter {
+	if (androidAdapterCache) return androidAdapterCache;
+	try {
+		// eslint-disable-next-line @typescript-eslint/no-require-imports
+		androidAdapterCache = require('./androidHealthAdapter')
+			.androidHealthAdapter as HealthAdapter;
+		return androidAdapterCache;
+	} catch {
+		return stubHealthAdapter;
+	}
+}
+
 export type { HealthAdapter, HealthPermissionStatus, HealthWorkoutSnapshot } from './types';
 
 export const HEALTH_ENABLED_KEY = 'repdraft:health-read-enabled';
@@ -37,7 +51,8 @@ type StoredHealthSnap = {
 /**
  * Health read adapter.
  * Native HealthKit / Health Connect bindings require a development build
- * (not Expo Go). Until plugins are wired, always returns the stub.
+ * (not Expo Go). iOS uses HealthKit when the module loads; Android scaffold
+ * reports unavailable until Health Connect is linked.
  */
 export function getHealthAdapter(): HealthAdapter {
 	if (isExpoGo()) {
@@ -46,7 +61,9 @@ export function getHealthAdapter(): HealthAdapter {
 	if (Platform.OS === 'ios') {
 		return getIosHealthAdapter();
 	}
-	// ponytail: Android Health Connect adapter is a follow-up; stub until wired.
+	if (Platform.OS === 'android') {
+		return getAndroidHealthAdapter();
+	}
 	return stubHealthAdapter;
 }
 

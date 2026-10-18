@@ -1,9 +1,10 @@
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { computeProgressOverview } from '@repdraft/domain/progressOverview';
 import type { WorkoutSession } from '@repdraft/domain/types';
 import { Panel } from '../../src/components/Panel';
+import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { useTabScreenPad } from '../../src/layout/safe';
 import { useLocale } from '../../src/state/locale';
 import { useAppColors } from '../../src/state/theme';
@@ -11,6 +12,7 @@ import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { radius, space, type ColorPalette } from '../../src/theme';
 
 export default function ProgressScreen() {
+	const router = useRouter();
 	const { tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -45,7 +47,13 @@ export default function ProgressScreen() {
 			<Panel>
 				<Text style={styles.sectionTitle}>{tt('progress.volumeByWeek')}</Text>
 				{overview.weeks.length === 0 ? (
-					<Text style={styles.muted}>{tt('progress.empty')}</Text>
+					<>
+						<Text style={styles.muted}>{tt('progress.empty')}</Text>
+						<PrimaryButton
+							label={tt('progress.emptyCta')}
+							onPress={() => router.push('/')}
+						/>
+					</>
 				) : (
 					overview.weeks.map((w) => (
 						<View key={w.weekKey} style={styles.weekRow}>

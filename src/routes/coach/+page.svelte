@@ -64,6 +64,7 @@
 	{#if hints.length === 0}
 		<AppPanel class="text-left">
 			<p class="coach-muted">{translate(lang, 'coach.empty')}</p>
+			<a href="/" class="btn-primary coach-empty-cta">{translate(lang, 'coach.emptyCta')}</a>
 		</AppPanel>
 	{:else}
 		{#each hints as hint (hint.id)}
@@ -95,7 +96,13 @@
 		opacity: 0.75;
 		line-height: 1.4;
 	}
-	.coach-card {
+	.coach-empty-cta {
+		display: inline-flex;
+		margin-top: 0.75rem;
+		min-height: 3rem;
+		align-items: center;
+	}
+	:global(.coach-card) {
 		margin-bottom: 0.75rem;
 	}
 	.coach-card__title {

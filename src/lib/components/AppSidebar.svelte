@@ -10,7 +10,7 @@
 	import { draft, draftHydrated } from '$lib/stores/draft';
 	import { appTheme } from '$lib/stores/theme';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { BookOpen, ClipboardList, Dumbbell, House, UserRound } from '@lucide/svelte';
+	import { BookOpen, ClipboardList, House, TrendingUp, UserRound } from '@lucide/svelte';
 
 	let {
 		path,
@@ -46,9 +46,9 @@
 	};
 
 	const mainNav: NavItem[] = [
-		{ href: '/', labelKey: 'nav.tabHome', icon: House },
-		{ href: '/workouts', labelKey: 'nav.workouts', icon: Dumbbell, liveDot: true },
-		{ href: '/exercises', labelKey: 'nav.exercises', icon: BookOpen }
+		{ href: '/', labelKey: 'nav.tabHome', icon: House, liveDot: true },
+		{ href: '/exercises', labelKey: 'nav.exercises', icon: BookOpen },
+		{ href: '/progress', labelKey: 'nav.progress', icon: TrendingUp }
 	];
 </script>
 

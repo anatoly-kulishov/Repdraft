@@ -25,3 +25,14 @@ Living list from theme + screen pass. Plan file is not edited; findings land her
 ## Closed for gate
 
 Theme wiring complete; tab/footer/keyboard padding is code-level. Remaining items are device-specific polish.
+
+## P0 sacred loop QA (2026-10-18)
+
+Code-level blockers for Open → plan → live → finish → summary: none found in this pass.
+
+- Web tabbar aligned to Home / Exercises / Progress / Profile (Workouts under Home)
+- Chips shared via `Chip` on achievements (web), exercises + history (RN)
+- Light BrandMark / PrimaryButton / Panel tokens already shipped in Quest branch
+- Device-specific: live footer stack height, builder selection bar - still watch on small phones
+- Health Connect: Android scaffold in `mobile/src/health/androidHealthAdapter.ts` (dev build only; Expo Go stays stub)
+- Watch ownership: still deferred per `watch-session-ownership.md`

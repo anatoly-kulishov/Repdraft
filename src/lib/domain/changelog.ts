@@ -17,14 +17,14 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.22.0',
 		highlights: {
 			ru: [
-				'Телефон: светлая тема на всех экранах, Quest и ачивки после тренировки',
-				'Профиль: чеклист знакомства, поиск планов на главной, режим тестировщика',
-				'HealthKit (dev build): чтение пульса и калорий после финиша, если включено'
+				'Сайт и телефон: одна нижняя навигация - Главная, Упражнения, Прогресс, Профиль',
+				'Quest: герой в профиле, прогресс и подсказки с короткими CTA, ачивки после тренировки',
+				'Светлая тема на телефоне; HealthKit в development build после финиша, если включено'
 			],
 			en: [
-				'Phone: light theme on all screens, Quest and achievements after workouts',
-				'Profile: getting-started checklist, plan search on Home, tester mode',
-				'HealthKit (dev build): read heart rate and calories after finish when enabled'
+				'Web and phone: one bottom nav - Home, Exercises, Progress, Profile',
+				'Quest: hero on profile, progress and coach empty CTAs, achievements after workouts',
+				'Phone light theme; HealthKit in a development build after finish when enabled'
 			]
 		}
 	},

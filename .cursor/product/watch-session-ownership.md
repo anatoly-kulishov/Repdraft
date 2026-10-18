@@ -1,6 +1,6 @@
 # Watch session ownership (spike / ADR)
 
-**Status:** spike only. Not implemented. Phase C/E after RN phone loop is stable.  
+**Status:** spike only. Not implemented. Deferred until phone sacred loop + web↔RN nav parity are stable (post Quest phases).  
 **Related:** [`native-rewrite-plan.md`](./native-rewrite-plan.md).
 
 ## Decision needed first

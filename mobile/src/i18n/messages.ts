@@ -1198,6 +1198,10 @@ const ru: Record<string, string> = {
 	'summary.addToPlan': 'В план',
 	'summary.lagging30d': 'Отстаёт за 30 дней',
 	'summary.workedToday': 'Проработано сегодня',
+	'coach.emptyCta': 'Заверши тренировку',
+	'progress.emptyCta': 'Создай план на главной',
+	'quest.heroNameless': 'Герой',
+	'quest.profileHero': '{name} · уровень {level}',
 };
 
 const en: Record<string, string> = {
@@ -2398,6 +2402,10 @@ const en: Record<string, string> = {
 	'summary.addToPlan': 'Add to plan',
 	'summary.lagging30d': 'Lagging in 30 days',
 	'summary.workedToday': 'Worked today',
+	'coach.emptyCta': 'Finish a workout',
+	'progress.emptyCta': 'Create a plan on Home',
+	'quest.heroNameless': 'Hero',
+	'quest.profileHero': '{name} · level {level}',
 };
 
 const tables = { ru, en } as const;
