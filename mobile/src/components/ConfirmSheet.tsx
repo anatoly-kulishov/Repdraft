@@ -18,10 +18,12 @@ type Props = {
 	message?: string;
 	onDismiss: () => void;
 	actions: ConfirmAction[];
+	/** Hide the extra Cancel when an action already dismisses (finish offer: Later). */
+	showCancel?: boolean;
 };
 
 /** Sacred-loop confirms (finish / skip / discard) - twin of web BottomSheet dialogs. */
-export function ConfirmSheet({ open, title, message, onDismiss, actions }: Props) {
+export function ConfirmSheet({ open, title, message, onDismiss, actions, showCancel = true }: Props) {
 	const { tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -44,7 +46,9 @@ export function ConfirmSheet({ open, title, message, onDismiss, actions }: Props
 							}}
 						/>
 					))}
-					<PrimaryButton label={tt('common.cancel')} variant="ghost" onPress={onDismiss} />
+					{showCancel ? (
+						<PrimaryButton label={tt('common.cancel')} variant="ghost" onPress={onDismiss} />
+					) : null}
 				</>
 			}
 		>

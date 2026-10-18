@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from 'react-native-svg';
 import { CUSTOM_EXERCISE_EQUIPMENT } from '@repdraft/domain/customExercises';
-import { labelBodyPart } from '@repdraft/domain/labels.ru';
+import { labelBodyPart, labelEquipment } from '@repdraft/domain/labels.ru';
 import {
 	exerciseDisplayName,
 	filterExercises,
@@ -275,11 +275,11 @@ export default function ExercisesScreen() {
 							keyExtractor={(item) => item}
 							contentContainerStyle={styles.chips}
 							renderItem={({ item }) => (
-								<Chip
-									label={item}
-									selected={customEq === item}
-									onPress={() => setCustomEq(item)}
-								/>
+						<Chip
+								label={labelEquipment(item, locale)}
+								selected={customEq === item}
+								onPress={() => setCustomEq(item)}
+							/>
 							)}
 						/>
 						<PrimaryButton label={tt('exercises.customCreate')} onPress={() => void createCustom()} />

@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Star } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
 	Alert,
@@ -34,7 +35,7 @@ import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { pushPlan } from '../../src/sync/cloudSync';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { useAppColors } from '../../src/state/theme';
-import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
+import { radius, space, touchMin, type, type ColorPalette } from '../../src/theme';
 
 export default function ExerciseDetailScreen() {
 	const { id: idParam } = useLocalSearchParams<{ id: string }>();
@@ -140,14 +141,30 @@ export default function ExerciseDetailScreen() {
 					<CatalogThumb imagePath={imagePath} bannerHeight={220} rounded={radius.md} />
 				</Pressable>
 				<PrimaryButton label={tt('exercises.add')} onPress={offerAddToPlan} />
-				<PrimaryButton
-					label={bookmarked ? '★ ' + tt('exercises.saved') : '☆ ' + tt('exercises.bookmark')}
-					variant={bookmarked ? 'primary' : 'ghost'}
+				<Pressable
+					accessibilityRole="button"
+					accessibilityState={{ selected: bookmarked }}
+					style={({ pressed }) => [styles.bookmarkBtn, pressed && styles.pressed]}
 					onPress={() => {
 						if (!id) return;
 						void bookmarksRepo.toggle(id).then(setBookmarked);
 					}}
-				/>
+				>
+					<Star
+						color={bookmarked ? colors.accent : colors.text}
+						size={20}
+						strokeWidth={2}
+						fill={bookmarked ? colors.accent : 'transparent'}
+					/>
+					<Text
+						style={[
+							styles.bookmarkLabel,
+							{ color: bookmarked ? colors.accent : colors.text }
+						]}
+					>
+						{bookmarked ? tt('exercises.saved') : tt('exercises.bookmark')}
+					</Text>
+				</Pressable>
 				<PrimaryButton
 					label={tt('exercise.technique')}
 					variant="ghost"
@@ -227,6 +244,19 @@ function makeStyles(colors: ColorPalette) {
 	cardTitle: { color: colors.text, fontWeight: '700' },
 	line: { color: colors.muted, fontVariant: ['tabular-nums'] },
 	step: { color: colors.text, fontSize: 15, lineHeight: 22 },
-	histRow: { minHeight: touchMin, justifyContent: 'center' }
+	histRow: { minHeight: touchMin, justifyContent: 'center' },
+	bookmarkBtn: {
+		minHeight: touchMin,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		gap: space.sm,
+		borderRadius: radius.pill,
+		borderWidth: 1,
+		borderColor: colors.border,
+		backgroundColor: colors.panel
+	},
+	bookmarkLabel: { ...type.body, fontWeight: '700' },
+	pressed: { opacity: 0.85 }
 	});
 }

@@ -20,6 +20,7 @@ const ru: Dict = {
 	'nav.main': 'Основная навигация',
 	'nav.home': 'Repdraft: на главную',
 	'brand.tagline': 'ЗАПИСЬ. ПОДХОД. ГОТОВО.',
+	'app.name': 'Repdraft',
 	'app.metaDescription':
 		'Repdraft — бесплатный дневник тренировок в зале: планы упражнений, запись подходов с весом, каталог с техникой. Работает офлайн в браузере телефона.',
 	'seo.exercisesDescription':
@@ -528,6 +529,10 @@ const ru: Dict = {
 	'live.actionsMenuTitle': 'Действия',
 	'live.actionsMenuAria': 'Меню действий упражнения',
 	'live.reps': 'Повторы',
+	'live.nudgeWeightDown': 'Уменьшить вес подхода {n} на 2.5 кг',
+	'live.nudgeWeightUp': 'Увеличить вес подхода {n} на 2.5 кг',
+	'live.nudgeRepsDown': 'Уменьшить повторы подхода {n}',
+	'live.nudgeRepsUp': 'Увеличить повторы подхода {n}',
 	'live.done': 'Готово',
 	'live.undoDone': 'Изменить подход',
 	'live.doneAll': 'Отметить все подходы',
@@ -1190,6 +1195,7 @@ const ru: Dict = {
 	'history.filter30': '30д',
 	'history.filter7': '7д',
 	'history.filter90': '90д',
+	'history.filterToday': 'Сегодня',
 	'history.filterAll': 'Все',
 	'history.min': 'мин',
 	'history.removeExercise': 'Убрать упражнение',
@@ -1269,6 +1275,8 @@ const ru: Dict = {
 	'workouts.newName': 'Новая тренировка',
 	'workouts.nextBadge': 'следующая',
 	'workouts.pinNext': 'Сделать следующей',
+	'workouts.moveUp': 'Выше',
+	'workouts.moveDown': 'Ниже',
 	'workouts.quick': 'Быстрый старт',
 };
 
@@ -1285,6 +1293,7 @@ const en: Dict = {
 	'nav.main': 'Main navigation',
 	'nav.home': 'Repdraft: home',
 	'brand.tagline': 'LOG. SET. CONQUER.',
+	'app.name': 'Repdraft',
 	'app.metaDescription':
 		'Repdraft — free gym workout log: exercise plans, set-by-set logging with weight, and a technique catalog. Works offline in your phone browser.',
 	'seo.exercisesDescription':
@@ -1789,6 +1798,10 @@ const en: Dict = {
 	'live.actionsMenuTitle': 'Actions',
 	'live.actionsMenuAria': 'Exercise actions menu',
 	'live.reps': 'Reps',
+	'live.nudgeWeightDown': 'Decrease set {n} weight by 2.5 kg',
+	'live.nudgeWeightUp': 'Increase set {n} weight by 2.5 kg',
+	'live.nudgeRepsDown': 'Decrease set {n} reps',
+	'live.nudgeRepsUp': 'Increase set {n} reps',
 	'live.done': 'Done',
 	'live.undoDone': 'Edit set',
 	'live.doneAll': 'Mark all sets done',
@@ -2449,6 +2462,7 @@ const en: Dict = {
 	'history.filter30': '30d',
 	'history.filter7': '7d',
 	'history.filter90': '90d',
+	'history.filterToday': 'Today',
 	'history.filterAll': 'All',
 	'history.min': 'min',
 	'history.removeExercise': 'Remove exercise',
@@ -2528,6 +2542,8 @@ const en: Dict = {
 	'workouts.newName': 'New workout',
 	'workouts.nextBadge': 'next',
 	'workouts.pinNext': 'Pin as next',
+	'workouts.moveUp': 'Move up',
+	'workouts.moveDown': 'Move down',
 	'workouts.quick': 'Quick start',
 };
 

@@ -51,7 +51,7 @@
 	import { restSoundEnabled, testerModeEnabled } from '$lib/stores/prefs';
 	import { testerToolsVisible } from '$lib/domain/prefs';
 	import { tick } from 'svelte';
-	import { Camera, FileText, LogOut, Timer, Shield } from '@lucide/svelte';
+	import { Camera, FileText, LogOut, Timer, Shield, UserRound } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -666,7 +666,7 @@
 								>
 							{:else}
 								<span class="account-avatar is-guest profile-hero__avatar" aria-hidden="true">
-									{profileName?.charAt(0)?.toUpperCase() ?? '?'}
+									<LucideIcon icon={UserRound} size={40} />
 								</span>
 							{/if}
 							{#if avatarBusy}

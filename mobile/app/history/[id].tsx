@@ -14,6 +14,7 @@ import {
 import type { WorkoutSession } from '@repdraft/domain/types';
 import { exerciseDisplayName, refreshCustomsCache } from '../../src/catalog/loadIndex';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
+import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { TechniqueSheet } from '../../src/components/TechniqueSheet';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { useLocale } from '../../src/state/locale';
@@ -146,7 +147,15 @@ export default function HistoryDetailScreen() {
 				const done = ex.sets.filter((s) => s.completed);
 				if (!editing && done.length === 0) return null;
 				return (
-					<View key={`${ex.exerciseId}-${ei}`} style={styles.card}>
+					<SwipeableRow
+						key={`${ex.exerciseId}-${ei}`}
+						style={styles.card}
+						deleteLabel={tt('history.delete')}
+						onDelete={() => {
+							if (!session) return;
+							setSession(removeLoggedExercise(session, ei));
+						}}
+					>
 						<Pressable onPress={() => setTechniqueId(ex.exerciseId)}>
 							<Text style={styles.cardTitle}>{exerciseDisplayName(ex.exerciseId, locale)}</Text>
 						</Pressable>
@@ -217,7 +226,7 @@ export default function HistoryDetailScreen() {
 								/>
 							</>
 						) : null}
-					</View>
+					</SwipeableRow>
 				);
 			})}
 			{editing ? (

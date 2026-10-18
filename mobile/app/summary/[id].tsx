@@ -1,7 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
-	ActivityIndicator,
 	Alert,
 	Pressable,
 	ScrollView,
@@ -36,6 +35,7 @@ import {
 import { AchievementUnlockSheet } from '../../src/components/AchievementUnlockSheet';
 import { AchievementsPanel } from '../../src/components/AchievementsPanel';
 import { SummaryLoadPanel } from '../../src/components/SummaryLoadPanel';
+import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { QuestSummaryCard } from '../../src/components/QuestSummaryCard';
@@ -128,11 +128,7 @@ export default function SummaryScreen() {
 	}, [id]);
 
 	if (!session) {
-		return (
-			<View style={styles.center}>
-				<ActivityIndicator color={colors.accent} />
-			</View>
-		);
+		return <PageSkeleton variant="summary" />;
 	}
 
 	const volume = Math.round(sessionVolumeKg(session));
@@ -285,16 +281,10 @@ export default function SummaryScreen() {
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
-		root: { flex: 1, backgroundColor: colors.bg },
-		flex: { flex: 1 },
-		scroll: { padding: space.lg, gap: space.md },
-		center: {
-			flex: 1,
-			alignItems: 'center',
-			justifyContent: 'center',
-			backgroundColor: colors.bg
-		},
-		kicker: { color: colors.accentLink, fontWeight: '700', fontSize: 14 },
+	root: { flex: 1, backgroundColor: colors.bg },
+	flex: { flex: 1 },
+	scroll: { padding: space.lg, gap: space.md },
+	kicker: { color: colors.accentLink, fontWeight: '700', fontSize: 14 },
 		title: { color: colors.text, fontSize: 24, fontWeight: '800' },
 		sectionTitle: {
 			color: colors.muted,

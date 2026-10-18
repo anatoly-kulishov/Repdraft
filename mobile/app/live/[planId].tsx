@@ -14,11 +14,13 @@ import {
 	View
 } from 'react-native';
 import {
+	LIVE_REPS,
 	coerceReps,
 	coerceWeightKg,
 	filterRepsInput,
 	filterWeightInput,
-	LIVE_REPS
+	nudgeReps,
+	nudgeWeightKg
 } from '@repdraft/domain/inputLimits';
 import { RECORDS_STORAGE_KEY } from '@repdraft/domain/repository';
 import {
@@ -48,22 +50,25 @@ import {
 	updateLoggedSet,
 	visibleSessionExerciseIndices
 } from '@repdraft/domain/session';
-import { isCardioBodyPart } from '@repdraft/domain/workout';
+import { isBodyweightEquipment, isCardioBodyPart } from '@repdraft/domain/workout';
 import type { LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { unlockRestAudioFromGesture } from '../../src/audio/restChime';
 import { signalRestDone } from '../../src/audio/restDone';
 import { exerciseDisplayName, getIndexItem, refreshCustomsCache } from '../../src/catalog/loadIndex';
 import { Chip } from '../../src/components/Chip';
 import { ConfirmSheet, type ConfirmAction } from '../../src/components/ConfirmSheet';
+import { ElapsedClock } from '../../src/components/ElapsedClock';
+import { LiveSetRow, type SetDraft } from '../../src/components/LiveSetRow';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
+import { RestTimer } from '../../src/components/RestTimer';
+import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { TechniqueSheet } from '../../src/components/TechniqueSheet';
 import { advanceHomeNextAfterFinish } from '../../src/live/homeNext';
 import { movePlanToEnd } from '../../src/live/planOrder';
-import { readRestUntil, restSecondsLeft, writeRestUntil } from '../../src/live/restUntil';
+import { readRestUntil, shiftRestUntil, writeRestUntil } from '../../src/live/restUntil';
 import {
 	exerciseAllSetsDone,
-	formatElapsedClock,
 	isLiveResumePlanId,
 	pickDefaultExerciseIndex
 } from '../../src/live/sessionUi';
@@ -91,11 +96,21 @@ import { useBottomChromePad, useStackHeaderOffset } from '../../src/layout/safe'
 import { pushPlan, pushRecord, pushSession } from '../../src/sync/cloudSync';
 import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
+/** ponytail: last-set hints only need recent finishes. Upgrade path: per-exercise index. */
+const HINT_SESSION_CAP = 30;
+
+function hintSessions(sessions: WorkoutSession[]): WorkoutSession[] {
+	return sessions
+		.filter((s) => s.finishedAt)
+		.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''))
+		.slice(0, HINT_SESSION_CAP);
+}
+
 function tapLight(): void {
 	void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
 }
 
-type DraftRow = { weight: string; reps: string };
+type DraftRow = SetDraft;
 
 export default function LiveScreen() {
 	const { planId: planIdParam } = useLocalSearchParams<{ planId: string }>();
@@ -114,7 +129,6 @@ export default function LiveScreen() {
 	const [drafts, setDrafts] = useState<DraftRow[]>([]);
 	const [noteText, setNoteText] = useState('');
 	const [restUntil, setRestUntil] = useState<number | null>(null);
-	const [now, setNow] = useState(Date.now());
 	const [finishing, setFinishing] = useState(false);
 	const [bootReady, setBootReady] = useState(false);
 	const [forceAltPick, setForceAltPick] = useState(false);
@@ -123,10 +137,9 @@ export default function LiveScreen() {
 		title: string;
 		message?: string;
 		actions: ConfirmAction[];
+		showCancel?: boolean;
 	} | null>(null);
 	const finishOfferedRef = useRef(false);
-	const prevRestLeft = useRef(0);
-	const restChimeArmed = useRef(false);
 
 	const persist = useCallback(async (next: WorkoutSession, nextRest: number | null = restUntil) => {
 		setSession(next);
@@ -162,7 +175,8 @@ export default function LiveScreen() {
 				readRestUntil()
 			]);
 			if (cancelled) return;
-			setHistory(hist);
+			const hints = hintSessions(hist);
+			setHistory(hints);
 			setRestUntil(rest);
 
 			const resumeActive = async (activeSession: WorkoutSession) => {
@@ -208,7 +222,7 @@ export default function LiveScreen() {
 									label: tt('live.switchStartNew'),
 									variant: 'danger',
 									onPress: () => {
-										void startNew(plan, hist);
+										void startNew(plan, hints);
 									}
 								}
 							]
@@ -233,7 +247,7 @@ export default function LiveScreen() {
 				}
 				return;
 			}
-			await startNew(plan, hist);
+			await startNew(plan, hints);
 			if (!cancelled) setBootReady(true);
 		})();
 		return () => {
@@ -243,27 +257,11 @@ export default function LiveScreen() {
 	}, [planId]);
 
 	useEffect(() => {
-		const t = setInterval(() => setNow(Date.now()), 250);
-		return () => clearInterval(t);
-	}, []);
-
-	useEffect(() => {
 		void activateKeepAwakeAsync('live-session');
 		return () => {
 			void deactivateKeepAwake('live-session');
 		};
 	}, []);
-
-	useEffect(() => {
-		const left = restSecondsLeft(restUntil, now);
-		if (restUntil != null && left > 0) restChimeArmed.current = true;
-		if (prevRestLeft.current > 0 && left === 0 && restChimeArmed.current) {
-			restChimeArmed.current = false;
-			void signalRestDone();
-			void writeRestUntil(null).then(() => setRestUntil(null));
-		}
-		prevRestLeft.current = left;
-	}, [now, restUntil]);
 
 	const visible = useMemo(
 		() => (session ? visibleSessionExerciseIndices(session) : []),
@@ -273,8 +271,10 @@ export default function LiveScreen() {
 	const needsAlt = Boolean(
 		session && ex && (forceAltPick || altGroupNeedsPick(session, selectedEi))
 	);
-	const restLeft = restSecondsLeft(restUntil, now);
 	const skipLift = Boolean(ex && isCardioBodyPart(getIndexItem(ex.exerciseId)?.body_part));
+	const bodyweight = Boolean(
+		ex && isBodyweightEquipment(getIndexItem(ex.exerciseId)?.equipment)
+	);
 
 	useEffect(() => {
 		if (!session || !ex || needsAlt) {
@@ -311,6 +311,7 @@ export default function LiveScreen() {
 		setConfirm({
 			title: tt('live.finishOfferReady'),
 			message: tt('live.finishOfferHint'),
+			showCancel: false,
 			actions: [
 				{
 					label: tt('live.finishOfferLater'),
@@ -330,10 +331,21 @@ export default function LiveScreen() {
 	async function setRestFromSec(sec: number) {
 		if (sec > 0) unlockRestAudioFromGesture();
 		const next = sec > 0 ? Date.now() + sec * 1000 : null;
-		if (next == null) restChimeArmed.current = false;
 		await writeRestUntil(next);
 		setRestUntil(next);
 	}
+
+	function adjustRest(deltaSec: number) {
+		if (restUntil == null) return;
+		unlockRestAudioFromGesture();
+		const next = shiftRestUntil(restUntil, deltaSec);
+		void writeRestUntil(next).then(() => setRestUntil(next));
+	}
+
+	const finishRest = useCallback(() => {
+		void signalRestDone();
+		void writeRestUntil(null).then(() => setRestUntil(null));
+	}, []);
 
 	async function patchSet(
 		ei: number,
@@ -599,15 +611,55 @@ export default function LiveScreen() {
 		}
 	}
 
+	function nudgeDraft(si: number, field: 'weight' | 'reps', delta: number) {
+		if (!session || !ex) return;
+		const row = drafts[si];
+		if (!row) return;
+		if (field === 'weight') {
+			const current = row.weight === '' ? null : coerceWeightKg(row.weight);
+			const next = String(nudgeWeightKg(current, delta));
+			setDrafts((rows) => rows.map((r, i) => (i === si ? { ...r, weight: next } : r)));
+			void persist(
+				updateLoggedSet(session, selectedEi, si, { weightKg: coerceWeightKg(next) }),
+				restUntil
+			);
+		} else {
+			const current = row.reps === '' ? null : coerceReps(row.reps, LIVE_REPS);
+			const next = String(nudgeReps(current, delta, LIVE_REPS));
+			setDrafts((rows) => rows.map((r, i) => (i === si ? { ...r, reps: next } : r)));
+			void persist(
+				updateLoggedSet(session, selectedEi, si, { reps: coerceReps(next, LIVE_REPS) }),
+				restUntil
+			);
+		}
+		tapLight();
+	}
+
+	function applyLastDraft(si: number, prev: { weightKg: number | null; reps: number | null }) {
+		if (!session) return;
+		const weight = prev.weightKg != null ? String(prev.weightKg) : '';
+		const reps = prev.reps != null ? String(prev.reps) : '';
+		setDrafts((rows) => rows.map((r, i) => (i === si ? { weight, reps } : r)));
+		void persist(
+			updateLoggedSet(session, selectedEi, si, {
+				weightKg: prev.weightKg,
+				reps: prev.reps
+			}),
+			restUntil
+		);
+		tapLight();
+	}
+
 	if (!bootReady || !session) {
 		return (
-			<View style={styles.center}>
-				<Text style={styles.muted}>…</Text>
+			<View style={styles.root}>
+				<PageSkeleton variant="planPreview" />
 				<ConfirmSheet
 					open={Boolean(confirm)}
 					title={confirm?.title ?? ''}
 					message={confirm?.message}
 					actions={confirm?.actions ?? []}
+					showCancel={confirm?.showCancel !== false}
 					onDismiss={() => setConfirm(null)}
 				/>
 			</View>
@@ -615,7 +667,6 @@ export default function LiveScreen() {
 	}
 
 	const progress = `${completedSetCount(session)} / ${totalSetCount(session)}`;
-	const elapsed = formatElapsedClock(now - new Date(session.startedAt).getTime());
 	const altOptions =
 		needsAlt && ex?.altGroupId
 			? session.exercises.filter((e) => e.altGroupId === ex.altGroupId)
@@ -623,7 +674,7 @@ export default function LiveScreen() {
 	const currentComplete = ex ? exerciseAllSetsDone(session.exercises, selectedEi) : false;
 	const hasNextExercise = nextManualExerciseFocus(session, selectedEi) !== selectedEi;
 	const restTotalSec = ex ? Math.max(1, restSecAfterSet(session, selectedEi)) : 1;
-	const restPct = restLeft > 0 ? Math.min(1, restLeft / restTotalSec) : 0;
+	const currentSetIndex = ex?.sets.findIndex((set) => !set.completed) ?? -1;
 
 	return (
 		<KeyboardAvoidingView
@@ -636,7 +687,7 @@ export default function LiveScreen() {
 					{session.planName}
 				</Text>
 				<Text style={styles.progress}>
-					{progress} · {elapsed}
+					{progress} · <ElapsedClock startedAt={session.startedAt} />
 				</Text>
 			</View>
 
@@ -671,39 +722,14 @@ export default function LiveScreen() {
 				keyboardShouldPersistTaps="handled"
 				keyboardDismissMode="on-drag"
 			>
-				{restLeft > 0 ? (
-					<View style={styles.restBox}>
-						<Text style={styles.restLabel}>{tt('live.rest')}</Text>
-						<Text style={styles.restValue}>{restLeft}</Text>
-						<Text style={styles.restUnit}>sec</Text>
-						<View style={styles.restBarTrack}>
-							<View style={[styles.restBarFill, { width: `${Math.round(restPct * 100)}%` }]} />
-						</View>
-						<View style={styles.restActions}>
-							<View style={styles.restAction}>
-								<PrimaryButton
-									label={tt('live.restPlus30')}
-									variant="ghost"
-									compact
-									onPress={() => {
-										unlockRestAudioFromGesture();
-										const base = restUntil && restUntil > Date.now() ? restUntil : Date.now();
-										const next = base + 30_000;
-										restChimeArmed.current = true;
-										void writeRestUntil(next).then(() => setRestUntil(next));
-									}}
-								/>
-							</View>
-							<View style={styles.restAction}>
-								<PrimaryButton
-									label={tt('live.skipRest')}
-									variant="ghost"
-									compact
-									onPress={() => void setRestFromSec(0)}
-								/>
-							</View>
-						</View>
-					</View>
+				{restUntil != null ? (
+					<RestTimer
+						restUntil={restUntil}
+						totalSec={restTotalSec}
+						onAdjust={adjustRest}
+						onSkip={() => void setRestFromSec(0)}
+						onDone={finishRest}
+					/>
 				) : null}
 
 				{needsAlt && ex ? (
@@ -748,92 +774,61 @@ export default function LiveScreen() {
 
 						{ex.sets.map((set, si) => {
 							const prev = previousSetAtIndex(history, ex.exerciseId, si);
-							const kindKey = setKindMessageKey(loggedSetKind(set));
 							const draft = drafts[si] ?? { weight: '', reps: '' };
 							return (
-								<View key={si} style={[styles.setRow, set.completed && styles.setRowDone]}>
-									<View style={styles.setHead}>
-										<Text style={styles.setIndex}>
-											{tt('live.setProgress', { current: si + 1, total: ex.sets.length })}
-										</Text>
-										<Text style={styles.prev}>
-											{tt('live.last')}:{' '}
-											{prev
-												? `${prev.weightKg ?? '-'} × ${prev.reps ?? '-'}`
-												: '-'}
-										</Text>
-									</View>
-									<View style={styles.inputs}>
-										<TextInput
-											value={draft.weight}
-											editable={!set.completed && !skipLift}
-											onChangeText={(value) => {
-												const filtered = filterWeightInput(value, draft.weight);
-												setDrafts((rows) =>
-													rows.map((r, i) => (i === si ? { ...r, weight: filtered } : r))
-												);
-											}}
-											onBlur={() => void syncDraftToSession(selectedEi, si)}
-											keyboardType="decimal-pad"
-											style={styles.input}
-											placeholder={tt('common.kg')}
-											placeholderTextColor={colors.muted}
-										/>
-										<TextInput
-											value={draft.reps}
-											editable={!set.completed}
-											onChangeText={(value) => {
-												const filtered = filterRepsInput(value, LIVE_REPS, draft.reps);
-												setDrafts((rows) =>
-													rows.map((r, i) => (i === si ? { ...r, reps: filtered } : r))
-												);
-											}}
-											onBlur={() => void syncDraftToSession(selectedEi, si)}
-											keyboardType="number-pad"
-											style={styles.input}
-											placeholder={tt('common.reps')}
-											placeholderTextColor={colors.muted}
-										/>
-									</View>
-									<View style={styles.setActions}>
-										<PrimaryButton
-											label={tt(kindKey)}
-											variant="ghost"
-											onPress={() =>
-												void patchSet(selectedEi, si, {
-													kind: nextSetKind(loggedSetKind(set))
-												})
-											}
-										/>
-										<PrimaryButton
-											label={set.completed ? tt('live.undoSet') : tt('live.log')}
-											onPress={() => void onToggleComplete(selectedEi, si)}
-										/>
-										{ex.sets.length > 1 ? (
-											<Pressable
-												style={styles.removeHit}
-												onLongPress={() => {
-													setConfirm({
-														title: tt('live.removeSet'),
-														actions: [
-															{
-																label: tt('live.removeSet'),
-																variant: 'danger',
-																onPress: () =>
-																	void persist(
-																		removeLoggedSet(session, selectedEi, si),
-																		restUntil
-																	)
-															}
-														]
-													});
-												}}
-											>
-												<Text style={styles.removeHint}>{tt('live.removeSet')}</Text>
-											</Pressable>
-										) : null}
-									</View>
-								</View>
+								<LiveSetRow
+									key={si}
+									setIndex={si}
+									setCount={ex.sets.length}
+									completed={set.completed}
+									current={si === currentSetIndex}
+									skipLift={skipLift}
+									bodyweight={bodyweight}
+									canRemove={ex.sets.length > 1}
+									kindLabel={tt(setKindMessageKey(loggedSetKind(set)))}
+									draft={draft}
+									prev={prev}
+									onChangeWeight={(value) => {
+										const filtered = filterWeightInput(value, draft.weight);
+										setDrafts((rows) =>
+											rows.map((r, i) => (i === si ? { ...r, weight: filtered } : r))
+										);
+									}}
+									onChangeReps={(value) => {
+										const filtered = filterRepsInput(value, LIVE_REPS, draft.reps);
+										setDrafts((rows) =>
+											rows.map((r, i) => (i === si ? { ...r, reps: filtered } : r))
+										);
+									}}
+									onBlur={() => void syncDraftToSession(selectedEi, si)}
+									onNudgeWeight={(delta) => nudgeDraft(si, 'weight', delta)}
+									onNudgeReps={(delta) => nudgeDraft(si, 'reps', delta)}
+									onApplyLast={() => {
+										if (prev) applyLastDraft(si, prev);
+									}}
+									onToggleKind={() =>
+										void patchSet(selectedEi, si, {
+											kind: nextSetKind(loggedSetKind(set))
+										})
+									}
+									onToggleComplete={() => void onToggleComplete(selectedEi, si)}
+									onRemove={() =>
+										setConfirm({
+											title: tt('live.removeSet'),
+											actions: [
+												{
+													label: tt('live.removeSet'),
+													variant: 'danger',
+													onPress: () =>
+														void persist(
+															removeLoggedSet(session, selectedEi, si),
+															restUntil
+														)
+												}
+											]
+										})
+									}
+								/>
 							);
 						})}
 
@@ -926,6 +921,7 @@ export default function LiveScreen() {
 				title={confirm?.title ?? ''}
 				message={confirm?.message}
 				actions={confirm?.actions ?? []}
+				showCancel={confirm?.showCancel !== false}
 				onDismiss={() => setConfirm(null)}
 			/>
 		</KeyboardAvoidingView>

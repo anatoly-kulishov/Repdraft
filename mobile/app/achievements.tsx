@@ -2,6 +2,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
+	ACHIEVEMENT_IDS,
 	countableFinishedSessions,
 	type AchievementsState
 } from '@repdraft/domain/achievements';
@@ -48,10 +49,10 @@ export default function AchievementsScreen() {
 			contentContainerStyle={[styles.root, { paddingBottom: bottomPad }]}
 		>
 			<Text style={styles.meta}>
-				{tt('achievements.progressCount', {
-					n: String(unlocked),
-					total: String(5)
-				})}
+			{tt('achievements.progressCount', {
+				n: String(unlocked),
+				total: String(ACHIEVEMENT_IDS.length)
+			})}
 			</Text>
 			<AchievementsPanel
 				state={state}

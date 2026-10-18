@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
 	lastPerformance,
 	seedOpenSetsFromLastPerformance,
@@ -15,18 +15,21 @@ import {
 	planPrescribedSetCount,
 	planTargetSummary
 } from '@repdraft/domain/workout';
+import { shouldShowCoachmark } from '@repdraft/domain/onboarding';
 import {
 	exerciseDisplayName,
 	getIndexItem,
 	loadExerciseIndex,
 	refreshCustomsCache
 } from '../../src/catalog/loadIndex';
+import { Coachmark } from '../../src/components/Coachmark';
+import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { routeParam } from '../../src/nav/params';
 import { useLocale } from '../../src/state/locale';
-import { noteChecklist } from '../../src/state/onboarding';
+import { dismissCoachmark, loadOnboarding, noteChecklist } from '../../src/state/onboarding';
 import { useAppColors } from '../../src/state/theme';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { readActiveSession, sessionsRepo, writeActiveSession } from '../../src/storage/sessionsRepo';
@@ -45,12 +48,17 @@ export default function PlanPreviewScreen() {
 	const [missing, setMissing] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const [hasActive, setHasActive] = useState(false);
+	const [showCoachmark, setShowCoachmark] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
 		void (async () => {
 			await refreshCustomsCache();
 			await noteChecklist('planReady');
+			const ob = await loadOnboarding();
+			if (!cancelled) {
+				setShowCoachmark(shouldShowCoachmark(ob, 'preview.start'));
+			}
 			if (!id) {
 				if (!cancelled) {
 					setMissing(true);
@@ -101,11 +109,7 @@ export default function PlanPreviewScreen() {
 	}
 
 	if (!plan) {
-		return (
-			<View style={styles.center}>
-				<ActivityIndicator color={colors.accent} />
-			</View>
-		);
+		return <PageSkeleton variant="planPreview" />;
 	}
 
 	const indexById = new Map(loadExerciseIndex().map((item) => [item.id, item] as const));
@@ -130,6 +134,15 @@ export default function PlanPreviewScreen() {
 				</Text>
 				{plan.exercises.length === 0 ? (
 					<Text style={styles.empty}>{tt('builder.empty')}</Text>
+				) : null}
+				{showCoachmark ? (
+					<Coachmark
+						message={tt('onboarding.coachPreviewStart')}
+						onDismiss={() => {
+							setShowCoachmark(false);
+							void dismissCoachmark('preview.start');
+						}}
+					/>
 				) : null}
 				{plan.exercises.map((ex, i) => {
 					const gRole = groupMemberRole(plan.exercises, i);
@@ -167,7 +180,7 @@ export default function PlanPreviewScreen() {
 					/>
 				) : (
 					<PrimaryButton
-						label={busy ? '…' : hasActive ? tt('workouts.resume') : tt('common.start')}
+						label={busy ? tt('common.loading') : hasActive ? tt('workouts.resume') : tt('common.start')}
 						onPress={() => void start()}
 						disabled={busy}
 					/>

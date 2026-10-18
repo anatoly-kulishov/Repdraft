@@ -19,11 +19,13 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 			ru: [
 				'Сайт и телефон: одна нижняя навигация - Главная, Упражнения, Прогресс, Профиль',
 				'Quest: герой в профиле, прогресс и подсказки с короткими CTA, ачивки после тренировки',
+				'Живая тренировка: вес и повторы кнопками плюс и минус, прошлый результат в один тап',
 				'Светлая тема на телефоне; HealthKit в development build после финиша, если включено'
 			],
 			en: [
 				'Web and phone: one bottom nav - Home, Exercises, Progress, Profile',
 				'Quest: hero on profile, progress and coach empty CTAs, achievements after workouts',
+				'Live workout: nudge weight and reps, apply the last result in one tap',
 				'Phone light theme; HealthKit in a development build after finish when enabled'
 			]
 		}

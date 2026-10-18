@@ -5,6 +5,9 @@ export const REPS = { min: 1, max: 999 } as const;
 /** Ladder endpoints (От/До) — keep chips readable; length still capped by SETS.max. */
 export const LADDER_REPS = { min: 1, max: 99 } as const;
 export const LIVE_REPS = { min: 0, max: 999 } as const;
+/** Gym-floor tap step. Storage still allows 0.1 kg via the keyboard. */
+export const LIVE_WEIGHT_NUDGE_KG = 2.5;
+export const LIVE_REPS_NUDGE = 1;
 export const SETS = { min: 1, max: 99 } as const;
 export const REST_SEC = { min: 0, max: 999 } as const;
 /** PR / record note — one line in list chips; keeps cards from ballooning. */

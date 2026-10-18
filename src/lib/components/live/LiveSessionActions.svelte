@@ -43,16 +43,13 @@
 	} = $props();
 
 	let showRest = $derived(restLeft > 0 && Boolean(onRestMinus && onRestPlus && onRestSkip));
-	let restExpanded = $state(false);
+	/** Mobile instance is remounted per rest (page `{#key}`), so this starts expanded. */
+	let restExpanded = $state(true);
 	/** Primary CTA = Next only after this exercise is done; else Finish on last exercise. */
 	let nextIsPrimary = $derived(hasNextExercise && currentExerciseComplete);
 	let showFinish = $derived(!hasNextExercise);
 	let pairLayout = $derived(layout === 'mobile');
 	let restCompact = $derived(pairLayout && !restExpanded);
-
-	$effect(() => {
-		if (restLeft <= 0) restExpanded = false;
-	});
 </script>
 
 {#snippet finishPrimary()}
