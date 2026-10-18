@@ -21,6 +21,7 @@ import {
 	loadExerciseIndex,
 	refreshCustomsCache
 } from '../../src/catalog/loadIndex';
+import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { routeParam } from '../../src/nav/params';
@@ -29,7 +30,7 @@ import { noteChecklist } from '../../src/state/onboarding';
 import { useAppColors } from '../../src/state/theme';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { readActiveSession, sessionsRepo, writeActiveSession } from '../../src/storage/sessionsRepo';
-import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
+import { space, touchMin, type ColorPalette } from '../../src/theme';
 
 export default function PlanPreviewScreen() {
 	const { id: idParam } = useLocalSearchParams<{ id: string }>();
@@ -142,17 +143,18 @@ export default function PlanPreviewScreen() {
 					return (
 						<Pressable
 							key={`${ex.exerciseId}-${i}`}
-							style={styles.card}
 							onPress={() => router.push(`/exercise/${ex.exerciseId}`)}
 						>
-							{badge ? <Text style={styles.badge}>{badge}</Text> : null}
-							<Text style={styles.cardTitle} numberOfLines={2}>
-								{exerciseDisplayName(ex.exerciseId, locale)}
-							</Text>
-							<Text style={styles.cardMeta}>{formatExercisePrescription(ex)}</Text>
-							{getIndexItem(ex.exerciseId)?.equipment ? (
-								<Text style={styles.cardMeta}>{getIndexItem(ex.exerciseId)?.equipment}</Text>
-							) : null}
+							<Panel style={styles.card}>
+								{badge ? <Text style={styles.badge}>{badge}</Text> : null}
+								<Text style={styles.cardTitle} numberOfLines={2}>
+									{exerciseDisplayName(ex.exerciseId, locale)}
+								</Text>
+								<Text style={styles.cardMeta}>{formatExercisePrescription(ex)}</Text>
+								{getIndexItem(ex.exerciseId)?.equipment ? (
+									<Text style={styles.cardMeta}>{getIndexItem(ex.exerciseId)?.equipment}</Text>
+								) : null}
+							</Panel>
 						</Pressable>
 					);
 				})}
@@ -172,7 +174,7 @@ export default function PlanPreviewScreen() {
 				)}
 				<PrimaryButton
 					label={tt('builder.title')}
-					variant="ghost"
+					variant="link"
 					onPress={() => router.push(`/builder/${plan.id}`)}
 				/>
 			</View>
@@ -198,17 +200,10 @@ function makeStyles(colors: ColorPalette) {
 		title: { color: colors.text, fontSize: 24, fontWeight: '800' },
 		lead: { color: colors.muted, marginBottom: 4 },
 		metaLine: { color: colors.muted, fontSize: 14, marginBottom: 4 },
-		card: {
-			backgroundColor: colors.panel,
-			borderRadius: radius.md,
-			borderWidth: 1,
-			borderColor: colors.border,
-			padding: space.md,
-			minHeight: touchMin
-		},
-		badge: { color: colors.accent, fontSize: 11, fontWeight: '800', marginBottom: 4 },
+		card: { minHeight: touchMin, gap: space.xs },
+		badge: { color: colors.accentLink, fontSize: 11, fontWeight: '800' },
 		cardTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
-		cardMeta: { color: colors.muted, marginTop: 4 },
+		cardMeta: { color: colors.muted },
 		footer: {
 			paddingHorizontal: space.lg,
 			paddingTop: space.md,

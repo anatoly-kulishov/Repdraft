@@ -1,4 +1,4 @@
-import type { AppLocale } from '$lib/i18n/locale';
+import type { AppLocale } from '../i18n/locale';
 import { exerciseName, exerciseNameSortLocale } from './exerciseName';
 import { BODY_PART_LABELS, EQUIPMENT_LABELS, TARGET_LABELS } from './labels.ru';
 import { SEARCH_SYNONYMS } from './searchSynonyms';

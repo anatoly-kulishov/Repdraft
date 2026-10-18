@@ -9,13 +9,28 @@
       "@repdraft/domain/*": [
         "../src/lib/domain/*"
       ],
-      "$lib/*": [
-        "src/shims/*"
+      "@repdraft/i18n/*": [
+        "../src/lib/i18n/*"
+      ],
+      "@repdraft/design/*": [
+        "../src/lib/design/*"
+      ],
+      "$lib/domain/*": [
+        "../src/lib/domain/*"
+      ],
+      "$lib/i18n/*": [
+        "../src/lib/i18n/*"
+      ],
+      "$lib/design/*": [
+        "../src/lib/design/*"
       ]
     }
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx"
+    "**/*.tsx",
+    "../src/lib/domain/**/*.ts",
+    "../src/lib/i18n/**/*.ts",
+    "../src/lib/design/**/*.ts"
   ]
 }

@@ -14,7 +14,11 @@
 <AppButton
 	variant="secondary"
 	type="button"
-	class={cn('h-auto min-h-9 w-auto min-w-0 rounded-full px-3 py-1.5 font-medium', active && 'is-active', className)}
+	class={cn(
+		'h-auto min-h-12 min-w-[48px] w-auto rounded-full px-3 py-1.5 font-medium',
+		active && 'is-active',
+		className
+	)}
 	aria-pressed={active}
 	{...rest}
 >

@@ -11,7 +11,7 @@ import {
 	TextInput,
 	View
 } from 'react-native';
-import { ChevronRight, Play, Sparkles } from 'lucide-react-native';
+import { ChevronRight, Sparkles } from 'lucide-react-native';
 import {
 	dayGreetingPeriod,
 	homeGreetingMessageKey
@@ -46,7 +46,7 @@ import { OnboardingChecklistPanel } from '../../src/components/OnboardingCheckli
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { getSupabase, isSupabaseConfigured } from '../../src/auth/supabase';
-import { formatRelativeDay } from '../../src/i18n/format';
+import { formatRelativeDay } from '@repdraft/i18n/format';
 import { readHomeNextPlanId, writeHomeNextPlanId } from '../../src/live/homeNext';
 import { readPlanOrder, writePlanOrder } from '../../src/live/planOrder';
 import { loadGreetingName } from '../../src/state/greetingName';
@@ -241,25 +241,25 @@ export default function WorkoutsScreen() {
 					/>
 				</Panel>
 			) : next && heroMeta ? (
-				<Pressable
-					accessibilityRole="button"
-					style={({ pressed }) => [styles.card, styles.heroCard, pressed && styles.pressed]}
-					onPress={() => router.push(`/plan/${next.id}`)}
-				>
-					<Text style={styles.eyebrow}>{tt('home.readyTitle')}</Text>
-					<Text style={styles.cardTitle} numberOfLines={2}>
-						{next.name || '-'}
-					</Text>
-					<Text style={styles.cardMeta} numberOfLines={2}>
-						{heroMeta.exercises} {tt('common.exercises')} · {heroMeta.summary}
-					</Text>
-					<View style={styles.heroCtaRow}>
-						<View style={styles.heroCta}>
-							<Play color={colors.accentText} size={18} strokeWidth={2.25} />
-							<Text style={styles.heroCtaText}>{tt('home.startWorkout')}</Text>
-						</View>
-					</View>
-				</Pressable>
+				<Panel style={styles.card}>
+					<Pressable
+						accessibilityRole="button"
+						onPress={() => router.push(`/plan/${next.id}`)}
+						style={({ pressed }) => pressed && styles.pressed}
+					>
+						<Text style={styles.eyebrow}>{tt('home.readyTitle')}</Text>
+						<Text style={styles.cardTitle} numberOfLines={2}>
+							{next.name || '-'}
+						</Text>
+						<Text style={styles.cardMeta} numberOfLines={2}>
+							{heroMeta.exercises} {tt('common.exercises')} · {heroMeta.summary}
+						</Text>
+					</Pressable>
+					<PrimaryButton
+						label={tt('home.startWorkout')}
+						onPress={() => router.push(`/plan/${next.id}`)}
+					/>
+				</Panel>
 			) : null}
 
 			{showChecklist && onboarding ? (
@@ -280,7 +280,7 @@ export default function WorkoutsScreen() {
 					<PrimaryButton label={tt('home.guestCreateLocal')} onPress={() => void createBlank()} />
 					<PrimaryButton
 						label={tt('nav.signIn')}
-						variant="ghost"
+						variant="secondary"
 						onPress={() => router.push('/(tabs)/profile')}
 					/>
 				</Panel>
@@ -478,24 +478,6 @@ function makeStyles(colors: ColorPalette) {
 	},
 	cardTitle: { ...type.title, color: colors.text },
 	cardMeta: { ...type.meta, color: colors.muted },
-	heroCard: {
-		backgroundColor: colors.panel,
-		borderRadius: radius.lg,
-		borderWidth: 1,
-		borderColor: colors.border,
-		padding: space.lg
-	},
-	heroCtaRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: space.xs },
-	heroCta: {
-		minHeight: touchMin,
-		backgroundColor: colors.accent,
-		borderRadius: radius.md,
-		paddingHorizontal: 18,
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: space.sm
-	},
-	heroCtaText: { color: colors.accentText, fontSize: 16, fontWeight: '700' },
 	pressed: { opacity: 0.85 },
 	search: {
 		minHeight: touchMin,

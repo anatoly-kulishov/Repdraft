@@ -36,7 +36,7 @@ If that loop is not excellent, ignore charts, AI, social, and other extras. Deli
 ## WORKFLOW & VERIFICATION
 
 - Keep changes isolated and self-contained per task.
-- Run typecheck with **`npm run check:all`** when both clients touched; **`npm run check`** for web-only work (not `npm run validate` - that script does not exist here).
+- Run **`npm run check:parity`** when both clients (or tokens/i18n) touched; **`npm run check`** for web-only work (not `npm run validate` - that script does not exist here). i18n: one file `src/lib/i18n/messages.ts`. Design tokens: `src/lib/design/tokens.ts` then `npm run build:tokens`.
 - Do not introduce new console errors or warnings.
 - Follow release branches: `cursor/vX.Y.Z-slug` - see `.cursor/rules/release-branches.mdc`.
 - Product north star: `.cursor/rules/mvp.mdc` + `.cursor/product/native-rewrite-plan.md`.

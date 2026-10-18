@@ -1,5 +1,5 @@
-import type { AppLocale } from '$lib/i18n/locale';
-import { translate } from '$lib/i18n/messages';
+import type { AppLocale } from '../i18n/locale';
+import { translate } from '../i18n/messages';
 import {
 	NOTE_MAX,
 	REPS,

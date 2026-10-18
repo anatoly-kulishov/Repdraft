@@ -33,7 +33,7 @@ import {
 	loadExerciseIndex,
 	refreshCustomsCache
 } from '../../src/catalog/loadIndex';
-import { AchievementUnlockModal } from '../../src/components/AchievementUnlockModal';
+import { AchievementUnlockSheet } from '../../src/components/AchievementUnlockSheet';
 import { AchievementsPanel } from '../../src/components/AchievementsPanel';
 import { SummaryLoadPanel } from '../../src/components/SummaryLoadPanel';
 import { Panel } from '../../src/components/Panel';
@@ -157,7 +157,7 @@ export default function SummaryScreen() {
 
 	return (
 		<View style={styles.root}>
-			<AchievementUnlockModal
+			<AchievementUnlockSheet
 				ids={showAchModal ? newAchIds : null}
 				onClose={() => {
 					setAchModalDismissed(true);
@@ -234,7 +234,7 @@ export default function SummaryScreen() {
 					const open = expanded[key] ?? true;
 					const done = ex.sets.filter((s) => s.completed);
 					return (
-						<View key={key} style={styles.card}>
+						<Panel key={key} style={styles.card}>
 							<Pressable
 								style={styles.cardHead}
 								onPress={() => setExpanded((m) => ({ ...m, [key]: !open }))}
@@ -262,7 +262,7 @@ export default function SummaryScreen() {
 										</Text>
 									))
 								: null}
-						</View>
+						</Panel>
 					);
 				})}
 				{achState ? (
@@ -294,7 +294,7 @@ function makeStyles(colors: ColorPalette) {
 			justifyContent: 'center',
 			backgroundColor: colors.bg
 		},
-		kicker: { color: colors.accent, fontWeight: '700', fontSize: 14 },
+		kicker: { color: colors.accentLink, fontWeight: '700', fontSize: 14 },
 		title: { color: colors.text, fontSize: 24, fontWeight: '800' },
 		sectionTitle: {
 			color: colors.muted,
@@ -326,14 +326,7 @@ function makeStyles(colors: ColorPalette) {
 			fontVariant: ['tabular-nums']
 		},
 		delta: { color: colors.muted, marginTop: 4, fontSize: 13, fontWeight: '600' },
-		card: {
-			backgroundColor: colors.panel,
-			borderRadius: radius.md,
-			borderWidth: 1,
-			borderColor: colors.border,
-			padding: space.md,
-			gap: 6
-		},
+		card: { gap: 6 },
 		cardHead: {
 			minHeight: touchMin,
 			flexDirection: 'row',

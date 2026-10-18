@@ -68,11 +68,10 @@ function makeStyles(colors: ColorPalette) {
 			flexShrink: 1
 		},
 		primary: {
-			backgroundColor: colors.accent,
-			// ponytail: RN linear-gradient requires a separate lib; web uses gradient.
-			// Keep flat accent on mobile until a native gradient dep is justified.
+			// Shared accentFill (web CTA solid); gradient stays web-only.
+			backgroundColor: colors.accentFill,
 			borderWidth: 1,
-			borderColor: colors.accent
+			borderColor: colors.accentFill
 		},
 		secondary: {
 			backgroundColor: colors.panelRaised,
@@ -111,7 +110,7 @@ function makeStyles(colors: ColorPalette) {
 			color: colors.danger
 		},
 		labelLink: {
-			color: colors.accent,
+			color: colors.accentLink,
 			textDecorationLine: 'underline'
 		}
 	});

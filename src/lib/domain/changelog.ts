@@ -3,7 +3,7 @@
  * Update on each release: newest first. Keep 4–6 entries; short athlete-facing bullets.
  * Plain language only: no sticky / toast / PWA / lightbox jargon.
  */
-import type { AppLocale } from '$lib/i18n/locale';
+import type { AppLocale } from '../i18n/locale';
 
 export type ChangelogRelease = {
 	/** Semver without `v`, must match package.json / GitHub tag. */

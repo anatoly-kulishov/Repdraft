@@ -3,7 +3,6 @@ import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-	Alert,
 	FlatList,
 	KeyboardAvoidingView,
 	Platform,
@@ -54,6 +53,9 @@ import type { LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/ty
 import { unlockRestAudioFromGesture } from '../../src/audio/restChime';
 import { signalRestDone } from '../../src/audio/restDone';
 import { exerciseDisplayName, getIndexItem, refreshCustomsCache } from '../../src/catalog/loadIndex';
+import { Chip } from '../../src/components/Chip';
+import { ConfirmSheet, type ConfirmAction } from '../../src/components/ConfirmSheet';
+import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { TechniqueSheet } from '../../src/components/TechniqueSheet';
 import { advanceHomeNextAfterFinish } from '../../src/live/homeNext';
@@ -69,7 +71,7 @@ import {
 	countImprovedRecords,
 	mergeSessionRecordsInto,
 	recordsFromFinishedSession
-} from '../../src/lib/sessionRecords';
+} from '@repdraft/domain/sessionRecords';
 import { noteFinishedSessionAchievements } from '../../src/state/achievements';
 import { isHealthReadEnabled } from '../../src/state/healthPrefs';
 import { getHealthAdapter, saveLastHealthSnapshot } from '../../src/health';
@@ -117,6 +119,11 @@ export default function LiveScreen() {
 	const [bootReady, setBootReady] = useState(false);
 	const [forceAltPick, setForceAltPick] = useState(false);
 	const [techniqueId, setTechniqueId] = useState<string | null>(null);
+	const [confirm, setConfirm] = useState<{
+		title: string;
+		message?: string;
+		actions: ConfirmAction[];
+	} | null>(null);
 	const finishOfferedRef = useRef(false);
 	const prevRestLeft = useRef(0);
 	const restChimeArmed = useRef(false);
@@ -184,24 +191,29 @@ export default function LiveScreen() {
 						if (!cancelled) setBootReady(true);
 						return;
 					}
-					Alert.alert(tt('live.switchStartNew'), tt('live.switchOfferHint'), [
-						{
-							text: tt('live.switchKeepCurrent'),
-							style: 'cancel',
-							onPress: () => {
-								router.replace(`/live/${active.planId}`);
-							}
-						},
-						{
-							text: tt('live.switchStartNew'),
-							style: 'destructive',
-							onPress: () => {
-								void startNew(plan, hist).then(() => {
-									if (!cancelled) setBootReady(true);
-								});
-							}
-						}
-					]);
+					if (!cancelled) {
+						setBootReady(true);
+						setConfirm({
+							title: tt('live.switchStartNew'),
+							message: tt('live.switchOfferHint'),
+							actions: [
+								{
+									label: tt('live.switchKeepCurrent'),
+									variant: 'secondary',
+									onPress: () => {
+										router.replace(`/live/${active.planId}`);
+									}
+								},
+								{
+									label: tt('live.switchStartNew'),
+									variant: 'danger',
+									onPress: () => {
+										void startNew(plan, hist);
+									}
+								}
+							]
+						});
+					}
 					return;
 				}
 			}
@@ -296,16 +308,23 @@ export default function LiveScreen() {
 		if (finishOfferedRef.current || finishing) return;
 		if (!isSessionFullyLogged(current)) return;
 		finishOfferedRef.current = true;
-		Alert.alert(tt('live.finishOfferReady'), tt('live.finishOfferHint'), [
-			{
-				text: tt('live.finishOfferLater'),
-				style: 'cancel',
-				onPress: () => {
-					finishOfferedRef.current = false;
+		setConfirm({
+			title: tt('live.finishOfferReady'),
+			message: tt('live.finishOfferHint'),
+			actions: [
+				{
+					label: tt('live.finishOfferLater'),
+					variant: 'secondary',
+					onPress: () => {
+						finishOfferedRef.current = false;
+					}
+				},
+				{
+					label: tt('live.finish'),
+					onPress: () => void commitFinish(current)
 				}
-			},
-			{ text: tt('live.finish'), onPress: () => void commitFinish(current) }
-		]);
+			]
+		});
 	}
 
 	async function setRestFromSec(sec: number) {
@@ -346,7 +365,7 @@ export default function LiveScreen() {
 	function validateLift(set: { weightKg: number | null; reps: number | null }): boolean {
 		if (skipLift) return true;
 		if (set.weightKg != null && !coerceWeightKg(String(set.weightKg))) {
-			Alert.alert(tt('live.invalidWeight'));
+			setConfirm({ title: tt('live.invalidWeight'), actions: [] });
 			return false;
 		}
 		if (
@@ -355,7 +374,7 @@ export default function LiveScreen() {
 			set.reps < LIVE_REPS.min ||
 			set.reps > LIVE_REPS.max
 		) {
-			Alert.alert(tt('live.invalidReps'));
+			setConfirm({ title: tt('live.invalidReps'), actions: [] });
 			return false;
 		}
 		return true;
@@ -511,49 +530,58 @@ export default function LiveScreen() {
 
 	function confirmFinish() {
 		if (!session) return;
-		Alert.alert(tt('live.finish'), tt('live.confirmFinish'), [
-			{ text: tt('common.cancel'), style: 'cancel' },
-			{ text: tt('live.finish'), onPress: () => void commitFinish(session) }
-		]);
+		setConfirm({
+			title: tt('live.finish'),
+			message: tt('live.confirmFinish'),
+			actions: [{ label: tt('live.finish'), onPress: () => void commitFinish(session) }]
+		});
 	}
 
 	function offerSkip() {
 		if (!session || !ex) return;
 		const ei = selectedEi;
 		const snapshot = session;
-		Alert.alert(tt('live.skipExercise'), tt('live.skipExerciseHint'), [
-			{ text: tt('common.cancel'), style: 'cancel' },
-			{
-				text: tt('live.skipExercise'),
-				style: 'destructive',
-				onPress: () => {
-					void (async () => {
-						const next = skipSessionExercise(snapshot, ei);
-						await persist(next, null);
-						if (next.exercises.length === 0) {
-							await writeActiveSession(null);
-							router.replace('/');
-							return;
-						}
-						setSelectedEi(pickDefaultExerciseIndex(next));
-						setForceAltPick(false);
-					})();
+		setConfirm({
+			title: tt('live.skipExercise'),
+			message: tt('live.skipExerciseHint'),
+			actions: [
+				{
+					label: tt('live.skipExercise'),
+					variant: 'danger',
+					onPress: () => {
+						void (async () => {
+							const next = skipSessionExercise(snapshot, ei);
+							await persist(next, null);
+							if (next.exercises.length === 0) {
+								await writeActiveSession(null);
+								router.replace('/');
+								return;
+							}
+							setSelectedEi(pickDefaultExerciseIndex(next));
+							setForceAltPick(false);
+						})();
+					}
 				}
-			}
-		]);
+			]
+		});
 	}
 
 	function offerDiscard() {
-		Alert.alert(tt('live.discard'), tt('live.discardHint'), [
-			{ text: tt('common.cancel'), style: 'cancel' },
-			{
-				text: tt('live.discardConfirm'),
-				style: 'destructive',
-				onPress: () => {
-					void writeActiveSession(null).then(() => writeRestUntil(null)).then(() => router.replace('/'));
+		setConfirm({
+			title: tt('live.discard'),
+			message: tt('live.discardHint'),
+			actions: [
+				{
+					label: tt('live.discardConfirm'),
+					variant: 'danger',
+					onPress: () => {
+						void writeActiveSession(null)
+							.then(() => writeRestUntil(null))
+							.then(() => router.replace('/'));
+					}
 				}
-			}
-		]);
+			]
+		});
 	}
 
 	async function undoLastSet() {
@@ -575,6 +603,13 @@ export default function LiveScreen() {
 		return (
 			<View style={styles.center}>
 				<Text style={styles.muted}>…</Text>
+				<ConfirmSheet
+					open={Boolean(confirm)}
+					title={confirm?.title ?? ''}
+					message={confirm?.message}
+					actions={confirm?.actions ?? []}
+					onDismiss={() => setConfirm(null)}
+				/>
 			</View>
 		);
 	}
@@ -614,20 +649,18 @@ export default function LiveScreen() {
 				renderItem={({ item: ei }) => {
 					const row = session.exercises[ei];
 					if (!row) return null;
-					const done = exerciseAllSetsDone(session.exercises, ei);
 					const active = ei === selectedEi;
 					return (
-						<Pressable
-							style={[styles.navChip, active && styles.navChipActive, done && styles.navChipDone]}
-							onPress={() => {
-								setSelectedEi(ei);
-								setForceAltPick(false);
-							}}
-						>
-							<Text style={[styles.navChipText, active && styles.navChipTextActive]} numberOfLines={1}>
-								{exerciseDisplayName(row.exerciseId, locale)}
-							</Text>
-						</Pressable>
+						<View style={[styles.navChipWrap, exerciseAllSetsDone(session.exercises, ei) && styles.navChipDone]}>
+							<Chip
+								label={exerciseDisplayName(row.exerciseId, locale)}
+								selected={active}
+								onPress={() => {
+									setSelectedEi(ei);
+									setForceAltPick(false);
+								}}
+							/>
+						</View>
 					);
 				}}
 			/>
@@ -674,7 +707,7 @@ export default function LiveScreen() {
 				) : null}
 
 				{needsAlt && ex ? (
-					<View style={styles.card}>
+					<Panel style={styles.card}>
 						<Text style={styles.exName}>{tt('live.pickAlt')}</Text>
 						{altOptions.map((opt) => (
 							<PrimaryButton
@@ -690,9 +723,9 @@ export default function LiveScreen() {
 								}}
 							/>
 						))}
-					</View>
+					</Panel>
 				) : ex ? (
-					<View style={styles.card}>
+					<Panel style={styles.card}>
 						<Pressable onPress={() => router.push(`/exercise/${ex.exerciseId}`)}>
 							<Text style={styles.exName} numberOfLines={2}>
 								{exerciseDisplayName(ex.exerciseId, locale)}
@@ -721,7 +754,7 @@ export default function LiveScreen() {
 								<View key={si} style={[styles.setRow, set.completed && styles.setRowDone]}>
 									<View style={styles.setHead}>
 										<Text style={styles.setIndex}>
-											{tt('live.setProgress', { n: si + 1, total: ex.sets.length })}
+											{tt('live.setProgress', { current: si + 1, total: ex.sets.length })}
 										</Text>
 										<Text style={styles.prev}>
 											{tt('live.last')}:{' '}
@@ -780,18 +813,20 @@ export default function LiveScreen() {
 											<Pressable
 												style={styles.removeHit}
 												onLongPress={() => {
-													Alert.alert(tt('live.removeSet'), undefined, [
-														{ text: tt('common.cancel'), style: 'cancel' },
-														{
-															text: tt('live.removeSet'),
-															style: 'destructive',
-															onPress: () =>
-																void persist(
-																	removeLoggedSet(session, selectedEi, si),
-																	restUntil
-																)
-														}
-													]);
+													setConfirm({
+														title: tt('live.removeSet'),
+														actions: [
+															{
+																label: tt('live.removeSet'),
+																variant: 'danger',
+																onPress: () =>
+																	void persist(
+																		removeLoggedSet(session, selectedEi, si),
+																		restUntil
+																	)
+															}
+														]
+													});
 												}}
 											>
 												<Text style={styles.removeHint}>{tt('live.removeSet')}</Text>
@@ -847,11 +882,11 @@ export default function LiveScreen() {
 							onPress={() => void persist(addLoggedSet(session, selectedEi), restUntil)}
 						/>
 						<PrimaryButton label={tt('live.skipExercise')} variant="ghost" onPress={offerSkip} />
-					</View>
+					</Panel>
 				) : (
-					<View style={styles.card}>
+					<Panel style={styles.card}>
 						<Text style={styles.exName}>{tt('live.finishOfferReady')}</Text>
-					</View>
+					</Panel>
 				)}
 			</ScrollView>
 
@@ -886,6 +921,13 @@ export default function LiveScreen() {
 				</View>
 			</View>
 			<TechniqueSheet exerciseId={techniqueId} onClose={() => setTechniqueId(null)} />
+			<ConfirmSheet
+				open={Boolean(confirm)}
+				title={confirm?.title ?? ''}
+				message={confirm?.message}
+				actions={confirm?.actions ?? []}
+				onDismiss={() => setConfirm(null)}
+			/>
 		</KeyboardAvoidingView>
 	);
 }
@@ -901,25 +943,8 @@ function makeStyles(colors: ColorPalette) {
 		progress: { color: colors.muted, fontSize: 14, fontWeight: '600' },
 		muted: { color: colors.muted },
 		nav: { paddingHorizontal: space.md, paddingVertical: space.sm, gap: space.sm },
-		navChip: {
-			minHeight: touchMin,
-			maxWidth: 168,
-			paddingHorizontal: space.md,
-			borderRadius: radius.xl,
-			borderWidth: 1,
-			borderColor: colors.border,
-			backgroundColor: colors.panel,
-			alignItems: 'center',
-			justifyContent: 'center',
-			marginRight: space.sm
-		},
-		navChipActive: {
-			borderColor: colors.accent,
-			backgroundColor: colors.accentDim
-		},
+		navChipWrap: { maxWidth: 168, marginRight: space.sm },
 		navChipDone: { opacity: 0.65 },
-		navChipText: { color: colors.muted, fontWeight: '700', fontSize: 13 },
-		navChipTextActive: { color: colors.text },
 		restBox: {
 			backgroundColor: colors.panelRaised,
 			borderRadius: radius.lg,
@@ -956,12 +981,7 @@ function makeStyles(colors: ColorPalette) {
 		restActions: { flexDirection: 'row', gap: space.sm, alignSelf: 'stretch', marginTop: space.sm },
 		restAction: { flex: 1 },
 		card: {
-			backgroundColor: colors.panel,
-			borderRadius: radius.lg,
-			padding: space.lg,
-			gap: space.md,
-			borderWidth: 1,
-			borderColor: colors.border
+			gap: space.md
 		},
 		exName: { color: colors.text, fontSize: 22, fontWeight: '800' },
 		exActions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },

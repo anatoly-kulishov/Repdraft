@@ -7,7 +7,15 @@
 
 Общее поведение: [`src/lib/domain`](../../src/lib/domain). UI и storage у каждого клиента свои.
 
-**Parity:** новые product-фичи без native API - domain + web + RN в одной задаче, см. [dual-client-parity.mdc](../rules/dual-client-parity.mdc).
+**Shared sync layer (одна правка → оба клиента):**
+
+| Слой | Путь |
+|---|---|
+| Domain | [`src/lib/domain`](../../src/lib/domain) |
+| i18n | [`src/lib/i18n/messages.ts`](../../src/lib/i18n/messages.ts) |
+| Design tokens | [`src/lib/design/tokens.ts`](../../src/lib/design/tokens.ts) → `npm run build:tokens` |
+
+**Parity:** новые product-фичи без native API - domain + i18n + web + RN в одной задаче, см. [dual-client-parity.mdc](../rules/dual-client-parity.mdc). Verify: `npm run check:parity`.
 
 **Не делать:** Capacitor / Cordova. Часы - отдельный native UI, не RN-экран.
 
