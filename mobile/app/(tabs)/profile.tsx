@@ -51,7 +51,7 @@ import { OnboardingChecklistPanel } from '../../src/components/OnboardingCheckli
 import { BrandMark } from '../../src/components/BrandMark';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
-import { QuestOnboardingModal } from '../../src/components/QuestOnboardingModal';
+import { QuestOnboardingSheet } from '../../src/components/QuestOnboardingSheet';
 import { QuestProgressPanel } from '../../src/components/QuestSummaryCard';
 import { WhatsNewSheet } from '../../src/components/WhatsNewSheet';
 import { getHealthAdapter } from '../../src/health';
@@ -111,7 +111,7 @@ export default function ProfileScreen() {
 	const switchColors = useMemo(
 		() => ({
 			trackColor: { false: colors.border, true: colors.accent } as const,
-			thumbColor: colors.text
+			thumbColor: colors.accentText
 		}),
 		[colors]
 	);
@@ -958,7 +958,7 @@ export default function ProfileScreen() {
 			</Pressable>
 		</ScrollView>
 		<WhatsNewSheet visible={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
-		<QuestOnboardingModal
+		<QuestOnboardingSheet
 			visible={questOnboardOpen}
 			defaultName={greetingNameInput || displayName || ''}
 			onComplete={(p) => void completeQuestOnboard(p)}

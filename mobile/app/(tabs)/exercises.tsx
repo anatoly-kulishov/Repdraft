@@ -11,6 +11,7 @@ import {
 	TextInput,
 	View
 } from 'react-native';
+import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from 'react-native-svg';
 import { CUSTOM_EXERCISE_EQUIPMENT } from '@repdraft/domain/customExercises';
 import { labelBodyPart } from '@repdraft/domain/labels.ru';
 import {
@@ -215,12 +216,23 @@ export default function ExercisesScreen() {
 									<CatalogThumb imagePath={null} size={40} style={styles.hubFallbackThumb} />
 								</View>
 							)}
-							<View style={styles.hubScrim} />
+							<View style={styles.hubScrim}>
+								<Svg height="100%" width="100%" style={StyleSheet.absoluteFill} preserveAspectRatio="none">
+									<Defs>
+										<SvgLinearGradient id="hubScrim" x1="0" y1="0" x2="0" y2="1">
+											<Stop offset="0" stopColor="white" stopOpacity="0" />
+											<Stop offset="0.42" stopColor="white" stopOpacity="0.72" />
+											<Stop offset="1" stopColor="white" stopOpacity="0.96" />
+										</SvgLinearGradient>
+									</Defs>
+									<Rect width="100%" height="100%" fill="url(#hubScrim)" />
+								</Svg>
+							</View>
 							<View style={styles.hubCaption}>
-								<Text style={styles.hubTitle} numberOfLines={2}>
+								<Text style={[styles.hubTitle, styles.hubTitleLight]} numberOfLines={2}>
 									{labelBodyPart(item, locale)}
 								</Text>
-								<Text style={styles.hubMeta}>
+								<Text style={[styles.hubMeta, styles.hubMetaLight]}>
 									{count} {tt('common.exercises')}
 								</Text>
 							</View>
@@ -355,13 +367,15 @@ function makeStyles(colors: ColorPalette) {
 	hubFallbackThumb: { borderWidth: 0, backgroundColor: 'transparent' },
 	hubScrim: {
 		...StyleSheet.absoluteFill,
-		backgroundColor: 'rgba(0,0,0,0.45)'
+		backgroundColor: 'transparent'
 	},
 	hubCaption: {
 		padding: space.md,
 		zIndex: 1
 	},
 	hubTitle: { color: '#f5f5f7', fontWeight: '800', fontSize: 16 },
-	hubMeta: { color: 'rgba(245,245,247,0.82)', marginTop: 4, fontSize: 13 }
+	hubTitleLight: { color: '#0f1012' },
+	hubMeta: { color: 'rgba(245,245,247,0.82)', marginTop: 4, fontSize: 13 },
+	hubMetaLight: { color: '#636366' }
 	});
 }
