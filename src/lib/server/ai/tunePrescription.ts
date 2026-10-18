@@ -1,9 +1,11 @@
 import { sanitizeAiBrief, AI_TUNE_NOTE_MAX } from '$lib/domain/inputLimits';
 import type { ExerciseIndexItem } from '$lib/domain/types';
+import { isExerciseRagConfigured } from '$lib/server/supabase/admin';
 import { loadExerciseIndex } from './catalog';
 import { chatCompletion } from './chat';
 import { resolveAiConfig, type AiProvider } from './config';
-import { cosine, loadEmbeddingIndex } from './embeddings';
+import { embed, exerciseEmbedText } from './embeddings';
+import { matchExercisesByEmbedding } from './matchExercises';
 import {
 	matchTemplate,
 	type SlotRole,
@@ -203,44 +205,50 @@ function formatSlot(slot: TemplateSlot): string {
 }
 
 /**
- * Peers via precomputed embeddings (no network). Same body_part or target.
- * Empty when embeddings missing.
+ * Peers via pgvector (embed meta text → match_exercises).
+ * Empty when service role / RPC / embed unavailable.
  */
-export function findPeerExercises(
+export async function findPeerExercises(
 	exerciseId: string,
 	index: ExerciseIndexItem[],
 	topK = PEER_TOP_K
-): ExerciseIndexItem[] {
-	const embIndex = loadEmbeddingIndex();
-	if (!embIndex?.items?.length) return [];
+): Promise<ExerciseIndexItem[]> {
+	if (!isExerciseRagConfigured()) return [];
 	const byId = new Map(index.map((e) => [e.id, e]));
 	const exercise = byId.get(exerciseId);
 	if (!exercise) return [];
-	const self = embIndex.items.find((r) => r.id === exerciseId);
-	if (!self?.vec?.length) return [];
 
-	const embById = new Map(embIndex.items.map((r) => [r.id, r.vec]));
-	const scored: Array<{ id: string; score: number }> = [];
-	for (const [id, vec] of embById) {
-		if (id === exerciseId) continue;
-		const peer = byId.get(id);
-		if (!peer) continue;
-		if (peer.body_part !== exercise.body_part && peer.target !== exercise.target) continue;
-		scored.push({ id, score: cosine(self.vec, vec) });
+	try {
+		const [vec] = await embed([exerciseEmbedText(exercise)]);
+		if (!vec?.length) return [];
+		const matched = await matchExercisesByEmbedding(vec, {
+			topK: topK + 8,
+			bodyParts: [exercise.body_part]
+		});
+		const out: ExerciseIndexItem[] = [];
+		for (const row of matched) {
+			if (row.exerciseId === exerciseId) continue;
+			const peer = byId.get(row.exerciseId);
+			if (!peer) continue;
+			if (peer.body_part !== exercise.body_part && peer.target !== exercise.target) continue;
+			out.push(peer);
+			if (out.length >= topK) break;
+		}
+		return out;
+	} catch {
+		return [];
 	}
-	scored.sort((a, b) => b.score - a.score);
-	return scored.slice(0, topK).map((s) => byId.get(s.id)!);
 }
 
 /** Structured + optional vector peers for the tune prompt. */
-export function retrievePrescriptionContext(
+export async function retrievePrescriptionContext(
 	exerciseId: string,
 	index: ExerciseIndexItem[] = loadExerciseIndex()
-): PrescriptionContext | null {
+): Promise<PrescriptionContext | null> {
 	const exercise = index.find((e) => e.id === exerciseId);
 	if (!exercise) return null;
 	const slot = pickSlotForExercise(exercise);
-	const peers = findPeerExercises(exerciseId, index);
+	const peers = await findPeerExercises(exerciseId, index);
 	return {
 		exercise,
 		slot,
@@ -457,7 +465,7 @@ export async function tunePrescription(input: TuneInput): Promise<TuneOk | TuneE
 		return { ok: false, code: 'invalid_input', error: 'Missing exerciseId' };
 	}
 
-	const ctx = retrievePrescriptionContext(exerciseId);
+	const ctx = await retrievePrescriptionContext(exerciseId);
 	if (!ctx) {
 		return { ok: false, code: 'invalid_input', error: 'Unknown exerciseId' };
 	}

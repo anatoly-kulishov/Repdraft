@@ -1,4 +1,3 @@
-import embeddingsJson from '../../../../static/data/exercises.embeddings.json';
 import { hintsFromBrief } from './catalog';
 import { authenticatedJsonPost } from './chat';
 import { resolveEmbeddingsConfig, ollamaEmbeddingsFallback, type AiConfig } from './config';
@@ -6,22 +5,12 @@ import { exerciseEmbedText } from './embedText';
 
 export { exerciseEmbedText } from './embedText';
 
-export type EmbeddingRow = { id: string; vec: number[] };
-
-export type EmbeddingIndexFile = {
-	provider: string;
-	model: string;
-	dims: number;
-	items: EmbeddingRow[];
-};
-
 const BRIEF_CACHE_MAX = 64;
 const briefCache = new Map<string, number[]>();
 
 function cacheGet(key: string): number[] | undefined {
 	const v = briefCache.get(key);
 	if (!v) return undefined;
-	// LRU touch
 	briefCache.delete(key);
 	briefCache.set(key, v);
 	return v;
@@ -37,58 +26,11 @@ function cacheSet(key: string, vec: number[]): void {
 	}
 }
 
-export function cosine(a: number[], b: number[]): number {
-	const n = Math.min(a.length, b.length);
-	if (!n) return 0;
-	let dot = 0;
-	let na = 0;
-	let nb = 0;
-	for (let i = 0; i < n; i++) {
-		const x = a[i]!;
-		const y = b[i]!;
-		dot += x * y;
-		na += x * x;
-		nb += y * y;
-	}
-	if (na === 0 || nb === 0) return 0;
-	return dot / (Math.sqrt(na) * Math.sqrt(nb));
-}
-
-let cachedIndex: EmbeddingIndexFile | null | undefined;
-
-/** Load precomputed exercise embeddings (null if missing/empty). */
-export function loadEmbeddingIndex(): EmbeddingIndexFile | null {
-	if (cachedIndex !== undefined) return cachedIndex;
-	const raw = embeddingsJson as EmbeddingIndexFile | EmbeddingRow[] | null;
-	if (!raw) {
-		cachedIndex = null;
-		return null;
-	}
-	if (Array.isArray(raw)) {
-		cachedIndex = raw.length
-			? { provider: 'unknown', model: 'unknown', dims: raw[0]?.vec?.length ?? 0, items: raw }
-			: null;
-		return cachedIndex;
-	}
-	if (!raw.items?.length) {
-		cachedIndex = null;
-		return null;
-	}
-	cachedIndex = raw;
-	return cachedIndex;
-}
-
-/** Test hook / build script. */
-export function setEmbeddingIndexForTests(index: EmbeddingIndexFile | null): void {
-	cachedIndex = index;
-}
-
 function extractVectors(text: string, expected: number): number[][] {
 	const data = JSON.parse(text) as {
 		data?: Array<{ embedding?: number[]; index?: number }>;
 		embedding?: number[];
 	};
-	// Ollama native /api/embed style sometimes returns single embedding
 	if (Array.isArray(data.embedding)) {
 		return [data.embedding];
 	}
@@ -112,7 +54,6 @@ async function embedViaOpenAiCompat(cfg: AiConfig, texts: string[]): Promise<num
 	return extractVectors(res.text, texts.length);
 }
 
-/** Ollama native batch when OpenAI-compat path is flaky. */
 async function embedViaOllamaNative(cfg: AiConfig, texts: string[]): Promise<number[][]> {
 	const base = cfg.baseUrl.replace(/\/v1\/?$/, '');
 	const out: number[][] = [];
@@ -151,7 +92,6 @@ export async function embed(texts: string[]): Promise<number[][]> {
 	try {
 		return await embedViaOpenAiCompat(cfg, texts);
 	} catch {
-		// GigaChat PERS often 402 on embeddings → Ollama fallback
 		const fallback = ollamaEmbeddingsFallback();
 		try {
 			return await embedViaOpenAiCompat(fallback, texts);

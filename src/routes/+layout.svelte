@@ -3,7 +3,6 @@
 	import { appTheme } from '$lib/stores/theme';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import AttributionFooter from '$lib/components/AttributionFooter.svelte';
-	import AccountChip from '$lib/components/AccountChip.svelte';
 	import DraftDock from '$lib/components/DraftDock.svelte';
 	import Logo from '$lib/components/Logo.svelte';
 	import SyncSnackbar from '$lib/components/SyncSnackbar.svelte';
@@ -20,7 +19,7 @@
 		ICON_TAB_STROKE,
 		ICON_TAB_STROKE_ACTIVE
 	} from '$lib/components/icons/sizes';
-	import { BookOpen, Dumbbell, House } from '@lucide/svelte';
+	import { BookOpen, House, TrendingUp, UserRound } from '@lucide/svelte';
 	import { isBuilderReturnPath } from '$lib/domain/catalogLinks';
 	import { showsExerciseMediaAttribution } from '$lib/domain/mediaAttribution';
 	import { translate } from '$lib/i18n/messages';
@@ -79,7 +78,6 @@
 		if (pathname.startsWith('/articles')) return true;
 		if (pathname.startsWith('/auth')) return true;
 		if (pathname === '/privacy' || pathname === '/terms') return true;
-		if (pathname === '/scenarios') return true;
 		if (pathname.startsWith('/exercises/')) return true;
 		/* Builder → pick exercise: ScreenHeader only (no logo chrome + phantom spacer). */
 		if (pathname === '/exercises' && isBuilderReturnPath(from)) return true;
@@ -218,7 +216,14 @@
 	});
 
 	function isActive(href: string): boolean {
-		if (href === '/') return path === '/';
+		if (href === '/') {
+			return (
+				path === '/' ||
+				path === '/workouts' ||
+				path.startsWith('/workouts/') ||
+				path.startsWith('/live/')
+			);
+		}
 		if (href === '/exercises') {
 			return (
 				path === '/exercises' ||
@@ -226,6 +231,14 @@
 				path.startsWith('/catalog/') ||
 				path.startsWith('/exercise/') ||
 				path.startsWith('/articles')
+			);
+		}
+		if (href === '/progress') {
+			return (
+				path === '/progress' ||
+				path === '/coach' ||
+				path === '/achievements' ||
+				path.startsWith('/progress/')
 			);
 		}
 		if (href === '/workouts') {
@@ -238,8 +251,14 @@
 		if (href === '/builder') {
 			return path.startsWith('/builder');
 		}
-		if (href === '/auth')
-			return path === '/auth' || path.startsWith('/auth/') || path === '/privacy' || path === '/terms';
+		if (href === '/auth') {
+			return (
+				path === '/auth' ||
+				path.startsWith('/auth/') ||
+				path === '/privacy' ||
+				path === '/terms'
+			);
+		}
 		return path === href || path.startsWith(`${href}/`);
 	}
 </script>
@@ -300,9 +319,6 @@
 							<ThemeToggleIcon isLight={isLight} size={ICON_SIDEBAR} strokeWidth={1.75} />
 						{/if}
 					</button>
-					{#if !showHomeShellHeader}
-						<AccountChip active={isActive('/auth')} />
-					{/if}
 				</div>
 			</div>
 		</header>
@@ -343,6 +359,9 @@
 			class="tab-link"
 			data-active={isActive('/')}
 			aria-current={isActive('/') ? 'page' : undefined}
+			aria-label={hasActiveSession
+				? `${translate(lang, 'nav.tabHome')}. ${translate(lang, 'nav.liveActive')}`
+				: undefined}
 		>
 			<span class="tab-link__inner">
 				<span class="tab-link-icon">
@@ -353,26 +372,6 @@
 					/>
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.tabHome')}</span>
-			</span>
-		</a>
-		<a
-			href="/workouts"
-			class="tab-link"
-			data-active={isActive('/workouts')}
-			aria-current={isActive('/workouts') ? 'page' : undefined}
-			aria-label={hasActiveSession
-				? `${translate(lang, 'nav.workouts')}. ${translate(lang, 'nav.liveActive')}`
-				: undefined}
-		>
-			<span class="tab-link__inner">
-				<span class="tab-link-icon">
-					<LucideIcon
-						icon={Dumbbell}
-						size={ICON_TAB}
-						strokeWidth={isActive('/workouts') ? ICON_TAB_STROKE_ACTIVE : ICON_TAB_STROKE}
-					/>
-				</span>
-				<span class="tab-link__label">{translate(lang, 'nav.workouts')}</span>
 			</span>
 		</a>
 		<a
@@ -390,6 +389,40 @@
 					/>
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.exercises')}</span>
+			</span>
+		</a>
+		<a
+			href="/progress"
+			class="tab-link"
+			data-active={isActive('/progress')}
+			aria-current={isActive('/progress') ? 'page' : undefined}
+		>
+			<span class="tab-link__inner">
+				<span class="tab-link-icon">
+					<LucideIcon
+						icon={TrendingUp}
+						size={ICON_TAB}
+						strokeWidth={isActive('/progress') ? ICON_TAB_STROKE_ACTIVE : ICON_TAB_STROKE}
+					/>
+				</span>
+				<span class="tab-link__label">{translate(lang, 'nav.progress')}</span>
+			</span>
+		</a>
+		<a
+			href="/auth"
+			class="tab-link"
+			data-active={isActive('/auth')}
+			aria-current={isActive('/auth') ? 'page' : undefined}
+		>
+			<span class="tab-link__inner">
+				<span class="tab-link-icon">
+					<LucideIcon
+						icon={UserRound}
+						size={ICON_TAB}
+						strokeWidth={isActive('/auth') ? ICON_TAB_STROKE_ACTIVE : ICON_TAB_STROKE}
+					/>
+				</span>
+				<span class="tab-link__label">{translate(lang, 'nav.profile')}</span>
 			</span>
 		</a>
 		</div>

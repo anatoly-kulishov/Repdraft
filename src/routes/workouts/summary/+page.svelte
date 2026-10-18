@@ -2,6 +2,16 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import AchievementUnlockSheet from '$lib/components/AchievementUnlockSheet.svelte';
+	import AchievementsPanel from '$lib/components/AchievementsPanel.svelte';
+	import QuestSummaryCard from '$lib/components/QuestSummaryCard.svelte';
+	import SummaryLoadPanel from '$lib/components/SummaryLoadPanel.svelte';
+	import {
+		achievementTitleKey,
+		countableFinishedSessions,
+		type AchievementId
+	} from '$lib/domain/achievements';
+	import { pickCatalogExerciseForBodyPart } from '$lib/domain/trainingLoad';
 	import SummaryPageSkeleton from '$lib/components/summary/SummaryPageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
@@ -21,6 +31,14 @@
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { peekLocalSession } from '$lib/storage/localSessionRepository';
+	import {
+		achievementsEnabled,
+		achievementsState,
+		loadLastAchievementUnlock
+	} from '$lib/stores/achievements';
+	import { quest } from '$lib/stores/quest';
+	import { appendExerciseToHomePlan } from '$lib/workout/planPatch';
+	import { goto } from '$app/navigation';
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { live } from '$lib/stores/live';
@@ -31,6 +49,7 @@
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
+	import { toasts } from '$lib/stores/toasts';
 
 	const GUEST_SYNC_DISMISS_KEY = 'repdraft:guest-sync-hint-dismissed';
 
@@ -42,6 +61,10 @@
 	let showAllExercises = $state(true);
 	let guestHintDismissed = $state(false);
 	let showFirstFinish = $state(false);
+	let allSessions = $state<WorkoutSession[]>([]);
+	let newAchIds = $state<AchievementId[] | null>(null);
+	let achModalOpen = $state(false);
+	let achModalDismissed = $state(false);
 
 	const PREVIEW_LIMIT = 6;
 
@@ -140,9 +163,30 @@
 			}
 			indexById = new Map(index.map((ex) => [ex.id, ex]));
 			void live.refreshHistory();
+			allSessions = get(live).history;
+			quest.hydrateLastApplyForSession(id);
+			if (get(achievementsEnabled)) {
+				achievementsState.reload();
+				newAchIds = loadLastAchievementUnlock(id);
+				if (newAchIds?.length && !achModalDismissed) achModalOpen = true;
+			}
 			loading = false;
 		})();
 	});
+
+	async function addLaggingToPlan(bodyPart: string) {
+		const exerciseId = pickCatalogExerciseForBodyPart([...indexById.values()], bodyPart);
+		if (!exerciseId) {
+			toasts.show(translate(lang, 'summary.addFail'), 'error');
+			return;
+		}
+		const planId = await appendExerciseToHomePlan(exerciseId);
+		if (!planId) {
+			toasts.show(translate(lang, 'summary.addFail'), 'error');
+			return;
+		}
+		await goto(`/builder/${planId}`);
+	}
 </script>
 
 <SeoHead title={translate(lang, 'summary.title')} noindex />
@@ -188,6 +232,19 @@
 			</AppPanel>
 		{/if}
 
+		<QuestSummaryCard />
+
+		{#if newAchIds && newAchIds.length > 0}
+			<AppPanel class="summary-ach-banner text-left" role="status">
+				<p class="summary-ach-banner__title">{translate(lang, 'achievements.unlocked')}</p>
+				<ul class="summary-ach-banner__list">
+					{#each newAchIds as aid (aid)}
+						<li>{translate(lang, achievementTitleKey(aid))}</li>
+					{/each}
+				</ul>
+			</AppPanel>
+		{/if}
+
 		<dl class="summary-stats" class:summary-stats--with-volume={volumeKg > 0}>
 			<div class="summary-stat">
 				<dt class="summary-stat__label">{translate(lang, 'summary.duration')}</dt>
@@ -226,6 +283,13 @@
 				</div>
 			{/if}
 		</dl>
+
+		<SummaryLoadPanel
+			{session}
+			allSessions={allSessions.length > 0 ? allSessions : $live.history}
+			bodyPartFor={(id) => indexById.get(id)?.body_part ?? null}
+			onAddLagging={(part) => void addLaggingToPlan(part)}
+		/>
 
 		{#if previewExercises.length > 0}
 			<div class="summary-exercises-preview">
@@ -291,6 +355,28 @@
 				{/if}
 			</div>
 		{/if}
+
+		{#if $achievementsEnabled}
+			<AppPanel class="text-left">
+				<p class="summary-ach-section-title">{translate(lang, 'achievements.title')}</p>
+				<AchievementsPanel
+					state={$achievementsState}
+					finishedSessions={countableFinishedSessions(
+						allSessions.length > 0 ? allSessions : $live.history
+					)}
+					highlightIds={newAchIds}
+				/>
+			</AppPanel>
+		{/if}
+
+		<AchievementUnlockSheet
+			bind:open={achModalOpen}
+			ids={newAchIds}
+			onViewAll={() => {
+				achModalDismissed = true;
+				void goto('/achievements');
+			}}
+		/>
 
 		{#if showGuestSyncHint}
 			<AppPanel

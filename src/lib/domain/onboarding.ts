@@ -1,5 +1,5 @@
-import { addExercise, createEmptyDraft } from '$lib/domain/workout';
-import type { WorkoutPlan } from '$lib/domain/types';
+import type { WorkoutPlan } from './types';
+import { addExercise } from './workout';
 
 export const ONBOARDING_STORAGE_KEY = 'repdraft:onboarding';
 export const DEMO_PLAN_ID = 'repdraft-onboarding-demo';

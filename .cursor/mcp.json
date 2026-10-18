@@ -1,12 +1,8 @@
 {
-  "mcpServers": {
-    "playwright": {
-      "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"]
-    },
-    "supabase": {
-      "type": "http",
-      "url": "https://mcp.supabase.com/mcp?read_only=true"
-    }
-  }
+	"mcpServers": {
+		"supabase": {
+			"type": "http",
+			"url": "https://mcp.supabase.com/mcp?read_only=true"
+		}
+	}
 }

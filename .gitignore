@@ -1,5 +1,10 @@
 node_modules
 
+# Expo / React Native
+mobile/.expo/
+mobile/dist/
+mobile/.expo-shared/
+
 # Output
 .output
 .vercel
@@ -7,12 +12,6 @@ node_modules
 .wrangler
 /.svelte-kit
 /build
-
-# Native route mask leftovers (should never persist)
-*.__web_only__
-
-# Capacitor local overrides (legacy; shells removed)
-capacitor.config.local.ts
 
 # OS
 .DS_Store
@@ -22,7 +21,6 @@ Thumbs.db
 .env
 .env.*
 !.env.example
-!.env.test
 
 # DB / ops scripts — not for the public repo
 supabase/*.sql
@@ -44,11 +42,6 @@ scripts/set-vercel-env.mjs
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .tmp/
-static/dev/*
-!static/dev/repdraft-backup-stress-load.json
 design-audit/
 static/data/exercises.full.json
-test-results/
-playwright-report/
-scripts/app.css.monolith.bak
 .local/

@@ -26,6 +26,8 @@
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import AuthInterfacePrefs from '$lib/components/AuthInterfacePrefs.svelte';
+	import ProfileAchievementsPanel from '$lib/components/ProfileAchievementsPanel.svelte';
+	import ProfileInsightsPanel from '$lib/components/ProfileInsightsPanel.svelte';
 	import AuthLegalConsent from '$lib/components/AuthLegalConsent.svelte';
 	import BrandTagline from '$lib/components/BrandTagline.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
@@ -38,6 +40,7 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import TurnstileWidget from '$lib/components/TurnstileWidget.svelte';
 	import DataExportSection from '$lib/components/DataExportSection.svelte';
+	import LoopMetricsPanel from '$lib/components/LoopMetricsPanel.svelte';
 	import ProfileDevWipePanel from '$lib/components/ProfileDevWipePanel.svelte';
 	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
 	import WhatsNewSheet from '$lib/components/WhatsNewSheet.svelte';
@@ -48,7 +51,7 @@
 	import { restSoundEnabled, testerModeEnabled } from '$lib/stores/prefs';
 	import { testerToolsVisible } from '$lib/domain/prefs';
 	import { tick } from 'svelte';
-	import { Camera, FileText, LogOut, Timer, Shield, ClipboardList } from '@lucide/svelte';
+	import { Camera, FileText, LogOut, Timer, Shield } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -780,6 +783,8 @@
 				</div>
 
 				<div class="profile-settings-stack-full">
+					<ProfileInsightsPanel />
+					<ProfileAchievementsPanel />
 					<OnboardingChecklist readonly onTryDemo={() => {}} />
 				</div>
 
@@ -790,6 +795,7 @@
 				</div>
 
 				{#if showTesterTools}
+					<LoopMetricsPanel />
 					<ProfileDevWipePanel />
 				{/if}
 
@@ -872,13 +878,6 @@
 					aria-busy={accountLocked || undefined}
 				>
 					<p class="profile-settings-group__title">{translate(lang, 'settings.accountTitle')}</p>
-					<ProfileSettingsRow
-						icon={ClipboardList}
-						iconTone="accent"
-						label={translate(lang, 'scenarios.link')}
-						href="/scenarios"
-						disabled={accountLocked}
-					/>
 					<ProfileSettingsRow
 						icon={FileText}
 						iconTone="accent"
@@ -1215,19 +1214,16 @@
 	<div class="auth-settings panel">
 		{@render onboardingHelpPanel()}
 		<AuthInterfacePrefs />
+		<ProfileInsightsPanel />
+		<ProfileAchievementsPanel />
 		<DataExportSection />
 		{#if showTesterTools}
+			<LoopMetricsPanel />
 			<ProfileDevWipePanel />
 		{/if}
 		<div class="auth-account__section auth-account__section--legal">
 			<p class="auth-prefs__title">{translate(lang, 'auth.privacyHint')}</p>
 			<div class="auth-prefs__stack">
-				<ProfileSettingsRow
-					icon={ClipboardList}
-					iconTone="accent"
-					label={translate(lang, 'scenarios.link')}
-					href="/scenarios"
-				/>
 				<ProfileSettingsRow
 					icon={FileText}
 					iconTone="accent"

@@ -1,0 +1,21 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "ignoreDeprecations": "6.0",
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@repdraft/domain/*": [
+        "../src/lib/domain/*"
+      ],
+      "$lib/*": [
+        "src/shims/*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
+}

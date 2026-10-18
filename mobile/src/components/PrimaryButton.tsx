@@ -1,0 +1,118 @@
+import { useMemo } from 'react';
+import { Pressable, StyleSheet, Text } from 'react-native';
+import { useAppColors } from '../state/theme';
+import { radius, touchMin, type ColorPalette } from '../theme';
+
+type Props = {
+	label: string;
+	onPress: () => void;
+	disabled?: boolean;
+	variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'link';
+	compact?: boolean;
+};
+
+export function PrimaryButton({
+	label,
+	onPress,
+	disabled,
+	variant = 'primary',
+	compact
+}: Props) {
+	const colors = useAppColors();
+	const styles = useMemo(() => makeStyles(colors), [colors]);
+
+	return (
+		<Pressable
+			accessibilityRole="button"
+			disabled={disabled}
+			onPress={onPress}
+			style={({ pressed }) => [
+				styles.base,
+				compact && styles.compact,
+				variant === 'primary' && styles.primary,
+				variant === 'secondary' && styles.secondary,
+				variant === 'ghost' && styles.ghost,
+				variant === 'danger' && styles.danger,
+				variant === 'link' && styles.link,
+				(disabled || pressed) && styles.dim
+			]}
+		>
+			<Text
+				style={[
+					styles.label,
+					compact && styles.labelCompact,
+					(variant === 'primary' || variant === 'secondary') && styles.labelOnInk,
+					variant === 'danger' && styles.labelDanger,
+					variant === 'link' && styles.labelLink
+				]}
+				numberOfLines={1}
+			>
+				{label}
+			</Text>
+		</Pressable>
+	);
+}
+
+function makeStyles(colors: ColorPalette) {
+	return StyleSheet.create({
+		base: {
+			minHeight: touchMin,
+			minWidth: touchMin,
+			borderRadius: radius.pill,
+			paddingHorizontal: 18,
+			alignItems: 'center',
+			justifyContent: 'center'
+		},
+		compact: {
+			paddingHorizontal: 12,
+			flexShrink: 1
+		},
+		primary: {
+			backgroundColor: colors.accent,
+			// ponytail: RN linear-gradient requires a separate lib; web uses gradient.
+			// Keep flat accent on mobile until a native gradient dep is justified.
+			borderWidth: 1,
+			borderColor: colors.accent
+		},
+		secondary: {
+			backgroundColor: colors.panelRaised,
+			borderWidth: 1,
+			borderColor: colors.border
+		},
+		ghost: {
+			backgroundColor: 'transparent',
+			borderWidth: 1,
+			borderColor: 'transparent'
+		},
+		danger: {
+			backgroundColor: colors.dangerBg,
+			borderWidth: 1,
+			borderColor: colors.danger
+		},
+		link: {
+			backgroundColor: 'transparent',
+			borderWidth: 0
+		},
+		dim: {
+			opacity: 0.72
+		},
+		label: {
+			color: colors.text,
+			fontSize: 17,
+			fontWeight: '700'
+		},
+		labelCompact: {
+			fontSize: 15
+		},
+		labelOnInk: {
+			color: colors.accentText
+		},
+		labelDanger: {
+			color: colors.danger
+		},
+		labelLink: {
+			color: colors.accent,
+			textDecorationLine: 'underline'
+		}
+	});
+}

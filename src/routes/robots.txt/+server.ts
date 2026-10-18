@@ -12,8 +12,7 @@ const ROBOTS_DISALLOW = [
 	'/live/',
 	'/workouts/',
 	'/exercises/records',
-	'/exercises/saved',
-	'/scenarios'
+	'/exercises/saved'
 ] as const;
 
 export const GET: RequestHandler = async ({ url }) => {

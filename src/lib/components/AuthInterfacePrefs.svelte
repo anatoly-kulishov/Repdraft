@@ -1,12 +1,23 @@
 <script lang="ts">
 	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
+	import QuestOnboardingSheet from '$lib/components/QuestOnboardingSheet.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { isWebAnalyticsAvailable } from '$lib/app/native';
+	import { clampWeeklyGoal, heroLevel, MAX_WEEKLY_GOAL, MIN_WEEKLY_GOAL } from '$lib/domain/quest';
+	import type { QuestHeroProfile } from '$lib/domain/questHeroProfile';
 	import { appTheme } from '$lib/stores/theme';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { webAnalyticsEnabled } from '$lib/stores/prefs';
+	import { questEnabled, webAnalyticsEnabled } from '$lib/stores/prefs';
+	import { quest, questState } from '$lib/stores/quest';
+	import {
+		loadQuestHeroProfile,
+		needsQuestHeroOnboarding,
+		saveQuestHeroProfile
+	} from '$lib/stores/questHero';
 	import { themeToggleStateIcon } from '$lib/components/icons/themeToggle';
-	import { BarChart3, Globe } from '@lucide/svelte';
+	import { BarChart3, Globe, Sparkles } from '@lucide/svelte';
+	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 
 	let {
 		surface = 'section'
@@ -20,6 +31,10 @@
 	let theme = $derived($appTheme);
 	let nextTheme = $derived(theme === 'dark' ? ('light' as const) : ('dark' as const));
 	let showWebAnalytics = $derived(isWebAnalyticsAvailable());
+	let weeklyGoal = $derived($questState.weeklyGoal);
+	let nextWeeklyGoal = $derived(
+		weeklyGoal >= MAX_WEEKLY_GOAL ? MIN_WEEKLY_GOAL : clampWeeklyGoal(weeklyGoal + 1)
+	);
 	let rootClass = $derived(
 		surface === 'panel'
 			? 'profile-settings-group panel profile-settings-group--paired'
@@ -30,6 +45,43 @@
 	);
 	let stackClass = $derived(surface === 'panel' ? undefined : 'auth-prefs__stack');
 	let hintClass = $derived(surface === 'panel' ? 'profile-settings-group__hint' : 'auth-prefs__hint');
+	let questOnboardOpen = $state(false);
+	let heroProfile = $state<QuestHeroProfile | null>(null);
+	let heroLine = $derived.by(() => {
+		if (!$questEnabled || !heroProfile?.completedAt) return null;
+		const name =
+			heroProfile.displayName.trim() || translate(lang, 'quest.heroNameless');
+		const level = heroLevel($questState.hero.totalXp);
+		return translate(lang, 'quest.profileHero', { name, level: String(level) });
+	});
+
+	onMount(() => {
+		heroProfile = loadQuestHeroProfile();
+		if (get(questEnabled) && needsQuestHeroOnboarding()) questOnboardOpen = true;
+	});
+
+	function onQuestToggle(on: boolean) {
+		questEnabled.set(on);
+		if (on && needsQuestHeroOnboarding()) questOnboardOpen = true;
+	}
+
+	function completeQuestOnboard(profile: QuestHeroProfile) {
+		saveQuestHeroProfile(profile);
+		heroProfile = profile;
+	}
+
+	function skipQuestOnboard() {
+		const profile: QuestHeroProfile = {
+			displayName: '',
+			sex: null,
+			age: null,
+			heightCm: null,
+			weightKg: null,
+			completedAt: new Date().toISOString()
+		};
+		saveQuestHeroProfile(profile);
+		heroProfile = profile;
+	}
 </script>
 
 <div class={rootClass}>
@@ -70,8 +122,41 @@
 				/>
 			</ProfileSettingsRow>
 		{/if}
+		<ProfileSettingsRow icon={Sparkles} label={translate(lang, 'settings.quest')}>
+			<input
+				type="checkbox"
+				class="auth-pref-toggle__input profile-settings-row__toggle"
+				checked={$questEnabled}
+				aria-label={translate(lang, 'settings.quest')}
+				onchange={(e) => {
+					onQuestToggle((e.currentTarget as HTMLInputElement).checked);
+				}}
+			/>
+		</ProfileSettingsRow>
+		{#if $questEnabled}
+			<ProfileSettingsRow
+				icon={Sparkles}
+				label={translate(lang, 'settings.questWeeklyGoal')}
+				value={String(weeklyGoal)}
+				ariaLabel={translate(lang, 'settings.questWeeklyGoalCycle', {
+					current: String(weeklyGoal),
+					next: String(nextWeeklyGoal)
+				})}
+				onclick={() => quest.setWeeklyGoal(nextWeeklyGoal)}
+			/>
+		{/if}
 	</div>
 	{#if showWebAnalytics}
 		<p class={hintClass}>{translate(lang, 'settings.webAnalyticsHint')}</p>
 	{/if}
+	<p class={hintClass}>{translate(lang, 'settings.questHint')}</p>
+	{#if heroLine}
+		<p class={hintClass}>{heroLine}</p>
+	{/if}
 </div>
+
+<QuestOnboardingSheet
+	bind:open={questOnboardOpen}
+	onComplete={completeQuestOnboard}
+	onSkip={skipQuestOnboard}
+/>

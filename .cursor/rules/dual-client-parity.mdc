@@ -1,0 +1,53 @@
+---
+description: Ship web/PWA parity with RN when the feature does not need native APIs
+alwaysApply: true
+---
+
+# Два клиента: RN + web/PWA
+
+Repdraft - **не только** `mobile/`. SvelteKit web/PWA остаётся полноценным клиентом для пользователей без приложения и для SEO/техники.
+
+## Обязательный порядок для новой фичи
+
+1. **Логика и строки** в `src/lib/domain/` и `src/lib/i18n/messages.ts` (общие для обоих клиентов).
+2. **Хранение** через `src/lib/storage/` (web) и установленные RN repo/state пути в `mobile/` - одна модель данных.
+3. **UI на обоих клиентах**, если фича не завязана на натив (см. ниже). В одном PR/задаче: RN экран/панель **и** web route или panel-widget в `src/routes/` / `src/lib/components/`.
+4. **Проверка:** `npm run check:all` перед «готово».
+
+RN может получать UX первым (священный цикл, bottom sheets), но **не оставлять** долгоживущий «только mobile» для domain-only возможностей (Quest, ачивки, прогресс, summary-подсказки, настройки профиля и т.п.).
+
+## Где web обязателен (parity)
+
+- Quest, кампания, XP, онбординг героя (локальные данные).
+- Ачивки, прогресс, эвристический coach/summary load - всё на domain + local/sync storage.
+- Профиль, планы, builder, live, history, summary, records, каталог, `/ai` (RAG).
+- Auth, sync, импорт/экспорт, legal, changelog.
+
+Web может быть проще по layout (нет safe-area tab bar), но **та же семантика** и те же ключи `translate()`.
+
+## Где достаточно только RN (native-only)
+
+Не блокировать web-задачу, но **не требовать** web UI для:
+
+- Apple Health / Health Connect read-write.
+- Development build plugins, Expo-only native modules.
+- Watch companion UI и session ownership на часах.
+- Платформенные разрешения без web-аналога (HealthKit, некоторые background modes).
+
+Если на web нужен **stub**: скрыть toggle, короткая подсказка «только в приложении», без краша и без фейковых данных.
+
+## Web-only (не тащить в RN без запроса)
+
+- Cloudflare Turnstile на auth (RN dev build может обходить иначе - см. `AGENTS.md`).
+- Vercel Analytics / Speed Insights (opt-in на сайте).
+
+## Антипаттерны
+
+- Domain + i18n + только `mobile/app/*` без web surface для non-native фичи.
+- Дублировать бизнес-правила в RN вместо `src/lib/domain/`.
+- Web-only storage schema, несовместимая с sync/RN.
+
+## Ссылки
+
+- Роли клиентов: `.cursor/product/delivery.md`
+- Приоритет UX телефона: `.cursor/rules/mvp.mdc` (не отменяет parity выше).

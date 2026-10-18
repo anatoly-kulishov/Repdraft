@@ -14,6 +14,34 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.22.0',
+		highlights: {
+			ru: [
+				'Сайт и телефон: одна нижняя навигация - Главная, Упражнения, Прогресс, Профиль',
+				'Quest: герой в профиле, прогресс и подсказки с короткими CTA, ачивки после тренировки',
+				'Светлая тема на телефоне; HealthKit в development build после финиша, если включено'
+			],
+			en: [
+				'Web and phone: one bottom nav - Home, Exercises, Progress, Profile',
+				'Quest: hero on profile, progress and coach empty CTAs, achievements after workouts',
+				'Phone light theme; HealthKit in a development build after finish when enabled'
+			]
+		}
+	},
+	{
+		version: '0.21.0',
+		highlights: {
+			ru: [
+				'Клиент на телефоне (Expo): тот же цикл тренировки, что в веб-приложении',
+				'Импорт бэкапа, избранное, свои упражнения и синхронизация с облаком на телефоне'
+			],
+			en: [
+				'Phone client (Expo): the same workout loop as the web app',
+				'Backup import, saved exercises, custom lifts, and cloud sync on phone'
+			]
+		}
+	},
+	{
 		version: '0.20.2',
 		highlights: {
 			ru: [

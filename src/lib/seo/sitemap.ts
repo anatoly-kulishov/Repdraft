@@ -63,12 +63,6 @@ export async function collectSitemapEntries(): Promise<SitemapEntry[]> {
 	return [...entries.values()].sort((a, b) => a.path.localeCompare(b.path));
 }
 
-/** @deprecated Use collectSitemapEntries(). */
-export async function collectPublicPaths(): Promise<string[]> {
-	const entries = await collectSitemapEntries();
-	return entries.map((entry) => entry.path);
-}
-
 export function buildSitemapXml(origin: string, entries: SitemapEntry[]): string {
 	const base = origin.replace(/\/$/, '');
 	const urls = entries

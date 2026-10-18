@@ -14,9 +14,11 @@ Canonical bake path: [`scripts/translate-exercise-names.py`](../../scripts/trans
 Overrides: `static/data/exercise-names.ru.overrides.json` + `src/lib/data/exerciseNamesRuOverrides.json`  
 Command: `npm run translate:names` (script + `build:data`)
 
-Technique / steps RU: [`scripts/apply-exercise-instructions-ru.py`](../../scripts/apply-exercise-instructions-ru.py)  
-Sources: `static/data/exercise-instructions.ru.generated.json` + curated `…ru.overrides.json` (overrides win).  
-After editing polish rules or generated/overrides: `python3 scripts/apply-exercise-instructions-ru.py`
+Technique / steps RU:
+- `npm run translate:instructions` - EN→RU via GigaChat
+- `npm run apply:instructions` - merge generated + overrides into `exercises.full.json`
+
+Sources: `static/data/exercise-instructions.ru.generated.json` + curated `…ru.overrides.json` (overrides win).
 
 ## When to use
 
@@ -44,7 +46,7 @@ After editing polish rules or generated/overrides: `python3 scripts/apply-exerci
    - Lyfta (stretches, odd mobility)
 5. **Human / product owner** is final arbiter for jargon (`махи` vs `разведения`).
 
-Program: [`.cursor/product/ru-catalog-copy-qa.md`](../../product/ru-catalog-copy-qa.md) (phased A→E research).
+Phased catalog sweeps A-D are done. Ongoing: phone inbox screenshots → same-day override via this skill + `npm run translate:names`.
 
 ## Gym Russian grammar (short)
 
@@ -162,7 +164,7 @@ If the user sends a screenshot of a bad title:
 
 1. Identify exercise id (search `name` / `name_ru` in `exercises.index.json`).
 2. Write the corrected title into overrides (skill algorithm above).
-3. Optional Agent card in issue / `.cursor/product/ideas/` only if it is a broader naming policy change, not a one-line fix.
+3. Optional GitHub Issue (Agent card) only if it is a broader naming policy change, not a one-line fix.
 
 ## Popularity triage
 

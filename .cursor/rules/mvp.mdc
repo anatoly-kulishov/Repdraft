@@ -1,11 +1,11 @@
 ---
-description: MVP north star, scope, and release planning — read before new features
+description: MVP north star, scope, and rewrite focus — read before new features
 alwaysApply: true
 ---
 
-# MVP (north star + scope)
+# MVP (north star + rewrite)
 
-**Sources:** [`GOAL.md`](../../GOAL.md) · [`.cursor/product/mvp-spec.md`](../product/mvp-spec.md) · [`.cursor/product/ux-research-mvp-direction.md`](../product/ux-research-mvp-direction.md)
+**Sources:** [`.cursor/product/native-rewrite-plan.md`](../product/native-rewrite-plan.md) · [`.cursor/product/delivery.md`](../product/delivery.md)
 
 **MANTRA:** IMPROVE THE EXPERIENCE. NOT THE FEATURE COUNT.  
 Maximum UI/UX comfort of the basic loop above new features.  
@@ -17,22 +17,24 @@ Open → Pick workout → Preview → Start → Set → Weight × reps → Next 
 
 **Metric:** phone → completed set. **Active Workout** gets the most UX attention.
 
+**Rewrite:** primary client is React Native (`mobile/`). Web/PWA stays for migration, SEO, technique. Do not preserve old PWA UI patterns for their own sake. Shared truth is `src/lib/domain`.
+
 ## Before coding
 
 1. Does this make an existing step faster / clearer / simpler?
-2. Will it stay smooth on a weak/old phone (pagination, deferred work, lean DOM)?
-3. Audit vs `mvp-spec.md` (Agent workflow) — implement only P0 gaps, no redesign from scratch.
-4. Release semver ideas: `.cursor/product/market-roadmap.md` (backlog, not a distraction).
+2. Will it stay smooth on a weak/old phone?
+3. Does it align with `native-rewrite-plan.md` (phase D first)?
+4. Shared logic in `domain` + i18n; **RN and web/PWA UI** where the feature is not native-only (see `dual-client-parity.mdc`). Do not ship RN-only for Quest, achievements, progress, profile settings, and other storage-backed features without a web counterpart in the same change when reasonable.
 
 ## Non-negotiables
 
 - Nav: Home, Workouts, Exercises (+ Profile low emphasis)
 - Visual: dark minimal premium, Lucide only, one primary CTA per screen
-- No blocking full-screen loaders — skeletons / optimistic UI
-- Performance budget for low-end: no unbounded full-list renders, avoid main-thread jank
+- No blocking full-screen loaders - skeletons / optimistic UI
+- Performance budget for low-end
 - Web analytics (Vercel) is opt-in
-- Delivery is the mobile-first PWA; do not add store shells without an explicit request
+- Delivery: RN (`mobile/`) + web/PWA; see `delivery.md`. No Capacitor/Cordova.
 
 ## Do not build without explicit user request
 
-Product analytics/charts dashboards, AI coach, social/gamification, wearables, feature parity with Hevy/JEFIT/Boostcamp, side sections that do not speed up the sacred loop.
+Charts dashboards, AI coach as center, social/wearables parity, side sections that do not speed up the sacred loop. Opt-in Quest and watch follow `native-rewrite-plan.md`.
