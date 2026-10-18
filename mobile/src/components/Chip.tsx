@@ -31,7 +31,9 @@ function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 		chip: {
 			minHeight: touchMin,
+			minWidth: touchMin,
 			justifyContent: 'center',
+			alignItems: 'center',
 			paddingHorizontal: space.md,
 			borderRadius: radius.pill,
 			borderWidth: 1,
@@ -39,8 +41,8 @@ function makeStyles(colors: ColorPalette) {
 			backgroundColor: 'transparent'
 		},
 		chipOn: {
-			borderColor: colors.accent,
-			backgroundColor: colors.accent
+			borderColor: colors.accentFill,
+			backgroundColor: colors.accentFill
 		},
 		text: {
 			color: colors.muted,

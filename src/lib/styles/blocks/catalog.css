@@ -2791,7 +2791,8 @@ body:has(.sticky-actions) .draft-dock {
 
 .shell-nav-tabbar__grid {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	/* Home / Exercises / Progress / Profile - four equal tabs. */
+	grid-template-columns: repeat(4, minmax(0, 1fr));
 	align-items: stretch;
 	gap: var(--tabbar-inset);
 	height: var(--tabbar-h);
@@ -3323,7 +3324,7 @@ body:has(.sticky-actions) .draft-dock {
 	gap: 0.35rem;
 	min-width: 0;
 	max-width: 100%;
-	min-height: 2.75rem;
+	min-height: var(--control-height);
 	padding: 0.4rem 0.85rem;
 	border: 1px solid var(--catalog-hub-chip-border);
 	border-radius: 999px;
@@ -3365,7 +3366,7 @@ body:has(.sticky-actions) .draft-dock {
 
 @media (max-width: 639px) {
 	.catalog-hub .catalog-hub-chip {
-		min-height: 2.75rem;
+		min-height: var(--control-height);
 		padding-block: 0.5rem;
 	}
 }
