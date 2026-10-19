@@ -2,7 +2,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import {
-	ActivityIndicator,
 	Alert,
 	FlatList,
 	Pressable,
@@ -11,7 +10,7 @@ import {
 	TextInput,
 	View
 } from 'react-native';
-import { ChevronRight, Play, Sparkles } from 'lucide-react-native';
+import { ChevronRight, SlidersHorizontal, Sparkles } from 'lucide-react-native';
 import {
 	dayGreetingPeriod,
 	homeGreetingMessageKey
@@ -30,23 +29,28 @@ import {
 	totalSetCount
 } from '@repdraft/domain/session';
 import {
+	collectPlanTargetFacets,
 	createEmptyDraft,
 	duplicatePlan,
 	planExerciseSlotCount,
+	planHasTarget,
 	planTargetSummary,
 	resolveHomeNextPlan,
 	sortPlansByUserOrder
 } from '@repdraft/domain/workout';
+import { PLANS_PAGE_SIZE } from '@repdraft/domain/home';
 import type { QuestState } from '@repdraft/domain/quest';
 import type { WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { loadExerciseIndex } from '../../src/catalog/loadIndex';
-import { BrandMark } from '../../src/components/BrandMark';
 import { QuestHomeBanner } from '../../src/components/QuestHomeBanner';
 import { OnboardingChecklistPanel } from '../../src/components/OnboardingChecklistPanel';
+import { PageSkeleton } from '../../src/components/PageSkeleton';
+import { MuscleFilterSheet } from '../../src/components/MuscleFilterSheet';
 import { Panel } from '../../src/components/Panel';
+import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { getSupabase, isSupabaseConfigured } from '../../src/auth/supabase';
-import { formatRelativeDay } from '../../src/i18n/format';
+import { formatRelativeDay } from '@repdraft/i18n/format';
 import { readHomeNextPlanId, writeHomeNextPlanId } from '../../src/live/homeNext';
 import { readPlanOrder, writePlanOrder } from '../../src/live/planOrder';
 import { loadGreetingName } from '../../src/state/greetingName';
@@ -57,7 +61,7 @@ import { dismissChecklist, noteChecklist } from '../../src/state/onboarding';
 import { isQuestEnabled, loadQuestState } from '../../src/state/quest';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { readActiveSession, sessionsRepo } from '../../src/storage/sessionsRepo';
-import { deletePlanRemote, pushPlan } from '../../src/sync/cloudSync';
+import { deletePlanRemote, outboxCount, pushPlan } from '../../src/sync/cloudSync';
 import { radius, space, touchMin, type, type ColorPalette } from '../../src/theme';
 
 const RECENT_LIMIT = 3;
@@ -76,31 +80,39 @@ export default function WorkoutsScreen() {
 	const [active, setActive] = useState<WorkoutSession | null>(null);
 	const [recent, setRecent] = useState<WorkoutSession[]>([]);
 	const [pinnedNextId, setPinnedNextId] = useState<string | null>(null);
+	const [planOrder, setPlanOrder] = useState<string[]>([]);
 	const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
 	const [greetingCustom, setGreetingCustom] = useState('');
 	const [authUser, setAuthUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [searchQuery, setSearchQuery] = useState('');
+	const [plansVisibleLimit, setPlansVisibleLimit] = useState(PLANS_PAGE_SIZE);
+	const [muscleFilter, setMuscleFilter] = useState('');
+	const [muscleSheetOpen, setMuscleSheetOpen] = useState(false);
 	const [questOn, setQuestOn] = useState(false);
 	const [questState, setQuestState] = useState<QuestState | null>(null);
+	const [pendingSync, setPendingSync] = useState(0);
 
 	const reload = useCallback(async () => {
 		setLoading(true);
-		const [list, activeSession, sessions, order, pinned, qEnabled, qState] = await Promise.all([
+		const [list, activeSession, sessions, order, pinned, qEnabled, qState, outbox] = await Promise.all([
 			plansRepo.list(),
 			readActiveSession(),
 			sessionsRepo.list(),
 			readPlanOrder(),
 			readHomeNextPlanId(),
 			isQuestEnabled(),
-			loadQuestState()
+			loadQuestState(),
+			outboxCount()
 		]);
 		const nextOb = await noteChecklist('homeSeen');
 		const lastFinished = sessions.find((s) => s.finishedAt && s.planId);
 		const ordered = sortPlansByUserOrder(list, order);
+		const nextOrder = order.length > 0 ? order : ordered.map((p) => p.id);
 		if (order.length === 0 && ordered.length > 0) {
-			await writePlanOrder(ordered.map((p) => p.id));
+			await writePlanOrder(nextOrder);
 		}
+		setPlanOrder(nextOrder);
 		setPlans(ordered);
 		setActive(activeSession && !activeSession.finishedAt ? activeSession : null);
 		setRecent(
@@ -117,6 +129,7 @@ export default function WorkoutsScreen() {
 		setGreetingCustom(await loadGreetingName(user));
 		setQuestOn(qEnabled);
 		setQuestState(qEnabled ? qState : null);
+		setPendingSync(outbox);
 		setLoading(false);
 	}, []);
 
@@ -162,6 +175,38 @@ export default function WorkoutsScreen() {
 		router.push(`/builder/${copy.id}`);
 	}
 
+	async function movePlan(plan: WorkoutPlan, direction: -1 | 1) {
+		const idx = planOrder.indexOf(plan.id);
+		if (idx < 0) return;
+		const nextIdx = idx + direction;
+		if (nextIdx < 0 || nextIdx >= planOrder.length) return;
+		const next = [...planOrder];
+		[next[idx], next[nextIdx]] = [next[nextIdx], next[idx]];
+		await writePlanOrder(next);
+		reload();
+	}
+
+	function confirmDelete(plan: WorkoutPlan) {
+		Alert.alert(tt('records.delete'), plan.name || tt('workouts.duplicate'), [
+			{ text: tt('common.cancel'), style: 'cancel' },
+			{
+				text: tt('records.delete'),
+				style: 'destructive',
+				onPress: () => {
+					void (async () => {
+						await plansRepo.remove(plan.id);
+						try {
+							await deletePlanRemote(plan.id);
+						} catch {
+							/* offline */
+						}
+						reload();
+					})();
+				}
+			}
+		]);
+	}
+
 	const next = useMemo(
 		() =>
 			resolveHomeNextPlan(
@@ -171,12 +216,50 @@ export default function WorkoutsScreen() {
 			),
 		[plans, recent, pinnedNextId]
 	);
+	const indexById = useMemo(
+		() => new Map(loadExerciseIndex().map((item) => [item.id, item] as const)),
+		[]
+	);
 	const showChecklist = onboarding ? shouldShowChecklist(onboarding) : false;
+	const heroMeta = useMemo(() => {
+		if (!next) return null;
+		return {
+			exercises: planExerciseSlotCount(next),
+			summary: planTargetSummary(next, indexById, locale)
+		};
+	}, [next, indexById, locale]);
+	const muscleFacets = useMemo(
+		() => collectPlanTargetFacets(plans, indexById, locale),
+		[plans, indexById, locale]
+	);
 	const filteredPlans = useMemo(() => {
+		let list = plans;
 		const q = searchQuery.trim().toLowerCase();
-		if (!q) return plans;
-		return plans.filter((p) => (p.name ?? '').toLowerCase().includes(q));
-	}, [plans, searchQuery]);
+		if (q) {
+			list = list.filter((p) => (p.name ?? '').toLowerCase().includes(q));
+		}
+		if (muscleFilter) {
+			list = list.filter((p) => planHasTarget(p, indexById, muscleFilter));
+		}
+		return list;
+	}, [plans, searchQuery, muscleFilter, indexById]);
+	const visiblePlans = useMemo(
+		() => filteredPlans.slice(0, plansVisibleLimit),
+		[filteredPlans, plansVisibleLimit]
+	);
+	const plansHasMore = filteredPlans.length > plansVisibleLimit;
+	const filtersActive = searchQuery.trim().length > 0 || muscleFilter !== '';
+
+	function loadMorePlans() {
+		if (plansVisibleLimit >= filteredPlans.length) return;
+		setPlansVisibleLimit(Math.min(filteredPlans.length, plansVisibleLimit + PLANS_PAGE_SIZE));
+	}
+
+	function clearFilters() {
+		setSearchQuery('');
+		setMuscleFilter('');
+		setPlansVisibleLimit(PLANS_PAGE_SIZE);
+	}
 	const searchActive = searchQuery.trim().length > 0;
 	const greetingName = greetingFirstName(greetingCustom, authUser);
 	const greeting = tt(
@@ -188,15 +271,6 @@ export default function WorkoutsScreen() {
 	const hasRecent = recent.length > 0;
 	const showGuestHero = isGuest && !hasPlans && !hasRecent && !active;
 
-	const heroMeta = useMemo(() => {
-		if (!next) return null;
-		const indexById = new Map(loadExerciseIndex().map((item) => [item.id, item] as const));
-		return {
-			exercises: planExerciseSlotCount(next),
-			summary: planTargetSummary(next, indexById, locale)
-		};
-	}, [next, locale]);
-
 	const continueMeta = useMemo(() => {
 		if (!active) return null;
 		if (isSessionFullyLogged(active)) return tt('home.remainingFinishReady');
@@ -207,24 +281,26 @@ export default function WorkoutsScreen() {
 	}, [active, tt]);
 
 	if (loading) {
-		return (
-			<View style={styles.center}>
-				<ActivityIndicator color={colors.accent} />
-			</View>
-		);
+		return <PageSkeleton variant="home" />;
 	}
 
 	const header = (
 		<View style={styles.headerWrap}>
 			<View style={styles.headerRow}>
-				<BrandMark size={40} />
 				<Text style={styles.greeting} numberOfLines={1}>
 					{greeting}
 				</Text>
 			</View>
-			{questOn && questState ? <QuestHomeBanner state={questState} /> : null}
+		{questOn && questState ? <QuestHomeBanner state={questState} /> : null}
+		{pendingSync > 0 ? (
+			<Panel style={styles.syncBanner}>
+				<Text style={styles.syncBannerText}>
+					{tt('profile.outbox', { n: pendingSync })}
+				</Text>
+			</Panel>
+		) : null}
 
-			<Text style={styles.leadHint}>{tt('workouts.lead')}</Text>
+		<Text style={styles.leadHint}>{tt('workouts.lead')}</Text>
 
 			{active && continueMeta ? (
 				<Panel accent style={styles.card}>
@@ -241,25 +317,25 @@ export default function WorkoutsScreen() {
 					/>
 				</Panel>
 			) : next && heroMeta ? (
-				<Pressable
-					accessibilityRole="button"
-					style={({ pressed }) => [styles.card, styles.heroCard, pressed && styles.pressed]}
-					onPress={() => router.push(`/plan/${next.id}`)}
-				>
-					<Text style={styles.eyebrow}>{tt('home.readyTitle')}</Text>
-					<Text style={styles.cardTitle} numberOfLines={2}>
-						{next.name || '-'}
-					</Text>
-					<Text style={styles.cardMeta} numberOfLines={2}>
-						{heroMeta.exercises} {tt('common.exercises')} · {heroMeta.summary}
-					</Text>
-					<View style={styles.heroCtaRow}>
-						<View style={styles.heroCta}>
-							<Play color={colors.accentText} size={18} strokeWidth={2.25} />
-							<Text style={styles.heroCtaText}>{tt('home.startWorkout')}</Text>
-						</View>
-					</View>
-				</Pressable>
+				<Panel style={styles.card}>
+					<Pressable
+						accessibilityRole="button"
+						onPress={() => router.push(`/plan/${next.id}`)}
+						style={({ pressed }) => pressed && styles.pressed}
+					>
+						<Text style={styles.eyebrow}>{tt('home.readyTitle')}</Text>
+						<Text style={styles.cardTitle} numberOfLines={2}>
+							{next.name || '-'}
+						</Text>
+						<Text style={styles.cardMeta} numberOfLines={2}>
+							{heroMeta.exercises} {tt('common.exercises')} · {heroMeta.summary}
+						</Text>
+					</Pressable>
+					<PrimaryButton
+						label={tt('home.startWorkout')}
+						onPress={() => router.push(`/plan/${next.id}`)}
+					/>
+				</Panel>
 			) : null}
 
 			{showChecklist && onboarding ? (
@@ -280,7 +356,7 @@ export default function WorkoutsScreen() {
 					<PrimaryButton label={tt('home.guestCreateLocal')} onPress={() => void createBlank()} />
 					<PrimaryButton
 						label={tt('nav.signIn')}
-						variant="ghost"
+						variant="secondary"
 						onPress={() => router.push('/(tabs)/profile')}
 					/>
 				</Panel>
@@ -340,18 +416,44 @@ export default function WorkoutsScreen() {
 			<View style={styles.sectionHead}>
 				<Text style={styles.sectionTitle}>{tt('workouts.title')}</Text>
 			</View>
-			{hasPlans ? (
-				<TextInput
-					value={searchQuery}
-					onChangeText={setSearchQuery}
-					placeholder={tt('workouts.searchPh')}
-					placeholderTextColor={colors.muted}
-					style={styles.search}
-					autoCapitalize="none"
-					autoCorrect={false}
-					clearButtonMode="while-editing"
-				/>
-			) : null}
+				{hasPlans ? (
+					<View style={styles.filterRow}>
+						<TextInput
+							value={searchQuery}
+							onChangeText={(v) => {
+								setSearchQuery(v);
+								setPlansVisibleLimit(PLANS_PAGE_SIZE);
+							}}
+							placeholder={tt('workouts.searchPh')}
+							placeholderTextColor={colors.muted}
+							style={styles.search}
+							autoCapitalize="none"
+							autoCorrect={false}
+							clearButtonMode="while-editing"
+						/>
+						<Pressable
+							accessibilityRole="button"
+							accessibilityLabel={tt('workouts.muscleFilter')}
+							style={({ pressed }) => [
+								styles.filterBtn,
+								(muscleFilter || searchQuery.trim()) && styles.filterBtnActive,
+								pressed && styles.pressed
+							]}
+							onPress={() => setMuscleSheetOpen(true)}
+						>
+							<SlidersHorizontal color={colors.text} size={20} strokeWidth={2} />
+						</Pressable>
+					</View>
+				) : null}
+				{filtersActive ? (
+					<Pressable
+						accessibilityRole="button"
+						style={styles.clearFiltersRow}
+						onPress={clearFilters}
+					>
+						<Text style={styles.clearFiltersText}>{tt('workouts.historyClearFiltersAria')}</Text>
+					</Pressable>
+				) : null}
 			<View style={styles.rowActions}>
 				<View style={styles.flex}>
 					<PrimaryButton label={tt('workouts.create')} onPress={() => void createBlank()} />
@@ -371,7 +473,7 @@ export default function WorkoutsScreen() {
 		<View style={styles.root}>
 			<FlatList
 				style={styles.flexList}
-				data={filteredPlans}
+				data={visiblePlans}
 				keyExtractor={(item) => item.id}
 				ListHeaderComponent={header}
 				ListEmptyComponent={
@@ -379,76 +481,97 @@ export default function WorkoutsScreen() {
 						{searchActive ? tt('builder.noMatches') : tt('workouts.empty')}
 					</Text>
 				}
+				onEndReached={loadMorePlans}
+				onEndReachedThreshold={0.5}
 				contentContainerStyle={[styles.list, { paddingBottom: tabPad }]}
 				renderItem={({ item }) => (
-					<Pressable
-						accessibilityRole="button"
-						style={({ pressed }) => [
-							styles.row,
-							next?.id === item.id && styles.rowNext,
-							pressed && styles.pressed
-						]}
-						onPress={() => router.push(`/plan/${item.id}`)}
-						onLongPress={() => {
-							Alert.alert(item.name || tt('workouts.duplicate'), undefined, [
-								{ text: tt('common.cancel'), style: 'cancel' },
-								{
-									text: tt('workouts.pinNext'),
-									onPress: () => {
-										void writeHomeNextPlanId(item.id).then(() => {
-											Alert.alert(
-												tt('common.ok'),
-												tt('home.setNextPlanDone', { name: item.name || tt('workouts.duplicate') })
-											);
-											return reload();
-										});
-									}
-								},
+					<SwipeableRow
+						deleteLabel={tt('workouts.delete')}
+						onDelete={() => confirmDelete(item)}
+					>
+						<Pressable
+							accessibilityRole="button"
+							style={({ pressed }) => [
+								styles.row,
+								next?.id === item.id && styles.rowNext,
+								pressed && styles.pressed
+							]}
+							onPress={() => router.push(`/plan/${item.id}`)}
+							onLongPress={() => {
+								Alert.alert(item.name || tt('workouts.duplicate'), undefined, [
+									{ text: tt('common.cancel'), style: 'cancel' },
+									{
+										text: tt('workouts.pinNext'),
+										onPress: () => {
+											void writeHomeNextPlanId(item.id).then(() => {
+												Alert.alert(
+													tt('common.ok'),
+													tt('home.setNextPlanDone', { name: item.name || tt('workouts.duplicate') })
+												);
+												return reload();
+											});
+										}
+									},
 								{
 									text: tt('workouts.duplicate'),
 									onPress: () => void duplicate(item)
 								},
 								{
-									text: tt('workouts.delete'),
-									style: 'destructive',
-									onPress: () => {
-										void (async () => {
-											await plansRepo.remove(item.id);
-											try {
-												await deletePlanRemote(item.id);
-											} catch {
-												/* offline */
-											}
-											await reload();
-										})();
-									}
+									text: tt('workouts.moveUp'),
+									onPress: () => void movePlan(item, -1)
+								},
+								{
+									text: tt('workouts.moveDown'),
+									onPress: () => void movePlan(item, 1)
 								}
 							]);
-						}}
-					>
-						<View style={styles.rowBody}>
-							<Text style={styles.rowTitle} numberOfLines={2}>
-								{item.name || '-'}
-							</Text>
-							<Text style={styles.rowMeta} numberOfLines={1}>
-								{item.exercises.length} {tt('common.exercises')}
-								{next?.id === item.id ? ` · ${tt('workouts.nextBadge')}` : ''}
-							</Text>
-						</View>
-						<Text style={styles.dupHint}>{tt('workouts.longPress')}</Text>
-					</Pressable>
+							}}
+						>
+							<View style={styles.rowBody}>
+								<Text style={styles.rowTitle} numberOfLines={2}>
+									{item.name || '-'}
+								</Text>
+								<Text style={styles.rowMeta} numberOfLines={1}>
+									{item.exercises.length} {tt('common.exercises')}
+									{next?.id === item.id ? ` · ${tt('workouts.nextBadge')}` : ''}
+								</Text>
+							</View>
+							<Text style={styles.dupHint}>{tt('workouts.longPress')}</Text>
+						</Pressable>
+					</SwipeableRow>
 				)}
 				ListFooterComponent={
-					<Pressable
-						accessibilityRole="button"
-						style={({ pressed }) => [styles.aiRow, pressed && styles.pressed]}
-						onPress={() => router.push('/ai')}
-					>
-						<Sparkles color={colors.muted} size={18} strokeWidth={2.25} />
-						<Text style={styles.aiRowText}>{tt('ai.open')}</Text>
-						<ChevronRight color={colors.muted} size={16} strokeWidth={2.25} />
-					</Pressable>
+					<View style={styles.footerStack}>
+						{plansHasMore ? (
+							<View style={styles.loadMore}>
+								<View style={styles.loadMoreDot} />
+							</View>
+						) : null}
+						<Pressable
+							accessibilityRole="button"
+							style={({ pressed }) => [styles.aiRow, pressed && styles.pressed]}
+							onPress={() => router.push('/ai')}
+						>
+							<Sparkles color={colors.muted} size={18} strokeWidth={2.25} />
+							<Text style={styles.aiRowText}>{tt('ai.open')}</Text>
+							<ChevronRight color={colors.muted} size={16} strokeWidth={2.25} />
+						</Pressable>
+					</View>
 				}
+			/>
+			<MuscleFilterSheet
+				open={muscleSheetOpen}
+				selected={muscleFilter}
+				targets={muscleFacets}
+				onSelect={(target) => {
+					setMuscleFilter(target);
+					setPlansVisibleLimit(PLANS_PAGE_SIZE);
+				}}
+				onClear={() => {
+					setMuscleFilter('');
+					setPlansVisibleLimit(PLANS_PAGE_SIZE);
+				}}
+				onDismiss={() => setMuscleSheetOpen(false)}
 			/>
 		</View>
 	);
@@ -457,7 +580,6 @@ export default function WorkoutsScreen() {
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 	root: { flex: 1, backgroundColor: colors.bg },
-	center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
 	flexList: { flex: 1 },
 	list: { flexGrow: 1, padding: space.lg, gap: space.sm },
 	headerWrap: { gap: space.md, paddingBottom: space.sm },
@@ -478,26 +600,9 @@ function makeStyles(colors: ColorPalette) {
 	},
 	cardTitle: { ...type.title, color: colors.text },
 	cardMeta: { ...type.meta, color: colors.muted },
-	heroCard: {
-		backgroundColor: colors.panel,
-		borderRadius: radius.lg,
-		borderWidth: 1,
-		borderColor: colors.border,
-		padding: space.lg
-	},
-	heroCtaRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: space.xs },
-	heroCta: {
-		minHeight: touchMin,
-		backgroundColor: colors.accent,
-		borderRadius: radius.md,
-		paddingHorizontal: 18,
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: space.sm
-	},
-	heroCtaText: { color: colors.accentText, fontSize: 16, fontWeight: '700' },
 	pressed: { opacity: 0.85 },
 	search: {
+		flex: 1,
 		minHeight: touchMin,
 		borderRadius: radius.md,
 		borderWidth: 1,
@@ -575,6 +680,55 @@ function makeStyles(colors: ColorPalette) {
 		gap: space.sm,
 		marginTop: space.xs
 	},
-	aiRowText: { ...type.body, color: colors.text, flex: 1 }
+	aiRowText: { ...type.body, color: colors.text, flex: 1 },
+	footerStack: { gap: space.sm },
+	loadMore: {
+		minHeight: touchMin,
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	loadMoreDot: {
+		width: 8,
+		height: 8,
+		borderRadius: 4,
+		backgroundColor: colors.panel
+	},
+	filterRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: space.sm
+	},
+	filterBtn: {
+		minHeight: touchMin,
+		minWidth: touchMin,
+		alignItems: 'center',
+		justifyContent: 'center',
+		borderRadius: radius.md,
+		borderWidth: 1,
+		borderColor: colors.border,
+		backgroundColor: colors.panel
+	},
+	filterBtnActive: {
+		borderColor: colors.accent,
+		backgroundColor: colors.accentDim
+	},
+	clearFiltersRow: {
+		minHeight: touchMin,
+		justifyContent: 'center'
+	},
+	clearFiltersText: {
+		color: colors.accentLink,
+		fontWeight: '700',
+		fontSize: 13
+	},
+	syncBanner: {
+		backgroundColor: colors.accentDim,
+		borderColor: colors.accent
+	},
+	syncBannerText: {
+		color: colors.accentText,
+		fontWeight: '600',
+		fontSize: 14
+	}
 	});
 }

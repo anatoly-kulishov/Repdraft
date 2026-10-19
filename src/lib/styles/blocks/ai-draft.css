@@ -91,8 +91,8 @@
 }
 
 .ai-draft-page__chip {
-	min-height: 2.25rem;
-	min-width: 0;
+	min-height: var(--control-height);
+	min-width: var(--control-height);
 	padding-inline: 0.875rem;
 	font-size: 0.8125rem;
 	touch-action: manipulation;
@@ -176,7 +176,7 @@ html[data-theme='light'] .ai-draft-page__composer--listening::before {
 textarea.pr-note-field.ai-draft-page__brief {
 	position: relative;
 	z-index: 1;
-	padding-right: 3rem;
+	padding-right: calc(var(--control-height) + 0.5rem);
 	scroll-margin-top: 5rem;
 	scroll-margin-bottom: 6rem;
 	/* Neon lives on ::before — no solid field border (avoids double outline) */
@@ -186,7 +186,7 @@ textarea.pr-note-field.ai-draft-page__brief {
 }
 
 .ai-draft-page__composer--has-clear textarea.pr-note-field.ai-draft-page__brief {
-	padding-right: 5.25rem;
+	padding-right: calc(2 * var(--control-height) + 0.75rem);
 }
 
 textarea.pr-note-field.ai-draft-page__brief:focus,
@@ -204,10 +204,10 @@ textarea.pr-note-field.ai-draft-page__brief:focus-visible,
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 2.25rem;
-	height: 2.25rem;
-	min-width: 2.25rem;
-	min-height: 2.25rem;
+	width: var(--control-height);
+	height: var(--control-height);
+	min-width: var(--control-height);
+	min-height: var(--control-height);
 	border: 0;
 	border-radius: 0.55rem;
 	background: transparent;
@@ -223,11 +223,11 @@ textarea.pr-note-field.ai-draft-page__brief:focus-visible,
 }
 
 .ai-draft-page__clear {
-	inset-inline-end: 2.7rem;
+	inset-inline-end: calc(var(--control-height) + 0.35rem);
 }
 
 .ai-draft-page__mic {
-	inset-inline-end: 0.4rem;
+	inset-inline-end: 0.15rem;
 }
 
 @media (hover: hover) {

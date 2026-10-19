@@ -1,4 +1,15 @@
-/** Color tokens aligned with web `tokens.css` dark / light. */
+import {
+	darkColors,
+	lightColors,
+	type AppThemeMode,
+	type CoreColorPalette
+} from '@repdraft/design/tokens';
+
+/**
+ * RN screen palette.
+ * `accentText` is CTA ink (white on filled buttons) = shared `accentInk`.
+ * Soft link accent is `accentLink` (= shared `accentText`).
+ */
 export type ColorPalette = {
 	bg: string;
 	panel: string;
@@ -8,7 +19,11 @@ export type ColorPalette = {
 	text: string;
 	muted: string;
 	accent: string;
+	accentFill: string;
+	/** White (or on-fill) label on primary CTA. */
 	accentText: string;
+	/** Soft accent for links / secondary emphasis. */
+	accentLink: string;
 	accentDim: string;
 	danger: string;
 	dangerBg: string;
@@ -16,36 +31,27 @@ export type ColorPalette = {
 	overlayScrim: string;
 };
 
-export const darkPalette: ColorPalette = {
-	bg: '#0b0b0c',
-	panel: '#1c1c1e',
-	panelRaised: '#2c2c2e',
-	border: '#3a3a3c',
-	borderStrong: '#48484a',
-	text: '#f5f5f7',
-	muted: '#98989d',
-	accent: '#8b5cf6',
-	accentText: '#ffffff',
-	accentDim: 'rgba(139, 92, 246, 0.18)',
-	danger: '#f87171',
-	dangerBg: '#3f1d1d',
-	overlayScrim: 'rgba(0,0,0,0.55)'
-};
+function toRnPalette(c: CoreColorPalette): ColorPalette {
+	return {
+		bg: c.bg,
+		panel: c.panel,
+		panelRaised: c.panelRaised,
+		border: c.border,
+		borderStrong: c.borderStrong,
+		text: c.text,
+		muted: c.muted,
+		accent: c.accent,
+		accentFill: c.accentFill,
+		accentText: c.accentInk,
+		accentLink: c.accentText,
+		accentDim: c.accentDim,
+		danger: c.danger,
+		dangerBg: c.dangerBg,
+		overlayScrim: c.overlayScrim
+	};
+}
 
-export const lightPalette: ColorPalette = {
-	bg: '#f2f2f7',
-	panel: '#ffffff',
-	panelRaised: '#ffffff',
-	border: '#d1d1d6',
-	borderStrong: '#c7c7cc',
-	text: '#000000',
-	muted: '#636366',
-	accent: '#8b5cf6',
-	accentText: '#ffffff',
-	accentDim: 'rgba(139, 92, 246, 0.12)',
-	danger: '#dc2626',
-	dangerBg: '#fef2f2',
-	overlayScrim: 'rgba(0,0,0,0.35)'
-};
+export const darkPalette: ColorPalette = toRnPalette(darkColors);
+export const lightPalette: ColorPalette = toRnPalette(lightColors);
 
-export type AppThemeMode = 'dark' | 'light';
+export type { AppThemeMode };

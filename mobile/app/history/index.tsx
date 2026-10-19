@@ -19,13 +19,19 @@ import { useBottomChromePad } from '../../src/layout/safe';
 import { useAppColors } from '../../src/state/theme';
 import { space, touchMin, type ColorPalette } from '../../src/theme';
 
-type Preset = 'all' | '7d' | '30d' | '90d';
+type Preset = 'today' | 'all' | '7d' | '30d' | '90d';
 
 function withinPreset(finishedAt: string, preset: Preset): boolean {
-	if (preset === 'all') return true;
-	const days = preset === '7d' ? 7 : preset === '30d' ? 30 : 90;
 	const t = new Date(finishedAt).getTime();
 	if (!Number.isFinite(t)) return false;
+	if (preset === 'today') {
+		const now = new Date();
+		const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+		const end = start + 86400000;
+		return t >= start && t < end;
+	}
+	if (preset === 'all') return true;
+	const days = preset === '7d' ? 7 : preset === '30d' ? 30 : 90;
 	return t >= Date.now() - days * 86400000;
 }
 
@@ -82,6 +88,7 @@ export default function HistoryListScreen() {
 	}
 
 	const presets: { id: Preset; label: string }[] = [
+		{ id: 'today', label: tt('history.filterToday') },
 		{ id: 'all', label: tt('history.filterAll') },
 		{ id: '7d', label: tt('history.filter7') },
 		{ id: '30d', label: tt('history.filter30') },

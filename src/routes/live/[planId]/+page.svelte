@@ -129,12 +129,15 @@
 		restUntil != null ? Math.max(0, Math.ceil((restUntil - now) / 1000)) : 0
 	);
 	let restTotalSec = $state(0);
+	/** New id when rest starts from zero. +/-30 keeps the same id so a collapse sticks. */
+	let restNonce = $state(0);
 	$effect(() => {
 		if (restUntil == null) {
 			restTotalSec = 0;
 			return;
 		}
 		const left = Math.max(0, Math.ceil((restUntil - now) / 1000));
+		if (restTotalSec === 0 && left > 0) restNonce += 1;
 		if (left > restTotalSec) restTotalSec = left;
 	});
 	let restPct = $derived(restTotalSec > 0 ? (restLeft / restTotalSec) * 100 : 0);
@@ -766,6 +769,7 @@
 						onDismiss={() => onboarding.dismissCoachmark('live.finish')}
 					/>
 				{/if}
+				{#key restNonce}
 				<LiveSessionActions
 					{lang}
 					{finishing}
@@ -791,6 +795,7 @@
 						live.skipRest();
 					}}
 				/>
+				{/key}
 			</div>
 		</div>
 

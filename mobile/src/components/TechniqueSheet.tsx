@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import { labelBodyPart } from '@repdraft/domain/labels.ru';
 import {
 	fetchExerciseDetail,
 	stepsForLocale,
 	type ExerciseDetailPayload
 } from '../catalog/fetchExerciseDetail';
-import { useBottomChromePad } from '../layout/safe';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
 import { radius, space, touchMin, type ColorPalette } from '../theme';
+import { BottomSheet } from './BottomSheet';
 import { CatalogThumb } from './CatalogThumb';
 import { PrimaryButton } from './PrimaryButton';
 
@@ -22,7 +22,6 @@ export function TechniqueSheet({ exerciseId, onClose }: Props) {
 	const { locale, tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
-	const bottomPad = useBottomChromePad(space.md);
 	const [detail, setDetail] = useState<ExerciseDetailPayload | null>(null);
 	const [loading, setLoading] = useState(false);
 
@@ -49,88 +48,54 @@ export function TechniqueSheet({ exerciseId, onClose }: Props) {
 	const title =
 		locale === 'ru' && detail?.name_ru?.trim()
 			? detail.name_ru.trim()
-			: detail?.name ?? tt('exercise.techniqueTitle');
+			: (detail?.name ?? tt('exercise.techniqueTitle'));
 
 	return (
-		<Modal visible={open} animationType="slide" transparent onRequestClose={onClose}>
-			<View style={styles.wrap}>
-				<Pressable style={styles.backdrop} onPress={onClose} accessibilityRole="button" />
-				<View style={[styles.sheet, { paddingBottom: bottomPad }]}>
-					<View style={styles.handle} />
-					<Text style={styles.title} numberOfLines={2}>
-						{title}
+		<BottomSheet
+			open={open}
+			onDismiss={onClose}
+			label={title}
+			actions={<PrimaryButton label={tt('common.close')} onPress={onClose} />}
+		>
+			<Text style={styles.title} numberOfLines={2}>
+				{title}
+			</Text>
+			{detail ? (
+				<Text style={styles.meta} numberOfLines={2}>
+					{labelBodyPart(detail.body_part, locale)} · {detail.equipment}
+				</Text>
+			) : null}
+			<ScrollView
+				style={styles.scroll}
+				contentContainerStyle={styles.body}
+				keyboardShouldPersistTaps="handled"
+			>
+				<CatalogThumb imagePath={detail?.image} bannerHeight={180} rounded={radius.md} />
+				{loading ? <Text style={styles.meta}>…</Text> : null}
+				{!loading && steps.length === 0 ? (
+					<Text style={styles.meta}>{tt('exercise.noSteps')}</Text>
+				) : null}
+				{steps.map((step, i) => (
+					<Text key={i} style={styles.step}>
+						{i + 1}. {step}
 					</Text>
-					{detail ? (
-						<Text style={styles.meta} numberOfLines={2}>
-							{labelBodyPart(detail.body_part, locale)} · {detail.equipment}
-						</Text>
-					) : null}
-					<ScrollView
-						style={styles.scroll}
-						contentContainerStyle={styles.body}
-						keyboardShouldPersistTaps="handled"
-					>
-						<CatalogThumb
-							imagePath={detail?.image}
-							bannerHeight={180}
-							rounded={radius.md}
-						/>
-						{loading ? <Text style={styles.meta}>…</Text> : null}
-						{!loading && steps.length === 0 ? (
-							<Text style={styles.meta}>{tt('exercise.noSteps')}</Text>
-						) : null}
-						{steps.map((step, i) => (
-							<Text key={i} style={styles.step}>
-								{i + 1}. {step}
-							</Text>
-						))}
-					</ScrollView>
-					<PrimaryButton label={tt('common.close')} onPress={onClose} />
-				</View>
-			</View>
-		</Modal>
+				))}
+			</ScrollView>
+		</BottomSheet>
 	);
 }
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
-	wrap: {
-		flex: 1,
-		justifyContent: 'flex-end',
-		backgroundColor: 'transparent'
-	},
-	backdrop: {
-		...StyleSheet.absoluteFill,
-		backgroundColor: colors.overlayScrim
-	},
-	sheet: {
-		maxHeight: '78%',
-		backgroundColor: colors.panel,
-		borderTopLeftRadius: radius.xl,
-		borderTopRightRadius: radius.xl,
-		paddingHorizontal: space.lg,
-		paddingTop: space.md,
-		gap: space.sm,
-		borderTopWidth: 1,
-		borderColor: colors.border
-	},
-	handle: {
-		alignSelf: 'center',
-		width: 40,
-		height: 4,
-		borderRadius: 999,
-		backgroundColor: colors.border,
-		marginBottom: 4
-	},
-	title: { color: colors.text, fontSize: 20, fontWeight: '800' },
-	meta: { color: colors.muted, fontSize: 13 },
-	scroll: { flexGrow: 0 },
-	body: { gap: space.sm, paddingBottom: space.sm },
-	step: {
-		color: colors.text,
-		fontSize: 15,
-		lineHeight: 22,
-		minHeight: touchMin / 2
-	}
+		title: { color: colors.text, fontSize: 20, fontWeight: '800' },
+		meta: { color: colors.muted, fontSize: 13 },
+		scroll: { flexGrow: 0 },
+		body: { gap: space.sm, paddingBottom: space.sm },
+		step: {
+			color: colors.text,
+			fontSize: 15,
+			lineHeight: 22,
+			minHeight: touchMin / 2
+		}
 	});
 }

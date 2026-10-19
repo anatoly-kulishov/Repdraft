@@ -9,10 +9,12 @@ Repdraft - **не только** `mobile/`. SvelteKit web/PWA остаётся �
 
 ## Обязательный порядок для новой фичи
 
-1. **Логика и строки** в `src/lib/domain/` и `src/lib/i18n/messages.ts` (общие для обоих клиентов).
-2. **Хранение** через `src/lib/storage/` (web) и установленные RN repo/state пути в `mobile/` - одна модель данных.
-3. **UI на обоих клиентах**, если фича не завязана на натив (см. ниже). В одном PR/задаче: RN экран/панель **и** web route или panel-widget в `src/routes/` / `src/lib/components/`.
-4. **Проверка:** `npm run check:all` перед «готово».
+1. **Логика** в `src/lib/domain/` (общая для обоих клиентов).
+2. **Строки** только в `src/lib/i18n/messages.ts` (один файл; RN импортирует через `@repdraft/i18n` / Metro). Не дублировать каталог в `mobile/`.
+3. **Визуальные токены** (цвет, spacing, radius, 48px) в `src/lib/design/tokens.ts`. После правки: `npm run build:tokens`. Web atmosphere (grain, градиенты CTA, Inter) остаётся в CSS рядом.
+4. **Хранение** через `src/lib/storage/` (web) и установленные RN repo/state пути в `mobile/` - одна модель данных.
+5. **UI на обоих клиентах**, если фича не завязана на натив (см. ниже). В одном PR/задаче: RN экран/панель **и** web route или panel-widget в `src/routes/` / `src/lib/components/`.
+6. **Проверка:** `npm run check:parity` перед «готово» (tokens + versions + web/mobile typecheck).
 
 RN может получать UX первым (священный цикл, bottom sheets), но **не оставлять** долгоживущий «только mobile» для domain-only возможностей (Quest, ачивки, прогресс, summary-подсказки, настройки профиля и т.п.).
 
@@ -45,7 +47,13 @@ Web может быть проще по layout (нет safe-area tab bar), но 
 
 - Domain + i18n + только `mobile/app/*` без web surface для non-native фичи.
 - Дублировать бизнес-правила в RN вместо `src/lib/domain/`.
+- Второй `messages.ts` или правки только в mobile copy.
+- Хардкод цветов/spacing в обход `src/lib/design/tokens.ts` без причины.
 - Web-only storage schema, несовместимая с sync/RN.
+
+## Версии
+
+Root `package.json`, `mobile/package.json` и `mobile/app.json` `expo.version` должны совпадать. Релиз: `npm run bump:version -- X.Y.Z` (+ changelog).
 
 ## Ссылки
 

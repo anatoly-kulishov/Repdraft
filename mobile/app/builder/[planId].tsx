@@ -33,6 +33,7 @@ import {
 	updateGroupRest,
 	updateGroupSets
 } from '@repdraft/domain/workout';
+import { shouldShowCoachmark } from '@repdraft/domain/onboarding';
 import type { ExerciseIndexItem, WorkoutPlan } from '@repdraft/domain/types';
 import {
 	exerciseDisplayName,
@@ -43,10 +44,12 @@ import {
 	uniqueBodyParts
 } from '../../src/catalog/loadIndex';
 import { CatalogThumb } from '../../src/components/CatalogThumb';
+import { Coachmark } from '../../src/components/Coachmark';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { useBottomChromePad, useStackHeaderOffset } from '../../src/layout/safe';
 import { routeParam } from '../../src/nav/params';
 import { useLocale } from '../../src/state/locale';
+import { loadOnboarding, dismissCoachmark } from '../../src/state/onboarding';
 import { useAppColors } from '../../src/state/theme';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { deletePlanRemote, pushPlan } from '../../src/sync/cloudSync';
@@ -71,6 +74,8 @@ export default function BuilderScreen() {
 	const listPad = bottomPad + (selected.size > 0 ? 220 : 152);
 	const [catalogTick, setCatalogTick] = useState(0);
 	const [flashId, setFlashId] = useState<string | null>(null);
+	const [showIntroCoachmark, setShowIntroCoachmark] = useState(false);
+	const [showSupersetCoachmark, setShowSupersetCoachmark] = useState(false);
 	const planRef = useRef<WorkoutPlan | null>(null);
 
 	const catalog = useMemo(() => {
@@ -146,7 +151,12 @@ export default function BuilderScreen() {
 					}
 					return;
 				}
-				if (!cancelled) setPlan(found);
+				if (!cancelled) {
+					setPlan(found);
+					const ob = await loadOnboarding();
+					setShowIntroCoachmark(shouldShowCoachmark(ob, 'builder.intro'));
+					setShowSupersetCoachmark(shouldShowCoachmark(ob, 'builder.superset'));
+				}
 			} catch {
 				if (!cancelled) {
 					setBootError(true);
@@ -382,6 +392,24 @@ export default function BuilderScreen() {
 			behavior={Platform.OS === 'ios' ? 'padding' : undefined}
 			keyboardVerticalOffset={88}
 		>
+			{showIntroCoachmark ? (
+				<Coachmark
+					message={tt('onboarding.coachBuilderIntro')}
+					onDismiss={() => {
+						setShowIntroCoachmark(false);
+						void dismissCoachmark('builder.intro');
+					}}
+				/>
+			) : null}
+			{showSupersetCoachmark ? (
+				<Coachmark
+					message={tt('onboarding.coachBuilderSuperset')}
+					onDismiss={() => {
+						setShowSupersetCoachmark(false);
+						void dismissCoachmark('builder.superset');
+					}}
+				/>
+			) : null}
 			<Text style={styles.label}>{tt('builder.name')}</Text>
 			<TextInput
 				style={styles.input}

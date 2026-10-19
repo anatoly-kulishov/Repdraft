@@ -1,7 +1,7 @@
-import type { AppLocale } from '$lib/i18n/locale';
+import type { AppLocale } from '../i18n/locale';
 import type { ExerciseIndexItem } from './types';
 import { isCustomExerciseId } from './customExercises';
-import ruOverrides from '$lib/data/exerciseNamesRuOverrides.json' with { type: 'json' };
+import ruOverrides from '../data/exerciseNamesRuOverrides.json' with { type: 'json' };
 
 const RU_OVERRIDES = ruOverrides as Record<string, string>;
 

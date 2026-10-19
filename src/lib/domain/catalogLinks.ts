@@ -1,6 +1,6 @@
 import { isBodyPart } from './filters';
 import { labelBodyPart } from './labels.ru';
-import type { AppLocale } from '$lib/i18n/locale';
+import type { AppLocale } from '../i18n/locale';
 import type { BodyPart } from './types';
 
 export { isSafeFromPath, withFromParam } from './navigation';

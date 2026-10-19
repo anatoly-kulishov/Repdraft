@@ -10,6 +10,7 @@ import * as WebBrowser from 'expo-web-browser';
 import {
 	Alert,
 	Image,
+	Platform,
 	Pressable,
 	ScrollView,
 	StyleSheet,
@@ -18,8 +19,9 @@ import {
 	TextInput,
 	View
 } from 'react-native';
+import { UserRound } from 'lucide-react-native';
 import type { Session } from '@supabase/supabase-js';
-import { userCustomAvatarPath, userDisplayName, userInitials } from '@repdraft/domain/authFlow';
+import { userCustomAvatarPath, userDisplayName } from '@repdraft/domain/authFlow';
 import { clampGreetingName } from '@repdraft/domain/greetingName';
 import { buildExportPayload, exportPayloadToJson } from '@repdraft/domain/exportData';
 import {
@@ -44,14 +46,18 @@ import {
 import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
 import type { WorkoutSession } from '@repdraft/domain/types';
 import type { OnboardingState } from '@repdraft/domain/onboarding';
+import {
+	passwordPolicyMessageKey,
+	validatePasswordPolicy
+} from '@repdraft/domain/passwordPolicy';
 import { TESTER_MODE_UNLOCK_TAPS } from '@repdraft/domain/prefs';
 import { heroLevel, type QuestState } from '@repdraft/domain/quest';
 import { AchievementsPanel } from '../../src/components/AchievementsPanel';
+import { ConfirmSheet } from '../../src/components/ConfirmSheet';
 import { OnboardingChecklistPanel } from '../../src/components/OnboardingChecklistPanel';
-import { BrandMark } from '../../src/components/BrandMark';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
-import { QuestOnboardingModal } from '../../src/components/QuestOnboardingModal';
+import { QuestOnboardingSheet } from '../../src/components/QuestOnboardingSheet';
 import { QuestProgressPanel } from '../../src/components/QuestSummaryCard';
 import { WhatsNewSheet } from '../../src/components/WhatsNewSheet';
 import { getHealthAdapter } from '../../src/health';
@@ -111,7 +117,7 @@ export default function ProfileScreen() {
 	const switchColors = useMemo(
 		() => ({
 			trackColor: { false: colors.border, true: colors.accent } as const,
-			thumbColor: colors.text
+			thumbColor: colors.accentText
 		}),
 		[colors]
 	);
@@ -135,6 +141,7 @@ export default function ProfileScreen() {
 	const [legalAccepted, setLegalAccepted] = useState(false);
 	const [whatsNewOpen, setWhatsNewOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
+	const [logoutEverywhereOpen, setLogoutEverywhereOpen] = useState(false);
 	const [deleteWord, setDeleteWord] = useState('');
 	const [avatarBusy, setAvatarBusy] = useState(false);
 	const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
@@ -147,7 +154,6 @@ export default function ProfileScreen() {
 	const cloud = isSupabaseConfigured();
 	const avatarUrl = session?.user ? resolveUserAvatarUrl(session.user) : null;
 	const displayName = userDisplayName(session?.user ?? null);
-	const initials = userInitials(session?.user ?? null);
 
 	useFocusEffect(
 		useCallback(() => {
@@ -330,7 +336,7 @@ export default function ProfileScreen() {
 		const path = `${FileSystem.cacheDirectory}repdraft-backup.json`;
 		await FileSystem.writeAsStringAsync(path, json);
 		if (await Sharing.isAvailableAsync()) {
-			await Sharing.shareAsync(path, { mimeType: 'application/json', dialogTitle: 'Repdraft backup' });
+			await Sharing.shareAsync(path, { mimeType: 'application/json', dialogTitle: tt('profile.export') });
 		} else {
 			await Clipboard.setStringAsync(json);
 			Alert.alert(tt('common.ok'), tt('profile.copied'));
@@ -410,6 +416,11 @@ export default function ProfileScreen() {
 		if (!requireLegal()) return;
 		const sb = getSupabase();
 		if (!sb) return;
+		const policyReason = validatePasswordPolicy(password, email.trim());
+		if (policyReason !== 'ok') {
+			Alert.alert(tt('common.error'), tt(passwordPolicyMessageKey(policyReason)));
+			return;
+		}
 		setBusy(true);
 		const { error } = await sb.auth.signUp({ email: email.trim(), password });
 		setBusy(false);
@@ -515,7 +526,12 @@ export default function ProfileScreen() {
 		await sb.auth.signOut();
 	}
 
+	function openLogoutEverywhereConfirm() {
+		setLogoutEverywhereOpen(true);
+	}
+
 	async function logoutEverywhere() {
+		setLogoutEverywhereOpen(false);
 		try {
 			await signOutEverywhere();
 			Alert.alert(tt('common.ok'), tt('auth.logoutEverywhereDone'));
@@ -555,22 +571,21 @@ export default function ProfileScreen() {
 						<Image source={{ uri: avatarUrl }} style={styles.avatarImg} />
 					) : (
 						<View style={[styles.avatarImg, styles.avatarFallback]}>
-							<Text style={styles.avatarInitials}>{initials ?? '?'}</Text>
+							<UserRound size={28} color={colors.text} strokeWidth={2} />
 						</View>
 					)}
 				</Pressable>
 				<View style={styles.brandBody}>
 					<Text style={styles.brandTitle}>{displayName ?? 'Repdraft'}</Text>
-					{session?.user?.email ? (
-						<Text style={styles.brandHint} numberOfLines={1}>
-							{session.user.email}
-						</Text>
-					) : (
-						<Text style={styles.brandHint}>{tt('auth.greetingNameHint')}</Text>
-					)}
-				</View>
-				<BrandMark size={40} />
+				{session?.user?.email ? (
+					<Text style={styles.brandHint} numberOfLines={1}>
+						{session.user.email}
+					</Text>
+				) : (
+					<Text style={styles.brandHint}>{tt('auth.greetingNameHint')}</Text>
+				)}
 			</View>
+		</View>
 			{session?.user ? (
 				<Panel>
 					<PrimaryButton label={tt('auth.avatar.change')} variant="ghost" onPress={() => void pickAvatar()} />
@@ -665,7 +680,9 @@ export default function ProfileScreen() {
 						}}
 					/>
 				</View>
-				<Text style={styles.hint}>{tt('settings.restSoundHint')}</Text>
+				<Text style={styles.hint}>
+					{tt(Platform.OS === 'ios' ? 'settings.restSoundHintIos' : 'settings.restSoundHint')}
+				</Text>
 			</Panel>
 
 			<Panel>
@@ -798,11 +815,11 @@ export default function ProfileScreen() {
 							disabled={busy}
 						/>
 						<PrimaryButton label={tt('profile.signOut')} variant="ghost" onPress={() => void signOut()} />
-						<PrimaryButton
-							label={tt('auth.logoutEverywhere')}
-							variant="ghost"
-							onPress={() => void logoutEverywhere()}
-						/>
+					<PrimaryButton
+						label={tt('auth.logoutEverywhere')}
+						variant="ghost"
+						onPress={() => openLogoutEverywhereConfirm()}
+					/>
 					</>
 				) : (
 					<>
@@ -957,8 +974,21 @@ export default function ProfileScreen() {
 				<Text style={styles.version}>{tt('profile.version', { v: APP_VERSION })}</Text>
 			</Pressable>
 		</ScrollView>
+		<ConfirmSheet
+			open={logoutEverywhereOpen}
+			title={tt('auth.logoutEverywhereConfirmTitle')}
+			message={tt('auth.logoutEverywhereConfirmLead')}
+			onDismiss={() => setLogoutEverywhereOpen(false)}
+			actions={[
+				{
+					label: tt('auth.logoutEverywhereConfirmAction'),
+					variant: 'danger',
+					onPress: () => void logoutEverywhere()
+				}
+			]}
+		/>
 		<WhatsNewSheet visible={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
-		<QuestOnboardingModal
+		<QuestOnboardingSheet
 			visible={questOnboardOpen}
 			defaultName={greetingNameInput || displayName || ''}
 			onComplete={(p) => void completeQuestOnboard(p)}
@@ -986,7 +1016,6 @@ function makeStyles(colors: ColorPalette) {
 		backgroundColor: colors.panelRaised
 	},
 	avatarFallback: { alignItems: 'center', justifyContent: 'center' },
-	avatarInitials: { color: colors.text, fontWeight: '800', fontSize: 18 },
 	brandBody: { flex: 1 },
 	brandTitle: { ...type.title, color: colors.text },
 	brandHint: { ...type.meta, color: colors.muted, marginTop: 2 },

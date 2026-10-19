@@ -3,7 +3,6 @@ import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-	Alert,
 	FlatList,
 	KeyboardAvoidingView,
 	Platform,
@@ -15,11 +14,13 @@ import {
 	View
 } from 'react-native';
 import {
+	LIVE_REPS,
 	coerceReps,
 	coerceWeightKg,
 	filterRepsInput,
 	filterWeightInput,
-	LIVE_REPS
+	nudgeReps,
+	nudgeWeightKg
 } from '@repdraft/domain/inputLimits';
 import { RECORDS_STORAGE_KEY } from '@repdraft/domain/repository';
 import {
@@ -49,19 +50,25 @@ import {
 	updateLoggedSet,
 	visibleSessionExerciseIndices
 } from '@repdraft/domain/session';
-import { isCardioBodyPart } from '@repdraft/domain/workout';
+import { isBodyweightEquipment, isCardioBodyPart } from '@repdraft/domain/workout';
 import type { LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { unlockRestAudioFromGesture } from '../../src/audio/restChime';
 import { signalRestDone } from '../../src/audio/restDone';
 import { exerciseDisplayName, getIndexItem, refreshCustomsCache } from '../../src/catalog/loadIndex';
+import { Chip } from '../../src/components/Chip';
+import { ConfirmSheet, type ConfirmAction } from '../../src/components/ConfirmSheet';
+import { ElapsedClock } from '../../src/components/ElapsedClock';
+import { LiveSetRow, type SetDraft } from '../../src/components/LiveSetRow';
+import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
+import { RestTimer } from '../../src/components/RestTimer';
+import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { TechniqueSheet } from '../../src/components/TechniqueSheet';
 import { advanceHomeNextAfterFinish } from '../../src/live/homeNext';
 import { movePlanToEnd } from '../../src/live/planOrder';
-import { readRestUntil, restSecondsLeft, writeRestUntil } from '../../src/live/restUntil';
+import { readRestUntil, shiftRestUntil, writeRestUntil } from '../../src/live/restUntil';
 import {
 	exerciseAllSetsDone,
-	formatElapsedClock,
 	isLiveResumePlanId,
 	pickDefaultExerciseIndex
 } from '../../src/live/sessionUi';
@@ -69,7 +76,7 @@ import {
 	countImprovedRecords,
 	mergeSessionRecordsInto,
 	recordsFromFinishedSession
-} from '../../src/lib/sessionRecords';
+} from '@repdraft/domain/sessionRecords';
 import { noteFinishedSessionAchievements } from '../../src/state/achievements';
 import { isHealthReadEnabled } from '../../src/state/healthPrefs';
 import { getHealthAdapter, saveLastHealthSnapshot } from '../../src/health';
@@ -89,11 +96,21 @@ import { useBottomChromePad, useStackHeaderOffset } from '../../src/layout/safe'
 import { pushPlan, pushRecord, pushSession } from '../../src/sync/cloudSync';
 import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
+/** ponytail: last-set hints only need recent finishes. Upgrade path: per-exercise index. */
+const HINT_SESSION_CAP = 30;
+
+function hintSessions(sessions: WorkoutSession[]): WorkoutSession[] {
+	return sessions
+		.filter((s) => s.finishedAt)
+		.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''))
+		.slice(0, HINT_SESSION_CAP);
+}
+
 function tapLight(): void {
 	void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
 }
 
-type DraftRow = { weight: string; reps: string };
+type DraftRow = SetDraft;
 
 export default function LiveScreen() {
 	const { planId: planIdParam } = useLocalSearchParams<{ planId: string }>();
@@ -112,14 +129,17 @@ export default function LiveScreen() {
 	const [drafts, setDrafts] = useState<DraftRow[]>([]);
 	const [noteText, setNoteText] = useState('');
 	const [restUntil, setRestUntil] = useState<number | null>(null);
-	const [now, setNow] = useState(Date.now());
 	const [finishing, setFinishing] = useState(false);
 	const [bootReady, setBootReady] = useState(false);
 	const [forceAltPick, setForceAltPick] = useState(false);
 	const [techniqueId, setTechniqueId] = useState<string | null>(null);
+	const [confirm, setConfirm] = useState<{
+		title: string;
+		message?: string;
+		actions: ConfirmAction[];
+		showCancel?: boolean;
+	} | null>(null);
 	const finishOfferedRef = useRef(false);
-	const prevRestLeft = useRef(0);
-	const restChimeArmed = useRef(false);
 
 	const persist = useCallback(async (next: WorkoutSession, nextRest: number | null = restUntil) => {
 		setSession(next);
@@ -155,7 +175,8 @@ export default function LiveScreen() {
 				readRestUntil()
 			]);
 			if (cancelled) return;
-			setHistory(hist);
+			const hints = hintSessions(hist);
+			setHistory(hints);
 			setRestUntil(rest);
 
 			const resumeActive = async (activeSession: WorkoutSession) => {
@@ -184,24 +205,29 @@ export default function LiveScreen() {
 						if (!cancelled) setBootReady(true);
 						return;
 					}
-					Alert.alert(tt('live.switchStartNew'), tt('live.switchOfferHint'), [
-						{
-							text: tt('live.switchKeepCurrent'),
-							style: 'cancel',
-							onPress: () => {
-								router.replace(`/live/${active.planId}`);
-							}
-						},
-						{
-							text: tt('live.switchStartNew'),
-							style: 'destructive',
-							onPress: () => {
-								void startNew(plan, hist).then(() => {
-									if (!cancelled) setBootReady(true);
-								});
-							}
-						}
-					]);
+					if (!cancelled) {
+						setBootReady(true);
+						setConfirm({
+							title: tt('live.switchStartNew'),
+							message: tt('live.switchOfferHint'),
+							actions: [
+								{
+									label: tt('live.switchKeepCurrent'),
+									variant: 'secondary',
+									onPress: () => {
+										router.replace(`/live/${active.planId}`);
+									}
+								},
+								{
+									label: tt('live.switchStartNew'),
+									variant: 'danger',
+									onPress: () => {
+										void startNew(plan, hints);
+									}
+								}
+							]
+						});
+					}
 					return;
 				}
 			}
@@ -221,7 +247,7 @@ export default function LiveScreen() {
 				}
 				return;
 			}
-			await startNew(plan, hist);
+			await startNew(plan, hints);
 			if (!cancelled) setBootReady(true);
 		})();
 		return () => {
@@ -231,27 +257,11 @@ export default function LiveScreen() {
 	}, [planId]);
 
 	useEffect(() => {
-		const t = setInterval(() => setNow(Date.now()), 250);
-		return () => clearInterval(t);
-	}, []);
-
-	useEffect(() => {
 		void activateKeepAwakeAsync('live-session');
 		return () => {
 			void deactivateKeepAwake('live-session');
 		};
 	}, []);
-
-	useEffect(() => {
-		const left = restSecondsLeft(restUntil, now);
-		if (restUntil != null && left > 0) restChimeArmed.current = true;
-		if (prevRestLeft.current > 0 && left === 0 && restChimeArmed.current) {
-			restChimeArmed.current = false;
-			void signalRestDone();
-			void writeRestUntil(null).then(() => setRestUntil(null));
-		}
-		prevRestLeft.current = left;
-	}, [now, restUntil]);
 
 	const visible = useMemo(
 		() => (session ? visibleSessionExerciseIndices(session) : []),
@@ -261,8 +271,10 @@ export default function LiveScreen() {
 	const needsAlt = Boolean(
 		session && ex && (forceAltPick || altGroupNeedsPick(session, selectedEi))
 	);
-	const restLeft = restSecondsLeft(restUntil, now);
 	const skipLift = Boolean(ex && isCardioBodyPart(getIndexItem(ex.exerciseId)?.body_part));
+	const bodyweight = Boolean(
+		ex && isBodyweightEquipment(getIndexItem(ex.exerciseId)?.equipment)
+	);
 
 	useEffect(() => {
 		if (!session || !ex || needsAlt) {
@@ -296,25 +308,44 @@ export default function LiveScreen() {
 		if (finishOfferedRef.current || finishing) return;
 		if (!isSessionFullyLogged(current)) return;
 		finishOfferedRef.current = true;
-		Alert.alert(tt('live.finishOfferReady'), tt('live.finishOfferHint'), [
-			{
-				text: tt('live.finishOfferLater'),
-				style: 'cancel',
-				onPress: () => {
-					finishOfferedRef.current = false;
+		setConfirm({
+			title: tt('live.finishOfferReady'),
+			message: tt('live.finishOfferHint'),
+			showCancel: false,
+			actions: [
+				{
+					label: tt('live.finishOfferLater'),
+					variant: 'secondary',
+					onPress: () => {
+						finishOfferedRef.current = false;
+					}
+				},
+				{
+					label: tt('live.finish'),
+					onPress: () => void commitFinish(current)
 				}
-			},
-			{ text: tt('live.finish'), onPress: () => void commitFinish(current) }
-		]);
+			]
+		});
 	}
 
 	async function setRestFromSec(sec: number) {
 		if (sec > 0) unlockRestAudioFromGesture();
 		const next = sec > 0 ? Date.now() + sec * 1000 : null;
-		if (next == null) restChimeArmed.current = false;
 		await writeRestUntil(next);
 		setRestUntil(next);
 	}
+
+	function adjustRest(deltaSec: number) {
+		if (restUntil == null) return;
+		unlockRestAudioFromGesture();
+		const next = shiftRestUntil(restUntil, deltaSec);
+		void writeRestUntil(next).then(() => setRestUntil(next));
+	}
+
+	const finishRest = useCallback(() => {
+		void signalRestDone();
+		void writeRestUntil(null).then(() => setRestUntil(null));
+	}, []);
 
 	async function patchSet(
 		ei: number,
@@ -346,7 +377,7 @@ export default function LiveScreen() {
 	function validateLift(set: { weightKg: number | null; reps: number | null }): boolean {
 		if (skipLift) return true;
 		if (set.weightKg != null && !coerceWeightKg(String(set.weightKg))) {
-			Alert.alert(tt('live.invalidWeight'));
+			setConfirm({ title: tt('live.invalidWeight'), actions: [] });
 			return false;
 		}
 		if (
@@ -355,7 +386,7 @@ export default function LiveScreen() {
 			set.reps < LIVE_REPS.min ||
 			set.reps > LIVE_REPS.max
 		) {
-			Alert.alert(tt('live.invalidReps'));
+			setConfirm({ title: tt('live.invalidReps'), actions: [] });
 			return false;
 		}
 		return true;
@@ -511,49 +542,58 @@ export default function LiveScreen() {
 
 	function confirmFinish() {
 		if (!session) return;
-		Alert.alert(tt('live.finish'), tt('live.confirmFinish'), [
-			{ text: tt('common.cancel'), style: 'cancel' },
-			{ text: tt('live.finish'), onPress: () => void commitFinish(session) }
-		]);
+		setConfirm({
+			title: tt('live.finish'),
+			message: tt('live.confirmFinish'),
+			actions: [{ label: tt('live.finish'), onPress: () => void commitFinish(session) }]
+		});
 	}
 
 	function offerSkip() {
 		if (!session || !ex) return;
 		const ei = selectedEi;
 		const snapshot = session;
-		Alert.alert(tt('live.skipExercise'), tt('live.skipExerciseHint'), [
-			{ text: tt('common.cancel'), style: 'cancel' },
-			{
-				text: tt('live.skipExercise'),
-				style: 'destructive',
-				onPress: () => {
-					void (async () => {
-						const next = skipSessionExercise(snapshot, ei);
-						await persist(next, null);
-						if (next.exercises.length === 0) {
-							await writeActiveSession(null);
-							router.replace('/');
-							return;
-						}
-						setSelectedEi(pickDefaultExerciseIndex(next));
-						setForceAltPick(false);
-					})();
+		setConfirm({
+			title: tt('live.skipExercise'),
+			message: tt('live.skipExerciseHint'),
+			actions: [
+				{
+					label: tt('live.skipExercise'),
+					variant: 'danger',
+					onPress: () => {
+						void (async () => {
+							const next = skipSessionExercise(snapshot, ei);
+							await persist(next, null);
+							if (next.exercises.length === 0) {
+								await writeActiveSession(null);
+								router.replace('/');
+								return;
+							}
+							setSelectedEi(pickDefaultExerciseIndex(next));
+							setForceAltPick(false);
+						})();
+					}
 				}
-			}
-		]);
+			]
+		});
 	}
 
 	function offerDiscard() {
-		Alert.alert(tt('live.discard'), tt('live.discardHint'), [
-			{ text: tt('common.cancel'), style: 'cancel' },
-			{
-				text: tt('live.discardConfirm'),
-				style: 'destructive',
-				onPress: () => {
-					void writeActiveSession(null).then(() => writeRestUntil(null)).then(() => router.replace('/'));
+		setConfirm({
+			title: tt('live.discard'),
+			message: tt('live.discardHint'),
+			actions: [
+				{
+					label: tt('live.discardConfirm'),
+					variant: 'danger',
+					onPress: () => {
+						void writeActiveSession(null)
+							.then(() => writeRestUntil(null))
+							.then(() => router.replace('/'));
+					}
 				}
-			}
-		]);
+			]
+		});
 	}
 
 	async function undoLastSet() {
@@ -571,16 +611,62 @@ export default function LiveScreen() {
 		}
 	}
 
+	function nudgeDraft(si: number, field: 'weight' | 'reps', delta: number) {
+		if (!session || !ex) return;
+		const row = drafts[si];
+		if (!row) return;
+		if (field === 'weight') {
+			const current = row.weight === '' ? null : coerceWeightKg(row.weight);
+			const next = String(nudgeWeightKg(current, delta));
+			setDrafts((rows) => rows.map((r, i) => (i === si ? { ...r, weight: next } : r)));
+			void persist(
+				updateLoggedSet(session, selectedEi, si, { weightKg: coerceWeightKg(next) }),
+				restUntil
+			);
+		} else {
+			const current = row.reps === '' ? null : coerceReps(row.reps, LIVE_REPS);
+			const next = String(nudgeReps(current, delta, LIVE_REPS));
+			setDrafts((rows) => rows.map((r, i) => (i === si ? { ...r, reps: next } : r)));
+			void persist(
+				updateLoggedSet(session, selectedEi, si, { reps: coerceReps(next, LIVE_REPS) }),
+				restUntil
+			);
+		}
+		tapLight();
+	}
+
+	function applyLastDraft(si: number, prev: { weightKg: number | null; reps: number | null }) {
+		if (!session) return;
+		const weight = prev.weightKg != null ? String(prev.weightKg) : '';
+		const reps = prev.reps != null ? String(prev.reps) : '';
+		setDrafts((rows) => rows.map((r, i) => (i === si ? { weight, reps } : r)));
+		void persist(
+			updateLoggedSet(session, selectedEi, si, {
+				weightKg: prev.weightKg,
+				reps: prev.reps
+			}),
+			restUntil
+		);
+		tapLight();
+	}
+
 	if (!bootReady || !session) {
 		return (
-			<View style={styles.center}>
-				<Text style={styles.muted}>…</Text>
+			<View style={styles.root}>
+				<PageSkeleton variant="planPreview" />
+				<ConfirmSheet
+					open={Boolean(confirm)}
+					title={confirm?.title ?? ''}
+					message={confirm?.message}
+					actions={confirm?.actions ?? []}
+					showCancel={confirm?.showCancel !== false}
+					onDismiss={() => setConfirm(null)}
+				/>
 			</View>
 		);
 	}
 
 	const progress = `${completedSetCount(session)} / ${totalSetCount(session)}`;
-	const elapsed = formatElapsedClock(now - new Date(session.startedAt).getTime());
 	const altOptions =
 		needsAlt && ex?.altGroupId
 			? session.exercises.filter((e) => e.altGroupId === ex.altGroupId)
@@ -588,7 +674,7 @@ export default function LiveScreen() {
 	const currentComplete = ex ? exerciseAllSetsDone(session.exercises, selectedEi) : false;
 	const hasNextExercise = nextManualExerciseFocus(session, selectedEi) !== selectedEi;
 	const restTotalSec = ex ? Math.max(1, restSecAfterSet(session, selectedEi)) : 1;
-	const restPct = restLeft > 0 ? Math.min(1, restLeft / restTotalSec) : 0;
+	const currentSetIndex = ex?.sets.findIndex((set) => !set.completed) ?? -1;
 
 	return (
 		<KeyboardAvoidingView
@@ -601,7 +687,7 @@ export default function LiveScreen() {
 					{session.planName}
 				</Text>
 				<Text style={styles.progress}>
-					{progress} · {elapsed}
+					{progress} · <ElapsedClock startedAt={session.startedAt} />
 				</Text>
 			</View>
 
@@ -614,20 +700,18 @@ export default function LiveScreen() {
 				renderItem={({ item: ei }) => {
 					const row = session.exercises[ei];
 					if (!row) return null;
-					const done = exerciseAllSetsDone(session.exercises, ei);
 					const active = ei === selectedEi;
 					return (
-						<Pressable
-							style={[styles.navChip, active && styles.navChipActive, done && styles.navChipDone]}
-							onPress={() => {
-								setSelectedEi(ei);
-								setForceAltPick(false);
-							}}
-						>
-							<Text style={[styles.navChipText, active && styles.navChipTextActive]} numberOfLines={1}>
-								{exerciseDisplayName(row.exerciseId, locale)}
-							</Text>
-						</Pressable>
+						<View style={[styles.navChipWrap, exerciseAllSetsDone(session.exercises, ei) && styles.navChipDone]}>
+							<Chip
+								label={exerciseDisplayName(row.exerciseId, locale)}
+								selected={active}
+								onPress={() => {
+									setSelectedEi(ei);
+									setForceAltPick(false);
+								}}
+							/>
+						</View>
 					);
 				}}
 			/>
@@ -638,43 +722,18 @@ export default function LiveScreen() {
 				keyboardShouldPersistTaps="handled"
 				keyboardDismissMode="on-drag"
 			>
-				{restLeft > 0 ? (
-					<View style={styles.restBox}>
-						<Text style={styles.restLabel}>{tt('live.rest')}</Text>
-						<Text style={styles.restValue}>{restLeft}</Text>
-						<Text style={styles.restUnit}>sec</Text>
-						<View style={styles.restBarTrack}>
-							<View style={[styles.restBarFill, { width: `${Math.round(restPct * 100)}%` }]} />
-						</View>
-						<View style={styles.restActions}>
-							<View style={styles.restAction}>
-								<PrimaryButton
-									label={tt('live.restPlus30')}
-									variant="ghost"
-									compact
-									onPress={() => {
-										unlockRestAudioFromGesture();
-										const base = restUntil && restUntil > Date.now() ? restUntil : Date.now();
-										const next = base + 30_000;
-										restChimeArmed.current = true;
-										void writeRestUntil(next).then(() => setRestUntil(next));
-									}}
-								/>
-							</View>
-							<View style={styles.restAction}>
-								<PrimaryButton
-									label={tt('live.skipRest')}
-									variant="ghost"
-									compact
-									onPress={() => void setRestFromSec(0)}
-								/>
-							</View>
-						</View>
-					</View>
+				{restUntil != null ? (
+					<RestTimer
+						restUntil={restUntil}
+						totalSec={restTotalSec}
+						onAdjust={adjustRest}
+						onSkip={() => void setRestFromSec(0)}
+						onDone={finishRest}
+					/>
 				) : null}
 
 				{needsAlt && ex ? (
-					<View style={styles.card}>
+					<Panel style={styles.card}>
 						<Text style={styles.exName}>{tt('live.pickAlt')}</Text>
 						{altOptions.map((opt) => (
 							<PrimaryButton
@@ -690,9 +749,9 @@ export default function LiveScreen() {
 								}}
 							/>
 						))}
-					</View>
+					</Panel>
 				) : ex ? (
-					<View style={styles.card}>
+					<Panel style={styles.card}>
 						<Pressable onPress={() => router.push(`/exercise/${ex.exerciseId}`)}>
 							<Text style={styles.exName} numberOfLines={2}>
 								{exerciseDisplayName(ex.exerciseId, locale)}
@@ -715,90 +774,61 @@ export default function LiveScreen() {
 
 						{ex.sets.map((set, si) => {
 							const prev = previousSetAtIndex(history, ex.exerciseId, si);
-							const kindKey = setKindMessageKey(loggedSetKind(set));
 							const draft = drafts[si] ?? { weight: '', reps: '' };
 							return (
-								<View key={si} style={[styles.setRow, set.completed && styles.setRowDone]}>
-									<View style={styles.setHead}>
-										<Text style={styles.setIndex}>
-											{tt('live.setProgress', { n: si + 1, total: ex.sets.length })}
-										</Text>
-										<Text style={styles.prev}>
-											{tt('live.last')}:{' '}
-											{prev
-												? `${prev.weightKg ?? '-'} × ${prev.reps ?? '-'}`
-												: '-'}
-										</Text>
-									</View>
-									<View style={styles.inputs}>
-										<TextInput
-											value={draft.weight}
-											editable={!set.completed && !skipLift}
-											onChangeText={(value) => {
-												const filtered = filterWeightInput(value, draft.weight);
-												setDrafts((rows) =>
-													rows.map((r, i) => (i === si ? { ...r, weight: filtered } : r))
-												);
-											}}
-											onBlur={() => void syncDraftToSession(selectedEi, si)}
-											keyboardType="decimal-pad"
-											style={styles.input}
-											placeholder={tt('common.kg')}
-											placeholderTextColor={colors.muted}
-										/>
-										<TextInput
-											value={draft.reps}
-											editable={!set.completed}
-											onChangeText={(value) => {
-												const filtered = filterRepsInput(value, LIVE_REPS, draft.reps);
-												setDrafts((rows) =>
-													rows.map((r, i) => (i === si ? { ...r, reps: filtered } : r))
-												);
-											}}
-											onBlur={() => void syncDraftToSession(selectedEi, si)}
-											keyboardType="number-pad"
-											style={styles.input}
-											placeholder={tt('common.reps')}
-											placeholderTextColor={colors.muted}
-										/>
-									</View>
-									<View style={styles.setActions}>
-										<PrimaryButton
-											label={tt(kindKey)}
-											variant="ghost"
-											onPress={() =>
-												void patchSet(selectedEi, si, {
-													kind: nextSetKind(loggedSetKind(set))
-												})
-											}
-										/>
-										<PrimaryButton
-											label={set.completed ? tt('live.undoSet') : tt('live.log')}
-											onPress={() => void onToggleComplete(selectedEi, si)}
-										/>
-										{ex.sets.length > 1 ? (
-											<Pressable
-												style={styles.removeHit}
-												onLongPress={() => {
-													Alert.alert(tt('live.removeSet'), undefined, [
-														{ text: tt('common.cancel'), style: 'cancel' },
-														{
-															text: tt('live.removeSet'),
-															style: 'destructive',
-															onPress: () =>
-																void persist(
-																	removeLoggedSet(session, selectedEi, si),
-																	restUntil
-																)
-														}
-													]);
-												}}
-											>
-												<Text style={styles.removeHint}>{tt('live.removeSet')}</Text>
-											</Pressable>
-										) : null}
-									</View>
-								</View>
+								<LiveSetRow
+									key={si}
+									setIndex={si}
+									setCount={ex.sets.length}
+									completed={set.completed}
+									current={si === currentSetIndex}
+									skipLift={skipLift}
+									bodyweight={bodyweight}
+									canRemove={ex.sets.length > 1}
+									kindLabel={tt(setKindMessageKey(loggedSetKind(set)))}
+									draft={draft}
+									prev={prev}
+									onChangeWeight={(value) => {
+										const filtered = filterWeightInput(value, draft.weight);
+										setDrafts((rows) =>
+											rows.map((r, i) => (i === si ? { ...r, weight: filtered } : r))
+										);
+									}}
+									onChangeReps={(value) => {
+										const filtered = filterRepsInput(value, LIVE_REPS, draft.reps);
+										setDrafts((rows) =>
+											rows.map((r, i) => (i === si ? { ...r, reps: filtered } : r))
+										);
+									}}
+									onBlur={() => void syncDraftToSession(selectedEi, si)}
+									onNudgeWeight={(delta) => nudgeDraft(si, 'weight', delta)}
+									onNudgeReps={(delta) => nudgeDraft(si, 'reps', delta)}
+									onApplyLast={() => {
+										if (prev) applyLastDraft(si, prev);
+									}}
+									onToggleKind={() =>
+										void patchSet(selectedEi, si, {
+											kind: nextSetKind(loggedSetKind(set))
+										})
+									}
+									onToggleComplete={() => void onToggleComplete(selectedEi, si)}
+									onRemove={() =>
+										setConfirm({
+											title: tt('live.removeSet'),
+											actions: [
+												{
+													label: tt('live.removeSet'),
+													variant: 'danger',
+													onPress: () =>
+														void persist(
+															removeLoggedSet(session, selectedEi, si),
+															restUntil
+														)
+												}
+											]
+										})
+									}
+								/>
 							);
 						})}
 
@@ -847,11 +877,11 @@ export default function LiveScreen() {
 							onPress={() => void persist(addLoggedSet(session, selectedEi), restUntil)}
 						/>
 						<PrimaryButton label={tt('live.skipExercise')} variant="ghost" onPress={offerSkip} />
-					</View>
+					</Panel>
 				) : (
-					<View style={styles.card}>
+					<Panel style={styles.card}>
 						<Text style={styles.exName}>{tt('live.finishOfferReady')}</Text>
-					</View>
+					</Panel>
 				)}
 			</ScrollView>
 
@@ -886,6 +916,14 @@ export default function LiveScreen() {
 				</View>
 			</View>
 			<TechniqueSheet exerciseId={techniqueId} onClose={() => setTechniqueId(null)} />
+			<ConfirmSheet
+				open={Boolean(confirm)}
+				title={confirm?.title ?? ''}
+				message={confirm?.message}
+				actions={confirm?.actions ?? []}
+				showCancel={confirm?.showCancel !== false}
+				onDismiss={() => setConfirm(null)}
+			/>
 		</KeyboardAvoidingView>
 	);
 }
@@ -901,25 +939,8 @@ function makeStyles(colors: ColorPalette) {
 		progress: { color: colors.muted, fontSize: 14, fontWeight: '600' },
 		muted: { color: colors.muted },
 		nav: { paddingHorizontal: space.md, paddingVertical: space.sm, gap: space.sm },
-		navChip: {
-			minHeight: touchMin,
-			maxWidth: 168,
-			paddingHorizontal: space.md,
-			borderRadius: radius.xl,
-			borderWidth: 1,
-			borderColor: colors.border,
-			backgroundColor: colors.panel,
-			alignItems: 'center',
-			justifyContent: 'center',
-			marginRight: space.sm
-		},
-		navChipActive: {
-			borderColor: colors.accent,
-			backgroundColor: colors.accentDim
-		},
+		navChipWrap: { maxWidth: 168, marginRight: space.sm },
 		navChipDone: { opacity: 0.65 },
-		navChipText: { color: colors.muted, fontWeight: '700', fontSize: 13 },
-		navChipTextActive: { color: colors.text },
 		restBox: {
 			backgroundColor: colors.panelRaised,
 			borderRadius: radius.lg,
@@ -956,12 +977,7 @@ function makeStyles(colors: ColorPalette) {
 		restActions: { flexDirection: 'row', gap: space.sm, alignSelf: 'stretch', marginTop: space.sm },
 		restAction: { flex: 1 },
 		card: {
-			backgroundColor: colors.panel,
-			borderRadius: radius.lg,
-			padding: space.lg,
-			gap: space.md,
-			borderWidth: 1,
-			borderColor: colors.border
+			gap: space.md
 		},
 		exName: { color: colors.text, fontSize: 22, fontWeight: '800' },
 		exActions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },

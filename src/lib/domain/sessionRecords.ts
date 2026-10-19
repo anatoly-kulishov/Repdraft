@@ -52,6 +52,18 @@ export function recordsFromFinishedSession(session: WorkoutSession): PersonalRec
 	return out;
 }
 
+export function mergeSessionRecordsInto(
+	existing: PersonalRecord[],
+	fromSession: PersonalRecord[]
+): PersonalRecord[] {
+	const map = new Map(existing.map((r) => [r.exerciseId, r]));
+	for (const next of fromSession) {
+		const prev = map.get(next.exerciseId) ?? null;
+		if (isBetter(next, prev)) map.set(next.exerciseId, next);
+	}
+	return [...map.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
 /** How many session lifts beat the previous stored record. */
 export function countImprovedRecords(
 	existing: PersonalRecord[],

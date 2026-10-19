@@ -1,7 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
-	ActivityIndicator,
 	Alert,
 	Pressable,
 	ScrollView,
@@ -33,9 +32,10 @@ import {
 	loadExerciseIndex,
 	refreshCustomsCache
 } from '../../src/catalog/loadIndex';
-import { AchievementUnlockModal } from '../../src/components/AchievementUnlockModal';
+import { AchievementUnlockSheet } from '../../src/components/AchievementUnlockSheet';
 import { AchievementsPanel } from '../../src/components/AchievementsPanel';
 import { SummaryLoadPanel } from '../../src/components/SummaryLoadPanel';
+import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { QuestSummaryCard } from '../../src/components/QuestSummaryCard';
@@ -128,11 +128,7 @@ export default function SummaryScreen() {
 	}, [id]);
 
 	if (!session) {
-		return (
-			<View style={styles.center}>
-				<ActivityIndicator color={colors.accent} />
-			</View>
-		);
+		return <PageSkeleton variant="summary" />;
 	}
 
 	const volume = Math.round(sessionVolumeKg(session));
@@ -157,7 +153,7 @@ export default function SummaryScreen() {
 
 	return (
 		<View style={styles.root}>
-			<AchievementUnlockModal
+			<AchievementUnlockSheet
 				ids={showAchModal ? newAchIds : null}
 				onClose={() => {
 					setAchModalDismissed(true);
@@ -234,7 +230,7 @@ export default function SummaryScreen() {
 					const open = expanded[key] ?? true;
 					const done = ex.sets.filter((s) => s.completed);
 					return (
-						<View key={key} style={styles.card}>
+						<Panel key={key} style={styles.card}>
 							<Pressable
 								style={styles.cardHead}
 								onPress={() => setExpanded((m) => ({ ...m, [key]: !open }))}
@@ -262,7 +258,7 @@ export default function SummaryScreen() {
 										</Text>
 									))
 								: null}
-						</View>
+						</Panel>
 					);
 				})}
 				{achState ? (
@@ -285,16 +281,10 @@ export default function SummaryScreen() {
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
-		root: { flex: 1, backgroundColor: colors.bg },
-		flex: { flex: 1 },
-		scroll: { padding: space.lg, gap: space.md },
-		center: {
-			flex: 1,
-			alignItems: 'center',
-			justifyContent: 'center',
-			backgroundColor: colors.bg
-		},
-		kicker: { color: colors.accent, fontWeight: '700', fontSize: 14 },
+	root: { flex: 1, backgroundColor: colors.bg },
+	flex: { flex: 1 },
+	scroll: { padding: space.lg, gap: space.md },
+	kicker: { color: colors.accentLink, fontWeight: '700', fontSize: 14 },
 		title: { color: colors.text, fontSize: 24, fontWeight: '800' },
 		sectionTitle: {
 			color: colors.muted,
@@ -326,14 +316,7 @@ function makeStyles(colors: ColorPalette) {
 			fontVariant: ['tabular-nums']
 		},
 		delta: { color: colors.muted, marginTop: 4, fontSize: 13, fontWeight: '600' },
-		card: {
-			backgroundColor: colors.panel,
-			borderRadius: radius.md,
-			borderWidth: 1,
-			borderColor: colors.border,
-			padding: space.md,
-			gap: 6
-		},
+		card: { gap: 6 },
 		cardHead: {
 			minHeight: touchMin,
 			flexDirection: 'row',

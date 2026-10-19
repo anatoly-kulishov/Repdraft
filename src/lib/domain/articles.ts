@@ -1,4 +1,4 @@
-import type { AppLocale } from '$lib/i18n/locale';
+import type { AppLocale } from '../i18n/locale';
 
 export type ArticleCoverIcon =
 	| 'book-open'

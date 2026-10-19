@@ -18,7 +18,8 @@ SvelteKit + TypeScript + Tailwind. Слои тонкие и явные - без 
 | `lib/storage/` | Репозитории: localStorage / Supabase. Единственное место CRUD данных пользователя |
 | `lib/data/` | Чтение статических каталогов (`static/data`) |
 | `lib/media/` | Клиентская обработка медиа (GIF encode, workers) |
-| `lib/i18n/` | Строки UI (`messages.ts`), хелперы локали |
+| `lib/i18n/` | Строки UI (`messages.ts`), хелперы локали - один файл для web + RN |
+| `lib/design/` | Shared tokens (цвета, spacing, radius); CSS через `npm run build:tokens` |
 | `lib/supabase/` | Создание клиента. Только `PUBLIC_*` из env |
 
 ## Зависимости (направление)

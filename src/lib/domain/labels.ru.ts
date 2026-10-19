@@ -1,5 +1,5 @@
-import type { AppLocale } from '$lib/i18n/locale';
-import { titleCaseEn } from '$lib/i18n/messages';
+import type { AppLocale } from '../i18n/locale';
+import { titleCaseEn } from '../i18n/messages';
 
 export const BODY_PART_LABELS: Record<string, string> = {
 	back: 'Спина',

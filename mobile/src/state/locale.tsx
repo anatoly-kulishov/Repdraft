@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { t, type Locale } from '../i18n/messages';
+import { t, type Locale } from '@repdraft/i18n/messages';
 
 const KEY = 'repdraft:locale';
 

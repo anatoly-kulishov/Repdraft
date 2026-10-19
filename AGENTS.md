@@ -23,9 +23,13 @@ npm run mobile         # Expo (repo root)
 npm run dev:all        # web + Expo together
 npm run check          # web
 npm run check:mobile   # tsc in mobile/
-npm run check:all      # web + mobile
+npm run check:all      # web + mobile typecheck
+npm run check:parity   # tokens + versions + check:all
+npm run build:tokens   # after editing src/lib/design/tokens.ts
 npm run build
 ```
+
+Shared copy: `src/lib/i18n/messages.ts` (both clients). Shared colors/spacing: `src/lib/design/tokens.ts`.
 
 Legal before public: real `PUBLIC_PRIVACY_*` in Vercel; lawyer review `/privacy` + `/terms`. Web analytics off by default.
 

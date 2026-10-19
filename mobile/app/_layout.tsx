@@ -1,8 +1,9 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { AppState } from 'react-native';
+import { AppState, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LocaleProvider, useLocale } from '../src/state/locale';
 import { ThemeProvider, useAppColors, useAppTheme } from '../src/state/theme';
 import { flushOutbox } from '../src/sync/cloudSync';
@@ -53,14 +54,16 @@ export default function RootLayout() {
 	}, []);
 
 	return (
-		<SafeAreaProvider>
-			<ThemeProvider>
-				<LocaleProvider>
-					<ThemedStatusBar />
-					<RootStack />
-				</LocaleProvider>
-			</ThemeProvider>
-		</SafeAreaProvider>
+		<GestureHandlerRootView style={styles.gestureRoot}>
+			<SafeAreaProvider>
+				<ThemeProvider>
+					<LocaleProvider>
+						<ThemedStatusBar />
+						<RootStack />
+					</LocaleProvider>
+				</ThemeProvider>
+			</SafeAreaProvider>
+		</GestureHandlerRootView>
 	);
 }
 
@@ -68,3 +71,7 @@ function ThemedStatusBar() {
 	const { mode } = useAppTheme();
 	return <StatusBar style={mode === 'light' ? 'dark' : 'light'} />;
 }
+
+const styles = StyleSheet.create({
+	gestureRoot: { flex: 1 }
+});

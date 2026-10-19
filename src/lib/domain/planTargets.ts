@@ -1,6 +1,6 @@
 import type { ExerciseIndexItem, WorkoutPlan } from './types';
 import { labelTarget } from './labels.ru';
-import type { AppLocale } from '$lib/i18n/locale';
+import type { AppLocale } from '../i18n/locale';
 
 /** Unique catalog `target` keys in plan order. */
 export function planTargetKeys(

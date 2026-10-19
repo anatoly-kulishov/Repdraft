@@ -43,7 +43,7 @@ cd mobile && npm install && npm start
 
 Новый код в существующий слой. Не смешивай fetch внутрь `domain`.
 
-**Parity:** для фич без native API добавляй web (`src/routes/` / components) и RN в одной задаче; см. [`dual-client-parity.mdc`](../../rules/dual-client-parity.mdc). Verify: `npm run check:all`.
+**Parity:** для фич без native API добавляй web (`src/routes/` / components) и RN в одной задаче; см. [`dual-client-parity.mdc`](../../rules/dual-client-parity.mdc). Verify: `npm run check:parity`. i18n: только `src/lib/i18n/messages.ts`. Tokens: `src/lib/design/tokens.ts` + `npm run build:tokens`.
 
 ### Paths
 

@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
 	lastPerformance,
 	seedOpenSetsFromLastPerformance,
@@ -15,21 +15,25 @@ import {
 	planPrescribedSetCount,
 	planTargetSummary
 } from '@repdraft/domain/workout';
+import { shouldShowCoachmark } from '@repdraft/domain/onboarding';
 import {
 	exerciseDisplayName,
 	getIndexItem,
 	loadExerciseIndex,
 	refreshCustomsCache
 } from '../../src/catalog/loadIndex';
+import { Coachmark } from '../../src/components/Coachmark';
+import { PageSkeleton } from '../../src/components/PageSkeleton';
+import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { routeParam } from '../../src/nav/params';
 import { useLocale } from '../../src/state/locale';
-import { noteChecklist } from '../../src/state/onboarding';
+import { dismissCoachmark, loadOnboarding, noteChecklist } from '../../src/state/onboarding';
 import { useAppColors } from '../../src/state/theme';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { readActiveSession, sessionsRepo, writeActiveSession } from '../../src/storage/sessionsRepo';
-import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
+import { space, touchMin, type ColorPalette } from '../../src/theme';
 
 export default function PlanPreviewScreen() {
 	const { id: idParam } = useLocalSearchParams<{ id: string }>();
@@ -44,12 +48,17 @@ export default function PlanPreviewScreen() {
 	const [missing, setMissing] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const [hasActive, setHasActive] = useState(false);
+	const [showCoachmark, setShowCoachmark] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
 		void (async () => {
 			await refreshCustomsCache();
 			await noteChecklist('planReady');
+			const ob = await loadOnboarding();
+			if (!cancelled) {
+				setShowCoachmark(shouldShowCoachmark(ob, 'preview.start'));
+			}
 			if (!id) {
 				if (!cancelled) {
 					setMissing(true);
@@ -100,11 +109,7 @@ export default function PlanPreviewScreen() {
 	}
 
 	if (!plan) {
-		return (
-			<View style={styles.center}>
-				<ActivityIndicator color={colors.accent} />
-			</View>
-		);
+		return <PageSkeleton variant="planPreview" />;
 	}
 
 	const indexById = new Map(loadExerciseIndex().map((item) => [item.id, item] as const));
@@ -130,6 +135,15 @@ export default function PlanPreviewScreen() {
 				{plan.exercises.length === 0 ? (
 					<Text style={styles.empty}>{tt('builder.empty')}</Text>
 				) : null}
+				{showCoachmark ? (
+					<Coachmark
+						message={tt('onboarding.coachPreviewStart')}
+						onDismiss={() => {
+							setShowCoachmark(false);
+							void dismissCoachmark('preview.start');
+						}}
+					/>
+				) : null}
 				{plan.exercises.map((ex, i) => {
 					const gRole = groupMemberRole(plan.exercises, i);
 					const aRole = altGroupMemberRole(plan.exercises, i);
@@ -142,17 +156,18 @@ export default function PlanPreviewScreen() {
 					return (
 						<Pressable
 							key={`${ex.exerciseId}-${i}`}
-							style={styles.card}
 							onPress={() => router.push(`/exercise/${ex.exerciseId}`)}
 						>
-							{badge ? <Text style={styles.badge}>{badge}</Text> : null}
-							<Text style={styles.cardTitle} numberOfLines={2}>
-								{exerciseDisplayName(ex.exerciseId, locale)}
-							</Text>
-							<Text style={styles.cardMeta}>{formatExercisePrescription(ex)}</Text>
-							{getIndexItem(ex.exerciseId)?.equipment ? (
-								<Text style={styles.cardMeta}>{getIndexItem(ex.exerciseId)?.equipment}</Text>
-							) : null}
+							<Panel style={styles.card}>
+								{badge ? <Text style={styles.badge}>{badge}</Text> : null}
+								<Text style={styles.cardTitle} numberOfLines={2}>
+									{exerciseDisplayName(ex.exerciseId, locale)}
+								</Text>
+								<Text style={styles.cardMeta}>{formatExercisePrescription(ex)}</Text>
+								{getIndexItem(ex.exerciseId)?.equipment ? (
+									<Text style={styles.cardMeta}>{getIndexItem(ex.exerciseId)?.equipment}</Text>
+								) : null}
+							</Panel>
 						</Pressable>
 					);
 				})}
@@ -165,14 +180,14 @@ export default function PlanPreviewScreen() {
 					/>
 				) : (
 					<PrimaryButton
-						label={busy ? '…' : hasActive ? tt('workouts.resume') : tt('common.start')}
+						label={busy ? tt('common.loading') : hasActive ? tt('workouts.resume') : tt('common.start')}
 						onPress={() => void start()}
 						disabled={busy}
 					/>
 				)}
 				<PrimaryButton
 					label={tt('builder.title')}
-					variant="ghost"
+					variant="link"
 					onPress={() => router.push(`/builder/${plan.id}`)}
 				/>
 			</View>
@@ -198,17 +213,10 @@ function makeStyles(colors: ColorPalette) {
 		title: { color: colors.text, fontSize: 24, fontWeight: '800' },
 		lead: { color: colors.muted, marginBottom: 4 },
 		metaLine: { color: colors.muted, fontSize: 14, marginBottom: 4 },
-		card: {
-			backgroundColor: colors.panel,
-			borderRadius: radius.md,
-			borderWidth: 1,
-			borderColor: colors.border,
-			padding: space.md,
-			minHeight: touchMin
-		},
-		badge: { color: colors.accent, fontSize: 11, fontWeight: '800', marginBottom: 4 },
+		card: { minHeight: touchMin, gap: space.xs },
+		badge: { color: colors.accentLink, fontSize: 11, fontWeight: '800' },
 		cardTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
-		cardMeta: { color: colors.muted, marginTop: 4 },
+		cardMeta: { color: colors.muted },
 		footer: {
 			paddingHorizontal: space.lg,
 			paddingTop: space.md,
