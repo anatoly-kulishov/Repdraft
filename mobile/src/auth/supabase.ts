@@ -25,7 +25,8 @@ export function getSupabase(): SupabaseClient | null {
 				storage: AsyncStorage,
 				autoRefreshToken: true,
 				persistSession: true,
-				detectSessionInUrl: false
+				detectSessionInUrl: false,
+				flowType: 'pkce'
 			}
 		});
 	}

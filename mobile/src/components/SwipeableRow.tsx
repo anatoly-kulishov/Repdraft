@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useAppColors } from '../state/theme';
-import { radius, space, touchMin, type ColorPalette } from '../theme';
+import { fontFamily, radius, space, touchMin, type ColorPalette } from '../theme';
 
 type Props = {
 	children: React.ReactNode;
@@ -52,7 +52,8 @@ function makeStyles(colors: ColorPalette) {
 		deleteLabel: {
 			color: '#fff',
 			fontWeight: '800',
-			fontSize: 13
+			fontSize: 13,
+			fontFamily: fontFamily.extrabold
 		}
 	});
 }

@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
-import { pathToFileURL, fileURLToPath } from 'node:url';
+import { pathToFileURL } from 'node:url';
 
-const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const outDir = path.join(os.tmpdir(), 'repdraft-qa');
+fs.mkdirSync(outDir, { recursive: true });
 const base = process.env.QA_BASE || 'http://localhost:5174';
 
 const candidates = [
@@ -56,7 +58,7 @@ async function auditRoute(route, name, theme) {
 	}, theme);
 	await page.waitForTimeout(500);
 	const suffix = theme === 'dark' ? '-dark' : '';
-	const shot = path.join(root, `qa-${name}${suffix}-390.png`);
+	const shot = path.join(outDir, `qa-${name}${suffix}-390.png`);
 	await page.screenshot({ path: shot, fullPage: false });
 	const info = await page.evaluate(() => {
 		const tabs = [...document.querySelectorAll('.shell-nav-tabbar__grid > .tab-link')].map(
@@ -170,6 +172,6 @@ for (const theme of ['light', 'dark']) {
 	}
 }
 
-fs.writeFileSync(path.join(root, 'qa-audit.json'), JSON.stringify(results, null, 2));
+fs.writeFileSync(path.join(outDir, 'qa-audit.json'), JSON.stringify(results, null, 2));
 await browser.close();
-console.log('done');
+console.log('done', outDir);

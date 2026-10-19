@@ -1,19 +1,21 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { labelBodyPart } from '@repdraft/domain/labels.ru';
 import { computeProgressOverview } from '@repdraft/domain/progressOverview';
 import type { WorkoutSession } from '@repdraft/domain/types';
+import { exerciseDisplayName, getIndexItem, refreshCustomsCache } from '../../src/catalog/loadIndex';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { useTabScreenPad } from '../../src/layout/safe';
 import { useLocale } from '../../src/state/locale';
 import { useAppColors } from '../../src/state/theme';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
-import { radius, space, type ColorPalette } from '../../src/theme';
+import { fontFamily, radius, space, type ColorPalette } from '../../src/theme';
 
 export default function ProgressScreen() {
 	const router = useRouter();
-	const { tt } = useLocale();
+	const { locale, tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const tabPad = useTabScreenPad(space.lg);
@@ -21,11 +23,17 @@ export default function ProgressScreen() {
 
 	useFocusEffect(
 		useCallback(() => {
-			void sessionsRepo.list().then(setSessions);
+			void (async () => {
+				await refreshCustomsCache();
+				setSessions(await sessionsRepo.list());
+			})();
 		}, [])
 	);
 
-	const overview = useMemo(() => computeProgressOverview(sessions), [sessions]);
+	const overview = useMemo(
+		() => computeProgressOverview(sessions, new Date(), (id) => getIndexItem(id)?.body_part ?? null),
+		[sessions]
+	);
 	const maxWeekVol = Math.max(1, ...overview.weeks.map((w) => w.volumeKg));
 
 	return (
@@ -73,6 +81,42 @@ export default function ProgressScreen() {
 					))
 				)}
 			</Panel>
+			{overview.bodyParts.length > 0 ? (
+				<Panel>
+					<Text style={styles.sectionTitle}>{tt('progress.bodyParts')}</Text>
+					{overview.bodyParts.map((part) => (
+						<View key={part.bodyPart} style={styles.part}>
+							<View style={styles.partTop}>
+								<Text style={styles.partLabel}>
+									{labelBodyPart(part.bodyPart, locale)}
+									{part.bodyPart === overview.laggingBodyPart ? ` · ${tt('progress.lagging')}` : ''}
+								</Text>
+								<Text style={styles.weekMeta}>{part.sharePct}%</Text>
+							</View>
+							<View style={styles.barTrack}>
+								<View
+									style={[
+										styles.barFill,
+										part.bodyPart === overview.laggingBodyPart && styles.barLag,
+										{ width: `${part.sharePct}%` }
+									]}
+								/>
+							</View>
+						</View>
+					))}
+				</Panel>
+			) : null}
+			{overview.trends.length > 0 ? (
+				<Panel>
+					<Text style={styles.sectionTitle}>{tt('progress.trends')}</Text>
+					{overview.trends.map((row) => (
+						<Text key={row.exerciseId} style={styles.muted}>
+							{exerciseDisplayName(row.exerciseId, locale)} · {row.deltaKg > 0 ? '+' : ''}
+							{row.deltaKg} kg
+						</Text>
+					))}
+				</Panel>
+			) : null}
 		</ScrollView>
 	);
 }
@@ -81,7 +125,7 @@ function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 		scroll: { flex: 1, backgroundColor: colors.bg },
 		root: { padding: space.lg, gap: space.md },
-		lead: { color: colors.muted, fontSize: 15, lineHeight: 21 },
+		lead: { color: colors.muted, fontSize: 15, lineHeight: 21, fontFamily: fontFamily.regular },
 		stats: { flexDirection: 'row', gap: space.sm },
 		stat: {
 			flex: 1,
@@ -91,13 +135,14 @@ function makeStyles(colors: ColorPalette) {
 			borderColor: colors.border,
 			padding: space.md
 		},
-		statLabel: { color: colors.muted, fontSize: 12 },
+		statLabel: { color: colors.muted, fontSize: 12, fontFamily: fontFamily.regular },
 		statValue: {
 			color: colors.text,
 			fontSize: 24,
 			fontWeight: '800',
 			marginTop: 4,
-			fontVariant: ['tabular-nums']
+			fontVariant: ['tabular-nums'],
+			fontFamily: fontFamily.extrabold
 		},
 		sectionTitle: {
 			color: colors.muted,
@@ -105,16 +150,20 @@ function makeStyles(colors: ColorPalette) {
 			fontSize: 12,
 			textTransform: 'uppercase',
 			letterSpacing: 0.5,
-			marginBottom: space.sm
+			marginBottom: space.sm,
+			fontFamily: fontFamily.bold
 		},
-		muted: { color: colors.muted },
+		muted: { color: colors.muted, fontFamily: fontFamily.regular },
 		weekRow: {
 			flexDirection: 'row',
 			alignItems: 'center',
 			gap: space.sm,
 			marginBottom: space.sm
 		},
-		weekLabel: { width: 48, color: colors.muted, fontSize: 13, fontWeight: '600' },
+		weekLabel: { width: 48, color: colors.muted, fontSize: 13, fontWeight: '600', fontFamily: fontFamily.semibold },
+		part: { gap: 6, marginBottom: 10 },
+		partTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+		partLabel: { flex: 1, color: colors.text, fontSize: 13, fontWeight: '600', fontFamily: fontFamily.semibold },
 		barTrack: {
 			flex: 1,
 			height: 10,
@@ -123,12 +172,14 @@ function makeStyles(colors: ColorPalette) {
 			overflow: 'hidden'
 		},
 		barFill: { height: '100%', backgroundColor: colors.accent },
+		barLag: { backgroundColor: colors.danger },
 		weekMeta: {
 			width: 72,
 			textAlign: 'right',
 			color: colors.muted,
 			fontSize: 12,
-			fontVariant: ['tabular-nums']
+			fontVariant: ['tabular-nums'],
+			fontFamily: fontFamily.regular
 		}
 	});
 }

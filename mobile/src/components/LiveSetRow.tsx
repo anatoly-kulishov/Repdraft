@@ -1,13 +1,9 @@
+import { Check, Trash2 } from 'lucide-react-native';
 import { memo, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import {
-	LIVE_REPS_NUDGE,
-	LIVE_WEIGHT_NUDGE_KG
-} from '@repdraft/domain/inputLimits';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
-import { radius, space, touchMin, type ColorPalette } from '../theme';
-import { PrimaryButton } from './PrimaryButton';
+import { fontFamily, radius, space, touchMin, type ColorPalette } from '../theme';
 
 export type SetDraft = { weight: string; reps: string };
 
@@ -15,20 +11,18 @@ export type SetPrev = { weightKg: number | null; reps: number | null } | null;
 
 type Props = {
 	setIndex: number;
-	setCount: number;
 	completed: boolean;
 	current: boolean;
 	skipLift: boolean;
 	bodyweight: boolean;
 	canRemove: boolean;
+	showKindBadge: boolean;
 	kindLabel: string;
 	draft: SetDraft;
 	prev: SetPrev;
 	onChangeWeight: (value: string) => void;
 	onChangeReps: (value: string) => void;
 	onBlur: () => void;
-	onNudgeWeight: (delta: number) => void;
-	onNudgeReps: (delta: number) => void;
 	onApplyLast: () => void;
 	onToggleKind: () => void;
 	onToggleComplete: () => void;
@@ -44,20 +38,18 @@ function formatPrev(prev: SetPrev): string | null {
 
 function LiveSetRowInner({
 	setIndex,
-	setCount,
 	completed,
 	current,
 	skipLift,
 	bodyweight,
 	canRemove,
+	showKindBadge,
 	kindLabel,
 	draft,
 	prev,
 	onChangeWeight,
 	onChangeReps,
 	onBlur,
-	onNudgeWeight,
-	onNudgeReps,
 	onApplyLast,
 	onToggleKind,
 	onToggleComplete,
@@ -77,43 +69,23 @@ function LiveSetRowInner({
 		(draft.weight !== prevWeight || draft.reps !== prevReps);
 
 	return (
-		<View style={[styles.row, completed && styles.rowDone, current && styles.rowCurrent]}>
-			<View style={styles.head}>
-				<Text style={styles.index}>
-					{tt('live.setProgress', { current: n, total: setCount })}
-				</Text>
-				{canApply ? (
-					<Pressable
-						accessibilityRole="button"
-						accessibilityLabel={tt('live.lastApplyAria', { value: prevLabel ?? '' })}
-						onPress={onApplyLast}
-						style={styles.lastChip}
-					>
-						<Text style={styles.lastChipText} numberOfLines={1}>
-							{tt('live.last')} {prevLabel}
+		<View style={[styles.block, current && styles.blockCurrent, completed && styles.blockDone]}>
+			<View style={styles.row}>
+				<Pressable
+					accessibilityRole="button"
+					accessibilityLabel={kindLabel}
+					onPress={onToggleKind}
+					style={styles.indexBtn}
+				>
+					<Text style={styles.index}>{n}</Text>
+					{showKindBadge ? (
+						<Text style={styles.kind} numberOfLines={1}>
+							{kindLabel}
 						</Text>
-					</Pressable>
-				) : (
-					<Text style={styles.prev} numberOfLines={1}>
-						{tt('live.last')}: {prevLabel ?? '-'}
-					</Text>
-				)}
-			</View>
-
-			{skipLift ? null : (
-				<View style={styles.fields}>
-					{bodyweight ? <Text style={styles.bw}>{tt('live.weightBw')}</Text> : null}
-					<View style={styles.step}>
-						{completed ? null : (
-							<Pressable
-								accessibilityRole="button"
-								accessibilityLabel={tt('live.nudgeWeightDown', { n })}
-								onPress={() => onNudgeWeight(-LIVE_WEIGHT_NUDGE_KG)}
-								style={styles.nudge}
-							>
-								<Text style={styles.nudgeText}>-</Text>
-							</Pressable>
-						)}
+					) : null}
+				</Pressable>
+				{skipLift ? <View style={styles.fields} /> : (
+					<View style={styles.fields}>
 						<TextInput
 							value={draft.weight}
 							editable={!completed}
@@ -125,28 +97,6 @@ function LiveSetRowInner({
 							placeholderTextColor={colors.muted}
 							accessibilityLabel={`${tt(bodyweight ? 'live.weightBw' : 'live.weight')} ${n}`}
 						/>
-						{completed ? null : (
-							<Pressable
-								accessibilityRole="button"
-								accessibilityLabel={tt('live.nudgeWeightUp', { n })}
-								onPress={() => onNudgeWeight(LIVE_WEIGHT_NUDGE_KG)}
-								style={styles.nudge}
-							>
-								<Text style={styles.nudgeText}>+</Text>
-							</Pressable>
-						)}
-					</View>
-					<View style={styles.step}>
-						{completed ? null : (
-							<Pressable
-								accessibilityRole="button"
-								accessibilityLabel={tt('live.nudgeRepsDown', { n })}
-								onPress={() => onNudgeReps(-LIVE_REPS_NUDGE)}
-								style={styles.nudge}
-							>
-								<Text style={styles.nudgeText}>-</Text>
-							</Pressable>
-						)}
 						<TextInput
 							value={draft.reps}
 							editable={!completed}
@@ -158,33 +108,43 @@ function LiveSetRowInner({
 							placeholderTextColor={colors.muted}
 							accessibilityLabel={`${tt('live.reps')} ${n}`}
 						/>
-						{completed ? null : (
-							<Pressable
-								accessibilityRole="button"
-								accessibilityLabel={tt('live.nudgeRepsUp', { n })}
-								onPress={() => onNudgeReps(LIVE_REPS_NUDGE)}
-								style={styles.nudge}
-							>
-								<Text style={styles.nudgeText}>+</Text>
-							</Pressable>
-						)}
 					</View>
-					{bodyweight && current ? (
-						<Text style={styles.bwHint}>{tt('live.weightBwHintShort')}</Text>
-					) : null}
-				</View>
-			)}
-
-			<View style={styles.actions}>
-				<PrimaryButton label={kindLabel} variant="ghost" onPress={onToggleKind} />
-				<PrimaryButton
-					label={completed ? tt('live.undoSet') : tt('live.log')}
+				)}
+				<Pressable
+					accessibilityRole="button"
+					accessibilityLabel={completed ? tt('live.undoSet') : tt('live.log')}
 					onPress={onToggleComplete}
-				/>
+					style={[styles.done, current && !completed && styles.doneCurrent]}
+				>
+					<Check
+						size={22}
+						color={completed || current ? colors.accentText : colors.text}
+						strokeWidth={2.5}
+					/>
+				</Pressable>
 				{canRemove ? (
-					<PrimaryButton label={tt('live.removeSet')} variant="ghost" onPress={onRemove} />
+					<Pressable
+						accessibilityRole="button"
+						accessibilityLabel={tt('live.removeSet')}
+						onPress={onRemove}
+						style={styles.remove}
+					>
+						<Trash2 size={18} color={colors.danger} strokeWidth={2.25} />
+					</Pressable>
 				) : null}
 			</View>
+			{canApply ? (
+				<Pressable
+					accessibilityRole="button"
+					accessibilityLabel={tt('live.lastApplyAria', { value: prevLabel ?? '' })}
+					onPress={onApplyLast}
+					style={styles.last}
+				>
+					<Text style={styles.lastText} numberOfLines={1}>
+						{tt('live.last')} {prevLabel}
+					</Text>
+				</Pressable>
+			) : null}
 		</View>
 	);
 }
@@ -193,43 +153,46 @@ export const LiveSetRow = memo(LiveSetRowInner);
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
+		block: {
+			gap: space.xs,
+			paddingVertical: space.xs
+		},
+		blockCurrent: {},
+		blockDone: { opacity: 0.72 },
 		row: {
-			gap: space.sm,
-			paddingVertical: space.md,
-			borderTopWidth: 1,
-			borderTopColor: colors.border
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: space.sm
 		},
-		rowDone: { opacity: 0.72 },
-		rowCurrent: {
-			borderWidth: 1,
-			borderColor: colors.accent,
-			borderRadius: radius.md,
-			paddingHorizontal: space.sm,
-			borderTopColor: colors.accent
-		},
-		head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.sm },
-		index: { color: colors.text, fontWeight: '700' },
-		prev: { color: colors.muted, fontSize: 13, flexShrink: 1, textAlign: 'right' },
-		lastChip: {
+		indexBtn: {
+			width: touchMin,
 			minHeight: touchMin,
-			minWidth: touchMin,
-			justifyContent: 'center',
-			paddingHorizontal: space.sm,
-			borderRadius: radius.pill,
-			borderWidth: 1,
-			borderColor: colors.accent,
-			flexShrink: 1
+			alignItems: 'center',
+			justifyContent: 'center'
 		},
-		lastChipText: { color: colors.accent, fontWeight: '700', fontSize: 13 },
-		fields: { gap: space.sm },
-		bw: { color: colors.muted, fontSize: 13, fontWeight: '600' },
-		bwHint: { color: colors.muted, fontSize: 13, lineHeight: 18 },
-		step: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-		nudge: {
+		index: { color: colors.text, fontWeight: '800', fontSize: 17, fontFamily: fontFamily.extrabold },
+		kind: { color: colors.muted, fontSize: 11, fontWeight: '700', fontFamily: fontFamily.bold },
+		fields: { flex: 1, flexDirection: 'row', gap: space.sm, minWidth: 0 },
+		input: {
+			flex: 1,
+			minWidth: 0,
+			minHeight: touchMin,
+			borderRadius: radius.md,
+			borderWidth: 1,
+			borderColor: colors.borderStrong,
+			backgroundColor: colors.bg,
+			color: colors.text,
+			paddingHorizontal: space.sm,
+			fontSize: 17,
+			fontWeight: '700',
+			textAlign: 'center',
+			fontVariant: ['tabular-nums'],
+			fontFamily: fontFamily.bold
+		},
+		inputCurrent: { borderColor: colors.accent },
+		done: {
 			width: touchMin,
 			height: touchMin,
-			minWidth: touchMin,
-			minHeight: touchMin,
 			alignItems: 'center',
 			justifyContent: 'center',
 			borderRadius: radius.md,
@@ -237,22 +200,21 @@ function makeStyles(colors: ColorPalette) {
 			borderColor: colors.borderStrong,
 			backgroundColor: colors.panel
 		},
-		nudgeText: { color: colors.text, fontSize: 22, fontWeight: '700' },
-		input: {
-			flex: 1,
-			minHeight: 56,
-			borderRadius: radius.md,
-			borderWidth: 1,
-			borderColor: colors.borderStrong,
-			backgroundColor: colors.bg,
-			color: colors.text,
-			paddingHorizontal: space.md,
-			fontSize: 22,
-			fontWeight: '800',
-			textAlign: 'center',
-			fontVariant: ['tabular-nums']
+		doneCurrent: {
+			backgroundColor: colors.accentFill,
+			borderColor: colors.accentFill
 		},
-		inputCurrent: { borderColor: colors.accent },
-		actions: { gap: space.sm }
+		remove: {
+			width: touchMin,
+			height: touchMin,
+			alignItems: 'center',
+			justifyContent: 'center'
+		},
+		last: {
+			minHeight: touchMin,
+			justifyContent: 'center',
+			paddingHorizontal: space.sm
+		},
+		lastText: { color: colors.accent, fontWeight: '700', fontSize: 15, fontFamily: fontFamily.bold }
 	});
 }

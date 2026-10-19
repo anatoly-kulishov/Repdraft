@@ -14,7 +14,10 @@
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { peekLocalPlan, syncPreviewExerciseRowsPeek, peekPreviewExerciseRows } from '$lib/storage/localWorkoutRepository';
+	import QuestOnboardingSheet from '$lib/components/QuestOnboardingSheet.svelte';
+	import type { QuestHeroProfile } from '$lib/domain/questHeroProfile';
 	import { plans } from '$lib/stores/plans';
+	import { needsQuestHeroOnboarding, saveQuestHeroProfile } from '$lib/stores/questHero';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { forceNormalShell, syncForceNormalShell } from '$lib/stores/shellChrome';
 	import { goto } from '$app/navigation';
@@ -38,6 +41,7 @@
 		peekedIndex ? new Map(peekedIndex.map((item) => [item.id, item])) : new Map()
 	);
 	let loading = $state(true);
+	let heroGate = $state(false);
 	let missing = $state(false);
 	let fromPath = $derived($page.url.pathname);
 	let technique = $state<{
@@ -101,7 +105,17 @@
 
 	function onStart() {
 		if (!plan) return;
+		if (needsQuestHeroOnboarding()) {
+			heroGate = true;
+			return;
+		}
 		void goto(`/live/${plan.id}`);
+	}
+
+	function onHeroReady(profile: QuestHeroProfile) {
+		saveQuestHeroProfile(profile);
+		heroGate = false;
+		if (plan) void goto(`/live/${plan.id}`);
 	}
 </script>
 
@@ -317,6 +331,8 @@
 		</div>
 	</section>
 {/if}
+
+<QuestOnboardingSheet bind:open={heroGate} onComplete={onHeroReady} />
 
 {#if technique}
 	<ExerciseTechniqueSheet

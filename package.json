@@ -1,7 +1,7 @@
 {
 	"name": "repdraft",
 	"private": true,
-	"version": "0.22.0",
+	"version": "0.22.1",
 	"description": "Gym workout log - React Native (mobile/) + SvelteKit web/PWA, shared domain",
 	"type": "module",
 	"scripts": {
@@ -12,6 +12,8 @@
 		"preview": "vite preview --host",
 		"prepare": "svelte-kit sync || echo ''",
 		"build:data": "node scripts/build-exercise-data.mjs",
+		"build:mobile-technique": "node scripts/build-mobile-technique-assets.mjs",
+		"copy:mobile-articles": "cp static/content/articles.json mobile/assets/data/articles.json",
 		"translate:names": "python3 scripts/translate-exercise-names.py && npm run build:data",
 		"translate:instructions": "python3 scripts/translate-exercise-instructions-ru.py",
 		"apply:instructions": "python3 scripts/apply-exercise-instructions-ru.py",

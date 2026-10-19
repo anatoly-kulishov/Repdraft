@@ -8,6 +8,7 @@ import {
 	Text,
 	View
 } from 'react-native';
+import { CircleCheck } from 'lucide-react-native';
 import {
 	achievementTitleKey,
 	countableFinishedSessions,
@@ -16,6 +17,7 @@ import {
 } from '@repdraft/domain/achievements';
 import { pickCatalogExerciseForBodyPart } from '@repdraft/domain/trainingLoad';
 import type { QuestApplyResult, QuestState } from '@repdraft/domain/quest';
+import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
 import {
 	completedExerciseCount,
 	completedSetCount,
@@ -53,10 +55,11 @@ import {
 } from '../../src/state/achievements';
 import { appendExerciseToHomePlan } from '../../src/lib/planPatch';
 import { useLocale } from '../../src/state/locale';
-import { isQuestEnabled, loadLastQuestApply, loadQuestState } from '../../src/state/quest';
+import { loadLastQuestApply, loadQuestState } from '../../src/state/quest';
+import { loadQuestHeroProfile } from '../../src/state/questHero';
 import { useAppColors } from '../../src/state/theme';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
-import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
+import { fontFamily, radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
 function formatDuration(ms: number): string {
 	const totalSec = Math.max(0, Math.round(ms / 1000));
@@ -78,6 +81,7 @@ export default function SummaryScreen() {
 	const [prevVolume, setPrevVolume] = useState<number | null>(null);
 	const [questApply, setQuestApply] = useState<QuestApplyResult | null>(null);
 	const [questState, setQuestState] = useState<QuestState | null>(null);
+	const [heroProfile, setHeroProfile] = useState<QuestHeroProfile | null>(null);
 	const [achState, setAchState] = useState<AchievementsState | null>(null);
 	const [newAchIds, setNewAchIds] = useState<AchievementId[] | null>(null);
 	const [healthSnap, setHealthSnap] = useState<HealthWorkoutSnapshot | null>(null);
@@ -97,14 +101,16 @@ export default function SummaryScreen() {
 				const prev = previousPlanSession(all, found);
 				if (!cancelled) setPrevVolume(prev ? sessionVolumeKg(prev) : null);
 			}
-			if (id && (await isQuestEnabled())) {
-				const [apply, st] = await Promise.all([
+			if (id) {
+				const [apply, st, hero] = await Promise.all([
 					loadLastQuestApply(id),
-					loadQuestState()
+					loadQuestState(),
+					loadQuestHeroProfile()
 				]);
 				if (!cancelled) {
 					setQuestApply(apply);
 					setQuestState(st);
+					setHeroProfile(hero);
 				}
 			}
 			if (await isAchievementsEnabled()) {
@@ -164,12 +170,25 @@ export default function SummaryScreen() {
 				style={styles.flex}
 				contentContainerStyle={[styles.scroll, { paddingBottom: scrollPad }]}
 			>
+			<View style={styles.hero}>
+				<CircleCheck size={48} color={colors.accent} strokeWidth={2} />
 				<Text style={styles.kicker}>{tt('summary.saved')}</Text>
 				<Text style={styles.title} numberOfLines={2}>
 					{session.planName}
 				</Text>
+			</View>
 				{questApply && questState ? (
-					<QuestSummaryCard apply={questApply} state={questState} />
+					<QuestSummaryCard
+						apply={questApply}
+						state={questState}
+						session={session}
+						sex={heroProfile?.sex ?? null}
+						bodyPartFor={(exerciseId) => {
+							const item = loadExerciseIndex().find((row) => row.id === exerciseId);
+							return item?.body_part ?? null;
+						}}
+						exerciseLabel={(exerciseId) => exerciseDisplayName(exerciseId, locale)}
+					/>
 				) : null}
 				{newAchIds && newAchIds.length > 0 ? (
 					<Panel accent>
@@ -207,7 +226,7 @@ export default function SummaryScreen() {
 					</View>
 					<View style={styles.stat}>
 						<Text style={styles.statLabel}>{tt('summary.volume')}</Text>
-						<Text style={styles.statValue}>{volume}</Text>
+						<Text style={styles.statValue}>{volume} {tt('pr.kg')}</Text>
 						{delta != null ? (
 							<Text style={styles.delta}>
 								{delta > 0 ? `+${delta}` : String(delta)}
@@ -283,21 +302,23 @@ function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 	root: { flex: 1, backgroundColor: colors.bg },
 	flex: { flex: 1 },
-	scroll: { padding: space.lg, gap: space.md },
-	kicker: { color: colors.accentLink, fontWeight: '700', fontSize: 14 },
-		title: { color: colors.text, fontSize: 24, fontWeight: '800' },
+		scroll: { padding: space.lg, gap: space.md },
+		hero: { alignItems: 'center', gap: space.sm },
+		kicker: { color: colors.accentLink, fontWeight: '700', fontSize: 14, fontFamily: fontFamily.bold },
+		title: { color: colors.text, fontSize: 24, fontWeight: '800', fontFamily: fontFamily.extrabold, textAlign: 'center' },
 		sectionTitle: {
 			color: colors.muted,
 			fontWeight: '700',
 			fontSize: 13,
 			letterSpacing: 0.4,
 			textTransform: 'uppercase',
-			marginBottom: space.xs
+			marginBottom: space.xs,
+			fontFamily: fontFamily.bold
 		},
-		achBannerTitle: { color: colors.text, fontWeight: '800', fontSize: 16 },
-		achBannerLine: { color: colors.accent, fontWeight: '600', fontSize: 14 },
-		healthTitle: { color: colors.text, fontWeight: '700', fontSize: 15 },
-		healthLine: { color: colors.muted, fontSize: 14, lineHeight: 20 },
+		achBannerTitle: { color: colors.text, fontWeight: '800', fontSize: 16, fontFamily: fontFamily.extrabold },
+		achBannerLine: { color: colors.accent, fontWeight: '600', fontSize: 14, fontFamily: fontFamily.semibold },
+		healthTitle: { color: colors.text, fontWeight: '700', fontSize: 15, fontFamily: fontFamily.bold },
+		healthLine: { color: colors.muted, fontSize: 14, lineHeight: 20, fontFamily: fontFamily.regular },
 		stats: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.sm },
 		stat: {
 			width: '47%',
@@ -307,15 +328,16 @@ function makeStyles(colors: ColorPalette) {
 			borderColor: colors.border,
 			padding: space.md
 		},
-		statLabel: { color: colors.muted, fontSize: 12 },
+		statLabel: { color: colors.muted, fontSize: 12, fontFamily: fontFamily.regular },
 		statValue: {
 			color: colors.text,
 			fontSize: 22,
 			fontWeight: '800',
 			marginTop: 6,
-			fontVariant: ['tabular-nums']
+			fontVariant: ['tabular-nums'],
+			fontFamily: fontFamily.extrabold
 		},
-		delta: { color: colors.muted, marginTop: 4, fontSize: 13, fontWeight: '600' },
+		delta: { color: colors.muted, marginTop: 4, fontSize: 13, fontWeight: '600', fontFamily: fontFamily.semibold },
 		card: { gap: 6 },
 		cardHead: {
 			minHeight: touchMin,
@@ -324,9 +346,9 @@ function makeStyles(colors: ColorPalette) {
 			justifyContent: 'space-between',
 			gap: space.sm
 		},
-		cardTitle: { color: colors.text, fontWeight: '800', flex: 1, fontSize: 16 },
-		cardMeta: { color: colors.muted, fontWeight: '600' },
-		setLine: { color: colors.muted, fontSize: 14 },
+		cardTitle: { color: colors.text, fontWeight: '800', flex: 1, fontSize: 16, fontFamily: fontFamily.extrabold },
+		cardMeta: { color: colors.muted, fontWeight: '600', fontFamily: fontFamily.semibold },
+		setLine: { color: colors.muted, fontSize: 14, fontFamily: fontFamily.regular },
 		footer: {
 			paddingHorizontal: space.lg,
 			paddingTop: space.md,

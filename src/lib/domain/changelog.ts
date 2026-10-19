@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.22.1',
+		highlights: {
+			ru: [
+				'Рекорды на телефоне: поле заметки с обычной подписью',
+				'На сайте план можно сдвинуть кнопками «Выше» и «Ниже»',
+				'Живая тренировка и редактор на телефоне: меньше пустого места под списком',
+				'На телефоне при запуске знак RP на чёрном экране'
+			],
+			en: [
+				'Phone records: the note field has a real label',
+				'On the web, move a plan up or down with buttons',
+				'Phone live workout and builder: less empty space under the list',
+				'Phone launch shows the RP mark on a black screen'
+			]
+		}
+	},
+	{
 		version: '0.22.0',
 		highlights: {
 			ru: [

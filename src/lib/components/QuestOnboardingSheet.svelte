@@ -2,6 +2,7 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
+	import HeroFigure from '$lib/components/HeroFigure.svelte';
 	import type { QuestHeroProfile, QuestHeroSex } from '$lib/domain/questHeroProfile';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -10,12 +11,12 @@
 		open = $bindable(false),
 		defaultName = '',
 		onComplete,
-		onSkip
+		onAbort
 	}: {
 		open?: boolean;
 		defaultName?: string;
 		onComplete: (profile: QuestHeroProfile) => void;
-		onSkip: () => void;
+		onAbort?: () => void;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
@@ -26,32 +27,54 @@
 	let weight = $state('');
 
 	$effect(() => {
-		if (open && !name && defaultName) name = defaultName;
+		if (open && name.length === 0 && defaultName) name = defaultName;
 	});
 
+	function parseHeight(): number | null {
+		if (!height.trim()) return null;
+		const n = parseInt(height, 10);
+		if (!Number.isFinite(n)) return null;
+		return Math.min(250, Math.max(100, n));
+	}
+
+	function parseWeight(): number | null {
+		if (!weight.trim()) return null;
+		const n = parseFloat(weight.replace(',', '.'));
+		if (!Number.isFinite(n)) return null;
+		return Math.min(300, Math.max(30, n));
+	}
+
+	let completing = false;
+
+	let ready = $derived(
+		name.trim().length > 0 && (sex === 'm' || sex === 'f') && parseHeight() != null && parseWeight() != null
+	);
+
 	function submit() {
+		const heightCm = parseHeight();
+		const weightKg = parseWeight();
+		if (!name.trim() || (sex !== 'm' && sex !== 'f') || heightCm == null || weightKg == null) return;
+		completing = true;
 		onComplete({
 			displayName: name.trim(),
 			sex,
 			age: age.trim() ? Math.min(99, Math.max(10, parseInt(age, 10) || 0)) : null,
-			heightCm: height.trim()
-				? Math.min(250, Math.max(100, parseInt(height, 10) || 0))
-				: null,
-			weightKg: weight.trim()
-				? Math.min(300, Math.max(30, parseFloat(weight.replace(',', '.')) || 0))
-				: null,
+			heightCm,
+			weightKg,
 			completedAt: new Date().toISOString()
 		});
 		open = false;
 	}
-
-	function skip() {
-		onSkip();
-		open = false;
-	}
 </script>
 
-<BottomSheet bind:open label={translate(lang, 'quest.onboardTitle')} onDismiss={skip}>
+<BottomSheet
+	bind:open
+	label={translate(lang, 'quest.onboardTitle')}
+	onDismiss={() => {
+		open = false;
+		if (!completing) onAbort?.();
+	}}
+>
 	<p class="quest-onboard__title">{translate(lang, 'quest.onboardTitle')}</p>
 	<p class="quest-onboard__lead">{translate(lang, 'quest.onboardLead')}</p>
 	<div class="quest-onboard__sex" role="group" aria-label={translate(lang, 'quest.onboardTitle')}>
@@ -60,9 +83,12 @@
 				type="button"
 				class="quest-onboard__sex-btn"
 				class:quest-onboard__sex-btn--on={sex === s}
+				aria-pressed={sex === s}
+				aria-label={s === 'm' ? translate(lang, 'quest.sexM') : translate(lang, 'quest.sexF')}
 				onclick={() => (sex = s)}
 			>
-				{s === 'm' ? translate(lang, 'quest.sexM') : translate(lang, 'quest.sexF')}
+				<HeroFigure {sex} size={72} />
+				<span>{s === 'm' ? translate(lang, 'quest.sexM') : translate(lang, 'quest.sexF')}</span>
 			</button>
 		{/each}
 	</div>
@@ -95,8 +121,7 @@
 	/>
 	<p class="quest-onboard__privacy">{translate(lang, 'quest.onboardPrivacy')}</p>
 	{#snippet actions()}
-		<AppButton block onclick={submit}>{translate(lang, 'quest.onboardSubmit')}</AppButton>
-		<AppButton block variant="ghost" onclick={skip}>{translate(lang, 'quest.onboardSkip')}</AppButton>
+		<AppButton block disabled={!ready} onclick={submit}>{translate(lang, 'quest.onboardSubmit')}</AppButton>
 	{/snippet}
 </BottomSheet>
 
@@ -119,22 +144,24 @@
 	}
 	.quest-onboard__sex-btn {
 		flex: 1;
-		min-height: 3rem;
-		border-radius: var(--radius-md, 10px);
+		min-height: 48px;
+		min-width: 48px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.35rem;
+		border-radius: 0.75rem;
 		border: 1px solid var(--color-border);
-		font-weight: 700;
+		background: transparent;
+		color: inherit;
 	}
 	.quest-onboard__sex-btn--on {
-		border-color: var(--color-accent);
-		background: color-mix(in srgb, var(--color-accent) 12%, transparent);
-	}
-	:global(.quest-onboard__field) {
-		margin-bottom: 0.5rem;
+		border-color: var(--color-muscle);
 	}
 	.quest-onboard__privacy {
 		margin: 0.5rem 0 0;
 		font-size: 0.8125rem;
-		opacity: 0.75;
-		line-height: 1.35;
+		opacity: 0.7;
 	}
 </style>

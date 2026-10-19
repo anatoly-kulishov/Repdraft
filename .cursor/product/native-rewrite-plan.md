@@ -9,8 +9,8 @@
 | A Метрики цикла | в коде | `domain/loopMetrics.ts`, снимок в профиле (tester) |
 | B Opt-in Quest | в коде (PWA + RN) | `domain/quest.ts`, toggle, summary card; RN `QuestSummaryCard` |
 | C Часы | spike ADR | [`.cursor/product/watch-session-ownership.md`](./watch-session-ownership.md); native UI отдельно |
-| D RN ядро | **активно** | `mobile/` - live/builder/home/history near web parity; theme via `useAppColors`; technique via API |
-| E Часы + Quest native | частично | Quest/ачивки/Health stub на RN; часы ещё не в коде |
+| D RN ядро | почти паритет | `mobile/` - live, builder, home, history близко к web; тема через `useAppColors`; техника через API |
+| E Часы + Quest native | частично | Quest, ачивки и HealthKit на RN; Health Connect всё ещё scaffold; часы не начаты |
 
 ## Обещание
 
@@ -47,7 +47,7 @@ RN:  / → /plan/[id] → /live/[planId] → /summary/[id]
 - Одну кроссплатформенную UI-абстракцию раньше контрактов данных
 - watchOS + Wear OS + Garmin одновременно в первом релизе
 
-## Фаза D (сейчас): RN ядро
+## Фаза D: RN ядро
 
 | Часть | Решение |
 |---|---|

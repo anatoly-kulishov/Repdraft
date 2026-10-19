@@ -48,12 +48,19 @@ Fixed:
 | Live confirms | BottomSheet | ConfirmSheet (same shell) | aligned |
 | Filter chips on home | none | none | both unused on loop |
 
+## Fixed in v0.22.1 small-screen pass (2026-10-19, 360x640 web)
+
+- RN live scroll no longer adds `bottomPad + 200` under a sibling footer. Content padding is `space.lg`.
+- RN builder list and pick list use `space.lg` under a sibling sticky bar. Selection no longer grows the pad by 68px.
+- Web history date preset uses `history.filterToday` (same key as RN). `home.today` stays for relative dates.
+- Web plan rows: 48px move up / down. On phone the rest of the action cluster stays hidden (swipe). Measured 48x48, no horizontal overflow.
+- Web live at 360x640: finish bar in view (79px), workspace pad follows `--sticky-actions-h` (coachmark raises it). No clip.
+- Web builder sticky does not overlap the tab bar (tab bar hidden on that screen). Group bar already stacks under 390px with 48px buttons.
+- ConfirmSheet finish offer passes `showCancel: false` (Later without a second Cancel).
+
 ## Still watch for (manual QA)
 
-- Live footer height when "Next exercise" + finish + undo row all visible (scroll pad is generous)
-- Builder group selection bar height varies; list pad grows when selection non-empty
-- Very small devices: tab bar + sticky footer together on long builder cards
-- ConfirmSheet always adds Cancel under custom actions (Later + Cancel both appear on finish-offer)
+- RN device pass of the same footer heights (this pass was web + code). Expo Go was not running.
 
 ## Closed for gate
 

@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { restSecondsLeft } from '../live/restUntil';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
-import { radius, space, type ColorPalette } from '../theme';
+import { fontFamily, radius, space, type ColorPalette } from '../theme';
 import { PrimaryButton } from './PrimaryButton';
 
 type Props = {
@@ -90,16 +90,18 @@ function makeStyles(colors: ColorPalette) {
 			fontWeight: '700',
 			letterSpacing: 0.6,
 			textTransform: 'uppercase',
-			fontSize: 12
+			fontSize: 12,
+			fontFamily: fontFamily.bold
 		},
 		restValue: {
 			color: colors.accent,
 			fontSize: 48,
 			fontWeight: '800',
 			fontVariant: ['tabular-nums'],
-			lineHeight: 52
+			lineHeight: 52,
+			fontFamily: fontFamily.extrabold
 		},
-		restUnit: { color: colors.muted, fontWeight: '600', marginTop: -6 },
+		restUnit: { color: colors.muted, fontWeight: '600', marginTop: -6, fontFamily: fontFamily.semibold },
 		restBarTrack: {
 			alignSelf: 'stretch',
 			height: 8,

@@ -9,15 +9,16 @@ import {
 	TextInput,
 	View
 } from 'react-native';
-import { completedSetCount, sessionVolumeKg } from '@repdraft/domain/session';
+import { completedSetCount, sessionDurationMs } from '@repdraft/domain/session';
 import type { WorkoutSession } from '@repdraft/domain/types';
+import { formatDurationMinutes, formatRelativeDay } from '@repdraft/i18n/format';
 import { Chip } from '../../src/components/Chip';
 import { useLocale } from '../../src/state/locale';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { deleteSessionRemote } from '../../src/sync/cloudSync';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { useAppColors } from '../../src/state/theme';
-import { space, touchMin, type ColorPalette } from '../../src/theme';
+import { fontFamily, space, touchMin, type ColorPalette } from '../../src/theme';
 
 type Preset = 'today' | 'all' | '7d' | '30d' | '90d';
 
@@ -37,7 +38,7 @@ function withinPreset(finishedAt: string, preset: Preset): boolean {
 
 export default function HistoryListScreen() {
 	const router = useRouter();
-	const { tt } = useLocale();
+	const { locale, tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const listPad = useBottomChromePad(space.lg);
@@ -100,7 +101,7 @@ export default function HistoryListScreen() {
 			<TextInput
 				value={query}
 				onChangeText={setQuery}
-				placeholder={tt('exercises.search')}
+				placeholder={tt('workouts.historySearchPh')}
 				placeholderTextColor={colors.muted}
 				style={styles.search}
 			/>
@@ -130,9 +131,9 @@ export default function HistoryListScreen() {
 							{item.planName}
 						</Text>
 						<Text style={styles.meta} numberOfLines={1}>
-							{(item.finishedAt ?? item.startedAt).slice(0, 10)} ·{' '}
-							{completedSetCount(item)} {tt('history.setsCount')} ·{' '}
-							{Math.round(sessionVolumeKg(item))} {tt('summary.volume')}
+							{formatRelativeDay(item.finishedAt ?? item.startedAt, locale)} ·{' '}
+							{formatDurationMinutes(sessionDurationMs(item)) ?? '-'} {tt('summary.min')} ·{' '}
+							{completedSetCount(item)} {tt('history.setsCount')}
 						</Text>
 					</Pressable>
 				)}
@@ -163,7 +164,7 @@ function makeStyles(colors: ColorPalette) {
 		borderColor: colors.border,
 		padding: 14
 	},
-	title: { color: colors.text, fontWeight: '700', fontSize: 16 },
-	meta: { color: colors.muted, marginTop: 4 }
+	title: { color: colors.text, fontWeight: '700', fontSize: 16, fontFamily: fontFamily.bold },
+	meta: { color: colors.muted, marginTop: 4, fontFamily: fontFamily.regular }
 	});
 }

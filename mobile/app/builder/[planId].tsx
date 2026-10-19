@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
 	Alert,
@@ -33,6 +33,7 @@ import {
 	updateGroupRest,
 	updateGroupSets
 } from '@repdraft/domain/workout';
+import { exerciseMetaHint } from '@repdraft/domain/labels.ru';
 import { shouldShowCoachmark } from '@repdraft/domain/onboarding';
 import type { ExerciseIndexItem, WorkoutPlan } from '@repdraft/domain/types';
 import {
@@ -53,7 +54,7 @@ import { loadOnboarding, dismissCoachmark } from '../../src/state/onboarding';
 import { useAppColors } from '../../src/state/theme';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { deletePlanRemote, pushPlan } from '../../src/sync/cloudSync';
-import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
+import { fontFamily, radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
 export default function BuilderScreen() {
 	const { planId: planIdParam } = useLocalSearchParams<{ planId: string }>();
@@ -63,7 +64,7 @@ export default function BuilderScreen() {
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const bottomPad = useBottomChromePad(space.md);
-	const pickListPad = bottomPad + 80;
+	const pickListPad = space.lg;
 	const headerOffset = useStackHeaderOffset();
 	const [plan, setPlan] = useState<WorkoutPlan | null>(null);
 	const [bootError, setBootError] = useState(false);
@@ -71,7 +72,7 @@ export default function BuilderScreen() {
 	const [query, setQuery] = useState('');
 	const [bodyPart, setBodyPart] = useState<string | 'all'>('all');
 	const [selected, setSelected] = useState<Set<string>>(new Set());
-	const listPad = bottomPad + (selected.size > 0 ? 220 : 152);
+	const listPad = space.lg;
 	const [catalogTick, setCatalogTick] = useState(0);
 	const [flashId, setFlashId] = useState<string | null>(null);
 	const [showIntroCoachmark, setShowIntroCoachmark] = useState(false);
@@ -455,7 +456,11 @@ export default function BuilderScreen() {
 				style={styles.flex}
 				data={plan.exercises}
 				keyExtractor={(item, i) => `${item.exerciseId}-${i}`}
-				contentContainerStyle={[styles.list, { paddingBottom: listPad }]}
+				contentContainerStyle={[
+					styles.list,
+					plan.exercises.length > 0 && styles.listPanel,
+					{ paddingBottom: listPad }
+				]}
 				ListEmptyComponent={<Text style={styles.empty}>{tt('builder.empty')}</Text>}
 				keyboardShouldPersistTaps="handled"
 				renderItem={({ item, index }) => {
@@ -472,8 +477,15 @@ export default function BuilderScreen() {
 					const groupLead = Boolean(
 						(item.groupId && gRole === 'first') || (item.altGroupId && aRole === 'first')
 					);
+					const metaHint = meta ? exerciseMetaHint(meta, locale) : '';
 					return (
-						<View style={[styles.card, on && styles.cardOn]}>
+						<View
+							style={[
+								styles.card,
+								on && styles.cardOn,
+								index === plan.exercises.length - 1 && styles.cardLast
+							]}
+						>
 							<View style={styles.cardHead}>
 								<Pressable
 									accessibilityRole="checkbox"
@@ -508,6 +520,7 @@ export default function BuilderScreen() {
 										</Text>
 									</Pressable>
 								</View>
+								<CatalogThumb imagePath={meta?.image} size={48} />
 								<View style={styles.flex}>
 									{badge ? <Text style={styles.badge}>{badge}</Text> : null}
 									<Text style={styles.rowTitle}>
@@ -515,7 +528,7 @@ export default function BuilderScreen() {
 									</Text>
 									<Text style={styles.meta}>
 										{formatExercisePrescription(item)}
-										{meta ? ` · ${meta.equipment}` : ''}
+										{metaHint ? ` · ${metaHint}` : meta?.equipment ? ` · ${meta.equipment}` : ''}
 									</Text>
 								</View>
 								<Pressable
@@ -556,78 +569,73 @@ export default function BuilderScreen() {
 									) : null}
 								</View>
 							) : null}
-							<View style={styles.steppers}>
-								<View style={styles.stepCell}>
-									<Stepper
-										styles={styles}
-										label={tt('builder.sets')}
-										value={item.sets}
-										onDec={() => {
-											if (item.groupId && gRole !== 'solo') {
-												void persist(updateGroupSets(plan, item.groupId, item.sets - 1));
-											} else {
-												void persist(
-													updateExercise(plan, item.exerciseId, { sets: item.sets - 1 })
-												);
-											}
-										}}
-										onInc={() => {
-											if (item.groupId && gRole !== 'solo') {
-												void persist(updateGroupSets(plan, item.groupId, item.sets + 1));
-											} else {
-												void persist(
-													updateExercise(plan, item.exerciseId, { sets: item.sets + 1 })
-												);
-											}
-										}}
-									/>
-								</View>
-								<View style={styles.stepCell}>
-									<Stepper
-										styles={styles}
-										label={tt('common.reps')}
-										value={item.reps}
-										onDec={() =>
+							<View style={styles.fields}>
+								<Stepper
+									styles={styles}
+									label={tt('builder.sets')}
+									value={item.sets}
+									onDec={() => {
+										if (item.groupId && gRole !== 'solo') {
+											void persist(updateGroupSets(plan, item.groupId, item.sets - 1));
+										} else {
 											void persist(
-												updateExercise(plan, item.exerciseId, { reps: item.reps - 1 })
-											)
+												updateExercise(plan, item.exerciseId, { sets: item.sets - 1 })
+											);
 										}
-										onInc={() =>
+									}}
+									onInc={() => {
+										if (item.groupId && gRole !== 'solo') {
+											void persist(updateGroupSets(plan, item.groupId, item.sets + 1));
+										} else {
 											void persist(
-												updateExercise(plan, item.exerciseId, { reps: item.reps + 1 })
-											)
+												updateExercise(plan, item.exerciseId, { sets: item.sets + 1 })
+											);
 										}
-									/>
-								</View>
-								<View style={styles.stepCell}>
-									<Stepper
-										styles={styles}
-										label={tt('builder.rest')}
-										value={item.restSec}
-										onDec={() => {
-											if (item.groupId && gRole !== 'solo') {
-												void persist(updateGroupRest(plan, item.groupId, item.restSec - 15));
-											} else {
-												void persist(
-													updateExercise(plan, item.exerciseId, {
-														restSec: item.restSec - 15
-													})
-												);
-											}
-										}}
-										onInc={() => {
-											if (item.groupId && gRole !== 'solo') {
-												void persist(updateGroupRest(plan, item.groupId, item.restSec + 15));
-											} else {
-												void persist(
-													updateExercise(plan, item.exerciseId, {
-														restSec: item.restSec + 15
-													})
-												);
-											}
-										}}
-									/>
-								</View>
+									}}
+								/>
+								<Text style={styles.times}>×</Text>
+								<Stepper
+									styles={styles}
+									label={tt('common.reps')}
+									value={item.reps}
+									onDec={() =>
+										void persist(
+											updateExercise(plan, item.exerciseId, { reps: item.reps - 1 })
+										)
+									}
+									onInc={() =>
+										void persist(
+											updateExercise(plan, item.exerciseId, { reps: item.reps + 1 })
+										)
+									}
+								/>
+								<Stepper
+									styles={styles}
+									label={tt('builder.rest')}
+									value={item.restSec}
+									onDec={() => {
+										if (item.groupId && gRole !== 'solo') {
+											void persist(updateGroupRest(plan, item.groupId, item.restSec - 15));
+										} else {
+											void persist(
+												updateExercise(plan, item.exerciseId, {
+													restSec: item.restSec - 15
+												})
+											);
+										}
+									}}
+									onInc={() => {
+										if (item.groupId && gRole !== 'solo') {
+											void persist(updateGroupRest(plan, item.groupId, item.restSec + 15));
+										} else {
+											void persist(
+												updateExercise(plan, item.exerciseId, {
+													restSec: item.restSec + 15
+												})
+											);
+										}
+									}}
+								/>
 							</View>
 							<PrimaryButton
 								label={hasLadderScheme(item) ? tt('builder.ladderOff') : tt('builder.ladder')}
@@ -650,18 +658,26 @@ export default function BuilderScreen() {
 					);
 				}}
 			/>
+			<Stack.Screen
+				options={{
+					headerRight: () => (
+						<Pressable accessibilityRole="button" hitSlop={8} onPress={offerMore}>
+							<Text style={styles.headerMore}>{tt('builder.more')}</Text>
+						</Pressable>
+					)
+				}}
+			/>
 			<View style={[styles.sticky, { paddingBottom: bottomPad }]}>
-				<PrimaryButton label={tt('builder.add')} onPress={() => setPicking(true)} />
 				<View style={styles.stickyRow}>
 					<View style={styles.flex}>
-						<PrimaryButton label={tt('builder.save')} onPress={() => void commitSave()} />
+						<PrimaryButton
+							label={tt('builder.addExerciseShort')}
+							variant="secondary"
+							onPress={() => setPicking(true)}
+						/>
 					</View>
 					<View style={styles.flex}>
-						<PrimaryButton
-							label={tt('builder.more')}
-							variant="ghost"
-							onPress={offerMore}
-						/>
+						<PrimaryButton label={tt('builder.save')} onPress={() => void commitSave()} />
 					</View>
 				</View>
 			</View>
@@ -685,16 +701,16 @@ function Stepper({
 	onInc: () => void;
 }) {
 	return (
-		<View style={styles.stepper}>
-			<Text style={styles.stepLabel} numberOfLines={1}>
+		<View style={styles.field}>
+			<Text style={styles.fieldLabel} numberOfLines={1}>
 				{label}
 			</Text>
-			<View style={styles.stepRow}>
-				<Pressable accessibilityRole="button" style={styles.stepBtn} onPress={onDec}>
+			<View style={styles.fieldRow}>
+				<Pressable accessibilityRole="button" hitSlop={8} style={styles.stepBtn} onPress={onDec}>
 					<Text style={styles.stepBtnText}>-</Text>
 				</Pressable>
 				<Text style={styles.stepValue}>{value}</Text>
-				<Pressable accessibilityRole="button" style={styles.stepBtn} onPress={onInc}>
+				<Pressable accessibilityRole="button" hitSlop={8} style={styles.stepBtn} onPress={onInc}>
 					<Text style={styles.stepBtnText}>+</Text>
 				</Pressable>
 			</View>
@@ -714,7 +730,7 @@ function makeStyles(colors: ColorPalette) {
 		padding: space.lg,
 		gap: space.md
 	},
-	label: { color: colors.muted, fontWeight: '700', fontSize: 12, letterSpacing: 0.4 },
+	label: { color: colors.muted, fontWeight: '700', fontSize: 12, letterSpacing: 0.4, fontFamily: fontFamily.bold },
 	input: {
 		minHeight: touchMin,
 		borderRadius: radius.md,
@@ -724,9 +740,10 @@ function makeStyles(colors: ColorPalette) {
 		color: colors.text,
 		paddingHorizontal: space.md,
 		fontSize: 17,
-		fontWeight: '700'
+		fontWeight: '700',
+		fontFamily: fontFamily.bold
 	},
-	pickHint: { color: colors.muted, fontSize: 13, lineHeight: 18 },
+	pickHint: { color: colors.muted, fontSize: 13, lineHeight: 18, fontFamily: fontFamily.regular },
 	chipStrip: { flexGrow: 0, flexShrink: 0, height: touchMin },
 	chips: { gap: space.sm, alignItems: 'center', paddingVertical: 0 },
 	chip: {
@@ -741,11 +758,18 @@ function makeStyles(colors: ColorPalette) {
 		marginRight: space.sm
 	},
 	chipOn: { backgroundColor: colors.accent, borderColor: colors.accent },
-	chipText: { color: colors.muted, fontWeight: '700', fontSize: 13 },
-	chipTextOn: { color: colors.accentText },
-	list: { gap: space.sm, paddingBottom: space.sm, flexGrow: 1 },
-	empty: { color: colors.muted, textAlign: 'center', marginTop: 48, lineHeight: 22 },
-	emptyPick: { color: colors.muted, textAlign: 'center', marginTop: 32 },
+	chipText: { color: colors.muted, fontWeight: '700', fontSize: 13, fontFamily: fontFamily.bold },
+	chipTextOn: { color: colors.accentText, fontFamily: fontFamily.bold },
+	list: { gap: 0, paddingBottom: space.sm, flexGrow: 1 },
+	listPanel: {
+		borderWidth: 1,
+		borderColor: colors.border,
+		borderRadius: radius.md,
+		overflow: 'hidden',
+		backgroundColor: colors.panel
+	},
+	empty: { color: colors.muted, textAlign: 'center', marginTop: 48, lineHeight: 22, fontFamily: fontFamily.regular },
+	emptyPick: { color: colors.muted, textAlign: 'center', marginTop: 32, fontFamily: fontFamily.regular },
 	pickRow: {
 		minHeight: touchMin + 8,
 		backgroundColor: colors.panel,
@@ -769,18 +793,21 @@ function makeStyles(colors: ColorPalette) {
 		color: colors.accent,
 		fontSize: 22,
 		fontWeight: '800',
-		paddingTop: 10
+		paddingTop: 10,
+		fontFamily: fontFamily.extrabold
 	},
 	pickMarkOn: { color: colors.muted },
 	card: {
 		backgroundColor: colors.panel,
-		borderRadius: radius.md,
-		borderWidth: 1,
-		borderColor: colors.border,
+		borderRadius: 0,
+		borderWidth: 0,
+		borderBottomWidth: StyleSheet.hairlineWidth,
+		borderBottomColor: colors.border,
 		padding: space.md,
 		gap: space.sm
 	},
 	cardOn: { borderColor: colors.accent, backgroundColor: colors.accentDim },
+	cardLast: { borderBottomWidth: 0 },
 	cardHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
 	check: {
 		minWidth: touchMin,
@@ -792,7 +819,7 @@ function makeStyles(colors: ColorPalette) {
 		justifyContent: 'center',
 		backgroundColor: colors.bg
 	},
-	checkText: { color: colors.accent, fontWeight: '800', fontSize: 18 },
+	checkText: { color: colors.accent, fontWeight: '800', fontSize: 18, fontFamily: fontFamily.extrabold },
 	moveCol: { gap: 2 },
 	moveBtn: {
 		minWidth: touchMin,
@@ -800,27 +827,33 @@ function makeStyles(colors: ColorPalette) {
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
-	moveText: { color: colors.text, fontSize: 18, fontWeight: '700' },
+	moveText: { color: colors.text, fontSize: 18, fontWeight: '700', fontFamily: fontFamily.bold },
 	moveDisabled: { color: colors.muted, opacity: 0.35 },
-	badge: { color: colors.accent, fontSize: 11, fontWeight: '800', marginBottom: 2 },
-	rowTitle: { color: colors.text, fontWeight: '700', fontSize: 16 },
-	meta: { color: colors.muted, marginTop: 2, fontSize: 13 },
-	muted: { color: colors.muted, textAlign: 'center' },
+	badge: { color: colors.accent, fontSize: 11, fontWeight: '800', marginBottom: 2, fontFamily: fontFamily.extrabold },
+	rowTitle: { color: colors.text, fontWeight: '700', fontSize: 16, fontFamily: fontFamily.bold },
+	meta: { color: colors.muted, marginTop: 2, fontSize: 13, fontFamily: fontFamily.regular },
+	muted: { color: colors.muted, textAlign: 'center', fontFamily: fontFamily.regular },
 	remove: { minWidth: touchMin, minHeight: touchMin, alignItems: 'center', justifyContent: 'center' },
-	removeText: { color: colors.danger, fontSize: 28, fontWeight: '300' },
-	steppers: { gap: space.sm },
-	stepCell: { width: '100%' },
-	stepper: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: space.sm,
-		width: '100%'
+	removeText: { color: colors.danger, fontSize: 28, fontWeight: '300', fontFamily: fontFamily.regular },
+	fields: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
+	times: {
+		color: colors.muted,
+		fontSize: 16,
+		fontWeight: '700',
+		marginBottom: 8,
+		fontFamily: fontFamily.bold
 	},
-	stepLabel: { flex: 1, color: colors.muted, fontSize: 13, fontWeight: '600' },
-	stepRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, flexShrink: 0 },
+	field: { flex: 1, minWidth: 0, gap: 4 },
+	fieldLabel: {
+		color: colors.muted,
+		fontSize: 11,
+		fontWeight: '600',
+		fontFamily: fontFamily.semibold
+	},
+	fieldRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 	stepBtn: {
-		minWidth: touchMin,
-		minHeight: touchMin,
+		width: 28,
+		height: 28,
 		borderRadius: radius.sm,
 		backgroundColor: colors.bg,
 		borderWidth: 1,
@@ -828,13 +861,14 @@ function makeStyles(colors: ColorPalette) {
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
-	stepBtnText: { color: colors.text, fontSize: 20, fontWeight: '700' },
+	stepBtnText: { color: colors.text, fontSize: 16, fontWeight: '700', fontFamily: fontFamily.bold },
 	stepValue: {
-		minWidth: 36,
+		minWidth: 22,
 		textAlign: 'center',
 		color: colors.text,
 		fontWeight: '800',
-		fontVariant: ['tabular-nums']
+		fontVariant: ['tabular-nums'],
+		fontFamily: fontFamily.extrabold
 	},
 	groupBar: { gap: space.sm },
 	groupActions: { flexDirection: 'row', gap: space.sm },
@@ -846,6 +880,13 @@ function makeStyles(colors: ColorPalette) {
 		borderTopColor: colors.border,
 		backgroundColor: colors.bg
 	},
-	stickyRow: { flexDirection: 'row', gap: space.sm }
+	stickyRow: { flexDirection: 'row', gap: space.sm },
+	headerMore: {
+		color: colors.text,
+		fontSize: 17,
+		fontWeight: '600',
+		fontFamily: fontFamily.semibold,
+		paddingHorizontal: 4
+	}
 	});
 }

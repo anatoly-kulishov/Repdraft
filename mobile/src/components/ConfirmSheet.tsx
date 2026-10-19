@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
-import { type ColorPalette } from '../theme';
+import { fontFamily, type ColorPalette } from '../theme';
 import { BottomSheet } from './BottomSheet';
 import { PrimaryButton } from './PrimaryButton';
 
@@ -60,7 +60,7 @@ export function ConfirmSheet({ open, title, message, onDismiss, actions, showCan
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
-		title: { color: colors.text, fontSize: 20, fontWeight: '800' },
-		message: { color: colors.muted, fontSize: 15, lineHeight: 22 }
+		title: { color: colors.text, fontSize: 20, fontWeight: '800', fontFamily: fontFamily.extrabold },
+		message: { color: colors.muted, fontSize: 15, lineHeight: 22, fontFamily: fontFamily.regular }
 	});
 }

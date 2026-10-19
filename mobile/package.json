@@ -1,6 +1,6 @@
 {
   "name": "repdraft-mobile",
-  "version": "0.22.0",
+  "version": "0.22.1",
   "main": "expo-router/entry",
   "private": true,
   "scripts": {
@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
     "@kingstinct/react-native-healthkit": "^8.7.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.118.0",
@@ -26,6 +27,7 @@
     "expo-linking": "~57.0.13",
     "expo-router": "~57.0.27",
     "expo-sharing": "^57.0.23",
+    "expo-splash-screen": "~57.0.10",
     "expo-status-bar": "~57.0.1",
     "expo-web-browser": "~57.0.3",
     "lucide-react-native": "^1.57.0",

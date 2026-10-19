@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
-import { labelBodyPart } from '@repdraft/domain/labels.ru';
+import { labelBodyPart, labelEquipment } from '@repdraft/domain/labels.ru';
 import {
 	fetchExerciseDetail,
 	stepsForLocale,
@@ -8,7 +8,7 @@ import {
 } from '../catalog/fetchExerciseDetail';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
-import { radius, space, touchMin, type ColorPalette } from '../theme';
+import { fontFamily, radius, space, touchMin, type ColorPalette } from '../theme';
 import { BottomSheet } from './BottomSheet';
 import { CatalogThumb } from './CatalogThumb';
 import { PrimaryButton } from './PrimaryButton';
@@ -62,7 +62,7 @@ export function TechniqueSheet({ exerciseId, onClose }: Props) {
 			</Text>
 			{detail ? (
 				<Text style={styles.meta} numberOfLines={2}>
-					{labelBodyPart(detail.body_part, locale)} · {detail.equipment}
+					{labelBodyPart(detail.body_part, locale)} · {labelEquipment(detail.equipment, locale)}
 				</Text>
 			) : null}
 			<ScrollView
@@ -87,15 +87,16 @@ export function TechniqueSheet({ exerciseId, onClose }: Props) {
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
-		title: { color: colors.text, fontSize: 20, fontWeight: '800' },
-		meta: { color: colors.muted, fontSize: 13 },
+		title: { color: colors.text, fontSize: 20, fontWeight: '800', fontFamily: fontFamily.extrabold },
+		meta: { color: colors.muted, fontSize: 13, fontFamily: fontFamily.regular },
 		scroll: { flexGrow: 0 },
 		body: { gap: space.sm, paddingBottom: space.sm },
 		step: {
 			color: colors.text,
 			fontSize: 15,
 			lineHeight: 22,
-			minHeight: touchMin / 2
+			minHeight: touchMin / 2,
+			fontFamily: fontFamily.regular
 		}
 	});
 }

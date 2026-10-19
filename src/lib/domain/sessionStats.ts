@@ -128,6 +128,20 @@ export function sessionVolumeKg(session: WorkoutSession): number {
 	return total;
 }
 
+/** Heaviest completed working weight for one exercise. Warm-up and empty loads do not count. */
+export function exerciseBestWeightKg(session: WorkoutSession, exerciseId: string): number | null {
+	let best: number | null = null;
+	for (const ex of session.exercises) {
+		if (ex.skipped || ex.exerciseId !== exerciseId) continue;
+		for (const set of ex.sets) {
+			if (!set.completed || !isProgressSet(set)) continue;
+			if (set.weightKg == null || set.weightKg <= 0) continue;
+			if (best == null || set.weightKg > best) best = set.weightKg;
+		}
+	}
+	return best;
+}
+
 /** Heaviest logged weight in one exercise block (completed sets). */
 export function exerciseLogTopWeight(sets: { weightKg: number | null }[]): number | null {
 	let top: number | null = null;

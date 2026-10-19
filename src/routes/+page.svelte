@@ -38,7 +38,8 @@
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { onboarding, onboardingHydrated } from '$lib/stores/onboarding';
-	import { questEnabled } from '$lib/stores/prefs';
+	import { exerciseName } from '$lib/domain/exerciseName';
+	import { suggestRaiseExerciseId } from '$lib/domain/sessionPayoff';
 	import { questState } from '$lib/stores/quest';
 	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
 	import QuestHomeBanner from '$lib/components/QuestHomeBanner.svelte';
@@ -97,6 +98,12 @@
 		peekedIndex ? new Map(peekedIndex.map((item) => [item.id, item])) : new Map()
 	);
 	let indexReady = $state(peekedIndex != null);
+	let raiseName = $derived.by(() => {
+		const id = suggestRaiseExerciseId($live.history);
+		if (!id) return null;
+		const item = indexById.get(id);
+		return item ? exerciseName(item, lang) : null;
+	});
 
 	let hasActive = $derived(Boolean(active && !active.finishedAt));
 	let hasPlans = $derived($plans.length > 0);
@@ -454,9 +461,9 @@
 				<OnboardingChecklist onTryDemo={onTryDemoPlan} {demoBusy} articlesHref="/articles" />
 			</div>
 		{/if}
-		{#if $questEnabled && pageReady}
+		{#if pageReady}
 			<div class="home-dashboard-top">
-				<QuestHomeBanner state={$questState} />
+				<QuestHomeBanner quest={$questState} raiseName={raiseName} />
 			</div>
 		{/if}
 		{#if showGuestCreateHero}

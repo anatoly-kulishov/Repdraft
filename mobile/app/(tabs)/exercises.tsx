@@ -1,10 +1,13 @@
 import { useFocusEffect, useRouter } from 'expo-router';
+import { BookOpen, Bookmark, List, SearchX, Trophy } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import {
 	Alert,
 	FlatList,
 	Image,
+	KeyboardAvoidingView,
 	Modal,
+	Platform,
 	Pressable,
 	StyleSheet,
 	Text,
@@ -14,8 +17,8 @@ import {
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from 'react-native-svg';
 import { CUSTOM_EXERCISE_EQUIPMENT } from '@repdraft/domain/customExercises';
 import { labelBodyPart, labelEquipment } from '@repdraft/domain/labels.ru';
+import { hasLiftData } from '@repdraft/domain/records';
 import {
-	exerciseDisplayName,
 	filterExercises,
 	loadExerciseIndex,
 	refreshCustomsCache,
@@ -25,13 +28,16 @@ import { catalogMediaUrl } from '../../src/catalog/mediaUrl';
 import { zoneCoverMap } from '../../src/catalog/zoneCovers';
 import { CatalogThumb } from '../../src/components/CatalogThumb';
 import { Chip } from '../../src/components/Chip';
+import { EmptyState } from '../../src/components/EmptyState';
+import { ExerciseGridCard } from '../../src/components/ExerciseGridCard';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { useBottomChromePad, useTabScreenPad } from '../../src/layout/safe';
 import { useLocale } from '../../src/state/locale';
 import { bookmarksRepo } from '../../src/storage/bookmarksRepo';
 import { customsRepo } from '../../src/storage/customsRepo';
+import { recordsRepo } from '../../src/storage/recordsRepo';
 import { useAppColors } from '../../src/state/theme';
-import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
+import { fontFamily, radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
 export default function ExercisesScreen() {
 	const { locale, tt } = useLocale();
@@ -44,6 +50,7 @@ export default function ExercisesScreen() {
 	const [bodyPart, setBodyPart] = useState<string | 'all'>('all');
 	const [savedOnly, setSavedOnly] = useState(false);
 	const [bookmarks, setBookmarks] = useState<string[]>([]);
+	const [records, setRecords] = useState<number>(0);
 	const [tick, setTick] = useState(0);
 	const [creating, setCreating] = useState(false);
 	const [customName, setCustomName] = useState('');
@@ -54,6 +61,8 @@ export default function ExercisesScreen() {
 		void (async () => {
 			await refreshCustomsCache();
 			setBookmarks(await bookmarksRepo.list());
+			const recs = await recordsRepo.list();
+			setRecords(recs.filter(hasLiftData).length);
 			setTick((n) => n + 1);
 		})();
 	}, []);
@@ -87,8 +96,6 @@ export default function ExercisesScreen() {
 		return list;
 	}, [all, query, bodyPart, locale, savedOnly, bookmarks]);
 
-	const bookmarkSet = useMemo(() => new Set(bookmarks), [bookmarks]);
-
 	function zoneLabel(part: string): string {
 		return part === 'all' ? tt('exercises.all') : labelBodyPart(part, locale);
 	}
@@ -118,21 +125,58 @@ export default function ExercisesScreen() {
 				placeholderTextColor={colors.muted}
 				style={styles.search}
 			/>
-			<View style={styles.topActions}>
-				<View style={{ flex: 1 }}>
-					<PrimaryButton
-						label={tt('exercises.records')}
-						variant="ghost"
-						onPress={() => router.push('/records')}
-					/>
-				</View>
-				<View style={{ flex: 1 }}>
-					<PrimaryButton
-						label={tt('exercises.saved')}
-						variant={savedOnly ? 'primary' : 'ghost'}
-						onPress={() => setSavedOnly((v) => !v)}
-					/>
-				</View>
+			<View style={styles.hubNav}>
+				<Pressable
+					style={({ pressed }) => [styles.hubNavChip, pressed && styles.pressed]}
+					onPress={() => {
+						setSavedOnly(false);
+						setBodyPart('all');
+						setQuery('');
+					}}
+					accessibilityRole="button"
+				>
+					<List size={16} color={colors.text} strokeWidth={2} />
+					<Text style={styles.hubNavText}>{tt('catalog.browseAll')}</Text>
+				</Pressable>
+				<Pressable
+					style={({ pressed }) => [
+						styles.hubNavChip,
+						savedOnly && styles.hubNavChipActive,
+						pressed && styles.pressed
+					]}
+					onPress={() => {
+						setSavedOnly((v) => !v);
+						setBodyPart('all');
+						setQuery('');
+					}}
+					accessibilityRole="button"
+				>
+					<Bookmark size={16} color={savedOnly ? colors.accentInk : colors.text} strokeWidth={2} />
+					<Text style={[styles.hubNavText, savedOnly && styles.hubNavTextActive]}>
+						{tt('bookmarks.title')}
+					</Text>
+				</Pressable>
+				<Pressable
+					style={({ pressed }) => [styles.hubNavChip, pressed && styles.pressed]}
+					onPress={() => router.push('/records')}
+					accessibilityRole="button"
+				>
+					<Trophy size={16} color={colors.text} strokeWidth={2} />
+					<Text style={styles.hubNavText}>{tt('records.title')}</Text>
+					{records > 0 ? (
+						<View style={styles.countBadge}>
+							<Text style={styles.countBadgeText}>{records}</Text>
+						</View>
+					) : null}
+				</Pressable>
+				<Pressable
+					style={({ pressed }) => [styles.hubNavChip, pressed && styles.pressed]}
+					onPress={() => router.push('/articles')}
+					accessibilityRole="button"
+				>
+					<BookOpen size={16} color={colors.text} strokeWidth={2} />
+					<Text style={styles.hubNavText}>{tt('articles.title')}</Text>
+				</Pressable>
 			</View>
 			<PrimaryButton
 				label={tt('exercises.custom')}
@@ -156,42 +200,43 @@ export default function ExercisesScreen() {
 						/>
 					)}
 				/>
-				<FlatList
-					style={styles.flexList}
-					data={filtered}
-					keyExtractor={(item) => item.id}
-					initialNumToRender={20}
-					windowSize={7}
-					contentContainerStyle={[styles.list, { paddingBottom: tabPad }]}
-					renderItem={({ item }) => {
-						const bookmarked = bookmarkSet.has(item.id);
-						return (
-							<Pressable style={styles.row} onPress={() => router.push(`/exercise/${item.id}`)}>
-								<CatalogThumb imagePath={item.image} size={56} />
-								<View style={styles.rowCopy}>
-									<Text style={styles.rowTitle} numberOfLines={2}>
-										{exerciseDisplayName(item.id, locale)}
-									</Text>
-									<Text style={styles.rowMeta} numberOfLines={1}>
-										{labelBodyPart(item.body_part, locale)} · {item.equipment}
-									</Text>
-								</View>
-								<Pressable
-									accessibilityRole="button"
-									accessibilityLabel={tt('exercises.bookmark')}
-									style={styles.star}
-									onPress={() => {
-										void bookmarksRepo.toggle(item.id).then(reload);
-									}}
-								>
-									<Text style={[styles.starText, bookmarked && styles.starOn]}>
-										{bookmarked ? '★' : '☆'}
-									</Text>
-								</Pressable>
-							</Pressable>
-						);
-					}}
-				/>
+				{filtered.length === 0 ? (
+					<EmptyState
+						title={
+							savedOnly
+								? tt('bookmarks.emptyTitle')
+								: query.trim()
+									? tt('catalog.emptyTitle')
+									: tt('catalog.emptyTitle')
+						}
+						description={
+							savedOnly
+								? tt('bookmarks.emptyDesc')
+								: query.trim()
+									? tt('catalog.emptyDesc')
+									: tt('catalog.emptyDesc')
+						}
+						icon={SearchX}
+						onAction={() => {
+							setSavedOnly(false);
+							setQuery('');
+							setBodyPart('all');
+						}}
+						actionLabel={savedOnly ? tt('bookmarks.browse') : tt('catalog.reset')}
+					/>
+				) : (
+					<FlatList
+						style={styles.flexList}
+						data={filtered}
+						keyExtractor={(item) => item.id}
+						numColumns={2}
+						columnWrapperStyle={styles.gridRow}
+						initialNumToRender={12}
+						windowSize={5}
+						contentContainerStyle={[styles.grid, { paddingBottom: tabPad }]}
+						renderItem={({ item }) => <ExerciseGridCard exercise={item} />}
+					/>
+				)}
 			</>
 		) : (
 			<FlatList
@@ -200,7 +245,7 @@ export default function ExercisesScreen() {
 				keyExtractor={(item) => item}
 				numColumns={2}
 				columnWrapperStyle={styles.hubRow}
-				contentContainerStyle={[styles.list, { paddingBottom: tabPad }]}
+					contentContainerStyle={[styles.grid, { paddingBottom: tabPad }]}
 				ListHeaderComponent={
 					<Text style={styles.hubLead}>{tt('exercises.hubLead')}</Text>
 				}
@@ -242,7 +287,10 @@ export default function ExercisesScreen() {
 			/>
 		)}
 			<Modal visible={creating} animationType="slide" transparent onRequestClose={() => setCreating(false)}>
-				<View style={styles.sheetWrap}>
+				<KeyboardAvoidingView
+					style={styles.sheetWrap}
+					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+				>
 					<View style={[styles.sheet, { paddingBottom: bottomPad }]}>
 						<Text style={styles.sheetTitle}>{tt('exercises.custom')}</Text>
 						<TextInput
@@ -283,21 +331,21 @@ export default function ExercisesScreen() {
 							)}
 						/>
 						<PrimaryButton label={tt('exercises.customCreate')} onPress={() => void createCustom()} />
-						<PrimaryButton
-							label={tt('common.cancel')}
-							variant="ghost"
-							onPress={() => setCreating(false)}
-						/>
-					</View>
+					<PrimaryButton
+						label={tt('common.cancel')}
+						variant="ghost"
+						onPress={() => setCreating(false)}
+					/>
 				</View>
-			</Modal>
+			</KeyboardAvoidingView>
+		</Modal>
 		</View>
 	);
 }
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
-	root: { flex: 1, padding: space.lg, gap: space.sm, backgroundColor: colors.bg },
+	root: { flex: 1, padding: space.md, gap: space.sm, backgroundColor: colors.bg },
 	search: {
 		minHeight: touchMin,
 		borderRadius: radius.sm,
@@ -306,30 +354,57 @@ function makeStyles(colors: ColorPalette) {
 		backgroundColor: colors.panel,
 		color: colors.text,
 		paddingHorizontal: space.md,
-		fontSize: 16
+		fontSize: 16,
+		fontFamily: fontFamily.regular
 	},
-	topActions: { flexDirection: 'row', gap: space.sm },
+	hubNav: { flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' },
+	hubNavChip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6,
+		minHeight: touchMin,
+		paddingHorizontal: space.md,
+		borderRadius: radius.pill,
+		borderWidth: 1,
+		borderColor: colors.border,
+		backgroundColor: colors.panel
+	},
+	hubNavChipActive: {
+		borderColor: colors.accentFill,
+		backgroundColor: colors.accentFill
+	},
+	hubNavText: {
+		color: colors.text,
+		fontSize: 14,
+		fontWeight: '600',
+		fontFamily: fontFamily.semibold
+	},
+	hubNavTextActive: {
+		color: colors.accentInk,
+		fontWeight: '700',
+		fontFamily: fontFamily.bold
+	},
+	countBadge: {
+		backgroundColor: colors.accent,
+		borderRadius: 999,
+		minWidth: 18,
+		height: 18,
+		alignItems: 'center',
+		justifyContent: 'center',
+		paddingHorizontal: 5
+	},
+	countBadgeText: {
+		color: colors.accentInk,
+		fontSize: 11,
+		fontWeight: '800',
+		fontFamily: fontFamily.extrabold
+	},
+	pressed: { opacity: 0.85 },
 	flexList: { flex: 1 },
 	chipStrip: { flexGrow: 0, flexShrink: 0, height: touchMin },
 	chips: { gap: space.sm, alignItems: 'center', paddingVertical: 0 },
-	list: { gap: space.sm },
-	row: {
-		minHeight: touchMin,
-		backgroundColor: colors.panel,
-		borderRadius: radius.md,
-		borderWidth: 1,
-		borderColor: colors.border,
-		padding: space.md,
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: space.sm
-	},
-	rowCopy: { flex: 1, gap: 4 },
-	rowTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
-	rowMeta: { color: colors.muted, fontSize: 13 },
-	star: { minWidth: touchMin, minHeight: touchMin, alignItems: 'center', justifyContent: 'center' },
-	starText: { color: colors.muted, fontSize: 22 },
-	starOn: { color: colors.accent },
+	grid: { gap: space.md },
+	gridRow: { gap: space.md },
 	sheetWrap: {
 		flex: 1,
 		justifyContent: 'flex-end',
@@ -343,14 +418,28 @@ function makeStyles(colors: ColorPalette) {
 		gap: space.sm,
 		maxHeight: '85%'
 	},
-	sheetTitle: { color: colors.text, fontSize: 20, fontWeight: '800' },
-	sheetLabel: { color: colors.muted, fontWeight: '600', fontSize: 13 },
-	hubLead: { color: colors.muted, marginBottom: space.sm, width: '100%' },
+	sheetTitle: {
+		color: colors.text,
+		fontSize: 20,
+		fontWeight: '800',
+		fontFamily: fontFamily.extrabold
+	},
+	sheetLabel: {
+		color: colors.muted,
+		fontWeight: '600',
+		fontSize: 13,
+		fontFamily: fontFamily.semibold
+	},
+	hubLead: {
+		color: colors.muted,
+		marginBottom: space.sm,
+		width: '100%',
+		fontFamily: fontFamily.regular
+	},
 	hubRow: { gap: space.sm },
 	hubCard: {
 		flex: 1,
-		minHeight: 128,
-		aspectRatio: 1.05,
+		aspectRatio: 0.75,
 		backgroundColor: colors.panel,
 		borderRadius: radius.md,
 		borderWidth: 1,
@@ -373,9 +462,19 @@ function makeStyles(colors: ColorPalette) {
 		padding: space.md,
 		zIndex: 1
 	},
-	hubTitle: { color: '#f5f5f7', fontWeight: '800', fontSize: 16 },
+	hubTitle: {
+		color: '#f5f5f7',
+		fontWeight: '800',
+		fontSize: 14,
+		fontFamily: fontFamily.extrabold
+	},
 	hubTitleLight: { color: '#0f1012' },
-	hubMeta: { color: 'rgba(245,245,247,0.82)', marginTop: 4, fontSize: 13 },
+	hubMeta: {
+		color: 'rgba(245,245,247,0.82)',
+		marginTop: 4,
+		fontSize: 11,
+		fontFamily: fontFamily.medium
+	},
 	hubMetaLight: { color: '#636366' }
 	});
 }

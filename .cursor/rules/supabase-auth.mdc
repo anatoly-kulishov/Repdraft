@@ -16,6 +16,7 @@ alwaysApply: false
 3. URL Configuration:
    - Site URL = production origin
    - Redirect allow-list includes `/auth` for prod + local (`localhost:5173`, `127.0.0.1:5173`)
+   - Phone app (dev/production build) also sends magic link, signup confirm, and password recovery to `repdraft://auth`. Add that scheme to the allow-list. Password sign-in does not need a redirect. Expo Go uses an `exp://` URL that changes with the LAN address, so email links are reliable in a dev build, not in Expo Go.
    - Confirm / magic / recovery должны открывать **тот же origin** `/auth`. Не жди открытия standalone PWA с Home Screen из письма: Mail → Safari/WebView; на iOS это ограничение ОС.
 4. Email templates must honor redirect / Site URL (confirm, magic link, recovery). Keep `{{ .ConfirmationURL }}` (or equivalent) so `emailRedirectTo` from the app is used.
 5. Bot protection (prod): Cloudflare Turnstile ON; secret in Supabase; `PUBLIC_TURNSTILE_SITE_KEY` in Vercel.

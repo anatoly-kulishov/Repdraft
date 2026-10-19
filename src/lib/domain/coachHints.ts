@@ -15,6 +15,33 @@ export type CoachHint = {
 	reasonKey: 'coach.hintLagging' | 'coach.hintBalance';
 };
 
+export type CoachReplace = {
+	fromExerciseId: string;
+	toExerciseId: string;
+	bodyPart: string;
+};
+
+/** Swap one plan exercise that sits on a lagging body part. */
+export function suggestPlanReplace(
+	planExerciseIds: readonly string[],
+	lagging: readonly string[],
+	catalog: readonly ExerciseIndexItem[],
+	bodyPartFor: (exerciseId: string) => string | null
+): CoachReplace | null {
+	for (const part of lagging) {
+		const fromExerciseId = planExerciseIds.find((id) => bodyPartFor(id) === part);
+		if (!fromExerciseId) continue;
+		const toExerciseId = pickCatalogExerciseForBodyPart(
+			catalog,
+			part,
+			new Set([...planExerciseIds, fromExerciseId])
+		);
+		if (!toExerciseId || toExerciseId === fromExerciseId) continue;
+		return { fromExerciseId, toExerciseId, bodyPart: part };
+	}
+	return null;
+}
+
 export function buildCoachHints(
 	focusSession: WorkoutSession,
 	finishedSessions: readonly WorkoutSession[],

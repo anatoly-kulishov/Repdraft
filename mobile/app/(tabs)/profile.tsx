@@ -36,6 +36,7 @@ import {
 	uploadAvatarMultipart
 } from '../../src/auth/accountApi';
 import { resolveUserAvatarUrl } from '../../src/auth/avatarUrl';
+import { authEmailRedirect } from '../../src/auth/emailLink';
 import { unlockRestAudioFromGesture, playRestDoneChime } from '../../src/audio/restChime';
 import { webOrigin } from '../../src/catalog/mediaUrl';
 import { getSupabase, isSupabaseConfigured } from '../../src/auth/supabase';
@@ -46,6 +47,7 @@ import {
 import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
 import type { WorkoutSession } from '@repdraft/domain/types';
 import type { OnboardingState } from '@repdraft/domain/onboarding';
+import { authErrorMessageKey } from '@repdraft/domain/authFlow';
 import {
 	passwordPolicyMessageKey,
 	validatePasswordPolicy
@@ -57,7 +59,6 @@ import { ConfirmSheet } from '../../src/components/ConfirmSheet';
 import { OnboardingChecklistPanel } from '../../src/components/OnboardingChecklistPanel';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
-import { QuestOnboardingSheet } from '../../src/components/QuestOnboardingSheet';
 import { QuestProgressPanel } from '../../src/components/QuestSummaryCard';
 import { WhatsNewSheet } from '../../src/components/WhatsNewSheet';
 import { getHealthAdapter } from '../../src/health';
@@ -71,17 +72,8 @@ import { isHealthReadEnabled, setHealthReadEnabled } from '../../src/state/healt
 import { useLocale } from '../../src/state/locale';
 import { useTabScreenPad } from '../../src/layout/safe';
 import { useAppColors, useAppTheme } from '../../src/state/theme';
-import {
-	isQuestEnabled,
-	loadQuestState,
-	setQuestEnabled,
-	setWeeklyGoal
-} from '../../src/state/quest';
-import {
-	loadQuestHeroProfile,
-	needsQuestHeroOnboarding,
-	saveQuestHeroProfile
-} from '../../src/state/questHero';
+import { loadQuestState, setWeeklyGoal } from '../../src/state/quest';
+import { loadQuestHeroProfile } from '../../src/state/questHero';
 import { applyBackupImport, parseBackupText } from '../../src/storage/backup';
 import { customsRepo } from '../../src/storage/customsRepo';
 import { plansRepo } from '../../src/storage/plansRepo';
@@ -97,7 +89,7 @@ import { loadOnboarding } from '../../src/state/onboarding';
 import { isTesterModeEnabled, setTesterModeEnabled } from '../../src/state/testerPrefs';
 import { outboxCount, pullAndMergeFromCloud } from '../../src/sync/cloudSync';
 import { wipeMobileAppStorage } from '../../src/storage/wipeAppStorage';
-import { radius, space, touchMin, type, type ColorPalette } from '../../src/theme';
+import { fontFamily, radius, space, touchMin, type, type ColorPalette } from '../../src/theme';
 
 const APP_VERSION =
 	Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? '0.22.0';
@@ -121,7 +113,6 @@ export default function ProfileScreen() {
 		}),
 		[colors]
 	);
-	const [questOn, setQuestOn] = useState(false);
 	const [questState, setQuestState] = useState<QuestState | null>(null);
 	const [achOn, setAchOn] = useState(false);
 	const [achState, setAchState] = useState<AchievementsState | null>(null);
@@ -139,6 +130,7 @@ export default function ProfileScreen() {
 	const [greetingName, setGreetingNameState] = useState('');
 	const [greetingNameInput, setGreetingNameInput] = useState('');
 	const [legalAccepted, setLegalAccepted] = useState(false);
+	const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
 	const [whatsNewOpen, setWhatsNewOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [logoutEverywhereOpen, setLogoutEverywhereOpen] = useState(false);
@@ -146,7 +138,6 @@ export default function ProfileScreen() {
 	const [avatarBusy, setAvatarBusy] = useState(false);
 	const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
 	const [testerOn, setTesterOn] = useState(false);
-	const [questOnboardOpen, setQuestOnboardOpen] = useState(false);
 	const [heroProfile, setHeroProfile] = useState<QuestHeroProfile | null>(null);
 	const [sessionList, setSessionList] = useState<WorkoutSession[]>([]);
 	const versionUnlockTaps = useRef(0);
@@ -169,13 +160,10 @@ export default function ProfileScreen() {
 	useEffect(() => {
 		let unsub: (() => void) | undefined;
 		void (async () => {
-			const qOn = await isQuestEnabled();
-			setQuestOn(qOn);
 			const st = await loadQuestState();
 			setQuestState(st);
 			setWeeklyGoalUi(st.weeklyGoal);
 			setHeroProfile(await loadQuestHeroProfile());
-			if (qOn && (await needsQuestHeroOnboarding())) setQuestOnboardOpen(true);
 			setAchOn(await isAchievementsEnabled());
 			setAchState(await loadAchievementsState());
 			setHealthOn(await isHealthReadEnabled());
@@ -202,38 +190,9 @@ export default function ProfileScreen() {
 		return () => unsub?.();
 	}, []);
 
-	async function toggleQuest(next: boolean) {
-		setQuestOn(next);
-		await setQuestEnabled(next);
-		if (next) {
-			setQuestState(await loadQuestState());
-			if (await needsQuestHeroOnboarding()) setQuestOnboardOpen(true);
-		}
-	}
-
-	async function completeQuestOnboard(profile: QuestHeroProfile) {
-		await saveQuestHeroProfile(profile);
-		setHeroProfile(profile);
-		setQuestOnboardOpen(false);
-		if (profile.displayName) {
-			setGreetingNameInput(profile.displayName);
-			await persistGreetingName(profile.displayName, session?.user ?? null);
-			setGreetingNameState(profile.displayName);
-		}
-	}
-
-	async function skipQuestOnboard() {
-		const profile: QuestHeroProfile = {
-			displayName: '',
-			sex: null,
-			age: null,
-			heightCm: null,
-			weightKg: null,
-			completedAt: new Date().toISOString()
-		};
-		await saveQuestHeroProfile(profile);
-		setHeroProfile(profile);
-		setQuestOnboardOpen(false);
+	function showAuthError(error: unknown, fallback: string) {
+		const key = authErrorMessageKey(error);
+		Alert.alert(tt('common.error'), key ? tt(key) : fallback);
 	}
 
 	async function toggleAchievements(next: boolean) {
@@ -402,7 +361,7 @@ export default function ProfileScreen() {
 		const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
 		setBusy(false);
 		if (error) {
-			Alert.alert(tt('common.error'), error.message);
+			showAuthError(error, error.message);
 			return;
 		}
 		const pulled = await pullAndMergeFromCloud();
@@ -422,10 +381,14 @@ export default function ProfileScreen() {
 			return;
 		}
 		setBusy(true);
-		const { error } = await sb.auth.signUp({ email: email.trim(), password });
+		const { error } = await sb.auth.signUp({
+			email: email.trim(),
+			password,
+			options: { emailRedirectTo: authEmailRedirect() }
+		});
 		setBusy(false);
 		if (error) {
-			Alert.alert(tt('common.error'), error.message);
+			showAuthError(error, error.message);
 			return;
 		}
 		Alert.alert(tt('common.ok'), tt('profile.signUpOk'));
@@ -436,10 +399,13 @@ export default function ProfileScreen() {
 		const sb = getSupabase();
 		if (!sb) return;
 		setBusy(true);
-		const { error } = await sb.auth.signInWithOtp({ email: email.trim() });
+		const { error } = await sb.auth.signInWithOtp({
+			email: email.trim(),
+			options: { emailRedirectTo: authEmailRedirect(), shouldCreateUser: true }
+		});
 		setBusy(false);
 		if (error) {
-			Alert.alert(tt('common.error'), error.message);
+			showAuthError(error, error.message);
 			return;
 		}
 		Alert.alert(
@@ -457,10 +423,12 @@ export default function ProfileScreen() {
 			return;
 		}
 		setBusy(true);
-		const { error } = await sb.auth.resetPasswordForEmail(trimmed);
+		const { error } = await sb.auth.resetPasswordForEmail(trimmed, {
+			redirectTo: authEmailRedirect()
+		});
 		setBusy(false);
 		if (error) {
-			Alert.alert(tt('common.error'), error.message);
+			showAuthError(error, error.message);
 			return;
 		}
 		Alert.alert(tt('auth.checkEmailTitle'), tt('auth.checkEmailReset', { email: trimmed }), [
@@ -599,6 +567,108 @@ export default function ProfileScreen() {
 				</Panel>
 			) : null}
 
+			{!session?.user ? (
+				<Panel>
+					<Text style={styles.groupTitle}>{tt('settings.accountTitle')}</Text>
+					{!cloud ? (
+						<Text style={styles.hint}>{tt('profile.cloudOff')}</Text>
+					) : (
+						<>
+							<Pressable
+								style={styles.legalRow}
+								onPress={() => setLegalAccepted((v) => !v)}
+								accessibilityRole="checkbox"
+								accessibilityState={{ checked: legalAccepted }}
+							>
+								<Text style={styles.legalMark}>{legalAccepted ? '☑' : '☐'}</Text>
+								<Text style={styles.legalText}>
+									{tt('auth.legalConsentLead')}{' '}
+									<Text
+										style={styles.legalLink}
+										onPress={() => void WebBrowser.openBrowserAsync(`${webOrigin()}/terms`)}
+									>
+										{tt('auth.legalTerms')}
+									</Text>{' '}
+									{tt('auth.legalConsentJoin')}{' '}
+									<Text
+										style={styles.legalLink}
+										onPress={() => void WebBrowser.openBrowserAsync(`${webOrigin()}/privacy`)}
+									>
+										{tt('auth.legalPrivacy')}
+									</Text>
+								</Text>
+							</Pressable>
+							<View style={styles.authTabs}>
+								<Pressable
+									style={[styles.authTab, authMode === 'signin' && styles.authTabOn]}
+									onPress={() => setAuthMode('signin')}
+									accessibilityRole="tab"
+									accessibilityState={{ selected: authMode === 'signin' }}
+								>
+									<Text style={[styles.authTabText, authMode === 'signin' && styles.authTabTextOn]}>
+										{tt('profile.signIn')}
+									</Text>
+								</Pressable>
+								<Pressable
+									style={[styles.authTab, authMode === 'signup' && styles.authTabOn]}
+									onPress={() => setAuthMode('signup')}
+									accessibilityRole="tab"
+									accessibilityState={{ selected: authMode === 'signup' }}
+								>
+									<Text style={[styles.authTabText, authMode === 'signup' && styles.authTabTextOn]}>
+										{tt('profile.signUp')}
+									</Text>
+								</Pressable>
+							</View>
+							<TextInput
+								style={styles.input}
+								autoCapitalize="none"
+								keyboardType="email-address"
+								placeholder={tt('profile.email')}
+								placeholderTextColor={colors.muted}
+								value={email}
+								onChangeText={setEmail}
+							/>
+							<TextInput
+								style={styles.input}
+								secureTextEntry
+								placeholder={tt('profile.password')}
+								placeholderTextColor={colors.muted}
+								value={password}
+								onChangeText={setPassword}
+							/>
+							{authMode === 'signin' ? (
+								<>
+									<PrimaryButton
+										label={tt('profile.resetPassword')}
+										variant="link"
+										onPress={() => void resetPassword()}
+										disabled={busy || !email.trim()}
+									/>
+									<PrimaryButton
+										label={busy ? '…' : tt('profile.signIn')}
+										onPress={() => void signIn()}
+										disabled={busy}
+									/>
+									<PrimaryButton
+										label={tt('profile.magicLink')}
+										variant="link"
+										onPress={() => void magicLink()}
+										disabled={busy || !email.trim()}
+									/>
+								</>
+							) : (
+								<PrimaryButton
+									label={busy ? '…' : tt('profile.signUp')}
+									onPress={() => void signUp()}
+									disabled={busy}
+								/>
+							)}
+						</>
+					)}
+				</Panel>
+			) : null}
+
 			<Panel>
 				<Text style={styles.groupTitle}>{tt('auth.greetingNameLabel')}</Text>
 				<TextInput
@@ -687,35 +757,20 @@ export default function ProfileScreen() {
 
 			<Panel>
 				<Text style={styles.groupTitle}>{tt('profile.quest')}</Text>
-				<View style={styles.row}>
-					<Text style={styles.rowText} numberOfLines={2}>
-						{tt('profile.quest')}
-					</Text>
-					<Switch
-						value={questOn}
-						trackColor={switchColors.trackColor}
-						thumbColor={switchColors.thumbColor}
-						onValueChange={(v) => void toggleQuest(v)}
-					/>
-				</View>
 				<Text style={styles.hint}>{tt('profile.questHint')}</Text>
-				{questOn ? (
-					<>
-						{heroProfile?.completedAt ? (
-							<Text style={styles.hint}>
-								{tt('quest.profileHero', {
-									name: heroProfile.displayName.trim() || tt('quest.heroNameless'),
-									level: String(heroLevel(questState?.hero.totalXp ?? 0))
-								})}
-							</Text>
-						) : null}
-						<Pressable style={styles.row} onPress={() => void cycleGoal()}>
-							<Text style={styles.rowText}>{tt('profile.weeklyGoal')}</Text>
-							<Text style={styles.rowValue}>{weeklyGoal}</Text>
-						</Pressable>
-						{questState ? <QuestProgressPanel state={questState} /> : null}
-					</>
+				{heroProfile?.displayName.trim() ? (
+					<Text style={styles.hint}>
+						{tt('quest.profileHero', {
+							name: heroProfile.displayName.trim(),
+							level: String(heroLevel(questState?.hero.totalXp ?? 0))
+						})}
+					</Text>
 				) : null}
+				<Pressable style={styles.row} onPress={() => void cycleGoal()}>
+					<Text style={styles.rowText}>{tt('profile.weeklyGoal')}</Text>
+					<Text style={styles.rowValue}>{weeklyGoal}</Text>
+				</Pressable>
+				{questState ? <QuestProgressPanel state={questState} /> : null}
 			</Panel>
 
 			<Panel>
@@ -800,96 +855,25 @@ export default function ProfileScreen() {
 				/>
 			</Panel>
 
-			<Panel>
-				<Text style={styles.groupTitle}>{tt('settings.accountTitle')}</Text>
-				{!cloud ? (
-					<Text style={styles.hint}>{tt('profile.cloudOff')}</Text>
-				) : session?.user ? (
-					<>
-						{pendingSync > 0 ? (
-							<Text style={styles.hint}>{tt('profile.outbox', { n: pendingSync })}</Text>
-						) : null}
-						<PrimaryButton
-							label={busy ? '…' : tt('profile.sync')}
-							onPress={() => void syncCloud()}
-							disabled={busy}
-						/>
-						<PrimaryButton label={tt('profile.signOut')} variant="ghost" onPress={() => void signOut()} />
+			{session?.user ? (
+				<Panel>
+					<Text style={styles.groupTitle}>{tt('settings.accountTitle')}</Text>
+					{pendingSync > 0 ? (
+						<Text style={styles.hint}>{tt('profile.outbox', { n: pendingSync })}</Text>
+					) : null}
+					<PrimaryButton
+						label={busy ? '…' : tt('profile.sync')}
+						onPress={() => void syncCloud()}
+						disabled={busy}
+					/>
+					<PrimaryButton label={tt('profile.signOut')} variant="ghost" onPress={() => void signOut()} />
 					<PrimaryButton
 						label={tt('auth.logoutEverywhere')}
 						variant="ghost"
 						onPress={() => openLogoutEverywhereConfirm()}
 					/>
-					</>
-				) : (
-					<>
-						<Pressable
-							style={styles.legalRow}
-							onPress={() => setLegalAccepted((v) => !v)}
-							accessibilityRole="checkbox"
-							accessibilityState={{ checked: legalAccepted }}
-						>
-							<Text style={styles.legalMark}>{legalAccepted ? '☑' : '☐'}</Text>
-							<Text style={styles.legalText}>
-								{tt('auth.legalConsentLead')}{' '}
-								<Text
-									style={styles.legalLink}
-									onPress={() => void WebBrowser.openBrowserAsync(`${webOrigin()}/terms`)}
-								>
-									{tt('auth.legalTerms')}
-								</Text>{' '}
-								{tt('auth.legalConsentJoin')}{' '}
-								<Text
-									style={styles.legalLink}
-									onPress={() => void WebBrowser.openBrowserAsync(`${webOrigin()}/privacy`)}
-								>
-									{tt('auth.legalPrivacy')}
-								</Text>
-							</Text>
-						</Pressable>
-						<TextInput
-							style={styles.input}
-							autoCapitalize="none"
-							keyboardType="email-address"
-							placeholder={tt('profile.email')}
-							placeholderTextColor={colors.muted}
-							value={email}
-							onChangeText={setEmail}
-						/>
-						<TextInput
-							style={styles.input}
-							secureTextEntry
-							placeholder={tt('profile.password')}
-							placeholderTextColor={colors.muted}
-							value={password}
-							onChangeText={setPassword}
-						/>
-						<PrimaryButton
-							label={busy ? '…' : tt('profile.signIn')}
-							onPress={() => void signIn()}
-							disabled={busy}
-						/>
-						<PrimaryButton
-							label={tt('profile.signUp')}
-							variant="ghost"
-							onPress={() => void signUp()}
-							disabled={busy}
-						/>
-						<PrimaryButton
-							label={tt('profile.magicLink')}
-							variant="ghost"
-							onPress={() => void magicLink()}
-							disabled={busy || !email.trim()}
-						/>
-						<PrimaryButton
-							label={tt('profile.resetPassword')}
-							variant="ghost"
-							onPress={() => void resetPassword()}
-							disabled={busy || !email.trim()}
-						/>
-					</>
-				)}
-			</Panel>
+				</Panel>
+			) : null}
 
 			{session?.user ? (
 				<Panel>
@@ -944,7 +928,7 @@ export default function ProfileScreen() {
 					<PrimaryButton
 						label={tt('articles.viewAll')}
 						variant="ghost"
-						onPress={() => void WebBrowser.openBrowserAsync(`${webOrigin()}/articles`)}
+						onPress={() => router.push('/articles')}
 					/>
 					<OnboardingChecklistPanel state={onboarding} readonly />
 				</Panel>
@@ -988,12 +972,6 @@ export default function ProfileScreen() {
 			]}
 		/>
 		<WhatsNewSheet visible={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
-		<QuestOnboardingSheet
-			visible={questOnboardOpen}
-			defaultName={greetingNameInput || displayName || ''}
-			onComplete={(p) => void completeQuestOnboard(p)}
-			onSkip={() => void skipQuestOnboard()}
-		/>
 		</>
 	);
 }
@@ -1026,21 +1004,56 @@ function makeStyles(colors: ColorPalette) {
 		letterSpacing: 0.8,
 		marginBottom: space.sm
 	},
-	hint: { color: colors.muted, fontSize: 13, lineHeight: 18 },
-	metricLine: { color: colors.text, fontSize: 14 },
-	version: { color: colors.muted, fontSize: 13, marginTop: space.lg, textAlign: 'center' },
+	hint: { color: colors.muted, fontSize: 13, lineHeight: 18, fontFamily: fontFamily.regular },
+	metricLine: { color: colors.text, fontSize: 14, fontFamily: fontFamily.regular },
+	version: {
+		color: colors.muted,
+		fontSize: 13,
+		marginTop: space.lg,
+		textAlign: 'center',
+		fontFamily: fontFamily.regular
+	},
 	row: {
 		minHeight: touchMin,
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'space-between'
 	},
-	rowText: { color: colors.text, fontWeight: '600', flex: 1, paddingRight: space.sm },
-	rowValue: { color: colors.accent, fontWeight: '800', fontSize: 16 },
+	rowText: {
+		color: colors.text,
+		fontWeight: '600',
+		flex: 1,
+		paddingRight: space.sm,
+		fontFamily: fontFamily.semibold
+	},
+	rowValue: { color: colors.accent, fontWeight: '800', fontSize: 16, fontFamily: fontFamily.extrabold },
 	legalRow: { flexDirection: 'row', gap: space.sm, minHeight: touchMin, alignItems: 'flex-start' },
-	legalMark: { color: colors.text, fontSize: 18, lineHeight: 22 },
-	legalText: { flex: 1, color: colors.muted, fontSize: 13, lineHeight: 18 },
-	legalLink: { color: colors.accent, fontWeight: '700' },
+	legalMark: { color: colors.text, fontSize: 18, lineHeight: 22, fontFamily: fontFamily.bold },
+	legalText: {
+		flex: 1,
+		color: colors.muted,
+		fontSize: 13,
+		lineHeight: 18,
+		fontFamily: fontFamily.regular
+	},
+	legalLink: { color: colors.accent, fontWeight: '700', fontFamily: fontFamily.bold },
+	authTabs: {
+		flexDirection: 'row',
+		backgroundColor: colors.panelRaised,
+		borderRadius: radius.pill,
+		padding: 4,
+		gap: 4
+	},
+	authTab: {
+		flex: 1,
+		minHeight: touchMin,
+		alignItems: 'center',
+		justifyContent: 'center',
+		borderRadius: radius.pill
+	},
+	authTabOn: { backgroundColor: colors.panel },
+	authTabText: { color: colors.muted, fontSize: 15, fontWeight: '600', fontFamily: fontFamily.semibold },
+	authTabTextOn: { color: colors.text, fontFamily: fontFamily.bold },
 	input: {
 		minHeight: touchMin,
 		borderRadius: radius.sm,
@@ -1048,7 +1061,8 @@ function makeStyles(colors: ColorPalette) {
 		borderColor: colors.border,
 		backgroundColor: colors.panelRaised,
 		color: colors.text,
-		paddingHorizontal: space.md
+		paddingHorizontal: space.md,
+		fontFamily: fontFamily.regular
 	}
 	});
 }

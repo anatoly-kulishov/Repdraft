@@ -1,15 +1,29 @@
 <script lang="ts">
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
+	import { exerciseName } from '$lib/domain/exerciseName';
+	import { labelBodyPart } from '$lib/domain/labels.ru';
 	import { computeProgressOverview } from '$lib/domain/progressOverview';
+	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
+	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { translate } from '$lib/i18n/messages';
+	import { onMount } from 'svelte';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { live } from '$lib/stores/live';
 	import { resolvedLocale } from '$lib/stores/locale';
 
 	let lang = $derived($resolvedLocale);
-	let overview = $derived(computeProgressOverview($live.history));
+	let indexById = $state(new Map<string, ExerciseIndexItem>());
+	let overview = $derived(
+		computeProgressOverview($live.history, new Date(), (id) => indexById.get(id)?.body_part ?? null)
+	);
 	let maxWeekVol = $derived(Math.max(1, ...overview.weeks.map((w) => w.volumeKg)));
+
+	onMount(() => {
+		void loadExerciseIndexWithCustoms().then((index) => {
+			indexById = new Map(index.map((item) => [item.id, item]));
+		});
+	});
 </script>
 
 <SeoHead title={translate(lang, 'nav.progress')} noindex />
@@ -52,6 +66,43 @@
 			{/each}
 		{/if}
 	</AppPanel>
+	{#if overview.bodyParts.length > 0}
+		<AppPanel class="text-left">
+			<p class="progress-section-title">{translate(lang, 'progress.bodyParts')}</p>
+			{#each overview.bodyParts as part (part.bodyPart)}
+				<div class="progress-part">
+					<div class="progress-part__top">
+						<span>
+							{labelBodyPart(part.bodyPart, lang)}
+							{#if part.bodyPart === overview.laggingBodyPart}
+								· {translate(lang, 'progress.lagging')}
+							{/if}
+						</span>
+						<span class="tabular-nums">{part.sharePct}%</span>
+					</div>
+					<div class="progress-week__track">
+						<div
+							class="progress-week__fill"
+							class:progress-week__fill--lag={part.bodyPart === overview.laggingBodyPart}
+							style:width="{part.sharePct}%"
+						></div>
+					</div>
+				</div>
+			{/each}
+		</AppPanel>
+	{/if}
+	{#if overview.trends.length > 0}
+		<AppPanel class="text-left">
+			<p class="progress-section-title">{translate(lang, 'progress.trends')}</p>
+			{#each overview.trends as row (row.exerciseId)}
+				{@const meta = indexById.get(row.exerciseId)}
+				<p class="progress-muted">
+					{meta ? exerciseName(meta, lang) : row.exerciseId}
+					· {row.deltaKg > 0 ? '+' : ''}{row.deltaKg} kg
+				</p>
+			{/each}
+		</AppPanel>
+	{/if}
 </section>
 
 <style>
@@ -120,6 +171,20 @@
 	.progress-week__fill {
 		height: 100%;
 		background: var(--color-accent);
+	}
+	.progress-week__fill--lag {
+		background: var(--color-danger);
+	}
+	.progress-part {
+		margin-bottom: 0.75rem;
+	}
+	.progress-part__top {
+		display: flex;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-bottom: 0.3rem;
+		font-size: 0.8125rem;
+		font-weight: 600;
 	}
 	.progress-week__meta {
 		width: 4.5rem;

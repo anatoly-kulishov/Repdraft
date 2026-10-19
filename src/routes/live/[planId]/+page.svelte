@@ -33,7 +33,10 @@
 	import { isQuotaExceededError } from '$lib/domain/storageErrors';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { navigateBack } from '$lib/navigation/back';
+	import QuestOnboardingSheet from '$lib/components/QuestOnboardingSheet.svelte';
+	import type { QuestHeroProfile } from '$lib/domain/questHeroProfile';
 	import { live } from '$lib/stores/live';
+	import { needsQuestHeroOnboarding, saveQuestHeroProfile } from '$lib/stores/questHero';
 	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { forceNormalShell, syncForceNormalShell } from '$lib/stores/shellChrome';
@@ -67,6 +70,7 @@
 	let session = $derived($live.session ?? holdSession);
 	let restUntil = $derived($live.restUntil);
 	let loading = $state(true);
+	let heroGate = $state(false);
 	let switching = $state(false);
 	let names = $state(new Map<string, ExerciseIndexItem>());
 
@@ -230,6 +234,16 @@
 				index = [];
 			}
 			names = new Map(index.map((ex) => [ex.id, ex]));
+
+			const active = get(live).session;
+			const resuming = Boolean(
+				active && !active.finishedAt && active.exercises.length > 0
+			);
+			if (!resuming && needsQuestHeroOnboarding()) {
+				heroGate = true;
+				loading = false;
+				return;
+			}
 
 			try {
 				const result = await bootLivePage(params.planId);
@@ -507,7 +521,33 @@
 		else void goto('/live/active');
 	}
 
+	async function onHeroReady(profile: QuestHeroProfile) {
+		saveQuestHeroProfile(profile);
+		heroGate = false;
+		if (pendingSwitchPlan) {
+			await confirmSwitchLivePlan();
+			return;
+		}
+		loading = true;
+		try {
+			const result = await bootLivePage(params.planId);
+			if (result.kind === 'started' || result.kind === 'resume') {
+				selectedExerciseIndex = result.selectedExerciseIndex;
+			}
+		} catch (err) {
+			console.error('live boot after hero failed', err);
+			missing = true;
+		} finally {
+			loading = false;
+		}
+	}
+
 	async function confirmSwitchLivePlan() {
+		if (needsQuestHeroOnboarding()) {
+			heroGate = true;
+			switchOfferOpen = false;
+			return;
+		}
 		const plan = pendingSwitchPlan;
 		switchOfferOpen = false;
 		pendingSwitchPlan = null;
@@ -538,7 +578,15 @@
 	noindex
 />
 
-{#if switchOfferOpen}
+<QuestOnboardingSheet
+	bind:open={heroGate}
+	onComplete={(profile) => void onHeroReady(profile)}
+	onAbort={() => void goto('/workouts')}
+/>
+
+{#if heroGate}
+	<LivePageSkeleton planId={params.planId} />
+{:else if switchOfferOpen}
 	<BottomSheet
 		open={switchOfferOpen}
 		titleId="live-switch-offer-title"

@@ -1,6 +1,6 @@
 import {
 	QUEST_HERO_PROFILE_KEY,
-	isQuestHeroOnboarded,
+	isHeroReady,
 	parseQuestHeroProfile,
 	type QuestHeroProfile
 } from '@repdraft/domain/questHeroProfile';
@@ -16,6 +16,5 @@ export async function saveQuestHeroProfile(profile: QuestHeroProfile): Promise<v
 }
 
 export async function needsQuestHeroOnboarding(): Promise<boolean> {
-	const raw = await kvGetJson<unknown>(QUEST_HERO_PROFILE_KEY, null);
-	return !isQuestHeroOnboarded(raw);
+	return !isHeroReady(await loadQuestHeroProfile());
 }

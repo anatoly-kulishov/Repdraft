@@ -1,16 +1,14 @@
 import {
-	QUEST_ENABLED_STORAGE_KEY,
 	QUEST_STATE_STORAGE_KEY,
 	applyFinishedSessionToQuest,
 	createInitialQuestState,
-	parseQuestEnabled,
 	parseQuestState,
 	setWeeklyGoal as setGoal,
 	type QuestApplyResult,
 	type QuestState
 } from '@repdraft/domain/quest';
 import type { WorkoutSession } from '@repdraft/domain/types';
-import { kvGet, kvSet, kvSetJson, kvGetJson } from '../storage/kv';
+import { kvSetJson, kvGetJson } from '../storage/kv';
 
 const QUEST_LAST_APPLY_KEY = 'repdraft:quest-last-apply';
 
@@ -18,14 +16,6 @@ type StoredLastApply = {
 	sessionId: string;
 	apply: QuestApplyResult;
 };
-
-export async function isQuestEnabled(): Promise<boolean> {
-	return parseQuestEnabled(await kvGet(QUEST_ENABLED_STORAGE_KEY));
-}
-
-export async function setQuestEnabled(on: boolean): Promise<void> {
-	await kvSet(QUEST_ENABLED_STORAGE_KEY, on ? '1' : '0');
-}
 
 export async function loadQuestState(): Promise<QuestState> {
 	const raw = await kvGetJson<unknown>(QUEST_STATE_STORAGE_KEY, null);
@@ -48,9 +38,11 @@ export async function loadLastQuestApply(sessionId: string): Promise<QuestApplyR
 	return raw.apply;
 }
 
-export async function noteFinishedSession(session: WorkoutSession): Promise<QuestApplyResult | null> {
-	if (!(await isQuestEnabled())) return null;
-	const result = applyFinishedSessionToQuest(await loadQuestState(), session, new Date());
+export async function noteFinishedSession(
+	session: WorkoutSession,
+	prior: readonly WorkoutSession[] = []
+): Promise<QuestApplyResult> {
+	const result = applyFinishedSessionToQuest(await loadQuestState(), session, new Date(), prior);
 	await saveQuestState(result.state);
 	await kvSetJson(QUEST_LAST_APPLY_KEY, {
 		sessionId: session.id,

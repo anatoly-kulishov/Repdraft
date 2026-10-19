@@ -2,9 +2,9 @@
   "expo": {
     "name": "Repdraft",
     "slug": "repdraft",
-    "version": "0.22.0",
+    "version": "0.22.1",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/app-icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "repdraft",
     "newArchEnabled": true,
@@ -42,6 +42,15 @@
           "NSHealthShareUsageDescription": "Repdraft reads workout duration, calories, and heart rate after you finish a session.",
           "NSHealthUpdateUsageDescription": false,
           "background": false
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#8b5cf6",
+          "image": "./assets/splash-mark.png",
+          "imageWidth": 120,
+          "resizeMode": "contain"
         }
       ]
     ],

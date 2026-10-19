@@ -68,6 +68,35 @@ html[data-boot-pending] .draft-dock-wrap {
 	background: var(--color-bg);
 }
 
+/*
+ * iOS 27 standalone PWA paints a system blur over the top unless WebKit sees a
+ * fixed bar within 4px of the viewport, at least 11px tall and 80% wide, with
+ * a background-color. The real header does not satisfy that check.
+ * background-clip: text keeps this bar out of the pixels.
+ */
+.ios-pwa-top {
+	display: none;
+}
+
+html[data-pwa-standalone] .ios-pwa-top {
+	display: block;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	width: 100%;
+	height: 11px;
+	z-index: 1;
+	pointer-events: none;
+	background-color: var(--chrome-header-bg);
+	-webkit-background-clip: text;
+	background-clip: text;
+}
+
+html[data-pwa-standalone] .ios-pwa-top--bg {
+	background-color: var(--color-bg);
+}
+
 .shell-header-mobile__lead {
 	display: flex;
 	align-items: center;

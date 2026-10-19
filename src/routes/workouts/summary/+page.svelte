@@ -232,7 +232,7 @@
 			</AppPanel>
 		{/if}
 
-		<QuestSummaryCard />
+		<QuestSummaryCard {session} names={indexById} />
 
 		{#if newAchIds && newAchIds.length > 0}
 			<AppPanel class="summary-ach-banner text-left" role="status">

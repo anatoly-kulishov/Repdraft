@@ -10,7 +10,7 @@
 		"coverIcon": "flame",
 		"ctaHref": "/catalog/chest",
 		"ctaLabelKey": "articles.ctaCatalog",
-		"bodyMd": "Перед жимом не нужен «полный тренинг».\n\nНужна **активация** и лёгкая мобилизация.\n\n## Чек-лист 5 минут\n\n- 1–2 мин лёгкого кардио (велотренажёр, ходьба)\n- 20 отжиманий от пола или с колен\n- 2×15 разведений с лёгкими гантелями\n- 1 разминочный подход жима с пустым грифом\n\n## Что смотреть в зале\n\nЕсли локти «уезжают» вперёд или плечи поднимаются к ушам, снизьте вес и вернитесь к технике.\n\nВ Repdraft откройте [упражнения на грудь](/catalog/chest) и добавьте разминочные варианты в план."
+		"bodyMd": "Перед жимом не нужен «полный тренинг».\n\nНужна **активация** и лёгкая мобилизация.\n\n## Чек-лист 5 минут\n\n- 1-2 мин лёгкого кардио (велотренажёр, ходьба)\n- 20 отжиманий от пола или с колен\n- 2×15 разведений с лёгкими гантелями\n- 1 разминочный подход жима с пустым грифом\n\n## Что смотреть в зале\n\nЕсли локти «уезжают» вперёд или плечи поднимаются к ушам, снизьте вес и вернитесь к технике.\n\nВ Repdraft откройте [упражнения на грудь](/catalog/chest) и добавьте разминочные варианты в план."
 	},
 	{
 		"slug": "warmup-before-press",
@@ -23,7 +23,7 @@
 		"coverIcon": "flame",
 		"ctaHref": "/catalog/chest",
 		"ctaLabelKey": "articles.ctaCatalog",
-		"bodyMd": "You do not need a full workout before pressing.\n\nYou need **activation** and light mobility.\n\n## 5-minute checklist\n\n- 1–2 min easy cardio (bike, walk)\n- 20 push-ups from the floor or knees\n- 2×15 light dumbbell flyes\n- 1 warm-up press set with an empty bar\n\n## What to watch in the gym\n\nIf elbows drift forward or shoulders rise toward the ears, drop the load and reset technique.\n\nIn Repdraft open [chest exercises](/catalog/chest) and add warm-up variations to your plan."
+		"bodyMd": "You do not need a full workout before pressing.\n\nYou need **activation** and light mobility.\n\n## 5-minute checklist\n\n- 1-2 min easy cardio (bike, walk)\n- 20 push-ups from the floor or knees\n- 2×15 light dumbbell flyes\n- 1 warm-up press set with an empty bar\n\n## What to watch in the gym\n\nIf elbows drift forward or shoulders rise toward the ears, drop the load and reset technique.\n\nIn Repdraft open [chest exercises](/catalog/chest) and add warm-up variations to your plan."
 	},
 	{
 		"slug": "read-workout-plan",
@@ -36,7 +36,7 @@
 		"coverIcon": "book-open",
 		"ctaHref": "/builder",
 		"ctaLabelKey": "articles.ctaBuilder",
-		"bodyMd": "План в Repdraft: **порядок упражнений** и целевые подходы.\n\nВо время сессии вы фиксируете факт: вес и повторы.\n\n## Обозначения\n\n- **3×10**: три подхода по десять повторений\n- **Отдых**: пауза после подхода; таймер включается автоматически после «Готово»\n- **Суперсет**: упражнения подряд без длинной паузы между ними\n\n## С чего начать\n\nСоберите 4–6 упражнений на одну зону или full-body.\n\nНе гонитесь за объёмом: лучше закончить сессию и сохранить историю, чем бросить на середине."
+		"bodyMd": "План в Repdraft: **порядок упражнений** и целевые подходы.\n\nВо время сессии вы фиксируете факт: вес и повторы.\n\n## Обозначения\n\n- **3×10**: три подхода по десять повторений\n- **Отдых**: пауза после подхода; таймер включается автоматически после «Готово»\n- **Суперсет**: упражнения подряд без длинной паузы между ними\n\n## С чего начать\n\nСоберите 4-6 упражнений на одну зону или full-body.\n\nНе гонитесь за объёмом: лучше закончить сессию и сохранить историю, чем бросить на середине."
 	},
 	{
 		"slug": "read-workout-plan",
@@ -49,7 +49,7 @@
 		"coverIcon": "book-open",
 		"ctaHref": "/builder",
 		"ctaLabelKey": "articles.ctaBuilder",
-		"bodyMd": "A Repdraft plan is the **exercise order** and target sets.\n\nDuring a live session you log what actually happened: weight and reps.\n\n## Notation\n\n- **3×10**: three sets of ten reps\n- **Rest**: the pause after a set; the timer starts automatically after Done\n- **Superset**: exercises back-to-back without a long pause between them\n\n## Where to start\n\nBuild 4–6 exercises for one zone or a full-body day.\n\nDo not chase volume: finishing and saving history beats quitting mid-session."
+		"bodyMd": "A Repdraft plan is the **exercise order** and target sets.\n\nDuring a live session you log what actually happened: weight and reps.\n\n## Notation\n\n- **3×10**: three sets of ten reps\n- **Rest**: the pause after a set; the timer starts automatically after Done\n- **Superset**: exercises back-to-back without a long pause between them\n\n## Where to start\n\nBuild 4-6 exercises for one zone or a full-body day.\n\nDo not chase volume: finishing and saving history beats quitting mid-session."
 	},
 	{
 		"slug": "rest-between-sets",
@@ -62,7 +62,7 @@
 		"coverIcon": "timer",
 		"ctaHref": "/workouts",
 		"ctaLabelKey": "articles.ctaWorkouts",
-		"bodyMd": "Отдых тоже часть прогресса, а не «потерянное время».\n\n## Ориентиры\n\n- **База (присед, жим, тяга):** 2–3 мин, если цель сила\n- **Изоляция (бицепс, трицепс, дельты):** 60–90 сек\n- **Суперсет:** короткая пауза внутри круга, 2 мин после полного круга\n\n## В Repdraft\n\nПосле отметки подхода запускается таймер.\n\nМожно начать следующий подход раньше: просто нажмите «Готово» снова.\n\nИстория сессии сохранится в [разделе «История»](/workouts?tab=history)."
+		"bodyMd": "Отдых тоже часть прогресса, а не «потерянное время».\n\n## Ориентиры\n\n- **База (присед, жим, тяга):** 2-3 мин, если цель сила\n- **Изоляция (бицепс, трицепс, дельты):** 60-90 сек\n- **Суперсет:** короткая пауза внутри круга, 2 мин после полного круга\n\n## В Repdraft\n\nПосле отметки подхода запускается таймер.\n\nМожно начать следующий подход раньше: просто нажмите «Готово» снова.\n\nИстория сессии сохранится в [разделе «История»](/workouts?tab=history)."
 	},
 	{
 		"slug": "rest-between-sets",
@@ -75,7 +75,7 @@
 		"coverIcon": "timer",
 		"ctaHref": "/workouts",
 		"ctaLabelKey": "articles.ctaWorkouts",
-		"bodyMd": "Rest is part of progress, not wasted time.\n\n## Guidelines\n\n- **Compounds (squat, press, deadlift):** 2–3 min when strength is the goal\n- **Isolation (biceps, triceps, delts):** 60–90 sec\n- **Superset:** a short pause inside the round, about 2 min after a full round\n\n## In Repdraft\n\nMarking a set done starts the timer.\n\nYou can start the next set earlier: just tap Done again.\n\nSession history lands in the [History tab](/workouts?tab=history)."
+		"bodyMd": "Rest is part of progress, not wasted time.\n\n## Guidelines\n\n- **Compounds (squat, press, deadlift):** 2-3 min when strength is the goal\n- **Isolation (biceps, triceps, delts):** 60-90 sec\n- **Superset:** a short pause inside the round, about 2 min after a full round\n\n## In Repdraft\n\nMarking a set done starts the timer.\n\nYou can start the next set earlier: just tap Done again.\n\nSession history lands in the [History tab](/workouts?tab=history)."
 	},
 	{
 		"slug": "technique-clips",
@@ -114,7 +114,7 @@
 		"coverIcon": "dumbbell",
 		"ctaHref": "/catalog/legs",
 		"ctaLabelKey": "articles.ctaLegs",
-		"bodyMd": "Зона **«Ноги»** объединяет бедро и голень.\n\nВнутри chips по целевым мышцам: ягодицы, квадрицепс, бицепс бедра, икры.\n\n## Как пользоваться\n\n1. Откройте [каталог ног](/catalog/legs)\n2. Выберите chip (например, «Ягодицы»)\n3. При необходимости сузьте **оборудование** в фильтрах\n\n## Совет\n\nДля первой тренировки хватит 3–4 упражнений: одно на ягодицы/квадрицепс, одно на заднюю поверхность бедра, одно на икры."
+		"bodyMd": "Зона **«Ноги»** объединяет бедро и голень.\n\nВнутри chips по целевым мышцам: ягодицы, квадрицепс, бицепс бедра, икры.\n\n## Как пользоваться\n\n1. Откройте [каталог ног](/catalog/legs)\n2. Выберите chip (например, «Ягодицы»)\n3. При необходимости сузьте **оборудование** в фильтрах\n\n## Совет\n\nДля первой тренировки хватит 3-4 упражнений: одно на ягодицы/квадрицепс, одно на заднюю поверхность бедра, одно на икры."
 	},
 	{
 		"slug": "legs-split",
@@ -127,7 +127,7 @@
 		"coverIcon": "dumbbell",
 		"ctaHref": "/catalog/legs",
 		"ctaLabelKey": "articles.ctaLegs",
-		"bodyMd": "The **Legs** zone covers thigh and lower leg.\n\nInside you get chips by target muscle: glutes, quads, hamstrings, calves.\n\n## How to use it\n\n1. Open the [legs catalog](/catalog/legs)\n2. Pick a chip (for example Glutes)\n3. Narrow **equipment** in filters if needed\n\n## Tip\n\nFor a first session, 3–4 exercises are enough: one for glutes/quads, one for hamstrings, one for calves."
+		"bodyMd": "The **Legs** zone covers thigh and lower leg.\n\nInside you get chips by target muscle: glutes, quads, hamstrings, calves.\n\n## How to use it\n\n1. Open the [legs catalog](/catalog/legs)\n2. Pick a chip (for example Glutes)\n3. Narrow **equipment** in filters if needed\n\n## Tip\n\nFor a first session, 3-4 exercises are enough: one for glutes/quads, one for hamstrings, one for calves."
 	},
 	{
 		"slug": "first-session",
@@ -140,7 +140,7 @@
 		"coverIcon": "history",
 		"ctaHref": "/builder",
 		"ctaLabelKey": "articles.ctaBuilder",
-		"bodyMd": "Базовый путь в Repdraft: **план → сессия → история**.\n\n## Шаги\n\n1. [Создайте план](/builder) из 3–5 упражнений\n2. На экране «Тренировки» нажмите **Старт**\n3. Отмечайте подходы; в конце нажмите **Завершить**\n4. Откройте [историю](/workouts?tab=history): там будут вес, повторы и длительность\n\nДанные сохраняются локально в браузере; с аккаунтом синхронизируются между устройствами."
+		"bodyMd": "Базовый путь в Repdraft: **план → сессия → история**.\n\n## Шаги\n\n1. [Создайте план](/builder) из 3-5 упражнений\n2. На экране «Тренировки» нажмите **Старт**\n3. Отмечайте подходы; в конце нажмите **Завершить**\n4. Откройте [историю](/workouts?tab=history): там будут вес, повторы и длительность\n\nДанные сохраняются локально в браузере; с аккаунтом синхронизируются между устройствами."
 	},
 	{
 		"slug": "first-session",
@@ -153,7 +153,7 @@
 		"coverIcon": "history",
 		"ctaHref": "/builder",
 		"ctaLabelKey": "articles.ctaBuilder",
-		"bodyMd": "The core Repdraft path: **plan → session → history**.\n\n## Steps\n\n1. [Create a plan](/builder) with 3–5 exercises\n2. On Workouts tap **Start**\n3. Log sets; finish with **Finish**\n4. Open [History](/workouts?tab=history): weight, reps, and duration are there\n\nData stays in the browser locally; with an account it syncs across devices."
+		"bodyMd": "The core Repdraft path: **plan → session → history**.\n\n## Steps\n\n1. [Create a plan](/builder) with 3-5 exercises\n2. On Workouts tap **Start**\n3. Log sets; finish with **Finish**\n4. Open [History](/workouts?tab=history): weight, reps, and duration are there\n\nData stays in the browser locally; with an account it syncs across devices."
 	},
 	{
 		"slug": "getting-started-quick-demo",
@@ -210,7 +210,7 @@
 	{
 		"slug": "ai-workout-draft",
 		"title": "Тренировка с ИИ: черновик за минуту",
-		"excerpt": "Опишите зоны, время и оборудование — ИИ соберёт план из каталога на 1300+ упражнений.",
+		"excerpt": "Опишите зоны, время и оборудование - ИИ соберёт план из каталога на 1300+ упражнений.",
 		"coverTone": "purple",
 		"locale": "ru",
 		"tags": ["ai", "план", "getting-started"],
@@ -218,12 +218,12 @@
 		"coverIcon": "sparkles",
 		"ctaHref": "/ai",
 		"ctaLabelKey": "articles.ctaAi",
-		"bodyMd": "ИИ-черновик собирает план из каталога Repdraft: не выдумывает упражнения, а подбирает реальные позиции с подходами, повторами и отдыхом.\n\n## Как открыть\n\nРаздел «Тренировки» → «Черновик с ИИ». Нужен интернет: запрос уходит к приватному провайдеру (GigaChat), история тренировок при этом остаётся на телефоне.\n\n![Форма запроса](/images/articles/ai-draft-form.jpg)\n\n## Что написать в запросе\n\n- **Зоны**: спина и бицепс, ноги, всё тело\n- **Время**: 45 минут\n- **Оборудование**: штанга, гантели, только резинка\n\nМожно диктовать голосом — кнопка микрофона в поле запроса.\n\n## Черновик плана\n\nИИ возвращает план из каталога: названия на русском, целевые мышцы, схема подходов и отдых.\n\n![Черновик плана](/images/articles/ai-draft-result.jpg)\n\nНе подошло — «Ещё раз» пересобирает вариант. Кнопка «В редактор» переносит план в конструктор, дальше священный цикл: live-сессия → запись подходов → история.\n\n## Важно\n\n- План — стартовая точка, а не предписание: веса и технику подбирайте под себя\n- Перед первым подходом откройте упражнение и посмотрите технику\n- ИИ работает только онлайн — без сети соберите план вручную в конструкторе"
+		"bodyMd": "ИИ-черновик собирает план из каталога Repdraft: не выдумывает упражнения, а подбирает реальные позиции с подходами, повторами и отдыхом.\n\n## Как открыть\n\nРаздел «Тренировки» → «Черновик с ИИ». Нужен интернет: запрос уходит к приватному провайдеру (GigaChat), история тренировок при этом остаётся на телефоне.\n\n![Форма запроса](/images/articles/ai-draft-form.jpg)\n\n## Что написать в запросе\n\n- **Зоны**: спина и бицепс, ноги, всё тело\n- **Время**: 45 минут\n- **Оборудование**: штанга, гантели, только резинка\n\nМожно диктовать голосом - кнопка микрофона в поле запроса.\n\n## Черновик плана\n\nИИ возвращает план из каталога: названия на русском, целевые мышцы, схема подходов и отдых.\n\n![Черновик плана](/images/articles/ai-draft-result.jpg)\n\nНе подошло - «Ещё раз» пересобирает вариант. Кнопка «В редактор» переносит план в конструктор, дальше священный цикл: live-сессия → запись подходов → история.\n\n## Важно\n\n- План - стартовая точка, а не предписание: веса и технику подбирайте под себя\n- Перед первым подходом откройте упражнение и посмотрите технику\n- ИИ работает только онлайн - без сети соберите план вручную в конструкторе"
 	},
 	{
 		"slug": "ai-workout-draft",
 		"title": "AI workout: a draft in a minute",
-		"excerpt": "Describe muscle zones, time, and equipment — the AI drafts a plan from the 1300+ exercise catalog.",
+		"excerpt": "Describe muscle zones, time, and equipment - the AI drafts a plan from the 1300+ exercise catalog.",
 		"coverTone": "purple",
 		"locale": "en",
 		"tags": ["ai", "plan", "getting-started"],
@@ -231,6 +231,6 @@
 		"coverIcon": "sparkles",
 		"ctaHref": "/ai",
 		"ctaLabelKey": "articles.ctaAi",
-		"bodyMd": "The AI draft builds a plan from the Repdraft catalog: it never invents exercises, it picks real entries with sets, reps, and rest.\n\n## How to open\n\nWorkouts tab → \"Draft with AI\". It needs internet: the request goes to a private provider (GigaChat), while your workout history stays on the phone.\n\n![Request form](/images/articles/ai-draft-form.jpg)\n\n## What to write\n\n- **Zones**: back and biceps, legs, full body\n- **Time**: 45 minutes\n- **Equipment**: barbell, dumbbells, resistance band only\n\nYou can dictate instead of typing — the mic button is inside the field.\n\n## The draft\n\nThe AI returns a catalog-based plan: Russian names, target muscles, set schemes, and rest.\n\n![Plan draft](/images/articles/ai-draft-result.jpg)\n\nNot quite right — \"Regenerate\" builds another variant. \"Send to builder\" moves the plan into the editor; from there it is the sacred loop: live session → log sets → history.\n\n## Keep in mind\n\n- The plan is a starting point, not a prescription: adjust weights and technique to yourself\n- Before the first set, open the exercise and check the technique\n- The AI needs a connection — offline, build the plan manually in the builder"
+		"bodyMd": "The AI draft builds a plan from the Repdraft catalog: it never invents exercises, it picks real entries with sets, reps, and rest.\n\n## How to open\n\nWorkouts tab → \"Draft with AI\". It needs internet: the request goes to a private provider (GigaChat), while your workout history stays on the phone.\n\n![Request form](/images/articles/ai-draft-form.jpg)\n\n## What to write\n\n- **Zones**: back and biceps, legs, full body\n- **Time**: 45 minutes\n- **Equipment**: barbell, dumbbells, resistance band only\n\nYou can dictate instead of typing - the mic button is inside the field.\n\n## The draft\n\nThe AI returns a catalog-based plan: Russian names, target muscles, set schemes, and rest.\n\n![Plan draft](/images/articles/ai-draft-result.jpg)\n\nNot quite right - \"Regenerate\" builds another variant. \"Send to builder\" moves the plan into the editor; from there it is the sacred loop: live session → log sets → history.\n\n## Keep in mind\n\n- The plan is a starting point, not a prescription: adjust weights and technique to yourself\n- Before the first set, open the exercise and check the technique\n- The AI needs a connection - offline, build the plan manually in the builder"
 	}
 ]

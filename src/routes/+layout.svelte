@@ -19,7 +19,7 @@
 		ICON_TAB_STROKE,
 		ICON_TAB_STROKE_ACTIVE
 	} from '$lib/components/icons/sizes';
-	import { BookOpen, House, TrendingUp, UserRound } from '@lucide/svelte';
+	import { BookOpen, Dumbbell, House, TrendingUp, UserRound } from '@lucide/svelte';
 	import { isBuilderReturnPath } from '$lib/domain/catalogLinks';
 	import { showsExerciseMediaAttribution } from '$lib/domain/mediaAttribution';
 	import { translate } from '$lib/i18n/messages';
@@ -217,12 +217,7 @@
 
 	function isActive(href: string): boolean {
 		if (href === '/') {
-			return (
-				path === '/' ||
-				path === '/workouts' ||
-				path.startsWith('/workouts/') ||
-				path.startsWith('/live/')
-			);
+			return path === '/';
 		}
 		if (href === '/exercises') {
 			return (
@@ -264,6 +259,11 @@
 </script>
 
 <a class="skip-link" href="#main-content">{translate(lang, 'a11y.skip')}</a>
+<div
+	class="ios-pwa-top"
+	class:ios-pwa-top--bg={showHomeShellHeader || hideMobileHeader}
+	aria-hidden="true"
+></div>
 <div class="app-shell" class:app-shell--immersive={hideMobileHeader}>
 	<AppSidebar {path} {isActive} {hasActiveSession} />
 
@@ -372,6 +372,23 @@
 					/>
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.tabHome')}</span>
+			</span>
+		</a>
+		<a
+			href="/workouts"
+			class="tab-link"
+			data-active={isActive('/workouts')}
+			aria-current={isActive('/workouts') ? 'page' : undefined}
+		>
+			<span class="tab-link__inner">
+				<span class="tab-link-icon">
+					<LucideIcon
+						icon={Dumbbell}
+						size={ICON_TAB}
+						strokeWidth={isActive('/workouts') ? ICON_TAB_STROKE_ACTIVE : ICON_TAB_STROKE}
+					/>
+				</span>
+				<span class="tab-link__label">{translate(lang, 'nav.workouts')}</span>
 			</span>
 		</a>
 		<a

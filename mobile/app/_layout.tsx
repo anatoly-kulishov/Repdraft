@@ -1,12 +1,25 @@
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from '@expo-google-fonts/inter';
+import {
+	Inter_400Regular,
+	Inter_500Medium,
+	Inter_600SemiBold,
+	Inter_700Bold,
+	Inter_800ExtraBold
+} from '@expo-google-fonts/inter';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AppState, StyleSheet } from 'react-native';
+import { fontFamily } from '../src/theme';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LocaleProvider, useLocale } from '../src/state/locale';
 import { ThemeProvider, useAppColors, useAppTheme } from '../src/state/theme';
+import { BootSplash } from '../src/boot/BootSplash';
 import { flushOutbox } from '../src/sync/cloudSync';
+
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 function RootStack() {
 	const { tt } = useLocale();
@@ -16,16 +29,17 @@ function RootStack() {
 			screenOptions={{
 				headerStyle: { backgroundColor: colors.bg },
 				headerTintColor: colors.text,
-				headerTitleStyle: { fontWeight: '700' },
+				headerTitleStyle: { fontWeight: '700', fontFamily: fontFamily.bold },
 				contentStyle: { backgroundColor: colors.bg },
 				headerShadowVisible: false,
 				// Tabs hide their header, so iOS has no previous title and shows only a chevron.
 				headerBackTitle: tt('common.back'),
 				headerBackButtonDisplayMode: 'generic',
-				headerBackTitleStyle: { fontSize: 17 }
+				headerBackTitleStyle: { fontSize: 17, fontFamily: fontFamily.regular }
 			}}
 		>
 			<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+			<Stack.Screen name="auth" options={{ title: tt('auth.title') }} />
 			<Stack.Screen name="plan/[id]" options={{ title: tt('nav.preview') }} />
 			<Stack.Screen
 				name="live/[planId]"
@@ -45,6 +59,15 @@ function RootStack() {
 }
 
 export default function RootLayout() {
+	const [booting, setBooting] = useState(true);
+	const [fontsLoaded] = useFonts({
+		Inter_400Regular,
+		Inter_500Medium,
+		Inter_600SemiBold,
+		Inter_700Bold,
+		Inter_800ExtraBold
+	});
+
 	useEffect(() => {
 		void flushOutbox();
 		const sub = AppState.addEventListener('change', (state) => {
@@ -53,6 +76,10 @@ export default function RootLayout() {
 		return () => sub.remove();
 	}, []);
 
+	if (!fontsLoaded) {
+		return <BootSplash onDone={() => undefined} />;
+	}
+
 	return (
 		<GestureHandlerRootView style={styles.gestureRoot}>
 			<SafeAreaProvider>
@@ -60,6 +87,7 @@ export default function RootLayout() {
 					<LocaleProvider>
 						<ThemedStatusBar />
 						<RootStack />
+						{booting ? <BootSplash onDone={() => setBooting(false)} /> : null}
 					</LocaleProvider>
 				</ThemeProvider>
 			</SafeAreaProvider>

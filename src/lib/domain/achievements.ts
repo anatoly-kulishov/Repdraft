@@ -150,6 +150,33 @@ export function evaluateAchievements(input: AchievementEvalInput): AchievementEv
 	return { state, newlyUnlocked };
 }
 
+export type AchievementIconName = 'flame' | 'medal' | 'trophy' | 'target' | 'zap';
+
+export type AchievementGlyphSpec = {
+	icon: AchievementIconName;
+	color: string;
+};
+
+/** Saturated plate color. White glyph sits on top in both themes. */
+export function achievementGlyph(id: AchievementId): AchievementGlyphSpec {
+	switch (id) {
+		case 'first_session':
+			return { icon: 'flame', color: '#e11d48' };
+		case 'sessions_5':
+			return { icon: 'medal', color: '#2563eb' };
+		case 'sessions_25':
+			return { icon: 'trophy', color: '#d97706' };
+		case 'weekly_goal':
+			return { icon: 'target', color: '#7c3aed' };
+		case 'first_pr':
+			return { icon: 'zap', color: '#ea580c' };
+		default: {
+			const _exhaustive: never = id;
+			return _exhaustive;
+		}
+	}
+}
+
 export function achievementTitleKey(id: AchievementId): string {
 	switch (id) {
 		case 'first_session':
@@ -282,5 +309,8 @@ export function achievementHintKey(id: AchievementId): string {
 	const parsed = parseAchievementsState(first.state);
 	if (!isUnlocked(parsed, 'first_session')) {
 		throw new Error('achievements: parse round-trip failed');
+	}
+	if (achievementGlyph('first_pr').icon !== 'zap') {
+		throw new Error('achievements: glyph map drifted');
 	}
 }

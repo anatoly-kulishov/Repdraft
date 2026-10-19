@@ -16,6 +16,15 @@ export function isQuestHeroOnboarded(raw: unknown): boolean {
 	return Boolean(p?.completedAt);
 }
 
+/** Name, sex, height, and weight are required before the first workout. */
+export function isHeroReady(profile: QuestHeroProfile | null): profile is QuestHeroProfile {
+	if (!profile?.completedAt) return false;
+	if (!profile.displayName.trim()) return false;
+	if (profile.sex !== 'm' && profile.sex !== 'f') return false;
+	if (profile.heightCm == null || profile.weightKg == null) return false;
+	return true;
+}
+
 export function parseQuestHeroProfile(raw: unknown): QuestHeroProfile | null {
 	if (!raw || typeof raw !== 'object') return null;
 	const o = raw as Record<string, unknown>;

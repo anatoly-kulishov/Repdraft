@@ -27,6 +27,7 @@ export {
 	removeExercise,
 	insertExerciseAt,
 	updateExercise,
+	replacePlanExercise,
 	type AddExerciseResult
 } from './workoutMutate';
 

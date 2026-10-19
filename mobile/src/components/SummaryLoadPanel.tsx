@@ -12,7 +12,7 @@ import {
 import type { WorkoutSession } from '@repdraft/domain/types';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
-import { radius, space, type ColorPalette } from '../theme';
+import { fontFamily, radius, space, type ColorPalette } from '../theme';
 import { Panel } from './Panel';
 import { PrimaryButton } from './PrimaryButton';
 
@@ -122,7 +122,8 @@ function makeStyles(colors: ColorPalette) {
 			fontSize: 12,
 			letterSpacing: 0.5,
 			textTransform: 'uppercase',
-			marginBottom: space.sm
+			marginBottom: space.sm,
+			fontFamily: fontFamily.bold
 		},
 		sectionGap: { marginTop: space.md },
 		shareRow: {
@@ -131,7 +132,7 @@ function makeStyles(colors: ColorPalette) {
 			gap: space.sm,
 			marginBottom: space.xs
 		},
-		shareLabel: { color: colors.text, fontSize: 14, fontWeight: '600', width: 88 },
+		shareLabel: { color: colors.text, fontSize: 14, fontWeight: '600', width: 88, fontFamily: fontFamily.semibold },
 		barTrack: {
 			flex: 1,
 			height: 8,
@@ -146,7 +147,8 @@ function makeStyles(colors: ColorPalette) {
 			fontWeight: '600',
 			width: 36,
 			textAlign: 'right',
-			fontVariant: ['tabular-nums']
+			fontVariant: ['tabular-nums'],
+			fontFamily: fontFamily.semibold
 		},
 		lagRow: {
 			flexDirection: 'row',
@@ -155,6 +157,6 @@ function makeStyles(colors: ColorPalette) {
 			gap: space.sm,
 			marginBottom: space.xs
 		},
-		lagText: { color: colors.text, fontSize: 15, fontWeight: '600', flex: 1 }
+		lagText: { color: colors.text, fontSize: 15, fontWeight: '600', flex: 1, fontFamily: fontFamily.semibold }
 	});
 }

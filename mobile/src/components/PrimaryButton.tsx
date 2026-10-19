@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { useAppColors } from '../state/theme';
-import { radius, touchMin, type ColorPalette } from '../theme';
+import { fontFamily, radius, touchMin, type ColorPalette } from '../theme';
 
 type Props = {
 	label: string;
@@ -41,7 +41,7 @@ export function PrimaryButton({
 				style={[
 					styles.label,
 					compact && styles.labelCompact,
-					(variant === 'primary' || variant === 'secondary') && styles.labelOnInk,
+					variant === 'primary' && styles.labelOnInk,
 					variant === 'danger' && styles.labelDanger,
 					variant === 'link' && styles.labelLink
 				]}
@@ -98,13 +98,14 @@ function makeStyles(colors: ColorPalette) {
 		label: {
 			color: colors.text,
 			fontSize: 17,
-			fontWeight: '700'
+			fontWeight: '700',
+			fontFamily: fontFamily.bold
 		},
 		labelCompact: {
 			fontSize: 15
 		},
 		labelOnInk: {
-			color: colors.accentText
+			color: colors.accentInk
 		},
 		labelDanger: {
 			color: colors.danger

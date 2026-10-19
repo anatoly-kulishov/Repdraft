@@ -21,6 +21,8 @@ export type ColorPalette = {
 	accent: string;
 	accentFill: string;
 	/** White (or on-fill) label on primary CTA. */
+	accentInk: string;
+	/** @deprecated Use accentInk for CTA ink; kept for compat. */
 	accentText: string;
 	/** Soft accent for links / secondary emphasis. */
 	accentLink: string;
@@ -29,6 +31,8 @@ export type ColorPalette = {
 	dangerBg: string;
 	/** Modal/sheet scrim */
 	overlayScrim: string;
+	xp: string;
+	muscle: string;
 };
 
 function toRnPalette(c: CoreColorPalette): ColorPalette {
@@ -42,12 +46,15 @@ function toRnPalette(c: CoreColorPalette): ColorPalette {
 		muted: c.muted,
 		accent: c.accent,
 		accentFill: c.accentFill,
+		accentInk: c.accentInk,
 		accentText: c.accentInk,
 		accentLink: c.accentText,
 		accentDim: c.accentDim,
 		danger: c.danger,
 		dangerBg: c.dangerBg,
-		overlayScrim: c.overlayScrim
+		overlayScrim: c.overlayScrim,
+		xp: c.xp,
+		muscle: c.muscle
 	};
 }
 

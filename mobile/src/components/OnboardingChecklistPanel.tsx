@@ -8,7 +8,7 @@ import {
 } from '@repdraft/domain/onboarding';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
-import { radius, space, touchMin, type ColorPalette } from '../theme';
+import { fontFamily, radius, space, touchMin, type ColorPalette } from '../theme';
 import { Panel } from './Panel';
 import { PrimaryButton } from './PrimaryButton';
 
@@ -73,10 +73,11 @@ function makeStyles(colors: ColorPalette) {
 			fontSize: 12,
 			fontWeight: '700',
 			textTransform: 'uppercase',
-			letterSpacing: 0.6
+			letterSpacing: 0.6,
+			fontFamily: fontFamily.bold
 		},
-		title: { color: colors.text, fontWeight: '800', fontSize: 17 },
-		meta: { color: colors.muted, fontSize: 14 },
+		title: { color: colors.text, fontWeight: '800', fontSize: 17, fontFamily: fontFamily.extrabold },
+		meta: { color: colors.muted, fontSize: 14, fontFamily: fontFamily.regular },
 		progressTrack: {
 			height: 6,
 			borderRadius: 999,
@@ -85,7 +86,7 @@ function makeStyles(colors: ColorPalette) {
 			marginVertical: space.xs
 		},
 		progressFill: { height: '100%', backgroundColor: colors.accent },
-		step: { color: colors.muted, fontSize: 14, minHeight: touchMin / 2, lineHeight: 22 },
-		stepDone: { color: colors.accent }
+		step: { color: colors.muted, fontSize: 14, minHeight: touchMin / 2, lineHeight: 22, fontFamily: fontFamily.regular },
+		stepDone: { color: colors.accent, fontFamily: fontFamily.regular }
 	});
 }

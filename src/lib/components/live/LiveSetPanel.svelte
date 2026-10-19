@@ -14,19 +14,11 @@
 	import { isCustomExerciseId } from '$lib/domain/customExercises';
 	import { exerciseMetaHint } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, SessionExercise, SetKind, WorkoutSession } from '$lib/domain/types';
-	import {
-		LIVE_REPS,
-		LIVE_REPS_NUDGE,
-		LIVE_WEIGHT_NUDGE_KG,
-		NOTE_MAX,
-		REPS_INPUT_MAX_LEN,
-		WEIGHT_INPUT_MAX_LEN,
-		clampNote,
-		nudgeReps,
-		nudgeWeightKg
-	} from '$lib/domain/inputLimits';
+	import { NOTE_MAX, REPS_INPUT_MAX_LEN, WEIGHT_INPUT_MAX_LEN, clampNote } from '$lib/domain/inputLimits';
 	import { isBodyweightEquipment, isCardioBodyPart } from '$lib/domain/workout';
-	import { loggedSetKind, setKindMessageKey } from '$lib/domain/session';
+	import { XP_WEIGHT_UP } from '$lib/domain/quest';
+	import { exerciseWeightByWeek, nextWeightHint, weightAboveLast } from '$lib/domain/sessionPayoff';
+	import { exerciseBestWeightKg, loggedSetKind, setKindMessageKey } from '$lib/domain/session';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
@@ -35,7 +27,6 @@
 		ClipboardPaste,
 		EllipsisVertical,
 		History,
-		Minus,
 		Plus,
 		RefreshCw,
 		SkipForward,
@@ -166,18 +157,6 @@
 			w: last.weightKg != null ? `${last.weightKg}` : '',
 			r: last.reps != null ? `${last.reps}` : ''
 		};
-	}
-
-	function nudgeSetWeight(si: number, delta: number) {
-		const set = exercise.sets[si];
-		if (!set || set.completed) return;
-		onWeight(si, String(nudgeWeightKg(set.weightKg, delta)));
-	}
-
-	function nudgeSetReps(si: number, delta: number) {
-		const set = exercise.sets[si];
-		if (!set || set.completed) return;
-		onReps(si, String(nudgeReps(set.reps, delta, LIVE_REPS)));
 	}
 
 	function applyLastPerformance() {
@@ -323,6 +302,14 @@
 		reps?.focus();
 	}
 
+	let weightWeeks = $derived(exerciseWeightByWeek($live.history, exercise.exerciseId));
+	let weightMax = $derived(Math.max(1, ...weightWeeks.map((w) => w.weightKg ?? 0)));
+	let currentBest = $derived(exerciseBestWeightKg(session, exercise.exerciseId));
+	let weightUp = $derived(
+		weightAboveLast(currentBest, $live.history, exercise.exerciseId, session.id)
+	);
+	let nextHint = $derived(nextWeightHint($live.history, exercise.exerciseId));
+
 	function onRepsKeydown(e: KeyboardEvent, si: number) {
 		if (e.key !== 'Enter') return;
 		if (exercise.sets[si]?.completed) return;
@@ -332,6 +319,32 @@
 </script>
 
 <div class="live-panel" class:live-panel--superset={selectedInGroup}>
+	<div class="live-weight-cue" aria-hidden="true">
+		{#each weightWeeks as week (week.weekKey)}
+			<div class="live-weight-cue__col">
+				<div
+					class="live-weight-cue__bar"
+					class:live-weight-cue__bar--empty={week.weightKg == null}
+					style:height="{week.weightKg == null
+						? '2px'
+						: `${Math.max(8, Math.round((week.weightKg / weightMax) * 36))}px`}"
+				></div>
+			</div>
+		{/each}
+	</div>
+	{#if weightUp}
+		<p class="live-weight-cue__chip">
+			{translate(lang, 'quest.weightUpChip', { xp: String(XP_WEIGHT_UP) })}
+		</p>
+	{/if}
+	{#if nextHint}
+		<p class="live-weight-cue__hint">
+			{translate(lang, 'quest.nextHint', {
+				weight: String(nextHint.weightKg),
+				reps: String(nextHint.reps)
+			})}
+		</p>
+	{/if}
 	<header class="live-panel__hero">
 		{#if selectedInGroup && selectedGroupPos}
 			<p class="live-superset-badge">
@@ -445,7 +458,6 @@
 		<div class="live-set-head" class:live-set-head--cardio={cardio}>
 			<span class="live-set-head__idx">#</span>
 			{#if !cardio}
-				<div class="live-set-fields">
 				{#if showFillColumn && canFillWeightAll && fillWeightKg != null}
 					<button
 						type="button"
@@ -485,7 +497,6 @@
 				{:else}
 					<span class="live-set-head__reps">{translate(lang, 'live.reps')}</span>
 				{/if}
-				</div>
 			{:else}
 				<span class="live-set-head__mark">{translate(lang, 'live.cardioCol')}</span>
 			{/if}
@@ -535,113 +546,63 @@
 							{/if}
 						</div>
 					{#if !cardio}
-						<div class="live-set-fields">
-							<div class="live-set-step">
-								{#if !set.completed}
-									<button
-										type="button"
-										class="live-set-nudge"
-										aria-label={translate(lang, 'live.nudgeWeightDown', { n: si + 1 })}
-										data-swipe-pass=""
-										onclick={() => nudgeSetWeight(si, -LIVE_WEIGHT_NUDGE_KG)}
-									>
-										<LucideIcon icon={Minus} size={ICON_SMALL} />
-									</button>
-								{/if}
-								<AppInput
-									class={`live-set-weight tabular-nums${invalidSetIndex === si && invalidKind === 'weight' ? ' is-invalid' : ''}`}
-									aria-invalid={invalidSetIndex === si && invalidKind === 'weight'}
-									type="text"
-									inputmode="decimal"
-									autocomplete="off"
-									maxlength={WEIGHT_INPUT_MAX_LEN}
-									enterkeyhint="next"
-									placeholder={weightPlaceholder}
-									aria-label={`${weightLabel} ${si + 1}`}
-									value={set.weightKg ?? ''}
-									readonly={set.completed}
-									tabindex={set.completed ? -1 : undefined}
-									data-swipe-pass=""
-									onfocus={(e) => {
-										if (set.completed) {
-											e.currentTarget.blur();
-											return;
-										}
-										scrollCurrentSetIntoView(e.currentTarget);
-									}}
-									oninput={(e) => {
-										if (set.completed) return;
-										const el = e.currentTarget;
-										const next = onWeight(si, el.value);
-										if (el.value !== next) el.value = next;
-									}}
-									onkeydown={(e) => onWeightKeydown(e, si)}
-								/>
-								{#if !set.completed}
-									<button
-										type="button"
-										class="live-set-nudge"
-										aria-label={translate(lang, 'live.nudgeWeightUp', { n: si + 1 })}
-										data-swipe-pass=""
-										onclick={() => nudgeSetWeight(si, LIVE_WEIGHT_NUDGE_KG)}
-									>
-										<LucideIcon icon={Plus} size={ICON_SMALL} />
-									</button>
-								{/if}
-							</div>
-							<div class="live-set-step">
-								{#if !set.completed}
-									<button
-										type="button"
-										class="live-set-nudge"
-										aria-label={translate(lang, 'live.nudgeRepsDown', { n: si + 1 })}
-										data-swipe-pass=""
-										onclick={() => nudgeSetReps(si, -LIVE_REPS_NUDGE)}
-									>
-										<LucideIcon icon={Minus} size={ICON_SMALL} />
-									</button>
-								{/if}
-								<AppInput
-									class={`live-set-reps tabular-nums${invalidSetIndex === si && invalidKind === 'reps' ? ' is-invalid' : ''}`}
-									aria-invalid={invalidSetIndex === si && invalidKind === 'reps'}
-									type="text"
-									inputmode="numeric"
-									autocomplete="off"
-									maxlength={REPS_INPUT_MAX_LEN}
-									enterkeyhint="done"
-									aria-label={`${translate(lang, 'live.reps')} ${si + 1}`}
-									value={set.reps ?? ''}
-									readonly={set.completed}
-									tabindex={set.completed ? -1 : undefined}
-									data-swipe-pass=""
-									onfocus={(e) => {
-										if (set.completed) {
-											e.currentTarget.blur();
-											return;
-										}
-										scrollCurrentSetIntoView(e.currentTarget);
-									}}
-									oninput={(e) => {
-										if (set.completed) return;
-										const el = e.currentTarget;
-										const next = onReps(si, el.value);
-										if (el.value !== next) el.value = next;
-									}}
-									onkeydown={(e) => onRepsKeydown(e, si)}
-								/>
-								{#if !set.completed}
-									<button
-										type="button"
-										class="live-set-nudge"
-										aria-label={translate(lang, 'live.nudgeRepsUp', { n: si + 1 })}
-										data-swipe-pass=""
-										onclick={() => nudgeSetReps(si, LIVE_REPS_NUDGE)}
-									>
-										<LucideIcon icon={Plus} size={ICON_SMALL} />
-									</button>
-								{/if}
-							</div>
-						</div>
+						<AppInput
+							class={`live-set-weight tabular-nums${invalidSetIndex === si && invalidKind === 'weight' ? ' is-invalid' : ''}`}
+							aria-invalid={invalidSetIndex === si && invalidKind === 'weight'}
+							type="text"
+							inputmode="decimal"
+							autocomplete="off"
+							maxlength={WEIGHT_INPUT_MAX_LEN}
+							enterkeyhint="next"
+							placeholder={weightPlaceholder}
+							aria-label={`${weightLabel} ${si + 1}`}
+							value={set.weightKg ?? ''}
+							readonly={set.completed}
+							tabindex={set.completed ? -1 : undefined}
+							data-swipe-pass=""
+							onfocus={(e) => {
+								if (set.completed) {
+									e.currentTarget.blur();
+									return;
+								}
+								scrollCurrentSetIntoView(e.currentTarget);
+							}}
+							oninput={(e) => {
+								if (set.completed) return;
+								const el = e.currentTarget;
+								const next = onWeight(si, el.value);
+								if (el.value !== next) el.value = next;
+							}}
+							onkeydown={(e) => onWeightKeydown(e, si)}
+						/>
+						<AppInput
+							class={`live-set-reps tabular-nums${invalidSetIndex === si && invalidKind === 'reps' ? ' is-invalid' : ''}`}
+							aria-invalid={invalidSetIndex === si && invalidKind === 'reps'}
+							type="text"
+							inputmode="numeric"
+							autocomplete="off"
+							maxlength={REPS_INPUT_MAX_LEN}
+							enterkeyhint="done"
+							aria-label={`${translate(lang, 'live.reps')} ${si + 1}`}
+							value={set.reps ?? ''}
+							readonly={set.completed}
+							tabindex={set.completed ? -1 : undefined}
+							data-swipe-pass=""
+							onfocus={(e) => {
+								if (set.completed) {
+									e.currentTarget.blur();
+									return;
+								}
+								scrollCurrentSetIntoView(e.currentTarget);
+							}}
+							oninput={(e) => {
+								if (set.completed) return;
+								const el = e.currentTarget;
+								const next = onReps(si, el.value);
+								if (el.value !== next) el.value = next;
+							}}
+							onkeydown={(e) => onRepsKeydown(e, si)}
+						/>
 					{:else}
 						<span class="live-set-cardio-mark" data-swipe-pass="">
 							{set.completed
@@ -906,3 +867,42 @@
 	exerciseId={exercise.exerciseId}
 	onDismiss={closeOverlay}
 />
+
+<style>
+	.live-weight-cue {
+		display: flex;
+		align-items: flex-end;
+		gap: 0.35rem;
+		height: 40px;
+		margin-bottom: 0.35rem;
+	}
+	.live-weight-cue__col {
+		flex: 1;
+		display: flex;
+		align-items: flex-end;
+		height: 100%;
+	}
+	.live-weight-cue__bar {
+		width: 100%;
+		border-radius: 4px 4px 0 0;
+		background: var(--color-xp);
+		opacity: 0.85;
+	}
+	.live-weight-cue__bar--empty {
+		opacity: 0.28;
+		border-radius: 1px;
+	}
+	.live-weight-cue__chip,
+	.live-weight-cue__hint {
+		margin: 0 0 0.35rem;
+		font-size: 0.8125rem;
+		font-weight: 700;
+	}
+	.live-weight-cue__chip {
+		color: var(--color-xp);
+	}
+	.live-weight-cue__hint {
+		font-weight: 500;
+		opacity: 0.8;
+	}
+</style>

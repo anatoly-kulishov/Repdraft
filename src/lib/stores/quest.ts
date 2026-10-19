@@ -85,8 +85,11 @@ export const quest = {
 		stateStore.update((s) => setWeeklyGoalState(s, goal));
 	},
 	/** After a successful persist of a finished session. Idempotent. */
-	noteFinishedSession(session: WorkoutSession): QuestApplyResult {
-		const result = applyFinishedSessionToQuest(get(stateStore), session, new Date());
+	noteFinishedSession(
+		session: WorkoutSession,
+		prior: readonly WorkoutSession[] = []
+	): QuestApplyResult {
+		const result = applyFinishedSessionToQuest(get(stateStore), session, new Date(), prior);
 		stateStore.set(result.state);
 		lastApplyStore.set(result);
 		writeLastApply(session.id, result);

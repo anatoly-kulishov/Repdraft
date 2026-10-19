@@ -6,7 +6,7 @@ import { BottomSheet } from './BottomSheet';
 import { PrimaryButton } from './PrimaryButton';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
-import { radius, space, touchMin, type, type ColorPalette } from '../theme';
+import { fontFamily, radius, space, touchMin, type, type ColorPalette } from '../theme';
 
 type Props = {
 	open: boolean;
@@ -76,7 +76,8 @@ function makeStyles(colors: ColorPalette) {
 			...type.body,
 			color: colors.text,
 			fontWeight: '800',
-			fontSize: 18
+			fontSize: 18,
+			fontFamily: fontFamily.extrabold
 		},
 		list: { gap: space.xs },
 		row: {
@@ -94,8 +95,9 @@ function makeStyles(colors: ColorPalette) {
 			color: colors.text,
 			fontWeight: '600',
 			flex: 1,
-			paddingRight: space.sm
+			paddingRight: space.sm,
+			fontFamily: fontFamily.semibold
 		},
-		labelActive: { color: colors.accent }
+		labelActive: { color: colors.accent, fontFamily: fontFamily.semibold }
 	});
 }

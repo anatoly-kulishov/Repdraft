@@ -13,7 +13,7 @@ import { loadAchievementsState } from '../src/state/achievements';
 import { useLocale } from '../src/state/locale';
 import { useAppColors } from '../src/state/theme';
 import { sessionsRepo } from '../src/storage/sessionsRepo';
-import { space, type ColorPalette } from '../src/theme';
+import { fontFamily, space, type ColorPalette } from '../src/theme';
 
 export default function AchievementsScreen() {
 	const { tt } = useLocale();
@@ -68,6 +68,6 @@ function makeStyles(colors: ColorPalette) {
 		scroll: { flex: 1, backgroundColor: colors.bg },
 		root: { padding: space.lg, gap: space.md },
 		center: { flex: 1, backgroundColor: colors.bg },
-		meta: { color: colors.muted, fontSize: 15, fontWeight: '600' }
+		meta: { color: colors.muted, fontSize: 15, fontWeight: '600', fontFamily: fontFamily.semibold }
 	});
 }

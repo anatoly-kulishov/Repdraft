@@ -18,9 +18,7 @@ import {
 	coerceReps,
 	coerceWeightKg,
 	filterRepsInput,
-	filterWeightInput,
-	nudgeReps,
-	nudgeWeightKg
+	filterWeightInput
 } from '@repdraft/domain/inputLimits';
 import { RECORDS_STORAGE_KEY } from '@repdraft/domain/repository';
 import {
@@ -30,6 +28,7 @@ import {
 	applyWeightToOpenSets,
 	chooseAltExercise,
 	completedSetCount,
+	exerciseBestWeightKg,
 	finishSession,
 	isSessionFullyLogged,
 	lastPerformance,
@@ -50,7 +49,10 @@ import {
 	updateLoggedSet,
 	visibleSessionExerciseIndices
 } from '@repdraft/domain/session';
+import { XP_WEIGHT_UP } from '@repdraft/domain/quest';
+import { exerciseWeightByWeek, nextWeightHint, weightAboveLast } from '@repdraft/domain/sessionPayoff';
 import { isBodyweightEquipment, isCardioBodyPart } from '@repdraft/domain/workout';
+import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
 import type { LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { unlockRestAudioFromGesture } from '../../src/audio/restChime';
 import { signalRestDone } from '../../src/audio/restDone';
@@ -59,6 +61,7 @@ import { Chip } from '../../src/components/Chip';
 import { ConfirmSheet, type ConfirmAction } from '../../src/components/ConfirmSheet';
 import { ElapsedClock } from '../../src/components/ElapsedClock';
 import { LiveSetRow, type SetDraft } from '../../src/components/LiveSetRow';
+import { QuestOnboardingSheet } from '../../src/components/QuestOnboardingSheet';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { RestTimer } from '../../src/components/RestTimer';
@@ -83,6 +86,7 @@ import { getHealthAdapter, saveLastHealthSnapshot } from '../../src/health';
 import { useLocale } from '../../src/state/locale';
 import { noteChecklist } from '../../src/state/onboarding';
 import { noteFinishedSession } from '../../src/state/quest';
+import { needsQuestHeroOnboarding, saveQuestHeroProfile } from '../../src/state/questHero';
 import { useAppColors } from '../../src/state/theme';
 import { kvSetJson } from '../../src/storage/kv';
 import { plansRepo } from '../../src/storage/plansRepo';
@@ -94,7 +98,7 @@ import {
 } from '../../src/storage/sessionsRepo';
 import { useBottomChromePad, useStackHeaderOffset } from '../../src/layout/safe';
 import { pushPlan, pushRecord, pushSession } from '../../src/sync/cloudSync';
-import { radius, space, touchMin, type ColorPalette } from '../../src/theme';
+import { fontFamily, radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
 /** ponytail: last-set hints only need recent finishes. Upgrade path: per-exercise index. */
 const HINT_SESSION_CAP = 30;
@@ -121,7 +125,6 @@ export default function LiveScreen() {
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const bottomPad = useBottomChromePad(space.md);
 	const headerOffset = useStackHeaderOffset();
-	const scrollPad = bottomPad + 200;
 
 	const [session, setSession] = useState<WorkoutSession | null>(null);
 	const [history, setHistory] = useState<WorkoutSession[]>([]);
@@ -131,6 +134,7 @@ export default function LiveScreen() {
 	const [restUntil, setRestUntil] = useState<number | null>(null);
 	const [finishing, setFinishing] = useState(false);
 	const [bootReady, setBootReady] = useState(false);
+	const [heroPlan, setHeroPlan] = useState<WorkoutPlan | null>(null);
 	const [forceAltPick, setForceAltPick] = useState(false);
 	const [techniqueId, setTechniqueId] = useState<string | null>(null);
 	const [confirm, setConfirm] = useState<{
@@ -150,6 +154,12 @@ export default function LiveScreen() {
 
 	const startNew = useCallback(
 		async (plan: WorkoutPlan, hist: WorkoutSession[]) => {
+			if (await needsQuestHeroOnboarding()) {
+				setHistory(hist);
+				setHeroPlan(plan);
+				return;
+			}
+			setHeroPlan(null);
 			let started = startSessionFromPlan(plan);
 			started = seedOpenSetsFromLastPerformance(started, (exerciseId) =>
 				lastPerformance(hist, exerciseId)
@@ -494,8 +504,8 @@ export default function LiveScreen() {
 		await kvSetJson(RECORDS_STORAGE_KEY, mergedRecords);
 		await writeActiveSession(null);
 		await writeRestUntil(null);
-		const questApply = await noteFinishedSession(done);
 		const allSessions = await sessionsRepo.list();
+		const questApply = await noteFinishedSession(done, allSessions);
 		await noteFinishedSessionAchievements({
 			justFinished: done,
 			finishedSessions: allSessions,
@@ -611,30 +621,6 @@ export default function LiveScreen() {
 		}
 	}
 
-	function nudgeDraft(si: number, field: 'weight' | 'reps', delta: number) {
-		if (!session || !ex) return;
-		const row = drafts[si];
-		if (!row) return;
-		if (field === 'weight') {
-			const current = row.weight === '' ? null : coerceWeightKg(row.weight);
-			const next = String(nudgeWeightKg(current, delta));
-			setDrafts((rows) => rows.map((r, i) => (i === si ? { ...r, weight: next } : r)));
-			void persist(
-				updateLoggedSet(session, selectedEi, si, { weightKg: coerceWeightKg(next) }),
-				restUntil
-			);
-		} else {
-			const current = row.reps === '' ? null : coerceReps(row.reps, LIVE_REPS);
-			const next = String(nudgeReps(current, delta, LIVE_REPS));
-			setDrafts((rows) => rows.map((r, i) => (i === si ? { ...r, reps: next } : r)));
-			void persist(
-				updateLoggedSet(session, selectedEi, si, { reps: coerceReps(next, LIVE_REPS) }),
-				restUntil
-			);
-		}
-		tapLight();
-	}
-
 	function applyLastDraft(si: number, prev: { weightKg: number | null; reps: number | null }) {
 		if (!session) return;
 		const weight = prev.weightKg != null ? String(prev.weightKg) : '';
@@ -650,10 +636,25 @@ export default function LiveScreen() {
 		tapLight();
 	}
 
+	async function onHeroReady(profile: QuestHeroProfile) {
+		await saveQuestHeroProfile(profile);
+		const plan = heroPlan;
+		if (!plan) return;
+		await startNew(plan, history);
+	}
+
 	if (!bootReady || !session) {
 		return (
 			<View style={styles.root}>
 				<PageSkeleton variant="planPreview" />
+				<QuestOnboardingSheet
+					visible={heroPlan != null}
+					onComplete={(profile) => void onHeroReady(profile)}
+					onDismiss={() => {
+						setHeroPlan(null);
+						router.replace('/');
+					}}
+				/>
 				<ConfirmSheet
 					open={Boolean(confirm)}
 					title={confirm?.title ?? ''}
@@ -693,6 +694,7 @@ export default function LiveScreen() {
 
 			<FlatList
 				horizontal
+				style={styles.navList}
 				data={visible}
 				keyExtractor={(i) => String(i)}
 				showsHorizontalScrollIndicator={false}
@@ -718,7 +720,7 @@ export default function LiveScreen() {
 
 			<ScrollView
 				style={styles.flex}
-				contentContainerStyle={[styles.scroll, { paddingBottom: scrollPad }]}
+				contentContainerStyle={styles.scroll}
 				keyboardShouldPersistTaps="handled"
 				keyboardDismissMode="on-drag"
 			>
@@ -771,6 +773,7 @@ export default function LiveScreen() {
 								/>
 							) : null}
 						</View>
+						<WeightCue session={session} exerciseId={ex.exerciseId} history={history} />
 
 						{ex.sets.map((set, si) => {
 							const prev = previousSetAtIndex(history, ex.exerciseId, si);
@@ -779,12 +782,12 @@ export default function LiveScreen() {
 								<LiveSetRow
 									key={si}
 									setIndex={si}
-									setCount={ex.sets.length}
 									completed={set.completed}
 									current={si === currentSetIndex}
 									skipLift={skipLift}
 									bodyweight={bodyweight}
 									canRemove={ex.sets.length > 1}
+									showKindBadge={loggedSetKind(set) !== 'work'}
 									kindLabel={tt(setKindMessageKey(loggedSetKind(set)))}
 									draft={draft}
 									prev={prev}
@@ -801,8 +804,6 @@ export default function LiveScreen() {
 										);
 									}}
 									onBlur={() => void syncDraftToSession(selectedEi, si)}
-									onNudgeWeight={(delta) => nudgeDraft(si, 'weight', delta)}
-									onNudgeReps={(delta) => nudgeDraft(si, 'reps', delta)}
 									onApplyLast={() => {
 										if (prev) applyLastDraft(si, prev);
 									}}
@@ -928,6 +929,53 @@ export default function LiveScreen() {
 	);
 }
 
+function WeightCue({
+	session,
+	exerciseId,
+	history
+}: {
+	session: WorkoutSession;
+	exerciseId: string;
+	history: readonly WorkoutSession[];
+}) {
+	const { tt } = useLocale();
+	const colors = useAppColors();
+	const weeks = exerciseWeightByWeek(history, exerciseId);
+	const max = Math.max(1, ...weeks.map((week) => week.weightKg ?? 0));
+	const current = exerciseBestWeightKg(session, exerciseId);
+	const raised = weightAboveLast(current, history, exerciseId, session.id);
+	const hint = nextWeightHint(history, exerciseId);
+	return (
+		<View style={{ gap: 4, marginBottom: 8 }}>
+			<View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 40, gap: 4 }}>
+				{weeks.map((week) => (
+					<View key={week.weekKey} style={{ flex: 1, height: '100%', justifyContent: 'flex-end' }}>
+						<View
+							style={{
+								height: week.weightKg == null ? 2 : Math.max(8, Math.round((week.weightKg / max) * 36)),
+								borderTopLeftRadius: 4,
+								borderTopRightRadius: 4,
+								backgroundColor: colors.xp,
+								opacity: week.weightKg == null ? 0.28 : 0.9
+							}}
+						/>
+					</View>
+				))}
+			</View>
+			{raised ? (
+				<Text style={{ color: colors.xp, fontWeight: '700' }}>
+					{tt('quest.weightUpChip', { xp: String(XP_WEIGHT_UP) })}
+				</Text>
+			) : null}
+			{hint ? (
+				<Text style={{ color: colors.muted }}>
+					{tt('quest.nextHint', { weight: String(hint.weightKg), reps: String(hint.reps) })}
+				</Text>
+			) : null}
+		</View>
+	);
+}
+
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 		root: { flex: 1, backgroundColor: colors.bg },
@@ -935,10 +983,11 @@ function makeStyles(colors: ColorPalette) {
 		header: { paddingHorizontal: space.lg, paddingTop: space.sm, gap: 2 },
 		scroll: { padding: space.lg, gap: space.md },
 		center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
-		plan: { color: colors.text, fontSize: 22, fontWeight: '800' },
-		progress: { color: colors.muted, fontSize: 14, fontWeight: '600' },
+		plan: { color: colors.text, fontSize: 22, fontWeight: '800', fontFamily: fontFamily.extrabold },
+		progress: { color: colors.muted, fontSize: 14, fontWeight: '600', fontFamily: fontFamily.semibold },
 		muted: { color: colors.muted },
-		nav: { paddingHorizontal: space.md, paddingVertical: space.sm, gap: space.sm },
+		navList: { flexGrow: 0, height: touchMin + space.sm * 2 },
+		nav: { paddingHorizontal: space.md, alignItems: 'center', gap: space.sm },
 		navChipWrap: { maxWidth: 168, marginRight: space.sm },
 		navChipDone: { opacity: 0.65 },
 		restBox: {
@@ -955,16 +1004,18 @@ function makeStyles(colors: ColorPalette) {
 			fontWeight: '700',
 			letterSpacing: 0.6,
 			textTransform: 'uppercase',
-			fontSize: 12
+			fontSize: 12,
+			fontFamily: fontFamily.bold
 		},
 		restValue: {
 			color: colors.accent,
 			fontSize: 48,
 			fontWeight: '800',
 			fontVariant: ['tabular-nums'],
-			lineHeight: 52
+			lineHeight: 52,
+			fontFamily: fontFamily.extrabold
 		},
-		restUnit: { color: colors.muted, fontWeight: '600', marginTop: -6 },
+		restUnit: { color: colors.muted, fontWeight: '600', marginTop: -6, fontFamily: fontFamily.semibold },
 		restBarTrack: {
 			alignSelf: 'stretch',
 			height: 8,
@@ -979,7 +1030,7 @@ function makeStyles(colors: ColorPalette) {
 		card: {
 			gap: space.md
 		},
-		exName: { color: colors.text, fontSize: 22, fontWeight: '800' },
+		exName: { color: colors.text, fontSize: 22, fontWeight: '800', fontFamily: fontFamily.extrabold },
 		exActions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
 		setRow: {
 			gap: space.sm,
@@ -989,7 +1040,7 @@ function makeStyles(colors: ColorPalette) {
 		},
 		setRowDone: { opacity: 0.72 },
 		setHead: { flexDirection: 'row', justifyContent: 'space-between', gap: space.sm },
-		setIndex: { color: colors.text, fontWeight: '700' },
+		setIndex: { color: colors.text, fontWeight: '700', fontFamily: fontFamily.bold },
 		prev: { color: colors.muted, fontSize: 13, flexShrink: 1, textAlign: 'right' },
 		inputs: { flexDirection: 'row', gap: space.sm },
 		input: {
@@ -1004,7 +1055,8 @@ function makeStyles(colors: ColorPalette) {
 			fontSize: 22,
 			fontWeight: '800',
 			textAlign: 'center',
-			fontVariant: ['tabular-nums']
+			fontVariant: ['tabular-nums'],
+			fontFamily: fontFamily.extrabold
 		},
 		setActions: { gap: space.sm },
 		removeHit: {
@@ -1017,7 +1069,8 @@ function makeStyles(colors: ColorPalette) {
 			color: colors.danger,
 			fontSize: 12,
 			textAlign: 'center',
-			fontWeight: '600'
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
 		},
 		note: {
 			minHeight: touchMin,
@@ -1027,7 +1080,8 @@ function makeStyles(colors: ColorPalette) {
 			backgroundColor: colors.bg,
 			color: colors.text,
 			paddingHorizontal: space.md,
-			fontSize: 15
+			fontSize: 15,
+			fontFamily: fontFamily.regular
 		},
 		footer: {
 			paddingHorizontal: space.lg,
@@ -1039,6 +1093,6 @@ function makeStyles(colors: ColorPalette) {
 		},
 		footerRow: { flexDirection: 'row', gap: space.sm, alignItems: 'center' },
 		discard: { minHeight: touchMin, alignItems: 'center', justifyContent: 'center' },
-		discardText: { color: colors.danger, fontWeight: '600' }
+		discardText: { color: colors.danger, fontWeight: '600', fontFamily: fontFamily.semibold }
 	});
 }

@@ -28,6 +28,10 @@ export type CoreColorPalette = {
 	danger: string;
 	dangerBg: string;
 	overlayScrim: string;
+	/** XP bar, streak chip, weight-up cue. */
+	xp: string;
+	/** Muscles worked today on the hero figure. */
+	muscle: string;
 };
 
 export const darkColors: CoreColorPalette = {
@@ -45,7 +49,9 @@ export const darkColors: CoreColorPalette = {
 	accentDim: 'rgba(139, 92, 246, 0.18)',
 	danger: '#f87171',
 	dangerBg: '#3f1d1d',
-	overlayScrim: 'rgba(0, 0, 0, 0.55)'
+	overlayScrim: 'rgba(0, 0, 0, 0.55)',
+	xp: '#f5a524',
+	muscle: '#3ee0c5'
 };
 
 export const lightColors: CoreColorPalette = {
@@ -63,7 +69,9 @@ export const lightColors: CoreColorPalette = {
 	accentDim: 'rgba(139, 92, 246, 0.12)',
 	danger: '#b91c1c',
 	dangerBg: '#fef2f2',
-	overlayScrim: 'rgba(0, 0, 0, 0.35)'
+	overlayScrim: 'rgba(0, 0, 0, 0.35)',
+	xp: '#d97706',
+	muscle: '#0f766e'
 };
 
 export const touchMin = 48;

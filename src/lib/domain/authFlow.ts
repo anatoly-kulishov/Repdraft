@@ -60,6 +60,52 @@ export function isAuthEmailCallback(search: string, hash: string): boolean {
 	return hashParams.has('access_token') && type === '';
 }
 
+/**
+ * Email confirm, magic link, and recovery, including `repdraft://` and `exp://`.
+ * `sb_flow_id` is the PKCE slot supabase-js appends to redirectTo.
+ */
+export type EmailAuthLink =
+	| { kind: 'pkce'; code: string; flowId: string | null }
+	| { kind: 'implicit'; accessToken: string; refreshToken: string; recovery: boolean }
+	| { kind: 'error'; description: string };
+
+export function parseEmailAuthLink(raw: string): EmailAuthLink | null {
+	const trimmed = raw.trim();
+	if (!trimmed) return null;
+	let query = '';
+	let hash = '';
+	try {
+		const url = new URL(trimmed);
+		query = url.search.startsWith('?') ? url.search.slice(1) : url.search;
+		hash = url.hash.startsWith('#') ? url.hash.slice(1) : url.hash;
+	} catch {
+		const hashAt = trimmed.indexOf('#');
+		const queryAt = trimmed.indexOf('?');
+		if (hashAt >= 0) hash = trimmed.slice(hashAt + 1);
+		if (queryAt >= 0) {
+			const end = hashAt > queryAt ? hashAt : trimmed.length;
+			query = trimmed.slice(queryAt + 1, end);
+		}
+	}
+	const q = new URLSearchParams(query);
+	const h = new URLSearchParams(hash);
+	const code = q.get('code') || h.get('code') || '';
+	if (code.length > 0) {
+		const flowId = q.get('sb_flow_id') || h.get('sb_flow_id');
+		return { kind: 'pkce', code, flowId: flowId && flowId.length > 0 ? flowId : null };
+	}
+	const accessToken = h.get('access_token') || q.get('access_token') || '';
+	const refreshToken = h.get('refresh_token') || q.get('refresh_token') || '';
+	if (accessToken && refreshToken) {
+		const type = (h.get('type') || q.get('type') || '').toLowerCase();
+		return { kind: 'implicit', accessToken, refreshToken, recovery: type === 'recovery' };
+	}
+	const description =
+		q.get('error_description') || h.get('error_description') || q.get('error') || h.get('error') || '';
+	if (description) return { kind: 'error', description };
+	return null;
+}
+
 export function passwordsMatch(a: string, b: string): boolean {
 	return a.length > 0 && a === b;
 }
@@ -280,6 +326,23 @@ export function runAuthFlowSelfCheck(): void {
 	}
 	if (!isAuthEmailCallback('', '#access_token=x&type=magiclink')) {
 		throw new Error('isAuthEmailCallback must accept magiclink hash');
+	}
+	const pkce = parseEmailAuthLink('repdraft://auth?code=abc&sb_flow_id=flow1');
+	if (!pkce || pkce.kind !== 'pkce' || pkce.code !== 'abc' || pkce.flowId !== 'flow1') {
+		throw new Error('parseEmailAuthLink must read PKCE code and flow id');
+	}
+	const recovery = parseEmailAuthLink(
+		'repdraft://auth#access_token=a&refresh_token=b&type=recovery'
+	);
+	if (!recovery || recovery.kind !== 'implicit' || !recovery.recovery) {
+		throw new Error('parseEmailAuthLink must read implicit recovery');
+	}
+	if (parseEmailAuthLink('repdraft://auth') !== null) {
+		throw new Error('parseEmailAuthLink must ignore a bare auth url');
+	}
+	const expired = parseEmailAuthLink('exp://127.0.0.1:8081/--/auth?error_description=expired');
+	if (!expired || expired.kind !== 'error' || expired.description !== 'expired') {
+		throw new Error('parseEmailAuthLink must read Expo Go error links');
 	}
 	if (!passwordsMatch('abc123', 'abc123') || passwordsMatch('a', 'b')) {
 		throw new Error('passwordsMatch broken');

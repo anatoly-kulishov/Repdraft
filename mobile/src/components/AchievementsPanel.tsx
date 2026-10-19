@@ -14,7 +14,8 @@ import {
 import type { WorkoutSession } from '@repdraft/domain/types';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
-import { radius, space, touchMin, type ColorPalette } from '../theme';
+import { fontFamily, radius, space, touchMin, type ColorPalette } from '../theme';
+import { AchievementGlyph } from './AchievementGlyph';
 import { Chip } from './Chip';
 
 type Props = {
@@ -73,9 +74,7 @@ export function AchievementsPanel({
 							key={id}
 							style={[styles.row, unlocked && styles.rowOn, isNew && styles.rowNew]}
 						>
-							<Text style={[styles.mark, unlocked && styles.markOn]}>
-								{unlocked ? '✓' : '○'}
-							</Text>
+							<AchievementGlyph id={id} size={32} dim={!unlocked} />
 							<View style={styles.copy}>
 								<Text style={[styles.title, !unlocked && styles.titleOff]}>
 									{tt(achievementTitleKey(id))}
@@ -116,7 +115,7 @@ function makeStyles(colors: ColorPalette) {
 		row: {
 			minHeight: touchMin,
 			flexDirection: 'row',
-			alignItems: 'flex-start',
+			alignItems: 'center',
 			gap: space.md,
 			paddingVertical: space.sm,
 			paddingHorizontal: space.sm,
@@ -127,18 +126,10 @@ function makeStyles(colors: ColorPalette) {
 		},
 		rowOn: { borderColor: colors.accent, backgroundColor: colors.accentDim },
 		rowNew: { borderColor: colors.accent },
-		mark: {
-			color: colors.muted,
-			fontWeight: '800',
-			fontSize: 16,
-			minWidth: 20,
-			marginTop: 2
-		},
-		markOn: { color: colors.accent },
 		copy: { flex: 1, gap: 2 },
-		title: { color: colors.text, fontWeight: '700', fontSize: 15 },
-		titleOff: { color: colors.muted },
-		hint: { color: colors.muted, fontSize: 13, lineHeight: 18 },
+		title: { color: colors.text, fontWeight: '700', fontSize: 15, fontFamily: fontFamily.bold },
+		titleOff: { color: colors.muted, fontFamily: fontFamily.bold },
+		hint: { color: colors.muted, fontSize: 13, lineHeight: 18, fontFamily: fontFamily.regular },
 		barTrack: {
 			height: 6,
 			borderRadius: radius.sm,
@@ -152,7 +143,8 @@ function makeStyles(colors: ColorPalette) {
 			fontSize: 12,
 			fontWeight: '600',
 			marginTop: 2,
-			fontVariant: ['tabular-nums']
+			fontVariant: ['tabular-nums'],
+			fontFamily: fontFamily.semibold
 		}
 	});
 }

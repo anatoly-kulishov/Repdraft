@@ -22,7 +22,8 @@ import {
 import { personalRecordChips } from '@repdraft/domain/records';
 import { shouldShowCoachmark } from '@repdraft/domain/onboarding';
 import type { PersonalRecord } from '@repdraft/domain/types';
-import { exerciseDisplayName, refreshCustomsCache } from '../src/catalog/loadIndex';
+import { exerciseDisplayName, getIndexItem, refreshCustomsCache } from '../src/catalog/loadIndex';
+import { CatalogThumb } from '../src/components/CatalogThumb';
 import { Coachmark } from '../src/components/Coachmark';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { useLocale } from '../src/state/locale';
@@ -31,7 +32,7 @@ import { recordsRepo } from '../src/storage/recordsRepo';
 import { pushRecord, deleteRecordRemote } from '../src/sync/cloudSync';
 import { useBottomChromePad } from '../src/layout/safe';
 import { useAppColors } from '../src/state/theme';
-import { space, touchMin, type ColorPalette } from '../src/theme';
+import { fontFamily, space, touchMin, type ColorPalette } from '../src/theme';
 
 const CATALOG_PAGE_SIZE = 24;
 
@@ -147,10 +148,13 @@ export default function RecordsScreen() {
 					setQuery(v);
 					setVisibleLimit(CATALOG_PAGE_SIZE);
 				}}
-				placeholder={tt('exercises.search')}
+				placeholder={tt('catalog.search')}
 				placeholderTextColor={colors.muted}
 				style={styles.search}
 			/>
+			<Text style={styles.count}>
+				{tt('catalog.countShown', { shown: String(visibleRecords.length), n: String(filtered.length) })}
+			</Text>
 			{editing ? (
 				<View style={styles.editCard}>
 					<Text style={styles.title}>{exerciseDisplayName(editing.exerciseId, locale)}</Text>
@@ -176,7 +180,7 @@ export default function RecordsScreen() {
 						style={styles.noteInput}
 						value={noteText}
 						onChangeText={(v) => setNoteText(v.slice(0, NOTE_MAX))}
-						placeholder={tt('records.note')}
+						placeholder={tt('pr.note')}
 						placeholderTextColor={colors.muted}
 						multiline
 						maxLength={NOTE_MAX}
@@ -237,6 +241,7 @@ export default function RecordsScreen() {
 								]);
 							}}
 						>
+							<CatalogThumb imagePath={getIndexItem(item.exerciseId)?.image} size={48} />
 							<View style={styles.rowBody}>
 								<Text style={styles.title} numberOfLines={2}>
 									{exerciseDisplayName(item.exerciseId, locale)}
@@ -271,6 +276,7 @@ function makeStyles(colors: ColorPalette) {
 		color: colors.text,
 		paddingHorizontal: 14
 	},
+	count: { color: colors.muted, fontSize: 13, fontFamily: fontFamily.regular },
 	editCard: {
 		backgroundColor: colors.panel,
 		borderRadius: 14,
@@ -290,7 +296,8 @@ function makeStyles(colors: ColorPalette) {
 		color: colors.text,
 		paddingHorizontal: 12,
 		textAlign: 'center',
-		fontWeight: '700'
+		fontWeight: '700',
+		fontFamily: fontFamily.bold
 	},
 	noteInput: {
 		minHeight: touchMin,
@@ -301,7 +308,8 @@ function makeStyles(colors: ColorPalette) {
 		color: colors.text,
 		padding: 12,
 		fontSize: 15,
-		textAlignVertical: 'top'
+		textAlignVertical: 'top',
+		fontFamily: fontFamily.regular
 	},
 	emptyWrap: { padding: space.md, gap: space.md },
 	empty: { color: colors.muted, textAlign: 'center', marginTop: 48 },
@@ -317,7 +325,7 @@ function makeStyles(colors: ColorPalette) {
 		gap: 8
 	},
 	rowBody: { flex: 1 },
-	title: { color: colors.text, fontWeight: '700' },
+	title: { color: colors.text, fontWeight: '700', fontFamily: fontFamily.bold },
 	metaRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
@@ -325,11 +333,12 @@ function makeStyles(colors: ColorPalette) {
 		marginTop: 4,
 		flexWrap: 'wrap'
 	},
-	liftChip: { color: colors.accent, fontWeight: '700', fontVariant: ['tabular-nums'] },
+	liftChip: { color: colors.accent, fontWeight: '700', fontVariant: ['tabular-nums'], fontFamily: fontFamily.bold },
 	noteChip: {
 		color: colors.muted,
 		fontSize: 13,
-		flex: 1
+		flex: 1,
+		fontFamily: fontFamily.regular
 	},
 	loadMore: {
 		minHeight: touchMin,

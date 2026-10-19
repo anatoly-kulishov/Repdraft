@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { useAppColors } from '../state/theme';
-import { radius, space, touchMin, type ColorPalette } from '../theme';
+import { fontFamily, radius, space, touchMin, type ColorPalette } from '../theme';
 
 type Props = {
 	label: string;
@@ -47,11 +47,13 @@ function makeStyles(colors: ColorPalette) {
 		text: {
 			color: colors.muted,
 			fontSize: 15,
-			fontWeight: '600'
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
 		},
 		textOn: {
-			color: colors.accentText,
-			fontWeight: '700'
+			color: colors.accentInk,
+			fontWeight: '700',
+			fontFamily: fontFamily.bold
 		}
 	});
 }

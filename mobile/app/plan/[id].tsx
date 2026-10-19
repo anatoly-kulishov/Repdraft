@@ -6,6 +6,7 @@ import {
 	seedOpenSetsFromLastPerformance,
 	startSessionFromPlan
 } from '@repdraft/domain/session';
+import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
 import type { WorkoutPlan } from '@repdraft/domain/types';
 import {
 	altGroupMemberRole,
@@ -15,6 +16,7 @@ import {
 	planPrescribedSetCount,
 	planTargetSummary
 } from '@repdraft/domain/workout';
+import { exerciseMetaHint } from '@repdraft/domain/labels.ru';
 import { shouldShowCoachmark } from '@repdraft/domain/onboarding';
 import {
 	exerciseDisplayName,
@@ -22,18 +24,21 @@ import {
 	loadExerciseIndex,
 	refreshCustomsCache
 } from '../../src/catalog/loadIndex';
+import { CatalogThumb } from '../../src/components/CatalogThumb';
 import { Coachmark } from '../../src/components/Coachmark';
 import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
+import { QuestOnboardingSheet } from '../../src/components/QuestOnboardingSheet';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { routeParam } from '../../src/nav/params';
 import { useLocale } from '../../src/state/locale';
 import { dismissCoachmark, loadOnboarding, noteChecklist } from '../../src/state/onboarding';
 import { useAppColors } from '../../src/state/theme';
+import { needsQuestHeroOnboarding, saveQuestHeroProfile } from '../../src/state/questHero';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { readActiveSession, sessionsRepo, writeActiveSession } from '../../src/storage/sessionsRepo';
-import { space, touchMin, type ColorPalette } from '../../src/theme';
+import { fontFamily, radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
 export default function PlanPreviewScreen() {
 	const { id: idParam } = useLocalSearchParams<{ id: string }>();
@@ -49,6 +54,7 @@ export default function PlanPreviewScreen() {
 	const [busy, setBusy] = useState(false);
 	const [hasActive, setHasActive] = useState(false);
 	const [showCoachmark, setShowCoachmark] = useState(false);
+	const [heroGate, setHeroGate] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -89,6 +95,11 @@ export default function PlanPreviewScreen() {
 			router.replace(`/live/${plan.id}`);
 			return;
 		}
+		if (await needsQuestHeroOnboarding()) {
+			setBusy(false);
+			setHeroGate(true);
+			return;
+		}
 		const history = await sessionsRepo.list();
 		let session = startSessionFromPlan(plan);
 		session = seedOpenSetsFromLastPerformance(session, (exerciseId) =>
@@ -97,6 +108,12 @@ export default function PlanPreviewScreen() {
 		await writeActiveSession(session);
 		setBusy(false);
 		router.replace(`/live/${plan.id}`);
+	}
+
+	async function onHeroReady(profile: QuestHeroProfile) {
+		await saveQuestHeroProfile(profile);
+		setHeroGate(false);
+		await start();
 	}
 
 	if (missing) {
@@ -153,20 +170,25 @@ export default function PlanPreviewScreen() {
 							: aRole !== 'solo'
 								? tt('preview.or')
 								: null;
+					const item = getIndexItem(ex.exerciseId);
+					const metaHint = item ? exerciseMetaHint(item, locale) : '';
 					return (
 						<Pressable
 							key={`${ex.exerciseId}-${i}`}
+							style={({ pressed }) => pressed && styles.pressed}
 							onPress={() => router.push(`/exercise/${ex.exerciseId}`)}
 						>
 							<Panel style={styles.card}>
-								{badge ? <Text style={styles.badge}>{badge}</Text> : null}
-								<Text style={styles.cardTitle} numberOfLines={2}>
-									{exerciseDisplayName(ex.exerciseId, locale)}
-								</Text>
-								<Text style={styles.cardMeta}>{formatExercisePrescription(ex)}</Text>
-								{getIndexItem(ex.exerciseId)?.equipment ? (
-									<Text style={styles.cardMeta}>{getIndexItem(ex.exerciseId)?.equipment}</Text>
-								) : null}
+								<View style={styles.cardRow}>
+									<CatalogThumb imagePath={item?.image} size={56} rounded={radius.sm} />
+									<View style={styles.cardBody}>
+										{badge ? <Text style={styles.badge}>{badge}</Text> : null}
+										<Text style={styles.cardTitle} numberOfLines={2}>
+											{exerciseDisplayName(ex.exerciseId, locale)}
+										</Text>
+										<Text style={styles.cardMeta}>{formatExercisePrescription(ex)} · {metaHint || item?.equipment || '-'}</Text>
+									</View>
+								</View>
 							</Panel>
 						</Pressable>
 					);
@@ -191,6 +213,11 @@ export default function PlanPreviewScreen() {
 					onPress={() => router.push(`/builder/${plan.id}`)}
 				/>
 			</View>
+			<QuestOnboardingSheet
+				visible={heroGate}
+				onComplete={(profile) => void onHeroReady(profile)}
+				onDismiss={() => setHeroGate(false)}
+			/>
 		</View>
 	);
 }
@@ -208,15 +235,18 @@ function makeStyles(colors: ColorPalette) {
 			padding: space.lg,
 			gap: space.md
 		},
-		missing: { color: colors.muted, textAlign: 'center' },
-		empty: { color: colors.muted, marginTop: space.md, lineHeight: 22 },
-		title: { color: colors.text, fontSize: 24, fontWeight: '800' },
-		lead: { color: colors.muted, marginBottom: 4 },
-		metaLine: { color: colors.muted, fontSize: 14, marginBottom: 4 },
+		missing: { color: colors.muted, textAlign: 'center', fontFamily: fontFamily.regular },
+		empty: { color: colors.muted, marginTop: space.md, lineHeight: 22, fontFamily: fontFamily.regular },
+		title: { color: colors.text, fontSize: 24, fontWeight: '800', fontFamily: fontFamily.extrabold },
+		lead: { color: colors.muted, marginBottom: 4, fontFamily: fontFamily.regular },
+		metaLine: { color: colors.muted, fontSize: 14, marginBottom: 4, fontFamily: fontFamily.regular },
 		card: { minHeight: touchMin, gap: space.xs },
-		badge: { color: colors.accentLink, fontSize: 11, fontWeight: '800' },
-		cardTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
-		cardMeta: { color: colors.muted },
+		cardRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+		cardBody: { flex: 1, gap: space.xs },
+		pressed: { opacity: 0.85 },
+		badge: { color: colors.accentLink, fontSize: 11, fontWeight: '800', fontFamily: fontFamily.extrabold },
+		cardTitle: { color: colors.text, fontSize: 16, fontWeight: '700', fontFamily: fontFamily.bold },
+		cardMeta: { color: colors.muted, fontFamily: fontFamily.regular },
 		footer: {
 			paddingHorizontal: space.lg,
 			paddingTop: space.md,

@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import {
 	QUEST_HERO_PROFILE_KEY,
-	isQuestHeroOnboarded,
+	isHeroReady,
 	parseQuestHeroProfile,
 	type QuestHeroProfile
 } from '$lib/domain/questHeroProfile';
@@ -31,5 +31,5 @@ export function saveQuestHeroProfile(profile: QuestHeroProfile): void {
 }
 
 export function needsQuestHeroOnboarding(): boolean {
-	return !isQuestHeroOnboarded(readRaw());
+	return !isHeroReady(loadQuestHeroProfile());
 }

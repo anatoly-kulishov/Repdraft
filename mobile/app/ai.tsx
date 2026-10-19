@@ -23,7 +23,7 @@ import { useLocale } from '../src/state/locale';
 import { plansRepo } from '../src/storage/plansRepo';
 import { pushPlan } from '../src/sync/cloudSync';
 import { useAppColors } from '../src/state/theme';
-import { radius, space, touchMin, type, type ColorPalette } from '../src/theme';
+import { fontFamily, radius, space, touchMin, type, type ColorPalette } from '../src/theme';
 
 type AiExercise = {
 	exerciseId: string;
@@ -337,8 +337,8 @@ function makeStyles(colors: ColorPalette) {
 			borderColor: colors.accent,
 			backgroundColor: colors.accentDim
 		},
-		chipText: { color: colors.text, fontWeight: '600' },
-		chipTextActive: { color: colors.accentText },
+		chipText: { color: colors.text, fontWeight: '600', fontFamily: fontFamily.semibold },
+		chipTextActive: { color: colors.accentText, fontFamily: fontFamily.semibold },
 		pressed: { opacity: 0.85 },
 		field: { gap: space.xs },
 		labelRow: {
@@ -357,9 +357,10 @@ function makeStyles(colors: ColorPalette) {
 			color: colors.text,
 			padding: space.md,
 			fontSize: 16,
-			textAlignVertical: 'top'
+			textAlignVertical: 'top',
+			fontFamily: fontFamily.regular
 		},
-		error: { color: colors.danger, fontSize: 14, marginTop: space.xs },
+		error: { color: colors.danger, fontSize: 14, marginTop: space.xs, fontFamily: fontFamily.regular },
 		skeleton: { gap: space.sm, marginVertical: space.sm },
 		bone: {
 			backgroundColor: colors.panel,
@@ -369,9 +370,9 @@ function makeStyles(colors: ColorPalette) {
 		boneMeta: { height: 14, width: '50%', backgroundColor: colors.panelRaised },
 		boneRow: { height: 56, borderRadius: radius.md },
 		planPanel: { gap: space.sm },
-		planTitle: { ...type.title, color: colors.text, fontSize: 20 },
+		planTitle: { ...type.title, color: colors.text, fontSize: 20, fontFamily: fontFamily.extrabold },
 		planMeta: { ...type.meta, color: colors.muted },
-		planMetaSub: { color: colors.accentLink, fontSize: 13, fontWeight: '600' },
+		planMetaSub: { color: colors.accentLink, fontSize: 13, fontWeight: '600', fontFamily: fontFamily.semibold },
 		exerciseRow: {
 			flexDirection: 'row',
 			alignItems: 'flex-start',
@@ -383,10 +384,11 @@ function makeStyles(colors: ColorPalette) {
 			color: colors.muted,
 			fontWeight: '800',
 			fontSize: 14,
-			textAlign: 'center'
+			textAlign: 'center',
+			fontFamily: fontFamily.extrabold
 		},
 		exerciseBody: { flex: 1, gap: 2 },
-		exerciseTitle: { color: colors.text, fontWeight: '700', fontSize: 15 },
+		exerciseTitle: { color: colors.text, fontWeight: '700', fontSize: 15, fontFamily: fontFamily.bold },
 		exerciseMeta: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' },
 		badge: {
 			color: colors.accentText,
@@ -395,9 +397,10 @@ function makeStyles(colors: ColorPalette) {
 			paddingVertical: 2,
 			borderRadius: radius.pill,
 			fontSize: 11,
-			fontWeight: '700'
+			fontWeight: '700',
+			fontFamily: fontFamily.bold
 		},
-		spec: { color: colors.muted, fontSize: 13 },
+		spec: { color: colors.muted, fontSize: 13, fontFamily: fontFamily.regular },
 		planAction: { marginTop: space.sm }
 	});
 }

@@ -45,6 +45,7 @@ export {
 	totalSetCount,
 	completedExerciseCount,
 	sessionVolumeKg,
+	exerciseBestWeightKg,
 	exerciseLogTopWeight,
 	exerciseLogWeightDelta,
 	previousPlanSession,

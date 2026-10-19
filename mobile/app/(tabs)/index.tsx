@@ -1,23 +1,14 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import {
-	Alert,
-	FlatList,
-	Pressable,
-	StyleSheet,
-	Text,
-	TextInput,
-	View
-} from 'react-native';
-import { ChevronRight, SlidersHorizontal, Sparkles } from 'lucide-react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ChevronRight } from 'lucide-react-native';
 import {
 	dayGreetingPeriod,
 	homeGreetingMessageKey
 } from '@repdraft/domain/greeting';
 import { greetingFirstName } from '@repdraft/domain/greetingName';
 import {
-	buildDemoPlan,
 	shouldShowChecklist,
 	type OnboardingState
 } from '@repdraft/domain/onboarding';
@@ -29,40 +20,38 @@ import {
 	totalSetCount
 } from '@repdraft/domain/session';
 import {
-	collectPlanTargetFacets,
 	createEmptyDraft,
-	duplicatePlan,
 	planExerciseSlotCount,
-	planHasTarget,
 	planTargetSummary,
 	resolveHomeNextPlan,
 	sortPlansByUserOrder
 } from '@repdraft/domain/workout';
-import { PLANS_PAGE_SIZE } from '@repdraft/domain/home';
 import type { QuestState } from '@repdraft/domain/quest';
 import type { WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { loadExerciseIndex } from '../../src/catalog/loadIndex';
 import { QuestHomeBanner } from '../../src/components/QuestHomeBanner';
 import { OnboardingChecklistPanel } from '../../src/components/OnboardingChecklistPanel';
 import { PageSkeleton } from '../../src/components/PageSkeleton';
-import { MuscleFilterSheet } from '../../src/components/MuscleFilterSheet';
 import { Panel } from '../../src/components/Panel';
-import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { getSupabase, isSupabaseConfigured } from '../../src/auth/supabase';
 import { formatRelativeDay } from '@repdraft/i18n/format';
-import { readHomeNextPlanId, writeHomeNextPlanId } from '../../src/live/homeNext';
+import { readHomeNextPlanId } from '../../src/live/homeNext';
 import { readPlanOrder, writePlanOrder } from '../../src/live/planOrder';
 import { loadGreetingName } from '../../src/state/greetingName';
 import { useLocale } from '../../src/state/locale';
 import { useTabScreenPad } from '../../src/layout/safe';
 import { useAppColors } from '../../src/state/theme';
 import { dismissChecklist, noteChecklist } from '../../src/state/onboarding';
-import { isQuestEnabled, loadQuestState } from '../../src/state/quest';
+import { exerciseName } from '@repdraft/domain/exerciseName';
+import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
+import { suggestRaiseExerciseId } from '@repdraft/domain/sessionPayoff';
+import { loadQuestState } from '../../src/state/quest';
+import { loadQuestHeroProfile } from '../../src/state/questHero';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { readActiveSession, sessionsRepo } from '../../src/storage/sessionsRepo';
-import { deletePlanRemote, outboxCount, pushPlan } from '../../src/sync/cloudSync';
-import { radius, space, touchMin, type, type ColorPalette } from '../../src/theme';
+import { outboxCount } from '../../src/sync/cloudSync';
+import { fontFamily, radius, space, touchMin, type, type ColorPalette } from '../../src/theme';
 
 const RECENT_LIMIT = 3;
 
@@ -80,29 +69,25 @@ export default function WorkoutsScreen() {
 	const [active, setActive] = useState<WorkoutSession | null>(null);
 	const [recent, setRecent] = useState<WorkoutSession[]>([]);
 	const [pinnedNextId, setPinnedNextId] = useState<string | null>(null);
-	const [planOrder, setPlanOrder] = useState<string[]>([]);
 	const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
 	const [greetingCustom, setGreetingCustom] = useState('');
 	const [authUser, setAuthUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [searchQuery, setSearchQuery] = useState('');
-	const [plansVisibleLimit, setPlansVisibleLimit] = useState(PLANS_PAGE_SIZE);
-	const [muscleFilter, setMuscleFilter] = useState('');
-	const [muscleSheetOpen, setMuscleSheetOpen] = useState(false);
-	const [questOn, setQuestOn] = useState(false);
 	const [questState, setQuestState] = useState<QuestState | null>(null);
+	const [heroProfile, setHeroProfile] = useState<QuestHeroProfile | null>(null);
+	const [finishedSessions, setFinishedSessions] = useState<WorkoutSession[]>([]);
 	const [pendingSync, setPendingSync] = useState(0);
 
 	const reload = useCallback(async () => {
 		setLoading(true);
-		const [list, activeSession, sessions, order, pinned, qEnabled, qState, outbox] = await Promise.all([
+		const [list, activeSession, sessions, order, pinned, qState, hero, outbox] = await Promise.all([
 			plansRepo.list(),
 			readActiveSession(),
 			sessionsRepo.list(),
 			readPlanOrder(),
 			readHomeNextPlanId(),
-			isQuestEnabled(),
 			loadQuestState(),
+			loadQuestHeroProfile(),
 			outboxCount()
 		]);
 		const nextOb = await noteChecklist('homeSeen');
@@ -112,7 +97,6 @@ export default function WorkoutsScreen() {
 		if (order.length === 0 && ordered.length > 0) {
 			await writePlanOrder(nextOrder);
 		}
-		setPlanOrder(nextOrder);
 		setPlans(ordered);
 		setActive(activeSession && !activeSession.finishedAt ? activeSession : null);
 		setRecent(
@@ -127,8 +111,9 @@ export default function WorkoutsScreen() {
 		const user = sb ? (await sb.auth.getSession()).data.session?.user ?? null : null;
 		setAuthUser(user);
 		setGreetingCustom(await loadGreetingName(user));
-		setQuestOn(qEnabled);
-		setQuestState(qEnabled ? qState : null);
+		setQuestState(qState);
+		setHeroProfile(hero);
+		setFinishedSessions(sessions.filter((s) => s.finishedAt));
 		setPendingSync(outbox);
 		setLoading(false);
 	}, []);
@@ -154,59 +139,6 @@ export default function WorkoutsScreen() {
 		}
 	}
 
-	async function quickStart() {
-		try {
-			const plan = buildDemoPlan(tt('workouts.quick'));
-			await plansRepo.save(plan);
-			router.push(`/plan/${plan.id}`);
-		} catch {
-			Alert.alert(tt('builder.saveFail'));
-		}
-	}
-
-	async function duplicate(plan: WorkoutPlan) {
-		const copy = duplicatePlan(plan);
-		await plansRepo.save(copy);
-		try {
-			await pushPlan(copy);
-		} catch {
-			/* offline */
-		}
-		router.push(`/builder/${copy.id}`);
-	}
-
-	async function movePlan(plan: WorkoutPlan, direction: -1 | 1) {
-		const idx = planOrder.indexOf(plan.id);
-		if (idx < 0) return;
-		const nextIdx = idx + direction;
-		if (nextIdx < 0 || nextIdx >= planOrder.length) return;
-		const next = [...planOrder];
-		[next[idx], next[nextIdx]] = [next[nextIdx], next[idx]];
-		await writePlanOrder(next);
-		reload();
-	}
-
-	function confirmDelete(plan: WorkoutPlan) {
-		Alert.alert(tt('records.delete'), plan.name || tt('workouts.duplicate'), [
-			{ text: tt('common.cancel'), style: 'cancel' },
-			{
-				text: tt('records.delete'),
-				style: 'destructive',
-				onPress: () => {
-					void (async () => {
-						await plansRepo.remove(plan.id);
-						try {
-							await deletePlanRemote(plan.id);
-						} catch {
-							/* offline */
-						}
-						reload();
-					})();
-				}
-			}
-		]);
-	}
-
 	const next = useMemo(
 		() =>
 			resolveHomeNextPlan(
@@ -220,6 +152,12 @@ export default function WorkoutsScreen() {
 		() => new Map(loadExerciseIndex().map((item) => [item.id, item] as const)),
 		[]
 	);
+	const raiseName = useMemo(() => {
+		const id = suggestRaiseExerciseId(finishedSessions);
+		if (!id) return null;
+		const item = indexById.get(id);
+		return item ? exerciseName(item, locale) : null;
+	}, [finishedSessions, indexById, locale]);
 	const showChecklist = onboarding ? shouldShowChecklist(onboarding) : false;
 	const heroMeta = useMemo(() => {
 		if (!next) return null;
@@ -228,39 +166,6 @@ export default function WorkoutsScreen() {
 			summary: planTargetSummary(next, indexById, locale)
 		};
 	}, [next, indexById, locale]);
-	const muscleFacets = useMemo(
-		() => collectPlanTargetFacets(plans, indexById, locale),
-		[plans, indexById, locale]
-	);
-	const filteredPlans = useMemo(() => {
-		let list = plans;
-		const q = searchQuery.trim().toLowerCase();
-		if (q) {
-			list = list.filter((p) => (p.name ?? '').toLowerCase().includes(q));
-		}
-		if (muscleFilter) {
-			list = list.filter((p) => planHasTarget(p, indexById, muscleFilter));
-		}
-		return list;
-	}, [plans, searchQuery, muscleFilter, indexById]);
-	const visiblePlans = useMemo(
-		() => filteredPlans.slice(0, plansVisibleLimit),
-		[filteredPlans, plansVisibleLimit]
-	);
-	const plansHasMore = filteredPlans.length > plansVisibleLimit;
-	const filtersActive = searchQuery.trim().length > 0 || muscleFilter !== '';
-
-	function loadMorePlans() {
-		if (plansVisibleLimit >= filteredPlans.length) return;
-		setPlansVisibleLimit(Math.min(filteredPlans.length, plansVisibleLimit + PLANS_PAGE_SIZE));
-	}
-
-	function clearFilters() {
-		setSearchQuery('');
-		setMuscleFilter('');
-		setPlansVisibleLimit(PLANS_PAGE_SIZE);
-	}
-	const searchActive = searchQuery.trim().length > 0;
 	const greetingName = greetingFirstName(greetingCustom, authUser);
 	const greeting = tt(
 		homeGreetingMessageKey(dayGreetingPeriod(), Boolean(greetingName)),
@@ -291,7 +196,14 @@ export default function WorkoutsScreen() {
 					{greeting}
 				</Text>
 			</View>
-		{questOn && questState ? <QuestHomeBanner state={questState} /> : null}
+		{questState ? (
+			<QuestHomeBanner
+				state={questState}
+				profile={heroProfile}
+				sessions={finishedSessions}
+				raiseName={raiseName}
+			/>
+		) : null}
 		{pendingSync > 0 ? (
 			<Panel style={styles.syncBanner}>
 				<Text style={styles.syncBannerText}>
@@ -413,167 +325,16 @@ export default function WorkoutsScreen() {
 				</Panel>
 			) : null}
 
-			<View style={styles.sectionHead}>
-				<Text style={styles.sectionTitle}>{tt('workouts.title')}</Text>
-			</View>
-				{hasPlans ? (
-					<View style={styles.filterRow}>
-						<TextInput
-							value={searchQuery}
-							onChangeText={(v) => {
-								setSearchQuery(v);
-								setPlansVisibleLimit(PLANS_PAGE_SIZE);
-							}}
-							placeholder={tt('workouts.searchPh')}
-							placeholderTextColor={colors.muted}
-							style={styles.search}
-							autoCapitalize="none"
-							autoCorrect={false}
-							clearButtonMode="while-editing"
-						/>
-						<Pressable
-							accessibilityRole="button"
-							accessibilityLabel={tt('workouts.muscleFilter')}
-							style={({ pressed }) => [
-								styles.filterBtn,
-								(muscleFilter || searchQuery.trim()) && styles.filterBtnActive,
-								pressed && styles.pressed
-							]}
-							onPress={() => setMuscleSheetOpen(true)}
-						>
-							<SlidersHorizontal color={colors.text} size={20} strokeWidth={2} />
-						</Pressable>
-					</View>
-				) : null}
-				{filtersActive ? (
-					<Pressable
-						accessibilityRole="button"
-						style={styles.clearFiltersRow}
-						onPress={clearFilters}
-					>
-						<Text style={styles.clearFiltersText}>{tt('workouts.historyClearFiltersAria')}</Text>
-					</Pressable>
-				) : null}
-			<View style={styles.rowActions}>
-				<View style={styles.flex}>
-					<PrimaryButton label={tt('workouts.create')} onPress={() => void createBlank()} />
-				</View>
-				<View style={styles.flex}>
-					<PrimaryButton
-						label={tt('workouts.quick')}
-						variant="ghost"
-						onPress={() => void quickStart()}
-					/>
-				</View>
-			</View>
 		</View>
 	);
 
 	return (
-		<View style={styles.root}>
-			<FlatList
-				style={styles.flexList}
-				data={visiblePlans}
-				keyExtractor={(item) => item.id}
-				ListHeaderComponent={header}
-				ListEmptyComponent={
-					<Text style={styles.empty}>
-						{searchActive ? tt('builder.noMatches') : tt('workouts.empty')}
-					</Text>
-				}
-				onEndReached={loadMorePlans}
-				onEndReachedThreshold={0.5}
-				contentContainerStyle={[styles.list, { paddingBottom: tabPad }]}
-				renderItem={({ item }) => (
-					<SwipeableRow
-						deleteLabel={tt('workouts.delete')}
-						onDelete={() => confirmDelete(item)}
-					>
-						<Pressable
-							accessibilityRole="button"
-							style={({ pressed }) => [
-								styles.row,
-								next?.id === item.id && styles.rowNext,
-								pressed && styles.pressed
-							]}
-							onPress={() => router.push(`/plan/${item.id}`)}
-							onLongPress={() => {
-								Alert.alert(item.name || tt('workouts.duplicate'), undefined, [
-									{ text: tt('common.cancel'), style: 'cancel' },
-									{
-										text: tt('workouts.pinNext'),
-										onPress: () => {
-											void writeHomeNextPlanId(item.id).then(() => {
-												Alert.alert(
-													tt('common.ok'),
-													tt('home.setNextPlanDone', { name: item.name || tt('workouts.duplicate') })
-												);
-												return reload();
-											});
-										}
-									},
-								{
-									text: tt('workouts.duplicate'),
-									onPress: () => void duplicate(item)
-								},
-								{
-									text: tt('workouts.moveUp'),
-									onPress: () => void movePlan(item, -1)
-								},
-								{
-									text: tt('workouts.moveDown'),
-									onPress: () => void movePlan(item, 1)
-								}
-							]);
-							}}
-						>
-							<View style={styles.rowBody}>
-								<Text style={styles.rowTitle} numberOfLines={2}>
-									{item.name || '-'}
-								</Text>
-								<Text style={styles.rowMeta} numberOfLines={1}>
-									{item.exercises.length} {tt('common.exercises')}
-									{next?.id === item.id ? ` · ${tt('workouts.nextBadge')}` : ''}
-								</Text>
-							</View>
-							<Text style={styles.dupHint}>{tt('workouts.longPress')}</Text>
-						</Pressable>
-					</SwipeableRow>
-				)}
-				ListFooterComponent={
-					<View style={styles.footerStack}>
-						{plansHasMore ? (
-							<View style={styles.loadMore}>
-								<View style={styles.loadMoreDot} />
-							</View>
-						) : null}
-						<Pressable
-							accessibilityRole="button"
-							style={({ pressed }) => [styles.aiRow, pressed && styles.pressed]}
-							onPress={() => router.push('/ai')}
-						>
-							<Sparkles color={colors.muted} size={18} strokeWidth={2.25} />
-							<Text style={styles.aiRowText}>{tt('ai.open')}</Text>
-							<ChevronRight color={colors.muted} size={16} strokeWidth={2.25} />
-						</Pressable>
-					</View>
-				}
-			/>
-			<MuscleFilterSheet
-				open={muscleSheetOpen}
-				selected={muscleFilter}
-				targets={muscleFacets}
-				onSelect={(target) => {
-					setMuscleFilter(target);
-					setPlansVisibleLimit(PLANS_PAGE_SIZE);
-				}}
-				onClear={() => {
-					setMuscleFilter('');
-					setPlansVisibleLimit(PLANS_PAGE_SIZE);
-				}}
-				onDismiss={() => setMuscleSheetOpen(false)}
-			/>
-		</View>
+		<ScrollView
+			style={styles.flexList}
+			contentContainerStyle={[styles.list, { paddingBottom: tabPad }]}
+		>
+			{header}
+		</ScrollView>
 	);
 }
 
@@ -610,7 +371,8 @@ function makeStyles(colors: ColorPalette) {
 		backgroundColor: colors.panel,
 		color: colors.text,
 		paddingHorizontal: space.md,
-		fontSize: 16
+		fontSize: 16,
+		fontFamily: fontFamily.regular
 	},
 	section: { gap: space.sm },
 	sectionHead: {
@@ -646,7 +408,7 @@ function makeStyles(colors: ColorPalette) {
 		gap: space.sm
 	},
 	recentBody: { flex: 1 },
-	recentTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
+	recentTitle: { color: colors.text, fontSize: 16, fontWeight: '700', fontFamily: fontFamily.bold },
 	recentMeta: { ...type.meta, color: colors.muted, marginTop: 2 },
 	rowActions: { flexDirection: 'row', gap: space.sm },
 	flex: { flex: 1 },
@@ -664,10 +426,17 @@ function makeStyles(colors: ColorPalette) {
 		gap: space.sm
 	},
 	rowBody: { flex: 1 },
-	rowTitle: { color: colors.text, fontSize: 17, fontWeight: '700' },
-	rowMeta: { color: colors.muted, marginTop: 4, fontSize: 13 },
+	rowTitle: { color: colors.text, fontSize: 17, fontWeight: '700', fontFamily: fontFamily.bold },
+	rowMeta: { color: colors.muted, marginTop: 4, fontSize: 13, fontFamily: fontFamily.medium },
 	rowNext: { borderColor: colors.accent, backgroundColor: colors.accentDim },
-	dupHint: { color: colors.muted, fontSize: 11, fontWeight: '600', maxWidth: 72, textAlign: 'right' },
+	dupHint: {
+		color: colors.muted,
+		fontSize: 11,
+		fontWeight: '600',
+		maxWidth: 72,
+		textAlign: 'right',
+		fontFamily: fontFamily.semibold
+	},
 	aiRow: {
 		minHeight: touchMin,
 		backgroundColor: colors.panel,
@@ -719,7 +488,8 @@ function makeStyles(colors: ColorPalette) {
 	clearFiltersText: {
 		color: colors.accentLink,
 		fontWeight: '700',
-		fontSize: 13
+		fontSize: 13,
+		fontFamily: fontFamily.bold
 	},
 	syncBanner: {
 		backgroundColor: colors.accentDim,
@@ -728,7 +498,8 @@ function makeStyles(colors: ColorPalette) {
 	syncBannerText: {
 		color: colors.accentText,
 		fontWeight: '600',
-		fontSize: 14
+		fontSize: 14,
+		fontFamily: fontFamily.semibold
 	}
 	});
 }

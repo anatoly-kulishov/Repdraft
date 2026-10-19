@@ -178,3 +178,20 @@ export function updateExercise(
 		})
 	);
 }
+
+/** Keep sets and rest. No-op if the target id is already in the plan. */
+export function replacePlanExercise(
+	plan: WorkoutPlan,
+	fromExerciseId: string,
+	toExerciseId: string
+): WorkoutPlan {
+	if (fromExerciseId === toExerciseId) return plan;
+	if (!plan.exercises.some((ex) => ex.exerciseId === fromExerciseId)) return plan;
+	if (plan.exercises.some((ex) => ex.exerciseId === toExerciseId)) return plan;
+	return withUpdated(
+		plan,
+		plan.exercises.map((ex) =>
+			ex.exerciseId === fromExerciseId ? { ...ex, exerciseId: toExerciseId } : ex
+		)
+	);
+}

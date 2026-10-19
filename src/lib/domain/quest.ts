@@ -3,12 +3,12 @@
  * XP for sticking to a chosen weekly plan - not tonnage or health claims.
  * Pure domain - persistence lives in stores/storage.
  */
+import { exerciseBestWeightKg } from './sessionStats';
 import type { WorkoutSession } from './types';
 
 /** Bump when XP / campaign rules change incompatibly. */
-export const QUEST_RULES_VERSION = 1;
+export const QUEST_RULES_VERSION = 2;
 
-export const QUEST_ENABLED_STORAGE_KEY = 'repdraft:quest-enabled';
 export const QUEST_STATE_STORAGE_KEY = 'repdraft:quest-state';
 
 export const XP_PER_COUNTED_SESSION = 100;
@@ -18,6 +18,11 @@ export const MIN_WEEKLY_GOAL = 1;
 export const MAX_WEEKLY_GOAL = 7;
 /** XP per hero level (cosmetic). */
 export const XP_PER_LEVEL = 200;
+/** Extra XP when this session's working weight beats the previous one. */
+export const XP_WEIGHT_UP = 10;
+export const XP_WEIGHT_UP_CAP = 3;
+/** Applied to base + weight-up XP from the second consecutive active week. */
+export const STREAK_BONUS_RATE = 0.1;
 
 export const STARTER_CAMPAIGN_ID = 'starter-campaign';
 export const STARTER_CAMPAIGN_CHAPTERS = 4;
@@ -52,6 +57,20 @@ export type QuestState = {
 	week: QuestWeek;
 	/** Session ids already rewarded (cross-week idempotency). */
 	rewardedSessionIds: string[];
+	/** Consecutive weeks that already have a counted session, including the current one. */
+	streakWeeks: number;
+	/** Monday key of the last week that earned a counted session. */
+	lastActiveWeekKey: string | null;
+	/** A full week was missed. Cleared on the next counted session. Banked XP stays. */
+	streakBroken: boolean;
+};
+
+export type QuestXpBreakdown = {
+	base: number;
+	weightUp: number;
+	weightUpCount: number;
+	streakBonus: number;
+	weeklyGoal: number;
 };
 
 export type QuestApplyResult = {
@@ -62,11 +81,8 @@ export type QuestApplyResult = {
 	goalJustMet: boolean;
 	chapterAdvanced: boolean;
 	campaignPaused: boolean;
+	breakdown: QuestXpBreakdown;
 };
-
-export function parseQuestEnabled(raw: string | null | undefined): boolean {
-	return raw === '1' || raw === 'true';
-}
 
 export function clampWeeklyGoal(n: number): number {
 	if (!Number.isFinite(n)) return DEFAULT_WEEKLY_GOAL;
@@ -92,12 +108,15 @@ export function heroXpProgress(totalXp: number): HeroXpProgress {
 }
 
 export type QuestDailyHint =
+	| { key: 'quest.dailyRaise'; vars: { name: string } }
 	| { key: 'quest.dailyWeekly'; vars: { n: number } }
 	| { key: 'quest.dailyCampaign' }
 	| { key: 'quest.dailySession'; vars: { xp: number } };
 
-/** One-line home hint from current Quest state (no extra persistence). */
-export function questDailyHint(state: QuestState): QuestDailyHint {
+/** One-line home hint. `raiseName` wins when the last session has a loaded lift. */
+export function questDailyHint(state: QuestState, raiseName?: string | null): QuestDailyHint {
+	const name = raiseName?.trim();
+	if (name) return { key: 'quest.dailyRaise', vars: { name } };
 	const done = state.week.countedSessionIds.length;
 	const remaining = state.weeklyGoal - done;
 	if (remaining > 0) {
@@ -135,8 +154,29 @@ export function createInitialQuestState(now: Date = new Date()): QuestState {
 		hero: { totalXp: 0 },
 		campaign: null,
 		week: emptyQuestWeek(weekKeyFromDate(now)),
-		rewardedSessionIds: []
+		rewardedSessionIds: [],
+		streakWeeks: 0,
+		lastActiveWeekKey: null,
+		streakBroken: false
 	};
+}
+
+export function emptyQuestBreakdown(): QuestXpBreakdown {
+	return { base: 0, weightUp: 0, weightUpCount: 0, streakBonus: 0, weeklyGoal: 0 };
+}
+
+function weekIndex(weekKey: string): number | null {
+	const t = Date.parse(`${weekKey}T00:00:00`);
+	if (!Number.isFinite(t)) return null;
+	return Math.round(t / (7 * 86_400_000));
+}
+
+/** How many Monday-weeks `newer` is after `older`. */
+export function weeksBetweenKeys(older: string, newer: string): number | null {
+	const a = weekIndex(older);
+	const b = weekIndex(newer);
+	if (a == null || b == null) return null;
+	return b - a;
 }
 
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -180,6 +220,12 @@ export function parseQuestState(raw: unknown, now: Date = new Date()): QuestStat
 	const rewardedSessionIds = Array.isArray(raw.rewardedSessionIds)
 		? raw.rewardedSessionIds.filter((id): id is string => typeof id === 'string')
 		: [];
+	const streakWeeks =
+		typeof raw.streakWeeks === 'number' && Number.isFinite(raw.streakWeeks)
+			? Math.max(0, Math.floor(raw.streakWeeks))
+			: 0;
+	const lastActiveWeekKey =
+		typeof raw.lastActiveWeekKey === 'string' && raw.lastActiveWeekKey ? raw.lastActiveWeekKey : null;
 	return {
 		rulesVersion: QUEST_RULES_VERSION,
 		weeklyGoal,
@@ -192,10 +238,12 @@ export function parseQuestState(raw: unknown, now: Date = new Date()): QuestStat
 				isObject(raw.week) && typeof raw.week.xpEarned === 'number'
 					? Math.max(0, Math.floor(raw.week.xpEarned))
 					: 0,
-			goalMetAwarded:
-				isObject(raw.week) && raw.week.goalMetAwarded === true
+			goalMetAwarded: isObject(raw.week) && raw.week.goalMetAwarded === true
 		},
-		rewardedSessionIds
+		rewardedSessionIds,
+		streakWeeks,
+		lastActiveWeekKey,
+		streakBroken: raw.streakBroken === true
 	};
 }
 
@@ -209,19 +257,31 @@ export function ensureQuestWeek(state: QuestState, now: Date): QuestState {
 	const key = weekKeyFromDate(now);
 	if (state.week.weekKey === key) return state;
 	let campaign = state.campaign;
-	let campaignPaused = false;
 	if (campaign && campaign.status === 'active' && state.week.countedSessionIds.length === 0) {
 		campaign = {
 			...campaign,
 			status: 'paused',
 			pausedAt: now.toISOString()
 		};
-		campaignPaused = true;
 	}
-	void campaignPaused;
+	const gap = weeksBetweenKeys(state.week.weekKey, key);
+	const oldHadSessions = state.week.countedSessionIds.length > 0;
+	const missed = gap == null || gap > 1 || !oldHadSessions;
+	const hadStreak = state.streakWeeks > 0 || state.lastActiveWeekKey != null;
+	let streakWeeks = state.streakWeeks;
+	let lastActiveWeekKey = state.lastActiveWeekKey;
+	let streakBroken = state.streakBroken;
+	if (missed && hadStreak) {
+		streakWeeks = 0;
+		lastActiveWeekKey = null;
+		streakBroken = true;
+	}
 	return {
 		...state,
 		campaign,
+		streakWeeks,
+		lastActiveWeekKey,
+		streakBroken,
 		week: emptyQuestWeek(key)
 	};
 }
@@ -254,6 +314,48 @@ export function setWeeklyGoal(state: QuestState, goal: number): QuestState {
 	return { ...state, weeklyGoal: clampWeeklyGoal(goal) };
 }
 
+/** Exercises whose working weight beat the previous finished session, capped. */
+export function weightUpExerciseIds(
+	session: WorkoutSession,
+	prior: readonly WorkoutSession[]
+): string[] {
+	const previous = prior
+		.filter((s) => s.id !== session.id && s.finishedAt)
+		.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''));
+	const seen = new Set<string>();
+	const ups: string[] = [];
+	for (const ex of session.exercises) {
+		if (seen.has(ex.exerciseId)) continue;
+		seen.add(ex.exerciseId);
+		const nowW = exerciseBestWeightKg(session, ex.exerciseId);
+		if (nowW == null) continue;
+		const prev = previous.find((s) => exerciseBestWeightKg(s, ex.exerciseId) != null);
+		if (!prev) continue;
+		const prevW = exerciseBestWeightKg(prev, ex.exerciseId);
+		if (prevW != null && nowW > prevW) ups.push(ex.exerciseId);
+		if (ups.length >= XP_WEIGHT_UP_CAP) break;
+	}
+	return ups;
+}
+
+function bumpStreak(state: QuestState, weekKey: string): Pick<
+	QuestState,
+	'streakWeeks' | 'lastActiveWeekKey' | 'streakBroken'
+> {
+	if (state.lastActiveWeekKey === weekKey) {
+		return {
+			streakWeeks: Math.max(1, state.streakWeeks),
+			lastActiveWeekKey: weekKey,
+			streakBroken: false
+		};
+	}
+	const gap = state.lastActiveWeekKey
+		? weeksBetweenKeys(state.lastActiveWeekKey, weekKey)
+		: null;
+	const streakWeeks = gap === 1 && state.streakWeeks > 0 ? state.streakWeeks + 1 : 1;
+	return { streakWeeks, lastActiveWeekKey: weekKey, streakBroken: false };
+}
+
 /**
  * Award XP for a finished session. Idempotent per session id.
  * Extra sessions beyond weeklyGoal grant no XP.
@@ -261,31 +363,26 @@ export function setWeeklyGoal(state: QuestState, goal: number): QuestState {
 export function applyFinishedSessionToQuest(
 	state: QuestState,
 	session: WorkoutSession,
-	now: Date = new Date()
+	now: Date = new Date(),
+	prior: readonly WorkoutSession[] = []
 ): QuestApplyResult {
 	let next = ensureQuestWeek(state, now);
-	let campaignPaused = next.campaign?.status === 'paused' && state.campaign?.status === 'active';
+	const campaignPaused = next.campaign?.status === 'paused' && state.campaign?.status === 'active';
+	const idle = {
+		xpGained: 0,
+		counted: false,
+		goalJustMet: false,
+		chapterAdvanced: false,
+		campaignPaused: Boolean(campaignPaused),
+		breakdown: emptyQuestBreakdown()
+	};
 
 	if (!isSessionCountableForQuest(session)) {
-		return {
-			state: next,
-			xpGained: 0,
-			counted: false,
-			goalJustMet: false,
-			chapterAdvanced: false,
-			campaignPaused: Boolean(campaignPaused)
-		};
+		return { state: next, ...idle };
 	}
 
 	if (next.rewardedSessionIds.includes(session.id)) {
-		return {
-			state: next,
-			xpGained: 0,
-			counted: false,
-			goalJustMet: false,
-			chapterAdvanced: false,
-			campaignPaused: Boolean(campaignPaused)
-		};
+		return { state: next, ...idle, campaignPaused: Boolean(campaignPaused) };
 	}
 
 	if (next.campaign?.status === 'paused') {
@@ -306,16 +403,26 @@ export function applyFinishedSessionToQuest(
 			counted: false,
 			goalJustMet: false,
 			chapterAdvanced: false,
-			campaignPaused: false
+			campaignPaused: false,
+			breakdown: emptyQuestBreakdown()
 		};
 	}
 
-	let xpGained = XP_PER_COUNTED_SESSION;
+	const streak = bumpStreak(next, next.week.weekKey);
+	next = { ...next, ...streak };
+	const weightIds = weightUpExerciseIds(session, prior);
+	const base = XP_PER_COUNTED_SESSION;
+	const weightUp = weightIds.length * XP_WEIGHT_UP;
+	const streakBonus =
+		next.streakWeeks >= 2 ? Math.round((base + weightUp) * STREAK_BONUS_RATE) : 0;
+	let xpGained = base + weightUp + streakBonus;
+	let weeklyGoalXp = 0;
 	const countedIds = [...next.week.countedSessionIds, session.id];
 	let goalMetAwarded = next.week.goalMetAwarded;
 	let goalJustMet = false;
 	if (!goalMetAwarded && countedIds.length >= next.weeklyGoal) {
-		xpGained += XP_WEEKLY_GOAL_BONUS;
+		weeklyGoalXp = XP_WEEKLY_GOAL_BONUS;
+		xpGained += weeklyGoalXp;
 		goalMetAwarded = true;
 		goalJustMet = true;
 	}
@@ -356,6 +463,13 @@ export function applyFinishedSessionToQuest(
 		counted: true,
 		goalJustMet,
 		chapterAdvanced,
-		campaignPaused: false
+		campaignPaused: false,
+		breakdown: {
+			base,
+			weightUp,
+			weightUpCount: weightIds.length,
+			streakBonus,
+			weeklyGoal: weeklyGoalXp
+		}
 	};
 }

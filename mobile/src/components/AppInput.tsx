@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { TextInput, StyleSheet, type TextInputProps, type ColorValue } from 'react-native';
 import { useAppColors } from '../state/theme';
-import { radius, touchMin, type ColorPalette } from '../theme';
+import { fontFamily, radius, touchMin, type ColorPalette } from '../theme';
 
 type Props = TextInputProps & {
 	minHeight?: number;
@@ -32,7 +32,8 @@ function makeStyles(colors: ColorPalette, minHeight: number) {
 			fontSize: 17,
 			fontWeight: '600',
 			paddingHorizontal: 14,
-			paddingVertical: 0
+			paddingVertical: 0,
+			fontFamily: fontFamily.semibold
 		}
 	});
 }

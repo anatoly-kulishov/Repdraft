@@ -90,7 +90,7 @@
 				aria-checked={preset === 'today' && !rangeActive}
 				onclick={() => pickPreset('today')}
 			>
-				<span class="catalog-equipment-sheet-option__label">{translate(lang, 'home.today')}</span>
+				<span class="catalog-equipment-sheet-option__label">{translate(lang, 'history.filterToday')}</span>
 				{#if preset === 'today' && !rangeActive}
 					<span class="catalog-equipment-sheet-option__check" aria-hidden="true">
 						<LucideIcon icon={Check} size={ICON_SMALL} />

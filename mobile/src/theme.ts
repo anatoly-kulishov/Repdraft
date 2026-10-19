@@ -13,11 +13,30 @@ export const space = sharedSpace;
 
 export const radius = sharedRadius;
 
+export const fontFamily = {
+	regular: 'Inter_400Regular',
+	medium: 'Inter_500Medium',
+	semibold: 'Inter_600SemiBold',
+	bold: 'Inter_700Bold',
+	extrabold: 'Inter_800ExtraBold'
+} as const;
+
 export const type = {
-	lead: { fontSize: 15, lineHeight: 22, fontWeight: '500' as const },
-	title: { fontSize: 28, lineHeight: 34, fontWeight: '800' as const },
-	header: { fontSize: 17, lineHeight: 22, fontWeight: '700' as const },
-	section: { fontSize: 13, lineHeight: 18, fontWeight: '700' as const, letterSpacing: 0.4 },
-	body: { fontSize: 17, lineHeight: 22, fontWeight: '600' as const },
-	meta: { fontSize: 13, lineHeight: 18, fontWeight: '500' as const }
+	lead: {
+		fontSize: 15,
+		lineHeight: 22,
+		fontWeight: '500' as const,
+		fontFamily: fontFamily.regular
+	},
+	title: { fontSize: 28, lineHeight: 34, fontWeight: '800' as const, fontFamily: fontFamily.extrabold },
+	header: { fontSize: 17, lineHeight: 22, fontWeight: '700' as const, fontFamily: fontFamily.bold },
+	section: {
+		fontSize: 13,
+		lineHeight: 18,
+		fontWeight: '700' as const,
+		letterSpacing: 0.4,
+		fontFamily: fontFamily.bold
+	},
+	body: { fontSize: 17, lineHeight: 22, fontWeight: '600' as const, fontFamily: fontFamily.semibold },
+	meta: { fontSize: 13, lineHeight: 18, fontWeight: '500' as const, fontFamily: fontFamily.medium }
 };

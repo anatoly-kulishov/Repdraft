@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Sparkles, X } from 'lucide-react-native';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
-import { radius, space, touchMin, type, type ColorPalette } from '../theme';
+import { fontFamily, radius, space, touchMin, type, type ColorPalette } from '../theme';
 
 type Props = {
 	message: string;
@@ -56,7 +56,8 @@ function makeStyles(colors: ColorPalette) {
 			color: colors.text,
 			fontSize: 14,
 			lineHeight: 20,
-			flex: 1
+			flex: 1,
+			fontFamily: fontFamily.regular
 		},
 		dismiss: {
 			minHeight: touchMin,

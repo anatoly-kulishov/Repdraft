@@ -10,6 +10,7 @@
 		type AchievementId,
 		type AchievementsState
 	} from '$lib/domain/achievements';
+	import AchievementGlyph from '$lib/components/AchievementGlyph.svelte';
 	import Chip from '$lib/components/Chip.svelte';
 	import type { WorkoutSession } from '$lib/domain/types';
 	import { translate } from '$lib/i18n/messages';
@@ -70,9 +71,7 @@
 			class:ach-panel__row--on={unlocked}
 			class:ach-panel__row--new={isNew}
 		>
-			<span class="ach-panel__mark" class:ach-panel__mark--on={unlocked} aria-hidden="true">
-				{unlocked ? '✓' : '○'}
-			</span>
+			<AchievementGlyph {id} size={32} dim={!unlocked} />
 			<div class="ach-panel__copy">
 				<p class="ach-panel__title" class:ach-panel__title--off={!unlocked}>
 					{translate(lang, achievementTitleKey(id))}
@@ -117,11 +116,11 @@
 	}
 	.ach-panel__row {
 		display: flex;
+		align-items: center;
 		gap: 0.65rem;
 		padding: 0.65rem 0.75rem;
 		border-radius: var(--radius-md, 10px);
 		border: 1px solid var(--color-border);
-		opacity: 0.85;
 	}
 	.ach-panel__row--on {
 		opacity: 1;
@@ -129,14 +128,6 @@
 	}
 	.ach-panel__row--new {
 		border-color: var(--color-accent);
-	}
-	.ach-panel__mark {
-		font-weight: 700;
-		opacity: 0.45;
-	}
-	.ach-panel__mark--on {
-		color: var(--color-accent);
-		opacity: 1;
 	}
 	.ach-panel__title {
 		margin: 0;

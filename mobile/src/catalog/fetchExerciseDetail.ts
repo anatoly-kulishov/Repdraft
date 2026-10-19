@@ -16,18 +16,49 @@ export type ExerciseDetailPayload = Pick<
 
 const cache = new Map<string, ExerciseDetailPayload>();
 
+const bundledTechnique = require('../../assets/data/exercises.technique.json') as Record<
+	string,
+	ExerciseDetailPayload
+>;
+
+function lookupBundled(id: string): ExerciseDetailPayload | null {
+	const hit = bundledTechnique[id];
+	if (hit?.id) return hit;
+	return null;
+}
+
 export async function fetchExerciseDetail(id: string): Promise<ExerciseDetailPayload | null> {
 	const hit = cache.get(id);
 	if (hit) return hit;
+
+	// Dev uses the bundled asset so a local web server is not required for technique.
+	if (__DEV__) {
+		const local = lookupBundled(id);
+		if (local) {
+			cache.set(id, local);
+			return local;
+		}
+	}
+
 	try {
 		const res = await fetch(`${webOrigin()}/api/catalog/exercise/${encodeURIComponent(id)}`);
-		if (!res.ok) return null;
+		if (!res.ok) {
+			const fallback = lookupBundled(id);
+			if (fallback) cache.set(id, fallback);
+			return fallback;
+		}
 		const data = (await res.json()) as ExerciseDetailPayload;
-		if (!data?.id) return null;
+		if (!data?.id) {
+			const fallback = lookupBundled(id);
+			if (fallback) cache.set(id, fallback);
+			return fallback;
+		}
 		cache.set(id, data);
 		return data;
 	} catch {
-		return null;
+		const fallback = lookupBundled(id);
+		if (fallback) cache.set(id, fallback);
+		return fallback;
 	}
 }
 

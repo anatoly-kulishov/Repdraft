@@ -396,6 +396,10 @@
 		plans.reorderInOrder(fromOrder, toOrder);
 	}
 
+	function movePlanStep(index: number, direction: -1 | 1) {
+		reorderPlan(index, index + direction);
+	}
+
 	/** One swipe left: pin (if not next) then delete — same rail pattern as Saved. */
 	function planSwipeActions(plan: (typeof $plans)[number]): SwipeRowAction[] {
 		const actions: SwipeRowAction[] = [];
@@ -852,6 +856,8 @@
 								onExitComplete={(id) => void onPlanExitComplete(id)}
 								onPreview={rememberPreviewRows}
 								onReorder={reorderPlan}
+								planCount={listPlans.length}
+								onMove={movePlanStep}
 							/>
 						{/each}
 					</ul>

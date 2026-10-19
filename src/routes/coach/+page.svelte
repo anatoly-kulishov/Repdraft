@@ -2,15 +2,18 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import { buildCoachHints } from '$lib/domain/coachHints';
+	import { buildCoachHints, suggestPlanReplace } from '$lib/domain/coachHints';
+	import { computeProgressOverview } from '$lib/domain/progressOverview';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelBodyPart } from '$lib/domain/labels.ru';
 	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
-	import { appendExerciseToHomePlan } from '$lib/workout/planPatch';
+	import { appendExerciseToHomePlan, replaceExerciseInHomePlan } from '$lib/workout/planPatch';
+	import { homeNextPlan } from '$lib/stores/homeNextPlan';
 	import { live } from '$lib/stores/live';
+	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
@@ -25,6 +28,26 @@
 		});
 	});
 
+	let homePlan = $derived.by(() => {
+		const list = $plans;
+		const pinned = $homeNextPlan;
+		return (pinned ? list.find((p) => p.id === pinned) : null) ?? list[0] ?? null;
+	});
+
+	let overview = $derived(
+		computeProgressOverview($live.history, new Date(), (id) => indexById.get(id)?.body_part ?? null)
+	);
+
+	let replace = $derived.by(() => {
+		if (!homePlan || indexById.size === 0 || !overview.laggingBodyPart) return null;
+		return suggestPlanReplace(
+			homePlan.exercises.map((ex) => ex.exerciseId),
+			[overview.laggingBodyPart],
+			[...indexById.values()],
+			(id) => indexById.get(id)?.body_part ?? null
+		);
+	});
+
 	let hints = $derived.by(() => {
 		const finished = $live.history
 			.filter((s) => s.finishedAt)
@@ -35,6 +58,21 @@
 		const bodyPartFor = (id: string) => indexById.get(id)?.body_part ?? null;
 		return buildCoachHints(focus, finished, catalog, bodyPartFor);
 	});
+
+	async function replaceHint() {
+		if (!replace) return;
+		try {
+			const planId = await replaceExerciseInHomePlan(replace.fromExerciseId, replace.toExerciseId);
+			if (!planId) {
+				toasts.show(translate(lang, 'coach.noPlan'), 'error');
+				return;
+			}
+			toasts.show(translate(lang, 'coach.replaced'), 'success');
+			await goto(`/builder/${planId}`);
+		} catch (err) {
+			toasts.show(translateError(lang, err, 'common.error'), 'error');
+		}
+	}
 
 	async function addHint(exerciseId: string) {
 		try {
@@ -61,7 +99,8 @@
 		preferHistoryBack
 	/>
 	<p class="coach-lead">{translate(lang, 'coach.lead')}</p>
-	{#if hints.length === 0}
+	<p class="coach-lead">{translate(lang, 'coach.reviewed', { n: String(overview.workouts30d) })}</p>
+	{#if hints.length === 0 && !replace}
 		<AppPanel class="text-left">
 			<p class="coach-muted">{translate(lang, 'coach.empty')}</p>
 			<a href="/" class="btn-primary coach-empty-cta">{translate(lang, 'coach.emptyCta')}</a>
@@ -81,6 +120,20 @@
 				</AppButton>
 			</AppPanel>
 		{/each}
+		{#if replace}
+			{@const fromMeta = indexById.get(replace.fromExerciseId)}
+			{@const toMeta = indexById.get(replace.toExerciseId)}
+			<AppPanel class="coach-card text-left">
+				<p class="coach-card__title">
+					{fromMeta ? exerciseName(fromMeta, lang) : replace.fromExerciseId}
+				</p>
+				<p class="coach-card__meta">
+					→ {toMeta ? exerciseName(toMeta, lang) : replace.toExerciseId}
+				</p>
+				<p class="coach-card__meta">{labelBodyPart(replace.bodyPart, lang)}</p>
+				<AppButton onclick={() => void replaceHint()}>{translate(lang, 'coach.replace')}</AppButton>
+			</AppPanel>
+		{/if}
 	{/if}
 </section>
 

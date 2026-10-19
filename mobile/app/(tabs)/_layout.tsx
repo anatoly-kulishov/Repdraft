@@ -1,9 +1,9 @@
 import { Tabs } from 'expo-router';
-import { Dumbbell, House, TrendingUp, UserRound } from 'lucide-react-native';
+import { ClipboardList, Dumbbell, House, TrendingUp, UserRound } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocale } from '../../src/state/locale';
 import { useAppColors } from '../../src/state/theme';
-import { touchMin } from '../../src/theme';
+import { fontFamily, touchMin } from '../../src/theme';
 
 export default function TabsLayout() {
 	const { tt } = useLocale();
@@ -16,7 +16,7 @@ export default function TabsLayout() {
 			screenOptions={{
 				headerStyle: { backgroundColor: colors.bg },
 				headerTintColor: colors.text,
-				headerTitleStyle: { fontWeight: '800' },
+				headerTitleStyle: { fontWeight: '800', fontFamily: fontFamily.extrabold },
 				headerShadowVisible: false,
 				tabBarStyle: {
 					backgroundColor: colors.bg,
@@ -28,7 +28,7 @@ export default function TabsLayout() {
 				},
 				tabBarActiveTintColor: colors.accent,
 				tabBarInactiveTintColor: colors.muted,
-				tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+				tabBarLabelStyle: { fontSize: 11, fontWeight: '700', fontFamily: fontFamily.bold },
 				tabBarShowLabel: true
 			}}
 		>
@@ -39,6 +39,16 @@ export default function TabsLayout() {
 					tabBarLabel: tt('tab.home'),
 					tabBarIcon: ({ color, size }) => (
 						<House color={color} size={size} strokeWidth={2.25} />
+					)
+				}}
+			/>
+			<Tabs.Screen
+				name="workouts"
+				options={{
+					title: tt('nav.workouts'),
+					tabBarLabel: tt('nav.workouts'),
+					tabBarIcon: ({ color, size }) => (
+						<ClipboardList color={color} size={size} strokeWidth={2.25} />
 					)
 				}}
 			/>

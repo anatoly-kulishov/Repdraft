@@ -12,7 +12,8 @@ import {
 	updateLoggedSet
 } from '@repdraft/domain/session';
 import type { WorkoutSession } from '@repdraft/domain/types';
-import { exerciseDisplayName, refreshCustomsCache } from '../../src/catalog/loadIndex';
+import { exerciseDisplayName, getIndexItem, refreshCustomsCache } from '../../src/catalog/loadIndex';
+import { CatalogThumb } from '../../src/components/CatalogThumb';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { TechniqueSheet } from '../../src/components/TechniqueSheet';
@@ -23,7 +24,7 @@ import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { clearSessionTombstone } from '../../src/sync/tombstones';
 import { deleteSessionRemote, pushPlan, pushSession } from '../../src/sync/cloudSync';
 import { useAppColors } from '../../src/state/theme';
-import { space, touchMin, type ColorPalette } from '../../src/theme';
+import { fontFamily, space, touchMin, type ColorPalette } from '../../src/theme';
 
 export default function HistoryDetailScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>();
@@ -120,7 +121,7 @@ export default function HistoryDetailScreen() {
 	if (!session) {
 		return (
 			<View style={styles.center}>
-				<Text style={{ color: colors.muted }}>…</Text>
+				<Text style={styles.muted}>…</Text>
 			</View>
 		);
 	}
@@ -143,22 +144,27 @@ export default function HistoryDetailScreen() {
 				{tt('history.setsCount')}
 				{volume > 0 ? ` · ${Math.round(volume)} ${tt('common.kg')}` : ''}
 			</Text>
-					{session.exercises.map((ex, ei) => {
-				const done = ex.sets.filter((s) => s.completed);
-				if (!editing && done.length === 0) return null;
-				return (
-					<SwipeableRow
-						key={`${ex.exerciseId}-${ei}`}
-						style={styles.card}
-						deleteLabel={tt('history.delete')}
-						onDelete={() => {
-							if (!session) return;
-							setSession(removeLoggedExercise(session, ei));
-						}}
-					>
-						<Pressable onPress={() => setTechniqueId(ex.exerciseId)}>
-							<Text style={styles.cardTitle}>{exerciseDisplayName(ex.exerciseId, locale)}</Text>
-						</Pressable>
+				{session.exercises.map((ex, ei) => {
+					const done = ex.sets.filter((s) => s.completed);
+					if (!editing && done.length === 0) return null;
+					const item = getIndexItem(ex.exerciseId);
+					return (
+						<SwipeableRow
+							key={`${ex.exerciseId}-${ei}`}
+							style={styles.card}
+							deleteLabel={tt('history.delete')}
+							onDelete={() => {
+								if (!session) return;
+								setSession(removeLoggedExercise(session, ei));
+							}}
+						>
+							<Pressable
+								style={styles.cardHead}
+								onPress={() => setTechniqueId(ex.exerciseId)}
+							>
+								<CatalogThumb imagePath={item?.image} size={48} />
+								<Text style={styles.cardTitle}>{exerciseDisplayName(ex.exerciseId, locale)}</Text>
+							</Pressable>
 						{editing
 							? ex.sets.map((s, si) => (
 									<View key={si} style={styles.editRow}>
@@ -256,18 +262,19 @@ function makeStyles(colors: ColorPalette) {
 		gap: 16,
 		padding: 24
 	},
-	title: { color: colors.text, fontSize: 24, fontWeight: '800' },
-	meta: { color: colors.muted, marginBottom: 8 },
-	card: {
-		backgroundColor: colors.panel,
-		borderRadius: 14,
-		borderWidth: 1,
-		borderColor: colors.border,
-		padding: 14,
-		gap: 6
-	},
-	cardTitle: { color: colors.text, fontWeight: '700', marginBottom: 4 },
-	setLine: { color: colors.muted, fontVariant: ['tabular-nums'] },
+	title: { color: colors.text, fontSize: 24, fontWeight: '800', fontFamily: fontFamily.extrabold },
+	meta: { color: colors.muted, marginBottom: 8, fontFamily: fontFamily.regular },
+		card: {
+			backgroundColor: colors.panel,
+			borderRadius: 14,
+			borderWidth: 1,
+			borderColor: colors.border,
+			padding: 14,
+			gap: 6
+		},
+		cardHead: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+		cardTitle: { color: colors.text, fontWeight: '700', marginBottom: 4, fontFamily: fontFamily.bold, flex: 1 },
+	setLine: { color: colors.muted, fontVariant: ['tabular-nums'], fontFamily: fontFamily.regular },
 	editRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
 	editInput: {
 		flex: 1,
@@ -278,7 +285,8 @@ function makeStyles(colors: ColorPalette) {
 		backgroundColor: colors.bg,
 		color: colors.text,
 		paddingHorizontal: 10,
-		fontVariant: ['tabular-nums']
+		fontVariant: ['tabular-nums'],
+		fontFamily: fontFamily.regular
 	},
 	smallBtn: {
 		minWidth: touchMin,
@@ -286,8 +294,8 @@ function makeStyles(colors: ColorPalette) {
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
-	removeText: { color: colors.danger, fontSize: 24 },
-	muted: { color: colors.muted, fontSize: 16 },
+	removeText: { color: colors.danger, fontSize: 24, fontFamily: fontFamily.regular },
+	muted: { color: colors.muted, fontSize: 16, fontFamily: fontFamily.regular },
 	undoBtn: {
 		minHeight: touchMin,
 		minWidth: touchMin,
@@ -297,6 +305,6 @@ function makeStyles(colors: ColorPalette) {
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
-	undoText: { color: colors.accentText, fontWeight: '700', fontSize: 16 }
+	undoText: { color: colors.accentText, fontWeight: '700', fontSize: 16, fontFamily: fontFamily.bold }
 	});
 }

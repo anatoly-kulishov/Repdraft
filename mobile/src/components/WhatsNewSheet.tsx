@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
-import { space, type ColorPalette } from '../theme';
+import { fontFamily, space, type ColorPalette } from '../theme';
 import { BottomSheet } from './BottomSheet';
 import { PrimaryButton } from './PrimaryButton';
 
@@ -45,10 +45,10 @@ export function WhatsNewSheet({ visible, onClose }: Props) {
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
-		title: { fontSize: 20, fontWeight: '800', color: colors.text },
-		lead: { fontSize: 14, lineHeight: 20, color: colors.muted },
+		title: { fontSize: 20, fontWeight: '800', color: colors.text, fontFamily: fontFamily.extrabold },
+		lead: { fontSize: 14, lineHeight: 20, color: colors.muted, fontFamily: fontFamily.regular },
 		scroll: { flexGrow: 0 },
-		version: { fontWeight: '800', fontSize: 15, marginBottom: 4, color: colors.accent },
-		bullet: { fontSize: 14, lineHeight: 20, marginBottom: 4, color: colors.muted }
+		version: { fontWeight: '800', fontSize: 15, marginBottom: 4, color: colors.accent, fontFamily: fontFamily.extrabold },
+		bullet: { fontSize: 14, lineHeight: 20, marginBottom: 4, color: colors.muted, fontFamily: fontFamily.regular }
 	});
 }

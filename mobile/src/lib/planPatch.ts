@@ -1,4 +1,4 @@
-import { addExercise } from '@repdraft/domain/workout';
+import { addExercise, replacePlanExercise } from '@repdraft/domain/workout';
 import type { WorkoutPlan } from '@repdraft/domain/types';
 import { readHomeNextPlanId } from '../live/homeNext';
 import { plansRepo } from '../storage/plansRepo';
@@ -11,6 +11,25 @@ export async function appendExerciseToHomePlan(exerciseId: string): Promise<stri
 	if (!plan) return null;
 	if (plan.exercises.some((e) => e.exerciseId === exerciseId)) return plan.id;
 	const { plan: next } = addExercise(plan, exerciseId);
+	const saved: WorkoutPlan = { ...next, updatedAt: new Date().toISOString() };
+	await plansRepo.save(saved);
+	try {
+		await pushPlan(saved);
+	} catch {
+		/* offline */
+	}
+	return saved.id;
+}
+
+export async function replaceExerciseInHomePlan(
+	fromExerciseId: string,
+	toExerciseId: string
+): Promise<string | null> {
+	const [plans, pinnedId] = await Promise.all([plansRepo.list(), readHomeNextPlanId()]);
+	const plan = (pinnedId ? plans.find((p) => p.id === pinnedId) : null) ?? plans[0] ?? null;
+	if (!plan) return null;
+	const next = replacePlanExercise(plan, fromExerciseId, toExerciseId);
+	if (next === plan) return plan.id;
 	const saved: WorkoutPlan = { ...next, updatedAt: new Date().toISOString() };
 	await plansRepo.save(saved);
 	try {
