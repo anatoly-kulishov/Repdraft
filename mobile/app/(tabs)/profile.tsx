@@ -100,7 +100,7 @@ import { wipeMobileAppStorage } from '../../src/storage/wipeAppStorage';
 import { radius, space, touchMin, type, type ColorPalette } from '../../src/theme';
 
 const APP_VERSION =
-	Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? '0.21.0';
+	Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? '0.22.0';
 
 function boolLabel(tt: (k: string) => string, v: boolean | null): string {
 	if (v == null) return '-';
