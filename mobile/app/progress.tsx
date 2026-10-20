@@ -4,21 +4,21 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { labelBodyPart } from '@repdraft/domain/labels.ru';
 import { computeProgressOverview } from '@repdraft/domain/progressOverview';
 import type { WorkoutSession } from '@repdraft/domain/types';
-import { exerciseDisplayName, getIndexItem, refreshCustomsCache } from '../../src/catalog/loadIndex';
-import { Panel } from '../../src/components/Panel';
-import { PrimaryButton } from '../../src/components/PrimaryButton';
-import { useTabScreenPad } from '../../src/layout/safe';
-import { useLocale } from '../../src/state/locale';
-import { useAppColors } from '../../src/state/theme';
-import { sessionsRepo } from '../../src/storage/sessionsRepo';
-import { fontFamily, radius, space, type ColorPalette } from '../../src/theme';
+import { exerciseDisplayName, getIndexItem, refreshCustomsCache } from '../src/catalog/loadIndex';
+import { Panel } from '../src/components/Panel';
+import { PrimaryButton } from '../src/components/PrimaryButton';
+import { useBottomChromePad } from '../src/layout/safe';
+import { useLocale } from '../src/state/locale';
+import { useAppColors } from '../src/state/theme';
+import { sessionsRepo } from '../src/storage/sessionsRepo';
+import { fontFamily, radius, space, type ColorPalette } from '../src/theme';
 
 export default function ProgressScreen() {
 	const router = useRouter();
 	const { locale, tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
-	const tabPad = useTabScreenPad(space.lg);
+	const bottomPad = useBottomChromePad(space.lg);
 	const [sessions, setSessions] = useState<WorkoutSession[]>([]);
 
 	useFocusEffect(
@@ -39,7 +39,7 @@ export default function ProgressScreen() {
 	return (
 		<ScrollView
 			style={styles.scroll}
-			contentContainerStyle={[styles.root, { paddingBottom: tabPad }]}
+			contentContainerStyle={[styles.root, { paddingBottom: bottomPad }]}
 		>
 			<Text style={styles.lead}>{tt('progress.lead')}</Text>
 			<View style={styles.stats}>

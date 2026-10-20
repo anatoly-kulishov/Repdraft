@@ -19,7 +19,7 @@
 		ICON_TAB_STROKE,
 		ICON_TAB_STROKE_ACTIVE
 	} from '$lib/components/icons/sizes';
-	import { BookOpen, Dumbbell, House, TrendingUp, UserRound } from '@lucide/svelte';
+	import { BookOpen, Dumbbell, House, UserRound } from '@lucide/svelte';
 	import { isBuilderReturnPath } from '$lib/domain/catalogLinks';
 	import { showsExerciseMediaAttribution } from '$lib/domain/mediaAttribution';
 	import { translate } from '$lib/i18n/messages';
@@ -406,23 +406,6 @@
 					/>
 				</span>
 				<span class="tab-link__label">{translate(lang, 'nav.exercises')}</span>
-			</span>
-		</a>
-		<a
-			href="/progress"
-			class="tab-link"
-			data-active={isActive('/progress')}
-			aria-current={isActive('/progress') ? 'page' : undefined}
-		>
-			<span class="tab-link__inner">
-				<span class="tab-link-icon">
-					<LucideIcon
-						icon={TrendingUp}
-						size={ICON_TAB}
-						strokeWidth={isActive('/progress') ? ICON_TAB_STROKE_ACTIVE : ICON_TAB_STROKE}
-					/>
-				</span>
-				<span class="tab-link__label">{translate(lang, 'nav.progress')}</span>
 			</span>
 		</a>
 		<a

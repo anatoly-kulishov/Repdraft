@@ -2,10 +2,10 @@
   "expo": {
     "name": "Repdraft",
     "slug": "repdraft",
-    "version": "0.22.1",
+    "version": "0.22.2",
     "orientation": "portrait",
     "icon": "./assets/app-icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "scheme": "repdraft",
     "newArchEnabled": true,
     "ios": {
@@ -50,7 +50,13 @@
           "backgroundColor": "#8b5cf6",
           "image": "./assets/splash-mark.png",
           "imageWidth": 120,
-          "resizeMode": "contain"
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#0c0c0e",
+            "image": "./assets/splash-mark.png",
+            "imageWidth": 120,
+            "resizeMode": "contain"
+          }
         }
       ]
     ],

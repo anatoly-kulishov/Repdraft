@@ -87,17 +87,12 @@ export default function PlanPreviewScreen() {
 		};
 	}, [id]);
 
-	async function start() {
+	async function beginStart() {
 		if (!plan || busy) return;
 		setBusy(true);
 		if (hasActive) {
 			setBusy(false);
 			router.replace(`/live/${plan.id}`);
-			return;
-		}
-		if (await needsQuestHeroOnboarding()) {
-			setBusy(false);
-			setHeroGate(true);
 			return;
 		}
 		const history = await sessionsRepo.list();
@@ -110,10 +105,19 @@ export default function PlanPreviewScreen() {
 		router.replace(`/live/${plan.id}`);
 	}
 
+	async function start() {
+		if (!plan || busy) return;
+		if (await needsQuestHeroOnboarding()) {
+			setHeroGate(true);
+			return;
+		}
+		await beginStart();
+	}
+
 	async function onHeroReady(profile: QuestHeroProfile) {
 		await saveQuestHeroProfile(profile);
 		setHeroGate(false);
-		await start();
+		await beginStart();
 	}
 
 	if (missing) {
@@ -216,7 +220,10 @@ export default function PlanPreviewScreen() {
 			<QuestOnboardingSheet
 				visible={heroGate}
 				onComplete={(profile) => void onHeroReady(profile)}
-				onDismiss={() => setHeroGate(false)}
+				onDismiss={() => {
+					setHeroGate(false);
+					void beginStart();
+				}}
 			/>
 		</View>
 	);

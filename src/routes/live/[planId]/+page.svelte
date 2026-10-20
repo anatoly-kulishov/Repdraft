@@ -223,68 +223,7 @@
 			}
 		});
 
-		void (async () => {
-			live.hydrate();
-			void live.refreshHistory();
-
-			let index: ExerciseIndexItem[] = [];
-			try {
-				index = await loadExerciseIndexWithCustoms();
-			} catch {
-				index = [];
-			}
-			names = new Map(index.map((ex) => [ex.id, ex]));
-
-			const active = get(live).session;
-			const resuming = Boolean(
-				active && !active.finishedAt && active.exercises.length > 0
-			);
-			if (!resuming && needsQuestHeroOnboarding()) {
-				heroGate = true;
-				loading = false;
-				return;
-			}
-
-			try {
-				const result = await bootLivePage(params.planId);
-				switch (result.kind) {
-					case 'resume':
-						selectedExerciseIndex = result.selectedExerciseIndex;
-						if (result.openFinishOffer) {
-							live.skipRest();
-							finishOfferOpen = true;
-						}
-						break;
-					case 'switch':
-						pendingSwitchPlan = result.pendingSwitchPlan;
-						resumeActivePlanId = result.resumeActivePlanId;
-						switchOfferOpen = true;
-						break;
-					case 'missing':
-						missing = true;
-						break;
-					case 'redirect':
-						break;
-					case 'started':
-						selectedExerciseIndex = result.selectedExerciseIndex;
-						break;
-					default: {
-						const _exhaustive: never = result;
-						void _exhaustive;
-					}
-				}
-			} catch (err) {
-				console.error('live boot failed', err);
-				if (isQuotaExceededError(err)) {
-					storageFull = true;
-					toasts.show(translateError(lang, err, 'live.storageFull'), 'error');
-				} else {
-					missing = true;
-				}
-			} finally {
-				loading = false;
-			}
-		})();
+		void bootLive(false);
 	});
 
 	onDestroy(() => {
@@ -301,6 +240,68 @@
 				?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: scrollBehavior() });
 		});
 	});
+
+	async function bootLive(skipHeroGate: boolean) {
+		loading = true;
+		live.hydrate();
+		void live.refreshHistory();
+
+		let index: ExerciseIndexItem[] = [];
+		try {
+			index = await loadExerciseIndexWithCustoms();
+		} catch {
+			index = [];
+		}
+		names = new Map(index.map((ex) => [ex.id, ex]));
+
+		const active = get(live).session;
+		const resuming = Boolean(active && !active.finishedAt && active.exercises.length > 0);
+		if (!resuming && !skipHeroGate && needsQuestHeroOnboarding()) {
+			heroGate = true;
+			loading = false;
+			return;
+		}
+
+		try {
+			const result = await bootLivePage(params.planId);
+			switch (result.kind) {
+				case 'resume':
+					selectedExerciseIndex = result.selectedExerciseIndex;
+					if (result.openFinishOffer) {
+						live.skipRest();
+						finishOfferOpen = true;
+					}
+					break;
+				case 'switch':
+					pendingSwitchPlan = result.pendingSwitchPlan;
+					resumeActivePlanId = result.resumeActivePlanId;
+					switchOfferOpen = true;
+					break;
+				case 'missing':
+					missing = true;
+					break;
+				case 'redirect':
+					break;
+				case 'started':
+					selectedExerciseIndex = result.selectedExerciseIndex;
+					break;
+				default: {
+					const _exhaustive: never = result;
+					void _exhaustive;
+				}
+			}
+		} catch (err) {
+			console.error('live boot failed', err);
+			if (isQuotaExceededError(err)) {
+				storageFull = true;
+				toasts.show(translateError(lang, err, 'live.storageFull'), 'error');
+			} else {
+				missing = true;
+			}
+		} finally {
+			loading = false;
+		}
+	}
 
 	async function flashSetInvalid(si: number, kind: 'weight' | 'reps') {
 		invalidSetIndex = null;
@@ -528,22 +529,20 @@
 			await confirmSwitchLivePlan();
 			return;
 		}
-		loading = true;
-		try {
-			const result = await bootLivePage(params.planId);
-			if (result.kind === 'started' || result.kind === 'resume') {
-				selectedExerciseIndex = result.selectedExerciseIndex;
-			}
-		} catch (err) {
-			console.error('live boot after hero failed', err);
-			missing = true;
-		} finally {
-			loading = false;
-		}
+		await bootLive(true);
 	}
 
-	async function confirmSwitchLivePlan() {
-		if (needsQuestHeroOnboarding()) {
+	async function onHeroSkipped() {
+		heroGate = false;
+		if (pendingSwitchPlan) {
+			await confirmSwitchLivePlan(true);
+			return;
+		}
+		await bootLive(true);
+	}
+
+	async function confirmSwitchLivePlan(skipHeroGate = false) {
+		if (!skipHeroGate && needsQuestHeroOnboarding()) {
 			heroGate = true;
 			switchOfferOpen = false;
 			return;
@@ -581,7 +580,7 @@
 <QuestOnboardingSheet
 	bind:open={heroGate}
 	onComplete={(profile) => void onHeroReady(profile)}
-	onAbort={() => void goto('/workouts')}
+	onAbort={() => void onHeroSkipped()}
 />
 
 {#if heroGate}

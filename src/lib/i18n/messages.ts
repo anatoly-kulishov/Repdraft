@@ -567,6 +567,7 @@ const ru: Dict = {
 	'live.setLogAria': 'Подходы упражнения',
 	'live.lastApplyAria': 'Подставить прошлый результат: {value}',
 	'live.rest': 'Отдых',
+	'live.restUnit': 'сек',
 	'live.skipRest': 'Пропустить',
 	'live.restPlus30': '+30',
 	'live.restMinus30': '−30',
@@ -1081,6 +1082,7 @@ const ru: Dict = {
 	'quest.statMass': 'Масса',
 	'quest.statEndurance': 'Выносливость',
 	'quest.nextHint': 'В следующий раз {weight} кг × {reps}',
+	'quest.weightByWeek': 'Вес по неделям',
 	'quest.bestSet': 'Лучший подход: {name}, {weight}\u00A0кг',
 	'quest.setsCount': 'Подходы {n}',
 	'quest.volumeKg': 'Объём {kg} кг',
@@ -1297,8 +1299,6 @@ const ru: Dict = {
 	'workouts.newName': 'Новая тренировка',
 	'workouts.nextBadge': 'следующая',
 	'workouts.pinNext': 'Сделать следующей',
-	'workouts.moveUp': 'Выше',
-	'workouts.moveDown': 'Ниже',
 	'workouts.quick': 'Быстрый старт',
 };
 
@@ -1858,6 +1858,7 @@ const en: Dict = {
 	'live.setLogAria': 'Exercise sets',
 	'live.lastApplyAria': 'Use last result: {value}',
 	'live.rest': 'Rest',
+	'live.restUnit': 'sec',
 	'live.skipRest': 'Skip',
 	'live.restPlus30': '+30',
 	'live.restMinus30': '−30',
@@ -2370,6 +2371,7 @@ const en: Dict = {
 	'quest.statMass': 'Mass',
 	'quest.statEndurance': 'Endurance',
 	'quest.nextHint': 'Next time {weight} kg × {reps}',
+	'quest.weightByWeek': 'Weight by week',
 	'quest.bestSet': 'Best set: {name}, {weight}\u00A0kg',
 	'quest.setsCount': 'Sets {n}',
 	'quest.volumeKg': 'Volume {kg} kg',
@@ -2586,8 +2588,6 @@ const en: Dict = {
 	'workouts.newName': 'New workout',
 	'workouts.nextBadge': 'next',
 	'workouts.pinNext': 'Pin as next',
-	'workouts.moveUp': 'Move up',
-	'workouts.moveDown': 'Move down',
 	'workouts.quick': 'Quick start',
 };
 

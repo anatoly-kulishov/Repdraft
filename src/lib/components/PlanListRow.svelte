@@ -10,7 +10,7 @@
 	import { planExerciseSlotCount } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
 	import { cn } from '$lib/utils.js';
-	import { ChevronDown, ChevronUp, Copy, Flag, Play, Trash2 } from '@lucide/svelte';
+	import { Copy, Flag, Play, Trash2 } from '@lucide/svelte';
 	import type { AppLocale } from '$lib/i18n/locale';
 
 	let {
@@ -32,9 +32,7 @@
 		onRemove,
 		onExitComplete,
 		onPreview,
-		onReorder,
-		planCount,
-		onMove
+		onReorder
 	}: {
 		plan: WorkoutPlan;
 		index: number;
@@ -55,14 +53,10 @@
 		onExitComplete?: (planId: string) => void;
 		onPreview: (plan: WorkoutPlan) => void;
 		onReorder: (from: number, to: number) => void;
-		/** Full filtered list length, including rows not yet paged in. */
-		planCount: number;
-		onMove: (index: number, direction: -1 | 1) => void;
 	} = $props();
 
 	let muscles = $derived(planTargetSummary(plan, indexById, lang));
 	let rowBusy = $derived(busyId !== null || exiting);
-	let showMove = $derived(canReorder && !isNext);
 </script>
 
 <li
@@ -101,30 +95,6 @@
 				</span>
 			</a>
 			<div class="entity-row__actions">
-				{#if showMove}
-					<div class="entity-row__nudge">
-						<AppButton
-							variant="ghost"
-							class="entity-row__nudge-btn"
-							onclick={() => onMove(index, -1)}
-							disabled={rowBusy || index <= 0}
-							aria-label={translate(lang, 'workouts.moveUp')}
-							title={translate(lang, 'workouts.moveUp')}
-						>
-							<LucideIcon icon={ChevronUp} size={ICON_SMALL} />
-						</AppButton>
-						<AppButton
-							variant="ghost"
-							class="entity-row__nudge-btn"
-							onclick={() => onMove(index, 1)}
-							disabled={rowBusy || index >= planCount - 1}
-							aria-label={translate(lang, 'workouts.moveDown')}
-							title={translate(lang, 'workouts.moveDown')}
-						>
-							<LucideIcon icon={ChevronDown} size={ICON_SMALL} />
-						</AppButton>
-					</div>
-				{/if}
 				<AppButton
 					variant="ghost"
 					class={cn('entity-row__pin entity-row__pin--desktop', isNext && 'is-pinned')}

@@ -152,13 +152,8 @@ export default function LiveScreen() {
 		setRestUntil(nextRest);
 	}, [restUntil]);
 
-	const startNew = useCallback(
+	const beginSession = useCallback(
 		async (plan: WorkoutPlan, hist: WorkoutSession[]) => {
-			if (await needsQuestHeroOnboarding()) {
-				setHistory(hist);
-				setHeroPlan(plan);
-				return;
-			}
 			setHeroPlan(null);
 			let started = startSessionFromPlan(plan);
 			started = seedOpenSetsFromLastPerformance(started, (exerciseId) =>
@@ -172,6 +167,18 @@ export default function LiveScreen() {
 			finishOfferedRef.current = false;
 		},
 		[]
+	);
+
+	const startNew = useCallback(
+		async (plan: WorkoutPlan, hist: WorkoutSession[]) => {
+			if (await needsQuestHeroOnboarding()) {
+				setHistory(hist);
+				setHeroPlan(plan);
+				return;
+			}
+			await beginSession(plan, hist);
+		},
+		[beginSession]
 	);
 
 	useEffect(() => {
@@ -651,8 +658,10 @@ export default function LiveScreen() {
 					visible={heroPlan != null}
 					onComplete={(profile) => void onHeroReady(profile)}
 					onDismiss={() => {
+						const plan = heroPlan;
 						setHeroPlan(null);
-						router.replace('/');
+						if (plan) void beginSession(plan, history);
+						else router.replace('/');
 					}}
 				/>
 				<ConfirmSheet
@@ -947,6 +956,17 @@ function WeightCue({
 	const hint = nextWeightHint(history, exerciseId);
 	return (
 		<View style={{ gap: 4, marginBottom: 8 }}>
+			<Text
+				style={{
+					color: colors.muted,
+					fontSize: 11,
+					fontWeight: '700',
+					textTransform: 'uppercase',
+					letterSpacing: 0.4
+				}}
+			>
+				{tt('quest.weightByWeek')}
+			</Text>
 			<View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 40, gap: 4 }}>
 				{weeks.map((week) => (
 					<View key={week.weekKey} style={{ flex: 1, height: '100%', justifyContent: 'flex-end' }}>
