@@ -490,10 +490,13 @@ export default function BuilderScreen() {
 								<Pressable
 									accessibilityRole="checkbox"
 									accessibilityState={{ checked: on }}
-									style={styles.check}
+									style={[styles.check, on && styles.checkOn]}
+									hitSlop={12}
 									onPress={() => toggleSelect(item.exerciseId)}
 								>
-									<Text style={styles.checkText}>{on ? '✓' : ''}</Text>
+									<Text style={[styles.checkText, on && styles.checkTextOn]}>
+										{on ? '✓' : ''}
+									</Text>
 								</Pressable>
 								<View style={styles.moveCol}>
 									<Pressable
@@ -803,23 +806,31 @@ function makeStyles(colors: ColorPalette) {
 		borderWidth: 0,
 		borderBottomWidth: StyleSheet.hairlineWidth,
 		borderBottomColor: colors.border,
-		padding: space.md,
+		padding: space.lg,
 		gap: space.sm
 	},
 	cardOn: { borderColor: colors.accent, backgroundColor: colors.accentDim },
 	cardLast: { borderBottomWidth: 0 },
-	cardHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+	cardHead: { flexDirection: 'row', alignItems: 'center', gap: space.md },
 	check: {
-		minWidth: touchMin,
-		minHeight: touchMin,
-		borderRadius: radius.sm,
-		borderWidth: 1,
+		width: 24,
+		height: 24,
+		borderRadius: 7,
+		borderWidth: 2,
 		borderColor: colors.border,
 		alignItems: 'center',
 		justifyContent: 'center',
 		backgroundColor: colors.bg
 	},
-	checkText: { color: colors.accent, fontWeight: '800', fontSize: 18, fontFamily: fontFamily.extrabold },
+	checkOn: { borderColor: colors.accent, backgroundColor: colors.accent },
+	checkText: {
+		color: colors.accent,
+		fontWeight: '800',
+		fontSize: 14,
+		lineHeight: 16,
+		fontFamily: fontFamily.extrabold
+	},
+	checkTextOn: { color: colors.accentText },
 	moveCol: { gap: 2 },
 	moveBtn: {
 		minWidth: touchMin,
@@ -835,7 +846,7 @@ function makeStyles(colors: ColorPalette) {
 	muted: { color: colors.muted, textAlign: 'center', fontFamily: fontFamily.regular },
 	remove: { minWidth: touchMin, minHeight: touchMin, alignItems: 'center', justifyContent: 'center' },
 	removeText: { color: colors.danger, fontSize: 28, fontWeight: '300', fontFamily: fontFamily.regular },
-	fields: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
+	fields: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
 	times: {
 		color: colors.muted,
 		fontSize: 16,

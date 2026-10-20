@@ -50,6 +50,7 @@ function RootStack() {
 			<Stack.Screen name="history/[id]" options={{ title: tt('nav.session') }} />
 			<Stack.Screen name="builder/[planId]" options={{ title: tt('nav.builder') }} />
 			<Stack.Screen name="records" options={{ title: tt('nav.records') }} />
+			<Stack.Screen name="progress" options={{ title: tt('nav.progress') }} />
 			<Stack.Screen name="exercise/[id]" options={{ title: tt('nav.exercise') }} />
 			<Stack.Screen name="ai" options={{ title: tt('nav.ai') }} />
 			<Stack.Screen name="coach" options={{ title: tt('nav.coach') }} />

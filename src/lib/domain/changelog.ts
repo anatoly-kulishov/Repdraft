@@ -14,6 +14,27 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.22.2',
+		highlights: {
+			ru: [
+				'Пропуск знакомства на старте — сразу к тренировке',
+				'Прогресс переехал в профиль; внизу 4 вкладки',
+				'«Вес по неделям» над графиком веса в живой тренировке',
+				'На сайте и телефоне: компактнее таймер отдыха и карточки конструктора',
+				'Порядок тренировок на сайте — перетаскиванием, без кнопок «Выше» и «Ниже»',
+				'На телефоне стартовый экран не сливается с текстом на светлом фоне'
+			],
+			en: [
+				'Skip the intro and jump straight into the workout',
+				'Progress now lives in Profile; 4 tabs at the bottom',
+				'“Weight by week” label above the weight chart in a live workout',
+				'Web and phone: more compact rest timer and builder cards',
+				'Reorder workouts on the web by dragging, no up/down buttons',
+				'Phone launch screen: text keeps contrast on both light and dark'
+			]
+		}
+	},
+	{
 		version: '0.22.1',
 		highlights: {
 			ru: [

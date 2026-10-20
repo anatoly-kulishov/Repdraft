@@ -320,6 +320,8 @@
 
 <div class="live-panel" class:live-panel--superset={selectedInGroup}>
 	<div class="live-weight-cue" aria-hidden="true">
+		<p class="live-weight-cue__title">{translate(lang, 'quest.weightByWeek')}</p>
+		<div class="live-weight-cue__bars">
 		{#each weightWeeks as week (week.weekKey)}
 			<div class="live-weight-cue__col">
 				<div
@@ -331,6 +333,7 @@
 				></div>
 			</div>
 		{/each}
+		</div>
 	</div>
 	{#if weightUp}
 		<p class="live-weight-cue__chip">
@@ -871,10 +874,23 @@
 <style>
 	.live-weight-cue {
 		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		margin-bottom: 0.35rem;
+	}
+	.live-weight-cue__title {
+		margin: 0;
+		font-size: 0.6875rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		opacity: 0.75;
+	}
+	.live-weight-cue__bars {
+		display: flex;
 		align-items: flex-end;
 		gap: 0.35rem;
 		height: 40px;
-		margin-bottom: 0.35rem;
 	}
 	.live-weight-cue__col {
 		flex: 1;

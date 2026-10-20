@@ -117,6 +117,11 @@
 		heroGate = false;
 		if (plan) void goto(`/live/${plan.id}`);
 	}
+
+	function onHeroSkipped() {
+		heroGate = false;
+		if (plan) void goto(`/live/${plan.id}`);
+	}
 </script>
 
 {#snippet headerActions()}
@@ -332,7 +337,7 @@
 	</section>
 {/if}
 
-<QuestOnboardingSheet bind:open={heroGate} onComplete={onHeroReady} />
+<QuestOnboardingSheet bind:open={heroGate} onComplete={onHeroReady} onAbort={onHeroSkipped} />
 
 {#if technique}
 	<ExerciseTechniqueSheet

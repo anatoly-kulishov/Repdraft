@@ -2791,8 +2791,8 @@ body:has(.sticky-actions) .draft-dock {
 
 .shell-nav-tabbar__grid {
 	display: grid;
-	/* Home / Workouts / Exercises / Progress / Profile. */
-	grid-template-columns: repeat(5, minmax(0, 1fr));
+	/* Home / Workouts / Exercises / Profile (Progress lives inside Profile). */
+	grid-template-columns: repeat(4, minmax(0, 1fr));
 	align-items: stretch;
 	gap: var(--tabbar-inset);
 	height: var(--tabbar-h);

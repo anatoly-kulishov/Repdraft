@@ -194,16 +194,6 @@
 		margin-inline: 0.35rem -0.15rem 0 0;
 	}
 
-	/* Swipe hides the action cluster on phone; keep keyboard move buttons. */
-	.workouts-page .entity-list .swipe-to-delete.is-enabled .entity-row__actions:has(.entity-row__nudge) {
-		display: flex;
-		align-items: center;
-	}
-
-	.workouts-page .entity-list .swipe-to-delete.is-enabled .entity-row__actions:has(.entity-row__nudge) > :not(.entity-row__nudge) {
-		display: none;
-	}
-
 	.workouts-page .entity-row__reorder-slot {
 		visibility: hidden;
 		pointer-events: none;
@@ -227,20 +217,6 @@
 
 .plan-list-item {
 	position: relative;
-}
-
-.workouts-page .entity-row__nudge {
-	display: flex;
-	flex-shrink: 0;
-	align-items: center;
-}
-
-.workouts-page .entity-row__nudge :is([data-slot='button'], .btn-ghost) {
-	width: 48px;
-	height: 48px;
-	min-width: 48px;
-	min-height: 48px;
-	padding: 0;
 }
 
 .plan-list-item--reorder-dragging .entity-row {
