@@ -199,7 +199,7 @@ export default function RecordsScreen() {
 				keyExtractor={(item) => item.exerciseId}
 				ListEmptyComponent={
 					<View style={styles.emptyWrap}>
-						<Text style={styles.empty}>{tt('records.empty')}</Text>
+						<Text style={styles.empty}>{tt('records.emptyTitle')}</Text>
 						{showCoachmark ? (
 							<Coachmark
 								message={tt('onboarding.coachRecordsEmpty')}

@@ -52,7 +52,6 @@ import {
 import { XP_WEIGHT_UP } from '@repdraft/domain/quest';
 import { exerciseWeightByWeek, nextWeightHint, weightAboveLast } from '@repdraft/domain/sessionPayoff';
 import { isBodyweightEquipment, isCardioBodyPart } from '@repdraft/domain/workout';
-import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
 import type { LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { unlockRestAudioFromGesture } from '../../src/audio/restChime';
 import { signalRestDone } from '../../src/audio/restDone';
@@ -61,7 +60,6 @@ import { Chip } from '../../src/components/Chip';
 import { ConfirmSheet, type ConfirmAction } from '../../src/components/ConfirmSheet';
 import { ElapsedClock } from '../../src/components/ElapsedClock';
 import { LiveSetRow, type SetDraft } from '../../src/components/LiveSetRow';
-import { QuestOnboardingSheet } from '../../src/components/QuestOnboardingSheet';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { RestTimer } from '../../src/components/RestTimer';
@@ -86,7 +84,6 @@ import { getHealthAdapter, saveLastHealthSnapshot } from '../../src/health';
 import { useLocale } from '../../src/state/locale';
 import { noteChecklist } from '../../src/state/onboarding';
 import { noteFinishedSession } from '../../src/state/quest';
-import { needsQuestHeroOnboarding, saveQuestHeroProfile } from '../../src/state/questHero';
 import { useAppColors } from '../../src/state/theme';
 import { kvSetJson } from '../../src/storage/kv';
 import { plansRepo } from '../../src/storage/plansRepo';
@@ -134,7 +131,6 @@ export default function LiveScreen() {
 	const [restUntil, setRestUntil] = useState<number | null>(null);
 	const [finishing, setFinishing] = useState(false);
 	const [bootReady, setBootReady] = useState(false);
-	const [heroPlan, setHeroPlan] = useState<WorkoutPlan | null>(null);
 	const [forceAltPick, setForceAltPick] = useState(false);
 	const [techniqueId, setTechniqueId] = useState<string | null>(null);
 	const [confirm, setConfirm] = useState<{
@@ -154,7 +150,6 @@ export default function LiveScreen() {
 
 	const beginSession = useCallback(
 		async (plan: WorkoutPlan, hist: WorkoutSession[]) => {
-			setHeroPlan(null);
 			let started = startSessionFromPlan(plan);
 			started = seedOpenSetsFromLastPerformance(started, (exerciseId) =>
 				lastPerformance(hist, exerciseId)
@@ -171,11 +166,6 @@ export default function LiveScreen() {
 
 	const startNew = useCallback(
 		async (plan: WorkoutPlan, hist: WorkoutSession[]) => {
-			if (await needsQuestHeroOnboarding()) {
-				setHistory(hist);
-				setHeroPlan(plan);
-				return;
-			}
 			await beginSession(plan, hist);
 		},
 		[beginSession]
@@ -570,8 +560,9 @@ export default function LiveScreen() {
 		if (!session || !ex) return;
 		const ei = selectedEi;
 		const snapshot = session;
+		const name = exerciseDisplayName(ex.exerciseId, locale);
 		setConfirm({
-			title: tt('live.skipExercise'),
+			title: tt('live.confirmSkipExercise', { name }),
 			message: tt('live.skipExerciseHint'),
 			actions: [
 				{
@@ -597,7 +588,7 @@ export default function LiveScreen() {
 
 	function offerDiscard() {
 		setConfirm({
-			title: tt('live.discard'),
+			title: tt('live.confirmDiscard'),
 			message: tt('live.discardHint'),
 			actions: [
 				{
@@ -643,27 +634,10 @@ export default function LiveScreen() {
 		tapLight();
 	}
 
-	async function onHeroReady(profile: QuestHeroProfile) {
-		await saveQuestHeroProfile(profile);
-		const plan = heroPlan;
-		if (!plan) return;
-		await startNew(plan, history);
-	}
-
 	if (!bootReady || !session) {
 		return (
 			<View style={styles.root}>
 				<PageSkeleton variant="planPreview" />
-				<QuestOnboardingSheet
-					visible={heroPlan != null}
-					onComplete={(profile) => void onHeroReady(profile)}
-					onDismiss={() => {
-						const plan = heroPlan;
-						setHeroPlan(null);
-						if (plan) void beginSession(plan, history);
-						else router.replace('/');
-					}}
-				/>
 				<ConfirmSheet
 					open={Boolean(confirm)}
 					title={confirm?.title ?? ''}
@@ -676,7 +650,10 @@ export default function LiveScreen() {
 		);
 	}
 
-	const progress = `${completedSetCount(session)} / ${totalSetCount(session)}`;
+	const progress = tt('live.progress', {
+		done: completedSetCount(session),
+		total: totalSetCount(session)
+	});
 	const altOptions =
 		needsAlt && ex?.altGroupId
 			? session.exercises.filter((e) => e.altGroupId === ex.altGroupId)

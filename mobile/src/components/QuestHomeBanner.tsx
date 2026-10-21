@@ -7,13 +7,14 @@ import {
 	questDailyHint,
 	type QuestState
 } from '@repdraft/domain/quest';
-import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
+import { isHeroReady, type QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
 import type { WorkoutSession } from '@repdraft/domain/types';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
 import { fontFamily, radius, space, type ColorPalette } from '../theme';
 import { HeroFigure } from './HeroFigure';
 import { Panel } from './Panel';
+import { PrimaryButton } from './PrimaryButton';
 
 function chapterLabel(
 	state: QuestState,
@@ -34,10 +35,11 @@ type Props = {
 	profile: QuestHeroProfile | null;
 	sessions: readonly WorkoutSession[];
 	raiseName?: string | null;
+	onSetupHero?: () => void;
 };
 
 /** Twin of web `QuestHomeBanner.svelte`. */
-export function QuestHomeBanner({ state, profile, sessions, raiseName = null }: Props) {
+export function QuestHomeBanner({ state, profile, sessions, raiseName = null, onSetupHero }: Props) {
 	const { tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -55,6 +57,7 @@ export function QuestHomeBanner({ state, profile, sessions, raiseName = null }: 
 				: hint.key === 'quest.dailySession'
 					? tt(hint.key, { xp: String(hint.vars.xp) })
 					: tt(hint.key);
+	const showHeroSetup = Boolean(onSetupHero && !isHeroReady(profile));
 	const pills = [
 		{ key: 'quest.statStrength', value: String(stats.strength) },
 		{ key: 'quest.statMass', value: String(stats.mass) },
@@ -105,6 +108,16 @@ export function QuestHomeBanner({ state, profile, sessions, raiseName = null }: 
 				<Text style={styles.dailyLabel}>{tt('quest.dailyTitle')}</Text>
 				<Text style={styles.dailyText}>{hintText}</Text>
 			</View>
+			{showHeroSetup ? (
+				<View style={styles.setup}>
+					<Text style={styles.setupHint}>{tt('quest.homeSetupHeroHint')}</Text>
+					<PrimaryButton
+						label={tt('quest.homeSetupHero')}
+						variant="secondary"
+						onPress={() => onSetupHero?.()}
+					/>
+				</View>
+			) : null}
 		</Panel>
 	);
 }
@@ -144,6 +157,8 @@ function makeStyles(colors: ColorPalette) {
 			textTransform: 'uppercase',
 			fontFamily: fontFamily.extrabold
 		},
-		dailyText: { color: colors.text, fontSize: 15, fontWeight: '600', lineHeight: 20, fontFamily: fontFamily.semibold }
+		dailyText: { color: colors.text, fontSize: 15, fontWeight: '600', lineHeight: 20, fontFamily: fontFamily.semibold },
+		setup: { gap: space.sm, marginTop: space.sm, paddingTop: space.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+		setupHint: { color: colors.muted, fontSize: 13, lineHeight: 18, fontFamily: fontFamily.regular }
 	});
 }

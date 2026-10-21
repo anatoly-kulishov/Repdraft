@@ -300,7 +300,6 @@ export default function WorkoutsTab() {
 									{next?.id === item.id ? ` · ${tt('workouts.nextBadge')}` : ''}
 								</Text>
 							</View>
-							<Text style={styles.dupHint}>{tt('workouts.longPress')}</Text>
 						</Pressable>
 					</SwipeableRow>
 				)}
@@ -373,14 +372,6 @@ function makeStyles(colors: ColorPalette) {
 		rowTitle: { color: colors.text, fontSize: 17, fontWeight: '700', fontFamily: fontFamily.bold },
 		rowMeta: { color: colors.muted, marginTop: 4, fontSize: 13, fontFamily: fontFamily.medium },
 		rowNext: { borderColor: colors.accent, backgroundColor: colors.accentDim },
-		dupHint: {
-			color: colors.muted,
-			fontSize: 11,
-			fontWeight: '600',
-			maxWidth: 72,
-			textAlign: 'right',
-			fontFamily: fontFamily.semibold
-		},
 		aiRow: {
 			minHeight: touchMin,
 			backgroundColor: colors.panel,

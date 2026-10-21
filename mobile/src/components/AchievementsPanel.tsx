@@ -48,19 +48,29 @@ export function AchievementsPanel({
 		(id) => filter === 'all' || achievementCategory(id) === filter
 	);
 
+	const unlockedCount = state.unlocked.length;
+
 	return (
 		<View style={styles.root}>
 			{showFilters ? (
-				<View style={styles.chips}>
-					{FILTERS.map((f) => (
-						<Chip
-							key={f}
-							label={tt(`achievements.filter.${f}`)}
-							selected={filter === f}
-							onPress={() => setFilter(f)}
-						/>
-					))}
-				</View>
+				<>
+					<View style={styles.chips}>
+						{FILTERS.map((f) => (
+							<Chip
+								key={f}
+								label={tt(`achievements.filter.${f}`)}
+								selected={filter === f}
+								onPress={() => setFilter(f)}
+							/>
+						))}
+					</View>
+					<Text style={styles.count}>
+						{tt('achievements.progressCount', {
+							n: String(unlockedCount),
+							total: String(ACHIEVEMENT_IDS.length)
+						})}
+					</Text>
+				</>
 			) : null}
 			<View style={styles.list}>
 				{ids.map((id) => {
@@ -111,6 +121,12 @@ function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 		root: { gap: space.sm },
 		chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+		count: {
+			color: colors.muted,
+			fontSize: 13,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
+		},
 		list: { gap: space.sm },
 		row: {
 			minHeight: touchMin,

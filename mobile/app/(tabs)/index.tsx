@@ -2,7 +2,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, NotebookPen, Smartphone, UserRound } from 'lucide-react-native';
 import {
 	dayGreetingPeriod,
 	homeGreetingMessageKey
@@ -47,7 +47,8 @@ import { exerciseName } from '@repdraft/domain/exerciseName';
 import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
 import { suggestRaiseExerciseId } from '@repdraft/domain/sessionPayoff';
 import { loadQuestState } from '../../src/state/quest';
-import { loadQuestHeroProfile } from '../../src/state/questHero';
+import { loadQuestHeroProfile, saveQuestHeroProfile } from '../../src/state/questHero';
+import { QuestOnboardingSheet } from '../../src/components/QuestOnboardingSheet';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { readActiveSession, sessionsRepo } from '../../src/storage/sessionsRepo';
 import { outboxCount } from '../../src/sync/cloudSync';
@@ -77,6 +78,7 @@ export default function WorkoutsScreen() {
 	const [heroProfile, setHeroProfile] = useState<QuestHeroProfile | null>(null);
 	const [finishedSessions, setFinishedSessions] = useState<WorkoutSession[]>([]);
 	const [pendingSync, setPendingSync] = useState(0);
+	const [heroSetupOpen, setHeroSetupOpen] = useState(false);
 
 	const reload = useCallback(async () => {
 		setLoading(true);
@@ -202,6 +204,7 @@ export default function WorkoutsScreen() {
 				profile={heroProfile}
 				sessions={finishedSessions}
 				raiseName={raiseName}
+				onSetupHero={() => setHeroSetupOpen(true)}
 			/>
 		) : null}
 		{pendingSync > 0 ? (
@@ -211,8 +214,6 @@ export default function WorkoutsScreen() {
 				</Text>
 			</Panel>
 		) : null}
-
-		<Text style={styles.leadHint}>{tt('workouts.lead')}</Text>
 
 			{active && continueMeta ? (
 				<Panel accent style={styles.card}>
@@ -262,9 +263,18 @@ export default function WorkoutsScreen() {
 					<Text style={styles.eyebrow}>{tt('home.guestTrainKicker')}</Text>
 					<Text style={styles.cardTitle}>{tt('home.guestTrainTitle')}</Text>
 					<Text style={styles.cardMeta}>{tt('home.guestTrainLead')}</Text>
-					<Text style={styles.cardMeta}>• {tt('home.guestPointLog')}</Text>
-					<Text style={styles.cardMeta}>• {tt('home.guestPointLocal')}</Text>
-					<Text style={styles.cardMeta}>• {tt('home.guestPointSync')}</Text>
+					<View style={styles.guestPoint}>
+						<NotebookPen color={colors.muted} size={18} strokeWidth={2.25} />
+						<Text style={styles.guestPointText}>{tt('home.guestPointLog')}</Text>
+					</View>
+					<View style={styles.guestPoint}>
+						<Smartphone color={colors.muted} size={18} strokeWidth={2.25} />
+						<Text style={styles.guestPointText}>{tt('home.guestPointLocal')}</Text>
+					</View>
+					<View style={styles.guestPoint}>
+						<UserRound color={colors.muted} size={18} strokeWidth={2.25} />
+						<Text style={styles.guestPointText}>{tt('home.guestPointSync')}</Text>
+					</View>
 					<PrimaryButton label={tt('home.guestCreateLocal')} onPress={() => void createBlank()} />
 					<PrimaryButton
 						label={tt('nav.signIn')}
@@ -328,13 +338,29 @@ export default function WorkoutsScreen() {
 		</View>
 	);
 
+	const heroDefaultName = greetingFirstName(greetingCustom, authUser);
+
 	return (
-		<ScrollView
-			style={styles.flexList}
-			contentContainerStyle={[styles.list, { paddingBottom: tabPad }]}
-		>
-			{header}
-		</ScrollView>
+		<>
+			<ScrollView
+				style={styles.flexList}
+				contentContainerStyle={[styles.list, { paddingBottom: tabPad }]}
+			>
+				{header}
+			</ScrollView>
+			<QuestOnboardingSheet
+				visible={heroSetupOpen}
+				defaultName={heroDefaultName || undefined}
+				onDismiss={() => setHeroSetupOpen(false)}
+				onComplete={(profile) => {
+					void (async () => {
+						await saveQuestHeroProfile(profile);
+						setHeroProfile(profile);
+						setHeroSetupOpen(false);
+					})();
+				}}
+			/>
+		</>
 	);
 }
 
@@ -361,6 +387,13 @@ function makeStyles(colors: ColorPalette) {
 	},
 	cardTitle: { ...type.title, color: colors.text },
 	cardMeta: { ...type.meta, color: colors.muted },
+	guestPoint: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: space.sm,
+		minHeight: touchMin
+	},
+	guestPointText: { ...type.meta, color: colors.muted, flex: 1 },
 	pressed: { opacity: 0.85 },
 	search: {
 		flex: 1,

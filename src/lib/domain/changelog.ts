@@ -14,6 +14,27 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.22.3',
+		highlights: {
+			ru: [
+				'Сайт и телефон ближе по экранам: подписи, отступы и кнопки',
+				'Телефон: детали после тренировки, история с пагинацией и удалением',
+				'Профиль на сайте: вибро в конце отдыха, ровные отступы между блоками',
+				'Русский интерфейс: «Кампания», «опыт», без «сессия» в подсказках',
+				'Герой кампании: женская фигура, рабочая форма, старт тренировки без блокировки',
+				'Персонаж создаётся с главной или из профиля, когда удобно'
+			],
+			en: [
+				'Web and phone closer screen by screen: labels, spacing, controls',
+				'Phone summary details; history pagination and delete confirm',
+				'Web profile: rest-end haptic; even spacing between settings blocks',
+				'Russian UI: Campaign, experience labels, no “session” in hints',
+				'Campaign hero: female figure, working form, workout start not blocked',
+				'Create your hero from Home or Profile when you want'
+			]
+		}
+	},
+	{
 		version: '0.22.2',
 		highlights: {
 			ru: [

@@ -58,9 +58,30 @@ Fixed:
 - Web builder sticky does not overlap the tab bar (tab bar hidden on that screen). Group bar already stacks under 390px with 48px buttons.
 - ConfirmSheet finish offer passes `showCancel: false` (Later without a second Cancel).
 
+## Dual-client UI parity (2026-10-21, v0.22.3)
+
+Best-of-both pass across parity screens (i18n keys, spacing, CTAs). Fixed:
+
+- RN plan preview: `preview.stats` / `preview.edit` / `builder.orBadge` (RU grammar + same labels as web)
+- RN home: drop duplicate `workouts.lead`; guest points with icons
+- RN live: `live.progress`, `live.confirmDiscard`, `live.confirmSkipExercise` with name
+- RN summary: title hierarchy, volume delta i18n, `setKindMessageKey`, sticky View details CTA
+- RN history list: pagination, empty CTA, `workouts.historyMeta`, day eyebrow
+- RN history detail: delete confirm, notes, no-logged-sets row, 48px card head, set kind labels
+- RN workouts: remove per-row long-press hint noise
+- RN builder: 48px steppers, `builder.or` label, empty AI CTA, `builder.orBadge`
+- RN coach: navigate to builder without success Alert
+- RN achievements / articles / records: progress count in panel; `articles.search`; `records.emptyTitle`
+- Web exercises hub lead → `exercises.hubLead`; articles sections → `gettingStarted` / `more`
+- Web profile: rest haptic toggle (`restHapticEnabled`); live ticker gates sound vs haptic separately
+
+Intentional still ok: grain/Inter/CTA gradient web-only; Health RN-only; draft vs plan-picker on exercise detail; RN history 7d/30d/90d chips vs web custom range.
+
 ## Still watch for (manual QA)
 
 - RN device pass of the same footer heights (this pass was web + code). Expo Go was not running.
+- Technique clips / related articles on RN exercise detail (still web-first).
+- Web records inline edit (RN has edit card; web keeps swipe + undo).
 
 ## Closed for gate
 

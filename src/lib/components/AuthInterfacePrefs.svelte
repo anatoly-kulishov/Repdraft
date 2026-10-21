@@ -10,14 +10,16 @@
 	import { quest, questState } from '$lib/stores/quest';
 	import { loadQuestHeroProfile } from '$lib/stores/questHero';
 	import { themeToggleStateIcon } from '$lib/components/icons/themeToggle';
-	import { BarChart3, Globe, Sparkles } from '@lucide/svelte';
+	import { BarChart3, Globe, Sparkles, UserRound } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let {
-		surface = 'section'
+		surface = 'section',
+		onSetupHero = undefined
 	}: {
 		/** Guest account stack vs signed-in profile panels. */
 		surface?: 'section' | 'panel';
+		onSetupHero?: () => void;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
@@ -89,6 +91,15 @@
 					}}
 				/>
 			</ProfileSettingsRow>
+		{/if}
+		{#if onSetupHero && !isHeroReady(heroProfile)}
+			<ProfileSettingsRow
+				icon={UserRound}
+				label={translate(lang, 'quest.homeSetupHero')}
+				value="-"
+				ariaLabel={translate(lang, 'quest.homeSetupHero')}
+				onclick={() => onSetupHero?.()}
+			/>
 		{/if}
 		<ProfileSettingsRow
 			icon={Sparkles}

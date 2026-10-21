@@ -9,10 +9,12 @@ import {
 	TextInput,
 	View
 } from 'react-native';
+import { HISTORY_PAGE_SIZE } from '@repdraft/domain/home';
 import { completedSetCount, sessionDurationMs } from '@repdraft/domain/session';
 import type { WorkoutSession } from '@repdraft/domain/types';
 import { formatDurationMinutes, formatRelativeDay } from '@repdraft/i18n/format';
 import { Chip } from '../../src/components/Chip';
+import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { useLocale } from '../../src/state/locale';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { deleteSessionRemote } from '../../src/sync/cloudSync';
@@ -45,6 +47,7 @@ export default function HistoryListScreen() {
 	const [sessions, setSessions] = useState<WorkoutSession[]>([]);
 	const [query, setQuery] = useState('');
 	const [preset, setPreset] = useState<Preset>('all');
+	const [visibleLimit, setVisibleLimit] = useState(HISTORY_PAGE_SIZE);
 
 	const reload = useCallback(() => {
 		void sessionsRepo.list().then(setSessions);
@@ -66,6 +69,11 @@ export default function HistoryListScreen() {
 				return s.planName.toLowerCase().replace(/ё/g, 'е').includes(q);
 			});
 	}, [sessions, query, preset]);
+
+	const visible = useMemo(
+		() => filtered.slice(0, visibleLimit),
+		[filtered, visibleLimit]
+	);
 
 	function confirmDelete(item: WorkoutSession) {
 		Alert.alert(tt('history.delete'), item.planName, [
@@ -96,11 +104,16 @@ export default function HistoryListScreen() {
 		{ id: '90d', label: tt('history.filter90') }
 	];
 
+	const emptyAll = sessions.filter((s) => s.finishedAt).length === 0;
+
 	return (
 		<View style={styles.root}>
 			<TextInput
 				value={query}
-				onChangeText={setQuery}
+				onChangeText={(v) => {
+					setQuery(v);
+					setVisibleLimit(HISTORY_PAGE_SIZE);
+				}}
 				placeholder={tt('workouts.historySearchPh')}
 				placeholderTextColor={colors.muted}
 				style={styles.search}
@@ -111,32 +124,63 @@ export default function HistoryListScreen() {
 						key={p.id}
 						label={p.label}
 						selected={preset === p.id}
-						onPress={() => setPreset(p.id)}
+						onPress={() => {
+							setPreset(p.id);
+							setVisibleLimit(HISTORY_PAGE_SIZE);
+						}}
 					/>
 				))}
 			</View>
 			<FlatList
 				style={{ flex: 1 }}
-				data={filtered}
+				data={visible}
 				keyExtractor={(item) => item.id}
-				ListEmptyComponent={<Text style={styles.empty}>{tt('history.empty')}</Text>}
+				onEndReached={() => {
+					if (visibleLimit < filtered.length) {
+						setVisibleLimit((n) => n + HISTORY_PAGE_SIZE);
+					}
+				}}
+				onEndReachedThreshold={0.4}
+				ListEmptyComponent={
+					<View style={styles.emptyWrap}>
+						<Text style={styles.empty}>
+							{emptyAll ? tt('workouts.historyEmptyTitle') : tt('history.empty')}
+						</Text>
+						{emptyAll ? (
+							<>
+								<Text style={styles.emptyLead}>{tt('onboarding.historyEmptyLead')}</Text>
+								<PrimaryButton
+									label={tt('home.startWorkout')}
+									onPress={() => router.push('/(tabs)/workouts')}
+								/>
+							</>
+						) : null}
+					</View>
+				}
 				contentContainerStyle={{ gap: space.sm, flexGrow: 1, paddingBottom: listPad }}
-				renderItem={({ item }) => (
-					<Pressable
-						style={styles.row}
-						onPress={() => router.push(`/history/${item.id}`)}
-						onLongPress={() => confirmDelete(item)}
-					>
-						<Text style={styles.title} numberOfLines={2}>
-							{item.planName}
-						</Text>
-						<Text style={styles.meta} numberOfLines={1}>
-							{formatRelativeDay(item.finishedAt ?? item.startedAt, locale)} ·{' '}
-							{formatDurationMinutes(sessionDurationMs(item)) ?? '-'} {tt('summary.min')} ·{' '}
-							{completedSetCount(item)} {tt('history.setsCount')}
-						</Text>
-					</Pressable>
-				)}
+				renderItem={({ item }) => {
+					const mins = formatDurationMinutes(sessionDurationMs(item));
+					return (
+						<Pressable
+							style={styles.row}
+							onPress={() => router.push(`/history/${item.id}`)}
+							onLongPress={() => confirmDelete(item)}
+						>
+							<Text style={styles.day} numberOfLines={1}>
+								{formatRelativeDay(item.finishedAt ?? item.startedAt, locale)}
+							</Text>
+							<Text style={styles.title} numberOfLines={2}>
+								{item.planName}
+							</Text>
+							<Text style={styles.meta} numberOfLines={1}>
+								{tt('workouts.historyMeta', {
+									min: mins ?? '-',
+									sets: completedSetCount(item)
+								})}
+							</Text>
+						</Pressable>
+					);
+				}}
 			/>
 		</View>
 	);
@@ -144,27 +188,42 @@ export default function HistoryListScreen() {
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
-	root: { flex: 1, padding: space.lg, backgroundColor: colors.bg, gap: space.sm },
-	search: {
-		minHeight: touchMin,
-		borderRadius: 12,
-		borderWidth: 1,
-		borderColor: colors.border,
-		backgroundColor: colors.panel,
-		color: colors.text,
-		paddingHorizontal: 14
-	},
-	chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-	empty: { color: colors.muted, textAlign: 'center', marginTop: 48 },
-	row: {
-		minHeight: touchMin,
-		backgroundColor: colors.panel,
-		borderRadius: 14,
-		borderWidth: 1,
-		borderColor: colors.border,
-		padding: 14
-	},
-	title: { color: colors.text, fontWeight: '700', fontSize: 16, fontFamily: fontFamily.bold },
-	meta: { color: colors.muted, marginTop: 4, fontFamily: fontFamily.regular }
+		root: { flex: 1, padding: space.lg, backgroundColor: colors.bg, gap: space.sm },
+		search: {
+			minHeight: touchMin,
+			borderRadius: 12,
+			borderWidth: 1,
+			borderColor: colors.border,
+			backgroundColor: colors.panel,
+			color: colors.text,
+			paddingHorizontal: 14
+		},
+		chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+		emptyWrap: { alignItems: 'center', gap: space.md, marginTop: 48, paddingHorizontal: space.lg },
+		empty: {
+			color: colors.text,
+			textAlign: 'center',
+			fontWeight: '700',
+			fontSize: 16,
+			fontFamily: fontFamily.bold
+		},
+		emptyLead: { color: colors.muted, textAlign: 'center', fontFamily: fontFamily.regular },
+		row: {
+			minHeight: touchMin,
+			backgroundColor: colors.panel,
+			borderRadius: 14,
+			borderWidth: 1,
+			borderColor: colors.border,
+			padding: 14
+		},
+		day: {
+			color: colors.muted,
+			fontSize: 12,
+			fontWeight: '600',
+			marginBottom: 2,
+			fontFamily: fontFamily.semibold
+		},
+		title: { color: colors.text, fontWeight: '700', fontSize: 16, fontFamily: fontFamily.bold },
+		meta: { color: colors.muted, marginTop: 4, fontFamily: fontFamily.regular }
 	});
 }

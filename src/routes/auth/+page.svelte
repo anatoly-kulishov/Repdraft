@@ -26,6 +26,10 @@
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import AuthInterfacePrefs from '$lib/components/AuthInterfacePrefs.svelte';
+	import QuestOnboardingSheet from '$lib/components/QuestOnboardingSheet.svelte';
+	import type { QuestHeroProfile } from '$lib/domain/questHeroProfile';
+	import { greetingFirstName } from '$lib/domain/greetingName';
+	import { loadQuestHeroProfile, saveQuestHeroProfile } from '$lib/stores/questHero';
 	import ProfileAchievementsPanel from '$lib/components/ProfileAchievementsPanel.svelte';
 	import ProfileInsightsPanel from '$lib/components/ProfileInsightsPanel.svelte';
 	import AuthLegalConsent from '$lib/components/AuthLegalConsent.svelte';
@@ -48,10 +52,10 @@
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { GREETING_NAME_MAX, clampGreetingName, greetingNameMatchesStored } from '$lib/domain/greetingName';
 	import { isIosDevice } from '$lib/domain/pwaInstall';
-	import { restSoundEnabled, testerModeEnabled } from '$lib/stores/prefs';
+	import { restHapticEnabled, restSoundEnabled, testerModeEnabled } from '$lib/stores/prefs';
 	import { testerToolsVisible } from '$lib/domain/prefs';
 	import { tick } from 'svelte';
-	import { Camera, FileText, LogOut, Timer, Shield, UserRound } from '@lucide/svelte';
+	import { Camera, FileText, LogOut, Smartphone, Timer, Shield, UserRound } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -145,6 +149,15 @@
 	let nextPath = $derived(safeRedirectPath($page.url.searchParams.get('next')));
 	let recoveryMode = $derived($auth.passwordRecovery);
 	let profileName = $derived(userDisplayName($auth.user));
+	let heroSetupOpen = $state(false);
+	let heroDefaultName = $derived(
+		greetingFirstName($greetingName, $auth.user) || profileName || ''
+	);
+
+	function onHeroSaved(profile: QuestHeroProfile) {
+		saveQuestHeroProfile(profile);
+		heroSetupOpen = false;
+	}
 	let profileAvatar = $derived(resolveUserAvatarUrl($auth.user));
 	let profileInitials = $derived(userInitials($auth.user));
 	let profileAvatarBroken = $state(false);
@@ -772,12 +785,23 @@
 									}}
 								/>
 							</ProfileSettingsRow>
+							<ProfileSettingsRow icon={Smartphone} label={translate(lang, 'profile.hapticRest')}>
+								<input
+									type="checkbox"
+									class="auth-pref-toggle__input profile-settings-row__toggle"
+									checked={$restHapticEnabled}
+									aria-label={translate(lang, 'profile.hapticRest')}
+									onchange={(e) => {
+										restHapticEnabled.set((e.currentTarget as HTMLInputElement).checked);
+									}}
+								/>
+							</ProfileSettingsRow>
 							<p class="profile-settings-group__hint">{translate(lang, restSoundHintKey)}</p>
 						</div>
 					</div>
 
 					<div class="profile-settings-col">
-						<AuthInterfacePrefs surface="panel" />
+						<AuthInterfacePrefs surface="panel" onSetupHero={() => (heroSetupOpen = true)} />
 						{@render onboardingAuthHelpCard()}
 					</div>
 				</div>
@@ -1210,10 +1234,16 @@
 	</BottomSheet>
 {/if}
 
+<QuestOnboardingSheet
+	bind:open={heroSetupOpen}
+	defaultName={heroDefaultName}
+	onComplete={onHeroSaved}
+/>
+
 {#snippet guestSettingsPanel()}
 	<div class="auth-settings panel">
 		{@render onboardingHelpPanel()}
-		<AuthInterfacePrefs />
+		<AuthInterfacePrefs onSetupHero={() => (heroSetupOpen = true)} />
 		<ProfileInsightsPanel />
 		<ProfileAchievementsPanel />
 		<DataExportSection />

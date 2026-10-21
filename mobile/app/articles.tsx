@@ -88,13 +88,13 @@ export default function ArticlesScreen() {
 				<Search size={18} color={colors.muted} />
 				<TextInput
 					style={styles.input}
-					placeholder={tt('articles.searchPlaceholder')}
+					placeholder={tt('articles.search')}
 					placeholderTextColor={colors.muted}
 					value={query}
 					onChangeText={setQuery}
 					autoCapitalize="none"
 					clearButtonMode="while-editing"
-					accessibilityLabel={tt('articles.searchPlaceholder')}
+					accessibilityLabel={tt('articles.search')}
 				/>
 			</View>
 			<FlatList

@@ -1,14 +1,16 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
 	addCompletedLoggedSet,
 	completedSetCount,
+	loggedSetKind,
 	planDraftFromSession,
 	removeLoggedExercise,
 	removeLoggedSet,
 	sessionDurationMs,
 	sessionVolumeKg,
+	setKindMessageKey,
 	updateLoggedSet
 } from '@repdraft/domain/session';
 import type { WorkoutSession } from '@repdraft/domain/types';
@@ -51,6 +53,18 @@ export default function HistoryDetailScreen() {
 			if (undoTimer.current) clearTimeout(undoTimer.current);
 		};
 	}, []);
+
+	function confirmRemove() {
+		if (!session) return;
+		Alert.alert(tt('workouts.confirmDeleteSession', { name: session.planName || '-' }), undefined, [
+			{ text: tt('common.cancel'), style: 'cancel' },
+			{
+				text: tt('history.delete'),
+				style: 'destructive',
+				onPress: () => void remove()
+			}
+		]);
+	}
 
 	async function remove() {
 		if (!session) return;
@@ -146,8 +160,16 @@ export default function HistoryDetailScreen() {
 			</Text>
 				{session.exercises.map((ex, ei) => {
 					const done = ex.sets.filter((s) => s.completed);
-					if (!editing && done.length === 0) return null;
+					if (!editing && done.length === 0) {
+						return (
+							<View key={`${ex.exerciseId}-${ei}`} style={styles.card}>
+								<Text style={styles.cardTitle}>{exerciseDisplayName(ex.exerciseId, locale)}</Text>
+								<Text style={styles.setLine}>{tt('workouts.noLoggedSets')}</Text>
+							</View>
+						);
+					}
 					const item = getIndexItem(ex.exerciseId);
+					const note = ex.note?.trim();
 					return (
 						<SwipeableRow
 							key={`${ex.exerciseId}-${ei}`}
@@ -160,6 +182,10 @@ export default function HistoryDetailScreen() {
 						>
 							<Pressable
 								style={styles.cardHead}
+								accessibilityRole="button"
+								accessibilityLabel={tt('exercise.openTechnique', {
+									name: exerciseDisplayName(ex.exerciseId, locale)
+								})}
 								onPress={() => setTechniqueId(ex.exerciseId)}
 							>
 								<CatalogThumb imagePath={item?.image} size={48} />
@@ -215,9 +241,11 @@ export default function HistoryDetailScreen() {
 							: done.map((s, si) => (
 									<Text key={si} style={styles.setLine}>
 										{s.weightKg != null ? `${s.weightKg} ${tt('common.kg')}` : '-'} ×{' '}
-										{s.reps ?? '-'} {tt('common.reps')}
+										{s.reps ?? '-'} {tt('common.reps')} ·{' '}
+										{tt(setKindMessageKey(loggedSetKind(s)))}
 									</Text>
 								))}
+						{!editing && note ? <Text style={styles.note}>{note}</Text> : null}
 						{editing ? (
 							<>
 								<PrimaryButton
@@ -245,7 +273,7 @@ export default function HistoryDetailScreen() {
 				variant="ghost"
 				onPress={() => void openAsPlan()}
 			/>
-			<PrimaryButton label={tt('history.delete')} variant="danger" onPress={() => void remove()} />
+			<PrimaryButton label={tt('history.delete')} variant="danger" onPress={confirmRemove} />
 			<TechniqueSheet exerciseId={techniqueId} onClose={() => setTechniqueId(null)} />
 		</ScrollView>
 	);
@@ -272,9 +300,15 @@ function makeStyles(colors: ColorPalette) {
 			padding: 14,
 			gap: 6
 		},
-		cardHead: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+		cardHead: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: space.md,
+			minHeight: touchMin
+		},
 		cardTitle: { color: colors.text, fontWeight: '700', marginBottom: 4, fontFamily: fontFamily.bold, flex: 1 },
 	setLine: { color: colors.muted, fontVariant: ['tabular-nums'], fontFamily: fontFamily.regular },
+	note: { color: colors.muted, fontSize: 13, marginTop: 4, fontFamily: fontFamily.regular },
 	editRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
 	editInput: {
 		flex: 1,
