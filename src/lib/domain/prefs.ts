@@ -1,6 +1,7 @@
 /** Local device preferences (not synced to cloud). */
 
 export const REST_SOUND_STORAGE_KEY = 'repdraft:rest-sound';
+export const REST_HAPTIC_STORAGE_KEY = 'repdraft:haptic-rest-done';
 export const WEB_ANALYTICS_STORAGE_KEY = 'repdraft:web-analytics';
 export const TESTER_MODE_STORAGE_KEY = 'repdraft:tester-mode';
 /** Tap app version this many times to unlock wipe / stress backup tools. */
@@ -9,6 +10,12 @@ export const INSTALL_HINT_DISMISSED_KEY = 'repdraft:install-hint-dismissed';
 export const PWA_INSTALLED_KEY = 'repdraft:pwa-installed';
 
 export function parseRestSoundEnabled(raw: string | null | undefined): boolean {
+	if (raw === '0' || raw === 'false') return false;
+	return true;
+}
+
+/** Local preference: vibrate when live rest timer ends. Default on. */
+export function parseRestHapticEnabled(raw: string | null | undefined): boolean {
 	if (raw === '0' || raw === 'false') return false;
 	return true;
 }

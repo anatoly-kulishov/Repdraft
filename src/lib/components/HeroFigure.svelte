@@ -17,13 +17,18 @@
 	const box = HERO_VIEWBOX;
 	let src = $derived(sex === 'f' ? '/images/hero/hero-f.png' : '/images/hero/hero-m.png');
 	let shapes = $derived(heroZoneShapes(sex, zones));
+	let figureHeight = $derived(Math.round((size * box.height) / box.width));
 </script>
 
+{#if shapes.length === 0}
+	<!-- ponytail: two SVG <image> side by side can show the same bitmap (onboarding M/F). -->
+	<img class="hero-figure" {src} alt="" width={size} height={figureHeight} decoding="async" />
+{:else}
 <svg
 	class="hero-figure"
 	viewBox="{box.x} {box.y} {box.width} {box.height}"
 	width={size}
-	height={Math.round((size * box.height) / box.width)}
+	height={figureHeight}
 	aria-hidden="true"
 >
 	<defs>
@@ -51,11 +56,13 @@
 		</g>
 	{/if}
 </svg>
+{/if}
 
 <style>
 	.hero-figure {
 		display: block;
 		flex-shrink: 0;
+		object-fit: contain;
 	}
 	.hero-figure__glow {
 		stop-color: var(--color-muscle);

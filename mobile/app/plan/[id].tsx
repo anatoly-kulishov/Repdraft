@@ -6,7 +6,6 @@ import {
 	seedOpenSetsFromLastPerformance,
 	startSessionFromPlan
 } from '@repdraft/domain/session';
-import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
 import type { WorkoutPlan } from '@repdraft/domain/types';
 import {
 	altGroupMemberRole,
@@ -29,13 +28,11 @@ import { Coachmark } from '../../src/components/Coachmark';
 import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
-import { QuestOnboardingSheet } from '../../src/components/QuestOnboardingSheet';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { routeParam } from '../../src/nav/params';
 import { useLocale } from '../../src/state/locale';
 import { dismissCoachmark, loadOnboarding, noteChecklist } from '../../src/state/onboarding';
 import { useAppColors } from '../../src/state/theme';
-import { needsQuestHeroOnboarding, saveQuestHeroProfile } from '../../src/state/questHero';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { readActiveSession, sessionsRepo, writeActiveSession } from '../../src/storage/sessionsRepo';
 import { fontFamily, radius, space, touchMin, type ColorPalette } from '../../src/theme';
@@ -54,8 +51,6 @@ export default function PlanPreviewScreen() {
 	const [busy, setBusy] = useState(false);
 	const [hasActive, setHasActive] = useState(false);
 	const [showCoachmark, setShowCoachmark] = useState(false);
-	const [heroGate, setHeroGate] = useState(false);
-
 	useEffect(() => {
 		let cancelled = false;
 		void (async () => {
@@ -107,16 +102,6 @@ export default function PlanPreviewScreen() {
 
 	async function start() {
 		if (!plan || busy) return;
-		if (await needsQuestHeroOnboarding()) {
-			setHeroGate(true);
-			return;
-		}
-		await beginStart();
-	}
-
-	async function onHeroReady(profile: QuestHeroProfile) {
-		await saveQuestHeroProfile(profile);
-		setHeroGate(false);
 		await beginStart();
 	}
 
@@ -150,7 +135,7 @@ export default function PlanPreviewScreen() {
 				</Text>
 				<Text style={styles.lead}>{tt('preview.today')}</Text>
 				<Text style={styles.metaLine}>
-					{slots} {tt('common.exercises')} · {sets} {tt('summary.sets')}
+					{tt('preview.stats', { exercises: slots, sets })}
 					{muscles ? ` · ${muscles}` : ''}
 				</Text>
 				{plan.exercises.length === 0 ? (
@@ -172,7 +157,7 @@ export default function PlanPreviewScreen() {
 						gRole !== 'solo'
 							? tt('preview.superset')
 							: aRole !== 'solo'
-								? tt('preview.or')
+								? tt('builder.orBadge')
 								: null;
 					const item = getIndexItem(ex.exerciseId);
 					const metaHint = item ? exerciseMetaHint(item, locale) : '';
@@ -212,19 +197,11 @@ export default function PlanPreviewScreen() {
 					/>
 				)}
 				<PrimaryButton
-					label={tt('builder.title')}
+					label={tt('preview.edit')}
 					variant="link"
 					onPress={() => router.push(`/builder/${plan.id}`)}
 				/>
 			</View>
-			<QuestOnboardingSheet
-				visible={heroGate}
-				onComplete={(profile) => void onHeroReady(profile)}
-				onDismiss={() => {
-					setHeroGate(false);
-					void beginStart();
-				}}
-			/>
 		</View>
 	);
 }

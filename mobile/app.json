@@ -1,71 +1,71 @@
 {
-  "expo": {
-    "name": "Repdraft",
-    "slug": "repdraft",
-    "version": "0.22.2",
-    "orientation": "portrait",
-    "icon": "./assets/app-icon.png",
-    "userInterfaceStyle": "automatic",
-    "scheme": "repdraft",
-    "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "app.repdraft.mobile"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#0c0c0e",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      },
-      "package": "app.repdraft.mobile",
-      "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
-      ]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
-    },
-    "plugins": [
-      "expo-router",
-      "expo-audio",
-      "expo-web-browser",
-      [
-        "@kingstinct/react-native-healthkit",
-        {
-          "NSHealthShareUsageDescription": "Repdraft reads workout duration, calories, and heart rate after you finish a session.",
-          "NSHealthUpdateUsageDescription": false,
-          "background": false
-        }
-      ],
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#8b5cf6",
-          "image": "./assets/splash-mark.png",
-          "imageWidth": 120,
-          "resizeMode": "contain",
-          "dark": {
-            "backgroundColor": "#0c0c0e",
-            "image": "./assets/splash-mark.png",
-            "imageWidth": 120,
-            "resizeMode": "contain"
-          }
-        }
-      ]
-    ],
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "c1c7cc75-f83a-422f-9de7-afdcd9d2a4af"
-      }
-    },
-    "owner": "stackbro"
-  }
+	"expo": {
+		"name": "Repdraft",
+		"slug": "repdraft",
+		"version": "0.22.3",
+		"orientation": "portrait",
+		"icon": "./assets/app-icon.png",
+		"userInterfaceStyle": "automatic",
+		"scheme": "repdraft",
+		"newArchEnabled": true,
+		"ios": {
+			"supportsTablet": true,
+			"bundleIdentifier": "app.repdraft.mobile"
+		},
+		"android": {
+			"adaptiveIcon": {
+				"backgroundColor": "#0c0c0e",
+				"foregroundImage": "./assets/android-icon-foreground.png",
+				"backgroundImage": "./assets/android-icon-background.png",
+				"monochromeImage": "./assets/android-icon-monochrome.png"
+			},
+			"package": "app.repdraft.mobile",
+			"predictiveBackGestureEnabled": false,
+			"permissions": [
+				"android.permission.RECORD_AUDIO",
+				"android.permission.MODIFY_AUDIO_SETTINGS",
+				"android.permission.FOREGROUND_SERVICE",
+				"android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+			]
+		},
+		"web": {
+			"favicon": "./assets/favicon.png",
+			"bundler": "metro"
+		},
+		"plugins": [
+			"expo-router",
+			"expo-audio",
+			"expo-web-browser",
+			[
+				"@kingstinct/react-native-healthkit",
+				{
+					"NSHealthShareUsageDescription": "Repdraft reads workout duration, calories, and heart rate after you finish a session.",
+					"NSHealthUpdateUsageDescription": false,
+					"background": false
+				}
+			],
+			[
+				"expo-splash-screen",
+				{
+					"backgroundColor": "#8b5cf6",
+					"image": "./assets/splash-mark.png",
+					"imageWidth": 120,
+					"resizeMode": "contain",
+					"dark": {
+						"backgroundColor": "#0c0c0e",
+						"image": "./assets/splash-mark.png",
+						"imageWidth": 120,
+						"resizeMode": "contain"
+					}
+				}
+			]
+		],
+		"extra": {
+			"router": {},
+			"eas": {
+				"projectId": "c1c7cc75-f83a-422f-9de7-afdcd9d2a4af"
+			}
+		},
+		"owner": "stackbro"
+	}
 }

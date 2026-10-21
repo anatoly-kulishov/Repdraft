@@ -34,7 +34,8 @@ export function PrimaryButton({
 				variant === 'ghost' && styles.ghost,
 				variant === 'danger' && styles.danger,
 				variant === 'link' && styles.link,
-				(disabled || pressed) && styles.dim
+				disabled && styles.disabled,
+				!disabled && pressed && styles.dim
 			]}
 		>
 			<Text
@@ -93,7 +94,10 @@ function makeStyles(colors: ColorPalette) {
 			borderWidth: 0
 		},
 		dim: {
-			opacity: 0.72
+			opacity: 0.88
+		},
+		disabled: {
+			opacity: 0.42
 		},
 		label: {
 			color: colors.text,

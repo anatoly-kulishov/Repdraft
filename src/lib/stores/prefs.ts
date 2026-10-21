@@ -1,9 +1,11 @@
 import { browser } from '$app/environment';
 import {
+	parseRestHapticEnabled,
 	parseRestSoundEnabled,
 	parseTesterModeEnabled,
 	parseWebAnalyticsEnabled,
 	playRestDoneChime,
+	REST_HAPTIC_STORAGE_KEY,
 	REST_SOUND_STORAGE_KEY,
 	TESTER_MODE_STORAGE_KEY,
 	WEB_ANALYTICS_STORAGE_KEY,
@@ -60,18 +62,26 @@ function createLocalBoolPref(opts: {
 	};
 }
 
-function previewRestFeedback() {
-	unlockAudioFromGesture();
-	void hapticRestDone();
-	playRestDoneChime();
-}
-
 /** Local preference: chime when live rest timer ends. Default on. */
 export const restSoundEnabled = createLocalBoolPref({
 	key: REST_SOUND_STORAGE_KEY,
 	parse: parseRestSoundEnabled,
 	fallback: true,
-	onEnable: previewRestFeedback
+	onEnable: () => {
+		unlockAudioFromGesture();
+		playRestDoneChime();
+	}
+});
+
+/** Local preference: vibrate when live rest timer ends. Default on. */
+export const restHapticEnabled = createLocalBoolPref({
+	key: REST_HAPTIC_STORAGE_KEY,
+	parse: parseRestHapticEnabled,
+	fallback: true,
+	onEnable: () => {
+		unlockAudioFromGesture();
+		void hapticRestDone();
+	}
 });
 
 /** Opt-in web-only Vercel Analytics / Speed Insights. Default off. */

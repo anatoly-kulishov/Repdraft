@@ -2,7 +2,7 @@ import { get } from 'svelte/store';
 import { playRestDoneChime, unlockAudioFromGesture } from '$lib/domain/prefs';
 import { hapticRestDone } from '$lib/media/haptics';
 import { live } from '$lib/stores/live';
-import { restSoundEnabled } from '$lib/stores/prefs';
+import { restHapticEnabled, restSoundEnabled } from '$lib/stores/prefs';
 
 export type LiveRestTicker = {
 	stop: () => void;
@@ -24,9 +24,9 @@ export function startLiveRestTicker(handlers: {
 		handlers.onNow(now);
 		const until = get(live).restUntil;
 		if (until != null && until <= now) {
-			if (handlers.getRestChimeArmed() && get(restSoundEnabled)) {
-				void hapticRestDone();
-				playRestDoneChime();
+			if (handlers.getRestChimeArmed()) {
+				if (get(restHapticEnabled)) void hapticRestDone();
+				if (get(restSoundEnabled)) playRestDoneChime();
 			}
 			handlers.setRestChimeArmed(false);
 			live.skipRest();

@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { Image as RNImage } from 'react-native';
 import Svg, { Defs, Ellipse, G, Image, Mask, RadialGradient, Stop } from 'react-native-svg';
 import { HERO_VIEWBOX, heroZoneShapes } from '@repdraft/design/heroFigure';
 import type { QuestHeroSex } from '@repdraft/domain/questHeroProfile';
@@ -22,7 +23,30 @@ export function HeroFigure({ sex = null, zones = [], width = 88 }: Props) {
 	const src = sex === 'f' ? HERO_F : HERO_M;
 	const shapes = heroZoneShapes(sex, zones);
 	const height = Math.round((width * box.height) / box.width);
-	const image = <Image href={src} x={box.x} y={box.y} width={box.width} height={box.height} />;
+
+	// ponytail: react-native-svg can reuse the wrong bitmap when two <Image href={require}> sit on screen (onboarding M/F).
+	if (shapes.length === 0) {
+		return (
+			<RNImage
+				source={src}
+				style={{ width, height }}
+				resizeMode="contain"
+				accessibilityElementsHidden
+				importantForAccessibility="no"
+			/>
+		);
+	}
+
+	const image = (
+		<Image
+			key={sex === 'f' ? 'hero-f' : 'hero-m'}
+			href={src}
+			x={box.x}
+			y={box.y}
+			width={box.width}
+			height={box.height}
+		/>
+	);
 
 	return (
 		<Svg width={width} height={height} viewBox={`${box.x} ${box.y} ${box.width} ${box.height}`}>

@@ -108,7 +108,7 @@
 	{:else}
 		<header class="page-header catalog-hub-intro">
 			<h1 id="catalog-hub-heading" class="page-title">{hubTitle}</h1>
-			<p class="page-lead catalog-hub-intro__lead">{translate(lang, 'catalog.hubLead')}</p>
+			<p class="page-lead catalog-hub-intro__lead">{translate(lang, 'exercises.hubLead')}</p>
 		</header>
 	{/if}
 

@@ -441,7 +441,7 @@ export default function BuilderScreen() {
 						</View>
 						<View style={styles.flex}>
 							<PrimaryButton
-								label={tt('builder.orGroup')}
+								label={tt('builder.or', { n: selectedIds.length })}
 								variant="ghost"
 								compact
 								onPress={() => {
@@ -461,7 +461,16 @@ export default function BuilderScreen() {
 					plan.exercises.length > 0 && styles.listPanel,
 					{ paddingBottom: listPad }
 				]}
-				ListEmptyComponent={<Text style={styles.empty}>{tt('builder.empty')}</Text>}
+				ListEmptyComponent={
+					<View style={styles.emptyWrap}>
+						<Text style={styles.empty}>{tt('builder.empty')}</Text>
+						<PrimaryButton
+							label={tt('builder.createWithAi')}
+							variant="secondary"
+							onPress={() => router.push('/ai')}
+						/>
+					</View>
+				}
 				keyboardShouldPersistTaps="handled"
 				renderItem={({ item, index }) => {
 					const meta = getIndexItem(item.exerciseId);
@@ -471,7 +480,7 @@ export default function BuilderScreen() {
 						gRole !== 'solo'
 							? tt('preview.superset')
 							: aRole !== 'solo'
-								? tt('preview.or')
+								? tt('builder.orBadge')
 								: null;
 					const on = selected.has(item.exerciseId);
 					const groupLead = Boolean(
@@ -771,7 +780,8 @@ function makeStyles(colors: ColorPalette) {
 		overflow: 'hidden',
 		backgroundColor: colors.panel
 	},
-	empty: { color: colors.muted, textAlign: 'center', marginTop: 48, lineHeight: 22, fontFamily: fontFamily.regular },
+	emptyWrap: { alignItems: 'stretch', gap: space.md, marginTop: 48, paddingHorizontal: space.sm },
+	empty: { color: colors.muted, textAlign: 'center', lineHeight: 22, fontFamily: fontFamily.regular },
 	emptyPick: { color: colors.muted, textAlign: 'center', marginTop: 32, fontFamily: fontFamily.regular },
 	pickRow: {
 		minHeight: touchMin + 8,
@@ -863,8 +873,8 @@ function makeStyles(colors: ColorPalette) {
 	},
 	fieldRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 	stepBtn: {
-		width: 28,
-		height: 28,
+		minWidth: touchMin,
+		minHeight: touchMin,
 		borderRadius: radius.sm,
 		backgroundColor: colors.bg,
 		borderWidth: 1,

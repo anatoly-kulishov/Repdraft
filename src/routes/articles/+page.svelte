@@ -49,7 +49,7 @@
 		{:else}
 			{#if showGettingStartedSection}
 				<h2 class="section-title articles-hub__section-title">
-					{translate(lang, 'articles.homeTeaserTitle')}
+					{translate(lang, 'articles.gettingStarted')}
 				</h2>
 				<div class="panel articles-hub__panel">
 					<div class="entity-list">
@@ -60,7 +60,7 @@
 				</div>
 				{#if otherArticles.length > 0}
 					<h2 class="section-title articles-hub__section-title articles-hub__section-title--more">
-						{translate(lang, 'articles.teaserTitle')}
+						{translate(lang, 'articles.more')}
 					</h2>
 					<div class="panel articles-hub__panel">
 						<div class="entity-list">

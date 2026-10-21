@@ -78,7 +78,6 @@ export default function CoachScreen() {
 			Alert.alert(tt('common.error'), tt('coach.noPlan'));
 			return;
 		}
-		Alert.alert(tt('common.ok'), tt('coach.replaced'));
 		router.push(`/builder/${planId}`);
 	}
 
@@ -88,7 +87,6 @@ export default function CoachScreen() {
 			Alert.alert(tt('common.error'), tt('coach.noPlan'));
 			return;
 		}
-		Alert.alert(tt('common.ok'), tt('coach.added'));
 		router.push(`/builder/${planId}`);
 	}
 

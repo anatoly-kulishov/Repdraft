@@ -43,6 +43,9 @@
 	import { questState } from '$lib/stores/quest';
 	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
 	import QuestHomeBanner from '$lib/components/QuestHomeBanner.svelte';
+	import QuestOnboardingSheet from '$lib/components/QuestOnboardingSheet.svelte';
+	import type { QuestHeroProfile } from '$lib/domain/questHeroProfile';
+	import { loadQuestHeroProfile, saveQuestHeroProfile } from '$lib/stores/questHero';
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
@@ -114,6 +117,8 @@
 	let pageReady = $derived(
 		$auth.ready && $auth.sessionKnown && $live.ready && $live.historyHydrated
 	);
+	let heroProfile = $state<QuestHeroProfile | null>(null);
+	let heroSetupOpen = $state(false);
 
 	/** Dev/QA: ?skeleton=create|start */
 	let skeletonForce = $derived(
@@ -332,7 +337,14 @@
 	}
 
 
+	function onHeroSaved(profile: QuestHeroProfile) {
+		saveQuestHeroProfile(profile);
+		heroProfile = profile;
+		heroSetupOpen = false;
+	}
+
 	onMount(() => {
+		heroProfile = loadQuestHeroProfile();
 		const clientPeek = readHomeClientBootPeek();
 		if (clientPeek.accountBoot || clientPeek.hasPlans) {
 			try {
@@ -463,7 +475,12 @@
 		{/if}
 		{#if pageReady}
 			<div class="home-dashboard-top">
-				<QuestHomeBanner quest={$questState} raiseName={raiseName} />
+				<QuestHomeBanner
+					quest={$questState}
+					profile={heroProfile}
+					{raiseName}
+					onSetupHero={() => (heroSetupOpen = true)}
+				/>
 			</div>
 		{/if}
 		{#if showGuestCreateHero}
@@ -578,3 +595,9 @@
 	</div>
 	{/if}
 </section>
+
+<QuestOnboardingSheet
+	bind:open={heroSetupOpen}
+	defaultName={firstName ?? ''}
+	onComplete={onHeroSaved}
+/>

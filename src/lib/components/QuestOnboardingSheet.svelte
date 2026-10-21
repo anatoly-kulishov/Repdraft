@@ -3,7 +3,13 @@
 	import AppInput from '$lib/components/AppInput.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import HeroFigure from '$lib/components/HeroFigure.svelte';
-	import type { QuestHeroProfile, QuestHeroSex } from '$lib/domain/questHeroProfile';
+	import {
+		isQuestOnboardingReady,
+		parseOnboardHeightCm,
+		parseOnboardWeightKg,
+		type QuestHeroProfile,
+		type QuestHeroSex
+	} from '$lib/domain/questHeroProfile';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 
@@ -25,44 +31,41 @@
 	let age = $state('');
 	let height = $state('');
 	let weight = $state('');
+	let wasOpen = $state(false);
+	/** Programmatic close after submit must not fire onAbort (race with sheet onOpenChange). */
+	let skipAbortOnce = $state(false);
 
 	$effect(() => {
-		if (open && name.length === 0 && defaultName) name = defaultName;
+		if (open && !wasOpen) {
+			name = defaultName.trim() || '';
+			sex = null;
+			age = '';
+			height = '';
+			weight = '';
+			skipAbortOnce = false;
+		}
+		wasOpen = open;
 	});
 
-	function parseHeight(): number | null {
-		if (!height.trim()) return null;
-		const n = parseInt(height, 10);
-		if (!Number.isFinite(n)) return null;
-		return Math.min(250, Math.max(100, n));
-	}
-
-	function parseWeight(): number | null {
-		if (!weight.trim()) return null;
-		const n = parseFloat(weight.replace(',', '.'));
-		if (!Number.isFinite(n)) return null;
-		return Math.min(300, Math.max(30, n));
-	}
-
-	let completing = false;
-
 	let ready = $derived(
-		name.trim().length > 0 && (sex === 'm' || sex === 'f') && parseHeight() != null && parseWeight() != null
+		isQuestOnboardingReady({ displayName: name, sex, heightRaw: height, weightRaw: weight })
 	);
 
-	function submit() {
-		const heightCm = parseHeight();
-		const weightKg = parseWeight();
+	function submit(event?: Event) {
+		event?.preventDefault();
+		const heightCm = parseOnboardHeightCm(height);
+		const weightKg = parseOnboardWeightKg(weight);
 		if (!name.trim() || (sex !== 'm' && sex !== 'f') || heightCm == null || weightKg == null) return;
-		completing = true;
-		onComplete({
+		const profile: QuestHeroProfile = {
 			displayName: name.trim(),
 			sex,
-			age: age.trim() ? Math.min(99, Math.max(10, parseInt(age, 10) || 0)) : null,
+			age: age.trim() ? Math.min(99, Math.max(10, parseInt(String(age), 10) || 0)) : null,
 			heightCm,
 			weightKg,
 			completedAt: new Date().toISOString()
-		});
+		};
+		skipAbortOnce = true;
+		onComplete(profile);
 		open = false;
 	}
 </script>
@@ -72,57 +75,64 @@
 	label={translate(lang, 'quest.onboardTitle')}
 	onDismiss={() => {
 		open = false;
-		if (!completing) onAbort?.();
+		if (skipAbortOnce) {
+			skipAbortOnce = false;
+			return;
+		}
+		onAbort?.();
 	}}
 >
 	<p class="quest-onboard__title">{translate(lang, 'quest.onboardTitle')}</p>
 	<p class="quest-onboard__lead">{translate(lang, 'quest.onboardLead')}</p>
-	<div class="quest-onboard__sex" role="group" aria-label={translate(lang, 'quest.onboardTitle')}>
-		{#each ['m', 'f'] as const as s (s)}
-			<button
-				type="button"
-				class="quest-onboard__sex-btn"
-				class:quest-onboard__sex-btn--on={sex === s}
-				aria-pressed={sex === s}
-				aria-label={s === 'm' ? translate(lang, 'quest.sexM') : translate(lang, 'quest.sexF')}
-				onclick={() => (sex = s)}
-			>
-				<HeroFigure {sex} size={72} />
-				<span>{s === 'm' ? translate(lang, 'quest.sexM') : translate(lang, 'quest.sexF')}</span>
-			</button>
-		{/each}
-	</div>
-	<AppInput
-		class="quest-onboard__field"
-		type="text"
-		placeholder={translate(lang, 'quest.onboardName')}
-		bind:value={name}
-	/>
-	<AppInput
-		class="quest-onboard__field"
-		type="number"
-		inputmode="numeric"
-		placeholder={translate(lang, 'quest.onboardAge')}
-		bind:value={age}
-	/>
-	<AppInput
-		class="quest-onboard__field"
-		type="number"
-		inputmode="numeric"
-		placeholder={translate(lang, 'quest.onboardHeight')}
-		bind:value={height}
-	/>
-	<AppInput
-		class="quest-onboard__field"
-		type="text"
-		inputmode="decimal"
-		placeholder={translate(lang, 'quest.onboardWeight')}
-		bind:value={weight}
-	/>
-	<p class="quest-onboard__privacy">{translate(lang, 'quest.onboardPrivacy')}</p>
-	{#snippet actions()}
-		<AppButton block disabled={!ready} onclick={submit}>{translate(lang, 'quest.onboardSubmit')}</AppButton>
-	{/snippet}
+	<form class="quest-onboard__form" onsubmit={submit}>
+		<div class="quest-onboard__sex" role="group" aria-label={translate(lang, 'quest.onboardTitle')}>
+			{#each ['m', 'f'] as const as s (s)}
+				<button
+					type="button"
+					class="quest-onboard__sex-btn"
+					class:quest-onboard__sex-btn--on={sex === s}
+					aria-pressed={sex === s}
+					aria-label={s === 'm' ? translate(lang, 'quest.sexM') : translate(lang, 'quest.sexF')}
+					onclick={() => (sex = s)}
+				>
+					{#key s}
+						<HeroFigure sex={s} size={72} />
+					{/key}
+					<span>{s === 'm' ? translate(lang, 'quest.sexM') : translate(lang, 'quest.sexF')}</span>
+				</button>
+			{/each}
+		</div>
+		<AppInput
+			type="text"
+			placeholder={translate(lang, 'quest.onboardName')}
+			bind:value={name}
+		/>
+		<AppInput
+			type="text"
+			inputmode="numeric"
+			autocomplete="off"
+			placeholder={translate(lang, 'quest.onboardAge')}
+			bind:value={age}
+		/>
+		<AppInput
+			type="text"
+			inputmode="numeric"
+			autocomplete="off"
+			placeholder={translate(lang, 'quest.onboardHeight')}
+			bind:value={height}
+		/>
+		<AppInput
+			type="text"
+			inputmode="decimal"
+			autocomplete="off"
+			placeholder={translate(lang, 'quest.onboardWeight')}
+			bind:value={weight}
+		/>
+		<p class="quest-onboard__privacy">{translate(lang, 'quest.onboardPrivacy')}</p>
+		<AppButton type="submit" block disabled={!ready}>
+			{translate(lang, 'quest.onboardSubmit')}
+		</AppButton>
+	</form>
 </BottomSheet>
 
 <style>
@@ -140,7 +150,6 @@
 	.quest-onboard__sex {
 		display: flex;
 		gap: 0.5rem;
-		margin-bottom: 0.65rem;
 	}
 	.quest-onboard__sex-btn {
 		flex: 1;
@@ -159,9 +168,19 @@
 	.quest-onboard__sex-btn--on {
 		border-color: var(--color-muscle);
 	}
+	.quest-onboard__form {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		margin: 0;
+	}
+	.quest-onboard__form > .quest-onboard__privacy {
+		margin-top: 0.15rem;
+	}
 	.quest-onboard__privacy {
-		margin: 0.5rem 0 0;
+		margin: 0.5rem 0 1.25rem;
 		font-size: 0.8125rem;
+		line-height: 1.45;
 		opacity: 0.7;
 	}
 </style>

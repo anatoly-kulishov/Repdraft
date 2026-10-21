@@ -8,26 +8,30 @@
 		questDailyHint,
 		type QuestState
 	} from '$lib/domain/quest';
-	import type { QuestHeroProfile } from '$lib/domain/questHeroProfile';
+	import { isHeroReady, type QuestHeroProfile } from '$lib/domain/questHeroProfile';
+	import AppButton from '$lib/components/AppButton.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { live } from '$lib/stores/live';
-	import { loadQuestHeroProfile } from '$lib/stores/questHero';
-	import { onMount } from 'svelte';
-
-	let { quest, raiseName = null }: { quest: QuestState; raiseName?: string | null } = $props();
+	let {
+		quest,
+		profile = null,
+		raiseName = null,
+		onSetupHero = undefined
+	}: {
+		quest: QuestState;
+		profile?: QuestHeroProfile | null;
+		raiseName?: string | null;
+		onSetupHero?: () => void;
+	} = $props();
 
 	let lang = $derived($resolvedLocale);
-	let profile = $state<QuestHeroProfile | null>(null);
 	let xp = $derived(heroXpProgress(quest.hero.totalXp));
 	let hint = $derived(questDailyHint(quest, raiseName));
 	let stats = $derived(heroDisplayStats({ profile, sessions: $live.history }));
 	let fillPct = $derived(Math.min(1, xp.xpInLevel / xp.xpForLevel));
 	let name = $derived(profile?.displayName.trim() || translate(lang, 'quest.heroNameless'));
-
-	onMount(() => {
-		profile = loadQuestHeroProfile();
-	});
+	let showHeroSetup = $derived(Boolean(onSetupHero && !isHeroReady(profile)));
 
 	let chapterLabel = $derived.by(() => {
 		const c = quest.campaign;
@@ -102,6 +106,14 @@
 		<p class="quest-home__daily-label">{translate(lang, 'quest.dailyTitle')}</p>
 		<p class="quest-home__daily-text">{hintText}</p>
 	</div>
+	{#if showHeroSetup}
+		<div class="quest-home__setup">
+			<p class="quest-home__setup-hint">{translate(lang, 'quest.homeSetupHeroHint')}</p>
+			<AppButton block variant="secondary" onclick={() => onSetupHero?.()}>
+				{translate(lang, 'quest.homeSetupHero')}
+			</AppButton>
+		</div>
+	{/if}
 </AppPanel>
 
 <style>
@@ -188,5 +200,17 @@
 	.quest-home__daily-text {
 		margin: 0.2rem 0 0;
 		font-size: 0.9375rem;
+	}
+	.quest-home__setup {
+		margin-top: 0.75rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	.quest-home__setup-hint {
+		margin: 0;
+		font-size: 0.8125rem;
+		line-height: 1.4;
+		opacity: 0.75;
 	}
 </style>

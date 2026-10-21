@@ -25,8 +25,10 @@ import {
 	previousPlanSession,
 	sessionDurationMs,
 	sessionVolumeKg,
+	setKindMessageKey,
 	visibleSessionExerciseIndices
 } from '@repdraft/domain/session';
+import { formatDurationMs } from '@repdraft/i18n/format';
 import type { WorkoutSession } from '@repdraft/domain/types';
 import {
 	exerciseDisplayName,
@@ -60,13 +62,6 @@ import { loadQuestHeroProfile } from '../../src/state/questHero';
 import { useAppColors } from '../../src/state/theme';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { fontFamily, radius, space, touchMin, type ColorPalette } from '../../src/theme';
-
-function formatDuration(ms: number): string {
-	const totalSec = Math.max(0, Math.round(ms / 1000));
-	const m = Math.floor(totalSec / 60);
-	const s = totalSec % 60;
-	return `${m}:${String(s).padStart(2, '0')}`;
-}
 
 export default function SummaryScreen() {
 	const { id: idParam } = useLocalSearchParams<{ id: string }>();
@@ -172,8 +167,8 @@ export default function SummaryScreen() {
 			>
 			<View style={styles.hero}>
 				<CircleCheck size={48} color={colors.accent} strokeWidth={2} />
-				<Text style={styles.kicker}>{tt('summary.saved')}</Text>
-				<Text style={styles.title} numberOfLines={2}>
+				<Text style={styles.title}>{tt('summary.title')}</Text>
+				<Text style={styles.kicker} numberOfLines={2}>
 					{session.planName}
 				</Text>
 			</View>
@@ -211,13 +206,13 @@ export default function SummaryScreen() {
 				) : null}
 				<View style={styles.stats}>
 					<View style={styles.stat}>
-						<Text style={styles.statLabel}>{tt('summary.time')}</Text>
+						<Text style={styles.statLabel}>{tt('summary.duration')}</Text>
 						<Text style={styles.statValue}>
-							{formatDuration(sessionDurationMs(session) ?? 0)}
+							{formatDurationMs(sessionDurationMs(session) ?? 0, { extended: true })}
 						</Text>
 					</View>
 					<View style={styles.stat}>
-						<Text style={styles.statLabel}>{tt('common.exercises')}</Text>
+						<Text style={styles.statLabel}>{tt('summary.exercises')}</Text>
 						<Text style={styles.statValue}>{completedExerciseCount(session)}</Text>
 					</View>
 					<View style={styles.stat}>
@@ -227,9 +222,11 @@ export default function SummaryScreen() {
 					<View style={styles.stat}>
 						<Text style={styles.statLabel}>{tt('summary.volume')}</Text>
 						<Text style={styles.statValue}>{volume} {tt('pr.kg')}</Text>
-						{delta != null ? (
+						{delta != null && delta !== 0 ? (
 							<Text style={styles.delta}>
-								{delta > 0 ? `+${delta}` : String(delta)}
+								{tt(delta > 0 ? 'summary.volumeUp' : 'summary.volumeDown', {
+									delta: Math.abs(delta)
+								})}
 							</Text>
 						) : null}
 					</View>
@@ -265,15 +262,7 @@ export default function SummaryScreen() {
 								? done.map((set, si) => (
 										<Text key={si} style={styles.setLine}>
 											{si + 1}. {set.weightKg ?? '-'} × {set.reps ?? '-'} ·{' '}
-											{tt(
-												loggedSetKind(set) === 'warmup'
-													? 'live.setKindWarmup'
-													: loggedSetKind(set) === 'drop'
-														? 'live.setKindDrop'
-														: loggedSetKind(set) === 'failure'
-															? 'live.setKindFailure'
-															: 'live.setKindWork'
-											)}
+											{tt(setKindMessageKey(loggedSetKind(set)))}
 										</Text>
 									))
 								: null}
@@ -293,6 +282,11 @@ export default function SummaryScreen() {
 			</ScrollView>
 			<View style={[styles.footer, { paddingBottom: bottomPad }]}>
 				<PrimaryButton label={tt('summary.back')} onPress={() => router.replace('/')} />
+				<PrimaryButton
+					label={tt('summary.openSession')}
+					variant="link"
+					onPress={() => router.push(`/history/${session.id}`)}
+				/>
 			</View>
 		</View>
 	);
