@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAppColors } from '../state/theme';
 import { fontFamily, radius, touchMin, type ColorPalette } from '../theme';
 
@@ -11,6 +12,11 @@ type Props = {
 	compact?: boolean;
 };
 
+/**
+ * Primary control. Matches web CTA look: pill radius,
+ * accent gradient fill (+ gradient on press, mirroring web hover),
+ * semibold label, scale-down press.
+ */
 export function PrimaryButton({
 	label,
 	onPress,
@@ -21,6 +27,23 @@ export function PrimaryButton({
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 
+	// Web CTA gradient (135deg): accentGradientStart → accentFill.
+	// On hover/press web swaps to accentGradientHoverStart → accentGradientHoverEnd.
+	const primaryGradient = useMemo(
+		() => [colors.accentGradientStart, colors.accentFill] as const,
+		[colors]
+	);
+	const primaryGradientPressed = useMemo(
+		() => [colors.accentGradientHoverStart, colors.accentGradientHoverEnd] as const,
+		[colors]
+	);
+	const disabledGradient = useMemo(
+		() => [colors.accentFill, colors.accentFill] as const,
+		[colors]
+	);
+
+	const isPrimary = variant === 'primary';
+
 	return (
 		<Pressable
 			accessibilityRole="button"
@@ -29,27 +52,32 @@ export function PrimaryButton({
 			style={({ pressed }) => [
 				styles.base,
 				compact && styles.compact,
-				variant === 'primary' && styles.primary,
-				variant === 'secondary' && styles.secondary,
-				variant === 'ghost' && styles.ghost,
-				variant === 'danger' && styles.danger,
-				variant === 'link' && styles.link,
+				!isPrimary && variant === 'secondary' && styles.secondary,
+				!isPrimary && variant === 'ghost' && styles.ghost,
+				!isPrimary && variant === 'danger' && styles.danger,
+				!isPrimary && variant === 'link' && styles.link,
 				disabled && styles.disabled,
-				!disabled && pressed && styles.dim
+				!disabled && pressed && styles.pressed
 			]}
 		>
-			<Text
-				style={[
-					styles.label,
-					compact && styles.labelCompact,
-					variant === 'primary' && styles.labelOnInk,
-					variant === 'danger' && styles.labelDanger,
-					variant === 'link' && styles.labelLink
-				]}
-				numberOfLines={1}
-			>
-				{label}
-			</Text>
+			{({ pressed }) =>
+				isPrimary ? (
+					<LinearGradient
+						colors={disabled ? disabledGradient : pressed ? primaryGradientPressed : primaryGradient}
+						start={{ x: 0, y: 1 }}
+						end={{ x: 1, y: 0 }}
+						style={[styles.fill, compact && styles.fillCompact]}
+					>
+						<Text style={[styles.label, compact && styles.labelCompact, styles.labelOnInk]}>
+							{label}
+						</Text>
+					</LinearGradient>
+				) : (
+					<Text style={[styles.label, compact && styles.labelCompact]}>
+						{label}
+					</Text>
+				)
+			}
 		</Pressable>
 	);
 }
@@ -60,63 +88,68 @@ function makeStyles(colors: ColorPalette) {
 			minHeight: touchMin,
 			minWidth: touchMin,
 			borderRadius: radius.pill,
-			paddingHorizontal: 18,
+			borderWidth: 1,
+			borderColor: 'transparent',
 			alignItems: 'center',
-			justifyContent: 'center'
+			justifyContent: 'center',
+			paddingHorizontal: 18,
+			paddingVertical: 6,
+			// Fallback behind the gradient overlay (kept in palette for non-primary).
+			backgroundColor: colors.accentFill,
+			overflow: 'hidden'
 		},
 		compact: {
 			paddingHorizontal: 12,
 			flexShrink: 1
 		},
-		primary: {
-			// Shared accentFill (web CTA solid); gradient stays web-only.
-			backgroundColor: colors.accentFill,
-			borderWidth: 1,
-			borderColor: colors.accentFill
+		fill: {
+			position: 'absolute',
+			top: 0,
+			right: 0,
+			bottom: 0,
+			left: 0,
+			alignItems: 'center',
+			justifyContent: 'center',
+			paddingHorizontal: 18,
+			paddingVertical: 6
+		},
+		fillCompact: {
+			paddingHorizontal: 12
 		},
 		secondary: {
 			backgroundColor: colors.panelRaised,
-			borderWidth: 1,
 			borderColor: colors.border
 		},
 		ghost: {
 			backgroundColor: 'transparent',
-			borderWidth: 1,
 			borderColor: 'transparent'
 		},
 		danger: {
 			backgroundColor: colors.dangerBg,
-			borderWidth: 1,
 			borderColor: colors.danger
 		},
 		link: {
 			backgroundColor: 'transparent',
 			borderWidth: 0
 		},
-		dim: {
-			opacity: 0.88
+		pressed: {
+			transform: [{ scale: 0.98 }]
 		},
 		disabled: {
 			opacity: 0.42
 		},
 		label: {
 			color: colors.text,
-			fontSize: 17,
-			fontWeight: '700',
-			fontFamily: fontFamily.bold
+			fontSize: 16,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold,
+			textAlign: 'center'
 		},
 		labelCompact: {
 			fontSize: 15
 		},
 		labelOnInk: {
 			color: colors.accentInk
-		},
-		labelDanger: {
-			color: colors.danger
-		},
-		labelLink: {
-			color: colors.accentLink,
-			textDecorationLine: 'underline'
 		}
 	});
 }

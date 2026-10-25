@@ -232,7 +232,6 @@
 			return (
 				path === '/progress' ||
 				path === '/coach' ||
-				path === '/achievements' ||
 				path.startsWith('/progress/')
 			);
 		}

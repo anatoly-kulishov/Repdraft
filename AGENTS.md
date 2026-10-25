@@ -11,7 +11,7 @@ Sacred workout loop. Not feature count. Fast on weak phones.
 
 React Native (Expo in `mobile/`) + SvelteKit web/PWA. Shared `src/lib/domain`.
 
-**Dual client:** ship web parity for non-native features (Quest, achievements, progress, profile, sacred loop on PWA). See [`.cursor/rules/dual-client-parity.mdc`](.cursor/rules/dual-client-parity.mdc). RN-first UX is fine; RN-only product surface is not, unless Health/watch/native modules.
+**Dual client:** ship web parity for non-native features (import, coach mode, progress, profile, sacred loop on PWA). See [`.cursor/rules/dual-client-parity.mdc`](.cursor/rules/dual-client-parity.mdc). RN-first UX is fine; RN-only product surface is not, unless Health/watch/native modules.
 
 ## Commands
 

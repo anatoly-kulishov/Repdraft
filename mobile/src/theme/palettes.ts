@@ -20,6 +20,9 @@ export type ColorPalette = {
 	muted: string;
 	accent: string;
 	accentFill: string;
+	accentGradientStart: string;
+	accentGradientHoverStart: string;
+	accentGradientHoverEnd: string;
 	/** White (or on-fill) label on primary CTA. */
 	accentInk: string;
 	/** @deprecated Use accentInk for CTA ink; kept for compat. */
@@ -46,6 +49,9 @@ function toRnPalette(c: CoreColorPalette): ColorPalette {
 		muted: c.muted,
 		accent: c.accent,
 		accentFill: c.accentFill,
+		accentGradientStart: c.accentGradientStart,
+		accentGradientHoverStart: c.accentGradientHoverStart,
+		accentGradientHoverEnd: c.accentGradientHoverEnd,
 		accentInk: c.accentInk,
 		accentText: c.accentInk,
 		accentLink: c.accentText,

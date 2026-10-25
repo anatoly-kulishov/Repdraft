@@ -14,6 +14,25 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.22.4',
+		highlights: {
+			ru: [
+				'Импорт истории тренировок: Strong, Hevy, FitNotes и таблицы Excel',
+				'Незнакомые упражнения можно сопоставить с каталогом прямо при импорте',
+				'Приложение открывается без интернета и не теряет тренировку в зале',
+				'Режим тренера: приглашение по коду и карточки клиентов',
+				'Убрали игровые элементы: опыт, кампании и ачивки'
+			],
+			en: [
+				'Import workout history: Strong, Hevy, FitNotes and Excel tables',
+				'Map unknown exercises to the catalog during import',
+				'The app opens offline and never loses a workout in the gym',
+				'Coach mode: invite codes and client cards',
+				'Removed game elements: XP, campaigns and achievements'
+			]
+		}
+	},
+	{
 		version: '0.22.3',
 		highlights: {
 			ru: [

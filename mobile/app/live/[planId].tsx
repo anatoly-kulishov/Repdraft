@@ -49,7 +49,6 @@ import {
 	updateLoggedSet,
 	visibleSessionExerciseIndices
 } from '@repdraft/domain/session';
-import { XP_WEIGHT_UP } from '@repdraft/domain/quest';
 import { exerciseWeightByWeek, nextWeightHint, weightAboveLast } from '@repdraft/domain/sessionPayoff';
 import { isBodyweightEquipment, isCardioBodyPart } from '@repdraft/domain/workout';
 import type { LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
@@ -74,16 +73,13 @@ import {
 	pickDefaultExerciseIndex
 } from '../../src/live/sessionUi';
 import {
-	countImprovedRecords,
 	mergeSessionRecordsInto,
 	recordsFromFinishedSession
 } from '@repdraft/domain/sessionRecords';
-import { noteFinishedSessionAchievements } from '../../src/state/achievements';
 import { isHealthReadEnabled } from '../../src/state/healthPrefs';
 import { getHealthAdapter, saveLastHealthSnapshot } from '../../src/health';
 import { useLocale } from '../../src/state/locale';
 import { noteChecklist } from '../../src/state/onboarding';
-import { noteFinishedSession } from '../../src/state/quest';
 import { useAppColors } from '../../src/state/theme';
 import { kvSetJson } from '../../src/storage/kv';
 import { plansRepo } from '../../src/storage/plansRepo';
@@ -496,19 +492,10 @@ export default function LiveScreen() {
 		await sessionsRepo.save(done);
 		const fromSession = recordsFromFinishedSession(done);
 		const existing = await recordsRepo.list();
-		const newPrCount = countImprovedRecords(existing, fromSession);
 		const mergedRecords = mergeSessionRecordsInto(existing, fromSession);
 		await kvSetJson(RECORDS_STORAGE_KEY, mergedRecords);
 		await writeActiveSession(null);
 		await writeRestUntil(null);
-		const allSessions = await sessionsRepo.list();
-		const questApply = await noteFinishedSession(done, allSessions);
-		await noteFinishedSessionAchievements({
-			justFinished: done,
-			finishedSessions: allSessions,
-			questGoalJustMet: Boolean(questApply?.goalJustMet),
-			newPrCount
-		});
 		if (done.finishedAt && (await isHealthReadEnabled())) {
 			const health = getHealthAdapter();
 			if (health.isAvailable()) {
@@ -961,7 +948,7 @@ function WeightCue({
 			</View>
 			{raised ? (
 				<Text style={{ color: colors.xp, fontWeight: '700' }}>
-					{tt('quest.weightUpChip', { xp: String(XP_WEIGHT_UP) })}
+					{tt('quest.weightUpChip')}
 				</Text>
 			) : null}
 			{hint ? (

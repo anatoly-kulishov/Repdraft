@@ -9,15 +9,7 @@ import {
 	View
 } from 'react-native';
 import { CircleCheck } from 'lucide-react-native';
-import {
-	achievementTitleKey,
-	countableFinishedSessions,
-	type AchievementId,
-	type AchievementsState
-} from '@repdraft/domain/achievements';
 import { pickCatalogExerciseForBodyPart } from '@repdraft/domain/trainingLoad';
-import type { QuestApplyResult, QuestState } from '@repdraft/domain/quest';
-import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
 import {
 	completedExerciseCount,
 	completedSetCount,
@@ -36,13 +28,10 @@ import {
 	loadExerciseIndex,
 	refreshCustomsCache
 } from '../../src/catalog/loadIndex';
-import { AchievementUnlockSheet } from '../../src/components/AchievementUnlockSheet';
-import { AchievementsPanel } from '../../src/components/AchievementsPanel';
 import { SummaryLoadPanel } from '../../src/components/SummaryLoadPanel';
 import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
-import { QuestSummaryCard } from '../../src/components/QuestSummaryCard';
 import {
 	formatHealthSnapshotLine,
 	loadLastHealthSnapshot,
@@ -50,15 +39,8 @@ import {
 } from '../../src/health';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { routeParam } from '../../src/nav/params';
-import {
-	isAchievementsEnabled,
-	loadAchievementsState,
-	loadLastAchievementUnlock
-} from '../../src/state/achievements';
 import { appendExerciseToHomePlan } from '../../src/lib/planPatch';
 import { useLocale } from '../../src/state/locale';
-import { loadLastQuestApply, loadQuestState } from '../../src/state/quest';
-import { loadQuestHeroProfile } from '../../src/state/questHero';
 import { useAppColors } from '../../src/state/theme';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { fontFamily, radius, space, touchMin, type ColorPalette } from '../../src/theme';
@@ -74,15 +56,9 @@ export default function SummaryScreen() {
 	const scrollPad = bottomPad + 88;
 	const [session, setSession] = useState<WorkoutSession | null>(null);
 	const [prevVolume, setPrevVolume] = useState<number | null>(null);
-	const [questApply, setQuestApply] = useState<QuestApplyResult | null>(null);
-	const [questState, setQuestState] = useState<QuestState | null>(null);
-	const [heroProfile, setHeroProfile] = useState<QuestHeroProfile | null>(null);
-	const [achState, setAchState] = useState<AchievementsState | null>(null);
-	const [newAchIds, setNewAchIds] = useState<AchievementId[] | null>(null);
 	const [healthSnap, setHealthSnap] = useState<HealthWorkoutSnapshot | null>(null);
 	const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 	const [allSessions, setAllSessions] = useState<WorkoutSession[]>([]);
-	const [achModalDismissed, setAchModalDismissed] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -95,28 +71,6 @@ export default function SummaryScreen() {
 			if (found) {
 				const prev = previousPlanSession(all, found);
 				if (!cancelled) setPrevVolume(prev ? sessionVolumeKg(prev) : null);
-			}
-			if (id) {
-				const [apply, st, hero] = await Promise.all([
-					loadLastQuestApply(id),
-					loadQuestState(),
-					loadQuestHeroProfile()
-				]);
-				if (!cancelled) {
-					setQuestApply(apply);
-					setQuestState(st);
-					setHeroProfile(hero);
-				}
-			}
-			if (await isAchievementsEnabled()) {
-				const [st, unlocked] = await Promise.all([
-					loadAchievementsState(),
-					id ? loadLastAchievementUnlock(id) : Promise.resolve(null)
-				]);
-				if (!cancelled) {
-					setAchState(st);
-					setNewAchIds(unlocked);
-				}
 			}
 			if (id) {
 				const snap = await loadLastHealthSnapshot(id);
@@ -135,8 +89,6 @@ export default function SummaryScreen() {
 	const volume = Math.round(sessionVolumeKg(session));
 	const delta = prevVolume != null ? volume - Math.round(prevVolume) : null;
 	const visible = visibleSessionExerciseIndices(session);
-	const showAchModal = Boolean(newAchIds?.length && !achModalDismissed);
-	const finishedForAch = countableFinishedSessions(allSessions);
 
 	async function addLaggingToPlan(bodyPart: string) {
 		const exerciseId = pickCatalogExerciseForBodyPart(loadExerciseIndex(), bodyPart);
@@ -154,13 +106,6 @@ export default function SummaryScreen() {
 
 	return (
 		<View style={styles.root}>
-			<AchievementUnlockSheet
-				ids={showAchModal ? newAchIds : null}
-				onClose={() => {
-					setAchModalDismissed(true);
-					router.push('/achievements');
-				}}
-			/>
 			<ScrollView
 				style={styles.flex}
 				contentContainerStyle={[styles.scroll, { paddingBottom: scrollPad }]}
@@ -172,31 +117,7 @@ export default function SummaryScreen() {
 					{session.planName}
 				</Text>
 			</View>
-				{questApply && questState ? (
-					<QuestSummaryCard
-						apply={questApply}
-						state={questState}
-						session={session}
-						sex={heroProfile?.sex ?? null}
-						bodyPartFor={(exerciseId) => {
-							const item = loadExerciseIndex().find((row) => row.id === exerciseId);
-							return item?.body_part ?? null;
-						}}
-						exerciseLabel={(exerciseId) => exerciseDisplayName(exerciseId, locale)}
-					/>
-				) : null}
-				{newAchIds && newAchIds.length > 0 ? (
-					<Panel accent>
-						<Text style={styles.achBannerTitle}>{tt('achievements.unlocked')}</Text>
-						{newAchIds.map((aid) => (
-							<Text key={aid} style={styles.achBannerLine}>
-								{'• '}
-								{tt(achievementTitleKey(aid))}
-							</Text>
-						))}
-					</Panel>
-				) : null}
-				{healthSnap ? (
+			{healthSnap ? (
 					<Panel>
 						<Text style={styles.healthTitle}>{tt('health.fromHealth')}</Text>
 						<Text style={styles.healthLine}>
@@ -269,16 +190,6 @@ export default function SummaryScreen() {
 						</Panel>
 					);
 				})}
-				{achState ? (
-					<Panel>
-						<Text style={styles.sectionTitle}>{tt('achievements.title')}</Text>
-						<AchievementsPanel
-							state={achState}
-							finishedSessions={finishedForAch}
-							highlightIds={newAchIds}
-						/>
-					</Panel>
-				) : null}
 			</ScrollView>
 			<View style={[styles.footer, { paddingBottom: bottomPad }]}>
 				<PrimaryButton label={tt('summary.back')} onPress={() => router.replace('/')} />
@@ -300,17 +211,6 @@ function makeStyles(colors: ColorPalette) {
 		hero: { alignItems: 'center', gap: space.sm },
 		kicker: { color: colors.accentLink, fontWeight: '700', fontSize: 14, fontFamily: fontFamily.bold },
 		title: { color: colors.text, fontSize: 24, fontWeight: '800', fontFamily: fontFamily.extrabold, textAlign: 'center' },
-		sectionTitle: {
-			color: colors.muted,
-			fontWeight: '700',
-			fontSize: 13,
-			letterSpacing: 0.4,
-			textTransform: 'uppercase',
-			marginBottom: space.xs,
-			fontFamily: fontFamily.bold
-		},
-		achBannerTitle: { color: colors.text, fontWeight: '800', fontSize: 16, fontFamily: fontFamily.extrabold },
-		achBannerLine: { color: colors.accent, fontWeight: '600', fontSize: 14, fontFamily: fontFamily.semibold },
 		healthTitle: { color: colors.text, fontWeight: '700', fontSize: 15, fontFamily: fontFamily.bold },
 		healthLine: { color: colors.muted, fontSize: 14, lineHeight: 20, fontFamily: fontFamily.regular },
 		stats: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.sm },

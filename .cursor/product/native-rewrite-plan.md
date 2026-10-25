@@ -7,14 +7,14 @@
 | Фаза | Статус | Суть |
 |---|---|---|
 | A Метрики цикла | в коде | `domain/loopMetrics.ts`, снимок в профиле (tester) |
-| B Opt-in Quest | в коде (PWA + RN) | `domain/quest.ts`, toggle, summary card; RN `QuestSummaryCard` |
+| B Opt-in Quest | **снят с продукта** | UI Quest/ачивок удалён (web + RN). Domain (`quest.ts`, `achievements.ts`) не удалён: им пользуется progress (`weekKeyFromDate`). Курс — профессиональный логгер, без RPG. |
 | C Часы | spike ADR | [`.cursor/product/watch-session-ownership.md`](./watch-session-ownership.md); native UI отдельно |
 | D RN ядро | почти паритет | `mobile/` - live, builder, home, history близко к web; тема через `useAppColors`; техника через API |
-| E Часы + Quest native | частично | Quest, ачивки и HealthKit на RN; Health Connect всё ещё scaffold; часы не начаты |
+| E Часы + Quest native | **снят** | HealthKit/Health Connect остаются, RPG-слой (XP, кампания, hero) убран |
 
 ## Обещание
 
-Быстрая запись подхода на телефоне (позже на часах), понятный прогресс, возврат после перерыва без наказания. Рабочее имя режима: **Repdraft Quest** (opt-in).
+Быстрая запись подхода на телефоне (позже на часах), понятный прогресс, возврат после перерыва без наказания. Никаких XP, уровней, кампаний и ачивок: профессиональный инструмент, а не игра.
 
 ## Архитектура
 
@@ -59,6 +59,25 @@ RN:  / → /plan/[id] → /live/[planId] → /summary/[id]
 | Часы | не в scope D |
 
 В ядро: планы, прошлый раз, подходы, rest, autosave, resume, история, export. Без питания, readiness, маркетплейса программ, соцсети как центра.
+
+## Фаза F: тренер ↔ клиент (Фаза 2 плана)
+
+**Статус:** домен + Supabase-слой готовы.
+
+- Связь `CoachClientLink`: `pending → active → revoked`, отзыв необратим, лимит активных клиентов.
+- Инвайт-код: 8 символов, алфавит без I/L/O/U, нормализация OCR-ошибок, формат `ABCD-1234`.
+- Роллап для тренера: тренировки/подходы/тоннаж, «7 дней», «активен за 48 часов».
+- SQL применён в проекте (`~/.repdraft-sql/coach-mode.sql`), проверен 19 сценариями на Postgres 16.
+- Клиент: `storage/coachRepository.ts` (RPC + маппинг SQLSTATE `RDC01…RDC05` → i18n), экран `/clients` в облачном режиме, приём кода — в профиле.
+
+**Дальше:**
+
+1. Имена клиентов: сейчас `note` или короткий id — нужна выборка из профилей.
+2. «План vs факт»: назначение плана клиенту (таблица `coach_assignments`).
+3. Мобильный паритет `/clients`.
+4. Оплата тренера (Stripe / ЮKassa).
+
+**Вне scope:** чат, питание, маркетплейс программ, биллинг клиентов тренера.
 
 ## Часы (фаза C/E, кратко)
 

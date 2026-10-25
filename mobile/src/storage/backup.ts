@@ -4,6 +4,13 @@ import {
 	type RepdraftExportPayload
 } from '@repdraft/domain/exportData';
 import {
+	detectCsvFormat,
+	parseCsvImport,
+	splitCsvRows,
+	type CsvImportReport
+} from '@repdraft/domain/importCsv';
+import type { ExerciseIndexItem } from '@repdraft/domain/types';
+import {
 	CUSTOM_EXERCISES_STORAGE_KEY,
 	PLANS_STORAGE_KEY,
 	RECORDS_STORAGE_KEY,
@@ -46,4 +53,23 @@ export async function applyBackupImport(payload: RepdraftExportPayload): Promise
 
 export function parseBackupText(raw: string) {
 	return parseExportJson(raw);
+}
+
+export type ImportFileResult =
+	| { ok: true; kind: 'json'; payload: RepdraftExportPayload }
+	| { ok: true; kind: 'csv'; payload: RepdraftExportPayload; report: CsvImportReport }
+	| { ok: false; reason: 'invalidJson' | 'invalidShape' | 'unsupportedVersion' | 'csvEmpty' };
+
+/** Same file picker serves Repdraft JSON backups and third-party CSV exports. */
+export function parseImportText(raw: string, catalog: readonly ExerciseIndexItem[]): ImportFileResult {
+	const json = parseExportJson(raw);
+	if (json.ok) return { ok: true, kind: 'json', payload: json.payload };
+
+	if (detectCsvFormat(splitCsvRows(raw)[0])) {
+		const csv = parseCsvImport(raw, { catalog });
+		if (!csv.ok) return { ok: false, reason: 'csvEmpty' };
+		return { ok: true, kind: 'csv', payload: csv.payload, report: csv.report };
+	}
+
+	return { ok: false, reason: json.reason };
 }
