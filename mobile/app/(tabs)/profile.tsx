@@ -10,6 +10,7 @@ import * as WebBrowser from 'expo-web-browser';
 import {
 	Alert,
 	Image,
+	Modal,
 	Platform,
 	Pressable,
 	ScrollView,
@@ -40,11 +41,6 @@ import { authEmailRedirect } from '../../src/auth/emailLink';
 import { unlockRestAudioFromGesture, playRestDoneChime } from '../../src/audio/restChime';
 import { webOrigin } from '../../src/catalog/mediaUrl';
 import { getSupabase, isSupabaseConfigured } from '../../src/auth/supabase';
-import {
-	countableFinishedSessions,
-	type AchievementsState
-} from '@repdraft/domain/achievements';
-import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
 import type { WorkoutSession } from '@repdraft/domain/types';
 import type { OnboardingState } from '@repdraft/domain/onboarding';
 import { authErrorMessageKey } from '@repdraft/domain/authFlow';
@@ -53,28 +49,24 @@ import {
 	validatePasswordPolicy
 } from '@repdraft/domain/passwordPolicy';
 import { TESTER_MODE_UNLOCK_TAPS } from '@repdraft/domain/prefs';
-import { heroLevel, type QuestState } from '@repdraft/domain/quest';
-import { AchievementsPanel } from '../../src/components/AchievementsPanel';
 import { ConfirmSheet } from '../../src/components/ConfirmSheet';
 import { OnboardingChecklistPanel } from '../../src/components/OnboardingChecklistPanel';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
-import { QuestProgressPanel } from '../../src/components/QuestSummaryCard';
 import { WhatsNewSheet } from '../../src/components/WhatsNewSheet';
 import { getHealthAdapter } from '../../src/health';
-import {
-	isAchievementsEnabled,
-	loadAchievementsState,
-	setAchievementsEnabled
-} from '../../src/state/achievements';
 import { loadGreetingName, saveGreetingName as persistGreetingName } from '../../src/state/greetingName';
 import { isHealthReadEnabled, setHealthReadEnabled } from '../../src/state/healthPrefs';
 import { useLocale } from '../../src/state/locale';
 import { useTabScreenPad } from '../../src/layout/safe';
 import { useAppColors, useAppTheme } from '../../src/state/theme';
-import { loadQuestState, setWeeklyGoal } from '../../src/state/quest';
-import { loadQuestHeroProfile } from '../../src/state/questHero';
-import { applyBackupImport, parseBackupText } from '../../src/storage/backup';
+import { applyBackupImport, parseImportText } from '../../src/storage/backup';
+import { loadExerciseIndex } from '../../src/catalog/loadIndex';
+import {
+	normalizeExerciseName,
+	parseCsvImport,
+	suggestCatalogCandidates
+} from '@repdraft/domain/importCsv';
 import { customsRepo } from '../../src/storage/customsRepo';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { recordsRepo } from '../../src/storage/recordsRepo';
@@ -113,12 +105,8 @@ export default function ProfileScreen() {
 		}),
 		[colors]
 	);
-	const [questState, setQuestState] = useState<QuestState | null>(null);
-	const [achOn, setAchOn] = useState(false);
-	const [achState, setAchState] = useState<AchievementsState | null>(null);
 	const [healthOn, setHealthOn] = useState(false);
 	const healthAvailable = getHealthAdapter().isAvailable();
-	const [weeklyGoal, setWeeklyGoalUi] = useState(2);
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 	const [session, setSession] = useState<Session | null>(null);
@@ -135,11 +123,14 @@ export default function ProfileScreen() {
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [logoutEverywhereOpen, setLogoutEverywhereOpen] = useState(false);
 	const [deleteWord, setDeleteWord] = useState('');
+	const [importReview, setImportReview] = useState<{
+		raw: string;
+		names: string[];
+		overrides: Record<string, string>;
+	} | null>(null);
 	const [avatarBusy, setAvatarBusy] = useState(false);
 	const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
 	const [testerOn, setTesterOn] = useState(false);
-	const [heroProfile, setHeroProfile] = useState<QuestHeroProfile | null>(null);
-	const [sessionList, setSessionList] = useState<WorkoutSession[]>([]);
 	const versionUnlockTaps = useRef(0);
 	const versionUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const cloud = isSupabaseConfigured();
@@ -150,7 +141,6 @@ export default function ProfileScreen() {
 		useCallback(() => {
 			void sessionsRepo.list().then((list) => {
 				setLoopSnap(computeLoopMetrics(list, new Date().toISOString()));
-				setSessionList(list);
 			});
 			void outboxCount().then(setPendingSync);
 			void loadOnboarding().then(setOnboarding);
@@ -160,12 +150,6 @@ export default function ProfileScreen() {
 	useEffect(() => {
 		let unsub: (() => void) | undefined;
 		void (async () => {
-			const st = await loadQuestState();
-			setQuestState(st);
-			setWeeklyGoalUi(st.weeklyGoal);
-			setHeroProfile(await loadQuestHeroProfile());
-			setAchOn(await isAchievementsEnabled());
-			setAchState(await loadAchievementsState());
 			setHealthOn(await isHealthReadEnabled());
 			const testerPref = await isTesterModeEnabled();
 			setTesterOn(testerPref || __DEV__);
@@ -193,12 +177,6 @@ export default function ProfileScreen() {
 	function showAuthError(error: unknown, fallback: string) {
 		const key = authErrorMessageKey(error);
 		Alert.alert(tt('common.error'), key ? tt(key) : fallback);
-	}
-
-	async function toggleAchievements(next: boolean) {
-		setAchOn(next);
-		await setAchievementsEnabled(next);
-		if (next) setAchState(await loadAchievementsState());
 	}
 
 	async function toggleHealth(next: boolean) {
@@ -277,13 +255,6 @@ export default function ProfileScreen() {
 		}
 	}
 
-	async function cycleGoal() {
-		const next = weeklyGoal >= 7 ? 1 : weeklyGoal + 1;
-		setWeeklyGoalUi(next);
-		const st = await setWeeklyGoal(next);
-		setQuestState(st);
-	}
-
 	async function exportBackup() {
 		const [plans, sessions, records, customs] = await Promise.all([
 			plansRepo.list(),
@@ -304,19 +275,108 @@ export default function ProfileScreen() {
 
 	async function importBackup() {
 		const picked = await DocumentPicker.getDocumentAsync({
-			type: 'application/json',
+			type: ['application/json', 'text/csv', 'text/comma-separated-values', 'text/plain'],
 			copyToCacheDirectory: true
 		});
 		if (picked.canceled || !picked.assets?.[0]?.uri) return;
+
+		setBusy(true);
+		let result: ReturnType<typeof parseImportText> | null = null;
+		let rawText = '';
+		try {
+			rawText = await FileSystem.readAsStringAsync(picked.assets[0].uri);
+			result = parseImportText(rawText, loadExerciseIndex());
+		} catch (err) {
+			Alert.alert(
+				tt('common.error'),
+				err instanceof Error ? err.message : tt('common.error')
+			);
+			return;
+		} finally {
+			setBusy(false);
+		}
+		if (!result) return;
+		if (!result.ok) {
+			Alert.alert(
+				tt('common.error'),
+				result.reason === 'csvEmpty' ? tt('settings.importCsvEmpty') : result.reason
+			);
+			return;
+		}
+
+		const parsed = result;
 		const run = async () => {
+			setBusy(true);
+			try {
+				const stats = await applyBackupImport(parsed.payload);
+				Alert.alert(
+					tt('common.ok'),
+					tt('profile.importOk', {
+						plans: stats.plans,
+						sessions: stats.sessions,
+						records: stats.records,
+						customs: stats.customs
+					})
+				);
+			} catch (err) {
+				Alert.alert(
+					tt('common.error'),
+					err instanceof Error ? err.message : tt('common.error')
+				);
+			} finally {
+				setBusy(false);
+			}
+		};
+
+		const isCsv = parsed.kind === 'csv';
+		if (isCsv && parsed.report.customExercises.length > 0) {
+			/* Parity with web: let the user map unknown names before applying. */
+			setImportReview({
+				raw: rawText,
+				names: [...parsed.report.customExercises],
+				overrides: {}
+			});
+			return;
+		}
+
+		const message = isCsv
+			? `${tt('settings.importCsvPreview', {
+					sessions: parsed.report.sessions,
+					sets: parsed.report.sets,
+					from: parsed.report.dateRange?.from.slice(0, 10) ?? '-',
+					to: parsed.report.dateRange?.to.slice(0, 10) ?? '-',
+					matched: parsed.report.matchedExercises,
+					custom: parsed.report.customExercises.length,
+					skipped: parsed.report.skippedRows
+				})}\n\n${tt('settings.importCsvKg')}`
+			: tt('settings.importConfirm');
+
+		Alert.alert(isCsv ? tt('settings.importCsvTitle') : tt('settings.importConfirmTitle'), message, [
+			{ text: tt('auth.deleteCancel'), style: 'cancel' },
+			{ text: tt('settings.importConfirmCta'), onPress: () => void run() }
+		]);
+	}
+
+	function setReviewOverride(key: string, value: string) {
+		setImportReview((prev) =>
+			prev ? { ...prev, overrides: { ...prev.overrides, [key]: value } } : prev
+		);
+	}
+
+	async function commitReview() {
+		const review = importReview;
+		if (!review) return;
+		const parsed = parseCsvImport(review.raw, {
+			catalog: loadExerciseIndex(),
+			overrides: review.overrides
+		});
+		if (!parsed.ok) {
+			Alert.alert(tt('common.error'), tt('settings.importCsvEmpty'));
+			return;
+		}
+		setImportReview(null);
 		setBusy(true);
 		try {
-			const raw = await FileSystem.readAsStringAsync(picked.assets[0].uri);
-			const parsed = parseBackupText(raw);
-			if (!parsed.ok) {
-				Alert.alert(tt('common.error'), parsed.reason);
-				return;
-			}
 			const stats = await applyBackupImport(parsed.payload);
 			Alert.alert(
 				tt('common.ok'),
@@ -328,22 +388,13 @@ export default function ProfileScreen() {
 				})
 			);
 		} catch (err) {
-			Alert.alert(
-				tt('common.error'),
-				err instanceof Error ? err.message : tt('common.error')
-			);
+			Alert.alert(tt('common.error'), err instanceof Error ? err.message : tt('common.error'));
 		} finally {
 			setBusy(false);
 		}
-		};
-		Alert.alert(tt('settings.importConfirmTitle'), tt('settings.importConfirm'), [
-			{ text: tt('auth.deleteCancel'), style: 'cancel' },
-			{ text: tt('settings.importConfirmCta'), onPress: () => void run() }
-		]);
 	}
 
-	async function syncCloud() {
-		setBusy(true);
+	async function syncCloud() {		setBusy(true);
 		const result = await pullAndMergeFromCloud();
 		setPendingSync(await outboxCount());
 		setBusy(false);
@@ -756,54 +807,6 @@ export default function ProfileScreen() {
 			</Panel>
 
 			<Panel>
-				<Text style={styles.groupTitle}>{tt('profile.quest')}</Text>
-				<Text style={styles.hint}>{tt('profile.questHint')}</Text>
-				{heroProfile?.displayName.trim() ? (
-					<Text style={styles.hint}>
-						{tt('quest.profileHero', {
-							name: heroProfile.displayName.trim(),
-							level: String(heroLevel(questState?.hero.totalXp ?? 0))
-						})}
-					</Text>
-				) : null}
-				<Pressable style={styles.row} onPress={() => void cycleGoal()}>
-					<Text style={styles.rowText}>{tt('profile.weeklyGoal')}</Text>
-					<Text style={styles.rowValue}>{weeklyGoal}</Text>
-				</Pressable>
-				{questState ? <QuestProgressPanel state={questState} /> : null}
-			</Panel>
-
-			<Panel>
-				<Text style={styles.groupTitle}>{tt('achievements.title')}</Text>
-				<View style={styles.row}>
-					<Text style={styles.rowText} numberOfLines={2}>
-						{tt('achievements.toggle')}
-					</Text>
-					<Switch
-						value={achOn}
-						trackColor={switchColors.trackColor}
-						thumbColor={switchColors.thumbColor}
-						onValueChange={(v) => void toggleAchievements(v)}
-					/>
-				</View>
-				<Text style={styles.hint}>{tt('achievements.hint')}</Text>
-				{achOn && achState ? (
-					<>
-						<AchievementsPanel
-							state={achState}
-							finishedSessions={countableFinishedSessions(sessionList)}
-							showFilters
-						/>
-						<PrimaryButton
-							label={tt('achievements.viewAll')}
-							variant="ghost"
-							onPress={() => router.push('/achievements')}
-						/>
-					</>
-				) : null}
-			</Panel>
-
-			<Panel>
 				<Text style={styles.groupTitle}>{tt('health.title')}</Text>
 				<View style={styles.row}>
 					<Text style={styles.rowText} numberOfLines={2}>
@@ -958,6 +961,69 @@ export default function ProfileScreen() {
 				<Text style={styles.version}>{tt('profile.version', { v: APP_VERSION })}</Text>
 			</Pressable>
 		</ScrollView>
+		<Modal
+			visible={importReview !== null}
+			transparent
+			animationType="slide"
+			onRequestClose={() => setImportReview(null)}
+		>
+			<View style={styles.reviewBackdrop}>
+				<View style={styles.reviewSheet}>
+					<Text style={styles.groupTitle}>{tt('settings.importCsvTitle')}</Text>
+					<Text style={styles.hint}>
+						{tt('settings.importCsvReview', { n: importReview?.names.length ?? 0 })}
+					</Text>
+					<ScrollView style={styles.reviewList}>
+						{importReview?.names.map((name) => {
+							const key = normalizeExerciseName(name);
+							const value = importReview.overrides[key] ?? '';
+							const candidates = suggestCatalogCandidates(name, loadExerciseIndex(), 3);
+							return (
+								<View key={key} style={styles.reviewRow}>
+									<Text style={styles.rowText}>{name}</Text>
+									<View style={styles.reviewChips}>
+										<Pressable
+											accessibilityRole="button"
+											style={[styles.reviewChip, value === '' && styles.reviewChipActive]}
+											onPress={() => setReviewOverride(key, '')}
+										>
+											<Text style={styles.reviewChipText}>
+												{tt('settings.importCsvKeepNew')}
+											</Text>
+										</Pressable>
+										{candidates.map((candidate) => (
+											<Pressable
+												key={candidate.id}
+												accessibilityRole="button"
+												style={[
+													styles.reviewChip,
+													value === candidate.id && styles.reviewChipActive
+												]}
+												onPress={() => setReviewOverride(key, candidate.id)}
+											>
+												<Text style={styles.reviewChipText}>{candidate.name}</Text>
+											</Pressable>
+										))}
+									</View>
+								</View>
+							);
+						})}
+					</ScrollView>
+					<View style={styles.reviewActions}>
+						<PrimaryButton
+							label={tt('common.cancel')}
+							variant="ghost"
+							onPress={() => setImportReview(null)}
+						/>
+						<PrimaryButton
+							label={tt('settings.importConfirmCta')}
+							onPress={() => void commitReview()}
+							disabled={busy}
+						/>
+					</View>
+				</View>
+			</View>
+		</Modal>
 		<ConfirmSheet
 			open={logoutEverywhereOpen}
 			title={tt('auth.logoutEverywhereConfirmTitle')}
@@ -980,6 +1046,31 @@ function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 	scroll: { flex: 1, backgroundColor: colors.bg },
 	root: { padding: space.lg, gap: space.md, backgroundColor: colors.bg },
+	reviewBackdrop: {
+		flex: 1,
+		justifyContent: 'flex-end',
+		backgroundColor: 'rgba(0,0,0,0.5)'
+	},
+	reviewSheet: {
+		backgroundColor: colors.bg,
+		borderTopLeftRadius: radius.lg,
+		borderTopRightRadius: radius.lg,
+		padding: space.lg,
+		gap: space.sm
+	},
+	reviewList: { maxHeight: 360 },
+	reviewRow: { gap: 6, marginBottom: space.md },
+	reviewChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+	reviewChip: {
+		borderWidth: 1,
+		borderColor: colors.border,
+		borderRadius: radius.md,
+		paddingHorizontal: 10,
+		paddingVertical: 8
+	},
+	reviewChipActive: { borderColor: colors.accent, backgroundColor: colors.panel },
+	reviewChipText: { color: colors.text, fontSize: 13, fontFamily: fontFamily.medium },
+	reviewActions: { flexDirection: 'row', gap: space.sm, justifyContent: 'flex-end' },
 	brandRow: {
 		flexDirection: 'row',
 		alignItems: 'center',

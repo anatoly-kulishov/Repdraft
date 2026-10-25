@@ -1609,6 +1609,7 @@ button.live-local-save-cue {
 	flex-direction: column;
 	gap: 0;
 	padding: 1.05rem 1.1rem 1.15rem;
+	margin-bottom: 1.15rem;
 	overflow: hidden;
 	container-type: inline-size;
 }

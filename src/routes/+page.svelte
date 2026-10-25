@@ -39,13 +39,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { onboarding, onboardingHydrated } from '$lib/stores/onboarding';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { suggestRaiseExerciseId } from '$lib/domain/sessionPayoff';
-	import { questState } from '$lib/stores/quest';
 	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
-	import QuestHomeBanner from '$lib/components/QuestHomeBanner.svelte';
-	import QuestOnboardingSheet from '$lib/components/QuestOnboardingSheet.svelte';
-	import type { QuestHeroProfile } from '$lib/domain/questHeroProfile';
-	import { loadQuestHeroProfile, saveQuestHeroProfile } from '$lib/stores/questHero';
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
@@ -101,12 +95,6 @@
 		peekedIndex ? new Map(peekedIndex.map((item) => [item.id, item])) : new Map()
 	);
 	let indexReady = $state(peekedIndex != null);
-	let raiseName = $derived.by(() => {
-		const id = suggestRaiseExerciseId($live.history);
-		if (!id) return null;
-		const item = indexById.get(id);
-		return item ? exerciseName(item, lang) : null;
-	});
 
 	let hasActive = $derived(Boolean(active && !active.finishedAt));
 	let hasPlans = $derived($plans.length > 0);
@@ -117,8 +105,6 @@
 	let pageReady = $derived(
 		$auth.ready && $auth.sessionKnown && $live.ready && $live.historyHydrated
 	);
-	let heroProfile = $state<QuestHeroProfile | null>(null);
-	let heroSetupOpen = $state(false);
 
 	/** Dev/QA: ?skeleton=create|start */
 	let skeletonForce = $derived(
@@ -336,15 +322,7 @@
 		}
 	}
 
-
-	function onHeroSaved(profile: QuestHeroProfile) {
-		saveQuestHeroProfile(profile);
-		heroProfile = profile;
-		heroSetupOpen = false;
-	}
-
 	onMount(() => {
-		heroProfile = loadQuestHeroProfile();
 		const clientPeek = readHomeClientBootPeek();
 		if (clientPeek.accountBoot || clientPeek.hasPlans) {
 			try {
@@ -473,16 +451,6 @@
 				<OnboardingChecklist onTryDemo={onTryDemoPlan} {demoBusy} articlesHref="/articles" />
 			</div>
 		{/if}
-		{#if pageReady}
-			<div class="home-dashboard-top">
-				<QuestHomeBanner
-					quest={$questState}
-					profile={heroProfile}
-					{raiseName}
-					onSetupHero={() => (heroSetupOpen = true)}
-				/>
-			</div>
-		{/if}
 		{#if showGuestCreateHero}
 			<div class="home-dashboard-top">
 				<div class="home-hero home-hero--guest">
@@ -595,9 +563,3 @@
 	</div>
 	{/if}
 </section>
-
-<QuestOnboardingSheet
-	bind:open={heroSetupOpen}
-	defaultName={firstName ?? ''}
-	onComplete={onHeroSaved}
-/>

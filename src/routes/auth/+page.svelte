@@ -26,12 +26,9 @@
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import AuthInterfacePrefs from '$lib/components/AuthInterfacePrefs.svelte';
-	import QuestOnboardingSheet from '$lib/components/QuestOnboardingSheet.svelte';
-	import type { QuestHeroProfile } from '$lib/domain/questHeroProfile';
-	import { greetingFirstName } from '$lib/domain/greetingName';
-	import { loadQuestHeroProfile, saveQuestHeroProfile } from '$lib/stores/questHero';
-	import ProfileAchievementsPanel from '$lib/components/ProfileAchievementsPanel.svelte';
 	import ProfileInsightsPanel from '$lib/components/ProfileInsightsPanel.svelte';
+	import { isValidInviteCode, normalizeInviteCode } from '$lib/domain/coach';
+	import { coachRepository } from '$lib/storage/coachRepository';
 	import AuthLegalConsent from '$lib/components/AuthLegalConsent.svelte';
 	import BrandTagline from '$lib/components/BrandTagline.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
@@ -55,7 +52,7 @@
 	import { restHapticEnabled, restSoundEnabled, testerModeEnabled } from '$lib/stores/prefs';
 	import { testerToolsVisible } from '$lib/domain/prefs';
 	import { tick } from 'svelte';
-	import { Camera, FileText, LogOut, Smartphone, Timer, Shield, UserRound } from '@lucide/svelte';
+	import { Camera, FileText, LogOut, Smartphone, Timer, Shield, UserRound, Users } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -79,6 +76,28 @@
 	let confirmMismatchVisible = $state(false);
 	let deleteConfirmOpen = $state(false);
 	let deleteConfirmText = $state('');
+	let coachInviteInput = $state('');
+	let coachInviteBusy = $state(false);
+
+	async function acceptCoachInvite() {
+		const code = normalizeInviteCode(coachInviteInput);
+		if (!isValidInviteCode(code)) {
+			toasts.show(translate(lang, 'coach.inviteInvalid'), 'error');
+			return;
+		}
+		coachInviteBusy = true;
+		try {
+			const result = await coachRepository.acceptInvite(code);
+			if (result.ok) {
+				coachInviteInput = '';
+				toasts.show(translate(lang, 'coach.inviteAccepted'), 'success');
+			} else {
+				toasts.show(translate(lang, `coach.error.${result.reason}`), 'error');
+			}
+		} finally {
+			coachInviteBusy = false;
+		}
+	}
 	let logoutEverywhereConfirmOpen = $state(false);
 	let captchaToken = $state('');
 	let captchaReset = $state(0);
@@ -149,15 +168,6 @@
 	let nextPath = $derived(safeRedirectPath($page.url.searchParams.get('next')));
 	let recoveryMode = $derived($auth.passwordRecovery);
 	let profileName = $derived(userDisplayName($auth.user));
-	let heroSetupOpen = $state(false);
-	let heroDefaultName = $derived(
-		greetingFirstName($greetingName, $auth.user) || profileName || ''
-	);
-
-	function onHeroSaved(profile: QuestHeroProfile) {
-		saveQuestHeroProfile(profile);
-		heroSetupOpen = false;
-	}
 	let profileAvatar = $derived(resolveUserAvatarUrl($auth.user));
 	let profileInitials = $derived(userInitials($auth.user));
 	let profileAvatarBroken = $state(false);
@@ -801,14 +811,42 @@
 					</div>
 
 					<div class="profile-settings-col">
-						<AuthInterfacePrefs surface="panel" onSetupHero={() => (heroSetupOpen = true)} />
+						<AuthInterfacePrefs surface="panel" />
 						{@render onboardingAuthHelpCard()}
 					</div>
 				</div>
 
 				<div class="profile-settings-stack-full">
 					<ProfileInsightsPanel />
-					<ProfileAchievementsPanel />
+					<div class="profile-settings-group panel text-left">
+						<p class="profile-settings-group__title">{translate(lang, 'profile.clients')}</p>
+						<p class="profile-settings-group__hint">{translate(lang, 'profile.clientsHint')}</p>
+						<ProfileSettingsRow
+							icon={Users}
+							label={translate(lang, 'coach.pageTitle')}
+							href="/clients"
+						/>
+						<p class="profile-settings-group__hint mt-3">{translate(lang, 'coach.inviteAcceptLead')}</p>
+						<div class="mt-1 flex gap-2">
+							<AppInput
+								class="w-full"
+								type="text"
+								autocomplete="off"
+								spellcheck={false}
+								placeholder={translate(lang, 'coach.inviteAcceptPlaceholder')}
+								aria-label={translate(lang, 'coach.inviteAcceptPlaceholder')}
+								value={coachInviteInput}
+								oninput={(e) => (coachInviteInput = e.currentTarget.value)}
+							/>
+							<AppButton
+								variant="secondary"
+								disabled={coachInviteBusy}
+								onclick={() => void acceptCoachInvite()}
+							>
+								{translate(lang, 'coach.inviteAcceptCta')}
+							</AppButton>
+						</div>
+					</div>
 					<OnboardingChecklist readonly onTryDemo={() => {}} />
 				</div>
 
@@ -1234,18 +1272,11 @@
 	</BottomSheet>
 {/if}
 
-<QuestOnboardingSheet
-	bind:open={heroSetupOpen}
-	defaultName={heroDefaultName}
-	onComplete={onHeroSaved}
-/>
-
 {#snippet guestSettingsPanel()}
 	<div class="auth-settings panel">
 		{@render onboardingHelpPanel()}
-		<AuthInterfacePrefs onSetupHero={() => (heroSetupOpen = true)} />
+		<AuthInterfacePrefs />
 		<ProfileInsightsPanel />
-		<ProfileAchievementsPanel />
 		<DataExportSection />
 		{#if showTesterTools}
 			<LoopMetricsPanel />

@@ -27,10 +27,30 @@ const STATIC_ESSENTIALS = files.filter(
 		/^\/icon/.test(path)
 );
 
+/**
+ * SvelteKit runtime modules are generated per build and are NOT part of `build`.
+ * Without `/_app/env.js` a cold offline boot dies on a dynamic import and the app
+ * stays on the skeleton forever (found in Phase 0 offline audit).
+ */
+const RUNTIME_ESSENTIALS = ['/_app/env.js', '/_app/version.json'];
+const OFFLINE_PAGE = '/offline.html';
+
+/** Honest offline screen for deep links never cached on this device. */
+const OFFLINE_ESSENTIALS = [OFFLINE_PAGE];
+
+/** Small static shell brand assets (splash/logo) the app requests before paint. */
+const BRAND_ESSENTIALS = files.filter((path) => /^\/(brand-|favicon|apple-touch)/.test(path));
+
 /** All catalog list thumbs — small enough to precache for offline browse. */
 const IMAGE_PRECACHE = files.filter((path) => path.startsWith('/images/'));
 
-const PRECACHE = [...BUILD_ASSETS, ...STATIC_ESSENTIALS];
+const PRECACHE = [
+	...BUILD_ASSETS,
+	...STATIC_ESSENTIALS,
+	...BRAND_ESSENTIALS,
+	...RUNTIME_ESSENTIALS,
+	...OFFLINE_ESSENTIALS
+];
 const PRECACHE_PATHS = new Set(PRECACHE);
 
 function offlineResponse(): Response {
@@ -172,7 +192,7 @@ async function cachedAppShell(): Promise<Response | undefined> {
 	return (await cache.match(APP_SHELL)) ?? undefined;
 }
 
-/** HTML: network-first with timeout, cache hit, then app shell. */
+/** HTML: network-first with timeout, cache hit, then shell (root only) or offline page. */
 async function navigationNetworkFirst(request: Request): Promise<Response> {
 	const cache = await caches.open(CACHE);
 	try {
@@ -182,8 +202,14 @@ async function navigationNetworkFirst(request: Request): Promise<Response> {
 	} catch {
 		const cached = await cache.match(request);
 		if (cached) return cached;
-		const shell = await cachedAppShell();
-		if (shell) return shell;
+		/* The cached shell is SSR-rendered for `/`. Serving it at another path makes
+		 * SvelteKit hydrate the wrong route and hang on a skeleton (Phase 0 audit). */
+		if (new URL(request.url).pathname === '/') {
+			const shell = await cachedAppShell();
+			if (shell) return shell;
+		}
+		const offline = await cache.match(OFFLINE_PAGE);
+		if (offline) return offline;
 		return offlineResponse();
 	}
 }

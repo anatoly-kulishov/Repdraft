@@ -2,15 +2,7 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import AchievementUnlockSheet from '$lib/components/AchievementUnlockSheet.svelte';
-	import AchievementsPanel from '$lib/components/AchievementsPanel.svelte';
-	import QuestSummaryCard from '$lib/components/QuestSummaryCard.svelte';
 	import SummaryLoadPanel from '$lib/components/SummaryLoadPanel.svelte';
-	import {
-		achievementTitleKey,
-		countableFinishedSessions,
-		type AchievementId
-	} from '$lib/domain/achievements';
 	import { pickCatalogExerciseForBodyPart } from '$lib/domain/trainingLoad';
 	import SummaryPageSkeleton from '$lib/components/summary/SummaryPageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
@@ -31,12 +23,6 @@
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { peekLocalSession } from '$lib/storage/localSessionRepository';
-	import {
-		achievementsEnabled,
-		achievementsState,
-		loadLastAchievementUnlock
-	} from '$lib/stores/achievements';
-	import { quest } from '$lib/stores/quest';
 	import { appendExerciseToHomePlan } from '$lib/workout/planPatch';
 	import { goto } from '$app/navigation';
 	import { auth } from '$lib/stores/auth';
@@ -62,9 +48,6 @@
 	let guestHintDismissed = $state(false);
 	let showFirstFinish = $state(false);
 	let allSessions = $state<WorkoutSession[]>([]);
-	let newAchIds = $state<AchievementId[] | null>(null);
-	let achModalOpen = $state(false);
-	let achModalDismissed = $state(false);
 
 	const PREVIEW_LIMIT = 6;
 
@@ -164,12 +147,6 @@
 			indexById = new Map(index.map((ex) => [ex.id, ex]));
 			void live.refreshHistory();
 			allSessions = get(live).history;
-			quest.hydrateLastApplyForSession(id);
-			if (get(achievementsEnabled)) {
-				achievementsState.reload();
-				newAchIds = loadLastAchievementUnlock(id);
-				if (newAchIds?.length && !achModalDismissed) achModalOpen = true;
-			}
 			loading = false;
 		})();
 	});
@@ -229,19 +206,6 @@
 						{translate(lang, 'onboarding.firstFinishLead')}
 					</p>
 				</div>
-			</AppPanel>
-		{/if}
-
-		<QuestSummaryCard {session} names={indexById} />
-
-		{#if newAchIds && newAchIds.length > 0}
-			<AppPanel class="summary-ach-banner text-left" role="status">
-				<p class="summary-ach-banner__title">{translate(lang, 'achievements.unlocked')}</p>
-				<ul class="summary-ach-banner__list">
-					{#each newAchIds as aid (aid)}
-						<li>{translate(lang, achievementTitleKey(aid))}</li>
-					{/each}
-				</ul>
 			</AppPanel>
 		{/if}
 
@@ -355,28 +319,6 @@
 				{/if}
 			</div>
 		{/if}
-
-		{#if $achievementsEnabled}
-			<AppPanel class="text-left">
-				<p class="summary-ach-section-title">{translate(lang, 'achievements.title')}</p>
-				<AchievementsPanel
-					state={$achievementsState}
-					finishedSessions={countableFinishedSessions(
-						allSessions.length > 0 ? allSessions : $live.history
-					)}
-					highlightIds={newAchIds}
-				/>
-			</AppPanel>
-		{/if}
-
-		<AchievementUnlockSheet
-			bind:open={achModalOpen}
-			ids={newAchIds}
-			onViewAll={() => {
-				achModalDismissed = true;
-				void goto('/achievements');
-			}}
-		/>
 
 		{#if showGuestSyncHint}
 			<AppPanel

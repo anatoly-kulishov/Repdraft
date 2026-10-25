@@ -16,7 +16,6 @@
 	import type { ExerciseIndexItem, SessionExercise, SetKind, WorkoutSession } from '$lib/domain/types';
 	import { NOTE_MAX, REPS_INPUT_MAX_LEN, WEIGHT_INPUT_MAX_LEN, clampNote } from '$lib/domain/inputLimits';
 	import { isBodyweightEquipment, isCardioBodyPart } from '$lib/domain/workout';
-	import { XP_WEIGHT_UP } from '$lib/domain/quest';
 	import { exerciseWeightByWeek, nextWeightHint, weightAboveLast } from '$lib/domain/sessionPayoff';
 	import { exerciseBestWeightKg, loggedSetKind, setKindMessageKey } from '$lib/domain/session';
 	import type { AppLocale } from '$lib/i18n/locale';
@@ -337,7 +336,7 @@
 	</div>
 	{#if weightUp}
 		<p class="live-weight-cue__chip">
-			{translate(lang, 'quest.weightUpChip', { xp: String(XP_WEIGHT_UP) })}
+			{translate(lang, 'quest.weightUpChip')}
 		</p>
 	{/if}
 	{#if nextHint}
