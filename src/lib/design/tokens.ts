@@ -20,6 +20,12 @@ export type CoreColorPalette = {
 	accent: string;
 	/** Solid CTA fill (web buttons; RN uses `accent` flat fill). */
 	accentFill: string;
+	/** CTA gradient start (lighter-than-fill endpoint). Together with `accentFill` forms the web CTA gradient. */
+	accentGradientStart: string;
+	/** CTA gradient start on hover/press (replaces `accentFill`). */
+	accentGradientHoverStart: string;
+	/** CTA gradient end on hover/press. */
+	accentGradientHoverEnd: string;
 	/** Label on filled CTA (white). */
 	accentInk: string;
 	/** Soft accent for links / secondary emphasis (not CTA ink). */
@@ -44,6 +50,9 @@ export const darkColors: CoreColorPalette = {
 	muted: '#98989d',
 	accent: '#8b5cf6',
 	accentFill: '#7c3aed',
+	accentGradientStart: '#6d28d9',
+	accentGradientHoverStart: '#7c3aed',
+	accentGradientHoverEnd: '#8252ed',
 	accentInk: '#ffffff',
 	accentText: '#a78bfa',
 	accentDim: 'rgba(139, 92, 246, 0.18)',
@@ -64,6 +73,9 @@ export const lightColors: CoreColorPalette = {
 	muted: '#636366',
 	accent: '#8b5cf6',
 	accentFill: '#7c3aed',
+	accentGradientStart: '#6d28d9',
+	accentGradientHoverStart: '#5b21b6',
+	accentGradientHoverEnd: '#6d28d9',
 	accentInk: '#ffffff',
 	accentText: '#5b21b6',
 	accentDim: 'rgba(139, 92, 246, 0.12)',

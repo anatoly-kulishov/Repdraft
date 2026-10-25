@@ -26,10 +26,8 @@ import {
 	resolveHomeNextPlan,
 	sortPlansByUserOrder
 } from '@repdraft/domain/workout';
-import type { QuestState } from '@repdraft/domain/quest';
 import type { WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { loadExerciseIndex } from '../../src/catalog/loadIndex';
-import { QuestHomeBanner } from '../../src/components/QuestHomeBanner';
 import { OnboardingChecklistPanel } from '../../src/components/OnboardingChecklistPanel';
 import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { Panel } from '../../src/components/Panel';
@@ -43,12 +41,6 @@ import { useLocale } from '../../src/state/locale';
 import { useTabScreenPad } from '../../src/layout/safe';
 import { useAppColors } from '../../src/state/theme';
 import { dismissChecklist, noteChecklist } from '../../src/state/onboarding';
-import { exerciseName } from '@repdraft/domain/exerciseName';
-import type { QuestHeroProfile } from '@repdraft/domain/questHeroProfile';
-import { suggestRaiseExerciseId } from '@repdraft/domain/sessionPayoff';
-import { loadQuestState } from '../../src/state/quest';
-import { loadQuestHeroProfile, saveQuestHeroProfile } from '../../src/state/questHero';
-import { QuestOnboardingSheet } from '../../src/components/QuestOnboardingSheet';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { readActiveSession, sessionsRepo } from '../../src/storage/sessionsRepo';
 import { outboxCount } from '../../src/sync/cloudSync';
@@ -74,22 +66,16 @@ export default function WorkoutsScreen() {
 	const [greetingCustom, setGreetingCustom] = useState('');
 	const [authUser, setAuthUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [questState, setQuestState] = useState<QuestState | null>(null);
-	const [heroProfile, setHeroProfile] = useState<QuestHeroProfile | null>(null);
-	const [finishedSessions, setFinishedSessions] = useState<WorkoutSession[]>([]);
 	const [pendingSync, setPendingSync] = useState(0);
-	const [heroSetupOpen, setHeroSetupOpen] = useState(false);
 
 	const reload = useCallback(async () => {
 		setLoading(true);
-		const [list, activeSession, sessions, order, pinned, qState, hero, outbox] = await Promise.all([
+		const [list, activeSession, sessions, order, pinned, outbox] = await Promise.all([
 			plansRepo.list(),
 			readActiveSession(),
 			sessionsRepo.list(),
 			readPlanOrder(),
 			readHomeNextPlanId(),
-			loadQuestState(),
-			loadQuestHeroProfile(),
 			outboxCount()
 		]);
 		const nextOb = await noteChecklist('homeSeen');
@@ -113,9 +99,6 @@ export default function WorkoutsScreen() {
 		const user = sb ? (await sb.auth.getSession()).data.session?.user ?? null : null;
 		setAuthUser(user);
 		setGreetingCustom(await loadGreetingName(user));
-		setQuestState(qState);
-		setHeroProfile(hero);
-		setFinishedSessions(sessions.filter((s) => s.finishedAt));
 		setPendingSync(outbox);
 		setLoading(false);
 	}, []);
@@ -154,12 +137,6 @@ export default function WorkoutsScreen() {
 		() => new Map(loadExerciseIndex().map((item) => [item.id, item] as const)),
 		[]
 	);
-	const raiseName = useMemo(() => {
-		const id = suggestRaiseExerciseId(finishedSessions);
-		if (!id) return null;
-		const item = indexById.get(id);
-		return item ? exerciseName(item, locale) : null;
-	}, [finishedSessions, indexById, locale]);
 	const showChecklist = onboarding ? shouldShowChecklist(onboarding) : false;
 	const heroMeta = useMemo(() => {
 		if (!next) return null;
@@ -198,15 +175,6 @@ export default function WorkoutsScreen() {
 					{greeting}
 				</Text>
 			</View>
-		{questState ? (
-			<QuestHomeBanner
-				state={questState}
-				profile={heroProfile}
-				sessions={finishedSessions}
-				raiseName={raiseName}
-				onSetupHero={() => setHeroSetupOpen(true)}
-			/>
-		) : null}
 		{pendingSync > 0 ? (
 			<Panel style={styles.syncBanner}>
 				<Text style={styles.syncBannerText}>
@@ -338,29 +306,13 @@ export default function WorkoutsScreen() {
 		</View>
 	);
 
-	const heroDefaultName = greetingFirstName(greetingCustom, authUser);
-
 	return (
-		<>
-			<ScrollView
-				style={styles.flexList}
-				contentContainerStyle={[styles.list, { paddingBottom: tabPad }]}
-			>
-				{header}
-			</ScrollView>
-			<QuestOnboardingSheet
-				visible={heroSetupOpen}
-				defaultName={heroDefaultName || undefined}
-				onDismiss={() => setHeroSetupOpen(false)}
-				onComplete={(profile) => {
-					void (async () => {
-						await saveQuestHeroProfile(profile);
-						setHeroProfile(profile);
-						setHeroSetupOpen(false);
-					})();
-				}}
-			/>
-		</>
+		<ScrollView
+			style={styles.flexList}
+			contentContainerStyle={[styles.list, { paddingBottom: tabPad }]}
+		>
+			{header}
+		</ScrollView>
 	);
 }
 
