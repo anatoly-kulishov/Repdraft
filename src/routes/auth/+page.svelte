@@ -27,6 +27,7 @@
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import AuthInterfacePrefs from '$lib/components/AuthInterfacePrefs.svelte';
+	import IconPlate from '$lib/components/IconPlate.svelte';
 	import ProfileInsightsPanel from '$lib/components/ProfileInsightsPanel.svelte';
 	import {
 		INVITE_CODE_LENGTH,
@@ -42,6 +43,7 @@
 	import PasswordField from '$lib/components/PasswordField.svelte';
 	import PasswordPolicyHints from '$lib/components/PasswordPolicyHints.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
+	import ConfirmSheet from '$lib/components/ConfirmSheet.svelte';
 	import AvatarCropSheet from '$lib/components/AvatarCropSheet.svelte';
 	import ProfileAvatarSheet from '$lib/components/ProfileAvatarSheet.svelte';
 	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
@@ -55,12 +57,34 @@
 	import WhatsNewSheet from '$lib/components/WhatsNewSheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
-	import { GREETING_NAME_MAX, clampGreetingName, greetingNameMatchesStored } from '$lib/domain/greetingName';
+	import {
+		GREETING_NAME_MAX,
+		clampGreetingName,
+		greetingNameMatchesStored
+	} from '$lib/domain/greetingName';
+	import { checklistProgress } from '$lib/domain/onboarding';
 	import { isIosDevice } from '$lib/domain/pwaInstall';
-	import { restHapticEnabled, restSoundEnabled, testerModeEnabled } from '$lib/stores/prefs';
+	import { onboarding } from '$lib/stores/onboarding';
+	import {
+		restHapticEnabled,
+		restSoundEnabled,
+		testerModeEnabled
+	} from '$lib/stores/prefs';
 	import { testerToolsVisible } from '$lib/domain/prefs';
+	import {
+		Camera,
+		CaretDown as ChevronDown,
+		DeviceMobile,
+		FileText,
+		Info,
+		ShieldCheck,
+		SignOut,
+		Timer,
+		User as UserRound,
+		UserCheck,
+		UsersThree
+	} from 'phosphor-svelte';
 	import { tick } from 'svelte';
-	import { Camera, FileText, LogOut, Smartphone, Timer, Shield, UserRound, Users } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -82,6 +106,7 @@
 	let greetingNameSaving = $state(false);
 	let fieldsInvalid = $state(false);
 	let confirmMismatchVisible = $state(false);
+	let deleteZoneOpen = $state(false);
 	let deleteConfirmOpen = $state(false);
 	let deleteConfirmText = $state('');
 	let coachInviteInput = $state('');
@@ -167,6 +192,7 @@
 			coachInviteBusy = false;
 		}
 	}
+	let logoutConfirmOpen = $state(false);
 	let logoutEverywhereConfirmOpen = $state(false);
 	let captchaToken = $state('');
 	let captchaReset = $state(0);
@@ -220,6 +246,10 @@
 	let lang = $derived($resolvedLocale);
 	let showTesterTools = $derived(
 		testerToolsVisible({ pref: $testerModeEnabled, dev: import.meta.env.DEV })
+	);
+	let onboardingProgress = $derived(checklistProgress($onboarding));
+	let onboardingComplete = $derived(
+		onboardingProgress.total > 0 && onboardingProgress.done >= onboardingProgress.total
 	);
 	let confirmMismatchHint = $derived(
 		confirmMismatchVisible ? translate(lang, 'auth.errors.passwordMismatch') : null
@@ -455,6 +485,15 @@
 		}
 	}
 
+	function openLogoutConfirm() {
+		if (accountBusy) return;
+		logoutConfirmOpen = true;
+	}
+
+	function dismissLogoutConfirm() {
+		logoutConfirmOpen = false;
+	}
+
 	function openLogoutEverywhereConfirm() {
 		if (accountBusy) return;
 		logoutEverywhereConfirmOpen = true;
@@ -478,7 +517,13 @@
 		}
 	}
 
+	function toggleDeleteZone() {
+		deleteZoneOpen = !deleteZoneOpen;
+		if (!deleteZoneOpen) cancelDeleteConfirm();
+	}
+
 	async function openDeleteConfirm() {
+		deleteZoneOpen = true;
 		deleteConfirmOpen = true;
 		deleteConfirmText = '';
 		await tick();
@@ -930,7 +975,7 @@
 									}}
 								/>
 							</ProfileSettingsRow>
-							<ProfileSettingsRow icon={Smartphone} label={translate(lang, 'profile.hapticRest')}>
+							<ProfileSettingsRow icon={DeviceMobile} label={translate(lang, 'profile.hapticRest')}>
 								<input
 									type="checkbox"
 									class="auth-pref-toggle__input profile-settings-row__toggle"
@@ -956,29 +1001,36 @@
 					<div class="profile-settings-group panel text-left">
 						<p class="profile-settings-group__title">{translate(lang, 'profile.clients')}</p>
 						<p class="profile-settings-group__hint">{translate(lang, 'profile.clientsHint')}</p>
-						<ProfileSettingsRow
-							icon={Users}
-							label={translate(lang, 'profile.clientsRow')}
-							href="/clients"
-						/>
-						<div class="profile-settings-group__section">
+
+						<div class="coach-role-block">
+							<p class="profile-settings-group__subtitle">
+								{translate(lang, 'profile.myCoach')}
+							</p>
 							{#if coachCloud && !clientCoachLoaded}
 								<div class="coach-connect-loading" aria-hidden="true">
-									<AppSkeleton class="h-10 w-10 shrink-0 rounded-[var(--radius-control)]" />
-									<div class="flex min-w-0 flex-col gap-2">
-										<AppSkeleton class="h-4 w-32" />
-										<AppSkeleton class="h-3 w-52 max-w-full" />
+									<AppSkeleton class="h-11 w-11 shrink-0 rounded-[0.8rem]" />
+									<div class="flex min-w-0 flex-1 flex-col gap-1">
+										<AppSkeleton class="h-4 w-40 max-w-full" />
+										<AppSkeleton class="h-3 w-full" />
+										<AppSkeleton class="h-3 w-2/3" />
 									</div>
 								</div>
 							{:else if activeCoachLinks.length > 0}
-								<ProfileSettingsRow
-									icon={Users}
-									iconTone="accent"
-									label={activeCoachLinks.length > 1
-										? translate(lang, 'profile.coachesConnected', { n: activeCoachLinks.length })
-										: translate(lang, 'profile.coachConnected')}
-									hint={translate(lang, 'profile.coachConnectedHint')}
-								/>
+								<div class="coach-connect-status">
+									<IconPlate icon={UserCheck} tone="accent" />
+									<div class="coach-connect-status__text">
+										<p class="coach-connect-status__title">
+											{activeCoachLinks.length > 1
+												? translate(lang, 'profile.coachesConnected', {
+														n: activeCoachLinks.length
+													})
+												: translate(lang, 'profile.coachConnected')}
+										</p>
+										<p class="coach-connect-status__hint">
+											{translate(lang, 'profile.coachConnectedHint')}
+										</p>
+									</div>
+								</div>
 							{:else}
 								<p class="profile-settings-group__hint">
 									{translate(lang, 'coach.inviteAcceptLead')}
@@ -1028,8 +1080,18 @@
 								{/if}
 							{/if}
 						</div>
+
+						<div class="profile-settings-group__section profile-settings-group__section--row">
+							<ProfileSettingsRow
+								icon={UsersThree}
+								label={translate(lang, 'profile.clientsRow')}
+								href="/clients"
+							/>
+						</div>
 					</div>
-					<OnboardingChecklist readonly onTryDemo={() => {}} />
+					{#if !onboardingComplete}
+						<OnboardingChecklist readonly onTryDemo={() => {}} />
+					{/if}
 				</div>
 
 				<div class="profile-settings-group panel profile-settings-group--data profile-settings-stack-full">
@@ -1043,75 +1105,105 @@
 					<ProfileDevWipePanel />
 				{/if}
 
-				<div class="auth-danger-zone profile-settings-stack-full" aria-labelledby="auth-danger-title">
-					<p class="auth-danger-zone__eyebrow">{translate(lang, 'auth.deleteZoneLabel')}</p>
-					<p id="auth-danger-title" class="auth-danger-zone__title">{translate(lang, 'auth.deleteTitle')}</p>
-					<p class="auth-danger-zone__lead">{translate(lang, 'auth.deleteLead')}</p>
-					<ul class="auth-danger-zone__list">
-						<li>{translate(lang, 'auth.deleteBulletPlans')}</li>
-						<li>{translate(lang, 'auth.deleteBulletRecords')}</li>
-						<li>{translate(lang, 'auth.deleteBulletSessions')}</li>
-						<li>{translate(lang, 'auth.deleteBulletClips')}</li>
-					</ul>
+				<div
+					class="auth-danger-zone profile-settings-stack-full"
+					class:auth-danger-zone--open={deleteZoneOpen}
+				>
+					<button
+						type="button"
+						class="auth-danger-zone__disclosure"
+						aria-expanded={deleteZoneOpen}
+						aria-controls={deleteZoneOpen ? 'auth-danger-body' : undefined}
+						disabled={accountLocked}
+						onclick={toggleDeleteZone}
+					>
+						<span class="auth-danger-zone__disclosure-text">
+							<span class="auth-danger-zone__eyebrow">
+								{translate(lang, 'auth.deleteZoneLabel')}
+							</span>
+							<span id="auth-danger-title" class="auth-danger-zone__title">
+								{translate(lang, 'auth.deleteTitle')}
+							</span>
+						</span>
+						<LucideIcon
+							icon={ChevronDown}
+							size={ICON_SMALL}
+							class="auth-danger-zone__chevron"
+						/>
+					</button>
 
-					{#if !deleteConfirmOpen}
-						<AppButton
-							variant="danger"
-							class="auth-danger-zone__trigger"
-							disabled={accountLocked}
-							onclick={openDeleteConfirm}
-						>
-							{translate(lang, 'auth.deleteButton')}
-						</AppButton>
-					{:else}
-						<div
-							class="auth-danger-zone__confirm"
-							role="group"
-							aria-labelledby="auth-delete-confirm-hint"
-						>
-							<AppLabel for="auth-delete-confirm">
-								<span id="auth-delete-confirm-hint">
-									{translate(lang, 'auth.deleteConfirmHint', { word: deleteConfirmWord })}
-								</span>
-								<AppInput
-									id="auth-delete-confirm"
-									class="mt-1 w-full"
-									type="text"
-									autocomplete="off"
-									autocapitalize="characters"
-									spellcheck="false"
-									placeholder={deleteConfirmWord}
-									bind:value={deleteConfirmText}
-									disabled={accountLocked}
-									onkeydown={(e) => {
-										if (e.key === 'Escape') cancelDeleteConfirm();
-									}}
-								/>
-							</AppLabel>
-							<div class="auth-danger-zone__confirm-actions">
-								<AppButton
-									variant="secondary"
-									disabled={accountLocked}
-									onclick={cancelDeleteConfirm}
-								>
-									{translate(lang, 'auth.deleteCancel')}
-								</AppButton>
+					{#if deleteZoneOpen}
+						<div id="auth-danger-body" class="auth-danger-zone__body">
+							<p class="auth-danger-zone__lead">{translate(lang, 'auth.deleteLead')}</p>
+							<ul class="auth-danger-zone__list">
+								<li>{translate(lang, 'auth.deleteBulletPlans')}</li>
+								<li>{translate(lang, 'auth.deleteBulletRecords')}</li>
+								<li>{translate(lang, 'auth.deleteBulletSessions')}</li>
+								<li>{translate(lang, 'auth.deleteBulletClips')}</li>
+							</ul>
+
+							{#if !deleteConfirmOpen}
 								<AppButton
 									variant="danger"
-									disabled={accountLocked || !deleteConfirmReady}
-									aria-busy={accountBusy === 'delete'}
-									onclick={deleteAccount}
+									class="auth-danger-zone__trigger"
+									disabled={accountLocked}
+									onclick={openDeleteConfirm}
 								>
-									{#if accountBusy === 'delete'}
-										<span class="inline-flex items-center gap-2">
-											<Spinner size="sm" block={false} />
-											{translate(lang, 'auth.deleteButtonFinal')}
-										</span>
-									{:else}
-										{translate(lang, 'auth.deleteButtonFinal')}
-									{/if}
+									{translate(lang, 'auth.deleteButton')}
 								</AppButton>
-							</div>
+							{:else}
+								<div
+									class="auth-danger-zone__confirm"
+									role="group"
+									aria-labelledby="auth-delete-confirm-hint"
+								>
+									<AppLabel for="auth-delete-confirm">
+										<span id="auth-delete-confirm-hint">
+											{translate(lang, 'auth.deleteConfirmHint', {
+												word: deleteConfirmWord
+											})}
+										</span>
+										<AppInput
+											id="auth-delete-confirm"
+											class="mt-1 w-full"
+											type="text"
+											autocomplete="off"
+											autocapitalize="characters"
+											spellcheck="false"
+											placeholder={deleteConfirmWord}
+											bind:value={deleteConfirmText}
+											disabled={accountLocked}
+											onkeydown={(e) => {
+												if (e.key === 'Escape') cancelDeleteConfirm();
+											}}
+										/>
+									</AppLabel>
+									<div class="auth-danger-zone__confirm-actions">
+										<AppButton
+											variant="secondary"
+											disabled={accountLocked}
+											onclick={cancelDeleteConfirm}
+										>
+											{translate(lang, 'auth.deleteCancel')}
+										</AppButton>
+										<AppButton
+											variant="danger"
+											disabled={accountLocked || !deleteConfirmReady}
+											aria-busy={accountBusy === 'delete'}
+											onclick={deleteAccount}
+										>
+											{#if accountBusy === 'delete'}
+												<span class="inline-flex items-center gap-2">
+													<Spinner size="sm" block={false} />
+													{translate(lang, 'auth.deleteButtonFinal')}
+												</span>
+											{:else}
+												{translate(lang, 'auth.deleteButtonFinal')}
+											{/if}
+										</AppButton>
+									</div>
+								</div>
+							{/if}
 						</div>
 					{/if}
 				</div>
@@ -1130,27 +1222,26 @@
 						disabled={accountLocked}
 					/>
 					<ProfileSettingsRow
-						icon={Shield}
+						icon={ShieldCheck}
 						iconTone="accent"
 						label={translate(lang, 'privacy.link')}
 						href="/privacy"
 						disabled={accountLocked}
 					/>
 					<ProfileSettingsRow
-						icon={LogOut}
+						icon={SignOut}
 						iconTone="accent"
 						label={translate(lang, 'auth.logout')}
 						ariaLabel={translate(lang, 'auth.logout')}
 						busy={accountBusy === 'logout'}
 						disabled={accountLocked}
-						onclick={() => {
-							void logout();
-						}}
+						onclick={openLogoutConfirm}
 					/>
 					<div class="profile-settings-group__session-footer">
-						<p class="profile-settings-group__hint profile-settings-group__hint--session">
-							{translate(lang, 'auth.logoutEverywhereHint')}
-						</p>
+						<div class="auth-session-note">
+							<LucideIcon icon={Info} size={ICON_SMALL} class="auth-session-note__icon" />
+							<p>{translate(lang, 'auth.logoutEverywhereHint')}</p>
+						</div>
 						<button
 							type="button"
 							class="profile-settings-group__text-action"
@@ -1420,6 +1511,20 @@
 </section>
 
 {#if $auth.user}
+	<ConfirmSheet
+		open={logoutConfirmOpen}
+		titleId="auth-logout-title"
+		title={translate(lang, 'auth.logoutConfirmTitle')}
+		hint={translate(lang, 'auth.logoutConfirmLead')}
+		confirmLabel={translate(lang, 'auth.logout')}
+		variant="primary"
+		busy={accountBusy === 'logout'}
+		onConfirm={() => {
+			logoutConfirmOpen = false;
+			void logout();
+		}}
+		onDismiss={dismissLogoutConfirm}
+	/>
 	<BottomSheet
 		open={logoutEverywhereConfirmOpen}
 		titleId="auth-logout-everywhere-title"
@@ -1456,7 +1561,9 @@
 
 {#snippet guestSettingsPanel()}
 	{@render onboardingAuthHelpCard()}
-	<OnboardingChecklist readonly onTryDemo={() => {}} />
+	{#if !onboardingComplete}
+		<OnboardingChecklist readonly onTryDemo={() => {}} />
+	{/if}
 	<AuthInterfacePrefs surface="panel" />
 	<ProfileInsightsPanel />
 	<div class="profile-settings-group panel profile-settings-group--data">
@@ -1478,7 +1585,7 @@
 				href="/terms"
 			/>
 			<ProfileSettingsRow
-				icon={Shield}
+				icon={ShieldCheck}
 				iconTone="accent"
 				label={translate(lang, 'privacy.link')}
 				href="/privacy"

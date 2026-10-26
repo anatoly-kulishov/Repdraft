@@ -19,7 +19,7 @@
 		ICON_TAB_STROKE,
 		ICON_TAB_STROKE_ACTIVE
 	} from '$lib/components/icons/sizes';
-	import { BookOpen, Dumbbell, House, UserRound } from '@lucide/svelte';
+	import { BookOpen, Barbell as Dumbbell, House, User as UserRound } from 'phosphor-svelte';
 	import { isBuilderReturnPath } from '$lib/domain/catalogLinks';
 	import { showsExerciseMediaAttribution } from '$lib/domain/mediaAttribution';
 	import { translate } from '$lib/i18n/messages';

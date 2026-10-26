@@ -5,7 +5,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import { onboardingHydrated } from '$lib/stores/onboarding';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { Sparkles, X } from '@lucide/svelte';
+	import { Sparkle as Sparkles, X } from 'phosphor-svelte';
 
 	const AXIS_LOCK_PX = 12;
 	const AXIS_BIAS = 1.45;

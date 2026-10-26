@@ -7,7 +7,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { clampSearchQuery, SEARCH_QUERY_MAX } from '$lib/domain/inputLimits';
 	import { onDestroy } from 'svelte';
-	import { Search, X } from '@lucide/svelte';
+	import { MagnifyingGlass as Search, X } from 'phosphor-svelte';
 
 	let {
 		value = $bindable(''),

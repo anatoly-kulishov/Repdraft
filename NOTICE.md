@@ -22,6 +22,11 @@ The Repdraft app icon / wordmark mark (violet plate, white RP with pulse) in `sr
 is **original artwork for this project**, released under the same MIT License as the application
 source. You may use it with Repdraft forks and deployments without a separate icon license.
 
+## Icons
+
+Interface icons come from **Phosphor Icons** via [`phosphor-svelte`](https://github.com/haruaki07/phosphor-svelte)
+(MIT License): https://phosphoricons.com/
+
 ## Dataset (non-media)
 
 Exercise metadata and multilingual instructions are separate from the media and are released

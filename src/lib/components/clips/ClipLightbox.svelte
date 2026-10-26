@@ -10,7 +10,7 @@
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { getMediaCache } from '$lib/media/mediaCache';
-	import { Flag, Link2, Pencil, Share2 } from '@lucide/svelte';
+	import { Flag, Link as Link2, PencilSimple as Pencil, ShareNetwork as Share2 } from 'phosphor-svelte';
 
 	let {
 		clip,

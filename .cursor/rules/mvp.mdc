@@ -29,7 +29,7 @@ Open → Pick workout → Preview → Start → Set → Weight × reps → Next 
 ## Non-negotiables
 
 - Nav: Home, Workouts, Exercises (+ Profile low emphasis)
-- Visual: dark minimal premium, Lucide only, one primary CTA per screen
+- Visual: dark minimal premium, Phosphor icons only, one primary CTA per screen
 - No blocking full-screen loaders - skeletons / optimistic UI
 - Performance budget for low-end
 - Web analytics (Vercel) is opt-in

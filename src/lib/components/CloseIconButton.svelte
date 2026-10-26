@@ -4,7 +4,7 @@
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { X } from '@lucide/svelte';
+	import { X } from 'phosphor-svelte';
 
 	let {
 		onclick,

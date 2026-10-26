@@ -6,7 +6,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import { navigateBack } from '$lib/navigation/back';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ArrowLeft } from '@lucide/svelte';
+	import { ArrowLeft } from 'phosphor-svelte';
 
 	let {
 		title,

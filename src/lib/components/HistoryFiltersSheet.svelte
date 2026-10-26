@@ -6,7 +6,7 @@
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { Check } from '@lucide/svelte';
+	import { Check } from 'phosphor-svelte';
 
 	type HistoryDatePreset = 'all' | 'today';
 

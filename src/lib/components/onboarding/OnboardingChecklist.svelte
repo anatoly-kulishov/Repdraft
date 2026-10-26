@@ -11,7 +11,14 @@
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { onboarding, onboardingHydrated } from '$lib/stores/onboarding';
-	import { BookOpen, ChevronRight, Circle, CircleCheck, Play, X } from '@lucide/svelte';
+	import {
+		BookOpen,
+		CaretRight as ChevronRight,
+		Circle,
+		CheckCircle as CircleCheck,
+		Play,
+		X,
+	} from 'phosphor-svelte';
 
 	let {
 		onTryDemo,
@@ -105,7 +112,7 @@
 				onclick={() => void onTryDemo()}
 			>
 				<span class="inline-flex items-center justify-center gap-2">
-					<LucideIcon icon={Play} size={ICON_BUTTON} />
+					<LucideIcon icon={Play} weight="bold" size={ICON_BUTTON} />
 					{translate(lang, 'onboarding.tryDemo')}
 				</span>
 			</AppButton>

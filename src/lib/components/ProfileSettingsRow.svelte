@@ -1,13 +1,15 @@
 <script lang="ts">
 	import IconPlate from '$lib/components/IconPlate.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import type { IconComponentProps, IconWeight } from 'phosphor-svelte';
 	import type { Component } from 'svelte';
 
 	type Props = {
-		icon: Component<{ size?: number | string; strokeWidth?: number | string }>;
+		icon: Component<IconComponentProps>;
 		label: string;
 		hint?: string;
 		iconTone?: 'default' | 'accent' | 'muted';
+		iconWeight?: IconWeight;
 		value?: string;
 		ariaLabel?: string;
 		href?: string;
@@ -23,6 +25,7 @@
 		label,
 		hint,
 		iconTone = 'default',
+		iconWeight = 'regular',
 		value,
 		ariaLabel,
 		href,
@@ -41,7 +44,12 @@
 			<Spinner size="sm" block={false} />
 		</span>
 	{:else}
-		<IconPlate {icon} tone={iconTone} class="profile-settings-row__icon" />
+		<IconPlate
+			{icon}
+			tone={iconTone}
+			weight={iconWeight}
+			class="profile-settings-row__icon"
+		/>
 	{/if}
 	<span class="profile-settings-row__label">{label}</span>
 	{#if value}

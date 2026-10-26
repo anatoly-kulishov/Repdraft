@@ -6,7 +6,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import { localMergeConflict } from '$lib/stores/localMergeConflict';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { CloudUpload, Trash2 } from '@lucide/svelte';
+	import { CloudArrowUp as CloudUpload, Trash as Trash2 } from 'phosphor-svelte';
 
 	let lang = $derived($resolvedLocale);
 	let open = $derived($localMergeConflict.status === 'pending');

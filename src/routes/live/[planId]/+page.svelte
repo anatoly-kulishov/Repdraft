@@ -46,7 +46,7 @@
 	import { scrollBehavior } from '$lib/dom/prefersReducedMotion';
 	import { get } from 'svelte/store';
 	import { onDestroy, onMount, tick as nextFrame } from 'svelte';
-	import { ArrowLeft } from '@lucide/svelte';
+	import { ArrowLeft } from 'phosphor-svelte';
 
 	let { params } = $props();
 

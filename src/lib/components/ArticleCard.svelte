@@ -9,7 +9,7 @@
 		articleCoverViewTransitionName
 	} from '$lib/dom/hierarchyViewTransition';
 	import { linkWithFrom } from '$lib/domain/navigation';
-	import { ChevronRight } from '@lucide/svelte';
+	import { CaretRight as ChevronRight } from 'phosphor-svelte';
 
 	let {
 		article,

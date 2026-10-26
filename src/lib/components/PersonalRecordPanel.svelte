@@ -34,7 +34,7 @@
 	import { records, recordsReady } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
-	import { X } from '@lucide/svelte';
+	import { X } from 'phosphor-svelte';
 	import { tick } from 'svelte';
 
 	let {

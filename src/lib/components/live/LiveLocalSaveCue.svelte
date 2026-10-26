@@ -7,7 +7,7 @@
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { syncState } from '$lib/stores/syncState';
-	import { Check } from '@lucide/svelte';
+	import { Check } from 'phosphor-svelte';
 
 	let lang = $derived($resolvedLocale);
 	let status = $derived($syncState);

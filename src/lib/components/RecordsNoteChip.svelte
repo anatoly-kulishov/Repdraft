@@ -5,7 +5,7 @@
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
-	import { ChevronDown } from '@lucide/svelte';
+	import { CaretDown as ChevronDown } from 'phosphor-svelte';
 	import { onMount } from 'svelte';
 
 	let {

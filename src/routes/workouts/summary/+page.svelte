@@ -30,7 +30,7 @@
 	import { live } from '$lib/stores/live';
 	import { onboarding } from '$lib/stores/onboarding';
 	import { forceNormalShell, syncForceNormalShell } from '$lib/stores/shellChrome';
-	import { CircleCheck } from '@lucide/svelte';
+	import { CheckCircle as CircleCheck } from 'phosphor-svelte';
 	import { page } from '$app/stores';
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { onMount } from 'svelte';

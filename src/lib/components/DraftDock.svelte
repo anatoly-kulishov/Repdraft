@@ -8,7 +8,7 @@
 	import { onboarding } from '$lib/stores/onboarding';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ClipboardList } from '@lucide/svelte';
+	import { ClipboardText as ClipboardList } from 'phosphor-svelte';
 	import { page } from '$app/stores';
 
 	let lang = $derived($resolvedLocale);

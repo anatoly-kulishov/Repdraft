@@ -19,7 +19,7 @@
 
 <p align="center">
   <a href="https://www.repdraft.xyz"><img alt="Live" src="https://img.shields.io/badge/live-repdraft.xyz-0B0F14?style=flat-square" /></a>
-  <img alt="Version" src="https://img.shields.io/badge/version-0.22.6-0B0F14?style=flat-square" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.23.0-0B0F14?style=flat-square" />
   <img alt="Expo" src="https://img.shields.io/badge/Expo-RN-000020?style=flat-square&logo=expo&logoColor=white" />
   <img alt="SvelteKit" src="https://img.shields.io/badge/SvelteKit-5-FF3E00?style=flat-square&logo=svelte&logoColor=white" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white" />

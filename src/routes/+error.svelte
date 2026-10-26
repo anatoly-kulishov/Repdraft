@@ -7,7 +7,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { House, Library } from '@lucide/svelte';
+	import { House, Books as Library } from 'phosphor-svelte';
 
 	let lang = $derived($resolvedLocale);
 	let status = $derived($page.status);

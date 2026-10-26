@@ -3,7 +3,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { cn } from '$lib/utils.js';
-	import { GripVertical } from '@lucide/svelte';
+	import { DotsSixVertical as GripVertical } from 'phosphor-svelte';
 	import { onDestroy } from 'svelte';
 
 	const HOLD_MS_DEFAULT = 360;

@@ -10,7 +10,14 @@
 	import { draft, draftHydrated } from '$lib/stores/draft';
 	import { appTheme } from '$lib/stores/theme';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { BookOpen, ClipboardList, Dumbbell, House, TrendingUp, UserRound } from '@lucide/svelte';
+	import {
+		BookOpen,
+		ClipboardText as ClipboardList,
+		Barbell as Dumbbell,
+		House,
+		TrendUp as TrendingUp,
+		User as UserRound,
+	} from 'phosphor-svelte';
 
 	let {
 		path,
@@ -71,7 +78,11 @@
 					: undefined}
 			>
 				<span class="sidebar-link-icon" class:is-active={isActive(item.href)}>
-					<LucideIcon icon={item.icon} size={ICON_SIDEBAR} />
+					<LucideIcon
+						icon={item.icon}
+						size={ICON_SIDEBAR}
+						strokeWidth={isActive(item.href) ? 2.25 : undefined}
+					/>
 				</span>
 				<span>{translate(lang, item.labelKey)}</span>
 			</a>
@@ -84,7 +95,11 @@
 				aria-current={draftActive ? 'page' : undefined}
 			>
 				<span class="sidebar-link-icon" class:is-active={draftActive}>
-					<LucideIcon icon={ClipboardList} size={ICON_SIDEBAR} />
+					<LucideIcon
+						icon={ClipboardList}
+						size={ICON_SIDEBAR}
+						strokeWidth={draftActive ? 2.25 : undefined}
+					/>
 				</span>
 				<span class="sidebar-link-draft-label">
 					{translate(lang, 'draft.dockNav', { n: draftCount })}
@@ -134,7 +149,11 @@
 				{:else if profileSignedIn && profileInitials}
 					<span class="sidebar-avatar" aria-hidden="true">{profileInitials}</span>
 				{:else}
-					<LucideIcon icon={UserRound} size={ICON_SIDEBAR} />
+					<LucideIcon
+						icon={UserRound}
+						size={ICON_SIDEBAR}
+						strokeWidth={isActive('/auth') ? 2.25 : undefined}
+					/>
 				{/if}
 			</span>
 			<span>{translate(lang, 'nav.profile')}</span>

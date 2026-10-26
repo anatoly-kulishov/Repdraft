@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.23.0',
+		highlights: {
+			ru: [
+				'Профиль: понятные настройки тренера и клиентов, защита от случайного выхода',
+				'Новые иконки по всему приложению: аккуратные и без лишних оттенков',
+				'Имя клиента видно тренеру сразу после подключения',
+				'Аккаунт: удаление раскрывается по нажатию и не мешает'
+			],
+			en: [
+				'Profile: clearer coach and client settings, confirm before signing out',
+				'New icons across the app: clean and single-tone',
+				'Coaches see the client name right after connecting',
+				'Account: delete section expands on tap and stays out of the way'
+			]
+		}
+	},
+	{
 		version: '0.22.6',
 		highlights: {
 			ru: [

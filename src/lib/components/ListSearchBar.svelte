@@ -3,7 +3,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { cn } from '$lib/utils.js';
-	import { SlidersHorizontal } from '@lucide/svelte';
+	import { SlidersHorizontal } from 'phosphor-svelte';
 	import type { Snippet } from 'svelte';
 
 	let {

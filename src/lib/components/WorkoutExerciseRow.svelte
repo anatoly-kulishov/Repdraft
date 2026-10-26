@@ -45,7 +45,13 @@
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { page } from '$app/stores';
-	import { ListOrdered, SlidersHorizontal, Sparkles, Trash2, Unlink } from '@lucide/svelte';
+	import {
+		ListNumbers as ListOrdered,
+		SlidersHorizontal,
+		Sparkle as Sparkles,
+		Trash as Trash2,
+		LinkBreak as Unlink,
+	} from 'phosphor-svelte';
 
 	let {
 		item,

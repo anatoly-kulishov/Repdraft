@@ -37,7 +37,7 @@ import {
 	import { page } from '$app/stores';
 	import { replaceState } from '$app/navigation';
 	import { onDestroy } from 'svelte';
-	import { Plus } from '@lucide/svelte';
+	import { Plus } from 'phosphor-svelte';
 
 	let { exerciseId }: { exerciseId: string } = $props();
 

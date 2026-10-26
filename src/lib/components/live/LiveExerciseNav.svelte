@@ -9,7 +9,7 @@
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { scrollBehavior } from '$lib/dom/prefersReducedMotion';
-	import { Check, Link2 } from '@lucide/svelte';
+	import { Check, Link as Link2 } from 'phosphor-svelte';
 
 	let {
 		session,

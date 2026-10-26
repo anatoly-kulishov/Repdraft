@@ -3,7 +3,7 @@
 	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ImagePlus, Trash2 } from '@lucide/svelte';
+	import { ImageSquare, Trash } from 'phosphor-svelte';
 
 	let {
 		open = false,
@@ -46,7 +46,7 @@
 		</div>
 		<div class="profile-avatar-sheet__actions" role="group" aria-labelledby={titleId}>
 			<ProfileSettingsRow
-				icon={ImagePlus}
+				icon={ImageSquare}
 				iconTone="accent"
 				label={translate(lang, 'auth.avatar.change')}
 				busy={busy}
@@ -56,7 +56,7 @@
 			{#if canRemove}
 				<div class="profile-avatar-sheet__danger">
 					<ProfileSettingsRow
-						icon={Trash2}
+						icon={Trash}
 						label={translate(lang, 'auth.avatar.remove')}
 						busy={busy}
 						disabled={busy}

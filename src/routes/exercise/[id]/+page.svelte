@@ -43,7 +43,7 @@ import { truncateMeta } from '$lib/seo/site';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Bookmark, ClipboardList, Plus } from '@lucide/svelte';
+	import { Bookmark, ClipboardText as ClipboardList, Plus } from 'phosphor-svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 

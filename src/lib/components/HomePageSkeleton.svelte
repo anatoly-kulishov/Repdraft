@@ -10,7 +10,14 @@
 	} from '$lib/domain/onboarding';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { LogIn, NotebookPen, Play, Plus, Smartphone, UserRound } from '@lucide/svelte';
+	import {
+		SignIn as LogIn,
+		Notebook as NotebookPen,
+		Play,
+		Plus,
+		DeviceMobile as Smartphone,
+		User as UserRound,
+	} from 'phosphor-svelte';
 	import { browser } from '$app/environment';
 	import { HOME_RECENT_ROW_LIMIT } from '$lib/domain/home';
 	import { peekLocalHistoryCount, readActiveSession } from '$lib/storage/localSessionRepository';
@@ -252,7 +259,7 @@
 					</p>
 				</div>
 				<span class="btn-primary home-continue-card__cta home-continue-card__cta--compact home-skel-bone home-skel-bone--cta-round" aria-hidden="true">
-					<LucideIcon icon={Play} size={ICON_PRIMARY} class="home-continue-card__cta-icon" />
+					<LucideIcon icon={Play} weight="bold" size={ICON_PRIMARY} class="home-continue-card__cta-icon" />
 					<span class="home-continue-card__cta-text">{translate(lang, 'home.continue')}</span>
 				</span>
 			</div>
@@ -271,7 +278,7 @@
 						class="btn-primary home-header__cta home-header__cta--compact home-skel-bone home-skel-bone--cta-round"
 						aria-hidden="true"
 					>
-						<LucideIcon icon={Play} size={ICON_PRIMARY} class="home-header__cta-icon" />
+						<LucideIcon icon={Play} weight="bold" size={ICON_PRIMARY} class="home-header__cta-icon" />
 						<span class="home-header__cta-text home-header__cta-text--short">
 							{translate(lang, 'home.startWorkoutShort')}
 						</span>
@@ -296,7 +303,7 @@
 						class="btn-primary home-header__cta home-header__cta--compact home-skel-bone home-skel-bone--cta-round"
 						aria-hidden="true"
 					>
-						<LucideIcon icon={Play} size={ICON_PRIMARY} class="home-header__cta-icon" />
+						<LucideIcon icon={Play} weight="bold" size={ICON_PRIMARY} class="home-header__cta-icon" />
 						<span class="home-header__cta-text home-header__cta-text--short">
 							{translate(lang, 'home.startWorkoutShort')}
 						</span>

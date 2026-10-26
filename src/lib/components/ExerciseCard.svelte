@@ -25,7 +25,16 @@
 		armedExerciseMediaVtId,
 		exerciseMediaViewTransitionName
 	} from '$lib/dom/exerciseMediaViewTransition';
-	import { Bookmark, Check, Dumbbell, Film, Plus, StickyNote, Target, Trash2 } from '@lucide/svelte';
+	import {
+		Bookmark,
+		Check,
+		Barbell as Dumbbell,
+		FilmStrip as Film,
+		Plus,
+		Note as StickyNote,
+		Target,
+		Trash as Trash2,
+	} from 'phosphor-svelte';
 
 	let {
 		exercise,
