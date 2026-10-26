@@ -27,6 +27,23 @@ export function avatarOutputSize(sourceSquare: number, maxPx = AVATAR_MAX_PX): n
 	return Math.min(maxPx, edge);
 }
 
+/** Square canvas edge used by the crop dialog (>= AVATAR_MAX_PX so no upscale on export). */
+export const AVATAR_CROP_EXPORT_PX = 512;
+export const AVATAR_CROP_MIN_ZOOM = 1;
+export const AVATAR_CROP_MAX_ZOOM = 3;
+
+/** Cover scale: the smaller image edge fills the square stage. */
+export function avatarCropBaseScale(stage: number, width: number, height: number): number {
+	if (stage <= 0 || width <= 0 || height <= 0) return 0;
+	return Math.max(stage / width, stage / height);
+}
+
+/** Keep the pan offset inside the drawn image so no empty corner shows. */
+export function clampAvatarCropOffset(offset: number, drawn: number, stage: number): number {
+	const limit = Math.max(0, (drawn - stage) / 2);
+	return Math.min(limit, Math.max(-limit, offset));
+}
+
 /** Path must be `{userId}/{file}` with webp/jpeg and no traversal. */
 export function isValidCustomAvatarPath(path: string, userId: string): boolean {
 	const id = userId.trim();
@@ -48,6 +65,21 @@ export function runAvatarImageSelfCheck(): void {
 	const tall = squareCropRect(400, 900);
 	if (tall.size !== 400 || tall.sx !== 0 || tall.sy !== 250) {
 		throw new Error('squareCropRect portrait');
+	}
+	if (avatarCropBaseScale(320, 800, 600) !== 0.4) {
+		throw new Error('avatarCropBaseScale landscape');
+	}
+	if (avatarCropBaseScale(320, 400, 900) !== 0.8) {
+		throw new Error('avatarCropBaseScale portrait');
+	}
+	if (clampAvatarCropOffset(100, 400, 320) !== 40) {
+		throw new Error('clampAvatarCropOffset upper');
+	}
+	if (clampAvatarCropOffset(-100, 400, 320) !== -40) {
+		throw new Error('clampAvatarCropOffset lower');
+	}
+	if (clampAvatarCropOffset(25, 300, 320) !== 0) {
+		throw new Error('clampAvatarCropOffset no slack');
 	}
 	if (avatarOutputSize(800) !== AVATAR_MAX_PX) {
 		throw new Error('avatarOutputSize should clamp to max');

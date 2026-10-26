@@ -35,6 +35,7 @@
 	import PasswordField from '$lib/components/PasswordField.svelte';
 	import PasswordPolicyHints from '$lib/components/PasswordPolicyHints.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
+	import AvatarCropSheet from '$lib/components/AvatarCropSheet.svelte';
 	import ProfileAvatarSheet from '$lib/components/ProfileAvatarSheet.svelte';
 	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
@@ -104,6 +105,9 @@
 	let avatarSheetOpen = $state(false);
 	let avatarBusy = $state(false);
 	let avatarFileInput: HTMLInputElement | null = $state(null);
+	let avatarCropOpen = $state(false);
+	let avatarCropFile = $state<File | null>(null);
+	let avatarRemoveOpen = $state(false);
 
 	let turnstileOn = $derived(isTurnstileConfigured());
 
@@ -538,15 +542,29 @@
 		const file = input.files?.[0] ?? null;
 		input.value = '';
 		if (!file || avatarBusy) return;
+		avatarCropFile = file;
+		avatarCropOpen = true;
+	}
+
+	async function saveCroppedAvatar(cropped: File) {
+		if (avatarBusy) return;
 		avatarBusy = true;
 		try {
-			await auth.uploadProfileAvatar(file);
+			await auth.uploadProfileAvatar(cropped);
 			toasts.show(translate(lang, 'auth.avatar.saved'), 'success');
+			avatarCropOpen = false;
+			avatarCropFile = null;
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'auth.avatar.uploadFail'), 'error');
 		} finally {
 			avatarBusy = false;
 		}
+	}
+
+	function dismissAvatarCrop() {
+		if (avatarBusy) return;
+		avatarCropOpen = false;
+		avatarCropFile = null;
 	}
 
 	async function removeCustomAvatar() {
@@ -555,6 +573,7 @@
 		try {
 			await auth.removeProfileAvatar();
 			toasts.show(translate(lang, 'auth.avatar.removed'), 'success');
+			avatarRemoveOpen = false;
 		} catch (err) {
 			toasts.show(translateError(lang, err, 'auth.avatar.removeFail'), 'error');
 		} finally {
@@ -564,7 +583,7 @@
 
 </script>
 
-<SeoHead title={translate(lang, 'auth.title')} noindex />
+<SeoHead title={translate(lang, accountMode ? 'nav.profile' : 'auth.title')} noindex />
 
 <section
 	class="auth-page content-page"
@@ -577,7 +596,7 @@
 		{#if accountMode}
 			<ScreenHeader
 				fixed
-				title={translate(lang, 'auth.title')}
+				title={translate(lang, 'nav.profile')}
 				backHref={nextPath}
 				backLabel={backLabel}
 				backLabelVisible
@@ -729,19 +748,67 @@
 				busy={avatarBusy}
 				onChangePhoto={openAvatarFilePicker}
 				onRemovePhoto={() => {
-					void removeCustomAvatar();
+					avatarRemoveOpen = true;
 				}}
 				onDismiss={() => {
 					avatarSheetOpen = false;
 				}}
 			/>
 
+			<AvatarCropSheet
+				open={avatarCropOpen}
+				file={avatarCropFile}
+				busy={avatarBusy}
+				onConfirm={(file) => void saveCroppedAvatar(file)}
+				onDismiss={dismissAvatarCrop}
+			/>
+
+			<BottomSheet
+				bind:open={avatarRemoveOpen}
+				titleId="avatar-remove-title"
+				dismissible={!avatarBusy}
+				onDismiss={() => {
+					avatarRemoveOpen = false;
+				}}
+			>
+				<p id="avatar-remove-title" class="bottom-sheet__title">
+					{translate(lang, 'auth.avatar.removeConfirmTitle')}
+				</p>
+				<p class="bottom-sheet__hint">{translate(lang, 'auth.avatar.removeConfirmHint')}</p>
+				{#snippet actions()}
+					<AppButton
+						variant="secondary"
+						disabled={avatarBusy}
+						onclick={() => {
+							avatarRemoveOpen = false;
+						}}
+					>
+						{translate(lang, 'common.cancel')}
+					</AppButton>
+					<AppButton
+						variant="danger"
+						disabled={avatarBusy}
+						aria-busy={avatarBusy}
+						onclick={() => void removeCustomAvatar()}
+					>
+						{#if avatarBusy}
+							<span class="inline-flex items-center gap-2">
+								<Spinner size="sm" block={false} />
+								{translate(lang, 'auth.wait')}
+							</span>
+						{:else}
+							{translate(lang, 'common.delete')}
+						{/if}
+					</AppButton>
+				{/snippet}
+			</BottomSheet>
+
 			<div class="profile-settings-stack">
 				<div class="profile-settings-cols">
 					<div class="profile-settings-col">
 						<form
 							id="auth-greeting-panel"
-							class="profile-settings-group panel"
+							class="profile-settings-group panel profile-settings-group--compact"
 							onsubmit={(e) => {
 								e.preventDefault();
 								void saveGreetingName();
@@ -782,7 +849,7 @@
 							</AppButton>
 						</form>
 
-						<div class="profile-settings-group panel">
+						<div class="profile-settings-group panel profile-settings-group--compact">
 							<p class="profile-settings-group__title">{translate(lang, 'settings.sessionTitle')}</p>
 							<ProfileSettingsRow icon={Timer} label={translate(lang, 'settings.restSound')}>
 								<input
