@@ -1812,6 +1812,46 @@ button.live-local-save-cue {
 	margin-top: 0.75rem;
 }
 
+/* Divider between the coach dashboard link and the invite-code form. */
+.profile-settings-group__section {
+	margin-top: 0.85rem;
+	padding-top: 0.85rem;
+	border-top: 1px solid var(--color-border);
+}
+
+.profile-settings-group__section > .profile-settings-group__hint {
+	margin-top: 0;
+}
+
+.coach-connect-loading {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 0.7rem 0;
+}
+
+/* Invite code: field + submit stack in narrow cards, sit side-by-side when there is room. */
+.coach-invite-form {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 0.5rem;
+	margin-top: 0.5rem;
+}
+
+@container (min-width: 20rem) {
+	.coach-invite-form {
+		grid-template-columns: minmax(0, 1fr) auto;
+	}
+}
+
+.coach-invite-form__error {
+	margin: 0.5rem 0 0;
+	font-size: 0.75rem;
+	line-height: 1.4;
+	color: var(--color-danger);
+	text-wrap: pretty;
+}
+
 .profile-settings-row {
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr) max-content;

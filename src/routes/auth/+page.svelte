@@ -25,9 +25,16 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
+	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import AuthInterfacePrefs from '$lib/components/AuthInterfacePrefs.svelte';
 	import ProfileInsightsPanel from '$lib/components/ProfileInsightsPanel.svelte';
-	import { isValidInviteCode, normalizeInviteCode } from '$lib/domain/coach';
+	import {
+		INVITE_CODE_LENGTH,
+		isValidInviteCode,
+		normalizeInviteCode,
+		type CoachClientLink
+	} from '$lib/domain/coach';
+	import { isSupabaseConfigured } from '$lib/supabase/client';
 	import { coachRepository } from '$lib/storage/coachRepository';
 	import AuthLegalConsent from '$lib/components/AuthLegalConsent.svelte';
 	import BrandTagline from '$lib/components/BrandTagline.svelte';
@@ -79,21 +86,82 @@
 	let deleteConfirmText = $state('');
 	let coachInviteInput = $state('');
 	let coachInviteBusy = $state(false);
+	let coachInviteError = $state<string | null>(null);
+	let coachInviteHasChars = $derived(normalizeInviteCode(coachInviteInput).length > 0);
+
+	let coachCloud = $derived(isSupabaseConfigured() && Boolean($auth.user));
+	let ownUserId = $derived($auth.user?.id ?? null);
+	let clientCoachLinks = $state<CoachClientLink[]>([]);
+	/** User id whose links are already in state, so switching accounts refetches. */
+	let clientCoachLoadedFor = $state<string | null>(null);
+	let clientCoachLoading = $state(false);
+	let clientCoachLoaded = $derived(Boolean(ownUserId) && clientCoachLoadedFor === ownUserId);
+	let activeCoachLinks = $derived(clientCoachLinks.filter((link) => link.status === 'active'));
+
+	async function loadClientCoachLinks() {
+		const userId = ownUserId;
+		if (!coachCloud || !userId || clientCoachLoading) return;
+		clientCoachLoading = true;
+		try {
+			const result = await coachRepository.listClientLinks(userId);
+			if (result.ok) clientCoachLinks = result.value;
+			clientCoachLoadedFor = userId;
+		} finally {
+			clientCoachLoading = false;
+		}
+	}
+
+	$effect(() => {
+		if (!coachCloud || !ownUserId || clientCoachLoaded || clientCoachLoading) return;
+		void loadClientCoachLinks();
+	});
+
+	function onCoachInviteInput(el: HTMLInputElement) {
+		const cleaned = normalizeInviteCode(el.value).slice(0, INVITE_CODE_LENGTH);
+		const next = cleaned.length > 4 ? `${cleaned.slice(0, 4)}-${cleaned.slice(4)}` : cleaned;
+		coachInviteInput = next;
+		coachInviteError = null;
+		if (el.value !== next) el.value = next;
+	}
 
 	async function acceptCoachInvite() {
+		if (coachInviteBusy) return;
 		const code = normalizeInviteCode(coachInviteInput);
 		if (!isValidInviteCode(code)) {
-			toasts.show(translate(lang, 'coach.inviteInvalid'), 'error');
+			coachInviteError = translate(lang, 'coach.inviteInvalid');
 			return;
 		}
+		coachInviteError = null;
 		coachInviteBusy = true;
 		try {
 			const result = await coachRepository.acceptInvite(code);
 			if (result.ok) {
+				const coachUserId = result.value;
+				const me = ownUserId ?? '';
+				const now = new Date().toISOString();
+				if (
+					!clientCoachLinks.some(
+						(link) => link.coachUserId === coachUserId && link.status === 'active'
+					)
+				) {
+					clientCoachLinks = [
+						...clientCoachLinks,
+						{
+							id: `accepted-${coachUserId}`,
+							coachUserId,
+							clientUserId: me,
+							status: 'active',
+							createdAt: now,
+							updatedAt: now
+						}
+					];
+				}
+				clientCoachLoadedFor = me;
 				coachInviteInput = '';
 				toasts.show(translate(lang, 'coach.inviteAccepted'), 'success');
+				void loadClientCoachLinks();
 			} else {
-				toasts.show(translate(lang, `coach.error.${result.reason}`), 'error');
+				coachInviteError = translate(lang, `coach.error.${result.reason}`);
 			}
 		} finally {
 			coachInviteBusy = false;
@@ -890,28 +958,75 @@
 						<p class="profile-settings-group__hint">{translate(lang, 'profile.clientsHint')}</p>
 						<ProfileSettingsRow
 							icon={Users}
-							label={translate(lang, 'coach.pageTitle')}
+							label={translate(lang, 'profile.clientsRow')}
 							href="/clients"
 						/>
-						<p class="profile-settings-group__hint mt-3">{translate(lang, 'coach.inviteAcceptLead')}</p>
-						<div class="mt-1 flex gap-2">
-							<AppInput
-								class="w-full"
-								type="text"
-								autocomplete="off"
-								spellcheck={false}
-								placeholder={translate(lang, 'coach.inviteAcceptPlaceholder')}
-								aria-label={translate(lang, 'coach.inviteAcceptPlaceholder')}
-								value={coachInviteInput}
-								oninput={(e) => (coachInviteInput = e.currentTarget.value)}
-							/>
-							<AppButton
-								variant="secondary"
-								disabled={coachInviteBusy}
-								onclick={() => void acceptCoachInvite()}
-							>
-								{translate(lang, 'coach.inviteAcceptCta')}
-							</AppButton>
+						<div class="profile-settings-group__section">
+							{#if coachCloud && !clientCoachLoaded}
+								<div class="coach-connect-loading" aria-hidden="true">
+									<AppSkeleton class="h-10 w-10 shrink-0 rounded-[var(--radius-control)]" />
+									<div class="flex min-w-0 flex-col gap-2">
+										<AppSkeleton class="h-4 w-32" />
+										<AppSkeleton class="h-3 w-52 max-w-full" />
+									</div>
+								</div>
+							{:else if activeCoachLinks.length > 0}
+								<ProfileSettingsRow
+									icon={Users}
+									iconTone="accent"
+									label={activeCoachLinks.length > 1
+										? translate(lang, 'profile.coachesConnected', { n: activeCoachLinks.length })
+										: translate(lang, 'profile.coachConnected')}
+									hint={translate(lang, 'profile.coachConnectedHint')}
+								/>
+							{:else}
+								<p class="profile-settings-group__hint">
+									{translate(lang, 'coach.inviteAcceptLead')}
+								</p>
+								<form
+									class="coach-invite-form"
+									onsubmit={(e) => {
+										e.preventDefault();
+										void acceptCoachInvite();
+									}}
+								>
+									<AppInput
+										type="text"
+										inputmode="text"
+										autocomplete="off"
+										autocapitalize="characters"
+										enterkeyhint="done"
+										maxlength={INVITE_CODE_LENGTH + 1}
+										spellcheck={false}
+										class="w-full font-mono tracking-[0.12em]"
+										placeholder={translate(lang, 'coach.inviteAcceptPlaceholder')}
+										aria-label={translate(lang, 'coach.inviteAcceptLabel')}
+										aria-invalid={coachInviteError ? 'true' : undefined}
+										aria-describedby={coachInviteError ? 'coach-invite-error' : undefined}
+										value={coachInviteInput}
+										oninput={(e) => onCoachInviteInput(e.currentTarget)}
+									/>
+									<AppButton
+										type="submit"
+										variant="secondary"
+										disabled={coachInviteBusy || !coachInviteHasChars}
+									>
+										{#if coachInviteBusy}
+											<span class="inline-flex items-center gap-2">
+												<Spinner size="sm" block={false} />
+												{translate(lang, 'auth.wait')}
+											</span>
+										{:else}
+											{translate(lang, 'coach.inviteAcceptCta')}
+										{/if}
+									</AppButton>
+								</form>
+								{#if coachInviteError}
+									<p id="coach-invite-error" class="coach-invite-form__error" role="alert">
+										{coachInviteError}
+									</p>
+								{/if}
+							{/if}
 						</div>
 					</div>
 					<OnboardingChecklist readonly onTryDemo={() => {}} />
@@ -1344,7 +1459,7 @@
 	<OnboardingChecklist readonly onTryDemo={() => {}} />
 	<AuthInterfacePrefs surface="panel" />
 	<ProfileInsightsPanel />
-	<div class="profile-settings-group panel">
+	<div class="profile-settings-group panel profile-settings-group--data">
 		<p class="profile-settings-group__title">{translate(lang, 'settings.exportTitle')}</p>
 		<p class="profile-settings-group__hint">{translate(lang, 'settings.exportHint')}</p>
 		<DataExportSection embedded />

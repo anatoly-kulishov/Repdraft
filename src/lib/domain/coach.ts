@@ -22,7 +22,10 @@ export type CoachClientLink = {
 	status: CoachLinkStatus;
 	createdAt: string;
 	updatedAt: string;
-	/** Coach-side label, e.g. «Аня — зал 3 раза». Never shown to the client. */
+	/**
+	 * Client label in the coach's list. On accept the DB fills it with the client's
+	 * display name; the coach can rename it later. Never rendered on the client side.
+	 */
 	note?: string;
 };
 

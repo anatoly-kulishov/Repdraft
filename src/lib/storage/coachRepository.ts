@@ -117,6 +117,20 @@ export const coachRepository = {
 		return { ok: true, value: (data as LinkRow[] | null)?.map(rowToLink) ?? [] };
 	},
 
+	/** Active links where the current user is the client (their coaches). */
+	async listClientLinks(clientUserId: string): Promise<CoachResult<CoachClientLink[]>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { data, error } = await supabase
+			.from('coach_links')
+			.select('id,coach_user_id,client_user_id,status,note,created_at,updated_at')
+			.eq('client_user_id', clientUserId)
+			.eq('status', 'active')
+			.order('updated_at', { ascending: false });
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		return { ok: true, value: (data as LinkRow[] | null)?.map(rowToLink) ?? [] };
+	},
+
 	async createInvite(): Promise<CoachResult<string>> {
 		const supabase = getSupabase();
 		if (!supabase) return { ok: false, reason: 'notConfigured' };
