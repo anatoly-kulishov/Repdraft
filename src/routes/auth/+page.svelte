@@ -808,7 +808,7 @@
 					<div class="profile-settings-col">
 						<form
 							id="auth-greeting-panel"
-							class="profile-settings-group panel"
+							class="profile-settings-group panel profile-settings-group--compact"
 							onsubmit={(e) => {
 								e.preventDefault();
 								void saveGreetingName();
@@ -849,7 +849,7 @@
 							</AppButton>
 						</form>
 
-						<div class="profile-settings-group panel">
+						<div class="profile-settings-group panel profile-settings-group--compact">
 							<p class="profile-settings-group__title">{translate(lang, 'settings.sessionTitle')}</p>
 							<ProfileSettingsRow icon={Timer} label={translate(lang, 'settings.restSound')}>
 								<input

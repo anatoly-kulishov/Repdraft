@@ -1778,6 +1778,25 @@ button.live-local-save-cue {
 	justify-content: center;
 }
 
+/* Compact settings card: hint hugs its control, tight title and action gaps. */
+.profile-settings-group--compact {
+	padding: 0.9rem 1.1rem 1rem;
+}
+
+.profile-settings-group--compact .profile-settings-group__title {
+	margin-bottom: 0.45rem;
+}
+
+.profile-settings-group--compact .profile-settings-group__hint {
+	margin: 0.3rem 0 0;
+	font-size: 0.75rem;
+	line-height: 1.35;
+}
+
+.profile-settings-group--compact .profile-settings-group__action {
+	margin-top: 0.65rem;
+}
+
 .profile-settings-group.panel :is(.btn-secondary, [data-slot='button'].btn-secondary):disabled {
 	opacity: 0.72;
 	color: color-mix(in srgb, var(--color-muted) 88%, var(--color-ink));

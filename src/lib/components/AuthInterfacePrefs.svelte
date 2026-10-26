@@ -22,7 +22,7 @@
 	let showWebAnalytics = $derived(isWebAnalyticsAvailable());
 	let rootClass = $derived(
 		surface === 'panel'
-			? 'profile-settings-group panel profile-settings-group--paired'
+			? 'profile-settings-group panel profile-settings-group--paired profile-settings-group--compact'
 			: 'auth-account__section'
 	);
 	let titleClass = $derived(

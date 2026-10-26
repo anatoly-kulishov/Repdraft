@@ -1105,9 +1105,9 @@ const ru: Dict = {
 	'auth.legalConsentNeed': 'Отметьте согласие с условиями и политикой конфиденциальности',
 	'auth.legalTerms': 'условия использования',
 	'auth.legalPrivacy': 'политику конфиденциальности',
-	'settings.webAnalytics': 'Веб-аналитика',
+	'settings.webAnalytics': 'Статистика посещений',
 	'settings.webAnalyticsHint':
-		'Vercel Analytics и Speed Insights только на сайте/PWA. Выкл. по умолчанию. В нативном приложении не используется.',
+		'Помогает понять, сколько людей заходит на сайт и как быстро он работает. Личные данные не собираются. По умолчанию выключено, в мобильном приложении не работает.',
 	'settings.questHint':
 		'Недельная цель и опыт за выполнение плана. Не влияет на рекорды и историю.',
 	'settings.questWeeklyGoal': 'Тренировок в неделю',
@@ -2467,9 +2467,9 @@ const en: Dict = {
 	'auth.legalConsentNeed': 'Please accept the terms and privacy policy',
 	'auth.legalTerms': 'terms of use',
 	'auth.legalPrivacy': 'privacy policy',
-	'settings.webAnalytics': 'Web analytics',
+	'settings.webAnalytics': 'Visit statistics',
 	'settings.webAnalyticsHint':
-		'Vercel Analytics and Speed Insights on the website/PWA only. Off by default. Not used in the native app.',
+		'Helps see how many people visit the site and how fast it loads. No personal data is collected. Off by default; not used in the mobile app.',
 	'settings.questHint':
 		'Weekly goal and XP for sticking to your plan. Does not change records or history.',
 	'settings.questWeeklyGoal': 'Workouts per week',
