@@ -583,7 +583,7 @@
 
 </script>
 
-<SeoHead title={translate(lang, accountMode ? 'nav.profile' : 'auth.title')} noindex />
+<SeoHead title={translate(lang, accountMode ? 'nav.profile' : 'nav.user')} noindex />
 
 <section
 	class="auth-page content-page"
@@ -602,7 +602,7 @@
 				backLabelVisible
 			/>
 		{:else if !recoveryMode}
-			<ScreenHeader title={translate(lang, 'auth.title')} backHref={nextPath} />
+			<ScreenHeader title={translate(lang, 'nav.user')} backHref={nextPath} />
 		{/if}
 	{/if}
 	{#if $auth.ready && $auth.sessionKnown && !accountMode && !showBootSkeleton}
@@ -619,7 +619,7 @@
 		<!-- Delay window: no skeleton, no auth UI (avoids FOLS). -->
 	{:else if showCloudOff}
 		<div class="auth-guest-stack">
-			<div class="auth-signin panel">
+			<div class="auth-signin profile-settings-group panel">
 				<p class="text-sm font-semibold">{translate(lang, 'auth.cloudOffTitle')}</p>
 				<p class="mt-2 text-sm text-[var(--color-muted)]">{translate(lang, 'auth.cloudOffLead')}</p>
 			</div>
@@ -1059,7 +1059,7 @@
 		</div>
 	{:else if panel === 'check-email'}
 		<div class="auth-guest-stack">
-			<div class="auth-signin panel flex flex-col gap-3">
+			<div class="auth-signin profile-settings-group panel flex flex-col gap-3">
 				<p class="font-semibold">{translate(lang, 'auth.checkEmailTitle')}</p>
 				<p class="text-sm text-[var(--color-muted)]">
 					{#if checkEmailKind === 'magic'}
@@ -1083,7 +1083,7 @@
 		</div>
 	{:else}
 		<div class="auth-guest-stack">
-			<div class="auth-signin panel flex flex-col gap-4">
+			<div class="auth-signin profile-settings-group panel flex flex-col gap-4">
 			{#if panel === 'magic'}
 				<form
 					class="auth-form"
@@ -1340,31 +1340,34 @@
 {/if}
 
 {#snippet guestSettingsPanel()}
-	<div class="auth-settings panel">
-		{@render onboardingHelpPanel()}
-		<AuthInterfacePrefs />
-		<ProfileInsightsPanel />
-		<DataExportSection />
-		{#if showTesterTools}
-			<LoopMetricsPanel />
-			<ProfileDevWipePanel />
-		{/if}
-		<div class="auth-account__section auth-account__section--legal">
-			<p class="auth-prefs__title">{translate(lang, 'auth.privacyHint')}</p>
-			<div class="auth-prefs__stack">
-				<ProfileSettingsRow
-					icon={FileText}
-					iconTone="accent"
-					label={translate(lang, 'terms.link')}
-					href="/terms"
-				/>
-				<ProfileSettingsRow
-					icon={Shield}
-					iconTone="accent"
-					label={translate(lang, 'privacy.link')}
-					href="/privacy"
-				/>
-			</div>
+	{@render onboardingAuthHelpCard()}
+	<OnboardingChecklist readonly onTryDemo={() => {}} />
+	<AuthInterfacePrefs surface="panel" />
+	<ProfileInsightsPanel />
+	<div class="profile-settings-group panel">
+		<p class="profile-settings-group__title">{translate(lang, 'settings.exportTitle')}</p>
+		<p class="profile-settings-group__hint">{translate(lang, 'settings.exportHint')}</p>
+		<DataExportSection embedded />
+	</div>
+	{#if showTesterTools}
+		<LoopMetricsPanel />
+		<ProfileDevWipePanel />
+	{/if}
+	<div class="profile-settings-group panel">
+		<p class="profile-settings-group__title">{translate(lang, 'auth.privacyHint')}</p>
+		<div class="auth-prefs__stack">
+			<ProfileSettingsRow
+				icon={FileText}
+				iconTone="accent"
+				label={translate(lang, 'terms.link')}
+				href="/terms"
+			/>
+			<ProfileSettingsRow
+				icon={Shield}
+				iconTone="accent"
+				label={translate(lang, 'privacy.link')}
+				href="/privacy"
+			/>
 		</div>
 	</div>
 	<WhatsNewSheet />
@@ -1377,12 +1380,5 @@
 		<AppButton variant="secondary" block href="/articles">
 			{translate(lang, 'articles.viewAll')}
 		</AppButton>
-	</div>
-{/snippet}
-
-{#snippet onboardingHelpPanel()}
-	<div class="onboarding-profile-block">
-		{@render onboardingAuthHelpCard()}
-		<OnboardingChecklist readonly onTryDemo={() => {}} />
 	</div>
 {/snippet}

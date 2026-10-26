@@ -139,13 +139,24 @@ export default function ProfileScreen() {
 
 	useFocusEffect(
 		useCallback(() => {
-			void sessionsRepo.list().then((list) => {
-				setLoopSnap(computeLoopMetrics(list, new Date().toISOString()));
-			});
 			void outboxCount().then(setPendingSync);
 			void loadOnboarding().then(setOnboarding);
 		}, [])
 	);
+
+	useEffect(() => {
+		if (!testerOn) {
+			setLoopSnap(null);
+			return;
+		}
+		let cancelled = false;
+		void sessionsRepo.list().then((list) => {
+			if (!cancelled) setLoopSnap(computeLoopMetrics(list, new Date().toISOString()));
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [testerOn]);
 
 	useEffect(() => {
 		let unsub: (() => void) | undefined;
@@ -824,7 +835,7 @@ export default function ProfileScreen() {
 				</Text>
 			</Panel>
 
-			{loopSnap ? (
+			{testerOn && loopSnap ? (
 				<Panel>
 					<Text style={styles.groupTitle}>{tt('loopMetrics.title')}</Text>
 					<Text style={styles.hint}>{tt('loopMetrics.hint')}</Text>

@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.22.6',
+		highlights: {
+			ru: [
+				'Экран без аккаунта теперь называется «Пользователь» и выглядит как профиль',
+				'Настройки компактнее, подсказки стоят рядом со своими полями',
+				'Меньше технических слов в ошибках и подсказках',
+				'В приложении служебные метрики скрыты от обычных пользователей'
+			],
+			en: [
+				'Signed-out screen is now called User and follows the profile layout',
+				'Settings are more compact, hints sit next to their fields',
+				'Fewer technical terms in errors and hints',
+				'Internal metrics are hidden from regular users in the app'
+			]
+		}
+	},
+	{
 		version: '0.22.5',
 		highlights: {
 			ru: [

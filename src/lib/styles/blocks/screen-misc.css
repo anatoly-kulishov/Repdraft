@@ -2555,8 +2555,13 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	gap: var(--page-section-gap);
 }
 
+/* Cards already sit in a gapped column — drop the extra card margin. */
+.auth-guest-stack > .panel,
+.auth-guest-stack > .profile-settings-group {
+	margin-bottom: 0;
+}
+
 .auth-signin.panel,
-.auth-settings.panel,
 .auth-panel.panel,
 .auth-account.panel {
 	display: flex;
@@ -2565,14 +2570,13 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	padding: 1.15rem 1.2rem;
 }
 
-.auth-signin.panel.flex {
-	gap: 1rem;
+/* Guest cards follow the signed-in profile rhythm. */
+.auth-signin.profile-settings-group.panel {
+	padding: 0.95rem 1.1rem 1.05rem;
 }
 
-.auth-settings.panel {
-	gap: 0;
-	padding-block: 1.15rem 0.5rem;
-	padding-inline: 1.2rem;
+.auth-signin.panel.flex {
+	gap: 1rem;
 }
 
 .auth-panel__primary {
