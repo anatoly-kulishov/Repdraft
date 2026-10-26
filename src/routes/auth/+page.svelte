@@ -1353,7 +1353,7 @@
 		<LoopMetricsPanel />
 		<ProfileDevWipePanel />
 	{/if}
-	<div class="profile-settings-group panel profile-settings-group--legal">
+	<div class="profile-settings-group panel">
 		<p class="profile-settings-group__title">{translate(lang, 'auth.privacyHint')}</p>
 		<div class="auth-prefs__stack">
 			<ProfileSettingsRow

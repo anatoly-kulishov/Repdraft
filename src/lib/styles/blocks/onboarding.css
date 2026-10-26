@@ -316,14 +316,6 @@ body:has(.workouts-fab:not(.workouts-fab--hidden)):has(.draft-dock-wrap__hint) {
 	--draft-dock-clearance: 13rem;
 }
 
-.onboarding-profile-block {
-	display: flex;
-	flex-direction: column;
-	gap: 0.65rem;
-	margin-bottom: 1.15rem;
-}
-
-.profile-settings-stack > .onboarding-profile-block,
 .profile-settings-stack > .profile-settings-stack-full {
 	margin-bottom: 0;
 }
@@ -355,10 +347,6 @@ body:has(.workouts-fab:not(.workouts-fab--hidden)):has(.draft-dock-wrap__hint) {
 	min-height: var(--control-height);
 	padding-block: 0;
 	line-height: 1.2;
-}
-
-.auth-settings.panel > .onboarding-profile-block + .auth-account__section {
-	padding-top: 0.75rem;
 }
 
 @media (min-width: 1024px) {

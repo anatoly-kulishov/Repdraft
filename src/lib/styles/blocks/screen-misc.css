@@ -2562,7 +2562,6 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 }
 
 .auth-signin.panel,
-.auth-settings.panel,
 .auth-panel.panel,
 .auth-account.panel {
 	display: flex;
@@ -2578,12 +2577,6 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 
 .auth-signin.panel.flex {
 	gap: 1rem;
-}
-
-.auth-settings.panel {
-	gap: 0;
-	padding-block: 1.15rem 0.5rem;
-	padding-inline: 1.2rem;
 }
 
 .auth-panel__primary {
