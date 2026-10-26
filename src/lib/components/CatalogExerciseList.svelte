@@ -57,7 +57,7 @@
 	import { page } from '$app/stores';
 	import { onMount, untrack, type Snippet } from 'svelte';
 	import { get } from 'svelte/store';
-	import { Bookmark, Plus, Trash2 } from '@lucide/svelte';
+	import { Bookmark, Plus, Trash as Trash2 } from 'phosphor-svelte';
 
 	let {
 		equipment: equipmentFacets,

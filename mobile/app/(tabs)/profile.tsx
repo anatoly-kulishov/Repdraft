@@ -11,7 +11,6 @@ import {
 	Alert,
 	Image,
 	Modal,
-	Platform,
 	Pressable,
 	ScrollView,
 	StyleSheet,
@@ -20,7 +19,7 @@ import {
 	TextInput,
 	View
 } from 'react-native';
-import { UserRound } from 'lucide-react-native';
+import { ChevronDown, UserRound } from 'lucide-react-native';
 import type { Session } from '@supabase/supabase-js';
 import { userCustomAvatarPath, userDisplayName } from '@repdraft/domain/authFlow';
 import { clampGreetingName } from '@repdraft/domain/greetingName';
@@ -42,7 +41,7 @@ import { unlockRestAudioFromGesture, playRestDoneChime } from '../../src/audio/r
 import { webOrigin } from '../../src/catalog/mediaUrl';
 import { getSupabase, isSupabaseConfigured } from '../../src/auth/supabase';
 import type { WorkoutSession } from '@repdraft/domain/types';
-import type { OnboardingState } from '@repdraft/domain/onboarding';
+import { checklistProgress, type OnboardingState } from '@repdraft/domain/onboarding';
 import { authErrorMessageKey } from '@repdraft/domain/authFlow';
 import {
 	passwordPolicyMessageKey,
@@ -120,7 +119,9 @@ export default function ProfileScreen() {
 	const [legalAccepted, setLegalAccepted] = useState(false);
 	const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
 	const [whatsNewOpen, setWhatsNewOpen] = useState(false);
+	const [deleteZoneOpen, setDeleteZoneOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
+	const [logoutOpen, setLogoutOpen] = useState(false);
 	const [logoutEverywhereOpen, setLogoutEverywhereOpen] = useState(false);
 	const [deleteWord, setDeleteWord] = useState('');
 	const [importReview, setImportReview] = useState<{
@@ -136,6 +137,10 @@ export default function ProfileScreen() {
 	const cloud = isSupabaseConfigured();
 	const avatarUrl = session?.user ? resolveUserAvatarUrl(session.user) : null;
 	const displayName = userDisplayName(session?.user ?? null);
+	const onboardingProgress = onboarding ? checklistProgress(onboarding) : null;
+	const onboardingComplete = Boolean(
+		onboardingProgress && onboardingProgress.done >= onboardingProgress.total
+	);
 
 	useFocusEffect(
 		useCallback(() => {
@@ -556,6 +561,11 @@ export default function ProfileScreen() {
 		await sb.auth.signOut();
 	}
 
+	function openSignOutConfirm() {
+		if (busy) return;
+		setLogoutOpen(true);
+	}
+
 	function openLogoutEverywhereConfirm() {
 		setLogoutEverywhereOpen(true);
 	}
@@ -812,9 +822,7 @@ export default function ProfileScreen() {
 						}}
 					/>
 				</View>
-				<Text style={styles.hint}>
-					{tt(Platform.OS === 'ios' ? 'settings.restSoundHintIos' : 'settings.restSoundHint')}
-				</Text>
+				<Text style={styles.hint}>{tt('settings.restSoundHint')}</Text>
 			</Panel>
 
 			<Panel>
@@ -880,7 +888,12 @@ export default function ProfileScreen() {
 						onPress={() => void syncCloud()}
 						disabled={busy}
 					/>
-					<PrimaryButton label={tt('profile.signOut')} variant="ghost" onPress={() => void signOut()} />
+					<PrimaryButton
+						label={tt('profile.signOut')}
+						variant="ghost"
+						onPress={openSignOutConfirm}
+					/>
+					<Text style={[styles.hint, styles.accountHint]}>{tt('auth.logoutEverywhereHint')}</Text>
 					<PrimaryButton
 						label={tt('auth.logoutEverywhere')}
 						variant="ghost"
@@ -891,47 +904,71 @@ export default function ProfileScreen() {
 
 			{session?.user ? (
 				<Panel>
-					<Text style={styles.groupTitle}>{tt('auth.deleteZoneLabel')}</Text>
-					<Text style={styles.hint}>{tt('auth.deleteTitle')}</Text>
-					<Text style={styles.hint}>{tt('auth.deleteLead')}</Text>
-					<Text style={styles.metricLine}>• {tt('auth.deleteBulletPlans')}</Text>
-					<Text style={styles.metricLine}>• {tt('auth.deleteBulletRecords')}</Text>
-					<Text style={styles.metricLine}>• {tt('auth.deleteBulletSessions')}</Text>
-					{!deleteOpen ? (
-						<PrimaryButton
-							label={tt('auth.deleteButton')}
-							variant="danger"
-							onPress={() => setDeleteOpen(true)}
-						/>
-					) : (
+					<Pressable
+						accessibilityRole="button"
+						accessibilityState={{ expanded: deleteZoneOpen }}
+						onPress={() => {
+							if (deleteZoneOpen) {
+								setDeleteOpen(false);
+								setDeleteWord('');
+							}
+							setDeleteZoneOpen(!deleteZoneOpen);
+						}}
+						style={styles.dangerHeader}
+					>
+						<View style={styles.dangerHeaderText}>
+							<Text style={styles.groupTitle}>{tt('auth.deleteZoneLabel')}</Text>
+							<Text style={styles.dangerTitle}>{tt('auth.deleteTitle')}</Text>
+						</View>
+						<View style={[styles.dangerChevron, deleteZoneOpen && styles.dangerChevronOpen]}>
+							<ChevronDown color={colors.danger} size={18} strokeWidth={2.25} />
+						</View>
+					</Pressable>
+					{deleteZoneOpen ? (
 						<>
-							<Text style={styles.hint}>
-								{tt('auth.deleteConfirmHint', { word: tt('auth.deleteConfirmWord') })}
-							</Text>
-							<TextInput
-								style={styles.input}
-								value={deleteWord}
-								onChangeText={setDeleteWord}
-								autoCapitalize="characters"
-								placeholder={tt('auth.deleteConfirmWord')}
-								placeholderTextColor={colors.muted}
-							/>
-							<PrimaryButton
-								label={tt('auth.deleteButtonFinal')}
-								variant="danger"
-								disabled={busy || deleteWord.trim() !== tt('auth.deleteConfirmWord')}
-								onPress={() => void confirmDeleteAccount()}
-							/>
-							<PrimaryButton
-								label={tt('auth.deleteCancel')}
-								variant="ghost"
-								onPress={() => {
-									setDeleteOpen(false);
-									setDeleteWord('');
-								}}
-							/>
+							<Text style={styles.hint}>{tt('auth.deleteLead')}</Text>
+							<Text style={styles.metricLine}>• {tt('auth.deleteBulletPlans')}</Text>
+							<Text style={styles.metricLine}>• {tt('auth.deleteBulletRecords')}</Text>
+							<Text style={styles.metricLine}>• {tt('auth.deleteBulletSessions')}</Text>
+							{!deleteOpen ? (
+								<PrimaryButton
+									label={tt('auth.deleteButton')}
+									variant="danger"
+									onPress={() => setDeleteOpen(true)}
+								/>
+							) : (
+								<>
+									<Text style={styles.hint}>
+										{tt('auth.deleteConfirmHint', {
+											word: tt('auth.deleteConfirmWord')
+										})}
+									</Text>
+									<TextInput
+										style={styles.input}
+										value={deleteWord}
+										onChangeText={setDeleteWord}
+										autoCapitalize="characters"
+										placeholder={tt('auth.deleteConfirmWord')}
+										placeholderTextColor={colors.muted}
+									/>
+									<PrimaryButton
+										label={tt('auth.deleteButtonFinal')}
+										variant="danger"
+										disabled={busy || deleteWord.trim() !== tt('auth.deleteConfirmWord')}
+										onPress={() => void confirmDeleteAccount()}
+									/>
+									<PrimaryButton
+										label={tt('auth.deleteCancel')}
+										variant="ghost"
+										onPress={() => {
+											setDeleteOpen(false);
+											setDeleteWord('');
+										}}
+									/>
+								</>
+							)}
 						</>
-					)}
+					) : null}
 				</Panel>
 			) : null}
 
@@ -944,7 +981,7 @@ export default function ProfileScreen() {
 						variant="ghost"
 						onPress={() => router.push('/articles')}
 					/>
-					<OnboardingChecklistPanel state={onboarding} readonly />
+					{!onboardingComplete ? <OnboardingChecklistPanel state={onboarding} readonly /> : null}
 				</Panel>
 			) : null}
 
@@ -1036,6 +1073,18 @@ export default function ProfileScreen() {
 			</View>
 		</Modal>
 		<ConfirmSheet
+			open={logoutOpen}
+			title={tt('auth.logoutConfirmTitle')}
+			message={tt('auth.logoutConfirmLead')}
+			onDismiss={() => setLogoutOpen(false)}
+			actions={[
+				{
+					label: tt('profile.signOut'),
+					onPress: () => void signOut()
+				}
+			]}
+		/>
+		<ConfirmSheet
 			open={logoutEverywhereOpen}
 			title={tt('auth.logoutEverywhereConfirmTitle')}
 			message={tt('auth.logoutEverywhereConfirmLead')}
@@ -1107,6 +1156,18 @@ function makeStyles(colors: ColorPalette) {
 		marginBottom: space.sm
 	},
 	hint: { color: colors.muted, fontSize: 13, lineHeight: 18, fontFamily: fontFamily.regular },
+	accountHint: { marginTop: 4, marginBottom: 2 },
+	dangerHeader: {
+		minHeight: touchMin,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		gap: space.sm
+	},
+	dangerHeaderText: { flex: 1, minWidth: 0 },
+	dangerTitle: { color: colors.text, fontSize: 16, lineHeight: 21, fontFamily: fontFamily.semibold },
+	dangerChevron: { transform: [{ rotate: '0deg' }] },
+	dangerChevronOpen: { transform: [{ rotate: '180deg' }] },
 	metricLine: { color: colors.text, fontSize: 14, fontFamily: fontFamily.regular },
 	version: {
 		color: colors.muted,

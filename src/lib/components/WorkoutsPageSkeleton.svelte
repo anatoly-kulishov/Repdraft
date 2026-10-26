@@ -8,7 +8,7 @@
 	} from '$lib/domain/home';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ClipboardList, Clock } from '@lucide/svelte';
+	import { ClipboardText as ClipboardList, Clock } from 'phosphor-svelte';
 
 	export type WorkoutsSkeletonVariant =
 		| 'plans-list'

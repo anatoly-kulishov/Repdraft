@@ -7,7 +7,7 @@
 	import { labelTarget } from '$lib/domain/labels.ru';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { Check } from '@lucide/svelte';
+	import { Check } from 'phosphor-svelte';
 
 	let {
 		open = false,

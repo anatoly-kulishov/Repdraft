@@ -5,7 +5,7 @@
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import type { CloudSyncState } from '$lib/domain/cloudSync';
-	import { RefreshCw } from '@lucide/svelte';
+	import { ArrowsClockwise as RefreshCw } from 'phosphor-svelte';
 
 	let {
 		sync,

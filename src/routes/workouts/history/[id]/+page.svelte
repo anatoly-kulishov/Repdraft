@@ -40,7 +40,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import SwipeToDelete from '$lib/components/SwipeToDelete.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { ChevronRight, Plus, Trash2 } from '@lucide/svelte';
+	import { CaretRight as ChevronRight, Plus, Trash as Trash2 } from 'phosphor-svelte';
 	import HistoryDetailToolbar from './HistoryDetailToolbar.svelte';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';

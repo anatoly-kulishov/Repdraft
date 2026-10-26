@@ -5,7 +5,13 @@
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { Check, ClipboardCopy, Pencil, Trash2, X } from '@lucide/svelte';
+	import {
+		Check,
+		Copy as ClipboardCopy,
+		PencilSimple as Pencil,
+		Trash as Trash2,
+		X,
+	} from 'phosphor-svelte';
 
 	let {
 		editing = false,

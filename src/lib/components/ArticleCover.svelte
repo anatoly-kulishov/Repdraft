@@ -2,8 +2,19 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import type { Article } from '$lib/domain/articles';
 	import { resolveArticleCoverIcon } from '$lib/domain/articles';
+	import type { IconComponentProps } from 'phosphor-svelte';
 	import type { Component } from 'svelte';
-	import { BookOpen, ClipboardList, Dumbbell, Flame, History, Library, Play, Sparkles, Timer } from '@lucide/svelte';
+	import {
+		BookOpen,
+		ClipboardText as ClipboardList,
+		Barbell as Dumbbell,
+		Fire as Flame,
+		ClockCounterClockwise as History,
+		Books as Library,
+		Play,
+		Sparkle as Sparkles,
+		Timer,
+	} from 'phosphor-svelte';
 
 	const COVER_ICONS = {
 		'book-open': BookOpen,
@@ -15,7 +26,7 @@
 		flame: Flame,
 		history: History,
 		sparkles: Sparkles
-	} satisfies Record<string, Component<{ size?: number | string; strokeWidth?: number | string }>>;
+	} satisfies Record<string, Component<IconComponentProps>>;
 
 	let { article }: { article: Article } = $props();
 
@@ -25,5 +36,5 @@
 </script>
 
 <div class="article-cover" data-tone={tone} aria-hidden="true">
-	<LucideIcon icon={CoverIcon} size={22} class="article-cover__icon" strokeWidth={1.85} />
+	<LucideIcon icon={CoverIcon} size={22} class="article-cover__icon" />
 </div>

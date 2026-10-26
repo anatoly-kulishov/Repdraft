@@ -6,7 +6,7 @@
 	import { AI_DRAFT_HREF, BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { Sparkles } from '@lucide/svelte';
+	import { Sparkle as Sparkles } from 'phosphor-svelte';
 
 	let {
 		preferDemo = false,

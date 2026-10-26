@@ -201,29 +201,22 @@ html[data-pwa-standalone] .ios-pwa-top--bg {
 	min-width: 2.75rem;
 	min-height: 2.75rem;
 	border-radius: 0.8rem;
-	border: 1px solid var(--icon-plate-border);
 	background: var(--icon-plate-bg);
-	color: var(--color-ink);
-	box-shadow: var(--icon-plate-shadow);
+	color: var(--icon-plate-color);
 }
 
 .icon-plate--accent {
-	border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-border));
 	background: var(--icon-plate-accent-bg);
 	color: var(--color-accent-text);
 }
 
 .icon-plate--muted {
-	background: color-mix(in srgb, var(--color-surface-muted) 88%, var(--color-bg));
+	background: color-mix(in srgb, var(--color-surface-muted) 72%, var(--color-surface));
 	color: var(--color-muted);
 }
 
-.icon-plate :global(svg) {
+.icon-plate svg {
 	display: block;
-	stroke: currentColor;
-	fill: none;
-	stroke-linecap: round;
-	stroke-linejoin: round;
 }
 
 .shell-nav-desktop {
@@ -623,11 +616,6 @@ button.sidebar-link {
 
 .sidebar-link svg {
 	flex-shrink: 0;
-	stroke: currentColor;
-	fill: none;
-	stroke-width: 1.75;
-	stroke-linecap: round;
-	stroke-linejoin: round;
 }
 
 .sidebar-link:hover {

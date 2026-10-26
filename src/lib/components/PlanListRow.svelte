@@ -10,7 +10,7 @@
 	import { planExerciseSlotCount } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
 	import { cn } from '$lib/utils.js';
-	import { Copy, Flag, Play, Trash2 } from '@lucide/svelte';
+	import { Copy, Flag, Play, Trash as Trash2 } from 'phosphor-svelte';
 	import type { AppLocale } from '$lib/i18n/locale';
 
 	let {
@@ -113,7 +113,7 @@
 					aria-label={translate(lang, 'workouts.open')}
 					title={translate(lang, 'workouts.open')}
 				>
-					<LucideIcon icon={Play} size={ICON_SMALL} />
+					<LucideIcon icon={Play} weight="bold" size={ICON_SMALL} />
 				</AppButton>
 				<AppButton
 					variant="ghost"

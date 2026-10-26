@@ -33,7 +33,15 @@
 	import { browser } from '$app/environment';
 	import { createDelayedTrue } from '$lib/browser/delayedTrue.svelte';
 	import { readDraft, peekBuilderDraftExerciseCount } from '$lib/storage/localWorkoutRepository';
-	import { Plus, Save, Trash2, ArrowLeft, Layers, ListTree, Sparkles } from '@lucide/svelte';
+	import {
+		Plus,
+		FloppyDisk as Save,
+		Trash as Trash2,
+		ArrowLeft,
+		Stack as Layers,
+		TreeStructure as ListTree,
+		Sparkle as Sparkles,
+	} from 'phosphor-svelte';
 
 	let { data } = $props();
 

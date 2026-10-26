@@ -8,7 +8,7 @@
 	import { resolveUserAvatarUrl } from '$lib/storage/avatarsRepository';
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { UserRound } from '@lucide/svelte';
+	import { User as UserRound } from 'phosphor-svelte';
 
 	let {
 		active = false

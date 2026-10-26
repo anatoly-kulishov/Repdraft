@@ -6,7 +6,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { PASSWORD_MIN_LENGTH } from '$lib/domain/passwordPolicy';
-	import { Eye, EyeOff } from '@lucide/svelte';
+	import { Eye, EyeSlash as EyeOff } from 'phosphor-svelte';
 
 	let {
 		value = $bindable(''),

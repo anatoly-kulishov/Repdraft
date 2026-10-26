@@ -9,7 +9,7 @@
 	import { clipEncodeDurationSec } from '$lib/media/videoToGif';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { Camera, Image, RefreshCw } from '@lucide/svelte';
+	import { Camera, Image, ArrowsClockwise as RefreshCw } from 'phosphor-svelte';
 
 	let {
 		open = false,

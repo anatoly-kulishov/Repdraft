@@ -4,7 +4,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ImageOff } from '@lucide/svelte';
+	import { ImageBroken as ImageOff } from 'phosphor-svelte';
 
 	let {
 		open = false,
@@ -59,7 +59,11 @@
 	>
 		{#if stillFailed}
 			<div class="exercise-technique-sheet__fail" role="status">
-				<LucideIcon icon={ImageOff} size={28} class="exercise-technique-sheet__fail-icon" />
+				<LucideIcon
+					icon={ImageOff}
+					size={28}
+					class="exercise-technique-sheet__fail-icon"
+				/>
 				<p class="exercise-technique-sheet__fail-text">
 					{translate(lang, 'exercise.mediaUnavailable')}
 				</p>

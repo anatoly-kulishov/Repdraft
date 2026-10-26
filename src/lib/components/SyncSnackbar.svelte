@@ -10,7 +10,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { outboxSyncUi, type OutboxSyncPhase } from '$lib/stores/outboxSyncUi';
 	import { toasts } from '$lib/stores/toasts';
-	import { AlertCircle, Check } from '@lucide/svelte';
+	import { WarningCircle as AlertCircle, Check } from 'phosphor-svelte';
 	import { onMount } from 'svelte';
 
 	/** iOS often skips `online`; keep trying while the chip is visible. */

@@ -5,7 +5,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { Plus } from '@lucide/svelte';
+	import { Plus } from 'phosphor-svelte';
 
 	let {
 		rows = 4,

@@ -3,7 +3,7 @@
 	import { passwordPolicyChecklist, PASSWORD_MIN_LENGTH } from '$lib/domain/passwordPolicy';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { Check, Circle } from '@lucide/svelte';
+	import { Check, Circle } from 'phosphor-svelte';
 
 	let {
 		password = '',

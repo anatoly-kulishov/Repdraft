@@ -11,7 +11,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import { toasts } from '$lib/stores/toasts';
 	import { browser } from '$app/environment';
-	import { Sparkles } from '@lucide/svelte';
+	import { Sparkle as Sparkles } from 'phosphor-svelte';
 
 	type TuneGoal = 'strength' | 'hypertrophy' | 'endurance' | 'general';
 

@@ -3,7 +3,8 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_FAB, ICON_FAB_STROKE } from '$lib/components/icons/sizes';
 	import { cn } from '$lib/utils.js';
-	import { Plus } from '@lucide/svelte';
+	import { Plus } from 'phosphor-svelte';
+	import type { IconComponentProps } from 'phosphor-svelte';
 	import type { Component } from 'svelte';
 
 	let {
@@ -16,7 +17,7 @@
 	}: {
 		href: string;
 		label: string;
-		icon?: Component<{ size?: number | string; strokeWidth?: number | string; class?: string }>;
+		icon?: Component<IconComponentProps>;
 		placement?: 'tabbar' | 'sticky';
 		hidden?: boolean;
 		class?: string;

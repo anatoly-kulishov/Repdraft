@@ -10,7 +10,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { cn } from '$lib/utils.js';
-	import { Check } from '@lucide/svelte';
+	import { Check } from 'phosphor-svelte';
 
 	let {
 		filters = $bindable(),

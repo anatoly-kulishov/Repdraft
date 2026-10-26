@@ -2,7 +2,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { navigateBack } from '$lib/navigation/back';
-	import { ArrowLeft } from '@lucide/svelte';
+	import { ArrowLeft } from 'phosphor-svelte';
 
 	let {
 		href,

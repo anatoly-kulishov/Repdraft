@@ -11,7 +11,7 @@
 	import { auth } from '$lib/stores/auth';
 	import { greetingName } from '$lib/stores/greetingName';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { UserRound } from '@lucide/svelte';
+	import { User as UserRound } from 'phosphor-svelte';
 
 	let lang = $derived($resolvedLocale);
 	let email = $derived($auth.user?.email ?? null);

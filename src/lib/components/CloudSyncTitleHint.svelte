@@ -2,7 +2,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import type { CloudSyncState } from '$lib/domain/cloudSync';
-	import { RefreshCw } from '@lucide/svelte';
+	import { ArrowsClockwise as RefreshCw } from 'phosphor-svelte';
 
 	let {
 		sync,

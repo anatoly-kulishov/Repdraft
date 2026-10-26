@@ -28,7 +28,13 @@
 	import { scrollFieldIntoView } from '$lib/dom/scrollFieldIntoView';
 	import { AI_BRIEF_MAX, sanitizeAiBrief } from '$lib/domain/inputLimits';
 	import { withFromParam } from '$lib/domain/navigation';
-	import { Mic, MicOff, RefreshCw, Sparkles, X } from '@lucide/svelte';
+	import {
+		Microphone as Mic,
+		MicrophoneSlash as MicOff,
+		ArrowsClockwise as RefreshCw,
+		Sparkle as Sparkles,
+		X,
+	} from 'phosphor-svelte';
 	import { onMount, tick } from 'svelte';
 	import type { Snapshot } from './$types';
 	import '$lib/styles/blocks/ai-draft.css';

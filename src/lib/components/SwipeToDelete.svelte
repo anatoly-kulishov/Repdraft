@@ -1,8 +1,11 @@
 <script lang="ts" module>
+	import type { IconComponentProps } from 'phosphor-svelte';
+	import type { Component } from 'svelte';
+
 	export type SwipeRowAction = {
 		label: string;
 		ariaLabel?: string;
-		icon: typeof import('@lucide/svelte').Trash2;
+		icon: Component<IconComponentProps>;
 		variant: 'danger' | 'accent' | 'success' | 'neutral';
 		onAction: () => void;
 		busy?: boolean;
@@ -15,7 +18,7 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_BUTTON } from '$lib/components/icons/sizes';
-	import { Trash2 } from '@lucide/svelte';
+	import { Trash as Trash2 } from 'phosphor-svelte';
 	import { onMount, type Snippet } from 'svelte';
 
 	const ACTION_WIDTH = 72;

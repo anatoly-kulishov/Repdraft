@@ -7,7 +7,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import { records, recordsReady } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { BookOpen, Bookmark, List, Trophy } from '@lucide/svelte';
+	import { BookOpen, Bookmark, List, Trophy } from 'phosphor-svelte';
 
 	let {
 		class: className = '',

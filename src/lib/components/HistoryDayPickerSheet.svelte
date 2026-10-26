@@ -13,7 +13,7 @@
 	import { toLocalDayKey } from '$lib/i18n/format';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ChevronLeft, ChevronRight } from '@lucide/svelte';
+	import { CaretLeft as ChevronLeft, CaretRight as ChevronRight } from 'phosphor-svelte';
 
 	let {
 		open = false,

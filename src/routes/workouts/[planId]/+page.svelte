@@ -21,7 +21,7 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { ChevronRight, Pencil, Play } from '@lucide/svelte';
+	import { CaretRight as ChevronRight, PencilSimple as Pencil, Play } from 'phosphor-svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import { onboarding } from '$lib/stores/onboarding';
@@ -295,7 +295,7 @@
 
 		<div class="workout-preview-start">
 			<AppButton block class="gap-2" onclick={onStart}>
-				<LucideIcon icon={Play} size={ICON_PRIMARY} />
+				<LucideIcon icon={Play} weight="bold" size={ICON_PRIMARY} />
 				{translate(lang, 'workouts.start')}
 			</AppButton>
 			<AppButton
@@ -310,7 +310,7 @@
 		<div class="sticky-actions lg:hidden">
 			<div class="sticky-actions__inner">
 				<AppButton block class="gap-2" onclick={onStart}>
-					<LucideIcon icon={Play} size={ICON_PRIMARY} />
+					<LucideIcon icon={Play} weight="bold" size={ICON_PRIMARY} />
 					{translate(lang, 'workouts.start')}
 				</AppButton>
 			</div>

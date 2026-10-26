@@ -2209,14 +2209,10 @@ html[data-nav-back] .zone-card__media-skel {
 	transition: color 160ms ease;
 }
 
-.tab-link-icon :global(svg) {
+.tab-link-icon svg {
 	display: block;
 	width: 1.375rem;
 	height: 1.375rem;
-	stroke: currentColor;
-	fill: none;
-	stroke-linecap: round;
-	stroke-linejoin: round;
 }
 
 .tab-link[data-active='true'] .tab-link-icon {

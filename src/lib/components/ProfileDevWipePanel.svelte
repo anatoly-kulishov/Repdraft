@@ -8,7 +8,7 @@
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
-	import { Eraser } from '@lucide/svelte';
+	import { Eraser } from 'phosphor-svelte';
 	import { testerModeEnabled } from '$lib/stores/prefs';
 
 	let loading = $state(false);

@@ -10,7 +10,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import Spinner from '$lib/components/Spinner.svelte';
-	import { X, Check } from '@lucide/svelte';
+	import { X, Check } from 'phosphor-svelte';
 
 	let { items }: { items: Toast[] } = $props();
 	let lang = $derived($resolvedLocale);

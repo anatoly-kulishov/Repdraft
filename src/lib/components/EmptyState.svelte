@@ -2,14 +2,10 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import type { IconComponentProps } from 'phosphor-svelte';
 	import type { Component, Snippet } from 'svelte';
 
-	type EmptyStateIcon = Component<{
-		size?: number | string;
-		strokeWidth?: number | string;
-		fill?: string;
-		class?: string;
-	}>;
+	type EmptyStateIcon = Component<IconComponentProps>;
 
 	let {
 		title,

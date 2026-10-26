@@ -23,16 +23,16 @@
 	import { live } from '$lib/stores/live';
 	import {
 		Check,
-		ClipboardPaste,
-		EllipsisVertical,
-		History,
+		Clipboard as ClipboardPaste,
+		DotsThreeVertical as EllipsisVertical,
+		ClockCounterClockwise as History,
 		Plus,
-		RefreshCw,
+		ArrowsClockwise as RefreshCw,
 		SkipForward,
-		StickyNote,
-		Trash2,
-		X
-	} from '@lucide/svelte';
+		Note as StickyNote,
+		Trash as Trash2,
+		X,
+	} from 'phosphor-svelte';
 
 	type LiveOverlay =
 		| { kind: 'none' }

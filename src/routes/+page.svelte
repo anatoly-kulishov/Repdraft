@@ -50,7 +50,15 @@
 	import { peekLikelySignedInUserId } from '$lib/storage/localUserCache';
 	import { readHomeClientBootPeek } from '$lib/storage/readHomeBootPeek';
 	import { onMount } from 'svelte';
-	import { ChevronRight, LogIn, NotebookPen, Play, Plus, Smartphone, UserRound } from '@lucide/svelte';
+	import {
+		CaretRight as ChevronRight,
+		SignIn as LogIn,
+		Notebook as NotebookPen,
+		Play,
+		Plus,
+		DeviceMobile as Smartphone,
+		User as UserRound,
+	} from 'phosphor-svelte';
 
 	let { data } = $props();
 
@@ -407,7 +415,7 @@
 					{/if}
 				</div>
 				<span class="btn-primary home-header__cta home-header__cta--compact" aria-hidden="true">
-					<LucideIcon icon={Play} size={ICON_PRIMARY} class="home-header__cta-icon" />
+					<LucideIcon icon={Play} weight="bold" size={ICON_PRIMARY} class="home-header__cta-icon" />
 					<span class="home-header__cta-text home-header__cta-text--short"
 						>{translate(lang, 'home.startWorkoutShort')}</span
 					>
@@ -440,7 +448,7 @@
 				<p class="home-continue-card__meta">{continueRemaining}</p>
 			</div>
 			<span class="btn-primary home-continue-card__cta home-continue-card__cta--compact" aria-hidden="true">
-				<LucideIcon icon={Play} size={ICON_PRIMARY} class="home-continue-card__cta-icon" />
+				<LucideIcon icon={Play} weight="bold" size={ICON_PRIMARY} class="home-continue-card__cta-icon" />
 				<span class="home-continue-card__cta-text">{translate(lang, 'home.continue')}</span>
 			</span>
 		</a>

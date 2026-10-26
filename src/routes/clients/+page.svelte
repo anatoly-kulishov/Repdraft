@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
+	import ConfirmSheet from '$lib/components/ConfirmSheet.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import {
@@ -23,7 +24,7 @@
 		type CoachErrorReason,
 		type CoachRecentSession
 	} from '$lib/storage/coachRepository';
-	import { Copy } from '@lucide/svelte';
+	import { Copy } from 'phosphor-svelte';
 
 	type Row = {
 		key: string;
@@ -45,6 +46,8 @@
 	let cloudLoaded = $state(false);
 
 	let expanded = $state<Record<string, boolean>>({});
+	let revokeTarget = $state<Row | null>(null);
+	let removeTarget = $state<Row | null>(null);
 
 	let rows = $derived.by<Row[]>(() => {
 		if (!cloud) {
@@ -150,6 +153,35 @@
 		} catch {
 			toasts.show(translate(lang, 'coach.inviteCopyFail'), 'error');
 		}
+	}
+
+	function requestRevoke(row: Row) {
+		if (cloudBusy) return;
+		revokeTarget = row;
+	}
+
+	function dismissRevoke() {
+		revokeTarget = null;
+	}
+
+	function confirmRevoke() {
+		const target = revokeTarget;
+		revokeTarget = null;
+		if (target) void revokeRow(target);
+	}
+
+	function requestRemove(row: Row) {
+		removeTarget = row;
+	}
+
+	function dismissRemove() {
+		removeTarget = null;
+	}
+
+	function confirmRemove() {
+		const target = removeTarget;
+		removeTarget = null;
+		if (target) coachPreview.remove(target.clientUserId);
 	}
 
 	async function revokeRow(row: Row) {
@@ -336,14 +368,11 @@
 							<AppButton variant="link" onclick={() => void toggleRow(row)} aria-expanded={isOpen}>
 								{translate(lang, isOpen ? 'coach.hideSessions' : 'coach.showSessions')}
 							</AppButton>
-							<AppButton variant="link" disabled={cloudBusy} onclick={() => void revokeRow(row)}>
+							<AppButton variant="link" disabled={cloudBusy} onclick={() => requestRevoke(row)}>
 								{translate(lang, 'coach.revoke')}
 							</AppButton>
 							{#if !cloud}
-								<AppButton
-									variant="link"
-									onclick={() => coachPreview.remove(row.clientUserId)}
-								>
+								<AppButton variant="link" onclick={() => requestRemove(row)}>
 									{translate(lang, 'coach.remove')}
 								</AppButton>
 							{/if}
@@ -380,3 +409,24 @@
 		{/if}
 	{/if}
 </section>
+
+<ConfirmSheet
+	open={revokeTarget !== null}
+	titleId="coach-revoke-title"
+	title={translate(lang, 'coach.revokeConfirmTitle')}
+	hint={translate(lang, 'coach.revokeConfirmLead', { name: revokeTarget?.label ?? '' })}
+	confirmLabel={translate(lang, 'coach.revoke')}
+	busy={cloudBusy}
+	onConfirm={confirmRevoke}
+	onDismiss={dismissRevoke}
+/>
+
+<ConfirmSheet
+	open={removeTarget !== null}
+	titleId="coach-remove-title"
+	title={translate(lang, 'coach.removeConfirmTitle')}
+	hint={translate(lang, 'coach.removeConfirmLead', { name: removeTarget?.label ?? '' })}
+	confirmLabel={translate(lang, 'coach.remove')}
+	onConfirm={confirmRemove}
+	onDismiss={dismissRemove}
+/>

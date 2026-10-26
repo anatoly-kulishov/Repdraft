@@ -19,14 +19,14 @@
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import {
-		ChevronDown,
-		ChevronRight,
-		Download,
-		Ellipsis,
-		HousePlus,
-		Share,
-		X
-	} from '@lucide/svelte';
+		CaretDown as ChevronDown,
+		CaretRight as ChevronRight,
+		DownloadSimple as Download,
+		DotsThree as Ellipsis,
+		House as HousePlus,
+		ShareNetwork as Share,
+		X,
+	} from 'phosphor-svelte';
 	import { onMount } from 'svelte';
 	import type { Component } from 'svelte';
 

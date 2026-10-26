@@ -5,7 +5,14 @@
 	import type { TechniqueClip } from '$lib/domain/clips';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
-	import { Copy, Flag, Link2, Pencil, Share2, Trash2 } from '@lucide/svelte';
+	import {
+		Copy,
+		Flag,
+		Link as Link2,
+		PencilSimple as Pencil,
+		ShareNetwork as Share2,
+		Trash as Trash2,
+	} from 'phosphor-svelte';
 
 	let {
 		clips,

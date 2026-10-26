@@ -6,7 +6,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { cn } from '$lib/utils.js';
 	import { scrollBehavior } from '$lib/dom/prefersReducedMotion';
-	import { ArrowUp } from '@lucide/svelte';
+	import { ArrowUp } from 'phosphor-svelte';
 	import { browser } from '$app/environment';
 
 	/** Show after roughly one short phone screen of scroll. */

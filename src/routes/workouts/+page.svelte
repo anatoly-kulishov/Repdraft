@@ -21,7 +21,14 @@
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { ArrowLeft, ClipboardList, Clock, Flag, Plus, Trash2 } from '@lucide/svelte';
+	import {
+		ArrowLeft,
+		ClipboardText as ClipboardList,
+		Clock,
+		Flag,
+		Plus,
+		Trash as Trash2,
+	} from 'phosphor-svelte';
 	import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { peekLocalPlanCount, syncPreviewExerciseRowsPeek } from '$lib/storage/localWorkoutRepository';
 	import { peekLocalHistoryCount } from '$lib/storage/localSessionRepository';

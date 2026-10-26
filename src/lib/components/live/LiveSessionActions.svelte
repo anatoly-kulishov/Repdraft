@@ -3,7 +3,15 @@
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { ICON_BUTTON, ICON_PRIMARY } from '$lib/components/icons/sizes';
-	import { CircleCheck, ChevronDown, ChevronRight, ChevronUp, Minus, Plus, SkipForward } from '@lucide/svelte';
+	import {
+		CheckCircle as CircleCheck,
+		CaretDown as ChevronDown,
+		CaretRight as ChevronRight,
+		CaretUp as ChevronUp,
+		Minus,
+		Plus,
+		SkipForward,
+	} from 'phosphor-svelte';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 

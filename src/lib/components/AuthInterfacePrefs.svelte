@@ -5,8 +5,7 @@
 	import { appTheme } from '$lib/stores/theme';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { webAnalyticsEnabled } from '$lib/stores/prefs';
-	import { themeToggleStateIcon } from '$lib/components/icons/themeToggle';
-	import { BarChart3, Globe } from '@lucide/svelte';
+	import { ChartBar, Globe, MoonStars, SunDim } from 'phosphor-svelte';
 
 	let {
 		surface = 'section'
@@ -19,6 +18,7 @@
 	let nextLang = $derived(lang === 'ru' ? ('en' as const) : ('ru' as const));
 	let theme = $derived($appTheme);
 	let nextTheme = $derived(theme === 'dark' ? ('light' as const) : ('dark' as const));
+	let themeIcon = $derived(theme === 'light' ? SunDim : MoonStars);
 	let showWebAnalytics = $derived(isWebAnalyticsAvailable());
 	let rootClass = $derived(
 		surface === 'panel'
@@ -47,7 +47,7 @@
 			onclick={() => resolvedLocale.set(nextLang)}
 		/>
 		<ProfileSettingsRow
-			icon={themeToggleStateIcon(theme === 'light')}
+			icon={themeIcon}
 			label={translate(lang, 'settings.theme')}
 			value={translate(lang, theme === 'light' ? 'settings.themeLight' : 'settings.themeDark')}
 			ariaLabel={translate(lang, 'settings.cycleHint', {
@@ -58,7 +58,7 @@
 			onclick={() => appTheme.set(nextTheme)}
 		/>
 		{#if showWebAnalytics}
-			<ProfileSettingsRow icon={BarChart3} label={translate(lang, 'settings.webAnalytics')}>
+			<ProfileSettingsRow icon={ChartBar} label={translate(lang, 'settings.webAnalytics')}>
 				<input
 					type="checkbox"
 					class="auth-pref-toggle__input profile-settings-row__toggle"
