@@ -2555,6 +2555,12 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	gap: var(--page-section-gap);
 }
 
+/* Cards already sit in a gapped column — drop the extra card margin. */
+.auth-guest-stack > .panel,
+.auth-guest-stack > .profile-settings-group {
+	margin-bottom: 0;
+}
+
 .auth-signin.panel,
 .auth-settings.panel,
 .auth-panel.panel,
