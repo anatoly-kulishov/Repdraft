@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.22.5',
+		highlights: {
+			ru: [
+				'Фото профиля: кадрирование перед загрузкой и подтверждение удаления',
+				'Экран настроек теперь называется «Профиль», блоки стали компактнее',
+				'Подсказки прижаты к своим полям и переключателям, меньше пустого места',
+				'Статистика посещений описана простыми словами'
+			],
+			en: [
+				'Profile photo: crop before upload and confirm before deleting',
+				'Settings screen is now called Profile, blocks are more compact',
+				'Hints sit next to their fields and toggles, less empty space',
+				'Visit statistics explained in plain words'
+			]
+		}
+	},
+	{
 		version: '0.22.4',
 		highlights: {
 			ru: [

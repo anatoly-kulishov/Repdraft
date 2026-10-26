@@ -15,11 +15,17 @@ if (!next || !/^\d+\.\d+\.\d+$/.test(next)) {
 	process.exit(1);
 }
 
+function detectIndent(raw) {
+	const match = raw.match(/^[ \t]+(?=")/m);
+	return match ? match[0] : '\t';
+}
+
 function bumpJson(filePath, mutator) {
 	const raw = readFileSync(filePath, 'utf8');
+	const indent = detectIndent(raw);
 	const data = JSON.parse(raw);
 	mutator(data);
-	writeFileSync(filePath, `${JSON.stringify(data, null, '\t')}\n`);
+	writeFileSync(filePath, `${JSON.stringify(data, null, indent)}\n`);
 }
 
 bumpJson(path.join(root, 'package.json'), (d) => {

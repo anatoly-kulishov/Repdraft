@@ -1,7 +1,14 @@
 # Доступ из РФ: сайт недоступен без VPN
 
-**Статус:** диагноз закрыт, нужен переезд DNS на Cloudflare (шаги ниже).
+**Статус:** Cloudflare-зона настроена, ждём делегирование NS в реестре `.xyz`.
 **Дата:** 2026-10-26.
+
+Текущее состояние (2026-10-26):
+
+- В Cloudflare: CNAME `repdraft.xyz` и `www` → `cname.vercel-dns.com` [proxied], A `*.repdraft.xyz`, TXT Google, CAA; SSL **Full (strict)**, Always Use HTTPS, Rocket Loader и Auto Minify выключены.
+- NS в панели Vercel прописаны (`celine` / `elijah.ns.cloudflare.com`), но реестр `.xyz` и авторитетные NS Vercel всё ещё отдают `ns1/ns2.vercel-dns.com` — смена ждёт распространения/передачи регистратором.
+- Зона Cloudflare в статусе `pending`; после делегирования перейдёт в `active` сама.
+- Проверка доступности из РФ: `npm run check:rf` (цель — `✓ 3/3` без VPN).
 
 ## Симптом
 
