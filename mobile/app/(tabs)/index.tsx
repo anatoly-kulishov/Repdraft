@@ -26,6 +26,7 @@ import {
 	resolveHomeNextPlan,
 	sortPlansByUserOrder
 } from '@repdraft/domain/workout';
+import { progress30d } from '@repdraft/domain/progressOverview';
 import type { WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { loadExerciseIndex } from '../../src/catalog/loadIndex';
 import { OnboardingChecklistPanel } from '../../src/components/OnboardingChecklistPanel';
@@ -61,6 +62,7 @@ export default function WorkoutsScreen() {
 	const [plans, setPlans] = useState<WorkoutPlan[]>([]);
 	const [active, setActive] = useState<WorkoutSession | null>(null);
 	const [recent, setRecent] = useState<WorkoutSession[]>([]);
+	const [monthly, setMonthly] = useState<{ workouts: number; volumeKg: number } | null>(null);
 	const [pinnedNextId, setPinnedNextId] = useState<string | null>(null);
 	const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
 	const [greetingCustom, setGreetingCustom] = useState('');
@@ -93,6 +95,7 @@ export default function WorkoutsScreen() {
 				.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''))
 				.slice(0, RECENT_LIMIT)
 		);
+		setMonthly(progress30d(sessions, new Date()));
 		setPinnedNextId(pinned);
 		setOnboarding(nextOb);
 		const sb = getSupabase();
@@ -252,6 +255,37 @@ export default function WorkoutsScreen() {
 				</Panel>
 			) : null}
 
+			{monthly && monthly.workouts > 0 ? (
+				<View style={styles.section}>
+					<View style={styles.sectionHead}>
+						<Text style={styles.sectionTitle}>{tt('progress.sectionTitle')}</Text>
+						<Pressable
+							accessibilityRole="button"
+							style={styles.sectionLink}
+							onPress={() => router.push('/progress')}
+						>
+							<Text style={styles.sectionLinkText}>{tt('home.progressOpen')}</Text>
+							<ChevronRight color={colors.muted} size={16} strokeWidth={2.25} />
+						</Pressable>
+					</View>
+					<Pressable
+						accessibilityRole="button"
+						accessibilityLabel={tt('nav.progress')}
+						style={({ pressed }) => [styles.monthlyRow, pressed && styles.pressed]}
+						onPress={() => router.push('/progress')}
+					>
+						<Panel style={styles.monthlyCard}>
+							<Text style={styles.monthlyValue}>{monthly.workouts}</Text>
+							<Text style={styles.monthlyLabel}>{tt('progress.workouts30d')}</Text>
+						</Panel>
+						<Panel style={styles.monthlyCard}>
+							<Text style={styles.monthlyValue}>{monthly.volumeKg}</Text>
+							<Text style={styles.monthlyLabel}>{tt('progress.volume30d')}</Text>
+						</Panel>
+					</Pressable>
+				</View>
+			) : null}
+
 			{recent.length > 0 ? (
 				<View style={styles.section}>
 					<View style={styles.sectionHead}>
@@ -360,6 +394,16 @@ function makeStyles(colors: ColorPalette) {
 		fontFamily: fontFamily.regular
 	},
 	section: { gap: space.sm },
+	monthlyRow: { flexDirection: 'row', gap: space.sm },
+	monthlyCard: { flex: 1, gap: 2, paddingVertical: space.md },
+	monthlyValue: {
+		fontSize: 24,
+		lineHeight: 30,
+		fontWeight: '800',
+		fontFamily: fontFamily.extrabold,
+		color: colors.text
+	},
+	monthlyLabel: { ...type.meta, color: colors.muted },
 	sectionHead: {
 		flexDirection: 'row',
 		alignItems: 'center',

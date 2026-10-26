@@ -1,9 +1,8 @@
 <script lang="ts">
+	import AppButton from '$lib/components/AppButton.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
-	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ImageSquare, Trash } from 'phosphor-svelte';
 
 	let {
 		open = false,
@@ -45,24 +44,13 @@
 			</p>
 		</div>
 		<div class="profile-avatar-sheet__actions" role="group" aria-labelledby={titleId}>
-			<ProfileSettingsRow
-				icon={ImageSquare}
-				iconTone="accent"
-				label={translate(lang, 'auth.avatar.change')}
-				busy={busy}
-				disabled={busy}
-				onclick={changePhoto}
-			/>
+			<AppButton block disabled={busy} onclick={changePhoto}>
+				{translate(lang, 'auth.avatar.change')}
+			</AppButton>
 			{#if canRemove}
-				<div class="profile-avatar-sheet__danger">
-					<ProfileSettingsRow
-						icon={Trash}
-						label={translate(lang, 'auth.avatar.remove')}
-						busy={busy}
-						disabled={busy}
-						onclick={removePhoto}
-					/>
-				</div>
+				<AppButton variant="ghost" class="is-danger" block disabled={busy} onclick={removePhoto}>
+					{translate(lang, 'auth.avatar.remove')}
+				</AppButton>
 			{/if}
 		</div>
 	</BottomSheet>

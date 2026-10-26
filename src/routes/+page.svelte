@@ -16,6 +16,7 @@
 	} from '$lib/domain/session';
 	import { resolveHomeNextPlan, planExerciseSlotCount, planTargetSummary } from '$lib/domain/workout';
 	import { HOME_RECENT_ROW_LIMIT, resolveHomeSkeletonVariant, shouldShowHomeChecklistSkeleton } from '$lib/domain/home';
+	import { progress30d } from '$lib/domain/progressOverview';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
@@ -98,6 +99,7 @@
 		return local && !local.finishedAt ? local : null;
 	});
 	let recent = $derived($live.history.slice(0, HOME_RECENT_ROW_LIMIT));
+	let monthly = $derived(progress30d($live.history, new Date()));
 	const peekedIndex = peekExerciseIndexWithCustoms();
 	let indexById = $state<Map<string, ExerciseIndexItem>>(
 		peekedIndex ? new Map(peekedIndex.map((item) => [item.id, item])) : new Map()
@@ -503,6 +505,31 @@
 		{#if showHomeMid}
 			<div class="home-dashboard-mid">
 				<div class="home-dashboard-aside">
+					{#if monthly.workouts > 0}
+						<div class="home-section">
+							<div class="home-section-head">
+								<h2 class="section-title">{translate(lang, 'progress.sectionTitle')}</h2>
+								<a class="home-section-link" href="/progress">
+									{translate(lang, 'home.progressOpen')}
+									<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
+								</a>
+							</div>
+							<a
+								class="home-monthly"
+								href="/progress"
+								aria-label={translate(lang, 'nav.progress')}
+							>
+								<div class="home-monthly__stat panel">
+									<span class="home-monthly__value tabular-nums">{monthly.workouts}</span>
+									<span class="home-monthly__label">{translate(lang, 'progress.workouts30d')}</span>
+								</div>
+								<div class="home-monthly__stat panel">
+									<span class="home-monthly__value tabular-nums">{monthly.volumeKg}</span>
+									<span class="home-monthly__label">{translate(lang, 'progress.volume30d')}</span>
+								</div>
+							</a>
+						</div>
+					{/if}
 					{#if recent.length > 0}
 						<div class="home-section">
 							<div class="home-section-head">

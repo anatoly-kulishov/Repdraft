@@ -835,15 +835,6 @@
 							{/if}
 						</span>
 					</button>
-					<input
-						bind:this={avatarFileInput}
-						type="file"
-						accept="image/*"
-						class="sr-only"
-						tabindex="-1"
-						aria-hidden="true"
-						onchange={onAvatarFileChange}
-					/>
 				</div>
 
 				<h2 class="profile-hero__name">{profileName || $auth.user.email}</h2>
@@ -1262,6 +1253,19 @@
 				</div>
 			</div>
 			<WhatsNewSheet />
+			<!-- iOS anchors the native file-picker popup to this input's on-screen
+			     frame. Keep it fixed at the bottom edge (1px, invisible) so the
+			     popup appears near the thumb for both triggers: the avatar tap
+			     and "Choose photo" in the sheet. -->
+			<input
+				bind:this={avatarFileInput}
+				type="file"
+				accept="image/*"
+				class="profile-avatar-file-input"
+				tabindex="-1"
+				aria-hidden="true"
+				onchange={onAvatarFileChange}
+			/>
 		</div>
 	{:else if panel === 'check-email'}
 		<div class="auth-guest-stack">

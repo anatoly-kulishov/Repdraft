@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
+	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import { buildCoachHints, suggestPlanReplace } from '$lib/domain/coachHints';
 	import { computeProgressOverview } from '$lib/domain/progressOverview';
@@ -9,6 +10,7 @@
 	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { translate, translateError } from '$lib/i18n/messages';
+	import { pluralRu } from '$lib/i18n/plural';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { appendExerciseToHomePlan, replaceExerciseInHomePlan } from '$lib/workout/planPatch';
 	import { homeNextPlan } from '$lib/stores/homeNextPlan';
@@ -21,11 +23,17 @@
 
 	let lang = $derived($resolvedLocale);
 	let indexById = $state(new Map<string, ExerciseIndexItem>());
+	let indexReady = $state(false);
 
 	onMount(() => {
-		void loadExerciseIndexWithCustoms().then((index) => {
-			indexById = new Map(index.map((ex) => [ex.id, ex]));
-		});
+		void loadExerciseIndexWithCustoms()
+			.then((index) => {
+				indexById = new Map(index.map((ex) => [ex.id, ex]));
+			})
+			.finally(() => {
+				// Even a failed load must not leave the page stuck on the skeleton.
+				indexReady = true;
+			});
 	});
 
 	let homePlan = $derived.by(() => {
@@ -36,6 +44,20 @@
 
 	let overview = $derived(
 		computeProgressOverview($live.history, new Date(), (id) => indexById.get(id)?.body_part ?? null)
+	);
+
+	let reviewedLine = $derived(
+		lang === 'ru'
+			? translate(lang, 'coach.reviewed', {
+					n: `${overview.workouts30d} ${pluralRu(overview.workouts30d, [
+						'тренировку',
+						'тренировки',
+						'тренировок'
+					])}`
+				})
+			: translate(lang, 'coach.reviewed', {
+					n: `${overview.workouts30d} ${overview.workouts30d === 1 ? 'workout' : 'workouts'}`
+				})
 	);
 
 	let replace = $derived.by(() => {
@@ -99,10 +121,16 @@
 		preferHistoryBack
 	/>
 	<p class="coach-lead">{translate(lang, 'coach.lead')}</p>
-	<p class="coach-lead">{translate(lang, 'coach.reviewed', { n: String(overview.workouts30d) })}</p>
-	{#if hints.length === 0 && !replace}
+	{#if overview.workouts30d > 0}
+		<p class="coach-lead">{reviewedLine}</p>
+	{/if}
+	{#if !indexReady}
+		<PageSkeleton rows={2} />
+	{:else if hints.length === 0 && !replace}
 		<AppPanel class="text-left">
-			<p class="coach-muted">{translate(lang, 'coach.empty')}</p>
+			<p class="coach-muted">
+				{translate(lang, overview.workouts30d === 0 ? 'coach.empty' : 'coach.nothingYet')}
+			</p>
 			<a href="/" class="btn-primary coach-empty-cta">{translate(lang, 'coach.emptyCta')}</a>
 		</AppPanel>
 	{:else}

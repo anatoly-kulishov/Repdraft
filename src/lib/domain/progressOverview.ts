@@ -31,6 +31,22 @@ export type ProgressOverview = {
 	trends: ExerciseTrend[];
 };
 
+export type Progress30d = {
+	workouts: number;
+	volumeKg: number;
+};
+
+/** Cheap 30-day totals for surfaces that only show a summary line (Home). */
+export function progress30d(
+	sessions: readonly WorkoutSession[],
+	now: Date = new Date()
+): Progress30d {
+	const last30 = finishedSessionsWithinDays(countableFinishedSessions([...sessions]), 30, now);
+	let volumeKg = 0;
+	for (const session of last30) volumeKg += sessionVolumeKg(session);
+	return { workouts: last30.length, volumeKg: Math.round(volumeKg) };
+}
+
 function trendDelta(
 	sessions: readonly WorkoutSession[],
 	exerciseId: string,
