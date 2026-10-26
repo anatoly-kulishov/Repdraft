@@ -35,7 +35,7 @@ Legal before public: real `PUBLIC_PRIVACY_*` in Vercel; lawyer review `/privacy`
 
 ## Mobile notes
 
-- **Expo Go SDK:** app targets Expo SDK 57. If Go mismatches, install from [expo.dev/go](https://expo.dev/go) or use a development build.
+- **Expo Go SDK:** app targets Expo SDK 58 — matches the current Expo Go on iOS. For native modules (Health) or stable runs use a dev build: `npx expo run:ios --device` (needs `expo-dev-client` + Apple ID in Xcode for signing).
 - **Turnstile:** Cloudflare captcha is web-only for now. RN auth in Expo Go has no Turnstile widget; test signup/reset on web when captcha is required in Supabase.
 - **Health read:** Apple Health / Health Connect needs a **development build** + config plugins (not Expo Go). Toggle lives in Profile; adapter is stub until native modules are wired. See `mobile/src/health/`.
 - **Watches:** separate native UI; ownership spike in [`.cursor/product/watch-session-ownership.md`](.cursor/product/watch-session-ownership.md).

@@ -219,7 +219,7 @@ export default function RecordsScreen() {
 						<View style={styles.loadMore}>
 							<View style={styles.loadMoreDot} />
 						</View>
-					) : null
+					) : undefined
 				}
 				renderItem={({ item }) => {
 					const chips = personalRecordChips(item, locale);

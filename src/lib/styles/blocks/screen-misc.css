@@ -1585,26 +1585,23 @@ button.live-local-save-cue {
 .profile-avatar-sheet__actions {
 	display: flex;
 	flex-direction: column;
-	gap: 0;
-	padding: 0.05rem 0 0.15rem;
+	gap: 0.4rem;
+	padding: 0.1rem 0 0.15rem;
 }
 
-.profile-avatar-sheet__actions .profile-settings-row {
-	min-height: 48px;
-}
-
-.profile-avatar-sheet__danger {
-	color: var(--color-danger);
-}
-
-.profile-avatar-sheet__danger .profile-settings-row__label {
-	color: var(--color-danger);
-}
-
-.profile-avatar-sheet__danger .icon-plate {
-	color: var(--color-danger);
-	border-color: color-mix(in srgb, var(--color-danger) 28%, var(--color-border));
-	background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface-elevated));
+/* 1px fixed input: WebKit anchors the native file-picker popup to its
+   on-screen frame, so pin it to the viewport bottom edge (not the page
+   bottom — an off-screen anchor falls back to screen center). */
+.profile-avatar-file-input {
+	position: fixed;
+	left: 0;
+	bottom: 0;
+	width: 1px;
+	height: 1px;
+	margin: 0;
+	padding: 0;
+	opacity: 0;
+	pointer-events: none;
 }
 
 /* Avatar crop dialog: square canvas + circular mask matching the avatar framing. */

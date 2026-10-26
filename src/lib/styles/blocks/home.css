@@ -1624,6 +1624,32 @@ a.home-header__row--link:active .home-header__cta {
 	color: var(--color-accent-text);
 }
 
+.home-monthly {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.65rem;
+}
+
+.home-monthly__stat {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	padding: 0.85rem 1rem;
+}
+
+.home-monthly__value {
+	font-size: 1.5rem;
+	font-weight: 800;
+	line-height: 1.2;
+	color: var(--color-ink);
+}
+
+.home-monthly__label {
+	font-size: 0.75rem;
+	line-height: 1.3;
+	color: var(--color-muted);
+}
+
 .home-aside-card {
 	padding: 1rem 1.05rem;
 }
