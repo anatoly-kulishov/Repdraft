@@ -2565,6 +2565,11 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	padding: 1.15rem 1.2rem;
 }
 
+/* Guest cards follow the signed-in profile rhythm. */
+.auth-signin.profile-settings-group.panel {
+	padding: 0.95rem 1.1rem 1.05rem;
+}
+
 .auth-signin.panel.flex {
 	gap: 1rem;
 }

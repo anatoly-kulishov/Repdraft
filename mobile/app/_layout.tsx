@@ -39,7 +39,7 @@ function RootStack() {
 			}}
 		>
 			<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-			<Stack.Screen name="auth" options={{ title: tt('auth.title') }} />
+			<Stack.Screen name="auth" options={{ title: tt('nav.user') }} />
 			<Stack.Screen name="plan/[id]" options={{ title: tt('nav.preview') }} />
 			<Stack.Screen
 				name="live/[planId]"
