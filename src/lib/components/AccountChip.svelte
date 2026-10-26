@@ -26,7 +26,7 @@
 		!$auth.ready || !$auth.sessionKnown
 			? translate(lang, 'common.loading')
 			: !$auth.configured
-				? translate(lang, 'nav.account')
+				? translate(lang, 'nav.profile')
 				: email
 					? email
 					: translate(lang, 'nav.signIn')

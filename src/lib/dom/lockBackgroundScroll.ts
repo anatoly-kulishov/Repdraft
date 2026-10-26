@@ -22,8 +22,14 @@ function onTouchStart(event: TouchEvent) {
 	startY = event.touches[0]?.clientY ?? 0;
 }
 
+/** Native sliders handle their own horizontal drag; blocking touchmove breaks them. */
+function isRangeInput(target: EventTarget | null): boolean {
+	return target instanceof HTMLInputElement && target.type === 'range';
+}
+
 function onTouchMove(event: TouchEvent) {
 	if (event.touches.length > 1) return;
+	if (isRangeInput(event.target)) return;
 	const y = event.touches[0]?.clientY ?? 0;
 	const deltaY = startY - y;
 	let node = event.target instanceof HTMLElement ? event.target : null;
