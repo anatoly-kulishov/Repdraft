@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.23.1',
+		highlights: {
+			ru: [
+				'Главная: итоги за 30 дней — тренировки и тоннаж, со ссылкой на прогресс',
+				'Фото профиля: заметная кнопка «Выбрать фото», само меню выбора — снизу экрана',
+				'ИИ-тренер: честные подсказки — если данных мало, так и говорит',
+				'Тренировки и объём считаются одинаково на телефоне и в вебе'
+			],
+			en: [
+				'Home: 30-day totals — workouts and volume, with a link to progress',
+				'Profile photo: a clear Choose photo button, the picker opens at the bottom of the screen',
+				'AI coach: honest hints — it says so when there is not enough data yet',
+				'Workouts and volume count the same on phone and web'
+			]
+		}
+	},
+	{
 		version: '0.23.0',
 		highlights: {
 			ru: [

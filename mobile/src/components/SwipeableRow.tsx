@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useAppColors } from '../state/theme';
 import { fontFamily, radius, space, touchMin, type ColorPalette } from '../theme';
 
@@ -30,9 +30,13 @@ export function SwipeableRow({ children, style, onDelete, deleteLabel }: Props) 
 
 	return (
 		<View style={style}>
-			<Swipeable renderRightActions={renderRightActions} friction={2} rightThreshold={40}>
+			<ReanimatedSwipeable
+				renderRightActions={() => renderRightActions()}
+				friction={2}
+				rightThreshold={40}
+			>
 				{children}
-			</Swipeable>
+			</ReanimatedSwipeable>
 		</View>
 	);
 }
