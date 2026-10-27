@@ -26,7 +26,7 @@
 
 | File | When |
 |------|------|
-| `native-rewrite-plan.md` | Native-first rewrite, phases, north star |
+| `native-rewrite-plan.md` | Native-first rewrite, phases, north star (фаза F: тренер ↔ клиент) |
 | `delivery.md` | RN + web roles |
 | `exercise-rag.md` | `/ai` catalog RAG: pgvector SQL + `npm run build:embeddings` |
 | `watch-session-ownership.md` | Watch companion spike: session lease / finish race |

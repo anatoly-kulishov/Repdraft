@@ -5,7 +5,7 @@
  * and read-only rollups the coach sees. No payments, no chat, no program
  * marketplace — the sacred loop must not get slower.
  */
-import type { WorkoutSession } from './types';
+import type { LoggedSet, SessionExercise, SetKind, WorkoutSession } from './types';
 
 export const INVITE_CODE_LENGTH = 8;
 /** Crockford-ish alphabet: no I/L/O/U to survive handwriting, QR and phone read-out. */
@@ -38,7 +38,98 @@ export type CoachSessionSummary = {
 	sessions7d: number;
 	/** True when a finished session happened in the last 48 hours. */
 	activeRecently: boolean;
+	/** Id of the newest finished session (for coach open-detail). */
+	lastSessionId?: string | null;
+	/** Plan name of that session. */
+	lastPlanName?: string | null;
 };
+
+/** One finished session the coach may open (RPC, not direct table read). */
+export type CoachSessionDetail = {
+	id: string;
+	clientUserId: string;
+	planName: string;
+	startedAt: string;
+	finishedAt: string;
+	exercises: WorkoutSession['exercises'];
+};
+
+/** Active coach link as seen by the client (with display name). */
+export type CoachMyCoach = {
+	linkId: string;
+	coachUserId: string;
+	coachName: string | null;
+	createdAt: string;
+	updatedAt: string;
+};
+
+function isSetKind(value: unknown): value is SetKind {
+	return value === 'work' || value === 'warmup' || value === 'drop' || value === 'failure';
+}
+
+function numField(value: unknown): number {
+	if (typeof value === 'number' && Number.isFinite(value)) return value;
+	if (typeof value === 'string') {
+		const parsed = Number(value);
+		return Number.isFinite(parsed) ? parsed : 0;
+	}
+	return 0;
+}
+
+function parseLoggedSet(raw: unknown): LoggedSet | null {
+	if (!raw || typeof raw !== 'object') return null;
+	const row = raw as Record<string, unknown>;
+	const weight =
+		typeof row.weightKg === 'number'
+			? row.weightKg
+			: typeof row.weightKg === 'string'
+				? Number(row.weightKg)
+				: null;
+	const reps =
+		typeof row.reps === 'number'
+			? row.reps
+			: typeof row.reps === 'string'
+				? Number(row.reps)
+				: null;
+	return {
+		weightKg: weight != null && Number.isFinite(weight) ? weight : null,
+		reps: reps != null && Number.isFinite(reps) ? reps : null,
+		completed: row.completed === true,
+		...(isSetKind(row.kind) ? { kind: row.kind } : {})
+	};
+}
+
+/** Parse session.exercises jsonb from coach RPCs into domain shapes. */
+export function parseCoachSessionExercises(raw: unknown): SessionExercise[] {
+	if (!Array.isArray(raw)) return [];
+	const out: SessionExercise[] = [];
+	for (const item of raw) {
+		if (!item || typeof item !== 'object') continue;
+		const row = item as Record<string, unknown>;
+		const exerciseId = typeof row.exerciseId === 'string' ? row.exerciseId : '';
+		if (!exerciseId) continue;
+		const setsRaw = Array.isArray(row.sets) ? row.sets : [];
+		const sets = setsRaw
+			.map(parseLoggedSet)
+			.filter((set): set is LoggedSet => set != null);
+		out.push({
+			exerciseId,
+			targetSets: numField(row.targetSets),
+			targetReps: numField(row.targetReps),
+			restSec: numField(row.restSec),
+			sets,
+			...(typeof row.groupId === 'string' || row.groupId === null
+				? { groupId: row.groupId as string | null }
+				: {}),
+			...(typeof row.altGroupId === 'string' || row.altGroupId === null
+				? { altGroupId: row.altGroupId as string | null }
+				: {}),
+			...(row.skipped === true ? { skipped: true } : {}),
+			...(typeof row.note === 'string' ? { note: row.note } : {})
+		});
+	}
+	return out;
+}
 
 const INVITE_ALIASES: Record<string, string> = {
 	O: '0',
@@ -307,4 +398,17 @@ export function runCoachSelfCheck(): void {
 	const silent = { ...summary, lastSessionAt: null };
 	if (clientActivityTier(silent, now) !== 'silent') throw new Error('coach: silent tier failed');
 	if (daysSinceLastSession(silent, now) !== null) throw new Error('coach: no-session days failed');
+
+	const parsed = parseCoachSessionExercises([
+		{
+			exerciseId: 'e1',
+			targetSets: 2,
+			targetReps: 5,
+			restSec: 90,
+			sets: [{ weightKg: 100, reps: 5, completed: true, kind: 'warmup' }]
+		}
+	]);
+	if (parsed.length !== 1 || parsed[0]?.sets[0]?.kind !== 'warmup') {
+		throw new Error('coach: session exercise parse drifted');
+	}
 }

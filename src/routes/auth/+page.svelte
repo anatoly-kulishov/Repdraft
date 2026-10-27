@@ -33,7 +33,7 @@
 		INVITE_CODE_LENGTH,
 		isValidInviteCode,
 		normalizeInviteCode,
-		type CoachClientLink
+		type CoachMyCoach
 	} from '$lib/domain/coach';
 	import { isSupabaseConfigured } from '$lib/supabase/client';
 	import { coachRepository } from '$lib/storage/coachRepository';
@@ -116,20 +116,21 @@
 
 	let coachCloud = $derived(isSupabaseConfigured() && Boolean($auth.user));
 	let ownUserId = $derived($auth.user?.id ?? null);
-	let clientCoachLinks = $state<CoachClientLink[]>([]);
+	let myCoaches = $state<CoachMyCoach[]>([]);
 	/** User id whose links are already in state, so switching accounts refetches. */
 	let clientCoachLoadedFor = $state<string | null>(null);
 	let clientCoachLoading = $state(false);
 	let clientCoachLoaded = $derived(Boolean(ownUserId) && clientCoachLoadedFor === ownUserId);
-	let activeCoachLinks = $derived(clientCoachLinks.filter((link) => link.status === 'active'));
+	let disconnectTarget = $state<CoachMyCoach | null>(null);
+	let disconnectBusy = $state(false);
 
 	async function loadClientCoachLinks() {
 		const userId = ownUserId;
 		if (!coachCloud || !userId || clientCoachLoading) return;
 		clientCoachLoading = true;
 		try {
-			const result = await coachRepository.listClientLinks(userId);
-			if (result.ok) clientCoachLinks = result.value;
+			const result = await coachRepository.listMyCoaches();
+			if (result.ok) myCoaches = result.value;
 			clientCoachLoadedFor = userId;
 		} finally {
 			clientCoachLoading = false;
@@ -161,29 +162,9 @@
 		try {
 			const result = await coachRepository.acceptInvite(code);
 			if (result.ok) {
-				const coachUserId = result.value;
-				const me = ownUserId ?? '';
-				const now = new Date().toISOString();
-				if (
-					!clientCoachLinks.some(
-						(link) => link.coachUserId === coachUserId && link.status === 'active'
-					)
-				) {
-					clientCoachLinks = [
-						...clientCoachLinks,
-						{
-							id: `accepted-${coachUserId}`,
-							coachUserId,
-							clientUserId: me,
-							status: 'active',
-							createdAt: now,
-							updatedAt: now
-						}
-					];
-				}
-				clientCoachLoadedFor = me;
 				coachInviteInput = '';
 				toasts.show(translate(lang, 'coach.inviteAccepted'), 'success');
+				clientCoachLoadedFor = null;
 				void loadClientCoachLinks();
 			} else {
 				coachInviteError = translate(lang, `coach.error.${result.reason}`);
@@ -191,6 +172,41 @@
 		} finally {
 			coachInviteBusy = false;
 		}
+	}
+
+	function requestDisconnectCoach(coach: CoachMyCoach) {
+		if (disconnectBusy) return;
+		disconnectTarget = coach;
+	}
+
+	function dismissDisconnectCoach() {
+		if (disconnectBusy) return;
+		disconnectTarget = null;
+	}
+
+	function confirmDisconnectCoach() {
+		const target = disconnectTarget;
+		disconnectTarget = null;
+		if (target) void disconnectCoach(target);
+	}
+
+	async function disconnectCoach(coach: CoachMyCoach) {
+		disconnectBusy = true;
+		try {
+			const result = await coachRepository.revokeAsClient(coach.linkId);
+			if (result.ok) {
+				myCoaches = myCoaches.filter((row) => row.linkId !== coach.linkId);
+				toasts.show(translate(lang, 'coach.disconnectDone'), 'success');
+			} else {
+				toasts.show(translate(lang, `coach.error.${result.reason}`), 'error');
+			}
+		} finally {
+			disconnectBusy = false;
+		}
+	}
+
+	function coachDisplayName(coach: CoachMyCoach): string {
+		return coach.coachName?.trim() || translate(lang, 'profile.coachFallback');
 	}
 	let logoutConfirmOpen = $state(false);
 	let logoutEverywhereConfirmOpen = $state(false);
@@ -1006,22 +1022,28 @@
 										<AppSkeleton class="h-3 w-2/3" />
 									</div>
 								</div>
-							{:else if activeCoachLinks.length > 0}
-								<div class="coach-connect-status">
-									<IconPlate icon={UserCheck} tone="accent" />
-									<div class="coach-connect-status__text">
-										<p class="coach-connect-status__title">
-											{activeCoachLinks.length > 1
-												? translate(lang, 'profile.coachesConnected', {
-														n: activeCoachLinks.length
-													})
-												: translate(lang, 'profile.coachConnected')}
-										</p>
-										<p class="coach-connect-status__hint">
-											{translate(lang, 'profile.coachConnectedHint')}
-										</p>
-									</div>
-								</div>
+							{:else if myCoaches.length > 0}
+								<ul class="coach-my-list">
+									{#each myCoaches as coach (coach.linkId)}
+										<li class="coach-connect-status">
+											<IconPlate icon={UserCheck} tone="accent" />
+											<div class="coach-connect-status__text">
+												<p class="coach-connect-status__title">{coachDisplayName(coach)}</p>
+												<p class="coach-connect-status__hint">
+													{translate(lang, 'profile.coachConnectedHint')}
+												</p>
+												<AppButton
+													variant="link"
+													class="mt-1 !min-h-[48px] !px-0"
+													disabled={disconnectBusy}
+													onclick={() => requestDisconnectCoach(coach)}
+												>
+													{translate(lang, 'coach.disconnect')}
+												</AppButton>
+											</div>
+										</li>
+									{/each}
+								</ul>
 							{:else}
 								<p class="profile-settings-group__hint">
 									{translate(lang, 'coach.inviteAcceptLead')}
@@ -1515,6 +1537,18 @@
 </section>
 
 {#if $auth.user}
+	<ConfirmSheet
+		open={disconnectTarget !== null}
+		titleId="coach-disconnect-title"
+		title={translate(lang, 'coach.disconnectConfirmTitle')}
+		hint={translate(lang, 'coach.disconnectConfirmLead', {
+			name: disconnectTarget ? coachDisplayName(disconnectTarget) : ''
+		})}
+		confirmLabel={translate(lang, 'coach.disconnect')}
+		busy={disconnectBusy}
+		onConfirm={confirmDisconnectCoach}
+		onDismiss={dismissDisconnectCoach}
+	/>
 	<ConfirmSheet
 		open={logoutConfirmOpen}
 		titleId="auth-logout-title"
