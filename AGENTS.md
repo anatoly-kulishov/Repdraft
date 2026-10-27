@@ -39,6 +39,7 @@ Legal before public: real `PUBLIC_PRIVACY_*` in Vercel; lawyer review `/privacy`
 - **Turnstile:** Cloudflare captcha is web-only for now. RN auth in Expo Go has no Turnstile widget; test signup/reset on web when captcha is required in Supabase.
 - **Health read:** Apple Health / Health Connect needs a **development build** + config plugins (not Expo Go). Toggle lives in Profile; adapter is stub until native modules are wired. See `mobile/src/health/`.
 - **Watches:** separate native UI; ownership spike in [`.cursor/product/watch-session-ownership.md`](.cursor/product/watch-session-ownership.md).
+- **Coach mode:** web `/clients` + RN `/clients` (not `/coach` - that screen is self-hints). Invite accept and disconnect live in Profile. Cloud RPCs need SQL from `~/.repdraft-sql/` (`coach-mode.sql`, then `coach-session-detail-and-client-revoke.sql`). Product loop: [native-rewrite-plan.md phase F](.cursor/product/native-rewrite-plan.md).
 
 ## Secrets
 

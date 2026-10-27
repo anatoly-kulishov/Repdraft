@@ -1,0 +1,262 @@
+/**
+ * Coach mode over Supabase (RN). Mirrors web `src/lib/storage/coachRepository.ts`.
+ * Schema: `~/.repdraft-sql/coach-mode.sql` + session-detail / client-revoke patch.
+ */
+import {
+	parseCoachSessionExercises,
+	type CoachClientLink,
+	type CoachMyCoach,
+	type CoachSessionDetail,
+	type CoachSessionSummary
+} from '@repdraft/domain/coach';
+import { getSupabase } from '../auth/supabase';
+
+export type CoachErrorReason =
+	| 'notConfigured'
+	| 'offline'
+	| 'limit'
+	| 'notFound'
+	| 'used'
+	| 'expired'
+	| 'self'
+	| 'unknown';
+
+export type CoachResult<T> = { ok: true; value: T } | { ok: false; reason: CoachErrorReason };
+
+type LinkRow = {
+	id: string;
+	coach_user_id: string;
+	client_user_id: string;
+	status: CoachClientLink['status'];
+	note: string | null;
+	created_at: string;
+	updated_at: string;
+};
+
+type StatsRow = {
+	client_user_id: string;
+	sessions: number | string;
+	sessions_7d: number | string;
+	sets_done: number | string;
+	volume_kg: number | string | null;
+	last_session_at: string | null;
+	last_session_id?: string | null;
+	last_plan_name?: string | null;
+};
+
+type MyCoachRow = {
+	id: string;
+	coach_user_id: string;
+	coach_name: string | null;
+	created_at: string;
+	updated_at: string;
+};
+
+type SessionDetailRow = {
+	id: string;
+	client_user_id: string;
+	plan_name: string | null;
+	started_at: string;
+	finished_at: string;
+	exercises: unknown;
+};
+
+export type CoachClientStatsRow = {
+	clientUserId: string;
+	summary: CoachSessionSummary;
+};
+
+export type CoachRecentSession = {
+	id: string;
+	planName: string;
+	finishedAt: string;
+	sets: number;
+	volumeKg: number;
+};
+
+function reasonFromError(code: string | undefined, message: string | undefined): CoachErrorReason {
+	switch (code) {
+		case 'RDC01':
+			return 'limit';
+		case 'RDC02':
+			return 'notFound';
+		case 'RDC03':
+			return 'used';
+		case 'RDC04':
+			return 'expired';
+		case 'RDC05':
+			return 'self';
+		case '28000':
+			return 'notConfigured';
+		default:
+			return message?.includes('Failed to fetch') || message?.includes('Network request failed')
+				? 'offline'
+				: 'unknown';
+	}
+}
+
+function rowToLink(row: LinkRow): CoachClientLink {
+	return {
+		id: row.id,
+		coachUserId: row.coach_user_id,
+		clientUserId: row.client_user_id,
+		status: row.status,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+		...(row.note ? { note: row.note } : {})
+	};
+}
+
+function num(value: number | string | null | undefined): number {
+	if (value == null) return 0;
+	const parsed = typeof value === 'number' ? value : Number(value);
+	return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function rowToStats(row: StatsRow): CoachClientStatsRow {
+	return {
+		clientUserId: row.client_user_id,
+		summary: {
+			sessions: num(row.sessions),
+			sessions7d: num(row.sessions_7d),
+			sets: num(row.sets_done),
+			volumeKg: Math.round(num(row.volume_kg)),
+			lastSessionAt: row.last_session_at ?? null,
+			activeRecently: row.last_session_at
+				? Date.now() - Date.parse(row.last_session_at) <= 2 * 86_400_000
+				: false,
+			lastSessionId: row.last_session_id ?? null,
+			lastPlanName: row.last_plan_name ?? null
+		}
+	};
+}
+
+function rowToSessionDetail(row: SessionDetailRow): CoachSessionDetail {
+	return {
+		id: row.id,
+		clientUserId: row.client_user_id,
+		planName: row.plan_name ?? '',
+		startedAt: row.started_at,
+		finishedAt: row.finished_at,
+		exercises: parseCoachSessionExercises(row.exercises)
+	};
+}
+
+function rowToMyCoach(row: MyCoachRow): CoachMyCoach {
+	return {
+		linkId: row.id,
+		coachUserId: row.coach_user_id,
+		coachName: row.coach_name?.trim() ? row.coach_name.trim() : null,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at
+	};
+}
+
+export const coachRepo = {
+	async listLinks(): Promise<CoachResult<CoachClientLink[]>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { data, error } = await supabase
+			.from('coach_links')
+			.select('id,coach_user_id,client_user_id,status,note,created_at,updated_at')
+			.order('updated_at', { ascending: false });
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		return { ok: true, value: (data as LinkRow[] | null)?.map(rowToLink) ?? [] };
+	},
+
+	async listMyCoaches(): Promise<CoachResult<CoachMyCoach[]>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { data, error } = await supabase.rpc('coach_list_my_coaches');
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		return { ok: true, value: (data as MyCoachRow[] | null)?.map(rowToMyCoach) ?? [] };
+	},
+
+	async createInvite(): Promise<CoachResult<string>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { data, error } = await supabase.rpc('create_coach_invite');
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		return { ok: true, value: String(data ?? '') };
+	},
+
+	async acceptInvite(code: string): Promise<CoachResult<string>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { data, error } = await supabase.rpc('accept_coach_invite', { p_code: code });
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		return { ok: true, value: String(data ?? '') };
+	},
+
+	async stats(): Promise<CoachResult<CoachClientStatsRow[]>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { data, error } = await supabase.rpc('coach_client_stats', { p_client: null });
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		return { ok: true, value: (data as StatsRow[] | null)?.map(rowToStats) ?? [] };
+	},
+
+	async recentSessions(clientUserId: string, limit = 5): Promise<CoachResult<CoachRecentSession[]>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { data, error } = await supabase.rpc('coach_client_sessions', {
+			p_client: clientUserId,
+			p_limit: limit
+		});
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		const rows =
+			(data as
+				| {
+						id: string;
+						plan_name: string | null;
+						finished_at: string;
+						sets_done: number | string;
+						volume_kg: number | string | null;
+				  }[]
+				| null) ?? [];
+		return {
+			ok: true,
+			value: rows
+				.filter((row) => Boolean(row.finished_at))
+				.map((row) => ({
+					id: row.id,
+					planName: row.plan_name ?? '',
+					finishedAt: row.finished_at,
+					sets: num(row.sets_done),
+					volumeKg: Math.round(num(row.volume_kg))
+				}))
+		};
+	},
+
+	async sessionDetail(sessionId: string): Promise<CoachResult<CoachSessionDetail>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { data, error } = await supabase.rpc('coach_client_session_detail', {
+			p_session: sessionId
+		});
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		const rows = (data as SessionDetailRow[] | null) ?? [];
+		const row = rows[0];
+		if (!row) return { ok: false, reason: 'notFound' };
+		return { ok: true, value: rowToSessionDetail(row) };
+	},
+
+	async revoke(linkId: string): Promise<CoachResult<true>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { error } = await supabase
+			.from('coach_links')
+			.update({ status: 'revoked' })
+			.eq('id', linkId);
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		return { ok: true, value: true };
+	},
+
+	async revokeAsClient(linkId: string): Promise<CoachResult<true>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { error } = await supabase.rpc('revoke_coach_link_as_client', { p_link_id: linkId });
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		return { ok: true, value: true };
+	}
+};

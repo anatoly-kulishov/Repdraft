@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.23.2',
+		highlights: {
+			ru: [
+				'Кабинет тренера: одна строка статуса и просмотр подходов клиента',
+				'Клиент может отключиться от тренера в профиле',
+				'Кабинет клиентов и код приглашения на телефоне',
+				'Пустая карточка больше не показывает три нуля подряд'
+			],
+			en: [
+				'Coach cabinet: one status line and a look at the client sets',
+				'Clients can disconnect from a coach in Profile',
+				'Client cabinet and invite code on the phone',
+				'Empty client cards no longer show three zeros'
+			]
+		}
+	},
+	{
 		version: '0.23.1',
 		highlights: {
 			ru: [

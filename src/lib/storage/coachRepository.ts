@@ -1,11 +1,18 @@
 /**
  * Coach mode over Supabase (Phase 2).
- * Schema lives outside the repo: `~/.repdraft-sql/coach-mode.sql`.
- * Errors from RPCs carry SQLSTATE RDC01..RDC05 — mapped to typed reasons here
+ * Schema lives outside the repo: `~/.repdraft-sql/coach-mode.sql`
+ * (+ `coach-session-detail-and-client-revoke.sql`).
+ * Errors from RPCs carry SQLSTATE RDC01..RDC05 - mapped to typed reasons here
  * so the UI never shows a raw Postgres message.
  */
+import {
+	parseCoachSessionExercises,
+	type CoachClientLink,
+	type CoachMyCoach,
+	type CoachSessionDetail,
+	type CoachSessionSummary
+} from '$lib/domain/coach';
 import { getSupabase } from '$lib/supabase/client';
-import type { CoachClientLink, CoachSessionSummary } from '$lib/domain/coach';
 
 export type CoachErrorReason =
 	| 'notConfigured'
@@ -36,6 +43,25 @@ type StatsRow = {
 	sets_done: number | string;
 	volume_kg: number | string | null;
 	last_session_at: string | null;
+	last_session_id?: string | null;
+	last_plan_name?: string | null;
+};
+
+type MyCoachRow = {
+	id: string;
+	coach_user_id: string;
+	coach_name: string | null;
+	created_at: string;
+	updated_at: string;
+};
+
+type SessionDetailRow = {
+	id: string;
+	client_user_id: string;
+	plan_name: string | null;
+	started_at: string;
+	finished_at: string;
+	exercises: unknown;
 };
 
 export type CoachClientStatsRow = {
@@ -100,8 +126,31 @@ function rowToStats(row: StatsRow): CoachClientStatsRow {
 			lastSessionAt: row.last_session_at ?? null,
 			activeRecently: row.last_session_at
 				? Date.now() - Date.parse(row.last_session_at) <= 2 * 86_400_000
-				: false
+				: false,
+			lastSessionId: row.last_session_id ?? null,
+			lastPlanName: row.last_plan_name ?? null
 		}
+	};
+}
+
+function rowToSessionDetail(row: SessionDetailRow): CoachSessionDetail {
+	return {
+		id: row.id,
+		clientUserId: row.client_user_id,
+		planName: row.plan_name ?? '',
+		startedAt: row.started_at,
+		finishedAt: row.finished_at,
+		exercises: parseCoachSessionExercises(row.exercises)
+	};
+}
+
+function rowToMyCoach(row: MyCoachRow): CoachMyCoach {
+	return {
+		linkId: row.id,
+		coachUserId: row.coach_user_id,
+		coachName: row.coach_name?.trim() ? row.coach_name.trim() : null,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at
 	};
 }
 
@@ -129,6 +178,15 @@ export const coachRepository = {
 			.order('updated_at', { ascending: false });
 		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
 		return { ok: true, value: (data as LinkRow[] | null)?.map(rowToLink) ?? [] };
+	},
+
+	/** Active coaches for the signed-in client, with display names. */
+	async listMyCoaches(): Promise<CoachResult<CoachMyCoach[]>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { data, error } = await supabase.rpc('coach_list_my_coaches');
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		return { ok: true, value: (data as MyCoachRow[] | null)?.map(rowToMyCoach) ?? [] };
 	},
 
 	async createInvite(): Promise<CoachResult<string>> {
@@ -163,9 +221,16 @@ export const coachRepository = {
 			p_limit: limit
 		});
 		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
-		const rows = (data as
-			| { id: string; plan_name: string | null; finished_at: string; sets_done: number | string; volume_kg: number | string | null }[]
-			| null) ?? [];
+		const rows =
+			(data as
+				| {
+						id: string;
+						plan_name: string | null;
+						finished_at: string;
+						sets_done: number | string;
+						volume_kg: number | string | null;
+				  }[]
+				| null) ?? [];
 		return {
 			ok: true,
 			value: rows
@@ -180,6 +245,19 @@ export const coachRepository = {
 		};
 	},
 
+	async sessionDetail(sessionId: string): Promise<CoachResult<CoachSessionDetail>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { data, error } = await supabase.rpc('coach_client_session_detail', {
+			p_session: sessionId
+		});
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		const rows = (data as SessionDetailRow[] | null) ?? [];
+		const row = rows[0];
+		if (!row) return { ok: false, reason: 'notFound' };
+		return { ok: true, value: rowToSessionDetail(row) };
+	},
+
 	async revoke(linkId: string): Promise<CoachResult<true>> {
 		const supabase = getSupabase();
 		if (!supabase) return { ok: false, reason: 'notConfigured' };
@@ -187,6 +265,14 @@ export const coachRepository = {
 			.from('coach_links')
 			.update({ status: 'revoked' })
 			.eq('id', linkId);
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		return { ok: true, value: true };
+	},
+
+	async revokeAsClient(linkId: string): Promise<CoachResult<true>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { error } = await supabase.rpc('revoke_coach_link_as_client', { p_link_id: linkId });
 		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
 		return { ok: true, value: true };
 	}
