@@ -1748,42 +1748,14 @@ button.live-panel-thumb {
 	border-top: 1px solid color-mix(in srgb, var(--color-border) 75%, transparent);
 }
 
-/* 4+ sets: fill down to 3 rows, then next column; scroll sideways if needed. */
+/* Non-edit: wrap grid of compact weight × reps cells (matches mobile history mock). */
 .history-exercise__sets--grid {
-	display: grid;
-	grid-auto-flow: column;
-	grid-template-rows: repeat(3, auto);
-	grid-auto-columns: max-content;
-	justify-content: start;
-	column-gap: 0.85rem;
-	row-gap: 0.35rem;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 0.5rem;
 	width: 100%;
 	max-width: 100%;
-	overflow-x: auto;
-	overscroll-behavior-x: contain;
-	-webkit-overflow-scrolling: touch;
-	scrollbar-width: none;
-}
-
-.history-exercise__sets--grid::-webkit-scrollbar {
-	display: none;
-}
-
-@media (min-width: 768px) {
-	.history-exercise__sets--grid {
-		scrollbar-width: thin;
-		scrollbar-color: color-mix(in srgb, var(--color-muted) 40%, transparent) transparent;
-	}
-
-	.history-exercise__sets--grid::-webkit-scrollbar {
-		display: block;
-		height: 6px;
-	}
-
-	.history-exercise__sets--grid::-webkit-scrollbar-thumb {
-		background: color-mix(in srgb, var(--color-muted) 35%, transparent);
-		border-radius: 999px;
-	}
 }
 
 .history-exercise__set {
@@ -1796,6 +1768,36 @@ button.live-panel-thumb {
 	font-size: 1.0625rem;
 	color: var(--color-ink);
 	white-space: nowrap;
+}
+
+.history-exercise__set--cell {
+	flex: 1 1 30%;
+	min-width: 5.5rem;
+	max-width: 100%;
+	gap: 0.12rem;
+	padding: 0.45rem 0.55rem;
+	border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+	border-radius: var(--radius-control, 0.65rem);
+	background: color-mix(in srgb, var(--color-bg) 72%, var(--color-surface));
+	font-size: 0.9375rem;
+	box-sizing: border-box;
+}
+
+.history-exercise__set--cell .history-exercise__set-i {
+	min-width: 0;
+	font-size: 0.6875rem;
+}
+
+.history-exercise__set-value {
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	color: var(--color-ink);
+	line-height: 1.25;
+}
+
+.history-exercise__set--cell .history-exercise__set-kind {
+	margin-inline-start: 0;
+	margin-block-start: 0.1rem;
 }
 
 .history-exercise__set-main {
@@ -1903,13 +1905,6 @@ button.live-panel-thumb {
 	font-weight: 600;
 	font-variant-numeric: tabular-nums;
 	white-space: nowrap;
-}
-
-@media (min-width: 640px) {
-	.history-exercise__sets--grid {
-		grid-auto-columns: max-content;
-		column-gap: 1.25rem;
-	}
 }
 
 .history-exercise__empty {
@@ -2132,14 +2127,15 @@ button.live-panel-thumb {
 
 .history-skeleton-set {
 	display: flex;
-	align-items: center;
-	gap: 0.45rem;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0.2rem;
 }
 
 .history-skeleton-set__i {
 	display: inline-block;
-	width: 1rem;
-	height: 0.75rem;
+	width: 0.75rem;
+	height: 0.55rem;
 	border: none;
 	border-radius: 999px;
 	flex-shrink: 0;
@@ -2147,8 +2143,8 @@ button.live-panel-thumb {
 
 .history-skeleton-set__val {
 	display: inline-block;
-	height: 1.0625rem;
-	width: 4.5rem;
+	height: 0.95rem;
+	width: 3.75rem;
 	border: none;
 	border-radius: 999px;
 }
@@ -3137,17 +3133,17 @@ button.live-panel-thumb {
 .live-set-done-btn--done,
 .live-set-done-btn--done.btn-ghost,
 [data-slot='button'].live-set-done-btn--done {
-	color: var(--color-accent-text);
-	-webkit-text-fill-color: var(--color-accent-text);
-	border: 1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border));
-	background: color-mix(in srgb, var(--color-accent-muted) 55%, var(--color-surface));
+	color: var(--color-accent-ink);
+	-webkit-text-fill-color: var(--color-accent-ink);
+	border: 1px solid var(--color-accent-fill);
+	background: var(--color-accent-fill);
 	box-shadow: none;
 	animation: kineticsDigitBump 0.35s var(--ease-spring) both;
 }
 
 .live-set-done-btn--done:hover {
-	color: var(--color-accent-text);
-	-webkit-text-fill-color: var(--color-accent-text);
+	color: var(--color-accent-ink);
+	-webkit-text-fill-color: var(--color-accent-ink);
 }
 
 .live-set-done-btn:active:not(:disabled) {

@@ -13,6 +13,8 @@ type Props = {
 	bannerHeight?: number;
 	style?: StyleProp<ViewStyle>;
 	rounded?: number;
+	/** Gym visual plates: white media well on dark screens. */
+	whitePlate?: boolean;
 };
 
 /** Remote catalog plate with dumbbell fallback when missing/failed. */
@@ -21,7 +23,8 @@ export function CatalogThumb({
 	size = 56,
 	bannerHeight,
 	style,
-	rounded = radius.sm
+	rounded = radius.sm,
+	whitePlate = true
 }: Props) {
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -35,6 +38,7 @@ export function CatalogThumb({
 		<View
 			style={[
 				styles.wrap,
+				whitePlate && styles.wrapWhite,
 				banner
 					? { width: '100%', height: bannerHeight, borderRadius: rounded }
 					: { width: size, height: size, borderRadius: rounded },
@@ -64,6 +68,10 @@ function makeStyles(colors: ColorPalette) {
 			overflow: 'hidden',
 			alignItems: 'center',
 			justifyContent: 'center'
+		},
+		wrapWhite: {
+			backgroundColor: '#ffffff',
+			borderColor: 'rgba(0, 0, 0, 0.06)'
 		},
 		img: { width: '100%', height: '100%' }
 	});

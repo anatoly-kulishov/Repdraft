@@ -1,6 +1,7 @@
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ChevronLeft } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
 	FlatList,
@@ -55,7 +56,7 @@ import type { LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/ty
 import { unlockRestAudioFromGesture } from '../../src/audio/restChime';
 import { signalRestDone } from '../../src/audio/restDone';
 import { exerciseDisplayName, getIndexItem, refreshCustomsCache } from '../../src/catalog/loadIndex';
-import { Chip } from '../../src/components/Chip';
+import { CatalogThumb } from '../../src/components/CatalogThumb';
 import { ConfirmSheet, type ConfirmAction } from '../../src/components/ConfirmSheet';
 import { ElapsedClock } from '../../src/components/ElapsedClock';
 import { LiveSetRow, type SetDraft } from '../../src/components/LiveSetRow';
@@ -89,7 +90,8 @@ import {
 	sessionsRepo,
 	writeActiveSession
 } from '../../src/storage/sessionsRepo';
-import { useBottomChromePad, useStackHeaderOffset } from '../../src/layout/safe';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomChromePad } from '../../src/layout/safe';
 import { pushPlan, pushRecord, pushSession } from '../../src/sync/cloudSync';
 import { fontFamily, radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
@@ -117,7 +119,8 @@ export default function LiveScreen() {
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const bottomPad = useBottomChromePad(space.md);
-	const headerOffset = useStackHeaderOffset();
+	const insets = useSafeAreaInsets();
+	const headerOffset = insets.top + touchMin;
 
 	const [session, setSession] = useState<WorkoutSession | null>(null);
 	const [history, setHistory] = useState<WorkoutSession[]>([]);
@@ -637,7 +640,12 @@ export default function LiveScreen() {
 		);
 	}
 
-	const progress = tt('live.progress', {
+	const slotPos = visible.indexOf(selectedEi);
+	const exerciseProgress = tt('live.progress', {
+		done: (slotPos >= 0 ? slotPos : 0) + 1,
+		total: Math.max(1, visible.length)
+	});
+	const setsProgress = tt('home.setsProgress', {
 		done: completedSetCount(session),
 		total: totalSetCount(session)
 	});
@@ -649,6 +657,27 @@ export default function LiveScreen() {
 	const hasNextExercise = nextManualExerciseFocus(session, selectedEi) !== selectedEi;
 	const restTotalSec = ex ? Math.max(1, restSecAfterSet(session, selectedEi)) : 1;
 	const currentSetIndex = ex?.sets.findIndex((set) => !set.completed) ?? -1;
+	const setProgressLabel =
+		ex && ex.sets.length > 0
+			? tt('live.setProgress', {
+					current: Math.min(
+						(currentSetIndex >= 0 ? currentSetIndex : ex.sets.length - 1) + 1,
+						ex.sets.length
+					),
+					total: ex.sets.length
+				})
+			: null;
+	const firstPrev =
+		ex != null ? previousSetAtIndex(history, ex.exerciseId, Math.max(0, currentSetIndex)) : null;
+	const firstPrevLabel =
+		firstPrev && (firstPrev.weightKg != null || firstPrev.reps != null)
+			? firstPrev.weightKg != null && firstPrev.reps != null
+				? `${firstPrev.weightKg} × ${firstPrev.reps}`
+				: firstPrev.reps != null
+					? String(firstPrev.reps)
+					: String(firstPrev.weightKg)
+			: null;
+	const applySi = currentSetIndex >= 0 ? currentSetIndex : 0;
 
 	return (
 		<KeyboardAvoidingView
@@ -656,14 +685,25 @@ export default function LiveScreen() {
 			behavior={Platform.OS === 'ios' ? 'padding' : undefined}
 			keyboardVerticalOffset={Platform.OS === 'ios' ? headerOffset : 0}
 		>
-			<View style={styles.header}>
+			<View style={[styles.header, { paddingTop: Math.max(insets.top, space.sm) }]}>
+				<Pressable
+					accessibilityRole="button"
+					accessibilityLabel={tt('common.back')}
+					onPress={() => router.back()}
+					style={styles.backBtn}
+				>
+					<ChevronLeft size={22} color={colors.text} strokeWidth={2.25} />
+				</Pressable>
 				<Text style={styles.plan} numberOfLines={1}>
 					{session.planName}
 				</Text>
-				<Text style={styles.progress}>
-					{progress} · <ElapsedClock startedAt={session.startedAt} />
-				</Text>
+				<View style={styles.headerTimer}>
+					<ElapsedClock startedAt={session.startedAt} />
+				</View>
 			</View>
+			<Text style={styles.progressLine}>
+				{exerciseProgress} · {setsProgress}
+			</Text>
 
 			<FlatList
 				horizontal
@@ -676,17 +716,28 @@ export default function LiveScreen() {
 					const row = session.exercises[ei];
 					if (!row) return null;
 					const active = ei === selectedEi;
+					const done = exerciseAllSetsDone(session.exercises, ei);
 					return (
-						<View style={[styles.navChipWrap, exerciseAllSetsDone(session.exercises, ei) && styles.navChipDone]}>
-							<Chip
-								label={exerciseDisplayName(row.exerciseId, locale)}
-								selected={active}
-								onPress={() => {
-									setSelectedEi(ei);
-									setForceAltPick(false);
-								}}
-							/>
-						</View>
+						<Pressable
+							accessibilityRole="button"
+							accessibilityState={{ selected: active }}
+							onPress={() => {
+								setSelectedEi(ei);
+								setForceAltPick(false);
+							}}
+							style={[
+								styles.navChip,
+								active && styles.navChipActive,
+								done && !active && styles.navChipDone
+							]}
+						>
+							<Text
+								style={[styles.navChipText, active && styles.navChipTextActive]}
+								numberOfLines={2}
+							>
+								{exerciseDisplayName(row.exerciseId, locale)}
+							</Text>
+						</Pressable>
 					);
 				}}
 			/>
@@ -727,11 +778,15 @@ export default function LiveScreen() {
 					</Panel>
 				) : ex ? (
 					<Panel style={styles.card}>
-						<Pressable onPress={() => router.push(`/exercise/${ex.exerciseId}`)}>
-							<Text style={styles.exName} numberOfLines={2}>
-								{exerciseDisplayName(ex.exerciseId, locale)}
-							</Text>
-						</Pressable>
+						<WeightCue
+							session={session}
+							exerciseId={ex.exerciseId}
+							history={history}
+							exerciseName={exerciseDisplayName(ex.exerciseId, locale)}
+							imagePath={getIndexItem(ex.exerciseId)?.image}
+							setProgressLabel={setProgressLabel}
+							onOpenExercise={() => router.push(`/exercise/${ex.exerciseId}`)}
+						/>
 						<View style={styles.exActions}>
 							<PrimaryButton
 								label={tt('exercise.technique')}
@@ -746,7 +801,22 @@ export default function LiveScreen() {
 								/>
 							) : null}
 						</View>
-						<WeightCue session={session} exerciseId={ex.exerciseId} history={history} />
+
+						{firstPrevLabel && !currentComplete ? (
+							<View style={styles.applyRow}>
+								<Text style={styles.applyHint} numberOfLines={1}>
+									{tt('live.last')} {firstPrevLabel}
+								</Text>
+								<PrimaryButton
+									label={tt('live.applyLast')}
+									variant="ghost"
+									compact
+									onPress={() => {
+										if (firstPrev) applyLastDraft(applySi, firstPrev);
+									}}
+								/>
+							</View>
+						) : null}
 
 						{ex.sets.map((set, si) => {
 							const prev = previousSetAtIndex(history, ex.exerciseId, si);
@@ -860,34 +930,39 @@ export default function LiveScreen() {
 			</ScrollView>
 
 			<View style={[styles.footer, { paddingBottom: bottomPad }]}>
-				{currentComplete && hasNextExercise ? (
-					<PrimaryButton
-						label={tt('live.nextExercise')}
-						onPress={() => setSelectedEi(nextManualExerciseFocus(session, selectedEi))}
-					/>
-				) : null}
-				<PrimaryButton
-					label={finishing ? '…' : tt('live.finish')}
-					onPress={confirmFinish}
-					disabled={finishing}
-				/>
-				<View style={styles.footerRow}>
-					{completedSetCount(session) > 0 ? (
-						<View style={styles.flex}>
+				<View style={styles.footerPair}>
+					<View style={styles.footerHalf}>
+						<PrimaryButton
+							label={tt('live.discard')}
+							variant="danger"
+							onPress={offerDiscard}
+							disabled={finishing}
+						/>
+					</View>
+					<View style={styles.footerHalf}>
+						{hasNextExercise ? (
 							<PrimaryButton
-								label={tt('live.undoSet')}
-								variant="ghost"
-								compact
-								onPress={() => void undoLastSet()}
+								label={tt('live.nextShort')}
+								onPress={() => setSelectedEi(nextManualExerciseFocus(session, selectedEi))}
+								disabled={finishing || !currentComplete}
 							/>
-						</View>
-					) : null}
-					<View style={styles.flex}>
-						<Pressable style={styles.discard} onPress={offerDiscard}>
-							<Text style={styles.discardText}>{tt('live.discard')}</Text>
-						</Pressable>
+						) : (
+							<PrimaryButton
+								label={finishing ? '…' : tt('live.finish')}
+								onPress={confirmFinish}
+								disabled={finishing}
+							/>
+						)}
 					</View>
 				</View>
+				{completedSetCount(session) > 0 ? (
+					<PrimaryButton
+						label={tt('live.undoSet')}
+						variant="ghost"
+						compact
+						onPress={() => void undoLastSet()}
+					/>
+				) : null}
 			</View>
 			<TechniqueSheet exerciseId={techniqueId} onClose={() => setTechniqueId(null)} />
 			<ConfirmSheet
@@ -905,11 +980,19 @@ export default function LiveScreen() {
 function WeightCue({
 	session,
 	exerciseId,
-	history
+	history,
+	exerciseName,
+	imagePath,
+	setProgressLabel,
+	onOpenExercise
 }: {
 	session: WorkoutSession;
 	exerciseId: string;
 	history: readonly WorkoutSession[];
+	exerciseName: string;
+	imagePath: string | null | undefined;
+	setProgressLabel: string | null;
+	onOpenExercise: () => void;
 }) {
 	const { tt } = useLocale();
 	const colors = useAppColors();
@@ -919,14 +1002,15 @@ function WeightCue({
 	const raised = weightAboveLast(current, history, exerciseId, session.id);
 	const hint = nextWeightHint(history, exerciseId);
 	return (
-		<View style={{ gap: 4, marginBottom: 8 }}>
+		<View style={{ gap: space.sm }}>
 			<Text
 				style={{
 					color: colors.muted,
 					fontSize: 11,
 					fontWeight: '700',
 					textTransform: 'uppercase',
-					letterSpacing: 0.4
+					letterSpacing: 0.4,
+					fontFamily: fontFamily.bold
 				}}
 			>
 				{tt('quest.weightByWeek')}
@@ -947,15 +1031,36 @@ function WeightCue({
 				))}
 			</View>
 			{raised ? (
-				<Text style={{ color: colors.xp, fontWeight: '700' }}>
+				<Text style={{ color: colors.xp, fontWeight: '700', fontFamily: fontFamily.bold }}>
 					{tt('quest.weightUpChip')}
 				</Text>
 			) : null}
 			{hint ? (
-				<Text style={{ color: colors.muted }}>
+				<Text style={{ color: colors.muted, fontFamily: fontFamily.regular }}>
 					{tt('quest.nextHint', { weight: String(hint.weightKg), reps: String(hint.reps) })}
 				</Text>
 			) : null}
+			<Pressable onPress={onOpenExercise} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+				<CatalogThumb imagePath={imagePath} size={48} rounded={radius.md} />
+				<View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+					<Text
+						style={{
+							color: colors.text,
+							fontSize: 18,
+							fontWeight: '800',
+							fontFamily: fontFamily.extrabold
+						}}
+						numberOfLines={2}
+					>
+						{exerciseName}
+					</Text>
+					{setProgressLabel ? (
+						<Text style={{ color: colors.muted, fontSize: 13, fontFamily: fontFamily.semibold }}>
+							{setProgressLabel}
+						</Text>
+					) : null}
+				</View>
+			</Pressable>
 		</View>
 	);
 }
@@ -964,16 +1069,90 @@ function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 		root: { flex: 1, backgroundColor: colors.bg },
 		flex: { flex: 1 },
-		header: { paddingHorizontal: space.lg, paddingTop: space.sm, gap: 2 },
+		header: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			paddingHorizontal: space.md,
+			paddingTop: space.sm,
+			gap: space.sm
+		},
+		backBtn: {
+			width: touchMin,
+			height: touchMin,
+			alignItems: 'center',
+			justifyContent: 'center'
+		},
+		headerTimer: {
+			minWidth: touchMin,
+			alignItems: 'flex-end',
+			justifyContent: 'center'
+		},
 		scroll: { padding: space.lg, gap: space.md },
 		center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
-		plan: { color: colors.text, fontSize: 22, fontWeight: '800', fontFamily: fontFamily.extrabold },
-		progress: { color: colors.muted, fontSize: 14, fontWeight: '600', fontFamily: fontFamily.semibold },
+		plan: {
+			flex: 1,
+			color: colors.text,
+			fontSize: 18,
+			fontWeight: '800',
+			fontFamily: fontFamily.extrabold
+		},
+		progressLine: {
+			color: colors.muted,
+			fontSize: 14,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold,
+			paddingHorizontal: space.lg,
+			paddingBottom: space.sm
+		},
 		muted: { color: colors.muted },
-		navList: { flexGrow: 0, height: touchMin + space.sm * 2 },
-		nav: { paddingHorizontal: space.md, alignItems: 'center', gap: space.sm },
-		navChipWrap: { maxWidth: 168, marginRight: space.sm },
-		navChipDone: { opacity: 0.65 },
+		navList: { flexGrow: 0 },
+		nav: { paddingHorizontal: space.md, alignItems: 'stretch', gap: space.sm, paddingBottom: space.sm },
+		navChip: {
+			width: 168,
+			minHeight: touchMin + 8,
+			paddingHorizontal: space.md,
+			paddingVertical: space.sm,
+			borderRadius: radius.md,
+			borderWidth: 1,
+			borderColor: colors.border,
+			backgroundColor: colors.panel,
+			justifyContent: 'center',
+			marginRight: space.sm,
+			opacity: 0.58
+		},
+		navChipActive: {
+			opacity: 1,
+			backgroundColor: colors.accentDim,
+			borderColor: colors.accent,
+			borderLeftWidth: 3,
+			paddingLeft: space.md - 2
+		},
+		navChipDone: { opacity: 0.45 },
+		navChipText: {
+			color: colors.muted,
+			fontSize: 13,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
+		},
+		navChipTextActive: {
+			color: colors.accentText,
+			fontWeight: '700',
+			fontFamily: fontFamily.bold
+		},
+		applyRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			gap: space.sm,
+			minHeight: touchMin
+		},
+		applyHint: {
+			flex: 1,
+			color: colors.muted,
+			fontSize: 14,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
+		},
 		restBox: {
 			backgroundColor: colors.panelRaised,
 			borderRadius: radius.lg,
@@ -1075,8 +1254,7 @@ function makeStyles(colors: ColorPalette) {
 			borderTopColor: colors.border,
 			backgroundColor: colors.bg
 		},
-		footerRow: { flexDirection: 'row', gap: space.sm, alignItems: 'center' },
-		discard: { minHeight: touchMin, alignItems: 'center', justifyContent: 'center' },
-		discardText: { color: colors.danger, fontWeight: '600', fontFamily: fontFamily.semibold }
+		footerPair: { flexDirection: 'row', gap: space.sm, alignItems: 'stretch' },
+		footerHalf: { flex: 1 }
 	});
 }

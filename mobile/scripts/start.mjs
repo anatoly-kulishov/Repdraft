@@ -21,7 +21,7 @@ const cloud = Boolean(
 const origin = process.env.EXPO_PUBLIC_WEB_ORIGIN ?? '';
 const isLocalDevOrigin = /^(http:\/\/)?(localhost|127\.0\.0\.1)/.test(origin);
 console.log(
-	`[repdraft] Expo Go must match SDK 57: https://expo.dev/go - or use a dev build for HealthKit. Supabase: ${cloud ? 'on' : 'off'}.`
+	`[repdraft] Expo Go must match SDK 58: https://expo.dev/go - or use a dev build for HealthKit. Supabase: ${cloud ? 'on' : 'off'}.`
 );
 if (isLocalDevOrigin) {
 	console.log(

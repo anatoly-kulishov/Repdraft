@@ -50,6 +50,7 @@
 		WORKOUTS_PLANS_SKELETON_ROW_LIMIT
 	} from '$lib/domain/home';
 	import { dayKeyInInclusiveRange } from '$lib/domain/calendar';
+	import { groupSessionsByLocalDay } from '$lib/domain/sessionHistory';
 	import {
 		formatDurationMinutes,
 		formatLocalDayRange,
@@ -236,6 +237,7 @@
 	});
 
 	let visibleHistory = $derived(filteredHistory.slice(0, historyVisibleLimit));
+	let visibleHistoryGroups = $derived(groupSessionsByLocalDay(visibleHistory));
 	let historyHasMore = $derived(historyVisibleLimit < filteredHistory.length);
 
 	function loadMoreHistory() {
@@ -933,55 +935,64 @@
 					actionOnclick={clearHistoryFilters}
 				/>
 			{:else}
-				<ul class="entity-list entity-list--cards">
-					{#each visibleHistory as session (session.id)}
-						<li>
-							<SwipeToDelete
-								label={translate(lang, 'workouts.deleteSession')}
-								disabled={historyBusyId !== null || exitingSessionIds.has(session.id)}
-								busy={historyBusyId === session.id}
-								exiting={exitingSessionIds.has(session.id)}
-								onDelete={() => onRemoveSession(session)}
-								onExitComplete={() => void onSessionExitComplete(session.id)}
+				<div class="workouts-history-groups">
+					{#each visibleHistoryGroups as group (group.dayKey)}
+						<section class="workouts-history-day" aria-labelledby={`history-day-${group.dayKey}`}>
+							<h2
+								id={`history-day-${group.dayKey}`}
+								class="workouts-history-day__eyebrow entity-row__eyebrow"
 							>
-								<div class="entity-row">
-									<a
-										class="entity-row__main"
-										href={`/workouts/history/${session.id}`}
-									>
-										<span class="entity-row__eyebrow">
-											{formatRelativeDay(session.finishedAt ?? session.startedAt, lang)}
-										</span>
-										<span class="entity-row__title">{session.planName}</span>
-										<span class="entity-row__meta">
-											{translate(lang, 'workouts.historyMeta', {
-												min: formatDurationMinutes(sessionDurationMs(session)) ?? '-',
-												sets: completedSetCount(session)
-											})}
-										</span>
-									</a>
-									<div class="entity-row__actions">
-										<AppButton
-											variant="ghost"
-											class="is-danger"
-											disabled={historyBusyId !== null}
-											aria-busy={historyBusyId === session.id}
-											aria-label={translate(lang, 'workouts.deleteSession')}
-											title={translate(lang, 'workouts.deleteSession')}
-											onclick={() => void onRemoveSession(session)}
+								{formatRelativeDay(group.dayIso, lang)}
+							</h2>
+							<ul class="entity-list entity-list--cards">
+								{#each group.sessions as session (session.id)}
+									<li>
+										<SwipeToDelete
+											label={translate(lang, 'workouts.deleteSession')}
+											disabled={historyBusyId !== null || exitingSessionIds.has(session.id)}
+											busy={historyBusyId === session.id}
+											exiting={exitingSessionIds.has(session.id)}
+											onDelete={() => onRemoveSession(session)}
+											onExitComplete={() => void onSessionExitComplete(session.id)}
 										>
-											{#if historyBusyId === session.id}
-												<Spinner size="sm" block={false} />
-											{:else}
-												<LucideIcon icon={Trash2} size={ICON_SMALL} />
-											{/if}
-										</AppButton>
-									</div>
-								</div>
-							</SwipeToDelete>
-						</li>
+											<div class="entity-row">
+												<a
+													class="entity-row__main"
+													href={`/workouts/history/${session.id}`}
+												>
+													<span class="entity-row__title">{session.planName}</span>
+													<span class="entity-row__meta">
+														{translate(lang, 'workouts.historyMeta', {
+															min: formatDurationMinutes(sessionDurationMs(session)) ?? '-',
+															sets: completedSetCount(session)
+														})}
+													</span>
+												</a>
+												<div class="entity-row__actions">
+													<AppButton
+														variant="ghost"
+														class="is-danger"
+														disabled={historyBusyId !== null}
+														aria-busy={historyBusyId === session.id}
+														aria-label={translate(lang, 'workouts.deleteSession')}
+														title={translate(lang, 'workouts.deleteSession')}
+														onclick={() => void onRemoveSession(session)}
+													>
+														{#if historyBusyId === session.id}
+															<Spinner size="sm" block={false} />
+														{:else}
+															<LucideIcon icon={Trash2} size={ICON_SMALL} />
+														{/if}
+													</AppButton>
+												</div>
+											</div>
+										</SwipeToDelete>
+									</li>
+								{/each}
+							</ul>
+						</section>
 					{/each}
-				</ul>
+				</div>
 				{#if historyHasMore}
 					<div
 						bind:this={historyLoadMoreSentinel}

@@ -13,7 +13,7 @@ type Props = {
 };
 
 /**
- * Primary control. Matches web CTA look: pill radius,
+ * Primary control. Matches web CTA look: 24px radius,
  * accent gradient fill (+ gradient on press, mirroring web hover),
  * semibold label, scale-down press.
  */
@@ -87,7 +87,7 @@ function makeStyles(colors: ColorPalette) {
 		base: {
 			minHeight: touchMin,
 			minWidth: touchMin,
-			borderRadius: radius.pill,
+			borderRadius: radius.xl,
 			borderWidth: 1,
 			borderColor: 'transparent',
 			alignItems: 'center',

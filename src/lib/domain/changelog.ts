@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.23.2',
+		highlights: {
+			ru: [
+				'Телефон ближе к web: плавающий таббар, отступы и мягкие акценты',
+				'Свайп удаления на iOS, чипы и табы читаются в светлой теме',
+				'Live и итог: прогресс, галочки подходов и иерархия как на сайте',
+				'Каталог, история, прогресс, рекорды и ИИ подтянуты к web'
+			],
+			en: [
+				'Phone closer to web: floating tab bar, page padding, soft accents',
+				'Swipe-to-delete on iOS; chips and tabs readable in light theme',
+				'Live and summary: progress, set checks, hierarchy match the site',
+				'Catalog, history, progress, records, and AI aligned with web'
+			]
+		}
+	},
+	{
 		version: '0.23.1',
 		highlights: {
 			ru: [

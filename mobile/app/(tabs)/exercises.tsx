@@ -9,6 +9,7 @@ import {
 	Modal,
 	Platform,
 	Pressable,
+	ScrollView,
 	StyleSheet,
 	Text,
 	TextInput,
@@ -125,7 +126,12 @@ export default function ExercisesScreen() {
 				placeholderTextColor={colors.muted}
 				style={styles.search}
 			/>
-			<View style={styles.hubNav}>
+			<ScrollView
+				horizontal
+				showsHorizontalScrollIndicator={false}
+				style={styles.hubNavScroll}
+				contentContainerStyle={styles.hubNav}
+			>
 				<Pressable
 					style={({ pressed }) => [styles.hubNavChip, pressed && styles.pressed]}
 					onPress={() => {
@@ -151,7 +157,7 @@ export default function ExercisesScreen() {
 					}}
 					accessibilityRole="button"
 				>
-					<Bookmark size={16} color={savedOnly ? colors.accentInk : colors.text} strokeWidth={2} />
+					<Bookmark size={16} color={savedOnly ? colors.accentText : colors.text} strokeWidth={2} />
 					<Text style={[styles.hubNavText, savedOnly && styles.hubNavTextActive]}>
 						{tt('bookmarks.title')}
 					</Text>
@@ -177,7 +183,7 @@ export default function ExercisesScreen() {
 					<BookOpen size={16} color={colors.text} strokeWidth={2} />
 					<Text style={styles.hubNavText}>{tt('articles.title')}</Text>
 				</Pressable>
-			</View>
+			</ScrollView>
 			<PrimaryButton
 				label={tt('exercises.custom')}
 				variant="ghost"
@@ -252,6 +258,7 @@ export default function ExercisesScreen() {
 				renderItem={({ item }) => {
 					const count = counts.get(item) ?? 0;
 					const coverUri = catalogMediaUrl(covers[item]);
+					const scrimId = `hubScrim-${item.replace(/\s+/g, '-')}`;
 					return (
 						<Pressable style={styles.hubCard} onPress={() => setBodyPart(item)}>
 							{coverUri ? (
@@ -264,20 +271,20 @@ export default function ExercisesScreen() {
 							<View style={styles.hubScrim}>
 								<Svg height="100%" width="100%" style={StyleSheet.absoluteFill} preserveAspectRatio="none">
 									<Defs>
-										<SvgLinearGradient id="hubScrim" x1="0" y1="0" x2="0" y2="1">
-											<Stop offset="0" stopColor="white" stopOpacity="0" />
-											<Stop offset="0.42" stopColor="white" stopOpacity="0.72" />
-											<Stop offset="1" stopColor="white" stopOpacity="0.96" />
+										<SvgLinearGradient id={scrimId} x1="0" y1="0" x2="0" y2="1">
+											<Stop offset="0" stopColor={colors.panel} stopOpacity="0" />
+											<Stop offset="0.42" stopColor={colors.panel} stopOpacity="0.72" />
+											<Stop offset="1" stopColor={colors.panel} stopOpacity="0.96" />
 										</SvgLinearGradient>
 									</Defs>
-									<Rect width="100%" height="100%" fill="url(#hubScrim)" />
+									<Rect width="100%" height="100%" fill={`url(#${scrimId})`} />
 								</Svg>
 							</View>
 							<View style={styles.hubCaption}>
-								<Text style={[styles.hubTitle, styles.hubTitleLight]} numberOfLines={2}>
+								<Text style={styles.hubTitle} numberOfLines={2}>
 									{labelBodyPart(item, locale)}
 								</Text>
-								<Text style={[styles.hubMeta, styles.hubMetaLight]}>
+								<Text style={styles.hubMeta}>
 									{count} {tt('common.exercises')}
 								</Text>
 							</View>
@@ -357,7 +364,8 @@ function makeStyles(colors: ColorPalette) {
 		fontSize: 16,
 		fontFamily: fontFamily.regular
 	},
-	hubNav: { flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' },
+	hubNavScroll: { flexGrow: 0, flexShrink: 0 },
+	hubNav: { flexDirection: 'row', gap: space.sm, paddingRight: space.sm },
 	hubNavChip: {
 		flexDirection: 'row',
 		alignItems: 'center',
@@ -370,8 +378,8 @@ function makeStyles(colors: ColorPalette) {
 		backgroundColor: colors.panel
 	},
 	hubNavChipActive: {
-		borderColor: colors.accentFill,
-		backgroundColor: colors.accentFill
+		borderColor: colors.accent,
+		backgroundColor: colors.accentDim
 	},
 	hubNavText: {
 		color: colors.text,
@@ -380,7 +388,7 @@ function makeStyles(colors: ColorPalette) {
 		fontFamily: fontFamily.semibold
 	},
 	hubNavTextActive: {
-		color: colors.accentInk,
+		color: colors.accentText,
 		fontWeight: '700',
 		fontFamily: fontFamily.bold
 	},
@@ -450,7 +458,7 @@ function makeStyles(colors: ColorPalette) {
 	},
 	hubImage: {
 		...StyleSheet.absoluteFill,
-		backgroundColor: colors.panelRaised
+		backgroundColor: colors.panel
 	},
 	hubFallback: { alignItems: 'center', justifyContent: 'center' },
 	hubFallbackThumb: { borderWidth: 0, backgroundColor: 'transparent' },
@@ -463,18 +471,16 @@ function makeStyles(colors: ColorPalette) {
 		zIndex: 1
 	},
 	hubTitle: {
-		color: '#f5f5f7',
+		color: colors.text,
 		fontWeight: '800',
 		fontSize: 14,
 		fontFamily: fontFamily.extrabold
 	},
-	hubTitleLight: { color: '#0f1012' },
 	hubMeta: {
-		color: 'rgba(245,245,247,0.82)',
+		color: colors.muted,
 		marginTop: 4,
 		fontSize: 11,
 		fontFamily: fontFamily.medium
-	},
-	hubMetaLight: { color: '#636366' }
+	}
 	});
 }

@@ -644,6 +644,10 @@ html.is-plan-reorder-active .reorder-handle {
 	background: color-mix(in srgb, var(--color-accent) 16%, var(--color-surface));
 	color: var(--color-accent-text);
 	border: 1px solid var(--border-accent);
+	box-shadow:
+		0 0 0 1px color-mix(in srgb, var(--color-accent) 40%, transparent),
+		0 0 20px color-mix(in srgb, var(--color-accent) 55%, transparent),
+		0 0 44px color-mix(in srgb, var(--color-accent) 28%, transparent);
 	animation: kineticsRingPop 0.55s var(--ease-spring) both;
 }
 
@@ -657,19 +661,23 @@ html.is-plan-reorder-active .reorder-handle {
 
 .summary-hero__title {
 	margin: 0;
+	max-width: 22rem;
 	font-size: 1.25rem;
 	font-weight: 700;
 	line-height: 1.25;
 	color: var(--color-ink);
+	overflow-wrap: anywhere;
+	text-align: center;
 }
 
 .summary-hero__plan {
 	margin: 0;
 	max-width: 22rem;
-	font-size: 0.9375rem;
+	font-size: 0.8125rem;
 	font-weight: 500;
 	line-height: 1.35;
 	color: var(--color-muted);
+	opacity: 0.8;
 	overflow-wrap: anywhere;
 }
 
@@ -937,8 +945,7 @@ html.is-plan-reorder-active .reorder-handle {
 }
 
 @media (max-width: 1023px) {
-	/* ScreenHeader already carries the title on phone + tablet. */
-	.summary-hero__title,
+	/* ScreenHeader carries generic summary.title; hero shows plan name under the check. */
 	.summary-page--skeleton .summary-skeleton-hero-title {
 		position: absolute;
 		width: 1px;
@@ -1096,6 +1103,28 @@ html.is-plan-reorder-active .reorder-handle {
 }
 
 .workouts-history-mock .entity-row__meta {
+	color: var(--color-muted);
+}
+
+.workouts-history-groups {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.workouts-history-day {
+	display: flex;
+	flex-direction: column;
+	gap: 0.45rem;
+	min-width: 0;
+}
+
+.workouts-history-day__eyebrow {
+	margin: 0;
+	padding-inline: 0.15rem;
+	font-size: var(--type-secondary, 0.8125rem);
+	font-weight: 600;
+	line-height: 1.25;
 	color: var(--color-muted);
 }
 

@@ -74,7 +74,8 @@ export default function ExerciseDetailScreen() {
 
 	return (
 		<>
-		<ScrollView contentContainerStyle={[styles.root, { paddingBottom: bottomPad }]}>
+		<View style={styles.screen}>
+		<ScrollView contentContainerStyle={[styles.root, { paddingBottom: space.lg }]}>
 				<Text style={styles.title} numberOfLines={2}>
 					{id ? exerciseDisplayName(id, locale) : tt('exercise.detail')}
 				</Text>
@@ -85,13 +86,13 @@ export default function ExerciseDetailScreen() {
 					</Text>
 				) : null}
 				<View>
-					<CatalogThumb imagePath={imagePath} bannerHeight={220} rounded={radius.md} />
+					<CatalogThumb
+						imagePath={imagePath}
+						bannerHeight={220}
+						rounded={radius.md}
+						whitePlate
+					/>
 				</View>
-				<PrimaryButton
-					label={tt('exercises.add')}
-					onPress={() => item && offerAddToPlan(item)}
-					disabled={!item}
-				/>
 				<Pressable
 					accessibilityRole="button"
 					accessibilityState={{ selected: bookmarked }}
@@ -211,6 +212,14 @@ export default function ExerciseDetailScreen() {
 					</View>
 				) : null}
 		</ScrollView>
+		<View style={[styles.footer, { paddingBottom: bottomPad }]}>
+			<PrimaryButton
+				label={tt('exercises.add')}
+				onPress={() => item && offerAddToPlan(item)}
+				disabled={!item}
+			/>
+		</View>
+		</View>
 		{addToPlanSheet}
 		</>
 	);
@@ -218,6 +227,7 @@ export default function ExerciseDetailScreen() {
 
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
+	screen: { flex: 1, backgroundColor: colors.bg },
 	root: { padding: space.lg, gap: space.md, backgroundColor: colors.bg },
 	title: { color: colors.text, fontSize: 24, fontWeight: '800', fontFamily: fontFamily.extrabold },
 	meta: { color: colors.muted },
@@ -231,7 +241,7 @@ function makeStyles(colors: ColorPalette) {
 	},
 	cardTitle: { color: colors.text, fontWeight: '700', fontFamily: fontFamily.bold },
 	line: { color: colors.muted, fontVariant: ['tabular-nums'] },
-		step: { color: colors.text, fontSize: 15, lineHeight: 22, fontFamily: fontFamily.regular },
+		step: { color: colors.text, fontSize: 14, lineHeight: 20, fontFamily: fontFamily.regular },
 	histRow: { minHeight: touchMin, justifyContent: 'center' },
 	bookmarkBtn: {
 		minHeight: touchMin,
@@ -239,12 +249,19 @@ function makeStyles(colors: ColorPalette) {
 		alignItems: 'center',
 		justifyContent: 'center',
 		gap: space.sm,
-		borderRadius: radius.pill,
+		borderRadius: radius.xl,
 		borderWidth: 1,
 		borderColor: colors.border,
 		backgroundColor: colors.panel
 	},
 	bookmarkLabel: { ...type.body, fontWeight: '700', fontFamily: fontFamily.bold },
+	footer: {
+		paddingHorizontal: space.lg,
+		paddingTop: space.sm,
+		borderTopWidth: 1,
+		borderTopColor: colors.border,
+		backgroundColor: colors.bg
+	},
 	tabs: {
 		flexDirection: 'row',
 		backgroundColor: colors.panelRaised,

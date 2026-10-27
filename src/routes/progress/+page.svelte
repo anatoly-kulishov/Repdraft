@@ -72,10 +72,10 @@
 			{#each overview.bodyParts as part (part.bodyPart)}
 				<div class="progress-part">
 					<div class="progress-part__top">
-						<span>
+						<span class="progress-part__label">
 							{labelBodyPart(part.bodyPart, lang)}
 							{#if part.bodyPart === overview.laggingBodyPart}
-								· {translate(lang, 'progress.lagging')}
+								<span class="progress-part__lag">{translate(lang, 'progress.lagging')}</span>
 							{/if}
 						</span>
 						<span class="tabular-nums">{part.sharePct}%</span>
@@ -185,6 +185,24 @@
 		margin-bottom: 0.3rem;
 		font-size: 0.8125rem;
 		font-weight: 600;
+	}
+	.progress-part__label {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		flex-wrap: wrap;
+		min-width: 0;
+	}
+	.progress-part__lag {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.12rem 0.4rem;
+		border-radius: var(--radius-sm, 6px);
+		background: color-mix(in srgb, var(--color-danger) 14%, transparent);
+		color: var(--color-danger);
+		font-size: 0.6875rem;
+		font-weight: 700;
+		line-height: 1.2;
 	}
 	.progress-week__meta {
 		width: 4.5rem;

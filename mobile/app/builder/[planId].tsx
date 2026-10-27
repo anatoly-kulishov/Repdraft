@@ -1,4 +1,5 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Plus, Sparkles } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
 	Alert,
@@ -75,6 +76,7 @@ export default function BuilderScreen() {
 	const listPad = space.lg;
 	const [catalogTick, setCatalogTick] = useState(0);
 	const [flashId, setFlashId] = useState<string | null>(null);
+	const [dirty, setDirty] = useState(false);
 	const [showIntroCoachmark, setShowIntroCoachmark] = useState(false);
 	const [showSupersetCoachmark, setShowSupersetCoachmark] = useState(false);
 	const planRef = useRef<WorkoutPlan | null>(null);
@@ -106,6 +108,7 @@ export default function BuilderScreen() {
 			};
 			setPlan(stamped);
 			planRef.current = stamped;
+			setDirty(true);
 			try {
 				await plansRepo.save(stamped);
 				try {
@@ -263,7 +266,10 @@ export default function BuilderScreen() {
 			return;
 		}
 		const ok = await persist(current);
-		if (ok) router.replace(`/plan/${current.id}`);
+		if (ok) {
+			setDirty(false);
+			router.replace(`/plan/${current.id}`);
+		}
 	}
 
 	if (bootError) {
@@ -463,12 +469,23 @@ export default function BuilderScreen() {
 				]}
 				ListEmptyComponent={
 					<View style={styles.emptyWrap}>
-						<Text style={styles.empty}>{tt('builder.empty')}</Text>
+						<View style={styles.emptyIcon}>
+							<Plus size={28} color={colors.accent} strokeWidth={2.5} />
+						</View>
+						<Text style={styles.emptyTitle}>{tt('builder.emptyTitle')}</Text>
+						<Text style={styles.empty}>{tt('builder.emptyDesc')}</Text>
 						<PrimaryButton
-							label={tt('builder.createWithAi')}
-							variant="secondary"
-							onPress={() => router.push('/ai')}
+							label={tt('builder.addExerciseShort')}
+							onPress={() => setPicking(true)}
 						/>
+						<Pressable
+							accessibilityRole="button"
+							style={styles.aiOutline}
+							onPress={() => router.push('/ai')}
+						>
+							<Sparkles size={18} color={colors.accentText} strokeWidth={2.25} />
+							<Text style={styles.aiOutlineText}>{tt('builder.createWithAi')}</Text>
+						</Pressable>
 					</View>
 				}
 				keyboardShouldPersistTaps="handled"
@@ -532,7 +549,7 @@ export default function BuilderScreen() {
 										</Text>
 									</Pressable>
 								</View>
-								<CatalogThumb imagePath={meta?.image} size={48} />
+								<CatalogThumb imagePath={meta?.image} size={48} whitePlate rounded={radius.md} />
 								<View style={styles.flex}>
 									{badge ? <Text style={styles.badge}>{badge}</Text> : null}
 									<Text style={styles.rowTitle}>
@@ -683,13 +700,17 @@ export default function BuilderScreen() {
 				<View style={styles.stickyRow}>
 					<View style={styles.flex}>
 						<PrimaryButton
-							label={tt('builder.addExerciseShort')}
+							label={`+ ${tt('builder.addExerciseShort')}`}
 							variant="secondary"
 							onPress={() => setPicking(true)}
 						/>
 					</View>
-					<View style={styles.flex}>
-						<PrimaryButton label={tt('builder.save')} onPress={() => void commitSave()} />
+					<View style={[styles.flex, !dirty && styles.saveDim]}>
+						<PrimaryButton
+							label={tt('builder.save')}
+							onPress={() => void commitSave()}
+							disabled={!dirty && plan.exercises.length === 0}
+						/>
 					</View>
 				</View>
 			</View>
@@ -769,7 +790,7 @@ function makeStyles(colors: ColorPalette) {
 		justifyContent: 'center',
 		marginRight: space.sm
 	},
-	chipOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+	chipOn: { backgroundColor: colors.accentDim, borderColor: colors.accent },
 	chipText: { color: colors.muted, fontWeight: '700', fontSize: 13, fontFamily: fontFamily.bold },
 	chipTextOn: { color: colors.accentText, fontFamily: fontFamily.bold },
 	list: { gap: 0, paddingBottom: space.sm, flexGrow: 1 },
@@ -780,9 +801,52 @@ function makeStyles(colors: ColorPalette) {
 		overflow: 'hidden',
 		backgroundColor: colors.panel
 	},
-	emptyWrap: { alignItems: 'stretch', gap: space.md, marginTop: 48, paddingHorizontal: space.sm },
+	emptyWrap: {
+		alignItems: 'center',
+		gap: space.md,
+		marginTop: 48,
+		paddingHorizontal: space.sm,
+		paddingVertical: space.xl
+	},
+	emptyIcon: {
+		width: 72,
+		height: 72,
+		borderRadius: radius.pill,
+		alignItems: 'center',
+		justifyContent: 'center',
+		backgroundColor: colors.accentDim,
+		borderWidth: 1,
+		borderColor: colors.accent
+	},
+	emptyTitle: {
+		color: colors.text,
+		fontSize: 20,
+		fontWeight: '800',
+		textAlign: 'center',
+		fontFamily: fontFamily.extrabold
+	},
 	empty: { color: colors.muted, textAlign: 'center', lineHeight: 22, fontFamily: fontFamily.regular },
+	aiOutline: {
+		minHeight: touchMin,
+		minWidth: touchMin,
+		alignSelf: 'stretch',
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		gap: space.sm,
+		borderRadius: radius.xl,
+		borderWidth: 1,
+		borderColor: colors.accent,
+		paddingHorizontal: space.lg
+	},
+	aiOutlineText: {
+		color: colors.accentText,
+		fontSize: 16,
+		fontWeight: '600',
+		fontFamily: fontFamily.semibold
+	},
 	emptyPick: { color: colors.muted, textAlign: 'center', marginTop: 32, fontFamily: fontFamily.regular },
+	saveDim: { opacity: 0.55 },
 	pickRow: {
 		minHeight: touchMin + 8,
 		backgroundColor: colors.panel,
@@ -871,18 +935,24 @@ function makeStyles(colors: ColorPalette) {
 		fontWeight: '600',
 		fontFamily: fontFamily.semibold
 	},
-	fieldRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+	fieldRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		minHeight: touchMin,
+		borderRadius: radius.md,
+		borderWidth: 1,
+		borderColor: colors.border,
+		backgroundColor: colors.bg,
+		paddingHorizontal: space.xs
+	},
 	stepBtn: {
 		minWidth: touchMin,
 		minHeight: touchMin,
-		borderRadius: radius.sm,
-		backgroundColor: colors.bg,
-		borderWidth: 1,
-		borderColor: colors.border,
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
-	stepBtnText: { color: colors.text, fontSize: 16, fontWeight: '700', fontFamily: fontFamily.bold },
+	stepBtnText: { color: colors.muted, fontSize: 16, fontWeight: '700', fontFamily: fontFamily.bold },
 	stepValue: {
 		minWidth: 22,
 		textAlign: 'center',

@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View, type ColorValue } from 'react-native';
+import { StyleSheet, Text, View, type ColorValue } from 'react-native';
 import { useAppColors } from '../state/theme';
-import { fontFamily, radius, space, touchMin, type ColorPalette } from '../theme';
+import { fontFamily, radius, space, type ColorPalette } from '../theme';
+import { PrimaryButton } from './PrimaryButton';
 
 type Props = {
 	title: string;
@@ -25,13 +26,9 @@ export function EmptyState({ title, description, icon: Icon, actionLabel, onActi
 			<Text style={styles.title}>{title}</Text>
 			{description ? <Text style={styles.description}>{description}</Text> : null}
 			{actionLabel && onAction ? (
-				<Pressable
-					style={({ pressed }) => [styles.action, pressed && styles.pressed]}
-					onPress={onAction}
-					accessibilityRole="button"
-				>
-					<Text style={styles.actionText}>{actionLabel}</Text>
-				</Pressable>
+				<View style={styles.actionWrap}>
+					<PrimaryButton label={actionLabel} onPress={onAction} />
+				</View>
 			) : null}
 		</View>
 	);
@@ -76,21 +73,9 @@ function makeStyles(colors: ColorPalette) {
 			textAlign: 'center',
 			fontFamily: fontFamily.regular
 		},
-		action: {
-			marginTop: space.sm,
-			minHeight: touchMin,
-			justifyContent: 'center',
-			alignItems: 'center',
-			paddingHorizontal: space.lg,
-			borderRadius: radius.pill,
-			backgroundColor: colors.accent
-		},
-		pressed: { opacity: 0.9 },
-		actionText: {
-			color: colors.accentInk,
-			fontSize: 15,
-			fontWeight: '700',
-			fontFamily: fontFamily.bold
+		actionWrap: {
+			alignSelf: 'stretch',
+			marginTop: space.sm
 		}
 	});
 }

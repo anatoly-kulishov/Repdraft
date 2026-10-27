@@ -96,7 +96,8 @@ function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 		host: {
 			flex: 1,
-			justifyContent: 'flex-end'
+			justifyContent: 'flex-end',
+			paddingHorizontal: space.md
 		},
 		backdrop: {
 			...StyleSheet.absoluteFill,
@@ -104,24 +105,34 @@ function makeStyles(colors: ColorPalette) {
 		},
 		card: {
 			backgroundColor: colors.panel,
-			borderTopLeftRadius: radius.xl,
-			borderTopRightRadius: radius.xl,
-			borderTopWidth: 1,
+			borderRadius: radius.md,
+			borderWidth: 1,
 			borderColor: colors.border,
 			paddingHorizontal: space.lg,
 			paddingTop: space.md,
-			gap: space.md
+			gap: space.md,
+			marginBottom: space.sm,
+			...Platform.select({
+				ios: {
+					shadowColor: '#000',
+					shadowOpacity: 0.4,
+					shadowRadius: 24,
+					shadowOffset: { width: 0, height: 12 }
+				},
+				android: { elevation: 16 }
+			})
 		},
 		cardRaised: {
 			backgroundColor: colors.bg
 		},
 		handle: {
 			alignSelf: 'center',
-			width: 40,
+			width: 36,
 			height: 4,
 			borderRadius: radius.pill,
-			backgroundColor: colors.border,
-			marginBottom: 2
+			backgroundColor: colors.borderStrong,
+			marginBottom: 2,
+			opacity: 0.7
 		},
 		actions: {
 			gap: space.sm,

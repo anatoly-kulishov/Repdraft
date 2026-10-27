@@ -25,14 +25,14 @@ type Props = {
 
 function ShareRow({
 	row,
-	colors,
 	styles,
-	label
+	label,
+	danger
 }: {
 	row: BodyPartShare;
-	colors: ColorPalette;
 	styles: ReturnType<typeof makeStyles>;
 	label: string;
+	danger?: boolean;
 }) {
 	return (
 		<View style={styles.shareRow}>
@@ -40,9 +40,15 @@ function ShareRow({
 				{label}
 			</Text>
 			<View style={styles.barTrack}>
-				<View style={[styles.barFill, { width: `${Math.max(4, row.sharePct)}%` }]} />
+				<View
+					style={[
+						styles.barFill,
+						danger && styles.barFillDanger,
+						{ width: `${Math.max(4, row.sharePct)}%` }
+					]}
+				/>
 			</View>
-			<Text style={styles.sharePct}>{row.sharePct}%</Text>
+			<Text style={[styles.sharePct, danger && styles.sharePctDanger]}>{row.sharePct}%</Text>
 		</View>
 	);
 }
@@ -61,18 +67,25 @@ export function SummaryLoadPanel({ session, allSessions, bodyPartFor, onAddLaggi
 		const windowMap = mergeVolumeMaps(
 			recent.map((s) => sessionVolumeByBodyPart(s, bodyPartFor))
 		);
+		const windowShareByPart = new Map(
+			volumeShares(windowMap).map((row) => [row.bodyPart, row])
+		);
+		const lagParts = laggingBodyParts(todayMap, windowMap);
 		return {
 			todayShares: volumeShares(todayMap).slice(0, 4),
-			lagging: laggingBodyParts(todayMap, windowMap)
+			lagging: lagParts.map((part) => {
+				const share = windowShareByPart.get(part);
+				return {
+					part,
+					label: labelBodyPart(part, locale),
+					sharePct: share?.sharePct ?? 4,
+					volumeKg: share?.volumeKg ?? 0
+				};
+			})
 		};
-	}, [session, allSessions, bodyPartFor]);
+	}, [session, allSessions, bodyPartFor, locale]);
 
 	if (todayShares.length === 0 && lagging.length === 0) return null;
-
-	const lagRows = lagging.map((part) => ({
-		part,
-		label: labelBodyPart(part, locale)
-	}));
 
 	return (
 		<Panel>
@@ -83,21 +96,25 @@ export function SummaryLoadPanel({ session, allSessions, bodyPartFor, onAddLaggi
 						<ShareRow
 							key={row.bodyPart}
 							row={row}
-							colors={colors}
 							styles={styles}
 							label={labelBodyPart(row.bodyPart, locale)}
 						/>
 					))}
 				</>
 			) : null}
-			{lagRows.length > 0 ? (
+			{lagging.length > 0 ? (
 				<>
 					<Text style={[styles.sectionTitle, todayShares.length > 0 && styles.sectionGap]}>
 						{tt('summary.lagging30d')}
 					</Text>
-					{lagRows.map(({ part, label }) => (
-						<View key={part} style={styles.lagRow}>
-							<Text style={styles.lagText}>{label}</Text>
+					{lagging.map(({ part, label, sharePct, volumeKg }) => (
+						<View key={part} style={styles.lagBlock}>
+							<ShareRow
+								row={{ bodyPart: part, sharePct, volumeKg }}
+								styles={styles}
+								label={label}
+								danger
+							/>
 							{onAddLagging ? (
 								<PrimaryButton
 									label={tt('summary.addToPlan')}
@@ -132,7 +149,13 @@ function makeStyles(colors: ColorPalette) {
 			gap: space.sm,
 			marginBottom: space.xs
 		},
-		shareLabel: { color: colors.text, fontSize: 14, fontWeight: '600', width: 88, fontFamily: fontFamily.semibold },
+		shareLabel: {
+			color: colors.text,
+			fontSize: 14,
+			fontWeight: '600',
+			width: 88,
+			fontFamily: fontFamily.semibold
+		},
 		barTrack: {
 			flex: 1,
 			height: 8,
@@ -141,6 +164,7 @@ function makeStyles(colors: ColorPalette) {
 			overflow: 'hidden'
 		},
 		barFill: { height: '100%', backgroundColor: colors.accent, borderRadius: radius.sm },
+		barFillDanger: { backgroundColor: colors.danger },
 		sharePct: {
 			color: colors.muted,
 			fontSize: 13,
@@ -150,13 +174,10 @@ function makeStyles(colors: ColorPalette) {
 			fontVariant: ['tabular-nums'],
 			fontFamily: fontFamily.semibold
 		},
-		lagRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'space-between',
-			gap: space.sm,
-			marginBottom: space.xs
-		},
-		lagText: { color: colors.text, fontSize: 15, fontWeight: '600', flex: 1, fontFamily: fontFamily.semibold }
+		sharePctDanger: { color: colors.danger },
+		lagBlock: {
+			gap: space.xs,
+			marginBottom: space.sm
+		}
 	});
 }

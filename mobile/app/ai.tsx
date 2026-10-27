@@ -350,12 +350,12 @@ function makeStyles(colors: ColorPalette) {
 		counter: { ...type.meta, color: colors.muted },
 		input: {
 			minHeight: 160,
-			borderRadius: radius.md,
-			borderWidth: 1,
-			borderColor: colors.border,
+			borderRadius: radius.xl,
+			borderWidth: 1.5,
+			borderColor: colors.accent,
 			backgroundColor: colors.panel,
 			color: colors.text,
-			padding: space.md,
+			padding: space.lg,
 			fontSize: 16,
 			textAlignVertical: 'top',
 			fontFamily: fontFamily.regular

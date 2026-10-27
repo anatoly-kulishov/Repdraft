@@ -1,34 +1,88 @@
 import { Tabs } from 'expo-router';
 import { ClipboardList, Dumbbell, House, UserRound } from 'lucide-react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { TABBAR_FLOAT_GAP, TABBAR_INNER_H } from '../../src/layout/safe';
 import { useLocale } from '../../src/state/locale';
-import { useAppColors } from '../../src/state/theme';
-import { fontFamily, touchMin } from '../../src/theme';
+import { useAppColors, useAppTheme } from '../../src/state/theme';
+import { fontFamily, radius, type ColorPalette } from '../../src/theme';
+import type { ComponentType } from 'react';
+
+function TabIcon({
+	icon: Icon,
+	size,
+	focused,
+	colors
+}: {
+	icon: ComponentType<{ color: string; size: number; strokeWidth?: number }>;
+	size: number;
+	focused: boolean;
+	colors: ColorPalette;
+}) {
+	return (
+		<View style={[styles.iconWrap, focused && { backgroundColor: colors.accentDim }]}>
+			<Icon
+				color={focused ? colors.accentText : colors.muted}
+				size={size}
+				strokeWidth={2.25}
+			/>
+		</View>
+	);
+}
 
 export default function TabsLayout() {
 	const { tt } = useLocale();
 	const colors = useAppColors();
+	const { mode } = useAppTheme();
 	const insets = useSafeAreaInsets();
 	const bottom = Math.max(insets.bottom, 8);
+	const light = mode === 'light';
 
 	return (
 		<Tabs
 			screenOptions={{
 				headerStyle: { backgroundColor: colors.bg },
 				headerTintColor: colors.text,
-				headerTitleStyle: { fontWeight: '800', fontFamily: fontFamily.extrabold },
+				headerTitleStyle: { fontWeight: '700', fontFamily: fontFamily.bold },
 				headerShadowVisible: false,
+				sceneStyle: { backgroundColor: colors.bg },
 				tabBarStyle: {
-					backgroundColor: colors.bg,
-					borderTopColor: colors.border,
-					minHeight: touchMin + bottom + 8,
-					paddingTop: 6,
-					paddingBottom: bottom,
-					height: touchMin + bottom + 14
+					position: 'absolute',
+					left: TABBAR_FLOAT_GAP,
+					right: TABBAR_FLOAT_GAP,
+					bottom: bottom,
+					height: TABBAR_INNER_H,
+					minHeight: TABBAR_INNER_H,
+					paddingTop: 4,
+					paddingBottom: 4,
+					paddingHorizontal: 4,
+					backgroundColor: colors.panel,
+					borderTopWidth: 0,
+					borderWidth: 1,
+					borderColor: colors.border,
+					borderRadius: radius.xl,
+					overflow: 'hidden',
+					...Platform.select({
+						ios: {
+							shadowColor: '#000',
+							shadowOpacity: light ? 0.12 : 0.35,
+							shadowRadius: light ? 14 : 18,
+							shadowOffset: { width: 0, height: light ? 4 : 8 }
+						},
+						android: { elevation: light ? 6 : 12 }
+					})
 				},
-				tabBarActiveTintColor: colors.accent,
+				tabBarActiveTintColor: colors.accentText,
 				tabBarInactiveTintColor: colors.muted,
-				tabBarLabelStyle: { fontSize: 11, fontWeight: '700', fontFamily: fontFamily.bold },
+				tabBarLabelStyle: {
+					fontSize: 11,
+					fontWeight: '600',
+					fontFamily: fontFamily.semibold
+				},
+				tabBarItemStyle: {
+					borderRadius: radius.md,
+					paddingVertical: 2
+				},
 				tabBarShowLabel: true
 			}}
 		>
@@ -37,8 +91,8 @@ export default function TabsLayout() {
 				options={{
 					title: 'Repdraft',
 					tabBarLabel: tt('tab.home'),
-					tabBarIcon: ({ color, size }) => (
-						<House color={color} size={size} strokeWidth={2.25} />
+					tabBarIcon: ({ size, focused }) => (
+						<TabIcon icon={House} size={size} focused={focused} colors={colors} />
 					)
 				}}
 			/>
@@ -47,8 +101,8 @@ export default function TabsLayout() {
 				options={{
 					title: tt('nav.workouts'),
 					tabBarLabel: tt('nav.workouts'),
-					tabBarIcon: ({ color, size }) => (
-						<ClipboardList color={color} size={size} strokeWidth={2.25} />
+					tabBarIcon: ({ size, focused }) => (
+						<TabIcon icon={ClipboardList} size={size} focused={focused} colors={colors} />
 					)
 				}}
 			/>
@@ -57,8 +111,8 @@ export default function TabsLayout() {
 				options={{
 					title: tt('tab.exercises'),
 					tabBarLabel: tt('tab.exercises'),
-					tabBarIcon: ({ color, size }) => (
-						<Dumbbell color={color} size={size} strokeWidth={2.25} />
+					tabBarIcon: ({ size, focused }) => (
+						<TabIcon icon={Dumbbell} size={size} focused={focused} colors={colors} />
 					)
 				}}
 			/>
@@ -67,11 +121,21 @@ export default function TabsLayout() {
 				options={{
 					title: tt('tab.profile'),
 					tabBarLabel: tt('tab.profile'),
-					tabBarIcon: ({ color, size }) => (
-						<UserRound color={color} size={size} strokeWidth={2.25} />
+					tabBarIcon: ({ size, focused }) => (
+						<TabIcon icon={UserRound} size={size} focused={focused} colors={colors} />
 					)
 				}}
 			/>
 		</Tabs>
 	);
 }
+
+const styles = StyleSheet.create({
+	iconWrap: {
+		width: 40,
+		height: 28,
+		borderRadius: radius.sm,
+		alignItems: 'center',
+		justifyContent: 'center'
+	}
+});

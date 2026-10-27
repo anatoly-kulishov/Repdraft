@@ -2,26 +2,26 @@
  * Run: npm run build:tokens
  */
 :root {
-	--color-bg: #0b0b0c;
+	--color-bg: #0E0E11;
 	--color-surface: #1c1c1e;
 	--color-surface-muted: #2c2c2e;
 	--color-surface-elevated: #2c2c2e;
-	--color-ink: #f5f5f7;
-	--color-muted: #98989d;
-	--color-placeholder: #98989d;
-	--color-accent: #8b5cf6;
-	--color-accent-fill: #7c3aed;
+	--color-ink: #ffffff;
+	--color-muted: #8e8e93;
+	--color-placeholder: #8e8e93;
+	--color-accent: #a259ff;
+	--color-accent-fill: #a259ff;
 	--color-accent-ink: #ffffff;
-	--color-accent-muted: rgba(139, 92, 246, 0.18);
-	--color-accent-text: #a78bfa;
+	--color-accent-muted: rgba(162, 89, 255, 0.18);
+	--color-accent-text: #c4a3ff;
 	--color-danger: #f87171;
 	--color-border: #3a3a3c;
 	--color-xp: #f5a524;
 	--color-muscle: #3ee0c5;
-	--radius-panel: 1.25rem;
+	--radius-panel: 1rem;
 	--radius-control: 1rem;
-	--radius-button: 999px;
-	--radius-lg: 1.25rem;
+	--radius-button: 1.5rem;
+	--radius-lg: 1.5rem;
 	--control-height: 3rem;
 	--control-min-width: 3rem;
 }

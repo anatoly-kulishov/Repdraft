@@ -22,6 +22,12 @@ import {
 import { ChevronDown, UserRound } from 'lucide-react-native';
 import type { Session } from '@supabase/supabase-js';
 import { userCustomAvatarPath, userDisplayName } from '@repdraft/domain/authFlow';
+import {
+	INVITE_CODE_LENGTH,
+	isValidInviteCode,
+	normalizeInviteCode,
+	type CoachMyCoach
+} from '@repdraft/domain/coach';
 import { clampGreetingName } from '@repdraft/domain/greetingName';
 import { buildExportPayload, exportPayloadToJson } from '@repdraft/domain/exportData';
 import {
@@ -67,6 +73,7 @@ import {
 	suggestCatalogCandidates
 } from '@repdraft/domain/importCsv';
 import { customsRepo } from '../../src/storage/customsRepo';
+import { coachRepo } from '../../src/storage/coachRepo';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { recordsRepo } from '../../src/storage/recordsRepo';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
@@ -100,7 +107,7 @@ export default function ProfileScreen() {
 	const switchColors = useMemo(
 		() => ({
 			trackColor: { false: colors.border, true: colors.accent } as const,
-			thumbColor: colors.accentText
+			thumbColor: colors.accentInk
 		}),
 		[colors]
 	);
@@ -132,6 +139,11 @@ export default function ProfileScreen() {
 	const [avatarBusy, setAvatarBusy] = useState(false);
 	const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
 	const [testerOn, setTesterOn] = useState(false);
+	const [myCoaches, setMyCoaches] = useState<CoachMyCoach[]>([]);
+	const [coachesLoaded, setCoachesLoaded] = useState(false);
+	const [coachInviteInput, setCoachInviteInput] = useState('');
+	const [coachInviteBusy, setCoachInviteBusy] = useState(false);
+	const [disconnectTarget, setDisconnectTarget] = useState<CoachMyCoach | null>(null);
 	const versionUnlockTaps = useRef(0);
 	const versionUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const cloud = isSupabaseConfigured();
@@ -146,7 +158,16 @@ export default function ProfileScreen() {
 		useCallback(() => {
 			void outboxCount().then(setPendingSync);
 			void loadOnboarding().then(setOnboarding);
-		}, [])
+			if (!cloud || !session?.user) {
+				setMyCoaches([]);
+				setCoachesLoaded(false);
+				return;
+			}
+			void coachRepo.listMyCoaches().then((result) => {
+				if (result.ok) setMyCoaches(result.value);
+				setCoachesLoaded(true);
+			});
+		}, [cloud, session?.user?.id])
 	);
 
 	useEffect(() => {
@@ -193,6 +214,50 @@ export default function ProfileScreen() {
 	function showAuthError(error: unknown, fallback: string) {
 		const key = authErrorMessageKey(error);
 		Alert.alert(tt('common.error'), key ? tt(key) : fallback);
+	}
+
+	function coachDisplayName(coach: CoachMyCoach): string {
+		return coach.coachName?.trim() || tt('profile.coachFallback');
+	}
+
+	function onCoachInviteChange(raw: string) {
+		const cleaned = normalizeInviteCode(raw).slice(0, INVITE_CODE_LENGTH);
+		const next = cleaned.length > 4 ? `${cleaned.slice(0, 4)}-${cleaned.slice(4)}` : cleaned;
+		setCoachInviteInput(next);
+	}
+
+	async function acceptCoachInvite() {
+		if (coachInviteBusy) return;
+		const code = normalizeInviteCode(coachInviteInput);
+		if (!isValidInviteCode(code)) {
+			Alert.alert(tt('common.error'), tt('coach.inviteInvalid'));
+			return;
+		}
+		setCoachInviteBusy(true);
+		try {
+			const result = await coachRepo.acceptInvite(code);
+			if (result.ok) {
+				setCoachInviteInput('');
+				Alert.alert(tt('coach.inviteAccepted'));
+				const refreshed = await coachRepo.listMyCoaches();
+				if (refreshed.ok) setMyCoaches(refreshed.value);
+				setCoachesLoaded(true);
+			} else {
+				Alert.alert(tt('common.error'), tt(`coach.error.${result.reason}`));
+			}
+		} finally {
+			setCoachInviteBusy(false);
+		}
+	}
+
+	async function disconnectCoach(coach: CoachMyCoach) {
+		const result = await coachRepo.revokeAsClient(coach.linkId);
+		if (result.ok) {
+			setMyCoaches((prev) => prev.filter((row) => row.linkId !== coach.linkId));
+			Alert.alert(tt('coach.disconnectDone'));
+		} else {
+			Alert.alert(tt('common.error'), tt(`coach.error.${result.reason}`));
+		}
 	}
 
 	async function toggleHealth(next: boolean) {
@@ -762,6 +827,55 @@ export default function ProfileScreen() {
 				/>
 			</Panel>
 
+			{session?.user && cloud ? (
+				<Panel>
+					<Text style={styles.groupTitle}>{tt('profile.clients')}</Text>
+					<Text style={styles.hint}>{tt('profile.clientsHint')}</Text>
+					<Text style={[styles.groupTitle, { marginTop: space.md, fontSize: 15 }]}>
+						{tt('profile.myCoach')}
+					</Text>
+					{!coachesLoaded ? (
+						<Text style={styles.hint}>…</Text>
+					) : myCoaches.length > 0 ? (
+						myCoaches.map((coach) => (
+							<View key={coach.linkId} style={styles.coachBlock}>
+								<Text style={styles.rowText}>{coachDisplayName(coach)}</Text>
+								<Text style={styles.hint}>{tt('profile.coachConnectedHint')}</Text>
+								<PrimaryButton
+									label={tt('coach.disconnect')}
+									variant="link"
+									onPress={() => setDisconnectTarget(coach)}
+								/>
+							</View>
+						))
+					) : (
+						<>
+							<Text style={styles.hint}>{tt('coach.inviteAcceptLead')}</Text>
+							<TextInput
+								style={[styles.input, styles.inviteInput]}
+								placeholder={tt('coach.inviteAcceptPlaceholder')}
+								placeholderTextColor={colors.muted}
+								autoCapitalize="characters"
+								autoCorrect={false}
+								maxLength={INVITE_CODE_LENGTH + 1}
+								value={coachInviteInput}
+								onChangeText={onCoachInviteChange}
+							/>
+							<PrimaryButton
+								label={coachInviteBusy ? '…' : tt('coach.inviteAcceptCta')}
+								variant="secondary"
+								onPress={() => void acceptCoachInvite()}
+								disabled={coachInviteBusy || normalizeInviteCode(coachInviteInput).length === 0}
+							/>
+						</>
+					)}
+					<Pressable style={styles.row} onPress={() => router.push('/clients')}>
+						<Text style={styles.rowText}>{tt('profile.clientsRow')}</Text>
+						<Text style={styles.rowValue}>→</Text>
+					</Pressable>
+				</Panel>
+			) : null}
+
 			<Panel>
 				<Text style={styles.groupTitle}>{tt('progress.sectionTitle')}</Text>
 				<Pressable style={styles.row} onPress={() => router.push('/progress')}>
@@ -1073,6 +1187,24 @@ export default function ProfileScreen() {
 			</View>
 		</Modal>
 		<ConfirmSheet
+			open={disconnectTarget !== null}
+			title={tt('coach.disconnectConfirmTitle')}
+			message={tt('coach.disconnectConfirmLead', {
+				name: disconnectTarget ? coachDisplayName(disconnectTarget) : ''
+			})}
+			onDismiss={() => setDisconnectTarget(null)}
+			actions={[
+				{
+					label: tt('coach.disconnect'),
+					variant: 'danger',
+					onPress: () => {
+						const target = disconnectTarget;
+						if (target) void disconnectCoach(target);
+					}
+				}
+			]}
+		/>
+		<ConfirmSheet
 			open={logoutOpen}
 			title={tt('auth.logoutConfirmTitle')}
 			message={tt('auth.logoutConfirmLead')}
@@ -1105,11 +1237,11 @@ export default function ProfileScreen() {
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 	scroll: { flex: 1, backgroundColor: colors.bg },
-	root: { padding: space.lg, gap: space.md, backgroundColor: colors.bg },
+	root: { paddingHorizontal: space.page, paddingTop: space.lg, gap: space.md, backgroundColor: colors.bg },
 	reviewBackdrop: {
 		flex: 1,
 		justifyContent: 'flex-end',
-		backgroundColor: 'rgba(0,0,0,0.5)'
+		backgroundColor: colors.overlayScrim
 	},
 	reviewSheet: {
 		backgroundColor: colors.bg,
@@ -1156,6 +1288,12 @@ function makeStyles(colors: ColorPalette) {
 		marginBottom: space.sm
 	},
 	hint: { color: colors.muted, fontSize: 13, lineHeight: 18, fontFamily: fontFamily.regular },
+	coachBlock: { gap: 4, marginBottom: space.sm },
+	inviteInput: {
+		fontFamily: fontFamily.semibold,
+		letterSpacing: 2,
+		textAlign: 'center'
+	},
 	accountHint: { marginTop: 4, marginBottom: 2 },
 	dangerHeader: {
 		minHeight: touchMin,

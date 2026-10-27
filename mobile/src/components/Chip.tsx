@@ -9,6 +9,7 @@ type Props = {
 	onPress: () => void;
 };
 
+/** Soft selection like web `.catalog-filter-chip` (not solid accent fill). */
 export function Chip({ label, selected, onPress }: Props) {
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -38,11 +39,11 @@ function makeStyles(colors: ColorPalette) {
 			borderRadius: radius.pill,
 			borderWidth: 1,
 			borderColor: colors.border,
-			backgroundColor: 'transparent'
+			backgroundColor: colors.panel
 		},
 		chipOn: {
-			borderColor: colors.accentFill,
-			backgroundColor: colors.accentFill
+			borderColor: colors.accent,
+			backgroundColor: colors.accentDim
 		},
 		text: {
 			color: colors.muted,
@@ -51,7 +52,7 @@ function makeStyles(colors: ColorPalette) {
 			fontFamily: fontFamily.semibold
 		},
 		textOn: {
-			color: colors.accentInk,
+			color: colors.accentText,
 			fontWeight: '700',
 			fontFamily: fontFamily.bold
 		}

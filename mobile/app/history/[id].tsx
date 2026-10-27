@@ -1,16 +1,15 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 import {
 	addCompletedLoggedSet,
 	completedSetCount,
-	loggedSetKind,
 	planDraftFromSession,
 	removeLoggedExercise,
 	removeLoggedSet,
 	sessionDurationMs,
 	sessionVolumeKg,
-	setKindMessageKey,
 	updateLoggedSet
 } from '@repdraft/domain/session';
 import type { WorkoutSession } from '@repdraft/domain/types';
@@ -180,88 +179,97 @@ export default function HistoryDetailScreen() {
 								setSession(removeLoggedExercise(session, ei));
 							}}
 						>
-							<Pressable
-								style={styles.cardHead}
-								accessibilityRole="button"
-								accessibilityLabel={tt('exercise.openTechnique', {
-									name: exerciseDisplayName(ex.exerciseId, locale)
-								})}
-								onPress={() => setTechniqueId(ex.exerciseId)}
-							>
-								<CatalogThumb imagePath={item?.image} size={48} />
-								<Text style={styles.cardTitle}>{exerciseDisplayName(ex.exerciseId, locale)}</Text>
-							</Pressable>
-						{editing
-							? ex.sets.map((s, si) => (
-									<View key={si} style={styles.editRow}>
-										<TextInput
-											style={styles.editInput}
-											keyboardType="decimal-pad"
-											value={s.weightKg != null ? String(s.weightKg) : ''}
-											onChangeText={(v) => {
-												const n = v.trim() === '' ? null : Number(v);
-												setSession(
-													updateLoggedSet(session, ei, si, {
-														weightKg: n != null && Number.isFinite(n) ? n : null,
-														completed: true
-													})
-												);
-											}}
-											placeholder={tt('common.kg')}
-											placeholderTextColor={colors.muted}
+							<View style={styles.cardInner}>
+								<Pressable
+									style={styles.cardHead}
+									accessibilityRole="button"
+									accessibilityLabel={tt('exercise.openTechnique', {
+										name: exerciseDisplayName(ex.exerciseId, locale)
+									})}
+									onPress={() => setTechniqueId(ex.exerciseId)}
+								>
+									<CatalogThumb imagePath={item?.image} size={48} whitePlate />
+									<Text style={styles.cardTitle}>{exerciseDisplayName(ex.exerciseId, locale)}</Text>
+								</Pressable>
+								{editing
+									? ex.sets.map((s, si) => (
+											<View key={si} style={styles.editRow}>
+												<TextInput
+													style={styles.editInput}
+													keyboardType="decimal-pad"
+													value={s.weightKg != null ? String(s.weightKg) : ''}
+													onChangeText={(v) => {
+														const n = v.trim() === '' ? null : Number(v);
+														setSession(
+															updateLoggedSet(session, ei, si, {
+																weightKg: n != null && Number.isFinite(n) ? n : null,
+																completed: true
+															})
+														);
+													}}
+													placeholder={tt('common.kg')}
+													placeholderTextColor={colors.muted}
+												/>
+												<TextInput
+													style={styles.editInput}
+													keyboardType="number-pad"
+													value={s.reps != null ? String(s.reps) : ''}
+													onChangeText={(v) => {
+														const n = v.trim() === '' ? null : Number(v);
+														setSession(
+															updateLoggedSet(session, ei, si, {
+																reps: n != null && Number.isFinite(n) ? n : null,
+																completed: true
+															})
+														);
+													}}
+													placeholder={tt('common.reps')}
+													placeholderTextColor={colors.muted}
+												/>
+												<Pressable
+													style={styles.smallBtn}
+													onPress={() =>
+														setSession(
+															removeLoggedSet(session, ei, si, { keepAtLeastOne: false })
+														)
+													}
+												>
+													<Text style={styles.removeText}>×</Text>
+												</Pressable>
+											</View>
+										))
+									: (
+											<View style={styles.setGrid}>
+												{done.map((s, si) => (
+													<View key={si} style={styles.setCell}>
+														<Text style={styles.setIndex}>{si + 1}</Text>
+														<Text style={styles.setCellValue}>
+															{s.weightKg != null ? `${s.weightKg}` : '-'}
+															{' × '}
+															{s.reps ?? '-'}
+														</Text>
+													</View>
+												))}
+											</View>
+										)}
+								{!editing && note ? <Text style={styles.note}>{note}</Text> : null}
+								{editing ? (
+									<>
+										<PrimaryButton
+											label={tt('history.addSet')}
+											variant="ghost"
+											onPress={() => setSession(addCompletedLoggedSet(session, ei))}
 										/>
-										<TextInput
-											style={styles.editInput}
-											keyboardType="number-pad"
-											value={s.reps != null ? String(s.reps) : ''}
-											onChangeText={(v) => {
-												const n = v.trim() === '' ? null : Number(v);
-												setSession(
-													updateLoggedSet(session, ei, si, {
-														reps: n != null && Number.isFinite(n) ? n : null,
-														completed: true
-													})
-												);
-											}}
-											placeholder={tt('common.reps')}
-											placeholderTextColor={colors.muted}
+										<PrimaryButton
+											label={tt('history.removeExercise')}
+											variant="ghost"
+											onPress={() => setSession(removeLoggedExercise(session, ei))}
 										/>
-										<Pressable
-											style={styles.smallBtn}
-											onPress={() =>
-												setSession(
-													removeLoggedSet(session, ei, si, { keepAtLeastOne: false })
-												)
-											}
-										>
-											<Text style={styles.removeText}>×</Text>
-										</Pressable>
-									</View>
-								))
-							: done.map((s, si) => (
-									<Text key={si} style={styles.setLine}>
-										{s.weightKg != null ? `${s.weightKg} ${tt('common.kg')}` : '-'} ×{' '}
-										{s.reps ?? '-'} {tt('common.reps')} ·{' '}
-										{tt(setKindMessageKey(loggedSetKind(s)))}
-									</Text>
-								))}
-						{!editing && note ? <Text style={styles.note}>{note}</Text> : null}
-						{editing ? (
-							<>
-								<PrimaryButton
-									label={tt('history.addSet')}
-									variant="ghost"
-									onPress={() => setSession(addCompletedLoggedSet(session, ei))}
-								/>
-								<PrimaryButton
-									label={tt('history.removeExercise')}
-									variant="ghost"
-									onPress={() => setSession(removeLoggedExercise(session, ei))}
-								/>
-							</>
-						) : null}
-					</SwipeableRow>
-				);
+									</>
+								) : null}
+							</View>
+						</SwipeableRow>
+					);
 			})}
 			{editing ? (
 				<PrimaryButton label={tt('history.save')} onPress={() => void saveEdits()} />
@@ -296,7 +304,10 @@ function makeStyles(colors: ColorPalette) {
 			backgroundColor: colors.panel,
 			borderRadius: 14,
 			borderWidth: 1,
-			borderColor: colors.border,
+			borderColor: colors.border
+		},
+		cardInner: {
+			backgroundColor: colors.panel,
 			padding: 14,
 			gap: 6
 		},
@@ -308,6 +319,36 @@ function makeStyles(colors: ColorPalette) {
 		},
 		cardTitle: { color: colors.text, fontWeight: '700', marginBottom: 4, fontFamily: fontFamily.bold, flex: 1 },
 	setLine: { color: colors.muted, fontVariant: ['tabular-nums'], fontFamily: fontFamily.regular },
+	setGrid: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: space.sm,
+		marginTop: space.xs
+	},
+	setCell: {
+		minWidth: '30%',
+		flexGrow: 1,
+		backgroundColor: colors.bg,
+		borderRadius: 10,
+		borderWidth: 1,
+		borderColor: colors.border,
+		paddingVertical: space.sm,
+		paddingHorizontal: space.sm,
+		gap: 2
+	},
+	setIndex: {
+		color: colors.muted,
+		fontSize: 11,
+		fontWeight: '600',
+		fontFamily: fontFamily.semibold
+	},
+	setCellValue: {
+		color: colors.text,
+		fontSize: 15,
+		fontWeight: '700',
+		fontVariant: ['tabular-nums'],
+		fontFamily: fontFamily.bold
+	},
 	note: { color: colors.muted, fontSize: 13, marginTop: 4, fontFamily: fontFamily.regular },
 	editRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
 	editInput: {
@@ -339,6 +380,6 @@ function makeStyles(colors: ColorPalette) {
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
-	undoText: { color: colors.accentText, fontWeight: '700', fontSize: 16, fontFamily: fontFamily.bold }
+	undoText: { color: colors.accentInk, fontWeight: '700', fontSize: 16, fontFamily: fontFamily.bold }
 	});
 }

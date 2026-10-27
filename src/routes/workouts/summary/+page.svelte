@@ -192,8 +192,9 @@
 			<div class="summary-check" aria-hidden="true">
 				<LucideIcon icon={CircleCheck} size={ICON_PRIMARY + 12} />
 			</div>
-			<h1 class="summary-hero__title">{translate(lang, 'summary.title')}</h1>
-			<p class="summary-hero__plan">{session.planName}</p>
+			<h1 class="summary-hero__title">
+				{session.planName?.trim() || translate(lang, 'summary.title')}
+			</h1>
 		</div>
 
 		{#if showFirstFinish}

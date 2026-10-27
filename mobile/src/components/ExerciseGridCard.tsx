@@ -172,14 +172,14 @@ function makeStyles(colors: ColorPalette) {
 		pressed: { opacity: 0.9 },
 		media: {
 			aspectRatio: 1,
-			backgroundColor: colors.panelRaised,
+			backgroundColor: '#ffffff',
 			overflow: 'hidden',
 			position: 'relative'
 		},
 		image: {
 			width: '100%',
 			height: '100%',
-			backgroundColor: colors.panelRaised
+			backgroundColor: '#ffffff'
 		},
 		imageFallback: {
 			width: '100%',
