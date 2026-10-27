@@ -84,26 +84,35 @@ export default function ProgressScreen() {
 			{overview.bodyParts.length > 0 ? (
 				<Panel>
 					<Text style={styles.sectionTitle}>{tt('progress.bodyParts')}</Text>
-					{overview.bodyParts.map((part) => (
-						<View key={part.bodyPart} style={styles.part}>
-							<View style={styles.partTop}>
-								<Text style={styles.partLabel}>
-									{labelBodyPart(part.bodyPart, locale)}
-									{part.bodyPart === overview.laggingBodyPart ? ` · ${tt('progress.lagging')}` : ''}
-								</Text>
-								<Text style={styles.weekMeta}>{part.sharePct}%</Text>
+					{overview.bodyParts.map((part) => {
+						const lagging = part.bodyPart === overview.laggingBodyPart;
+						return (
+							<View key={part.bodyPart} style={styles.part}>
+								<View style={styles.partTop}>
+									<View style={styles.partLabelRow}>
+										<Text style={styles.partLabel} numberOfLines={1}>
+											{labelBodyPart(part.bodyPart, locale)}
+										</Text>
+										{lagging ? (
+											<View style={styles.lagTag}>
+												<Text style={styles.lagTagText}>{tt('progress.lagging')}</Text>
+											</View>
+										) : null}
+									</View>
+									<Text style={styles.weekMeta}>{part.sharePct}%</Text>
+								</View>
+								<View style={styles.barTrack}>
+									<View
+										style={[
+											styles.barFill,
+											lagging && styles.barLag,
+											{ width: `${part.sharePct}%` }
+										]}
+									/>
+								</View>
 							</View>
-							<View style={styles.barTrack}>
-								<View
-									style={[
-										styles.barFill,
-										part.bodyPart === overview.laggingBodyPart && styles.barLag,
-										{ width: `${part.sharePct}%` }
-									]}
-								/>
-							</View>
-						</View>
-					))}
+						);
+					})}
 				</Panel>
 			) : null}
 			{overview.trends.length > 0 ? (
@@ -162,8 +171,21 @@ function makeStyles(colors: ColorPalette) {
 		},
 		weekLabel: { width: 48, color: colors.muted, fontSize: 13, fontWeight: '600', fontFamily: fontFamily.semibold },
 		part: { gap: 6, marginBottom: 10 },
-		partTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-		partLabel: { flex: 1, color: colors.text, fontSize: 13, fontWeight: '600', fontFamily: fontFamily.semibold },
+		partTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, alignItems: 'center' },
+		partLabelRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm, minWidth: 0 },
+		partLabel: { flexShrink: 1, color: colors.text, fontSize: 13, fontWeight: '600', fontFamily: fontFamily.semibold },
+		lagTag: {
+			paddingHorizontal: 8,
+			paddingVertical: 3,
+			borderRadius: radius.sm,
+			backgroundColor: colors.dangerBg
+		},
+		lagTagText: {
+			color: colors.danger,
+			fontSize: 11,
+			fontWeight: '700',
+			fontFamily: fontFamily.bold
+		},
 		barTrack: {
 			flex: 1,
 			height: 10,

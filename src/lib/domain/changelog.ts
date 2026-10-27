@@ -17,16 +17,16 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.23.2',
 		highlights: {
 			ru: [
-				'Кабинет тренера: одна строка статуса и просмотр подходов клиента',
-				'Клиент может отключиться от тренера в профиле',
+				'Кабинет тренера: статус клиента и просмотр подходов, отключение в профиле',
 				'Кабинет клиентов и код приглашения на телефоне',
-				'Пустая карточка больше не показывает три нуля подряд'
+				'Телефон ближе к web: плавающий таббар, отступы и мягкие акценты',
+				'Live, каталог, история и прогресс подтянуты к виду сайта'
 			],
 			en: [
-				'Coach cabinet: one status line and a look at the client sets',
-				'Clients can disconnect from a coach in Profile',
+				'Coach cabinet: client status and sets, disconnect in Profile',
 				'Client cabinet and invite code on the phone',
-				'Empty client cards no longer show three zeros'
+				'Phone closer to web: floating tab bar, padding, soft accents',
+				'Live, catalog, history, and progress match the site look'
 			]
 		}
 	},

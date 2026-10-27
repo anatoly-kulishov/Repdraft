@@ -107,7 +107,7 @@ export default function ProfileScreen() {
 	const switchColors = useMemo(
 		() => ({
 			trackColor: { false: colors.border, true: colors.accent } as const,
-			thumbColor: colors.accentText
+			thumbColor: colors.accentInk
 		}),
 		[colors]
 	);
@@ -1237,7 +1237,7 @@ export default function ProfileScreen() {
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 	scroll: { flex: 1, backgroundColor: colors.bg },
-	root: { padding: space.lg, gap: space.md, backgroundColor: colors.bg },
+	root: { paddingHorizontal: space.page, paddingTop: space.lg, gap: space.md, backgroundColor: colors.bg },
 	reviewBackdrop: {
 		flex: 1,
 		justifyContent: 'flex-end',

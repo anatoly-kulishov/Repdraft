@@ -62,13 +62,9 @@
 				{#if ex.setCount === 0}
 					<p class="history-exercise__empty">{translate(lang, 'workouts.noLoggedSets')}</p>
 				{:else}
-					<ul
-						class="history-exercise__sets"
-						class:history-exercise__sets--grid={ex.setCount >= 4}
-						aria-hidden="true"
-					>
+					<ul class="history-exercise__sets history-exercise__sets--grid" aria-hidden="true">
 						{#each Array.from({ length: ex.setCount }, (_, si) => si) as si (si)}
-							<li class="history-exercise__set history-skeleton-set">
+							<li class="history-exercise__set history-exercise__set--cell history-skeleton-set">
 								<span class="history-skeleton-set__i"></span>
 								<span class="history-skeleton-set__val"></span>
 							</li>

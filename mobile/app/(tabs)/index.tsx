@@ -1,14 +1,19 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ChevronRight, NotebookPen, Smartphone, UserRound } from 'lucide-react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ChevronRight, NotebookPen, Settings, Smartphone, UserRound, Play, Bell } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
 	dayGreetingPeriod,
 	homeGreetingMessageKey
 } from '@repdraft/domain/greeting';
 import { greetingFirstName } from '@repdraft/domain/greetingName';
 import {
+	buildDemoPlan,
+	DEMO_PLAN_ID,
+	isCanonicalDemoPlan,
+	ONBOARDING_STORAGE_KEY,
 	shouldShowChecklist,
 	type OnboardingState
 } from '@repdraft/domain/onboarding';
@@ -34,6 +39,7 @@ import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { getSupabase, isSupabaseConfigured } from '../../src/auth/supabase';
+import { resolveUserAvatarUrl } from '../../src/auth/avatarUrl';
 import { formatRelativeDay } from '@repdraft/i18n/format';
 import { readHomeNextPlanId } from '../../src/live/homeNext';
 import { readPlanOrder, writePlanOrder } from '../../src/live/planOrder';
@@ -42,6 +48,7 @@ import { useLocale } from '../../src/state/locale';
 import { useTabScreenPad } from '../../src/layout/safe';
 import { useAppColors } from '../../src/state/theme';
 import { dismissChecklist, noteChecklist } from '../../src/state/onboarding';
+import { kvSetJson } from '../../src/storage/kv';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { readActiveSession, sessionsRepo } from '../../src/storage/sessionsRepo';
 import { outboxCount } from '../../src/sync/cloudSync';
@@ -149,6 +156,7 @@ export default function WorkoutsScreen() {
 		};
 	}, [next, indexById, locale]);
 	const greetingName = greetingFirstName(greetingCustom, authUser);
+	const avatarUrl = authUser ? resolveUserAvatarUrl(authUser) : null;
 	const greeting = tt(
 		homeGreetingMessageKey(dayGreetingPeriod(), Boolean(greetingName)),
 		greetingName ? { name: greetingName } : undefined
@@ -174,9 +182,36 @@ export default function WorkoutsScreen() {
 	const header = (
 		<View style={styles.headerWrap}>
 			<View style={styles.headerRow}>
+				{avatarUrl ? (
+					<Image source={{ uri: avatarUrl }} style={styles.avatar} />
+				) : (
+					<View style={[styles.avatar, styles.avatarFallback]}>
+						<UserRound size={16} color={colors.text} strokeWidth={2} />
+					</View>
+				)}
 				<Text style={styles.greeting} numberOfLines={1}>
 					{greeting}
 				</Text>
+				<View style={styles.headerCta}>
+					<Pressable
+						accessibilityRole="button"
+						accessibilityLabel={tt('settings.title')}
+						hitSlop={8}
+						style={styles.iconBtn}
+						onPress={() => router.push('/(tabs)/profile')}
+					>
+						<Settings color={colors.muted} size={22} strokeWidth={1.5} />
+					</Pressable>
+					<Pressable
+						accessibilityRole="button"
+						accessibilityLabel={tt('nav.notifications')}
+						hitSlop={8}
+						style={styles.iconBtn}
+						onPress={() => router.push('/(tabs)/profile')}
+					>
+						<Bell color={colors.muted} size={22} strokeWidth={1.5} />
+					</Pressable>
+				</View>
 			</View>
 		{pendingSync > 0 ? (
 			<Panel style={styles.syncBanner}>
@@ -188,37 +223,46 @@ export default function WorkoutsScreen() {
 
 			{active && continueMeta ? (
 				<Panel accent style={styles.card}>
-					<Text style={styles.eyebrow}>{tt('home.workoutInProgress')}</Text>
-					<Text style={styles.cardTitle} numberOfLines={2}>
-						{active.planName || '-'}
-					</Text>
-					<Text style={styles.cardMeta} numberOfLines={2}>
-						{continueMeta}
-					</Text>
-					<PrimaryButton
-						label={tt('home.continue')}
-						onPress={() => router.push(`/live/${active.planId ?? 'active'}`)}
-					/>
+					<View style={styles.heroRow}>
+						<View style={styles.heroBody}>
+							<Text style={[styles.eyebrow, styles.eyebrowAccent]}>
+								{tt('home.workoutInProgress')}
+							</Text>
+							<Text style={styles.cardTitle} numberOfLines={2}>
+								{active.planName || '-'}
+							</Text>
+							<Text style={styles.cardMeta} numberOfLines={2}>
+								{continueMeta}
+							</Text>
+						</View>
+						<HeroFab
+							onPress={() => router.push(`/live/${active.planId ?? 'active'}`)}
+							colors={colors}
+							label={tt('home.continue')}
+						/>
+					</View>
 				</Panel>
 			) : next && heroMeta ? (
 				<Panel style={styles.card}>
 					<Pressable
 						accessibilityRole="button"
 						onPress={() => router.push(`/plan/${next.id}`)}
-						style={({ pressed }) => pressed && styles.pressed}
+						style={({ pressed }) => [styles.heroRow, pressed && styles.pressed]}
 					>
-						<Text style={styles.eyebrow}>{tt('home.readyTitle')}</Text>
-						<Text style={styles.cardTitle} numberOfLines={2}>
-							{next.name || '-'}
-						</Text>
-						<Text style={styles.cardMeta} numberOfLines={2}>
-							{heroMeta.exercises} {tt('common.exercises')} · {heroMeta.summary}
-						</Text>
+						<View style={styles.heroBody}>
+							<Text style={styles.eyebrow}>{tt('home.readyTitle')}</Text>
+							<Text style={styles.cardTitle} numberOfLines={2}>
+								{next.name || '-'}
+							</Text>
+							<Text style={styles.cardMeta} numberOfLines={2}>
+								{heroMeta.exercises} {tt('common.exercises')} · {heroMeta.summary}
+							</Text>
+						</View>
+						<HeroFab
+							onPress={() => router.push(`/plan/${next.id}`)}
+							colors={colors}
+						/>
 					</Pressable>
-					<PrimaryButton
-						label={tt('home.startWorkout')}
-						onPress={() => router.push(`/plan/${next.id}`)}
-					/>
 				</Panel>
 			) : null}
 
@@ -226,6 +270,33 @@ export default function WorkoutsScreen() {
 				<OnboardingChecklistPanel
 					state={onboarding}
 					onDismiss={() => void dismissChecklist().then(setOnboarding)}
+					onTryDemo={async () => {
+						try {
+							const existing = await plansRepo.get(DEMO_PLAN_ID);
+							if (existing && isCanonicalDemoPlan(existing)) {
+								const nextState = {
+									...(await noteChecklist('planReady')),
+									demoPlanInstalled: true
+								};
+								await kvSetJson(ONBOARDING_STORAGE_KEY, nextState);
+								setOnboarding(nextState);
+								router.push(`/plan/${existing.id}`);
+								return;
+							}
+							const plan = buildDemoPlan(tt('onboarding.demoPlanName'));
+							await plansRepo.save(plan);
+							const nextState = {
+								...(await noteChecklist('planReady')),
+								demoPlanInstalled: true
+							};
+							await kvSetJson(ONBOARDING_STORAGE_KEY, nextState);
+							setOnboarding(nextState);
+							await reload();
+							router.push(`/plan/${plan.id}`);
+						} catch {
+							Alert.alert(tt('common.error'), tt('onboarding.demoFail'));
+						}
+					}}
 				/>
 			) : null}
 
@@ -299,11 +370,16 @@ export default function WorkoutsScreen() {
 							<ChevronRight color={colors.muted} size={16} strokeWidth={2.25} />
 						</Pressable>
 					</View>
-					{recent.map((session) => (
+					<View style={styles.recentList}>
+					{recent.map((session, idx) => (
 						<Pressable
 							key={session.id}
 							accessibilityRole="button"
-							style={({ pressed }) => [styles.recentRow, pressed && styles.pressed]}
+							style={({ pressed }) => [
+								styles.recentRow,
+								idx > 0 && styles.recentRowDivider,
+								pressed && styles.pressed
+							]}
 							onPress={() => router.push(`/history/${session.id}`)}
 						>
 							<View style={styles.recentBody}>
@@ -324,6 +400,7 @@ export default function WorkoutsScreen() {
 							<ChevronRight color={colors.muted} size={16} strokeWidth={2.25} />
 						</Pressable>
 					))}
+					</View>
 				</View>
 			) : hasPlans ? (
 				<Panel>
@@ -350,6 +427,71 @@ export default function WorkoutsScreen() {
 	);
 }
 
+/** Compact labeled CTA - matches web home continue/start control (not a lone Play orb). */
+function HeroFab({
+	onPress,
+	colors,
+	label
+}: {
+	onPress: () => void;
+	colors: ColorPalette;
+	label?: string;
+}) {
+	const { tt } = useLocale();
+	const styles = useMemo(() => fabStyles(colors), [colors]);
+	const text = label ?? tt('home.startWorkoutShort');
+	return (
+		<Pressable
+			accessibilityRole="button"
+			accessibilityLabel={text}
+			onPress={onPress}
+			style={({ pressed }) => [pressed && fabPressed]}
+		>
+			<LinearGradient
+				colors={[colors.accentGradientStart, colors.accentFill]}
+				start={{ x: 0, y: 1 }}
+				end={{ x: 1, y: 0 }}
+				style={styles.cta}
+			>
+				<Play color={colors.accentInk} size={16} fill={colors.accentInk} strokeWidth={0} />
+				<Text style={styles.ctaLabel} numberOfLines={1}>
+					{text}
+				</Text>
+			</LinearGradient>
+		</Pressable>
+	);
+}
+
+const fabPressed = {
+	transform: [{ scale: 0.98 }]
+} as const;
+
+function fabStyles(colors: ColorPalette) {
+	return StyleSheet.create({
+		cta: {
+			minHeight: touchMin,
+			minWidth: touchMin,
+			paddingHorizontal: space.md,
+			borderRadius: radius.xl,
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'center',
+			gap: space.sm,
+			shadowColor: colors.accent,
+			shadowOpacity: 0.28,
+			shadowRadius: 12,
+			shadowOffset: { width: 0, height: 4 },
+			elevation: 5
+		},
+		ctaLabel: {
+			color: colors.accentInk,
+			fontSize: 15,
+			fontWeight: '700',
+			fontFamily: fontFamily.bold
+		}
+	});
+}
+
 function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 	root: { flex: 1, backgroundColor: colors.bg },
@@ -360,18 +502,56 @@ function makeStyles(colors: ColorPalette) {
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: space.md,
-		paddingBottom: space.xs
+		paddingBottom: space.xs,
+		minHeight: 36
 	},
-	greeting: { ...type.title, color: colors.text, flex: 1 },
+	avatar: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		backgroundColor: colors.panel,
+		borderWidth: 1,
+		borderColor: colors.borderGlass
+	},
+	avatarFallback: {
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	headerCta: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: space.sm
+	},
+	iconBtn: {
+		width: 36,
+		height: 36,
+		borderRadius: radius.md,
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	greeting: {
+		color: colors.text,
+		flex: 1,
+		fontSize: 16,
+		lineHeight: 22,
+		fontWeight: '500',
+		fontFamily: fontFamily.medium
+	},
 	leadHint: { ...type.meta, color: colors.muted },
 	card: { gap: space.sm },
-	eyebrow: {
-		...type.section,
-		color: colors.muted,
-		textTransform: 'uppercase',
-		letterSpacing: 0.8
+	heroRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: space.lg
 	},
-	cardTitle: { ...type.title, color: colors.text },
+	heroBody: { flex: 1, gap: space.sm },
+	eyebrow: {
+		...type.kicker,
+		color: colors.muted,
+		textTransform: 'uppercase'
+	},
+	eyebrowAccent: { color: colors.accentText },
+	cardTitle: { ...type.title, color: colors.text, fontSize: 18, lineHeight: 24 },
 	cardMeta: { ...type.meta, color: colors.muted },
 	guestPoint: {
 		flexDirection: 'row',
@@ -395,10 +575,9 @@ function makeStyles(colors: ColorPalette) {
 	},
 	section: { gap: space.sm },
 	monthlyRow: { flexDirection: 'row', gap: space.sm },
-	monthlyCard: { flex: 1, gap: 2, paddingVertical: space.md },
+	monthlyCard: { flex: 1, gap: 2, paddingVertical: space.md, borderRadius: radius.md },
 	monthlyValue: {
-		fontSize: 24,
-		lineHeight: 30,
+		...type.display,
 		fontWeight: '800',
 		fontFamily: fontFamily.extrabold,
 		color: colors.text
@@ -413,9 +592,7 @@ function makeStyles(colors: ColorPalette) {
 	},
 	sectionTitle: {
 		...type.section,
-		color: colors.muted,
-		textTransform: 'uppercase',
-		letterSpacing: 0.8
+		color: colors.text
 	},
 	sectionLink: {
 		flexDirection: 'row',
@@ -425,16 +602,23 @@ function makeStyles(colors: ColorPalette) {
 		paddingHorizontal: space.sm
 	},
 	sectionLinkText: { ...type.meta, color: colors.muted, fontWeight: '700' },
-	recentRow: {
-		minHeight: touchMin,
-		backgroundColor: colors.panel,
-		borderRadius: radius.md,
+	recentList: {
+		overflow: 'hidden',
+		borderRadius: radius.lg,
 		borderWidth: 1,
 		borderColor: colors.border,
+		backgroundColor: colors.panel
+	},
+	recentRow: {
+		minHeight: touchMin,
 		paddingHorizontal: space.lg,
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: space.sm
+	},
+	recentRowDivider: {
+		borderTopWidth: 1,
+		borderTopColor: colors.divider
 	},
 	recentBody: { flex: 1 },
 	recentTitle: { color: colors.text, fontSize: 16, fontWeight: '700', fontFamily: fontFamily.bold },
@@ -525,7 +709,7 @@ function makeStyles(colors: ColorPalette) {
 		borderColor: colors.accent
 	},
 	syncBannerText: {
-		color: colors.accentText,
+		color: colors.accentLink,
 		fontWeight: '600',
 		fontSize: 14,
 		fontFamily: fontFamily.semibold

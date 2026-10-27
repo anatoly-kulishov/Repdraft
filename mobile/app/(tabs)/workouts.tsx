@@ -1,15 +1,9 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import {
-	Alert,
-	FlatList,
-	Pressable,
-	StyleSheet,
-	Text,
-	TextInput,
-	View
-} from 'react-native';
-import { ChevronRight, SlidersHorizontal, Sparkles } from 'lucide-react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList } from 'react-native-gesture-handler';
+import { ChevronRight, Plus, SlidersHorizontal, Sparkles } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { buildDemoPlan } from '@repdraft/domain/onboarding';
 import {
 	collectPlanTargetFacets,
@@ -23,6 +17,7 @@ import {
 import { PLANS_PAGE_SIZE } from '@repdraft/domain/home';
 import type { WorkoutPlan } from '@repdraft/domain/types';
 import { loadExerciseIndex } from '../../src/catalog/loadIndex';
+import { EmptyState } from '../../src/components/EmptyState';
 import { MuscleFilterSheet } from '../../src/components/MuscleFilterSheet';
 import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
@@ -232,30 +227,32 @@ export default function WorkoutsTab() {
 								<Text style={styles.clearFiltersText}>{tt('workouts.historyClearFiltersAria')}</Text>
 							</Pressable>
 						) : null}
-						<View style={styles.rowActions}>
-							<View style={styles.flex}>
-								<PrimaryButton label={tt('workouts.create')} onPress={() => void createBlank()} />
-							</View>
-							<View style={styles.flex}>
-								<PrimaryButton
-									label={tt('workouts.quick')}
-									variant="ghost"
-									onPress={() => void quickStart()}
-								/>
-							</View>
-						</View>
+						{hasPlans ? (
+							<PrimaryButton
+								label={tt('workouts.quick')}
+								variant="secondary"
+								onPress={() => void quickStart()}
+							/>
+						) : null}
 					</View>
 				}
 				ListEmptyComponent={
-					<Text style={styles.empty}>
-						{searchActive ? tt('builder.noMatches') : tt('workouts.empty')}
-					</Text>
+					<EmptyState
+						title={searchActive ? tt('builder.noMatches') : tt('workouts.emptyTitle')}
+						description={searchActive ? undefined : tt('workouts.emptyDesc')}
+						actionLabel={searchActive ? undefined : tt('workouts.create')}
+						onAction={searchActive ? undefined : () => void createBlank()}
+					/>
 				}
 				onEndReached={loadMorePlans}
 				onEndReachedThreshold={0.5}
 				contentContainerStyle={[styles.list, { paddingBottom: tabPad }]}
 				renderItem={({ item }) => (
-					<SwipeableRow deleteLabel={tt('workouts.delete')} onDelete={() => confirmDelete(item)}>
+					<SwipeableRow
+						style={[styles.rowShell, next?.id === item.id && styles.rowShellNext]}
+						deleteLabel={tt('workouts.delete')}
+						onDelete={() => confirmDelete(item)}
+					>
 						<Pressable
 							accessibilityRole="button"
 							style={({ pressed }) => [
@@ -288,6 +285,9 @@ export default function WorkoutsTab() {
 							}}
 						>
 							<View style={styles.rowBody}>
+								{next?.id === item.id ? (
+									<Text style={styles.nextBadge}>{tt('workouts.nextBadge')}</Text>
+								) : null}
 								<Text style={styles.rowTitle} numberOfLines={2}>
 									{item.name || '-'}
 								</Text>
@@ -297,9 +297,9 @@ export default function WorkoutsTab() {
 										const summary = planTargetSummary(item, indexById, locale);
 										return summary ? ` · ${summary}` : '';
 									})()}
-									{next?.id === item.id ? ` · ${tt('workouts.nextBadge')}` : ''}
 								</Text>
 							</View>
+							<ChevronRight color={colors.muted} size={18} strokeWidth={2.25} />
 						</Pressable>
 					</SwipeableRow>
 				)}
@@ -315,6 +315,27 @@ export default function WorkoutsTab() {
 					</Pressable>
 				}
 			/>
+			{hasPlans ? (
+				<Pressable
+					accessibilityRole="button"
+					accessibilityLabel={tt('workouts.create')}
+					onPress={() => void createBlank()}
+					style={({ pressed }) => [
+						styles.fabWrap,
+						{ bottom: tabPad - space.md },
+						pressed && styles.pressed
+					]}
+				>
+					<LinearGradient
+						colors={[colors.accentGradientStart, colors.accentFill]}
+						start={{ x: 0, y: 1 }}
+						end={{ x: 1, y: 0 }}
+						style={styles.fab}
+					>
+						<Plus color={colors.accentInk} size={26} strokeWidth={2.5} />
+					</LinearGradient>
+				</Pressable>
+			) : null}
 			<MuscleFilterSheet
 				open={muscleSheetOpen}
 				selected={muscleFilter}
@@ -353,25 +374,56 @@ function makeStyles(colors: ColorPalette) {
 			fontSize: 16,
 			fontFamily: fontFamily.regular
 		},
-		rowActions: { flexDirection: 'row', gap: space.sm },
-		flex: { flex: 1 },
-		empty: { color: colors.muted, textAlign: 'center', marginTop: 40 },
-		row: {
-			minHeight: touchMin + 8,
-			backgroundColor: colors.panel,
+		rowShell: {
 			borderRadius: radius.md,
 			borderWidth: 1,
 			borderColor: colors.border,
+			backgroundColor: colors.panel
+		},
+		rowShellNext: { borderColor: colors.accent, backgroundColor: colors.accentDim },
+		row: {
+			minHeight: touchMin + 8,
+			backgroundColor: colors.panel,
 			paddingHorizontal: space.lg,
 			paddingVertical: space.md,
 			flexDirection: 'row',
 			alignItems: 'center',
 			gap: space.sm
 		},
-		rowBody: { flex: 1 },
+		rowBody: { flex: 1, minWidth: 0, gap: 2 },
+		nextBadge: {
+			alignSelf: 'flex-start',
+			color: colors.accentText,
+			backgroundColor: colors.accentDim,
+			overflow: 'hidden',
+			paddingHorizontal: 8,
+			paddingVertical: 2,
+			borderRadius: radius.sm,
+			fontSize: 11,
+			fontWeight: '700',
+			fontFamily: fontFamily.bold,
+			marginBottom: 2
+		},
 		rowTitle: { color: colors.text, fontSize: 17, fontWeight: '700', fontFamily: fontFamily.bold },
-		rowMeta: { color: colors.muted, marginTop: 4, fontSize: 13, fontFamily: fontFamily.medium },
-		rowNext: { borderColor: colors.accent, backgroundColor: colors.accentDim },
+		rowMeta: { color: colors.muted, marginTop: 2, fontSize: 13, fontFamily: fontFamily.medium },
+		rowNext: { backgroundColor: colors.accentDim },
+		fabWrap: {
+			position: 'absolute',
+			right: space.lg,
+			zIndex: 5
+		},
+		fab: {
+			width: touchMin + 8,
+			height: touchMin + 8,
+			borderRadius: radius.xl,
+			alignItems: 'center',
+			justifyContent: 'center',
+			shadowColor: colors.accent,
+			shadowOpacity: 0.35,
+			shadowRadius: 14,
+			shadowOffset: { width: 0, height: 6 },
+			elevation: 8
+		},
 		aiRow: {
 			minHeight: touchMin,
 			backgroundColor: colors.panel,

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import {
 	ONBOARDING_CHECKLIST_STEPS,
@@ -24,12 +24,19 @@ type Props = {
 	state: OnboardingState;
 	readonly?: boolean;
 	onDismiss?: () => void;
+	onTryDemo?: () => void | Promise<void>;
 };
 
-export function OnboardingChecklistPanel({ state, readonly = false, onDismiss }: Props) {
+export function OnboardingChecklistPanel({
+	state,
+	readonly = false,
+	onDismiss,
+	onTryDemo
+}: Props) {
 	const { tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
+	const [demoBusy, setDemoBusy] = useState(false);
 	const progress = checklistProgress(state);
 	const progressPct =
 		progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
@@ -58,6 +65,16 @@ export function OnboardingChecklistPanel({ state, readonly = false, onDismiss }:
 					{tt(stepLabelKey[step])}
 				</Text>
 			))}
+			{!readonly && onTryDemo ? (
+				<PrimaryButton
+					label={demoBusy ? tt('onboarding.demoBusy') : tt('onboarding.tryDemo')}
+					disabled={demoBusy}
+					onPress={() => {
+						setDemoBusy(true);
+						void Promise.resolve(onTryDemo()).finally(() => setDemoBusy(false));
+					}}
+				/>
+			) : null}
 			{!readonly && onDismiss ? (
 				<PrimaryButton label={tt('onboarding.dismiss')} variant="ghost" onPress={onDismiss} />
 			) : null}
@@ -86,7 +103,13 @@ function makeStyles(colors: ColorPalette) {
 			marginVertical: space.xs
 		},
 		progressFill: { height: '100%', backgroundColor: colors.accent },
-		step: { color: colors.muted, fontSize: 14, minHeight: touchMin / 2, lineHeight: 22, fontFamily: fontFamily.regular },
+		step: {
+			color: colors.muted,
+			fontSize: 14,
+			minHeight: touchMin / 2,
+			lineHeight: 22,
+			fontFamily: fontFamily.regular
+		},
 		stepDone: { color: colors.accent, fontFamily: fontFamily.regular }
 	});
 }

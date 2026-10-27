@@ -111,9 +111,10 @@ export default function SummaryScreen() {
 				contentContainerStyle={[styles.scroll, { paddingBottom: scrollPad }]}
 			>
 			<View style={styles.hero}>
-				<CircleCheck size={48} color={colors.accent} strokeWidth={2} />
-				<Text style={styles.title}>{tt('summary.title')}</Text>
-				<Text style={styles.kicker} numberOfLines={2}>
+				<View style={styles.checkGlow}>
+					<CircleCheck size={36} color={colors.accentInk} strokeWidth={2.5} />
+				</View>
+				<Text style={styles.title} numberOfLines={2}>
 					{session.planName}
 				</Text>
 			</View>
@@ -192,7 +193,7 @@ export default function SummaryScreen() {
 				})}
 			</ScrollView>
 			<View style={[styles.footer, { paddingBottom: bottomPad }]}>
-				<PrimaryButton label={tt('summary.back')} onPress={() => router.replace('/')} />
+				<PrimaryButton label={tt('summary.done')} onPress={() => router.replace('/')} />
 				<PrimaryButton
 					label={tt('summary.openSession')}
 					variant="link"
@@ -208,9 +209,27 @@ function makeStyles(colors: ColorPalette) {
 	root: { flex: 1, backgroundColor: colors.bg },
 	flex: { flex: 1 },
 		scroll: { padding: space.lg, gap: space.md },
-		hero: { alignItems: 'center', gap: space.sm },
-		kicker: { color: colors.accentLink, fontWeight: '700', fontSize: 14, fontFamily: fontFamily.bold },
-		title: { color: colors.text, fontSize: 24, fontWeight: '800', fontFamily: fontFamily.extrabold, textAlign: 'center' },
+		hero: { alignItems: 'center', gap: space.md, paddingVertical: space.sm },
+		checkGlow: {
+			width: 72,
+			height: 72,
+			borderRadius: radius.pill,
+			alignItems: 'center',
+			justifyContent: 'center',
+			backgroundColor: colors.accentFill,
+			shadowColor: colors.accent,
+			shadowOpacity: 0.55,
+			shadowRadius: 18,
+			shadowOffset: { width: 0, height: 0 },
+			elevation: 8
+		},
+		title: {
+			color: colors.text,
+			fontSize: 22,
+			fontWeight: '800',
+			fontFamily: fontFamily.extrabold,
+			textAlign: 'center'
+		},
 		healthTitle: { color: colors.text, fontWeight: '700', fontSize: 15, fontFamily: fontFamily.bold },
 		healthLine: { color: colors.muted, fontSize: 14, lineHeight: 20, fontFamily: fontFamily.regular },
 		stats: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.sm },

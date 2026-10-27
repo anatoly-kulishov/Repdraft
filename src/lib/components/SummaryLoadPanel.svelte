@@ -42,10 +42,17 @@
 		const windowMap = mergeVolumeMaps(
 			recent.map((s) => sessionVolumeByBodyPart(s, bodyPartFor))
 		);
-		return laggingBodyParts(todayMap, windowMap).map((part) => ({
-			part,
-			label: labelBodyPart(part, lang)
-		}));
+		const windowShareByPart = new Map(
+			volumeShares(windowMap).map((row) => [row.bodyPart, row])
+		);
+		return laggingBodyParts(todayMap, windowMap).map((part) => {
+			const share = windowShareByPart.get(part);
+			return {
+				part,
+				sharePct: share?.sharePct ?? 4,
+				volumeKg: share?.volumeKg ?? 0
+			};
+		});
 	});
 
 	let show = $derived(todayShares.length > 0 || lagRows.length > 0);
@@ -65,7 +72,10 @@
 			</p>
 			{#each lagRows as row (row.part)}
 				<div class="summary-load__lag">
-					<span class="summary-load__lag-label">{row.label}</span>
+					{@render shareRow(
+						{ bodyPart: row.part, sharePct: row.sharePct, volumeKg: row.volumeKg },
+						true
+					)}
 					{#if onAddLagging}
 						<AppButton variant="ghost" class="summary-load__add" onclick={() => onAddLagging(row.part)}>
 							{translate(lang, 'summary.addToPlan')}
@@ -77,16 +87,22 @@
 	</AppPanel>
 {/if}
 
-{#snippet shareRow(row: BodyPartShare)}
+{#snippet shareRow(row: BodyPartShare, danger = false)}
 	<div class="summary-load__share">
 		<span class="summary-load__share-label">{labelBodyPart(row.bodyPart, lang)}</span>
 		<div class="summary-load__bar-track">
 			<div
 				class="summary-load__bar-fill"
+				class:summary-load__bar-fill--danger={danger}
 				style:width="{Math.max(4, row.sharePct)}%"
 			></div>
 		</div>
-		<span class="summary-load__share-pct tabular-nums">{row.sharePct}%</span>
+		<span
+			class="summary-load__share-pct tabular-nums"
+			class:summary-load__share-pct--danger={danger}
+		>
+			{row.sharePct}%
+		</span>
 	</div>
 {/snippet}
 
@@ -127,6 +143,9 @@
 		height: 100%;
 		background: var(--color-accent);
 	}
+	.summary-load__bar-fill--danger {
+		background: var(--color-danger);
+	}
 	.summary-load__share-pct {
 		width: 2.25rem;
 		text-align: right;
@@ -134,19 +153,23 @@
 		font-weight: 600;
 		opacity: 0.75;
 	}
+	.summary-load__share-pct--danger {
+		color: var(--color-danger);
+		opacity: 1;
+	}
 	.summary-load__lag {
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem;
-		margin-bottom: 0.35rem;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.25rem;
+		margin-bottom: 0.5rem;
 	}
-	.summary-load__lag-label {
-		font-size: 0.9375rem;
-		font-weight: 600;
+	.summary-load__lag .summary-load__share {
+		margin-bottom: 0;
 	}
 	:global(.summary-load__add) {
 		min-height: 3rem;
 		min-width: 3rem;
+		align-self: flex-start;
 	}
 </style>

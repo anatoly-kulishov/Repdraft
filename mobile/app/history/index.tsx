@@ -2,8 +2,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
 	Alert,
-	FlatList,
 	Pressable,
+	SectionList,
 	StyleSheet,
 	Text,
 	TextInput,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { HISTORY_PAGE_SIZE } from '@repdraft/domain/home';
 import { completedSetCount, sessionDurationMs } from '@repdraft/domain/session';
+import { groupSessionsByLocalDay } from '@repdraft/domain/sessionHistory';
 import type { WorkoutSession } from '@repdraft/domain/types';
 import { formatDurationMinutes, formatRelativeDay } from '@repdraft/i18n/format';
 import { Chip } from '../../src/components/Chip';
@@ -20,7 +21,7 @@ import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { deleteSessionRemote } from '../../src/sync/cloudSync';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { useAppColors } from '../../src/state/theme';
-import { fontFamily, space, touchMin, type ColorPalette } from '../../src/theme';
+import { fontFamily, radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
 type Preset = 'today' | 'all' | '7d' | '30d' | '90d';
 
@@ -73,6 +74,15 @@ export default function HistoryListScreen() {
 	const visible = useMemo(
 		() => filtered.slice(0, visibleLimit),
 		[filtered, visibleLimit]
+	);
+
+	const sections = useMemo(
+		() =>
+			groupSessionsByLocalDay(visible).map((g) => ({
+				title: formatRelativeDay(g.dayIso, locale),
+				data: g.sessions
+			})),
+		[visible, locale]
 	);
 
 	function confirmDelete(item: WorkoutSession) {
@@ -131,10 +141,11 @@ export default function HistoryListScreen() {
 					/>
 				))}
 			</View>
-			<FlatList
+			<SectionList
 				style={{ flex: 1 }}
-				data={visible}
+				sections={sections}
 				keyExtractor={(item) => item.id}
+				stickySectionHeadersEnabled={false}
 				onEndReached={() => {
 					if (visibleLimit < filtered.length) {
 						setVisibleLimit((n) => n + HISTORY_PAGE_SIZE);
@@ -158,6 +169,9 @@ export default function HistoryListScreen() {
 					</View>
 				}
 				contentContainerStyle={{ gap: space.sm, flexGrow: 1, paddingBottom: listPad }}
+				renderSectionHeader={({ section }) => (
+					<Text style={styles.sectionDay}>{section.title}</Text>
+				)}
 				renderItem={({ item }) => {
 					const mins = formatDurationMinutes(sessionDurationMs(item));
 					return (
@@ -166,9 +180,6 @@ export default function HistoryListScreen() {
 							onPress={() => router.push(`/history/${item.id}`)}
 							onLongPress={() => confirmDelete(item)}
 						>
-							<Text style={styles.day} numberOfLines={1}>
-								{formatRelativeDay(item.finishedAt ?? item.startedAt, locale)}
-							</Text>
 							<Text style={styles.title} numberOfLines={2}>
 								{item.planName}
 							</Text>
@@ -191,14 +202,15 @@ function makeStyles(colors: ColorPalette) {
 		root: { flex: 1, padding: space.lg, backgroundColor: colors.bg, gap: space.sm },
 		search: {
 			minHeight: touchMin,
-			borderRadius: 12,
+			borderRadius: radius.md,
 			borderWidth: 1,
 			borderColor: colors.border,
 			backgroundColor: colors.panel,
 			color: colors.text,
-			paddingHorizontal: 14
+			paddingHorizontal: space.md,
+			fontFamily: fontFamily.regular
 		},
-		chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+		chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
 		emptyWrap: { alignItems: 'center', gap: space.md, marginTop: 48, paddingHorizontal: space.lg },
 		empty: {
 			color: colors.text,
@@ -208,20 +220,21 @@ function makeStyles(colors: ColorPalette) {
 			fontFamily: fontFamily.bold
 		},
 		emptyLead: { color: colors.muted, textAlign: 'center', fontFamily: fontFamily.regular },
+		sectionDay: {
+			color: colors.muted,
+			fontSize: 13,
+			fontWeight: '600',
+			marginTop: space.sm,
+			marginBottom: space.xs,
+			fontFamily: fontFamily.semibold
+		},
 		row: {
 			minHeight: touchMin,
 			backgroundColor: colors.panel,
-			borderRadius: 14,
+			borderRadius: radius.md,
 			borderWidth: 1,
 			borderColor: colors.border,
-			padding: 14
-		},
-		day: {
-			color: colors.muted,
-			fontSize: 12,
-			fontWeight: '600',
-			marginBottom: 2,
-			fontFamily: fontFamily.semibold
+			padding: space.md
 		},
 		title: { color: colors.text, fontWeight: '700', fontSize: 16, fontFamily: fontFamily.bold },
 		meta: { color: colors.muted, marginTop: 4, fontFamily: fontFamily.regular }

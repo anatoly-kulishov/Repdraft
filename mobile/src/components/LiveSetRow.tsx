@@ -114,11 +114,15 @@ function LiveSetRowInner({
 					accessibilityRole="button"
 					accessibilityLabel={completed ? tt('live.undoSet') : tt('live.log')}
 					onPress={onToggleComplete}
-					style={[styles.done, current && !completed && styles.doneCurrent]}
+					style={[
+						styles.done,
+						completed && styles.doneDone,
+						current && !completed && styles.doneCurrent
+					]}
 				>
 					<Check
 						size={22}
-						color={completed || current ? colors.accentText : colors.text}
+						color={completed ? colors.accentInk : current ? colors.accentInk : colors.muted}
 						strokeWidth={2.5}
 					/>
 				</Pressable>
@@ -158,7 +162,7 @@ function makeStyles(colors: ColorPalette) {
 			paddingVertical: space.xs
 		},
 		blockCurrent: {},
-		blockDone: { opacity: 0.72 },
+		blockDone: {},
 		row: {
 			flexDirection: 'row',
 			alignItems: 'center',
@@ -199,6 +203,10 @@ function makeStyles(colors: ColorPalette) {
 			borderWidth: 1,
 			borderColor: colors.borderStrong,
 			backgroundColor: colors.panel
+		},
+		doneDone: {
+			backgroundColor: colors.accentFill,
+			borderColor: colors.accentFill
 		},
 		doneCurrent: {
 			backgroundColor: colors.accentFill,

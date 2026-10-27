@@ -24,7 +24,7 @@
 		setKindMessageKey,
 		updateLoggedSet
 	} from '$lib/domain/session';
-	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
+	import type { ExerciseIndexItem, LoggedSet, WorkoutSession } from '$lib/domain/types';
 	import { formatDurationMs, formatLongDate } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
@@ -330,6 +330,33 @@
 	/>
 {/snippet}
 
+{#snippet viewSets(rows: { set: LoggedSet; setIndex: number }[])}
+	{#if rows.length > 0}
+		<ul class="history-exercise__sets history-exercise__sets--grid">
+			{#each rows as item, i (item.setIndex)}
+				{@const setKind = loggedSetKind(item.set)}
+				<li class="history-exercise__set history-exercise__set--cell tabular-nums">
+					<span class="history-exercise__set-i">{i + 1}</span>
+					<span class="history-exercise__set-value">
+						{#if item.set.weightKg != null || item.set.reps != null}
+							{item.set.weightKg != null ? item.set.weightKg : '-'} × {item.set.reps ?? '-'}
+						{:else}
+							{translate(lang, 'live.setMarked')}
+						{/if}
+					</span>
+					{#if setKind !== 'work'}
+						<span class="history-exercise__set-kind">
+							{translate(lang, setKindMessageKey(setKind))}
+						</span>
+					{/if}
+				</li>
+			{/each}
+		</ul>
+	{:else}
+		<p class="history-exercise__empty">{translate(lang, 'workouts.noLoggedSets')}</p>
+	{/if}
+{/snippet}
+
 <SeoHead
 	title={session ? session.planName : translate(lang, 'workouts.historyDetail')}
 	noindex
@@ -608,46 +635,7 @@
 							<p class="history-exercise__note">{ex.note.trim()}</p>
 						{/if}
 
-						{#if rows.length > 0}
-							<ul
-								class="history-exercise__sets"
-								class:history-exercise__sets--grid={rows.length >= 4}
-							>
-								{#each rows as item, i (item.setIndex)}
-									{@const setKind = loggedSetKind(item.set)}
-									<li class="history-exercise__set tabular-nums">
-										<div class="history-exercise__set-main">
-											<span class="history-exercise__set-i">{i + 1}</span>
-											{#if item.set.weightKg != null || item.set.reps != null}
-												{#if item.set.weightKg != null}
-													<span class="history-exercise__set-weight"
-														>{item.set.weightKg} {translate(lang, 'pr.kg')}</span
-													>
-													<span class="history-exercise__set-reps">× {item.set.reps ?? '-'}</span>
-												{:else}
-													<span class="history-exercise__set-reps">
-														{item.set.reps != null
-															? `${item.set.reps} ${translate(lang, 'pr.repsShort')}`
-															: '-'}
-													</span>
-												{/if}
-											{:else}
-												<span class="history-exercise__set-reps"
-													>{translate(lang, 'live.setMarked')}</span
-												>
-											{/if}
-										</div>
-										{#if setKind !== 'work'}
-											<span class="history-exercise__set-kind">
-												{translate(lang, setKindMessageKey(setKind))}
-											</span>
-										{/if}
-									</li>
-								{/each}
-							</ul>
-						{:else}
-							<p class="history-exercise__empty">{translate(lang, 'workouts.noLoggedSets')}</p>
-						{/if}
+						{@render viewSets(rows)}
 					{:else}
 						<div class="history-exercise__head is-static">
 							<span
@@ -658,40 +646,7 @@
 								<p class="workout-preview-row-title">{ex.exerciseId}</p>
 							</div>
 						</div>
-						{#if rows.length > 0}
-							<ul
-								class="history-exercise__sets"
-								class:history-exercise__sets--grid={rows.length >= 4}
-							>
-								{#each rows as item, i (item.setIndex)}
-									{@const setKind = loggedSetKind(item.set)}
-									<li class="history-exercise__set tabular-nums">
-										<div class="history-exercise__set-main">
-											<span class="history-exercise__set-i">{i + 1}</span>
-											{#if item.set.weightKg != null}
-												<span class="history-exercise__set-weight"
-													>{item.set.weightKg} {translate(lang, 'pr.kg')}</span
-												>
-												<span class="history-exercise__set-reps">× {item.set.reps ?? '-'}</span>
-											{:else}
-												<span class="history-exercise__set-reps">
-													{item.set.reps != null
-														? `${item.set.reps} ${translate(lang, 'pr.repsShort')}`
-														: '-'}
-												</span>
-											{/if}
-										</div>
-										{#if setKind !== 'work'}
-											<span class="history-exercise__set-kind">
-												{translate(lang, setKindMessageKey(setKind))}
-											</span>
-										{/if}
-									</li>
-								{/each}
-							</ul>
-						{:else}
-							<p class="history-exercise__empty">{translate(lang, 'workouts.noLoggedSets')}</p>
-						{/if}
+						{@render viewSets(rows)}
 					{/if}
 				</li>
 			{/each}

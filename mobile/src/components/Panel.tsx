@@ -20,14 +20,15 @@ function makeStyles(colors: ColorPalette) {
 	return StyleSheet.create({
 		panel: {
 			backgroundColor: colors.panel,
-			borderRadius: radius.lg,
+			borderRadius: radius.md,
 			borderWidth: 1,
 			borderColor: colors.border,
 			padding: space.lg,
 			gap: space.sm
 		},
 		accent: {
-			borderColor: colors.accent
+			borderColor: colors.accent,
+			borderLeftWidth: 3
 		}
 	});
 }

@@ -41,21 +41,21 @@ export type CoreColorPalette = {
 };
 
 export const darkColors: CoreColorPalette = {
-	bg: '#0b0b0c',
+	bg: '#0E0E11',
 	panel: '#1c1c1e',
 	panelRaised: '#2c2c2e',
 	border: '#3a3a3c',
 	borderStrong: '#48484a',
-	text: '#f5f5f7',
-	muted: '#98989d',
-	accent: '#8b5cf6',
-	accentFill: '#7c3aed',
-	accentGradientStart: '#6d28d9',
-	accentGradientHoverStart: '#7c3aed',
-	accentGradientHoverEnd: '#8252ed',
+	text: '#ffffff',
+	muted: '#8e8e93',
+	accent: '#a259ff',
+	accentFill: '#a259ff',
+	accentGradientStart: '#8a2be2',
+	accentGradientHoverStart: '#8a2be2',
+	accentGradientHoverEnd: '#a259ff',
 	accentInk: '#ffffff',
-	accentText: '#a78bfa',
-	accentDim: 'rgba(139, 92, 246, 0.18)',
+	accentText: '#c4a3ff',
+	accentDim: 'rgba(162, 89, 255, 0.18)',
 	danger: '#f87171',
 	dangerBg: '#3f1d1d',
 	overlayScrim: 'rgba(0, 0, 0, 0.55)',
@@ -93,8 +93,16 @@ export const space = {
 	sm: 8,
 	md: 12,
 	lg: 16,
+	/** Page horizontal pad - web `--page-pad-x` 1.125rem. */
+	page: 18,
 	xl: 20,
 	xxl: 28
+} as const;
+
+/** Floating tab bar - web `--tabbar-h` / `--tabbar-float-gap`. */
+export const tabbar = {
+	innerH: 58,
+	floatGap: 8
 } as const;
 
 export const radius = {
@@ -107,8 +115,10 @@ export const radius = {
 
 /** Rem values for web CSS generation (px / 16). */
 export const radiusRem = {
-	panel: '1.25rem',
+	/** Cards / panels: 16px. */
+	panel: '1rem',
 	control: '1rem',
-	button: '999px',
-	lg: '1.25rem'
+	/** Primary CTAs and main containers: 24px (not pill). */
+	button: '1.5rem',
+	lg: '1.5rem'
 } as const;

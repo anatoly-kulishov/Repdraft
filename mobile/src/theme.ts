@@ -1,4 +1,9 @@
-import { radius as sharedRadius, space as sharedSpace, touchMin as sharedTouchMin } from '@repdraft/design/tokens';
+import {
+	radius as sharedRadius,
+	space as sharedSpace,
+	tabbar as sharedTabbar,
+	touchMin as sharedTouchMin
+} from '@repdraft/design/tokens';
 import { darkPalette } from './theme/palettes';
 
 /** @deprecated Prefer `useAppColors()` inside screens; static fallback for legacy StyleSheets. */
@@ -10,6 +15,8 @@ export type { AppThemeMode, ColorPalette } from './theme/palettes';
 export const touchMin = sharedTouchMin;
 
 export const space = sharedSpace;
+
+export const tabbar = sharedTabbar;
 
 export const radius = sharedRadius;
 
@@ -28,11 +35,20 @@ export const type = {
 		fontWeight: '500' as const,
 		fontFamily: fontFamily.regular
 	},
-	title: { fontSize: 28, lineHeight: 34, fontWeight: '800' as const, fontFamily: fontFamily.extrabold },
+	/** Page / hero plan name - matches web ~17/650, not a shouty 28. */
+	title: { fontSize: 17, lineHeight: 22, fontWeight: '700' as const, fontFamily: fontFamily.bold },
+	/** Large display (stats, summary numbers). */
+	display: { fontSize: 28, lineHeight: 34, fontWeight: '800' as const, fontFamily: fontFamily.extrabold },
 	header: { fontSize: 17, lineHeight: 22, fontWeight: '700' as const, fontFamily: fontFamily.bold },
 	section: {
-		fontSize: 13,
-		lineHeight: 18,
+		fontSize: 17,
+		lineHeight: 22,
+		fontWeight: '600' as const,
+		fontFamily: fontFamily.semibold
+	},
+	kicker: {
+		fontSize: 12,
+		lineHeight: 16,
 		fontWeight: '700' as const,
 		letterSpacing: 0.4,
 		fontFamily: fontFamily.bold
