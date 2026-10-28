@@ -1,6 +1,6 @@
 import type { ExerciseIndexItem } from '$lib/domain/types';
 import { isExerciseRagConfigured } from '$lib/server/supabase/admin';
-import { hintsFromBrief, popularity, slimCatalogForBrief } from './catalog';
+import { effectivePartsFromBrief, popularity, slimCatalogForBrief } from './catalog';
 import { embedBrief } from './embeddings';
 import { matchExercisesByEmbedding } from './matchExercises';
 import { matchTemplate, type SplitTemplate } from './splitTemplates';
@@ -35,12 +35,12 @@ function regexResult(
 	index: ExerciseIndexItem[],
 	topK: number
 ): RetrieveResult {
-	const hints = hintsFromBrief(brief);
+	const hinted = effectivePartsFromBrief(brief);
 	const regexSlim = slimCatalogForBrief(index, brief).slice(0, topK);
-	const parts = hints.parts.length ? hints.parts : majorityParts(regexSlim);
+	const parts = hinted.length ? hinted : majorityParts(regexSlim);
 	return {
 		exercises: regexSlim,
-		template: matchTemplate(parts, hints.parts),
+		template: matchTemplate(parts, hinted),
 		mode: 'regex',
 		scores: regexSlim.map((exercise) => ({
 			exercise,
@@ -60,7 +60,7 @@ export async function retrieve(
 	opts: { topK?: number } = {}
 ): Promise<RetrieveResult> {
 	const topK = opts.topK ?? RETRIEVE_TOP_K;
-	const hints = hintsFromBrief(brief);
+	const hinted = effectivePartsFromBrief(brief);
 	const regexSlim = slimCatalogForBrief(index, brief);
 	const regexIds = new Set(regexSlim.map((e) => e.id));
 
@@ -75,7 +75,7 @@ export async function retrieve(
 		const q = await embedBrief(brief);
 		const matched = await matchExercisesByEmbedding(q, {
 			topK,
-			bodyParts: hints.parts.length ? hints.parts : undefined
+			bodyParts: hinted.length ? hinted : undefined
 		});
 		if (!matched.length) {
 			return regexResult(brief, index, topK);
@@ -109,10 +109,10 @@ export async function retrieve(
 
 	const merged = [...scoreMap.values()].sort((a, b) => b.score - a.score);
 	const exercises = merged.slice(0, topK).map((s) => s.exercise);
-	const parts = hints.parts.length ? hints.parts : majorityParts(exercises);
+	const parts = hinted.length ? hinted : majorityParts(exercises);
 	return {
 		exercises,
-		template: matchTemplate(parts, hints.parts),
+		template: matchTemplate(parts, hinted),
 		mode: 'hybrid',
 		scores: merged.slice(0, topK)
 	};

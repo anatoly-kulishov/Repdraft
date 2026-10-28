@@ -1,4 +1,4 @@
-import { hintsFromBrief } from './catalog';
+import { effectivePartsFromBrief, hintsFromBrief } from './catalog';
 import { authenticatedJsonPost } from './chat';
 import { resolveEmbeddingsConfig, ollamaEmbeddingsFallback, type AiConfig } from './config';
 import { exerciseEmbedText } from './embedText';
@@ -106,9 +106,10 @@ export async function embedBrief(brief: string): Promise<number[]> {
 	const cfg = resolveEmbeddingsConfig();
 	const model = cfg?.model ?? 'nomic-embed-text';
 	const hints = hintsFromBrief(brief);
+	const parts = effectivePartsFromBrief(brief);
 	const expanded =
-		hints.parts.length || hints.equipment.length
-			? `${brief} | ${[...hints.parts, ...hints.equipment].join(' ')}`
+		parts.length || hints.equipment.length
+			? `${brief} | ${[...parts, ...hints.equipment].join(' ')}`
 			: brief;
 	const key = `${model}::${expanded}`;
 	const hit = cacheGet(key);

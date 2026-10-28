@@ -7,7 +7,8 @@ import {
 	hintsFromBrief,
 	loadExerciseIndex,
 	slimCatalogForBrief,
-	targetsFromBrief
+	targetsFromBrief,
+	exclusionsFromBrief
 } from './catalog';
 import { chatCompletion } from './chat';
 import { resolveAiConfig, type AiProvider } from './config';
@@ -43,6 +44,17 @@ export type GeneratePlanErr = {
 const MIN_EXERCISES = 5;
 const MAX_EXERCISES = 8;
 
+/** Fine-grained catalog targets that belong to a body_part. */
+const TARGET_TO_PART: Record<string, string> = {
+	delts: 'shoulders',
+	quads: 'upper legs',
+	glutes: 'upper legs',
+	calves: 'lower legs',
+	abs: 'waist',
+	triceps: 'upper arms',
+	biceps: 'upper arms'
+};
+
 const SYSTEM_TEMPLATE = `Ты — API генерации плана тренировки для приложения Repdraft. Не чат-бот.
 Собери силовой план для зала: безопасный, логичный по нагрузке, без воды.
 
@@ -76,6 +88,7 @@ const SYSTEM_TEMPLATE = `Ты — API генерации плана тренир
 15. Если brief задаёт зону (руки/грудь/ноги/…) — бери ТОЛЬКО упражнения этой зоны (и явно названных соседних). Не подмешивай присед/ягодицы в план на руки и т.п.
 16. Если brief называет НЕСКОЛЬКО зон (например «спина и трицепс») — в плане ОБЯЗАНЫ быть упражнения КАЖДОЙ зоны (не меньше 1–2 на вторичную). Не оставляй только первую зону.
 17. Если brief называет мышцу изоляции (трицепс/бицепс/…) — для upper arms бери target этой мышцы, не соседнюю.
+18. Если ниже указаны ИСКЛЮЧЕНИЯ — не бери упражнения этих зон вообще, даже ради количества. Название плана не должно упоминать исключённые зоны.
 
 {template}
 
@@ -181,6 +194,21 @@ export function filterToBodyHints(
 	if (!kept.length) {
 		throw new Error('После фильтра зоны не осталось упражнений');
 	}
+	return { name: plan.name, exercises: kept };
+}
+
+/** Drop exercises whose body_part is explicitly excluded by the brief. */
+export function filterExcludedParts(
+	plan: AiPlan,
+	index: ReturnType<typeof loadExerciseIndex>,
+	exclude: readonly string[]
+): AiPlan {
+	if (!exclude.length) return plan;
+	const byId = new Map(index.map((ex) => [ex.id, ex]));
+	const kept = plan.exercises.filter((e) => {
+		const part = byId.get(e.exerciseId)?.body_part;
+		return !part || !exclude.includes(part);
+	});
 	return { name: plan.name, exercises: kept };
 }
 
@@ -376,13 +404,20 @@ export async function generateWorkoutPlan(briefRaw: string): Promise<GeneratePla
 	const slimRaw = retrieved.exercises.length
 		? retrieved.exercises
 		: slimCatalogForBrief(index, brief);
-	const { parts } = hintsFromBrief(brief);
-	const targets = targetsFromBrief(brief);
+	const exclude = exclusionsFromBrief(brief);
+	const { parts: hintedParts } = hintsFromBrief(brief);
+	const parts = hintedParts.filter((part) => !exclude.includes(part));
+	const targets = targetsFromBrief(brief).filter(
+		(target) => !exclude.includes(TARGET_TO_PART[target] ?? '')
+	);
 	const wantCount = desiredExerciseCountFromBrief(brief, MIN_EXERCISES);
-	const slim = parts.length
+	const slimBase = parts.length
 		? slimRaw.filter((ex) => parts.includes(ex.body_part))
 		: slimRaw;
-	if (parts.length && slim.length === 0) {
+	const slim = slimBase.filter((ex) => !exclude.includes(ex.body_part));
+	// Retrieval can be biased by excluded words, so fall back to a clean zone slice.
+	const safeSlim = slim.length ? slim : slimCatalogForBrief(index, brief);
+	if (parts.length && safeSlim.length === 0) {
 		return {
 			ok: false,
 			code: 'invalid_plan',
@@ -396,8 +431,13 @@ export async function generateWorkoutPlan(briefRaw: string): Promise<GeneratePla
 		targets.length > 0
 			? `\nЦелевые мышцы (target): ${targets.join(', ')}. Для рук предпочитай эти target.`
 			: '';
-	const system = SYSTEM_TEMPLATE.replace('{catalog}', catalogPromptLines(slim))
-		.replace('{template}', templateBlock + targetHint);
+	const excludeHint = exclude.length
+		? `\nИСКЛЮЧЕНИЯ (body_part): ${exclude.join(', ')}. Не бери упражнения с этими body_part и не упоминай их в названии.`
+		: '';
+	const system = SYSTEM_TEMPLATE.replace('{catalog}', catalogPromptLines(safeSlim)).replace(
+		'{template}',
+		templateBlock + targetHint + excludeHint
+	);
 
 	try {
 		let raw: unknown;
@@ -443,9 +483,15 @@ export async function generateWorkoutPlan(briefRaw: string): Promise<GeneratePla
 		const beforeKnown = plan.exercises.length;
 		plan = filterKnownIds(plan, allowed);
 		const droppedUnknownIds = beforeKnown - plan.exercises.length;
+		plan = filterExcludedParts(plan, index, exclude);
 		plan = filterToBodyHints(plan, index, parts);
-		plan = padToMinExercises(plan, slim, allowed, parts.length ? [] : index, wantCount);
-		plan = ensureHintCoverage(plan, index, parts, slim, allowed, targets);
+		const fallbackPool = parts.length
+			? []
+			: index.filter((ex) => !exclude.includes(ex.body_part));
+		plan = padToMinExercises(plan, safeSlim, allowed, fallbackPool, wantCount);
+		plan = ensureHintCoverage(plan, index, parts, safeSlim, allowed, targets);
+		// Coverage may swap a row in; keep the exclusion contract absolute.
+		plan = filterExcludedParts(plan, index, exclude);
 		return {
 			ok: true,
 			provider: cfg.provider,

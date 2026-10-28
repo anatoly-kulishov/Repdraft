@@ -14,6 +14,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.23.4',
+		highlights: {
+			ru: [
+				'ИИ-черновик: «без плеч» и «болят плечи» теперь реально исключают зону',
+				'Подбор упражнений не подмешивает исключённые группы даже для добора до нужного числа',
+				'Название плана больше не упоминает зоны, которые просили не трогать'
+			],
+			en: [
+				'AI draft: "no shoulders" and "sore shoulders" now actually exclude the zone',
+				'Exercise picks never mix in an excluded group, even to reach the minimum count',
+				'The plan name no longer mentions zones you asked to skip'
+			]
+		}
+	},
+	{
 		version: '0.23.3',
 		highlights: {
 			ru: [
