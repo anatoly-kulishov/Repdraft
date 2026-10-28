@@ -60,6 +60,15 @@ export default function CoachScreen() {
 		);
 	}, [homePlan, overview.laggingBodyPart]);
 
+	const replaceSharePct = useMemo(
+		() =>
+			replace
+				? (overview.bodyParts.find((part) => part.bodyPart === replace.bodyPart)?.sharePct ??
+					null)
+				: null,
+		[replace, overview.bodyParts]
+	);
+
 	const hints = useMemo(() => {
 		const finished = sessions
 			.filter((s) => s.finishedAt)
@@ -124,6 +133,15 @@ export default function CoachScreen() {
 							<Text style={styles.title}>{exerciseDisplayName(replace.fromExerciseId, locale)}</Text>
 							<Text style={styles.meta}>→ {exerciseDisplayName(replace.toExerciseId, locale)}</Text>
 							<Text style={styles.meta}>{labelBodyPart(replace.bodyPart, locale)}</Text>
+							<Text style={styles.why}>
+								{replaceSharePct != null
+									? tt('coach.replaceWhy', {
+											part: labelBodyPart(replace.bodyPart, locale),
+											pct: replaceSharePct
+										})
+									: tt('coach.replaceWhyGeneric')}
+							</Text>
+							<Text style={styles.why}>{tt('coach.replaceWhat')}</Text>
 							<PrimaryButton label={tt('coach.replace')} onPress={() => void replaceHint()} />
 						</Panel>
 					) : null}
@@ -140,6 +158,13 @@ function makeStyles(colors: ColorPalette) {
 		lead: { color: colors.muted, fontSize: 15, lineHeight: 21, fontFamily: fontFamily.regular },
 		title: { color: colors.text, fontWeight: '800', fontSize: 17, fontFamily: fontFamily.extrabold },
 		meta: { color: colors.muted, fontSize: 14, marginBottom: space.sm, fontFamily: fontFamily.regular },
+		why: {
+			color: colors.muted,
+			fontSize: 13,
+			lineHeight: 18,
+			marginBottom: space.sm,
+			fontFamily: fontFamily.regular
+		},
 		muted: { color: colors.muted, lineHeight: 20, fontFamily: fontFamily.regular }
 	});
 }

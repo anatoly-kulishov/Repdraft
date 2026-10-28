@@ -9,6 +9,7 @@ import { Panel } from '../src/components/Panel';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { useBottomChromePad } from '../src/layout/safe';
 import { useLocale } from '../src/state/locale';
+import { loadQuestState } from '../src/state/quest';
 import { useAppColors } from '../src/state/theme';
 import { sessionsRepo } from '../src/storage/sessionsRepo';
 import { fontFamily, radius, space, type ColorPalette } from '../src/theme';
@@ -20,12 +21,15 @@ export default function ProgressScreen() {
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const bottomPad = useBottomChromePad(space.lg);
 	const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+	const [weeklyGoal, setWeeklyGoal] = useState(2);
 
 	useFocusEffect(
 		useCallback(() => {
 			void (async () => {
 				await refreshCustomsCache();
 				setSessions(await sessionsRepo.list());
+				const quest = await loadQuestState();
+				setWeeklyGoal(Math.max(1, quest.weeklyGoal));
 			})();
 		}, [])
 	);
@@ -35,6 +39,19 @@ export default function ProgressScreen() {
 		[sessions]
 	);
 	const maxWeekVol = Math.max(1, ...overview.weeks.map((w) => w.volumeKg));
+	const thisWeekDone = overview.streak.thisWeekCount;
+	const goalMet = thisWeekDone >= weeklyGoal;
+	// Small samples make a "lagging" flag noisy: require enough groups and workouts.
+	const laggingPart =
+		overview.bodyParts.length >= 3 && overview.workouts30d >= 4
+			? overview.laggingBodyPart
+			: null;
+	const formatWeight = (kg: number) =>
+		Number.isInteger(kg) ? String(kg) : String(Math.round(kg * 10) / 10);
+	const weekLabel = (weekKey: string) =>
+		weekKey === overview.streak.thisWeekKey
+			? tt('progress.weekNow')
+			: `${weekKey.slice(8, 10)}.${weekKey.slice(5, 7)}`;
 
 	return (
 		<ScrollView
@@ -50,8 +67,31 @@ export default function ProgressScreen() {
 				<View style={styles.stat}>
 					<Text style={styles.statLabel}>{tt('progress.volume30d')}</Text>
 					<Text style={styles.statValue}>{overview.volume30dKg}</Text>
+					{overview.workouts30d > 0 ? (
+						<Text style={styles.statMeta}>
+							{tt('progress.avgPerWorkout', { kg: overview.avgVolumePerWorkoutKg })}
+						</Text>
+					) : null}
 				</View>
 			</View>
+			{overview.weeks.length > 0 ? (
+				<Panel>
+					<Text style={styles.sectionTitle}>{tt('progress.streakTitle')}</Text>
+					<View style={styles.streakRow}>
+						<Text style={styles.streakValue}>
+							{overview.streak.streakWeeks > 0
+								? tt('progress.streakValue', { n: overview.streak.streakWeeks })
+								: tt('progress.streakNone')}
+						</Text>
+						<Text style={[styles.streakGoal, goalMet && styles.streakGoalMet]}>
+							{goalMet
+								? tt('progress.goalMet')
+								: tt('progress.weekGoal', { done: thisWeekDone, goal: weeklyGoal })}
+						</Text>
+					</View>
+					<Text style={styles.streakHint}>{tt('progress.streakHint')}</Text>
+				</Panel>
+			) : null}
 			<Panel>
 				<Text style={styles.sectionTitle}>{tt('progress.volumeByWeek')}</Text>
 				{overview.weeks.length === 0 ? (
@@ -63,29 +103,50 @@ export default function ProgressScreen() {
 						/>
 					</>
 				) : (
-					overview.weeks.map((w) => (
-						<View key={w.weekKey} style={styles.weekRow}>
-							<Text style={styles.weekLabel}>{w.weekKey.slice(5)}</Text>
-							<View style={styles.barTrack}>
-								<View
-									style={[
-										styles.barFill,
-										{ width: `${Math.round((w.volumeKg / maxWeekVol) * 100)}%` }
-									]}
-								/>
+					overview.weeks.map((w) => {
+						const isNow = w.weekKey === overview.streak.thisWeekKey;
+						return (
+							<View key={w.weekKey} style={styles.weekRow}>
+								<Text style={[styles.weekLabel, isNow && styles.weekLabelNow]}>
+									{weekLabel(w.weekKey)}
+								</Text>
+								<View style={styles.barTrack}>
+									<View
+										style={[
+											styles.barFill,
+											{ width: `${Math.round((w.volumeKg / maxWeekVol) * 100)}%` }
+										]}
+									/>
+								</View>
+								<Text style={styles.weekMeta}>
+									{w.volumeKg} · {w.workouts}
+								</Text>
 							</View>
-							<Text style={styles.weekMeta}>
-								{w.volumeKg} · {w.workouts}
-							</Text>
-						</View>
-					))
+						);
+					})
 				)}
 			</Panel>
+			{overview.bestLifts.length > 0 ? (
+				<Panel>
+					<Text style={styles.sectionTitle}>{tt('progress.bestLifts')}</Text>
+					<Text style={styles.panelHint}>{tt('progress.bestLiftsHint')}</Text>
+					{overview.bestLifts.map((lift) => (
+						<View key={lift.exerciseId} style={styles.liftRow}>
+							<Text style={styles.liftName} numberOfLines={1}>
+								{exerciseDisplayName(lift.exerciseId, locale)}
+							</Text>
+							<Text style={styles.liftValue}>
+								{formatWeight(lift.weightKg)} {tt('pr.kg')} × {lift.reps} {tt('pr.repsShort')}
+							</Text>
+						</View>
+					))}
+				</Panel>
+			) : null}
 			{overview.bodyParts.length > 0 ? (
 				<Panel>
 					<Text style={styles.sectionTitle}>{tt('progress.bodyParts')}</Text>
 					{overview.bodyParts.map((part) => {
-						const lagging = part.bodyPart === overview.laggingBodyPart;
+						const lagging = part.bodyPart === laggingPart;
 						return (
 							<View key={part.bodyPart} style={styles.part}>
 								<View style={styles.partTop}>
@@ -153,6 +214,12 @@ function makeStyles(colors: ColorPalette) {
 			fontVariant: ['tabular-nums'],
 			fontFamily: fontFamily.extrabold
 		},
+		statMeta: {
+			color: colors.muted,
+			fontSize: 11,
+			marginTop: 2,
+			fontFamily: fontFamily.regular
+		},
 		sectionTitle: {
 			color: colors.muted,
 			fontWeight: '700',
@@ -163,6 +230,59 @@ function makeStyles(colors: ColorPalette) {
 			fontFamily: fontFamily.bold
 		},
 		muted: { color: colors.muted, fontFamily: fontFamily.regular },
+		panelHint: {
+			color: colors.muted,
+			fontSize: 12,
+			marginTop: -2,
+			marginBottom: space.sm,
+			fontFamily: fontFamily.regular
+		},
+		streakRow: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'baseline',
+			flexWrap: 'wrap',
+			gap: 6
+		},
+		streakValue: {
+			color: colors.text,
+			fontSize: 24,
+			fontWeight: '800',
+			fontVariant: ['tabular-nums'],
+			fontFamily: fontFamily.extrabold
+		},
+		streakGoal: {
+			color: colors.muted,
+			fontSize: 13,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
+		},
+		streakGoalMet: { color: colors.accent },
+		streakHint: {
+			color: colors.muted,
+			fontSize: 12,
+			marginTop: 6,
+			fontFamily: fontFamily.regular
+		},
+		liftRow: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			gap: space.sm,
+			paddingVertical: 4
+		},
+		liftName: {
+			flex: 1,
+			color: colors.text,
+			fontSize: 14,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
+		},
+		liftValue: {
+			color: colors.muted,
+			fontSize: 13,
+			fontVariant: ['tabular-nums'],
+			fontFamily: fontFamily.regular
+		},
 		weekRow: {
 			flexDirection: 'row',
 			alignItems: 'center',
@@ -170,6 +290,7 @@ function makeStyles(colors: ColorPalette) {
 			marginBottom: space.sm
 		},
 		weekLabel: { width: 48, color: colors.muted, fontSize: 13, fontWeight: '600', fontFamily: fontFamily.semibold },
+		weekLabelNow: { color: colors.accent },
 		part: { gap: 6, marginBottom: 10 },
 		partTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, alignItems: 'center' },
 		partLabelRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm, minWidth: 0 },

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Repdraft",
     "slug": "repdraft",
-    "version": "0.23.2",
+    "version": "0.23.3",
     "orientation": "portrait",
     "icon": "./assets/app-icon.png",
     "userInterfaceStyle": "automatic",

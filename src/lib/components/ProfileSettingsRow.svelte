@@ -14,6 +14,8 @@
 		ariaLabel?: string;
 		href?: string;
 		onclick?: () => void;
+		/** Destructive action: red label and red icon plate. */
+		danger?: boolean;
 		/** Show inline spinner in the icon slot; keeps the label readable. */
 		busy?: boolean;
 		disabled?: boolean;
@@ -30,6 +32,7 @@
 		ariaLabel,
 		href,
 		onclick,
+		danger = false,
 		busy = false,
 		disabled = false,
 		children
@@ -68,6 +71,7 @@
 	<a
 		class="profile-settings-row profile-settings-row--cycle"
 		class:profile-settings-row--busy={busy}
+		class:profile-settings-row--danger={danger}
 		aria-label={ariaLabel ?? label}
 		aria-busy={busy || undefined}
 		aria-disabled={locked || undefined}
@@ -84,6 +88,7 @@
 		type="button"
 		class="profile-settings-row profile-settings-row--cycle"
 		class:profile-settings-row--busy={busy}
+		class:profile-settings-row--danger={danger}
 		aria-label={ariaLabel ?? label}
 		aria-busy={busy || undefined}
 		disabled={locked}
@@ -92,7 +97,7 @@
 		{@render body()}
 	</button>
 {:else}
-	<div class="profile-settings-row" class:profile-settings-row--busy={busy} aria-busy={busy || undefined}>
+	<div class="profile-settings-row" class:profile-settings-row--busy={busy} class:profile-settings-row--danger={danger} aria-busy={busy || undefined}>
 		{@render body()}
 	</div>
 {/if}
