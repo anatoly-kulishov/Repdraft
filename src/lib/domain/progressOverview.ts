@@ -22,13 +22,33 @@ export type ExerciseTrend = {
 	deltaKg: number;
 };
 
+/** Heaviest completed working set for an exercise within the window. */
+export type ProgressBestLift = {
+	exerciseId: string;
+	weightKg: number;
+	reps: number;
+};
+
+export type ProgressStreak = {
+	/** Consecutive weeks with at least one finished session (this week counts if it has one). */
+	streakWeeks: number;
+	/** Finished sessions in the current Monday-based week. */
+	thisWeekCount: number;
+	/** Monday key (YYYY-MM-DD) of the current week. */
+	thisWeekKey: string;
+};
+
 export type ProgressOverview = {
 	workouts30d: number;
 	volume30dKg: number;
+	/** volume30dKg / workouts30d, rounded. 0 when there are no workouts. */
+	avgVolumePerWorkoutKg: number;
 	weeks: WeekVolume[];
 	bodyParts: BodyPartShare[];
 	laggingBodyPart: string | null;
 	trends: ExerciseTrend[];
+	streak: ProgressStreak;
+	bestLifts: ProgressBestLift[];
 };
 
 export type Progress30d = {
@@ -67,6 +87,64 @@ function trendDelta(
 	}
 	if (recent == null || older == null || recent === older) return null;
 	return Math.round((recent - older) * 10) / 10;
+}
+
+function minusWeeks(ms: number, weeks: number): number {
+	const d = new Date(ms);
+	d.setDate(d.getDate() - weeks * 7);
+	return d.getTime();
+}
+
+/** Consecutive Monday-based weeks with at least one countable session. */
+function weeklyStreak(finished: readonly WorkoutSession[], now: Date): ProgressStreak {
+	const weekKeys = new Set<string>();
+	let thisWeekCount = 0;
+	const thisWeekKey = weekKeyFromDate(now);
+	for (const session of finished) {
+		if (!session.finishedAt) continue;
+		const t = Date.parse(session.finishedAt);
+		if (!Number.isFinite(t)) continue;
+		const key = weekKeyFromDate(new Date(t));
+		weekKeys.add(key);
+		if (key === thisWeekKey) thisWeekCount += 1;
+	}
+	// An empty current week does not break an ongoing streak yet.
+	let cursor = weekKeys.has(thisWeekKey) ? now.getTime() : minusWeeks(now.getTime(), 1);
+	let streakWeeks = 0;
+	while (weekKeys.has(weekKeyFromDate(new Date(cursor))) && streakWeeks < 520) {
+		streakWeeks += 1;
+		cursor = minusWeeks(cursor, 1);
+	}
+	return { streakWeeks, thisWeekCount, thisWeekKey };
+}
+
+/** Heaviest completed working set per exercise within the given sessions. */
+function bestLiftsWithin(sessions: readonly WorkoutSession[]): ProgressBestLift[] {
+	const best = new Map<string, ProgressBestLift>();
+	for (const session of sessions) {
+		for (const exercise of session.exercises) {
+			if (exercise.skipped) continue;
+			for (const set of exercise.sets) {
+				if (!set.completed || set.weightKg == null || set.reps == null) continue;
+				if (set.kind === 'warmup') continue;
+				const prev = best.get(exercise.exerciseId);
+				const better =
+					!prev ||
+					set.weightKg > prev.weightKg ||
+					(set.weightKg === prev.weightKg && set.reps > prev.reps);
+				if (better) {
+					best.set(exercise.exerciseId, {
+						exerciseId: exercise.exerciseId,
+						weightKg: set.weightKg,
+						reps: set.reps
+					});
+				}
+			}
+		}
+	}
+	return [...best.values()]
+		.sort((a, b) => b.weightKg - a.weightKg || b.reps - a.reps)
+		.slice(0, 5);
 }
 
 export function computeProgressOverview(
@@ -123,9 +201,12 @@ export function computeProgressOverview(
 	return {
 		workouts30d: last30.length,
 		volume30dKg: Math.round(volume30dKg),
+		avgVolumePerWorkoutKg: last30.length > 0 ? Math.round(volume30dKg / last30.length) : 0,
 		weeks,
 		bodyParts,
 		laggingBodyPart,
-		trends
+		trends,
+		streak: weeklyStreak(finished, now),
+		bestLifts: bestLiftsWithin(last30)
 	};
 }

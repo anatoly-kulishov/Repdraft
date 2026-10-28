@@ -35,6 +35,7 @@
 	import { readDraft, peekBuilderDraftExerciseCount } from '$lib/storage/localWorkoutRepository';
 	import {
 		Plus,
+		NotePencil,
 		FloppyDisk as Save,
 		Trash as Trash2,
 		ArrowLeft,
@@ -372,7 +373,7 @@
 				<EmptyState
 					centered
 					class="builder-empty-state"
-					icon={Plus}
+					icon={NotePencil}
 					title={translate(lang, 'builder.emptyTitle')}
 					description={translate(lang, 'builder.emptyDesc')}
 					actionHref={BUILDER_ADD_EXERCISE_HREF}

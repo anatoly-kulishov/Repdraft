@@ -1572,21 +1572,34 @@ button.live-local-save-cue {
 	pointer-events: none;
 }
 
-.profile-avatar-sheet__head {
-	padding-bottom: 0.1rem;
+.profile-avatar-sheet__grabber {
+	display: block;
+	width: 2.25rem;
+	height: 0.25rem;
+	margin: -0.35rem auto 0.7rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--color-muted) 35%, transparent);
 }
 
 .profile-avatar-sheet__title {
+	margin: 0 0 0.25rem;
 	font-size: 1rem;
 	font-weight: 650;
 	line-height: 1.25;
 }
 
-.profile-avatar-sheet__actions {
-	display: flex;
-	flex-direction: column;
-	gap: 0.4rem;
-	padding: 0.1rem 0 0.15rem;
+.profile-avatar-sheet__list {
+	margin: 0.1rem 0 0.15rem;
+}
+
+/* Destructive row in action sheets (red label + red icon plate). */
+.profile-settings-row--danger .profile-settings-row__label {
+	color: var(--color-danger);
+}
+
+.profile-settings-row--danger .icon-plate {
+	background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+	color: var(--color-danger);
 }
 
 /* 1px fixed input: WebKit anchors the native file-picker popup to its
@@ -1672,6 +1685,42 @@ button.live-local-save-cue {
 	line-height: 1.4;
 	color: var(--color-muted);
 	overflow-wrap: anywhere;
+}
+
+/* Tap-to-copy on the profile hero: text looks unchanged, whole label is a button. */
+.profile-hero__copy {
+	position: relative;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	font: inherit;
+	line-height: inherit;
+	letter-spacing: inherit;
+	color: inherit;
+	text-align: inherit;
+	cursor: pointer;
+	border-radius: 0.4rem;
+	-webkit-user-select: none;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* Expand the hit area to a comfortable target without shifting the text. */
+.profile-hero__copy::after {
+	content: '';
+	position: absolute;
+	inset: -0.6rem -0.5rem;
+}
+
+.profile-hero__copy:hover,
+.profile-hero__copy:focus-visible {
+	color: var(--color-accent);
+}
+
+.profile-hero__copy:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 3px;
 }
 
 .profile-hero__badge {
@@ -1877,6 +1926,20 @@ button.live-local-save-cue {
 	opacity: 0.72;
 	color: color-mix(in srgb, var(--color-muted) 88%, var(--color-ink));
 	border-color: color-mix(in srgb, var(--color-border) 92%, var(--color-muted));
+}
+
+/* Greeting-name save: clearly inactive instead of a dimmed actionable button. */
+.profile-settings-group.panel .profile-settings-group__action:disabled,
+.profile-settings-group.panel [data-slot='button'].profile-settings-group__action:disabled {
+	opacity: 1;
+	transition: none;
+	cursor: default;
+	background: var(--color-surface-muted) !important;
+	background-image: none !important;
+	border-color: color-mix(in srgb, var(--color-border) 70%, transparent) !important;
+	color: var(--color-muted) !important;
+	-webkit-text-fill-color: var(--color-muted) !important;
+	box-shadow: none !important;
 }
 
 .profile-settings-group--data .auth-account__section {

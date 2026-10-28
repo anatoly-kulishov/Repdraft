@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.23.3',
+		highlights: {
+			ru: [
+				'Прогресс: серия недель, цель недели и лучшие подъёмы за месяц',
+				'ИИ-тренер: у замены упражнения теперь есть объяснение: почему и на что менять',
+				'Фото профиля: меню в виде строк с иконками и кнопкой «Отмена»',
+				'Профиль: имя и почту можно скопировать одним нажатием'
+			],
+			en: [
+				'Progress: weekly streak, weekly goal, and best lifts for the month',
+				'AI coach: each exercise swap now explains why and what to',
+				'Profile photo: icon rows and a clear Cancel button',
+				'Profile: tap your name or email to copy it'
+			]
+		}
+	},
+	{
 		version: '0.23.2',
 		highlights: {
 			ru: [

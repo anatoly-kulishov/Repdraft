@@ -104,6 +104,9 @@
 	let redirected = $state(false);
 	let greetingNameInput = $state('');
 	let greetingNameSaving = $state(false);
+	/** Only enable the Save button after the user actually edits the field. Prevents
+	 *  a violet flash while the store hydrates and the input is still being seeded. */
+	let greetingNameTouched = $state(false);
 	let fieldsInvalid = $state(false);
 	let confirmMismatchVisible = $state(false);
 	let deleteZoneOpen = $state(false);
@@ -286,6 +289,7 @@
 	let nextPath = $derived(safeRedirectPath($page.url.searchParams.get('next')));
 	let recoveryMode = $derived($auth.passwordRecovery);
 	let profileName = $derived(userDisplayName($auth.user));
+	let profileEmail = $derived($auth.user?.email ?? '');
 	let profileAvatar = $derived(resolveUserAvatarUrl($auth.user));
 	let profileInitials = $derived(userInitials($auth.user));
 	let profileAvatarBroken = $state(false);
@@ -307,6 +311,21 @@
 		profileAvatar;
 		profileAvatarBroken = false;
 	});
+
+	/** Tap-to-copy on the profile hero (username / email). */
+	async function copyProfileValue(value: string | null | undefined, kind: 'name' | 'email') {
+		const text = value?.trim();
+		if (!browser || !text) return;
+		try {
+			await navigator.clipboard.writeText(text);
+			toasts.show(
+				translate(lang, kind === 'email' ? 'profile.copyEmail' : 'profile.copyName'),
+				'success'
+			);
+		} catch {
+			toasts.show(translate(lang, 'profile.copyFail'), 'error');
+		}
+	}
 
 	let backLabel = $derived(
 		nextPath === '/' ? translate(lang, 'nav.tabHome') : translate(lang, 'a11y.back')
@@ -634,7 +653,7 @@
 	});
 
 	let greetingNameDirty = $derived(
-		!greetingNameMatchesStored($greetingName, greetingNameInput)
+		greetingNameTouched && !greetingNameMatchesStored($greetingName, greetingNameInput)
 	);
 
 	async function saveGreetingName() {
@@ -643,6 +662,7 @@
 		try {
 			const saved = await greetingName.save(greetingNameInput, $auth.user.id);
 			if (saved) {
+				greetingNameTouched = false;
 				toasts.show(translate(lang, 'auth.greetingNameSaved'), 'success');
 			}
 		} catch (err) {
@@ -853,9 +873,29 @@
 					</button>
 				</div>
 
-				<h2 class="profile-hero__name">{profileName || $auth.user.email}</h2>
+				<h2 class="profile-hero__name">
+					<button
+						type="button"
+						class="profile-hero__copy"
+						title={translate(lang, 'profile.copyNameAria')}
+						aria-label={translate(lang, 'profile.copyNameAria')}
+						onclick={() => void copyProfileValue(profileName || profileEmail, 'name')}
+					>
+						{profileName || $auth.user.email}
+					</button>
+				</h2>
 				{#if profileName && $auth.user.email}
-					<p class="profile-hero__meta">{$auth.user.email}</p>
+					<p class="profile-hero__meta">
+						<button
+							type="button"
+							class="profile-hero__copy"
+							title={translate(lang, 'profile.copyEmailAria')}
+							aria-label={translate(lang, 'profile.copyEmailAria')}
+							onclick={() => void copyProfileValue(profileEmail, 'email')}
+						>
+							{$auth.user.email}
+						</button>
+					</p>
 				{/if}
 				{#if profileProviderLabel}
 					<span class="auth-provider-badge profile-hero__badge">{profileProviderLabel}</span>
@@ -948,6 +988,7 @@
 									const el = e.currentTarget as HTMLInputElement;
 									const next = clampGreetingName(el.value);
 									greetingNameInput = next;
+									greetingNameTouched = true;
 									if (el.value !== next) el.value = next;
 								}}
 							/>

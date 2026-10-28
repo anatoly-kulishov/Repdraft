@@ -70,6 +70,11 @@
 		);
 	});
 
+	let replaceSharePct = $derived.by(() => {
+		if (!replace) return null;
+		return overview.bodyParts.find((part) => part.bodyPart === replace.bodyPart)?.sharePct ?? null;
+	});
+
 	let hints = $derived.by(() => {
 		const finished = $live.history
 			.filter((s) => s.finishedAt)
@@ -159,6 +164,15 @@
 					→ {toMeta ? exerciseName(toMeta, lang) : replace.toExerciseId}
 				</p>
 				<p class="coach-card__meta">{labelBodyPart(replace.bodyPart, lang)}</p>
+				<p class="coach-why">
+					{replaceSharePct != null
+						? translate(lang, 'coach.replaceWhy', {
+								part: labelBodyPart(replace.bodyPart, lang),
+								pct: replaceSharePct
+							})
+						: translate(lang, 'coach.replaceWhyGeneric')}
+				</p>
+				<p class="coach-why">{translate(lang, 'coach.replaceWhat')}</p>
 				<AppButton onclick={() => void replaceHint()}>{translate(lang, 'coach.replace')}</AppButton>
 			</AppPanel>
 		{/if}
@@ -195,5 +209,14 @@
 		margin: 0.35rem 0 0.75rem;
 		font-size: 0.875rem;
 		opacity: 0.75;
+	}
+	.coach-why {
+		margin: 0 0 0.45rem;
+		font-size: 0.8125rem;
+		line-height: 1.35;
+		opacity: 0.85;
+	}
+	.coach-why:last-of-type {
+		margin-bottom: 0.85rem;
 	}
 </style>
