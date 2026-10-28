@@ -17,40 +17,123 @@ type BodyHint = {
 	equipment: string[];
 };
 
+/** Hinge / deadlift family → legs (also may match «тяга»→back below; both OK). */
+const HINGE_PART_RULE: [RegExp, string[]] = [
+	/румын|rdl|deadlift|мертв[а-яё]*\s*тяг|станова[а-яё]*\s*тяг|тяги?\s*на\s*прям/,
+	['upper legs', 'lower legs']
+];
+
+/** Rough RU/EN keyword → catalog body_part values. */
+const PART_RULES: Array<[RegExp, string[]]> = [
+	[/груд|chest|pec/, ['chest']],
+	// «back» as word only (not feedback); «тяга» still maps pull/back days
+	[/спин|\bbacks?\b|тяга|крыл/, ['back']],
+	// «плеч» but not inside «предплечье»
+	[/(?<!пред)плеч|shoulder|дельт/, ['shoulders']],
+	[/трицеп|триц|triceps|tricep/, ['upper arms']],
+	[/бицеп|biceps|бицух|банк[аиу]/, ['upper arms']],
+	[/рук[аиуеы]?|\barms?\b/, ['upper arms']],
+	// «leg(s)» as word (not college); RU slang булки/галифе
+	[/ног|\blegs?\b|квадр|ягод|glute|бедр|ляшк|галифе|булк/, ['upper legs', 'lower legs']],
+	[/пресс|core|waist|абдом/, ['waist']],
+	[/икр|\bcalf\b|\bcalves\b/, ['lower legs']],
+	[/предплеч|forearm|wrist/, ['lower arms']],
+	[/шея|neck/, ['neck']],
+	[/кардио|cardio|бег/, ['cardio']],
+	[/(?:^|[\s,])верх(?:\s+тела)?(?:$|[\s,])|\bupper\b/, ['chest', 'back', 'shoulders', 'upper arms']],
+	[/(?:^|[\s,])низ(?:\s+тела)?(?:$|[\s,])|\blower\b/, ['upper legs', 'lower legs', 'waist']],
+	[/вс[её]\s+тело|full\s*body|фулбади/, ['chest', 'back', 'shoulders', 'upper arms', 'upper legs', 'lower legs', 'waist']]
+];
+
+/** Markers that negate the body part that follows them. */
+const NEG_PREFIX =
+	/без|исключ\w*|убра\w*|убер\w*|пропуст\w*|избега\w*|побере\w*|не\s*(?:надо|нужн|хочу|хотел|тренир|включа|трога|дела|став)|\bno\b|\bwithout\b|\bskip\b|\bavoid\b|\bexclude\b/g;
+
+/** Pain / injury markers: only the nearest body part is excluded.
+ *  NOTE: `\b` is ASCII-only in JS, so Cyrillic endings use a negative lookahead. */
+const PAIN_MARKER =
+	/травм\w*|бол(?:ит|ят|ел\w*|ь|езн\w*)(?![а-яё])|повреж\w*|воспал\w*|\bpain\b|\bhurt\b|\binjur\w*|\bsore\b/g;
+
+function globalRe(re: RegExp): RegExp {
+	return re.flags.includes('g') ? re : new RegExp(re.source, `${re.flags}g`);
+}
+
+type PartMatch = { part: string; start: number; end: number };
+
+function partMatches(clause: string): PartMatch[] {
+	const out: PartMatch[] = [];
+	for (const [re, vals] of PART_RULES) {
+		for (const m of clause.matchAll(globalRe(re))) {
+			if (m.index == null) continue;
+			for (const part of vals) {
+				out.push({ part, start: m.index, end: m.index + m[0].length });
+			}
+		}
+	}
+	return out;
+}
+
+/** Split on sentence punctuation and contrast conjunctions, not on enumeration. */
+function briefClauses(brief: string): string[] {
+	return brief
+		.toLowerCase()
+		.split(/[.,;!?\n]+|\s+(?:но|а)\s+/)
+		.map((s) => s.trim())
+		.filter(Boolean);
+}
+
+/**
+ * Body parts the brief asks to skip: "болят плечи", "без плеч", "no shoulders".
+ * Pain markers exclude only the nearest part so "болят плечи, хочу ноги" keeps legs.
+ */
+export function exclusionsFromBrief(brief: string): string[] {
+	const excluded: string[] = [];
+	for (const clause of briefClauses(brief)) {
+		const parts = partMatches(clause);
+		if (!parts.length) continue;
+
+		for (const m of clause.matchAll(NEG_PREFIX)) {
+			if (m.index == null) continue;
+			const spanEnd = m.index + m[0].length + 34;
+			for (const p of parts) {
+				if (p.start >= m.index && p.start <= spanEnd) excluded.push(p.part);
+			}
+		}
+
+		for (const m of clause.matchAll(PAIN_MARKER)) {
+			if (m.index == null) continue;
+			const center = m.index + m[0].length / 2;
+			let nearest: PartMatch | null = null;
+			let nearestDist = Infinity;
+			for (const p of parts) {
+				const dist = Math.abs(p.start + (p.end - p.start) / 2 - center);
+				if (dist < nearestDist) {
+					nearestDist = dist;
+					nearest = p;
+				}
+			}
+			if (nearest && nearestDist <= 30) excluded.push(nearest.part);
+		}
+	}
+	return [...new Set(excluded)];
+}
+
+/** Parts to build the plan for: mentioned zones minus explicit exclusions. */
+export function effectivePartsFromBrief(brief: string): string[] {
+	const { parts } = hintsFromBrief(brief);
+	const exclude = exclusionsFromBrief(brief);
+	return parts.filter((part) => !exclude.includes(part));
+}
+
 /** Rough RU/EN keyword → catalog fields for prompt slimdown. */
 export function hintsFromBrief(brief: string): BodyHint {
 	const t = brief.toLowerCase();
 	const parts: string[] = [];
 	const equipment: string[] = [];
 
-	// Hinge / deadlift family → legs (also may match «тяга»→back below; both OK).
-	if (
-		/румын|rdl|deadlift|мертв[а-яё]*\s*тяг|станова[а-яё]*\s*тяг|тяги?\s*на\s*прям/.test(t)
-	) {
-		parts.push('upper legs', 'lower legs');
-	}
+	if (HINGE_PART_RULE[0].test(t)) parts.push(...HINGE_PART_RULE[1]);
 
-	const partRules: Array<[RegExp, string[]]> = [
-		[/груд|chest|pec/, ['chest']],
-		// «back» as word only (not feedback); «тяга» still maps pull/back days
-		[/спин|\bbacks?\b|тяга|крыл/, ['back']],
-		// «плеч» but not inside «предплечье»
-		[/(?<!пред)плеч|shoulder|дельт/, ['shoulders']],
-		[/трицеп|триц|triceps|tricep/, ['upper arms']],
-		[/бицеп|biceps|бицух|банк[аиу]/, ['upper arms']],
-		[/рук[аиуеы]?|\barms?\b/, ['upper arms']],
-		// «leg(s)» as word (not college); RU slang булки/галифе
-		[/ног|\blegs?\b|квадр|ягод|glute|бедр|ляшк|галифе|булк/, ['upper legs', 'lower legs']],
-		[/пресс|core|waist|абдом/, ['waist']],
-		[/икр|\bcalf\b|\bcalves\b/, ['lower legs']],
-		[/предплеч|forearm|wrist/, ['lower arms']],
-		[/шея|neck/, ['neck']],
-		[/кардио|cardio|бег/, ['cardio']],
-		[/(?:^|[\s,])верх(?:\s+тела)?(?:$|[\s,])|\bupper\b/, ['chest', 'back', 'shoulders', 'upper arms']],
-		[/(?:^|[\s,])низ(?:\s+тела)?(?:$|[\s,])|\blower\b/, ['upper legs', 'lower legs', 'waist']],
-		[/вс[её]\s+тело|full\s*body|фулбади/, ['chest', 'back', 'shoulders', 'upper arms', 'upper legs', 'lower legs', 'waist']]
-	];
-	for (const [re, vals] of partRules) {
+	for (const [re, vals] of PART_RULES) {
 		if (re.test(t)) parts.push(...vals);
 	}
 
@@ -126,12 +209,19 @@ const SLIM_MIN = 8;
  *  Zone briefs stay inside body_part (relax equipment, never OR foreign zones).
  *  Equipment-only briefs may OR; tiny zones may return < SLIM_MIN. */
 export function slimCatalogForBrief(
-	index: ExerciseIndexItem[],
+	indexAll: ExerciseIndexItem[],
 	brief: string
 ): ExerciseIndexItem[] {
-	if (!index.length) return [];
+	if (!indexAll.length) return [];
 
-	const { parts, equipment } = hintsFromBrief(brief);
+	const { parts: hintedParts, equipment } = hintsFromBrief(brief);
+	const exclude = exclusionsFromBrief(brief);
+	const parts = hintedParts.filter((part) => !exclude.includes(part));
+	// Never offer an excluded body part to the model.
+	const index = exclude.length
+		? indexAll.filter((ex) => !exclude.includes(ex.body_part))
+		: indexAll;
+	if (!index.length) return [];
 
 	if (!parts.length && !equipment.length) {
 		return topPopular(index);
