@@ -55,6 +55,7 @@ import {
 } from '@repdraft/domain/passwordPolicy';
 import { TESTER_MODE_UNLOCK_TAPS } from '@repdraft/domain/prefs';
 import { ConfirmSheet } from '../../src/components/ConfirmSheet';
+import { ProfileAvatarSheet } from '../../src/components/ProfileAvatarSheet';
 import { OnboardingChecklistPanel } from '../../src/components/OnboardingChecklistPanel';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
@@ -137,6 +138,9 @@ export default function ProfileScreen() {
 		overrides: Record<string, string>;
 	} | null>(null);
 	const [avatarBusy, setAvatarBusy] = useState(false);
+	const [avatarSheetOpen, setAvatarSheetOpen] = useState(false);
+	const [copiedHint, setCopiedHint] = useState<string | null>(null);
+	const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
 	const [testerOn, setTesterOn] = useState(false);
 	const [myCoaches, setMyCoaches] = useState<CoachMyCoach[]>([]);
@@ -287,6 +291,19 @@ export default function ProfileScreen() {
 		} catch {
 			Alert.alert(tt('common.error'), tt('auth.greetingNameSaveFail'));
 		}
+	}
+
+	async function copyProfileValue(value: string | null | undefined, kind: 'name' | 'email') {
+		const text = value?.trim();
+		if (!text) return;
+		try {
+			await Clipboard.setStringAsync(text);
+			setCopiedHint(tt(kind === 'email' ? 'profile.copyEmail' : 'profile.copyName'));
+		} catch {
+			setCopiedHint(tt('profile.copyFail'));
+		}
+		if (copiedTimer.current) clearTimeout(copiedTimer.current);
+		copiedTimer.current = setTimeout(() => setCopiedHint(null), 1800);
 	}
 
 	async function pickAvatar() {
@@ -669,7 +686,9 @@ export default function ProfileScreen() {
 			<View style={styles.brandRow}>
 				<Pressable
 					accessibilityRole="button"
-					onPress={() => session?.user && !avatarBusy && void pickAvatar()}
+					onPress={() => {
+						if (session?.user && !avatarBusy) setAvatarSheetOpen(true);
+					}}
 					style={styles.avatarBtn}
 				>
 					{avatarUrl ? (
@@ -681,27 +700,40 @@ export default function ProfileScreen() {
 					)}
 				</Pressable>
 				<View style={styles.brandBody}>
-					<Text style={styles.brandTitle}>{displayName ?? 'Repdraft'}</Text>
-				{session?.user?.email ? (
-					<Text style={styles.brandHint} numberOfLines={1}>
-						{session.user.email}
-					</Text>
-				) : (
-					<Text style={styles.brandHint}>{tt('auth.greetingNameHint')}</Text>
-				)}
+					<Pressable
+						accessibilityRole="button"
+						accessibilityLabel={tt('profile.copyNameAria')}
+						hitSlop={8}
+						onPress={() => void copyProfileValue(displayName, 'name')}
+					>
+						<Text style={styles.brandTitle}>{displayName ?? 'Repdraft'}</Text>
+					</Pressable>
+					{session?.user?.email ? (
+						<Pressable
+							accessibilityRole="button"
+							accessibilityLabel={tt('profile.copyEmailAria')}
+							hitSlop={8}
+							onPress={() => void copyProfileValue(session.user.email, 'email')}
+						>
+							<Text style={styles.brandHint} numberOfLines={1}>
+								{session.user.email}
+							</Text>
+						</Pressable>
+					) : (
+						<Text style={styles.brandHint}>{tt('auth.greetingNameHint')}</Text>
+					)}
+					{copiedHint ? <Text style={styles.copiedHint}>{copiedHint}</Text> : null}
+				</View>
 			</View>
-		</View>
 			{session?.user ? (
-				<Panel>
-					<PrimaryButton label={tt('auth.avatar.change')} variant="ghost" onPress={() => void pickAvatar()} />
-					{userCustomAvatarPath(session.user) ? (
-						<PrimaryButton
-							label={tt('auth.avatar.remove')}
-							variant="ghost"
-							onPress={() => void clearAvatar()}
-						/>
-					) : null}
-				</Panel>
+				<ProfileAvatarSheet
+					open={avatarSheetOpen}
+					canRemove={Boolean(userCustomAvatarPath(session.user))}
+					busy={avatarBusy}
+					onChangePhoto={() => void pickAvatar()}
+					onRemovePhoto={() => void clearAvatar()}
+					onDismiss={() => setAvatarSheetOpen(false)}
+				/>
 			) : null}
 
 			{!session?.user ? (
@@ -1280,6 +1312,7 @@ function makeStyles(colors: ColorPalette) {
 	brandBody: { flex: 1 },
 	brandTitle: { ...type.title, color: colors.text },
 	brandHint: { ...type.meta, color: colors.muted, marginTop: 2 },
+	copiedHint: { color: colors.accent, fontSize: 12, marginTop: 2, fontFamily: fontFamily.medium },
 	groupTitle: {
 		...type.section,
 		color: colors.muted,

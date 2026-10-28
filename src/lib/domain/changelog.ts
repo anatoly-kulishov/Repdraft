@@ -14,6 +14,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.23.5',
+		highlights: {
+			ru: [
+				'Профиль на телефоне: имя и почту можно скопировать одним нажатием',
+				'Фото профиля на телефоне: меню строками с иконками и кнопкой «Отмена»',
+				'Убрать фото покрашено красным, чтобы не нажать случайно'
+			],
+			en: [
+				'Phone profile: tap your name or email to copy it',
+				'Phone profile photo: icon rows and a clear Cancel button',
+				'Remove photo is red so it is hard to hit by accident'
+			]
+		}
+	},
+	{
 		version: '0.23.4',
 		highlights: {
 			ru: [
