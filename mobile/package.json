@@ -1,6 +1,6 @@
 {
   "name": "repdraft-mobile",
-  "version": "0.23.6",
+  "version": "0.23.7",
   "main": "expo-router/entry",
   "private": true,
   "scripts": {

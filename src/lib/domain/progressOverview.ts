@@ -3,6 +3,7 @@ import { exerciseBestWeightKg } from './sessionStats';
 import { sessionVolumeKg } from './session';
 import type { WorkoutSession } from './types';
 import {
+	finishedSessionsBetweenDays,
 	finishedSessionsWithinDays,
 	sessionVolumeByBodyPart,
 	mergeVolumeMaps,
@@ -88,17 +89,32 @@ export type ProgressOverview = {
 export type Progress30d = {
 	workouts: number;
 	volumeKg: number;
+	/** Last 7 days − previous 7 days in finished workouts (home delta line). */
+	workoutsDeltaWeek: number;
+	/** Last 7 days − previous 7 days in kg (home delta line). */
+	volumeDeltaWeek: number;
 };
 
-/** Cheap 30-day totals for surfaces that only show a summary line (Home). */
+/** Cheap 30-day totals + week-over-week deltas for the Home summary cards. */
 export function progress30d(
 	sessions: readonly WorkoutSession[],
 	now: Date = new Date()
 ): Progress30d {
-	const last30 = finishedSessionsWithinDays(countableFinishedSessions([...sessions]), 30, now);
-	let volumeKg = 0;
-	for (const session of last30) volumeKg += sessionVolumeKg(session);
-	return { workouts: last30.length, volumeKg: Math.round(volumeKg) };
+	const finished = countableFinishedSessions([...sessions]);
+	const totalsFor = (list: readonly WorkoutSession[]): { workouts: number; volumeKg: number } => {
+		let volumeKg = 0;
+		for (const session of list) volumeKg += sessionVolumeKg(session);
+		return { workouts: list.length, volumeKg: Math.round(volumeKg) };
+	};
+	const last30 = totalsFor(finishedSessionsWithinDays(finished, 30, now));
+	const thisWeek = totalsFor(finishedSessionsWithinDays(finished, 7, now));
+	const priorWeek = totalsFor(finishedSessionsBetweenDays(finished, 14, 7, now));
+	return {
+		workouts: last30.workouts,
+		volumeKg: last30.volumeKg,
+		workoutsDeltaWeek: thisWeek.workouts - priorWeek.workouts,
+		volumeDeltaWeek: thisWeek.volumeKg - priorWeek.volumeKg
+	};
 }
 
 function trendDelta(
@@ -204,7 +220,7 @@ export function computeProgressOverview(
 	const prior =
 		days == null
 			? null
-			: finishedSessionsWithinDays(finished, days, new Date(now.getTime() - days * 86_400_000));
+			: finishedSessionsBetweenDays(finished, days * 2, days, now);
 	const totals = totalsFor(window);
 	const priorTotals = prior ? totalsFor(prior) : null;
 	const cards: ProgressCardMetrics =

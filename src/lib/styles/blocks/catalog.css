@@ -3317,6 +3317,9 @@ body:has(.sticky-actions) .draft-dock {
 	overscroll-behavior-x: contain;
 	scrollbar-width: none;
 	-webkit-overflow-scrolling: touch;
+	/* Same fade affordance as the "Часто тренируете" rail. */
+	-webkit-mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+	mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
 }
 
 .catalog-hub-chips::-webkit-scrollbar {
@@ -4092,4 +4095,21 @@ body:has(.sticky-actions) .draft-dock {
 .catalog-section-mine-add:hover {
 	color: var(--color-accent);
 	border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+}
+
+/* 320–360px: four tab labels need a touch more room. */
+@media (max-width: 360px) {
+	.tab-link {
+		font-size: 0.625rem;
+		letter-spacing: 0;
+	}
+	.tab-link-icon,
+	.tab-link-icon svg {
+		width: 1.25rem;
+		height: 1.25rem;
+	}
+	.tab-link__inner {
+		gap: 1px;
+		padding: 0.125rem;
+	}
 }

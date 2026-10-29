@@ -16,6 +16,10 @@ export type CoreColorPalette = {
 	borderStrong: string;
 	text: string;
 	muted: string;
+	/** Neutral grey secondary text (kickers, meta links). Additive token: does not replace `muted`. */
+	mutedSoft: string;
+	/** Violet-tinted secondary text (TZ #6750A4). Additive token for new surfaces. */
+	secondary: string;
 	/** Brand violet for chips, focus, icons. */
 	accent: string;
 	/** Solid CTA fill (web buttons; RN uses `accent` flat fill). */
@@ -52,6 +56,8 @@ export const darkColors: CoreColorPalette = {
 	borderStrong: '#48484a',
 	text: '#ffffff',
 	muted: '#8e8e93',
+	mutedSoft: '#a1a1a6',
+	secondary: '#c4a3ff',
 	accent: '#a259ff',
 	accentFill: '#a259ff',
 	accentGradientStart: '#8a2be2',
@@ -77,6 +83,8 @@ export const lightColors: CoreColorPalette = {
 	borderStrong: '#d1d1d6',
 	text: '#000000',
 	muted: '#636366',
+	mutedSoft: '#7e7984',
+	secondary: '#6750a4',
 	accent: '#8b5cf6',
 	accentFill: '#7c3aed',
 	accentGradientStart: '#6d28d9',
@@ -115,6 +123,10 @@ export const tabbar = {
 
 export const radius = {
 	sm: 10,
+	/** Interactive tags / pills (spec: 8px). */
+	tag: 8,
+	/** Segmented-control track / active plate (spec: 12px). */
+	control: 12,
 	md: 16,
 	lg: 20,
 	xl: 24,

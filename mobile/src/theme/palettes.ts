@@ -20,6 +20,10 @@ export type ColorPalette = {
 	borderGlass: string;
 	text: string;
 	muted: string;
+	/** Neutral grey secondary text (kickers, meta links). */
+	mutedSoft: string;
+	/** Violet-tinted secondary text for new surfaces. */
+	secondary: string;
 	accent: string;
 	accentFill: string;
 	accentGradientStart: string;
@@ -34,6 +38,9 @@ export type ColorPalette = {
 	accentDim: string;
 	danger: string;
 	dangerBg: string;
+	/** Positive / gain state (green delta rows). */
+	success: string;
+	successBg: string;
 	/** Modal/sheet scrim */
 	overlayScrim: string;
 	xp: string;
@@ -52,6 +59,8 @@ function toRnPalette(c: CoreColorPalette, dark: boolean): ColorPalette {
 		borderGlass: dark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
 		text: c.text,
 		muted: c.muted,
+		mutedSoft: c.mutedSoft,
+		secondary: c.secondary,
 		accent: c.accent,
 		accentFill: c.accentFill,
 		accentGradientStart: c.accentGradientStart,
@@ -63,6 +72,8 @@ function toRnPalette(c: CoreColorPalette, dark: boolean): ColorPalette {
 		accentDim: c.accentDim,
 		danger: c.danger,
 		dangerBg: c.dangerBg,
+		success: c.success,
+		successBg: c.successBg,
 		overlayScrim: c.overlayScrim,
 		xp: c.xp,
 		muscle: c.muscle,

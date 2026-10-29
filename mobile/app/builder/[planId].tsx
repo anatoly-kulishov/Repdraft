@@ -13,7 +13,6 @@ import {
 	View
 } from 'react-native';
 import { clampPlanName } from '@repdraft/domain/inputLimits';
-import { labelBodyPart } from '@repdraft/domain/labels.ru';
 import {
 	addExercise,
 	altGroupMemberRole,
@@ -36,6 +35,11 @@ import {
 } from '@repdraft/domain/workout';
 import { exerciseMetaHint } from '@repdraft/domain/labels.ru';
 import { shouldShowCoachmark } from '@repdraft/domain/onboarding';
+import {
+	POPULAR_EXERCISE_IDS,
+	frequentExercises,
+	type FrequentExercise
+} from '@repdraft/domain/exerciseFrequency';
 import type { ExerciseIndexItem, WorkoutPlan } from '@repdraft/domain/types';
 import {
 	exerciseDisplayName,
@@ -46,6 +50,7 @@ import {
 	uniqueBodyParts
 } from '../../src/catalog/loadIndex';
 import { CatalogThumb } from '../../src/components/CatalogThumb';
+import { BuilderPicker } from '../../src/builder/BuilderPicker';
 import { Coachmark } from '../../src/components/Coachmark';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { useBottomChromePad, useStackHeaderOffset } from '../../src/layout/safe';
@@ -54,6 +59,7 @@ import { useLocale } from '../../src/state/locale';
 import { loadOnboarding, dismissCoachmark } from '../../src/state/onboarding';
 import { useAppColors } from '../../src/state/theme';
 import { plansRepo } from '../../src/storage/plansRepo';
+import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { deletePlanRemote, pushPlan } from '../../src/sync/cloudSync';
 import { fontFamily, radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
@@ -79,7 +85,10 @@ export default function BuilderScreen() {
 	const [dirty, setDirty] = useState(false);
 	const [showIntroCoachmark, setShowIntroCoachmark] = useState(false);
 	const [showSupersetCoachmark, setShowSupersetCoachmark] = useState(false);
+	const [frequent, setFrequent] = useState<FrequentExercise[]>([]);
+	const [railNote, setRailNote] = useState<string | null>(null);
 	const planRef = useRef<WorkoutPlan | null>(null);
+	const railNoteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const catalog = useMemo(() => {
 		void catalogTick;
@@ -94,6 +103,26 @@ export default function BuilderScreen() {
 		() => new Set(plan?.exercises.map((e) => e.exerciseId) ?? []),
 		[plan]
 	);
+	const frequentItems = useMemo(() => {
+		const byId = new Map(catalog.map((item) => [item.id, item] as const));
+		const ids = frequent.length
+			? frequent.map((row) => row.exerciseId)
+			: [...POPULAR_EXERCISE_IDS];
+		return ids
+			.map((id) => byId.get(id))
+			.filter((item): item is NonNullable<typeof item> => Boolean(item));
+	}, [catalog, frequent]);
+
+	useEffect(() => {
+		let alive = true;
+		void sessionsRepo.list().then((list) => {
+			if (alive) setFrequent(frequentExercises(list));
+		});
+		return () => {
+			alive = false;
+			if (railNoteTimer.current) clearTimeout(railNoteTimer.current);
+		};
+	}, []);
 
 	useEffect(() => {
 		planRef.current = plan;
@@ -201,6 +230,9 @@ export default function BuilderScreen() {
 		if (ok) {
 			setFlashId(item.id);
 			setTimeout(() => setFlashId(null), 900);
+			setRailNote(tt('exercise.added'));
+			if (railNoteTimer.current) clearTimeout(railNoteTimer.current);
+			railNoteTimer.current = setTimeout(() => setRailNote(null), 1600);
 		}
 	}
 
@@ -302,92 +334,28 @@ export default function BuilderScreen() {
 
 	if (picking) {
 		return (
-			<KeyboardAvoidingView
-				style={styles.root}
-				behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-				keyboardVerticalOffset={Platform.OS === 'ios' ? headerOffset : 0}
-			>
-				<TextInput
-					style={styles.input}
-					value={query}
-					onChangeText={setQuery}
-					placeholder={tt('exercises.search')}
-					placeholderTextColor={colors.muted}
-					autoFocus
-				/>
-				<Text style={styles.pickHint}>{tt('builder.pickHint')}</Text>
-				<FlatList
-					horizontal
-					style={styles.chipStrip}
-					data={['all', ...parts] as const}
-					keyExtractor={(p) => p}
-					showsHorizontalScrollIndicator={false}
-					contentContainerStyle={styles.chips}
-					renderItem={({ item: part }) => {
-						const on = bodyPart === part;
-						const label =
-							part === 'all' ? tt('exercises.all') : labelBodyPart(part, locale);
-						return (
-							<Pressable
-								style={[styles.chip, on && styles.chipOn]}
-								onPress={() => setBodyPart(part)}
-							>
-								<Text style={[styles.chipText, on && styles.chipTextOn]} numberOfLines={1}>
-									{label}
-								</Text>
-							</Pressable>
-						);
-					}}
-				/>
-				<FlatList
-					style={styles.flex}
-					data={pickList}
-					keyExtractor={(item) => item.id}
-					keyboardShouldPersistTaps="handled"
-					initialNumToRender={24}
-					windowSize={8}
-					contentContainerStyle={{ paddingBottom: pickListPad, gap: space.sm }}
-					ListEmptyComponent={<Text style={styles.emptyPick}>{tt('builder.noMatches')}</Text>}
-					renderItem={({ item }) => {
-						const inPlan = inPlanIds.has(item.id);
-						const flashed = flashId === item.id;
-						return (
-							<Pressable
-								style={[
-									styles.pickRow,
-									inPlan && styles.pickRowIn,
-									flashed && styles.pickRowFlash
-								]}
-								onPress={() => void addFromCatalog(item)}
-							>
-								<CatalogThumb imagePath={item.image} size={48} />
-								<View style={styles.flex}>
-									<Text style={styles.rowTitle} numberOfLines={2}>
-										{exerciseDisplayName(item.id, locale)}
-									</Text>
-									<Text style={styles.meta} numberOfLines={1}>
-										{item.body_part}
-										{item.equipment ? ` · ${item.equipment}` : ''}
-									</Text>
-								</View>
-								<Text style={[styles.pickMark, inPlan && styles.pickMarkOn]}>
-									{inPlan ? '✓' : '+'}
-								</Text>
-							</Pressable>
-						);
-					}}
-				/>
-				<View style={[styles.sticky, { paddingBottom: bottomPad }]}>
-					<PrimaryButton
-						label={`${tt('builder.done')} (${plan.exercises.length})`}
-						onPress={() => {
-							setPicking(false);
-							setQuery('');
-							setBodyPart('all');
-						}}
-					/>
-				</View>
-			</KeyboardAvoidingView>
+			<BuilderPicker
+				query={query}
+				onQueryChange={setQuery}
+				bodyPart={bodyPart}
+				onBodyPartChange={setBodyPart}
+				parts={parts}
+				pickList={pickList}
+				frequentItems={frequentItems}
+				frequentCount={frequent.length}
+				inPlanIds={inPlanIds}
+				flashId={flashId}
+				railNote={railNote}
+				planExerciseCount={plan.exercises.length}
+				headerOffset={headerOffset}
+				bottomPad={bottomPad}
+				onAdd={(item) => void addFromCatalog(item)}
+				onDone={() => {
+					setPicking(false);
+					setQuery('');
+					setBodyPart('all');
+				}}
+			/>
 		);
 	}
 
@@ -776,55 +744,6 @@ function makeStyles(colors: ColorPalette) {
 		fontWeight: '700',
 		fontFamily: fontFamily.bold
 	},
-	pickHint: { color: colors.muted, fontSize: 13, lineHeight: 18, fontFamily: fontFamily.regular },
-	chipStrip: { flexGrow: 0, flexShrink: 0, height: touchMin },
-	chips: { gap: space.sm, alignItems: 'center', paddingVertical: 0 },
-	chip: {
-		height: touchMin,
-		paddingHorizontal: space.md,
-		borderRadius: 999,
-		borderWidth: 1,
-		borderColor: colors.border,
-		backgroundColor: colors.panel,
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginRight: space.sm
-	},
-	chipOn: { backgroundColor: colors.accentDim, borderColor: colors.accent },
-	chipText: { color: colors.muted, fontWeight: '700', fontSize: 13, fontFamily: fontFamily.bold },
-	chipTextOn: { color: colors.accentText, fontFamily: fontFamily.bold },
-	list: { gap: 0, paddingBottom: space.sm, flexGrow: 1 },
-	listPanel: {
-		borderWidth: 1,
-		borderColor: colors.border,
-		borderRadius: radius.md,
-		overflow: 'hidden',
-		backgroundColor: colors.panel
-	},
-	emptyWrap: {
-		alignItems: 'center',
-		gap: space.md,
-		marginTop: 48,
-		paddingHorizontal: space.sm,
-		paddingVertical: space.xl
-	},
-	emptyIcon: {
-		width: 72,
-		height: 72,
-		borderRadius: radius.pill,
-		alignItems: 'center',
-		justifyContent: 'center',
-		backgroundColor: colors.accentDim,
-		borderWidth: 1,
-		borderColor: colors.accent
-	},
-	emptyTitle: {
-		color: colors.text,
-		fontSize: 20,
-		fontWeight: '800',
-		textAlign: 'center',
-		fontFamily: fontFamily.extrabold
-	},
 	empty: { color: colors.muted, textAlign: 'center', lineHeight: 22, fontFamily: fontFamily.regular },
 	aiOutline: {
 		minHeight: touchMin,
@@ -844,65 +763,6 @@ function makeStyles(colors: ColorPalette) {
 		fontSize: 16,
 		fontWeight: '600',
 		fontFamily: fontFamily.semibold
-	},
-	emptyPick: { color: colors.muted, textAlign: 'center', marginTop: 32, fontFamily: fontFamily.regular },
-	saveDim: { opacity: 0.55 },
-	pickRow: {
-		minHeight: touchMin + 8,
-		backgroundColor: colors.panel,
-		borderRadius: radius.md,
-		borderWidth: 1,
-		borderColor: colors.border,
-		paddingHorizontal: space.md,
-		paddingVertical: space.sm,
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: space.sm,
-		marginBottom: space.sm
-	},
-	pickRowIn: { opacity: 0.55 },
-	pickRowFlash: { borderColor: colors.accent, backgroundColor: colors.accentDim },
-	pickMark: {
-		minWidth: touchMin,
-		minHeight: touchMin,
-		textAlign: 'center',
-		textAlignVertical: 'center',
-		color: colors.accent,
-		fontSize: 22,
-		fontWeight: '800',
-		paddingTop: 10,
-		fontFamily: fontFamily.extrabold
-	},
-	pickMarkOn: { color: colors.muted },
-	card: {
-		backgroundColor: colors.panel,
-		borderRadius: 0,
-		borderWidth: 0,
-		borderBottomWidth: StyleSheet.hairlineWidth,
-		borderBottomColor: colors.border,
-		padding: space.lg,
-		gap: space.sm
-	},
-	cardOn: { borderColor: colors.accent, backgroundColor: colors.accentDim },
-	cardLast: { borderBottomWidth: 0 },
-	cardHead: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-	check: {
-		width: 24,
-		height: 24,
-		borderRadius: 7,
-		borderWidth: 2,
-		borderColor: colors.border,
-		alignItems: 'center',
-		justifyContent: 'center',
-		backgroundColor: colors.bg
-	},
-	checkOn: { borderColor: colors.accent, backgroundColor: colors.accent },
-	checkText: {
-		color: colors.accent,
-		fontWeight: '800',
-		fontSize: 14,
-		lineHeight: 16,
-		fontFamily: fontFamily.extrabold
 	},
 	checkTextOn: { color: colors.accentText },
 	moveCol: { gap: 2 },
@@ -978,6 +838,69 @@ function makeStyles(colors: ColorPalette) {
 		fontWeight: '600',
 		fontFamily: fontFamily.semibold,
 		paddingHorizontal: 4
-	}
+	},
+	card: {
+		backgroundColor: colors.panel,
+		borderRadius: 0,
+		borderWidth: 0,
+		borderBottomWidth: StyleSheet.hairlineWidth,
+		borderBottomColor: colors.border,
+		padding: space.lg,
+		gap: space.sm
+	},
+	cardHead: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+	cardLast: { borderBottomWidth: 0 },
+	cardOn: { borderColor: colors.accent, backgroundColor: colors.accentDim },
+	check: {
+		width: 24,
+		height: 24,
+		borderRadius: 7,
+		borderWidth: 2,
+		borderColor: colors.border,
+		alignItems: 'center',
+		justifyContent: 'center',
+		backgroundColor: colors.bg
+	},
+	checkOn: { borderColor: colors.accent, backgroundColor: colors.accent },
+	checkText: {
+		color: colors.accent,
+		fontWeight: '800',
+		fontSize: 14,
+		lineHeight: 16,
+		fontFamily: fontFamily.extrabold
+	},
+	emptyIcon: {
+		width: 72,
+		height: 72,
+		borderRadius: radius.pill,
+		alignItems: 'center',
+		justifyContent: 'center',
+		backgroundColor: colors.accentDim,
+		borderWidth: 1,
+		borderColor: colors.accent
+	},
+	emptyTitle: {
+		color: colors.text,
+		fontSize: 20,
+		fontWeight: '800',
+		textAlign: 'center',
+		fontFamily: fontFamily.extrabold
+	},
+	emptyWrap: {
+		alignItems: 'center',
+		gap: space.md,
+		marginTop: 48,
+		paddingHorizontal: space.sm,
+		paddingVertical: space.xl
+	},
+	list: { gap: 0, paddingBottom: space.sm, flexGrow: 1 },
+	listPanel: {
+		borderWidth: 1,
+		borderColor: colors.border,
+		borderRadius: radius.md,
+		overflow: 'hidden',
+		backgroundColor: colors.panel
+	},
+	saveDim: { opacity: 0.55 },
 	});
 }

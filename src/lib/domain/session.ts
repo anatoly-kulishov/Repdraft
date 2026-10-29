@@ -34,7 +34,8 @@ export {
 	finishSession,
 	mergeWorkoutSessions,
 	planDraftFromSession,
-	sessionDurationMs
+	sessionDurationMs,
+	sessionDurationMinutes
 } from './sessionLifecycle';
 
 export {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import '$lib/styles/blocks/exercises-hub.css';
 	import CatalogHubChips from '$lib/components/CatalogHubChips.svelte';
 	import CatalogCategoryCard from '$lib/components/CatalogCategoryCard.svelte';
 	import CatalogCategoryGridSkeleton from '$lib/components/CatalogCategoryGridSkeleton.svelte';
@@ -12,7 +13,16 @@
 		labelCatalogZone,
 		withFromParam
 	} from '$lib/domain/catalogLinks';
-	import { loadExerciseIndex } from '$lib/data/loadExercises';
+	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
+	import { exerciseName } from '$lib/domain/exerciseName';
+	import {
+		POPULAR_EXERCISE_IDS,
+		frequentExercises
+	} from '$lib/domain/exerciseFrequency';
+	import type { ExerciseIndexItem } from '$lib/domain/types';
+	import { draft } from '$lib/stores/draft';
+	import { live } from '$lib/stores/live';
+	import { toasts } from '$lib/stores/toasts';
 	import { blurActiveElement } from '$lib/dom/blurActiveElement';
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
@@ -26,6 +36,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
+	import { Plus } from 'phosphor-svelte';
 
 	let { data } = $props();
 
@@ -54,8 +65,45 @@
 	let forceSkeleton = $derived(readSearchParam($page.url, 'skeleton') === '1');
 	let showCategorySkeleton = $derived(forceSkeleton);
 
+	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
+	/** "Часто тренируете" (history) or "Популярное в зале" (cold start). */
+	let frequentRows = $derived(frequentExercises($live.history, { limit: 10 }));
+	let frequentItems = $derived.by(() => {
+		const ids =
+			frequentRows.length > 0
+				? frequentRows.map((row) => row.exerciseId)
+				: [...POPULAR_EXERCISE_IDS];
+		return ids
+			.map((id) => indexById.get(id))
+			.filter((item): item is ExerciseIndexItem => Boolean(item));
+	});
+	let frequentTitle = $derived(
+		translate(
+			lang,
+			frequentRows.length > 0 ? 'exercises.frequentTitle' : 'exercises.popularTitle'
+		)
+	);
+
+	function addFrequent(exercise: ExerciseIndexItem) {
+		const result = draft.addToDraft(exercise.id, {
+			name: exercise.name,
+			equipment: exercise.equipment
+		});
+		toasts.show(
+			translate(lang, result.added ? 'exercise.added' : 'exercise.already'),
+			result.added ? 'success' : 'info',
+			2600,
+			undefined,
+			'draft'
+		);
+	}
+
 	onMount(() => {
-		void loadExerciseIndex();
+		const peeked = peekExerciseIndex();
+		if (peeked) indexById = new Map(peeked.map((item) => [item.id, item]));
+		void loadExerciseIndex().then((index) => {
+			indexById = new Map(index.map((item) => [item.id, item]));
+		});
 		/* Fresh hub visit: drop leftover list facets before search / browse-all. */
 		catalogUi.reset();
 		void records.refresh();
@@ -158,5 +206,34 @@
 				/>
 			{/each}
 		</div>
+	{/if}
+
+	{#if frequentItems.length > 0}
+		<section class="exercise-frequent" aria-labelledby="exercise-frequent-title">
+			<h2 id="exercise-frequent-title" class="exercise-frequent__title">{frequentTitle}</h2>
+			<div class="exercise-frequent__rail">
+				{#each frequentItems as item (item.id)}
+					{#if fromBuilder}
+						<button
+							type="button"
+							class="exercise-frequent__chip"
+							onclick={() => addFrequent(item)}
+						>
+							<img src={`/${item.image}`} alt="" loading="lazy" />
+							<span>{exerciseName(item, lang)}</span>
+							<Plus size={16} />
+						</button>
+					{:else}
+						<a
+							class="exercise-frequent__chip"
+							href={withFromParam(`/exercise/${item.id}`, fromParam)}
+						>
+							<img src={`/${item.image}`} alt="" loading="lazy" />
+							<span>{exerciseName(item, lang)}</span>
+						</a>
+					{/if}
+				{/each}
+			</div>
+		</section>
 	{/if}
 </section>

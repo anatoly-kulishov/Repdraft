@@ -180,3 +180,14 @@ export function sessionDurationMs(session: WorkoutSession): number | null {
 	if (!Number.isFinite(ms) || ms < 0) return null;
 	return ms;
 }
+
+/**
+ * Whole minutes for list meta. Null when the duration is missing or below a
+ * minute - callers must hide the chip instead of printing "0 мин" / "- мин".
+ */
+export function sessionDurationMinutes(session: WorkoutSession): number | null {
+	const ms = sessionDurationMs(session);
+	if (ms == null) return null;
+	const minutes = Math.round(ms / 60_000);
+	return minutes >= 1 ? minutes : null;
+}

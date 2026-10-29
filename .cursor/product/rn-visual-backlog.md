@@ -97,3 +97,18 @@ Code-level blockers for Open → plan → live → finish → summary: none foun
 - Device-specific: live footer stack height, builder selection bar - still watch on small phones
 - Health Connect: Android scaffold in `mobile/src/health/androidHealthAdapter.ts` (dev build only; Expo Go stays stub)
 - Watch ownership: still deferred per `watch-session-ownership.md`
+
+## Redesign pass (2026-10-29, v0.23.7)
+
+Сквозной проход по трём экранам + общий UI-кит. Web и RN в одной задаче, токены общие.
+
+- **8-pt сетка и токены.** `bg #F4F3F8`, карточки `#FFFFFF`, акцент `#6B34C9`, `muted #7E7984`, `secondary #6750A4`, `success #2E7D32`. Аддитивные `mutedSoft` / `secondary` / `success` + `radius.tag` / `radius.control`; старые токены не переименовывались.
+- **Клиенты (web + RN).** Компактный инвайт вместо свёрнутого блока, поиск при 5+ клиентах, строка «Последняя: план · когда», сводка «Активны за 7 дней», скелетоны. Desktop ≥1280px - две колонки (360px + 1fr), `max-width 72rem`; ≤380px - компактные строки.
+- **Главная (web + RN).** Hero-CTA с `planEstimatedMinutes` и составом, карточки 30 дней с недельной динамикой (`finishedSessionsBetweenDays`), `formatRelativeDayShort` без «—» и «N дн. назад».
+- **Прогресс (web + RN).** Вынесен в компоненты, период переключает весь экран, дельты к прошлому окну.
+- **«Часто тренируете».** `frequentExercises()` (90 дней, рабочие подходы) + cold-start `POPULAR_EXERCISE_IDS`; веб - рейл на хабе, RN - `FrequentExercisesRail` в футере списка.
+- **Помощь «?».** `HelpButton` + `HelpPanel` на вебе (Прогресс, Итоги, Клиенты). Панель inline под хедером, поэтому на sticky-хедерах (Records, карточка плана, Live, Auth) нужен поповер-вариант.
+- **Адаптив.** Прогон всех маршрутов на 320/360/390/414/768/1024/1280/1440/1920 после снятия `data-boot-pending`: `overflowX = 0`, таб-бар не переносится.
+- **Favicon.** Скруглённая градиентная плашка RP; ссылки root-relative + `v15`, чтобы localhost не тянул прод-кэш.
+
+Still open: RN help on Progress/Summary, поповер для sticky-хедеров, назначение плана клиенту (SQL).

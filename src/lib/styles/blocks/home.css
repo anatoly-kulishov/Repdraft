@@ -219,7 +219,7 @@
 	min-width: 0;
 	font-size: 1rem;
 	line-height: 1.45;
-	color: var(--color-muted);
+	color: var(--color-muted-soft);
 	overflow-wrap: anywhere;
 	word-break: break-word;
 }
@@ -351,7 +351,7 @@ a.home-header__row--link:active .home-header__cta {
 	margin: 0;
 	font-size: 0.8125rem;
 	line-height: 1.35;
-	color: var(--color-muted);
+	color: var(--color-muted-soft);
 }
 
 .home-header--mockup .home-header__plan {
@@ -362,6 +362,7 @@ a.home-header__row--link:active .home-header__cta {
 
 .home-header--mockup .home-header__meta {
 	min-height: calc(0.8125rem * 1.35);
+	color: var(--color-secondary);
 }
 
 .home-header__cta-text {
@@ -1614,9 +1615,9 @@ a.home-header__row--link:active .home-header__cta {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.15rem;
-	font-size: 0.8125rem;
+	font-size: 0.875rem;
 	font-weight: 500;
-	color: var(--color-muted);
+	color: var(--color-muted-soft);
 	text-decoration: none;
 }
 
@@ -1627,27 +1628,43 @@ a.home-header__row--link:active .home-header__cta {
 .home-monthly {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	gap: 0.65rem;
+	gap: 0.75rem;
 }
 
 .home-monthly__stat {
 	display: flex;
 	flex-direction: column;
-	gap: 0.15rem;
-	padding: 0.85rem 1rem;
+	gap: 0.125rem;
+	padding: 1rem;
 }
 
 .home-monthly__value {
-	font-size: 1.5rem;
+	font-size: 1.75rem;
 	font-weight: 800;
 	line-height: 1.2;
 	color: var(--color-ink);
 }
 
+.home-monthly__value--kg {
+	font-size: 1.5rem;
+}
+
 .home-monthly__label {
 	font-size: 0.75rem;
 	line-height: 1.3;
-	color: var(--color-muted);
+	font-weight: 400;
+	color: var(--color-muted-soft);
+}
+
+.home-monthly__delta {
+	font-size: 0.75rem;
+	line-height: 1.3;
+	font-weight: 400;
+	color: var(--color-success);
+}
+
+.home-monthly__delta--flat {
+	color: var(--color-muted-soft);
 }
 
 .home-aside-card {

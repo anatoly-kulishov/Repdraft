@@ -1,21 +1,25 @@
 <script lang="ts">
+	import '$lib/styles/blocks/coach.css';
 	import AppButton from '$lib/components/AppButton.svelte';
-	import AppPanel from '$lib/components/AppPanel.svelte';
+	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import CoachSessionDetailSheet from '$lib/components/coach/CoachSessionDetailSheet.svelte';
 	import ConfirmSheet from '$lib/components/ConfirmSheet.svelte';
+	import HelpButton from '$lib/components/HelpButton.svelte';
+	import HelpPanel from '$lib/components/HelpPanel.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import {
-		clientActivityTier,
+		clientInitials,
 		daysSinceLastSession,
 		formatInviteCode,
 		type CoachClientLink,
 		type CoachSessionDetail,
 		type CoachSessionSummary
 	} from '$lib/domain/coach';
+	import { formatKgInt } from '$lib/domain/format';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
-	import { formatRelativeDay } from '$lib/i18n/format';
+	import { formatRelativeDayShort } from '$lib/i18n/format';
 	import { translate } from '$lib/i18n/messages';
 	import { isSupabaseConfigured } from '$lib/supabase/client';
 	import { auth } from '$lib/stores/auth';
@@ -28,7 +32,15 @@
 		type CoachErrorReason,
 		type CoachRecentSession
 	} from '$lib/storage/coachRepository';
-	import { CaretDown, Copy } from 'phosphor-svelte';
+	import {
+		ChartLineUp,
+		Check,
+		ChatCircle,
+		Copy,
+		Gear,
+		ShareNetwork,
+		UsersThree
+	} from 'phosphor-svelte';
 
 	type Row = {
 		key: string;
@@ -48,7 +60,12 @@
 	let cloudSessions = $state<Record<string, CoachRecentSession[]>>({});
 	let cloudBusy = $state(false);
 	let cloudLoaded = $state(false);
-	let inviteOpen = $state(false);
+	let cloudStatsReady = $state(true);
+	let inviteMenuOpen = $state(false);
+	let inviteCopied = $state(false);
+	let inviteCopiedTimer: ReturnType<typeof setTimeout> | null = null;
+	let helpOpen = $state(false);
+	let refreshTarget = $state(false);
 
 	let expanded = $state<Record<string, boolean>>({});
 	let revokeTarget = $state<Row | null>(null);
@@ -92,7 +109,14 @@
 
 	let inviteCode = $derived(cloud ? cloudInvite : $coachPreviewState.inviteCode);
 	let weekActive = $derived(rows.filter((row) => row.summary.sessions7d > 0).length);
-	let showInvitePanel = $derived(rows.length === 0 || inviteOpen || Boolean(inviteCode));
+	let statsReady = $derived(!cloud || cloudStatsReady);
+	let clientQuery = $state('');
+	let filteredRows = $derived.by(() => {
+		const needle = clientQuery.trim().toLowerCase();
+		return needle
+			? rows.filter((row) => row.label.toLowerCase().includes(needle))
+			: rows;
+	});
 
 	function shortId(id: string): string {
 		return `${translate(lang, 'coach.clientFallback')} ${id.slice(0, 4).toUpperCase()}`;
@@ -135,8 +159,12 @@
 				cloudStats = Object.fromEntries(
 					stats.value.map((row: CoachClientStatsRow) => [row.clientUserId, row.summary])
 				);
-			} else if (stats.reason !== 'notConfigured') {
-				toasts.show(errorText(stats.reason), 'error');
+				cloudStatsReady = true;
+			} else {
+				cloudStatsReady = false;
+				if (stats.reason !== 'notConfigured') {
+					toasts.show(errorText(stats.reason), 'error');
+				}
 			}
 			cloudLoaded = true;
 		} finally {
@@ -151,16 +179,13 @@
 	async function createInvite() {
 		if (!cloud) {
 			coachPreview.createInvite();
-			inviteOpen = true;
 			return;
 		}
 		cloudBusy = true;
 		try {
 			const result = await coachRepository.createInvite();
-			if (result.ok) {
-				cloudInvite = result.value;
-				inviteOpen = true;
-			} else toasts.show(errorText(result.reason), 'error');
+			if (result.ok) cloudInvite = result.value;
+			else toasts.show(errorText(result.reason), 'error');
 		} finally {
 			cloudBusy = false;
 		}
@@ -181,9 +206,69 @@
 		try {
 			await navigator.clipboard.writeText(formatInviteCode(code));
 			toasts.show(translate(lang, 'coach.inviteCopied'), 'success');
+			inviteCopied = true;
+			if (inviteCopiedTimer) clearTimeout(inviteCopiedTimer);
+			inviteCopiedTimer = setTimeout(() => (inviteCopied = false), 1500);
 		} catch {
 			toasts.show(translate(lang, 'coach.inviteCopyFail'), 'error');
 		}
+	}
+
+	async function shareInvite() {
+		const code = inviteCode;
+		if (!code) return;
+		const text = translate(lang, 'coach.inviteShareMessage', {
+			code: formatInviteCode(code)
+		});
+		try {
+			if (typeof navigator !== 'undefined' && navigator.share) {
+				await navigator.share({ text });
+				return;
+			}
+			await navigator.clipboard.writeText(text);
+			toasts.show(translate(lang, 'coach.inviteCopied'), 'success');
+		} catch {
+			/* user dismissed the share sheet */
+		}
+	}
+
+	async function remind(row: Row) {
+		const text = translate(lang, 'coach.remindMessage', { name: row.label });
+		try {
+			if (typeof navigator !== 'undefined' && navigator.share) {
+				await navigator.share({ text });
+				return;
+			}
+			await navigator.clipboard.writeText(text);
+			toasts.show(translate(lang, 'coach.remind'), 'success');
+		} catch {
+			/* user dismissed the share sheet */
+		}
+	}
+
+	function requestRefresh() {
+		inviteMenuOpen = false;
+		refreshTarget = true;
+	}
+
+	async function confirmRefresh() {
+		refreshTarget = false;
+		if (!cloud) {
+			coachPreview.refreshInvite();
+			return;
+		}
+		await refreshInvite();
+	}
+
+	function rowStatus(summary: CoachSessionSummary) {
+		if (!statsReady) {
+			return {
+				key: 'coach.noStats' as const,
+				vars: {} as Record<string, string | number>,
+				tone: 'neutral' as const
+			};
+		}
+		return statusLine(summary);
 	}
 
 	function requestRevoke(row: Row) {
@@ -283,27 +368,42 @@
 		sessionDetail = null;
 	}
 
+	/** Two-state status: today (green with dot) or a calm grey line. */
 	function statusLine(summary: CoachSessionSummary) {
-		const tier = clientActivityTier(summary);
-		const days = daysSinceLastSession(summary);
-		if (tier === 'silent') {
+		if (summary.sessions === 0 || !summary.lastSessionAt) {
 			return {
-				key: 'coach.tierSilent' as const,
+				key: 'coach.never' as const,
 				vars: {} as Record<string, string | number>,
-				tone: 'stale' as const
+				tone: 'neutral' as const
 			};
 		}
-		if (tier === 'active') {
+		const days = daysSinceLastSession(summary);
+		if (days === 0) {
 			return {
-				key: 'coach.tierActive' as const,
-				vars: { n: days ?? 0 },
+				key: 'coach.trainedToday' as const,
+				vars: {} as Record<string, string | number>,
 				tone: 'active' as const
 			};
 		}
-		if (tier === 'calm') {
-			return { key: 'coach.tierCalm' as const, vars: { n: days ?? 0 }, tone: 'calm' as const };
+		if (days === 1) {
+			return {
+				key: 'coach.trainedYesterday' as const,
+				vars: {} as Record<string, string | number>,
+				tone: 'neutral' as const
+			};
 		}
-		return { key: 'coach.tierStale' as const, vars: { n: days ?? 0 }, tone: 'stale' as const };
+		if (days != null && days <= 7) {
+			return {
+				key: 'coach.tierActive' as const,
+				vars: { n: days },
+				tone: 'neutral' as const
+			};
+		}
+		return {
+			key: 'coach.tierStale' as const,
+			vars: { n: days ?? 0 },
+			tone: 'neutral' as const
+		};
 	}
 
 	function previewSessions(clientUserId: string): CoachRecentSession[] {
@@ -335,173 +435,282 @@
 
 <SeoHead title={translate(lang, 'coach.pageTitle')} noindex />
 
-<section class="content-page content-page--narrow">
+<section class="content-page content-page--narrow coach-page">
 	<ScreenHeader
 		title={translate(lang, 'coach.pageTitle')}
 		backHref="/auth"
 		backLabelVisible
 		backLabel={translate(lang, 'nav.profile')}
 		preferHistoryBack={false}
+	>
+		{#snippet actions()}
+			<HelpButton label={translate(lang, 'coach.help')} bind:open={helpOpen} />
+			<a class="coach-icon-btn" href="/auth" aria-label={translate(lang, 'coach.settings')}>
+				<Gear size={22} />
+			</a>
+		{/snippet}
+	</ScreenHeader>
+
+	<HelpPanel
+		open={helpOpen}
+		title={translate(lang, 'coach.helpTitle')}
+		body={translate(lang, 'coach.helpBody')}
 	/>
 
-	<AppPanel class="mt-4 text-left">
-		<p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">
-			{translate(lang, cloud ? 'coach.cloudBadge' : 'coach.previewBadge')}
-		</p>
-		<p class="mt-1 text-sm text-[var(--color-muted)]">
-			{translate(lang, cloud ? 'coach.cloudLead' : 'coach.pageLead')}
-		</p>
-	</AppPanel>
+	<div class="coach-layout">
+	<div class="coach-column">
+	<div class="coach-block">
+		<h2 class="coach-block-title">{translate(lang, 'coach.inviteTitle')}</h2>
+		<div class="panel coach-card">
+			<div class="coach-card-top">
+				<span class="coach-hint">{translate(lang, 'coach.inviteHint')}</span>
+				{#if inviteCode}
+					<button
+						type="button"
+						class="coach-more"
+						aria-label={translate(lang, 'coach.more')}
+						aria-expanded={inviteMenuOpen}
+						onclick={() => (inviteMenuOpen = !inviteMenuOpen)}
+					>
+						⋮
+					</button>
+				{/if}
+			</div>
 
-	{#if showInvitePanel}
-		<AppPanel class="mt-4 text-left">
-			<h2 class="text-base font-bold">{translate(lang, 'coach.inviteTitle')}</h2>
-			<p class="mt-1 text-sm text-[var(--color-muted)]">{translate(lang, 'coach.inviteLead')}</p>
 			{#if inviteCode}
-				<p class="mt-3 font-mono text-2xl font-bold tracking-[0.18em] tabular-nums">
-					{formatInviteCode(inviteCode)}
-				</p>
-				<div class="mt-3 flex flex-wrap gap-2">
-					<AppButton variant="secondary" onclick={() => void copyInvite()}>
-						<span class="inline-flex items-center gap-2">
-							<Copy size={16} />
-							{translate(lang, 'coach.inviteCopy')}
-						</span>
-					</AppButton>
-					<AppButton variant="link" onclick={() => void refreshInvite()}>
-						{translate(lang, 'coach.inviteRefresh')}
-					</AppButton>
+				<div class="coach-code-row">
+					<div class="coach-code-plate">
+						<span class="coach-code">{formatInviteCode(inviteCode)}</span>
+						<button
+							type="button"
+							class="coach-copy"
+							aria-label={translate(lang, 'coach.inviteCopy')}
+							onclick={() => void copyInvite()}
+						>
+							{#if inviteCopied}
+								<Check size={20} />
+							{:else}
+								<Copy size={20} />
+							{/if}
+						</button>
+					</div>
+					<button
+						type="button"
+						class="coach-share"
+						aria-label={translate(lang, 'coach.inviteShare')}
+						onclick={() => void shareInvite()}
+					>
+						<ShareNetwork size={20} />
+					</button>
 				</div>
+				<p class="coach-hint">{translate(lang, 'coach.inviteHelp')}</p>
 			{:else}
-				<AppButton class="mt-3" disabled={cloudBusy} onclick={() => void createInvite()}>
-					{translate(lang, 'coach.inviteCreate')}
+				<AppButton block disabled={cloudBusy} onclick={() => void createInvite()}>
+					{translate(lang, 'coach.inviteCreateShort')}
 				</AppButton>
 			{/if}
-		</AppPanel>
-	{:else}
-		<div class="mt-4">
-			<AppButton variant="link" disabled={cloudBusy} onclick={() => void createInvite()}>
-				{translate(lang, 'coach.inviteCollapsed')}
-			</AppButton>
+
+			{#if inviteMenuOpen}
+				<div class="coach-menu">
+					<button type="button" class="coach-menu-item" onclick={() => void copyInvite()}>
+						{translate(lang, 'coach.inviteCopy')}
+					</button>
+					<button
+						type="button"
+						class="coach-menu-item coach-menu-item--danger"
+						disabled={cloudBusy}
+						onclick={requestRefresh}
+					>
+						{translate(lang, 'coach.inviteRefresh')}
+					</button>
+				</div>
+			{/if}
 		</div>
-	{/if}
-
-	<div class="mt-6 flex items-center justify-between">
-		<h2 class="section-title">{translate(lang, 'coach.clientsTitle')}</h2>
-		<span class="text-sm text-[var(--color-muted)]">{rows.length}</span>
 	</div>
-	{#if rows.length > 0}
-		<p class="mt-1 text-sm text-[var(--color-muted)]">
-			{translate(lang, 'coach.summaryLine', { total: rows.length, week: weekActive })}
-		</p>
-	{/if}
 
-	{#if rows.length === 0}
-		<AppPanel class="mt-3 text-left">
-			<p class="text-base font-semibold">{translate(lang, 'coach.clientsEmpty')}</p>
-			<p class="mt-1 text-sm text-[var(--color-muted)]">
-				{translate(lang, cloud ? 'coach.clientsEmptyCloud' : 'coach.clientsEmptyLead')}
-			</p>
+	</div>
+	<div class="coach-column">
+	{#if cloudBusy && !cloudLoaded}
+		<div class="coach-skeleton" aria-busy="true" aria-live="polite">
+			<span class="sr-only">{translate(lang, 'common.loading')}</span>
+			{#each [0, 1, 2] as row (row)}
+				<div class="coach-skeleton__row" aria-hidden="true">
+					<AppSkeleton class="coach-skeleton__avatar" />
+					<div class="coach-skeleton__copy">
+						<AppSkeleton class="coach-skeleton__name" />
+						<AppSkeleton class="coach-skeleton__meta" />
+					</div>
+					<AppSkeleton class="coach-skeleton__chip" />
+				</div>
+			{/each}
+		</div>
+	{:else if rows.length === 0}
+		<div class="panel coach-empty">
+			<span class="coach-empty__icon"><UsersThree size={28} /></span>
+			<p class="coach-empty__title">{translate(lang, 'coach.emptyTitle')}</p>
+			<p class="coach-hint coach-empty__body">{translate(lang, 'coach.emptyBody')}</p>
+			{#if inviteCode}
+				<AppButton variant="secondary" onclick={() => void shareInvite()}>
+					{translate(lang, 'coach.inviteShare')}
+				</AppButton>
+			{:else}
+				<AppButton disabled={cloudBusy} onclick={() => void createInvite()}>
+					{translate(lang, 'coach.inviteCreateShort')}
+				</AppButton>
+			{/if}
 			{#if !cloud}
-				<AppButton class="mt-3" variant="secondary" onclick={() => coachPreview.addDemoClient()}>
+				<AppButton variant="secondary" onclick={() => coachPreview.addDemoClient()}>
 					{translate(lang, 'coach.addDemo')}
 				</AppButton>
 			{/if}
-		</AppPanel>
+		</div>
 	{:else}
-		<ul class="mt-3 flex list-none flex-col gap-3 p-0">
-			{#each rows as row (row.key)}
-				{@const status = statusLine(row.summary)}
-				{@const isOpen = expanded[row.key] ?? false}
-				{@const lastName = row.summary.lastPlanName?.trim() || null}
-				{@const lastId = row.summary.lastSessionId ?? null}
-				<li>
-					<AppPanel class="text-left">
-						<div class="min-w-0">
-							<p class="truncate text-base font-bold">{row.label}</p>
-							<p
-								class="mt-1 text-sm {status.tone === 'active'
-									? 'text-[var(--color-accent)]'
-									: status.tone === 'stale'
-										? 'text-[var(--color-danger)]'
-										: 'text-[var(--color-muted)]'}"
-							>
-								{translate(lang, status.key, status.vars)}
-							</p>
-						</div>
-
-						{#if lastName && lastId}
+		<div class="coach-block">
+			<div class="coach-list-head">
+				<h2 class="coach-block-title">
+					{translate(lang, 'coach.clientsCount', { n: rows.length })}
+				</h2>
+				<span class="coach-week">
+					{statsReady ? translate(lang, 'coach.weekActive', { n: weekActive }) : '—'}
+				</span>
+			</div>
+			{#if rows.length > 4}
+				<input
+					class="coach-search"
+					type="search"
+					bind:value={clientQuery}
+					placeholder={translate(lang, 'coach.searchPlaceholder')}
+					aria-label={translate(lang, 'coach.searchPlaceholder')}
+				/>
+			{/if}
+			{#if filteredRows.length === 0}
+				<p class="coach-hint coach-no-matches">{translate(lang, 'coach.noMatches')}</p>
+			{:else}
+			<ul class="panel coach-list">
+				{#each filteredRows as row, idx (row.key)}
+					{@const status = rowStatus(row.summary)}
+					{@const isOpen = expanded[row.key] ?? false}
+					{@const activeWeek = row.summary.sessions7d > 0}
+					{@const recent = sessionsFor(row)}
+					<li class="coach-row" class:coach-row--divider={idx > 0}>
+						<div class="coach-row-main">
 							<button
 								type="button"
-								class="mt-3 flex min-h-[48px] w-full items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-panel)] px-3 text-left"
-								onclick={() => void openSession(lastId, row.clientUserId)}
+								class="coach-row-open"
+								aria-expanded={isOpen}
+								onclick={() => void toggleRow(row)}
 							>
-								<span class="min-w-0 truncate font-semibold">
-									{translate(lang, 'coach.lastSession', { name: lastName })}
-								</span>
-								{#if row.summary.lastSessionAt}
-									<span class="shrink-0 text-sm text-[var(--color-muted)]">
-										{translate(lang, 'coach.lastSessionWhen', {
-											when: formatRelativeDay(row.summary.lastSessionAt, lang)
-										})}
+								<span class="coach-avatar">{clientInitials(row.label)}</span>
+								<span class="coach-row-copy">
+									<span class="coach-name">{row.label}</span>
+									<span
+										class="coach-status"
+										class:coach-status--active={status.tone === 'active'}
+									>
+										{#if status.tone === 'active'}
+											<span class="coach-dot" aria-hidden="true"></span>
+										{/if}
+										{translate(lang, status.key, status.vars)}
 									</span>
+									{#if row.summary.lastPlanName && row.summary.lastSessionAt}
+										<span class="coach-row-last">
+											{translate(lang, 'coach.lastSessionShort', {
+												name: row.summary.lastPlanName
+											})}
+											· {formatRelativeDayShort(row.summary.lastSessionAt, lang)}
+										</span>
+									{/if}
+								</span>
+							</button>
+							<button
+								type="button"
+								class="coach-chip"
+								onclick={() => {
+									if (!activeWeek) {
+										void remind(row);
+										return;
+									}
+									if (row.summary.lastSessionId) {
+										void openSession(row.summary.lastSessionId, row.clientUserId);
+									} else void toggleRow(row);
+								}}
+							>
+								{#if activeWeek}
+									<ChartLineUp size={18} />
+									<span>{translate(lang, 'coach.results')}</span>
+								{:else}
+									<ChatCircle size={18} />
+									<span>{translate(lang, 'coach.remind')}</span>
 								{/if}
 							</button>
-						{/if}
-
-						<div class="mt-3 flex flex-wrap gap-2">
-							<AppButton variant="link" onclick={() => void toggleRow(row)} aria-expanded={isOpen}>
-								<span class="inline-flex items-center gap-1">
-									{translate(lang, isOpen ? 'coach.hideSessions' : 'coach.showSessions')}
-									<CaretDown size={14} class={isOpen ? 'rotate-180' : ''} />
-								</span>
-							</AppButton>
-							<AppButton variant="link" disabled={cloudBusy} onclick={() => requestRevoke(row)}>
-								{translate(lang, 'coach.revoke')}
-							</AppButton>
-							{#if !cloud}
-								<AppButton variant="link" onclick={() => requestRemove(row)}>
-									{translate(lang, 'coach.remove')}
-								</AppButton>
-							{/if}
 						</div>
 
 						{#if isOpen}
-							<ul class="mt-2 flex list-none flex-col gap-1 p-0">
-								{#each sessionsFor(row) as session (session.id)}
-									<li>
+							<div class="coach-expanded">
+								<p class="coach-hint">
+									{translate(lang, 'coach.totalsLine', {
+										sessions: row.summary.sessions,
+										sets: row.summary.sets,
+										kg: formatKgInt(row.summary.volumeKg)
+									})}
+								</p>
+								{#if recent.length === 0}
+									<p class="coach-hint">{translate(lang, 'coach.sessionDetailEmpty')}</p>
+								{:else}
+									{#each recent as session (session.id)}
 										<button
 											type="button"
-											class="flex min-h-[48px] w-full items-center justify-between gap-2 border-t border-[var(--color-border)] py-2 text-left text-sm"
+											class="coach-session"
 											onclick={() => void openSession(session.id, row.clientUserId)}
 										>
-											<span class="min-w-0 truncate font-semibold">
-												{session.planName || translate(lang, 'coach.sessionDetailTitle')}
+											<span class="coach-session__name">
+												{session.planName ||
+													translate(lang, 'coach.sessionDetailTitle')}
 											</span>
-											<span class="shrink-0 text-[var(--color-muted)] tabular-nums">
+											<span class="coach-session__meta tabular-nums">
 												{translate(lang, 'coach.sessionMeta', {
-													when: formatRelativeDay(session.finishedAt, lang),
+													when: formatRelativeDayShort(session.finishedAt, lang),
 													sets: session.sets,
-													volume: session.volumeKg.toLocaleString(
-														lang === 'ru' ? 'ru-RU' : 'en-GB'
-													)
+													volume: formatKgInt(session.volumeKg)
 												})}
 											</span>
 										</button>
-									</li>
-								{/each}
-							</ul>
+									{/each}
+								{/if}
+								<div class="coach-expanded__actions">
+									<AppButton
+										variant="ghost"
+										class="is-danger"
+										disabled={cloudBusy}
+										onclick={() => requestRevoke(row)}
+									>
+										{translate(lang, 'coach.revoke')}
+									</AppButton>
+									{#if !cloud}
+										<AppButton
+											variant="ghost"
+											class="is-danger"
+											onclick={() => requestRemove(row)}
+										>
+											{translate(lang, 'coach.remove')}
+										</AppButton>
+									{/if}
+								</div>
+							</div>
 						{/if}
-					</AppPanel>
-				</li>
-			{/each}
-		</ul>
+					</li>
+				{/each}
+			</ul>
+			{/if}
+		</div>
 		{#if !cloud}
-			<AppButton class="mt-3" variant="secondary" block onclick={() => coachPreview.addDemoClient()}>
+			<AppButton variant="secondary" block onclick={() => coachPreview.addDemoClient()}>
 				{translate(lang, 'coach.addDemo')}
 			</AppButton>
 		{/if}
 	{/if}
+	</div>
+	</div>
 </section>
 
 <CoachSessionDetailSheet
@@ -521,6 +730,17 @@
 	busy={cloudBusy}
 	onConfirm={confirmRevoke}
 	onDismiss={dismissRevoke}
+/>
+
+<ConfirmSheet
+	open={refreshTarget}
+	titleId="coach-refresh-title"
+	title={translate(lang, 'coach.inviteRefreshConfirmTitle')}
+	hint={translate(lang, 'coach.inviteRefreshConfirmLead')}
+	confirmLabel={translate(lang, 'coach.inviteRefresh')}
+	busy={cloudBusy}
+	onConfirm={() => void confirmRefresh()}
+	onDismiss={() => (refreshTarget = false)}
 />
 
 <ConfirmSheet
