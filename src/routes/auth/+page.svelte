@@ -28,7 +28,6 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
-	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import AuthInterfacePrefs from '$lib/components/AuthInterfacePrefs.svelte';
 	import IconPlate from '$lib/components/IconPlate.svelte';
 	import ProfileInsightsPanel from '$lib/components/ProfileInsightsPanel.svelte';
@@ -121,6 +120,7 @@
 	let coachInviteBusy = $state(false);
 	let coachInviteError = $state<string | null>(null);
 	let coachInviteHasChars = $derived(normalizeInviteCode(coachInviteInput).length > 0);
+	let coachSheetOpen = $state(false);
 
 	let coachCloud = $derived(isSupabaseConfigured() && Boolean($auth.user));
 	let ownUserId = $derived($auth.user?.id ?? null);
@@ -227,6 +227,7 @@
 			const result = await coachRepository.acceptInvite(code);
 			if (result.ok) {
 				coachInviteInput = '';
+				coachSheetOpen = false;
 				toasts.show(translate(lang, 'coach.inviteAccepted'), 'success');
 				clientCoachLoadedFor = null;
 				assignmentLoadedFor = null;
@@ -328,6 +329,15 @@
 	}
 
 	let lang = $derived($resolvedLocale);
+	let coachRowValue = $derived(
+		!clientCoachLoaded
+			? '…'
+			: myCoaches.length === 0
+				? translate(lang, 'profile.coachNone')
+				: myCoaches.length === 1
+					? translate(lang, 'profile.coachConnected')
+					: translate(lang, 'profile.coachesConnected', { n: myCoaches.length })
+	);
 	let showTesterTools = $derived(
 		testerToolsVisible({ pref: $testerModeEnabled, dev: import.meta.env.DEV })
 	);
@@ -1113,7 +1123,6 @@
 					<ProfileInsightsPanel />
 					<div class="profile-settings-group panel text-left">
 						<p class="profile-settings-group__title">{translate(lang, 'profile.clients')}</p>
-						<p class="profile-settings-group__hint">{translate(lang, 'profile.clientsHint')}</p>
 
 						{#if currentAssignment}
 							<div class="coach-assigned">
@@ -1150,95 +1159,12 @@
 							</div>
 						{/if}
 
-						<div class="coach-role-block">
-							<p class="profile-settings-group__subtitle">
-								{translate(lang, 'profile.myCoach')}
-							</p>
-							{#if coachCloud && !clientCoachLoaded}
-								<div class="coach-connect-loading" aria-hidden="true">
-									<AppSkeleton class="h-11 w-11 shrink-0 rounded-[0.8rem]" />
-									<div class="flex min-w-0 flex-1 flex-col gap-1">
-										<AppSkeleton class="h-4 w-40 max-w-full" />
-										<AppSkeleton class="h-3 w-full" />
-										<AppSkeleton class="h-3 w-2/3" />
-									</div>
-								</div>
-							{:else if myCoaches.length > 0}
-								<ul class="coach-my-list">
-									{#each myCoaches as coach (coach.linkId)}
-										<li class="coach-connect-status">
-											<IconPlate icon={UserCheck} tone="accent" />
-											<div class="coach-connect-status__text">
-												<p class="coach-connect-status__title">{coachDisplayName(coach)}</p>
-												<p class="coach-connect-status__hint">
-													{translate(lang, 'coach.connectedOn', {
-														when: formatRelativeDay(coach.createdAt, lang)
-													})}
-												</p>
-												<p class="coach-connect-status__hint">
-													{translate(lang, 'profile.coachConnectedHint')}
-												</p>
-												<AppButton
-													variant="ghost"
-													class="is-danger mt-1 !min-h-[48px]"
-													disabled={disconnectBusy}
-													onclick={() => requestDisconnectCoach(coach)}
-												>
-													{translate(lang, 'coach.disconnect')}
-												</AppButton>
-											</div>
-										</li>
-									{/each}
-								</ul>
-							{:else}
-								<p class="profile-settings-group__hint">
-									{translate(lang, 'coach.inviteAcceptLead')}
-								</p>
-								<form
-									class="coach-invite-form"
-									onsubmit={(e) => {
-										e.preventDefault();
-										void acceptCoachInvite();
-									}}
-								>
-									<AppInput
-										type="text"
-										inputmode="text"
-										autocomplete="off"
-										autocapitalize="characters"
-										enterkeyhint="done"
-										maxlength={INVITE_CODE_LENGTH + 1}
-										spellcheck={false}
-										class="w-full font-mono tracking-[0.12em]"
-										placeholder={translate(lang, 'coach.inviteAcceptPlaceholder')}
-										aria-label={translate(lang, 'coach.inviteAcceptLabel')}
-										aria-invalid={coachInviteError ? 'true' : undefined}
-										aria-describedby={coachInviteError ? 'coach-invite-error' : undefined}
-										value={coachInviteInput}
-										oninput={(e) => onCoachInviteInput(e.currentTarget)}
-									/>
-									<AppButton
-										type="submit"
-										variant="secondary"
-										disabled={coachInviteBusy || !coachInviteHasChars}
-									>
-										{#if coachInviteBusy}
-											<span class="inline-flex items-center gap-2">
-												<Spinner size="sm" block={false} />
-												{translate(lang, 'auth.wait')}
-											</span>
-										{:else}
-											{translate(lang, 'coach.inviteAcceptCta')}
-										{/if}
-									</AppButton>
-								</form>
-								{#if coachInviteError}
-									<p id="coach-invite-error" class="coach-invite-form__error" role="alert">
-										{coachInviteError}
-									</p>
-								{/if}
-							{/if}
-						</div>
+						<ProfileSettingsRow
+							icon={myCoaches.length > 0 ? UserCheck : UserRound}
+							label={translate(lang, 'profile.myCoach')}
+							hint={coachRowValue || undefined}
+							onclick={() => (coachSheetOpen = true)}
+						/>
 
 						<div class="profile-settings-group__section profile-settings-group__section--row">
 							<ProfileSettingsRow
@@ -1683,6 +1609,90 @@
 </section>
 
 {#if $auth.user}
+	<BottomSheet
+		bind:open={coachSheetOpen}
+		titleId="coach-my-title"
+		label={translate(lang, 'profile.myCoach')}
+		raised={myCoaches.length === 0}
+		dismissible={!coachInviteBusy}
+		onDismiss={() => (coachSheetOpen = false)}
+	>
+		<p id="coach-my-title" class="bottom-sheet__title">{translate(lang, 'profile.myCoach')}</p>
+		{#if coachCloud && !clientCoachLoaded}
+			<p class="bottom-sheet__hint">…</p>
+		{:else if myCoaches.length > 0}
+			<ul class="coach-my-list">
+				{#each myCoaches as coach (coach.linkId)}
+					<li class="coach-connect-status">
+						<IconPlate icon={UserCheck} tone="accent" />
+						<div class="coach-connect-status__text">
+							<p class="coach-connect-status__title">{coachDisplayName(coach)}</p>
+							<p class="coach-connect-status__hint">
+								{translate(lang, 'coach.connectedOn', {
+									when: formatRelativeDay(coach.createdAt, lang)
+								})}
+							</p>
+							<p class="coach-connect-status__hint">
+								{translate(lang, 'profile.coachConnectedHint')}
+							</p>
+							<AppButton
+								variant="ghost"
+								class="is-danger mt-1 !min-h-[48px]"
+								disabled={disconnectBusy}
+								onclick={() => {
+									coachSheetOpen = false;
+									requestDisconnectCoach(coach);
+								}}
+							>
+								{translate(lang, 'coach.disconnect')}
+							</AppButton>
+						</div>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="bottom-sheet__hint">{translate(lang, 'coach.inviteAcceptLead')}</p>
+			<form
+				class="coach-connect-form"
+				onsubmit={(e) => {
+					e.preventDefault();
+					void acceptCoachInvite();
+				}}
+			>
+				<AppInput
+					type="text"
+					inputmode="text"
+					autocomplete="off"
+					autocapitalize="characters"
+					enterkeyhint="done"
+					maxlength={INVITE_CODE_LENGTH + 1}
+					spellcheck={false}
+					class="w-full font-mono tracking-[0.12em]"
+					placeholder={translate(lang, 'coach.inviteAcceptPlaceholder')}
+					aria-label={translate(lang, 'coach.inviteAcceptLabel')}
+					aria-invalid={coachInviteError ? 'true' : undefined}
+					aria-describedby={coachInviteError ? 'coach-invite-error' : undefined}
+					value={coachInviteInput}
+					oninput={(e) => onCoachInviteInput(e.currentTarget)}
+				/>
+				<AppButton type="submit" block disabled={coachInviteBusy || !coachInviteHasChars}>
+					{#if coachInviteBusy}
+						<span class="inline-flex items-center gap-2">
+							<Spinner size="sm" block={false} />
+							{translate(lang, 'auth.wait')}
+						</span>
+					{:else}
+						{translate(lang, 'coach.inviteAcceptCta')}
+					{/if}
+				</AppButton>
+			</form>
+			{#if coachInviteError}
+				<p id="coach-invite-error" class="coach-connect-form__error" role="alert">
+					{coachInviteError}
+				</p>
+			{/if}
+		{/if}
+	</BottomSheet>
 	<ConfirmSheet
 		open={disconnectTarget !== null}
 		titleId="coach-disconnect-title"

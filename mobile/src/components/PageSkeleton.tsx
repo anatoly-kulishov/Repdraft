@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useAppColors } from '../state/theme';
 import { radius, space, type ColorPalette } from '../theme';
 
-type PageSkeletonVariant = 'home' | 'planPreview' | 'summary';
+type PageSkeletonVariant = 'home' | 'planPreview' | 'summary' | 'coach';
 
 export function PageSkeleton({ variant }: { variant: PageSkeletonVariant }) {
 	const colors = useAppColors();
@@ -82,6 +82,24 @@ export function PageSkeleton({ variant }: { variant: PageSkeletonVariant }) {
 						</View>
 					</View>
 					<View style={[styles.bone, styles.footerCta]} />
+				</>
+			) : null}
+			{variant === 'coach' ? (
+				<>
+					<View style={[styles.bone, styles.previewMeta]} />
+					<View style={[styles.bone, styles.previewMetaShort]} />
+					<View style={styles.rowStack}>
+						<View style={styles.exerciseCard}>
+							<View style={[styles.bone, styles.exerciseTitle]} />
+							<View style={[styles.bone, styles.exerciseMeta]} />
+							<View style={[styles.bone, styles.coachCta]} />
+						</View>
+						<View style={styles.exerciseCard}>
+							<View style={[styles.bone, styles.exerciseTitle]} />
+							<View style={[styles.bone, styles.exerciseMeta]} />
+							<View style={[styles.bone, styles.coachCta]} />
+						</View>
+					</View>
 				</>
 			) : null}
 		</View>
@@ -195,6 +213,11 @@ function makeStyles(colors: ColorPalette) {
 			height: 13,
 			width: '45%',
 			backgroundColor: colors.panelRaised
+		},
+		coachCta: {
+			height: 48,
+			borderRadius: radius.md,
+			marginTop: space.xs
 		},
 		footerCta: {
 			height: 48,

@@ -30,6 +30,7 @@ import {
 	type CoachMyCoach
 } from '@repdraft/domain/coach';
 import { clampGreetingName } from '@repdraft/domain/greetingName';
+import { coachBadgeVisible } from '@repdraft/domain/coachHints';
 import { buildExportPayload, exportPayloadToJson } from '@repdraft/domain/exportData';
 import {
 	computeLoopMetrics,
@@ -55,6 +56,7 @@ import {
 	validatePasswordPolicy
 } from '@repdraft/domain/passwordPolicy';
 import { TESTER_MODE_UNLOCK_TAPS } from '@repdraft/domain/prefs';
+import { BottomSheet } from '../../src/components/BottomSheet';
 import { ConfirmSheet } from '../../src/components/ConfirmSheet';
 import { ProfileAvatarSheet } from '../../src/components/ProfileAvatarSheet';
 import { OnboardingChecklistPanel } from '../../src/components/OnboardingChecklistPanel';
@@ -63,6 +65,7 @@ import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { WhatsNewSheet } from '../../src/components/WhatsNewSheet';
 import { getHealthAdapter } from '../../src/health';
 import { loadGreetingName, saveGreetingName as persistGreetingName } from '../../src/state/greetingName';
+import { loadCoachSeenAt } from '../../src/state/coachHints';
 import { isHealthReadEnabled, setHealthReadEnabled } from '../../src/state/healthPrefs';
 import { useLocale } from '../../src/state/locale';
 import { useTabScreenPad } from '../../src/layout/safe';
@@ -153,6 +156,8 @@ export default function ProfileScreen() {
 	const [assignmentBusy, setAssignmentBusy] = useState(false);
 	const [coachInviteInput, setCoachInviteInput] = useState('');
 	const [coachInviteBusy, setCoachInviteBusy] = useState(false);
+	const [coachSheetOpen, setCoachSheetOpen] = useState(false);
+	const [coachBadge, setCoachBadge] = useState(false);
 	const [disconnectTarget, setDisconnectTarget] = useState<CoachMyCoach | null>(null);
 	const versionUnlockTaps = useRef(0);
 	const versionUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -163,11 +168,26 @@ export default function ProfileScreen() {
 	const onboardingComplete = Boolean(
 		onboardingProgress && onboardingProgress.done >= onboardingProgress.total
 	);
+	const coachRowValue = !coachesLoaded
+		? '…'
+		: myCoaches.length === 0
+			? tt('profile.coachNone')
+			: myCoaches.length === 1
+				? tt('profile.coachConnected')
+				: tt('profile.coachesConnected', { n: myCoaches.length });
 
 	useFocusEffect(
 		useCallback(() => {
 			void outboxCount().then(setPendingSync);
 			void loadOnboarding().then(setOnboarding);
+			void (async () => {
+				const [seenAt, list] = await Promise.all([loadCoachSeenAt(), sessionsRepo.list()]);
+				const lastFinishedAt = list.reduce<string | null>((latest, item) => {
+					if (!item.finishedAt) return latest;
+					return !latest || item.finishedAt > latest ? item.finishedAt : latest;
+				}, null);
+				setCoachBadge(coachBadgeVisible(lastFinishedAt, seenAt));
+			})();
 			if (!cloud || !session?.user) {
 				setMyCoaches([]);
 				setCoachesLoaded(false);
@@ -258,6 +278,7 @@ export default function ProfileScreen() {
 				const refreshedAssignment = await coachRepo.myCurrentAssignment();
 				if (refreshedAssignment.ok) setAssignment(refreshedAssignment.value);
 				setCoachesLoaded(true);
+				setCoachSheetOpen(false);
 			} else {
 				Alert.alert(tt('common.error'), tt(`coach.error.${result.reason}`));
 			}
@@ -908,7 +929,6 @@ export default function ProfileScreen() {
 			{session?.user && cloud ? (
 				<Panel>
 					<Text style={styles.groupTitle}>{tt('profile.clients')}</Text>
-					<Text style={styles.hint}>{tt('profile.clientsHint')}</Text>
 					{assignment ? (
 						<AssignedPlanCard
 							assignment={assignment}
@@ -917,51 +937,25 @@ export default function ProfileScreen() {
 							onDismiss={() => void dismissCoachAssignment()}
 						/>
 					) : null}
-					<Text style={[styles.groupTitle, { marginTop: space.md, fontSize: 15 }]}>
-						{tt('profile.myCoach')}
-					</Text>
-					{!coachesLoaded ? (
-						<Text style={styles.hint}>…</Text>
-					) : myCoaches.length > 0 ? (
-						myCoaches.map((coach) => (
-							<View key={coach.linkId} style={styles.coachBlock}>
-								<Text style={styles.rowText}>{coachDisplayName(coach)}</Text>
-								<Text style={styles.hint}>
-									{tt('coach.connectedOn', {
-										when: formatRelativeDay(coach.createdAt, locale)
-									})}
-								</Text>
-								<Text style={styles.hint}>{tt('profile.coachConnectedHint')}</Text>
-								<PrimaryButton
-									label={tt('coach.disconnect')}
-									variant="danger"
-									compact
-									onPress={() => setDisconnectTarget(coach)}
-								/>
-							</View>
-						))
-					) : (
-						<>
-							<Text style={styles.hint}>{tt('coach.inviteAcceptLead')}</Text>
-							<TextInput
-								style={[styles.input, styles.inviteInput]}
-								placeholder={tt('coach.inviteAcceptPlaceholder')}
-								placeholderTextColor={colors.muted}
-								autoCapitalize="characters"
-								autoCorrect={false}
-								maxLength={INVITE_CODE_LENGTH + 1}
-								value={coachInviteInput}
-								onChangeText={onCoachInviteChange}
-							/>
-							<PrimaryButton
-								label={coachInviteBusy ? '…' : tt('coach.inviteAcceptCta')}
-								variant="secondary"
-								onPress={() => void acceptCoachInvite()}
-								disabled={coachInviteBusy || normalizeInviteCode(coachInviteInput).length === 0}
-							/>
-						</>
-					)}
-					<Pressable style={styles.row} onPress={() => router.push('/clients')}>
+					<Pressable
+						style={styles.row}
+						accessibilityRole="button"
+						accessibilityLabel={`${tt('profile.myCoach')}, ${coachRowValue}`}
+						onPress={() => setCoachSheetOpen(true)}
+					>
+						<View style={styles.coachRowBody}>
+							<Text style={styles.coachRowLabel}>{tt('profile.myCoach')}</Text>
+							<Text style={styles.coachRowValue} numberOfLines={1}>
+								{coachRowValue}
+							</Text>
+						</View>
+						<Text style={styles.rowValue}>→</Text>
+					</Pressable>
+					<Pressable
+						style={styles.row}
+						accessibilityRole="button"
+						onPress={() => router.push('/clients')}
+					>
 						<Text style={styles.rowText}>{tt('profile.clientsRow')}</Text>
 						<Text style={styles.rowValue}>→</Text>
 					</Pressable>
@@ -974,8 +968,16 @@ export default function ProfileScreen() {
 					<Text style={styles.rowText}>{tt('nav.progress')}</Text>
 					<Text style={styles.rowValue}>→</Text>
 				</Pressable>
-				<Pressable style={styles.row} onPress={() => router.push('/coach')}>
-					<Text style={styles.rowText}>{tt('nav.coach')}</Text>
+				<Pressable
+					style={styles.row}
+					accessibilityRole="button"
+					accessibilityHint={coachBadge ? tt('coach.newHints') : undefined}
+					onPress={() => router.push('/coach')}
+				>
+					<View style={styles.rowBadgeWrap}>
+						<Text style={styles.rowText}>{tt('nav.coach')}</Text>
+						{coachBadge ? <View style={styles.rowBadge} /> : null}
+					</View>
 					<Text style={styles.rowValue}>→</Text>
 				</Pressable>
 			</Panel>
@@ -1278,6 +1280,59 @@ export default function ProfileScreen() {
 				</View>
 			</View>
 		</Modal>
+		<BottomSheet
+			open={coachSheetOpen}
+			onDismiss={() => setCoachSheetOpen(false)}
+			label={tt('profile.myCoach')}
+			raised={myCoaches.length === 0}
+			dismissible={!coachInviteBusy}
+		>
+			<Text style={styles.sheetTitle}>{tt('profile.myCoach')}</Text>
+			{!coachesLoaded ? (
+				<Text style={styles.hint}>…</Text>
+			) : myCoaches.length > 0 ? (
+				myCoaches.map((coach) => (
+					<View key={coach.linkId} style={styles.coachBlock}>
+						<Text style={styles.sheetRowTitle}>{coachDisplayName(coach)}</Text>
+						<Text style={styles.hint}>
+							{tt('coach.connectedOn', {
+								when: formatRelativeDay(coach.createdAt, locale)
+							})}
+						</Text>
+						<Text style={styles.hint}>{tt('profile.coachConnectedHint')}</Text>
+						<PrimaryButton
+							label={tt('coach.disconnect')}
+							variant="danger"
+							compact
+							onPress={() => {
+								setCoachSheetOpen(false);
+								setDisconnectTarget(coach);
+							}}
+						/>
+					</View>
+				))
+			) : (
+				<>
+					<Text style={styles.hint}>{tt('coach.inviteAcceptLead')}</Text>
+					<TextInput
+						style={[styles.input, styles.inviteInput]}
+						placeholder={tt('coach.inviteAcceptPlaceholder')}
+						placeholderTextColor={colors.muted}
+						accessibilityLabel={tt('coach.inviteAcceptLabel')}
+						autoCapitalize="characters"
+						autoCorrect={false}
+						maxLength={INVITE_CODE_LENGTH + 1}
+						value={coachInviteInput}
+						onChangeText={onCoachInviteChange}
+					/>
+					<PrimaryButton
+						label={coachInviteBusy ? '…' : tt('coach.inviteAcceptCta')}
+						onPress={() => void acceptCoachInvite()}
+						disabled={coachInviteBusy || normalizeInviteCode(coachInviteInput).length === 0}
+					/>
+				</>
+			)}
+		</BottomSheet>
 		<ConfirmSheet
 			open={disconnectTarget !== null}
 			title={tt('coach.disconnectConfirmTitle')}
@@ -1382,6 +1437,16 @@ function makeStyles(colors: ColorPalette) {
 	},
 	hint: { color: colors.muted, fontSize: 13, lineHeight: 18, fontFamily: fontFamily.regular },
 	coachBlock: { gap: 4, marginBottom: space.sm },
+	coachRowBody: { flex: 1, minWidth: 0 },
+	coachRowLabel: { color: colors.text, fontSize: 14, fontFamily: fontFamily.semibold },
+	coachRowValue: { marginTop: 2, color: colors.muted, fontSize: 13, fontFamily: fontFamily.regular },
+	sheetTitle: {
+		color: colors.text,
+		fontSize: 18,
+		lineHeight: 24,
+		fontFamily: fontFamily.semibold
+	},
+	sheetRowTitle: { color: colors.text, fontSize: 16, fontFamily: fontFamily.semibold },
 	inviteInput: {
 		fontFamily: fontFamily.semibold,
 		letterSpacing: 2,
@@ -1421,6 +1486,8 @@ function makeStyles(colors: ColorPalette) {
 		fontFamily: fontFamily.semibold
 	},
 	rowValue: { color: colors.accent, fontWeight: '800', fontSize: 16, fontFamily: fontFamily.extrabold },
+	rowBadgeWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm },
+	rowBadge: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent },
 	legalRow: { flexDirection: 'row', gap: space.sm, minHeight: touchMin, alignItems: 'flex-start' },
 	legalMark: { color: colors.text, fontSize: 18, lineHeight: 22, fontFamily: fontFamily.bold },
 	legalText: {
