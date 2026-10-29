@@ -24,7 +24,9 @@ let inflight: Promise<void> | null = null;
  * Local data is source of truth; failures leave entries in the outbox.
  */
 export async function flushSyncOutbox(): Promise<void> {
-	if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+	/* Do NOT bail on `!navigator.onLine`: iOS/Safari often reports a stale "offline"
+	 * after the network returns, which used to strand the outbox forever. A real
+	 * failure just leaves entries queued (the fetch rejects quickly when offline). */
 	if (!isCloudMode()) return;
 	if (inflight) return inflight;
 

@@ -2494,11 +2494,6 @@ button.live-panel-thumb {
 	}
 }
 
-.workout-preview-start__edit {
-	align-self: flex-start;
-	min-height: var(--control-height);
-}
-
 .workout-preview-action-icon,
 .workout-preview-edit-link {
 	display: inline-flex;

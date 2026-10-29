@@ -195,23 +195,47 @@ async function cachedAppShell(): Promise<Response | undefined> {
 /** HTML: network-first with timeout, cache hit, then shell (root only) or offline page. */
 async function navigationNetworkFirst(request: Request): Promise<Response> {
 	const cache = await caches.open(CACHE);
+	/* Reported offline: skip the 5s network wait and serve the cache at once.
+	 * (onLine can lie toward "online", so we only fast-path the explicit false.) */
+	if (self.navigator?.onLine === false) {
+		return offlineNavigationFallback(request, cache);
+	}
 	try {
 		const response = await fetchWithTimeout(request, SW_NAVIGATION_MS);
-		if (response.ok) void cache.put(request, response.clone());
+		/* Redirected / non-ok responses cannot be stored by cache.put(). */
+		if (response.ok && !response.redirected) void cache.put(request, response.clone());
 		return response;
 	} catch {
-		const cached = await cache.match(request);
-		if (cached) return cached;
-		/* The cached shell is SSR-rendered for `/`. Serving it at another path makes
-		 * SvelteKit hydrate the wrong route and hang on a skeleton (Phase 0 audit). */
-		if (new URL(request.url).pathname === '/') {
-			const shell = await cachedAppShell();
-			if (shell) return shell;
-		}
-		const offline = await cache.match(OFFLINE_PAGE);
-		if (offline) return offline;
-		return offlineResponse();
+		return offlineNavigationFallback(request, cache);
 	}
+}
+
+/** Offline navigation: cached page, else shell (root), else boot home, else offline page. */
+async function offlineNavigationFallback(request: Request, cache: Cache): Promise<Response> {
+	const cached = await cache.match(request);
+	if (cached) return cached;
+
+	const pathname = new URL(request.url).pathname;
+	const shell = await cachedAppShell();
+
+	/* The cached shell is SSR-rendered for `/`. Serving it at another path makes
+	 * SvelteKit hydrate the wrong route and hang on a skeleton (Phase 0 audit). */
+	if (pathname === '/') {
+		if (shell) return shell;
+	} else if (shell) {
+		/* iOS standalone restores the last URL, not start_url. A never-cached deep
+		 * link would dead-end on /offline.html even though the home works offline.
+		 * Boot the offline-capable home instead via a real navigation (302 → `/`). */
+		try {
+			return Response.redirect(new URL('/', self.location.origin).href, 302);
+		} catch {
+			/* fall through to the offline page */
+		}
+	}
+
+	const offline = await cache.match(OFFLINE_PAGE);
+	if (offline) return offline;
+	return offlineResponse();
 }
 
 /** JS/CSS from precache or /_app/immutable — cache-first (SvelteKit offline pattern). */

@@ -290,6 +290,16 @@
 	background: var(--catalog-hub-zone-scrim);
 }
 
+/* Dark theme: dim the hub illustration too. The zone image is z-index:1, so the
+   shared media-well veil (auto z) would paint behind it — lift it above (scrim
+   z-2 / caption z-3 stay on top). Light theme: veil is transparent, no-op. */
+html:not([data-theme='light'])
+	.content-page--catalog
+	.catalog-hub-grid
+	.zone-card__media--grid::after {
+	z-index: 1;
+}
+
 .content-page--catalog .catalog-hub-grid .zone-card__caption {
 	position: absolute;
 	left: 0;

@@ -43,7 +43,7 @@ import { truncateMeta } from '$lib/seo/site';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Bookmark, ClipboardText as ClipboardList, Plus } from 'phosphor-svelte';
+	import { Heart, ClipboardText as ClipboardList, Plus } from 'phosphor-svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 
@@ -231,7 +231,7 @@ import { truncateMeta } from '$lib/seo/site';
 		{#if bookmarkBusy}
 			<Spinner size="sm" block={false} />
 		{:else}
-			<LucideIcon icon={Bookmark} size={ICON_BUTTON + 2} fill={bookmarked ? 'currentColor' : 'none'} />
+			<LucideIcon icon={Heart} size={ICON_BUTTON + 2} fill={bookmarked ? 'currentColor' : 'none'} />
 		{/if}
 	</AppButton>
 {/snippet}
@@ -300,7 +300,7 @@ import { truncateMeta } from '$lib/seo/site';
 								aria-label={translate(lang, bookmarked ? 'bookmarks.remove' : 'bookmarks.add')}
 								aria-pressed={bookmarked}
 							>
-								<LucideIcon icon={Bookmark} size={ICON_BUTTON + 2} fill={bookmarked ? 'currentColor' : 'none'} />
+								<LucideIcon icon={Heart} size={ICON_BUTTON + 2} fill={bookmarked ? 'currentColor' : 'none'} />
 							</AppButton>
 						</div>
 						{#if showExerciseBookmarkCoachmark}

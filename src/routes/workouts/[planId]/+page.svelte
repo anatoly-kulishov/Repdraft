@@ -298,13 +298,6 @@
 				<LucideIcon icon={Play} weight="bold" size={ICON_PRIMARY} />
 				{translate(lang, 'workouts.start')}
 			</AppButton>
-			<AppButton
-				variant="link"
-				class="workout-preview-start__edit"
-				href={`/builder/${plan.id}`}
-			>
-				{translate(lang, 'preview.edit')}
-			</AppButton>
 		</div>
 
 		<div class="sticky-actions lg:hidden">

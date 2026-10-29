@@ -26,10 +26,10 @@
 		exerciseMediaViewTransitionName
 	} from '$lib/dom/exerciseMediaViewTransition';
 	import {
-		Bookmark,
 		Check,
 		Barbell as Dumbbell,
 		FilmStrip as Film,
+		Heart,
 		Plus,
 		Note as StickyNote,
 		Target,
@@ -214,7 +214,7 @@
 				<Spinner size="sm" block={false} />
 			{:else}
 				<LucideIcon
-					icon={Bookmark}
+					icon={Heart}
 					size={ICON_SMALL}
 					class="exercise-card-bookmark-icon"
 					fill={bookmarked ? 'currentColor' : 'none'}

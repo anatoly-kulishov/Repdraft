@@ -70,6 +70,9 @@ function colorBlock(c, mode) {
 		`\t--color-accent-muted: ${c.accentDim};`,
 		`\t--color-accent-text: ${c.accentText};`,
 		`\t--color-danger: ${c.danger};`,
+		`\t--color-danger-bg: ${c.dangerBg};`,
+		`\t--color-success: ${c.success};`,
+		`\t--color-success-bg: ${c.successBg};`,
 		`\t--color-border: ${c.border};`,
 		`\t--color-xp: ${c.xp};`,
 		`\t--color-muscle: ${c.muscle};`

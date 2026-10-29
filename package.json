@@ -1,7 +1,7 @@
 {
   "name": "repdraft",
   "private": true,
-  "version": "0.23.5",
+  "version": "0.23.6",
   "description": "Gym workout log - React Native (mobile/) + SvelteKit web/PWA, shared domain",
   "type": "module",
   "scripts": {

@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { BookOpen, Bookmark, List, SearchX, Trophy } from 'lucide-react-native';
+import { BookOpen, Heart, List, SearchX, Trophy } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import {
 	Alert,
@@ -157,7 +157,7 @@ export default function ExercisesScreen() {
 					}}
 					accessibilityRole="button"
 				>
-					<Bookmark size={16} color={savedOnly ? colors.accentText : colors.text} strokeWidth={2} />
+					<Heart size={16} color={savedOnly ? colors.accentText : colors.text} strokeWidth={2} />
 					<Text style={[styles.hubNavText, savedOnly && styles.hubNavTextActive]}>
 						{tt('bookmarks.title')}
 					</Text>

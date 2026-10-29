@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Bookmark } from 'lucide-react-native';
+import { Heart } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { lastPerformance, recentExerciseLogs } from '@repdraft/domain/session';
@@ -102,7 +102,7 @@ export default function ExerciseDetailScreen() {
 						void bookmarksRepo.toggle(id).then(setBookmarked);
 					}}
 				>
-				<Bookmark
+				<Heart
 					color={bookmarked ? colors.accent : colors.text}
 					size={20}
 					strokeWidth={2}

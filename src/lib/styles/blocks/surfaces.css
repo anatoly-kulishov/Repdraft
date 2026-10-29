@@ -60,8 +60,19 @@
 	display: block;
 	box-sizing: border-box;
 	flex-shrink: 0;
+	position: relative;
 	overflow: hidden;
 	background: var(--media-plate-bg);
+}
+
+/* Dark theme: soften the bright white gym plate so it doesn't glare.
+   Light theme keeps --media-plate-scrim transparent. Non-interactive. */
+.media-well::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background: var(--media-plate-scrim, rgba(0, 0, 0, 0));
 }
 
 /* Media thumbs as AppButton/ghost: kill .btn-ghost padding (0.25rem) and size mins. */

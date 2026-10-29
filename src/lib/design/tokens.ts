@@ -33,6 +33,10 @@ export type CoreColorPalette = {
 	accentDim: string;
 	danger: string;
 	dangerBg: string;
+	/** Positive / gain state (green pills, +delta dynamics). */
+	success: string;
+	/** Soft plate behind a success pill/badge. */
+	successBg: string;
 	overlayScrim: string;
 	/** XP bar, streak chip, weight-up cue. */
 	xp: string;
@@ -58,6 +62,8 @@ export const darkColors: CoreColorPalette = {
 	accentDim: 'rgba(162, 89, 255, 0.18)',
 	danger: '#f87171',
 	dangerBg: '#3f1d1d',
+	success: '#34d399',
+	successBg: 'rgba(52, 211, 153, 0.16)',
 	overlayScrim: 'rgba(0, 0, 0, 0.55)',
 	xp: '#f5a524',
 	muscle: '#3ee0c5'
@@ -81,6 +87,8 @@ export const lightColors: CoreColorPalette = {
 	accentDim: 'rgba(139, 92, 246, 0.12)',
 	danger: '#b91c1c',
 	dangerBg: '#fef2f2',
+	success: '#16803c',
+	successBg: '#e6f6ec',
 	overlayScrim: 'rgba(0, 0, 0, 0.35)',
 	xp: '#d97706',
 	muscle: '#0f766e'
