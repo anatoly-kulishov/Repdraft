@@ -57,7 +57,7 @@
 	import { page } from '$app/stores';
 	import { onMount, untrack, type Snippet } from 'svelte';
 	import { get } from 'svelte/store';
-	import { Bookmark, Plus, Trash as Trash2 } from 'phosphor-svelte';
+	import { Heart, Plus, Trash as Trash2 } from 'phosphor-svelte';
 
 	let {
 		equipment: equipmentFacets,
@@ -698,7 +698,7 @@
 	<EmptyState
 		class={emptyStateClass}
 		centered
-		icon={Bookmark}
+		icon={Heart}
 		title={translate(lang, 'bookmarks.emptyTitle')}
 		description={translate(lang, 'bookmarks.emptyDesc')}
 		actionHref="/exercises"
@@ -813,7 +813,7 @@
 		<EmptyState
 			class={emptyStateClass}
 			centered={savedOnly}
-			icon={savedOnly && !filters.query.trim() ? Bookmark : null}
+			icon={savedOnly && !filters.query.trim() ? Heart : null}
 			title={translate(
 				lang,
 				savedOnly && !filters.query.trim() ? 'bookmarks.emptyTitle' : 'catalog.emptyTitle'

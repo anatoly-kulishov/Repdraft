@@ -7,7 +7,7 @@
 	import { translate } from '$lib/i18n/messages';
 	import { records, recordsReady } from '$lib/stores/records';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { BookOpen, Bookmark, List, Trophy } from 'phosphor-svelte';
+	import { BookOpen, Heart, List, Trophy } from 'phosphor-svelte';
 
 	let {
 		class: className = '',
@@ -32,7 +32,7 @@
 		<span>{translate(lang, 'catalog.browseAll')}</span>
 	</AppBadge>
 	<AppBadge href={savedHref} variant="outline" class="catalog-hub-chip">
-		<LucideIcon icon={Bookmark} size={ICON_BUTTON} />
+		<LucideIcon icon={Heart} size={ICON_BUTTON} />
 		<span>{translate(lang, 'bookmarks.title')}</span>
 	</AppBadge>
 	{#if !pickMode}

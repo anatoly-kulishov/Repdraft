@@ -14,6 +14,27 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.23.6',
+		highlights: {
+			ru: [
+				'Прогресс: период 7, 30, 90 дней или всё время переключается одним тапом',
+				'Прогресс: главные цифры крупнее, рост и снижение подсвечены зелёным и красным',
+				'Прогресс: объём по неделям с понятными датами и числом тренировок',
+				'Главная: быстрый переход в кабинет тренера',
+				'Закладки теперь с сердцем на вебе и в приложении',
+				'Без сети приложение открывает главную, а данные снова уходят сразу после связи'
+			],
+			en: [
+				'Progress: switch between 7, 30, 90 days or all time with one tap',
+				'Progress: bigger headline numbers, with gains and drops in green and red',
+				'Progress: weekly volume with readable dates and workout counts',
+				'Home: a quick link to the coach dashboard',
+				'Bookmarks now use a heart on web and in the app',
+				'Offline: the app opens Home and your data syncs as soon as you are back online'
+			]
+		}
+	},
+	{
 		version: '0.23.5',
 		highlights: {
 			ru: [

@@ -59,6 +59,7 @@
 		Plus,
 		DeviceMobile as Smartphone,
 		User as UserRound,
+		UsersThree,
 	} from 'phosphor-svelte';
 
 	let { data } = $props();
@@ -592,6 +593,28 @@
 							</AppPanel>
 						</div>
 					{/if}
+
+					<div class="home-section">
+						<div class="home-section-head">
+							<h2 class="section-title">{translate(lang, 'home.coachTitle')}</h2>
+						</div>
+						<ul class="entity-list">
+							<li>
+								<a class="entity-row entity-row--link" href="/clients">
+									<LucideIcon icon={UsersThree} size={ICON_PRIMARY} class="entity-row__icon" />
+									<span class="entity-row__main">
+										<span class="entity-row__title">{translate(lang, 'home.coachEntry')}</span>
+										<span class="entity-row__meta">{translate(lang, 'home.coachEntryHint')}</span>
+									</span>
+									<LucideIcon
+										icon={ChevronRight}
+										size={ICON_SMALL}
+										class="entity-row__chevron"
+									/>
+								</a>
+							</li>
+						</ul>
+					</div>
 				</div>
 			</div>
 		{/if}

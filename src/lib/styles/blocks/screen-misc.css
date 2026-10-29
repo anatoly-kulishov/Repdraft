@@ -3103,6 +3103,17 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	user-select: none;
 }
 
+/* Dark theme: soften the bright detail hero plate (static image + gif).
+   Light theme keeps --media-plate-scrim transparent. Non-interactive. */
+.exercise-media-frame::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background: var(--media-plate-scrim, rgba(0, 0, 0, 0));
+	border-radius: inherit;
+}
+
 .exercise-detail-page {
 	display: grid;
 	gap: 1rem;
@@ -3470,6 +3481,11 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 
 	.exercise-detail-bookmark--page {
 		display: inline-flex;
+	}
+
+	/* Desktop: bookmark lives beside the hero — hide the ScreenHeader one to avoid duplication. */
+	.exercise-detail-bookmark:not(.exercise-detail-bookmark--page) {
+		display: none;
 	}
 }
 

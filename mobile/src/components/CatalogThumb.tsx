@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Dumbbell } from 'lucide-react-native';
 import { catalogMediaUrl } from '../catalog/mediaUrl';
-import { useAppColors } from '../state/theme';
+import { useAppColors, useAppTheme } from '../state/theme';
 import { radius, type ColorPalette } from '../theme';
 
 type Props = {
@@ -27,6 +27,8 @@ export function CatalogThumb({
 	whitePlate = true
 }: Props) {
 	const colors = useAppColors();
+	const { mode } = useAppTheme();
+	const dimWhitePlate = mode === 'dark' && whitePlate;
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const uri = catalogMediaUrl(imagePath);
 	const [failed, setFailed] = useState(false);
@@ -55,6 +57,7 @@ export function CatalogThumb({
 			) : (
 				<Dumbbell color={colors.muted} size={iconSize} strokeWidth={2} />
 			)}
+			{dimWhitePlate ? <View style={styles.darkScrim} pointerEvents="none" /> : null}
 		</View>
 	);
 }
@@ -72,6 +75,15 @@ function makeStyles(colors: ColorPalette) {
 		wrapWhite: {
 			backgroundColor: '#ffffff',
 			borderColor: 'rgba(0, 0, 0, 0.06)'
+		},
+		/** Dark theme only: soften the bright white gym plate. */
+		darkScrim: {
+			position: 'absolute',
+			top: 0,
+			left: 0,
+			right: 0,
+			bottom: 0,
+			backgroundColor: 'rgba(0, 0, 0, 0.20)'
 		},
 		img: { width: '100%', height: '100%' }
 	});

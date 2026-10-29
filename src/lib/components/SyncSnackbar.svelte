@@ -33,9 +33,9 @@
 
 	function tryFlush() {
 		refresh();
-		if (!shouldRetryOutboxFlush({ online, cloudMode, pendingCount: pending })) {
-			return;
-		}
+		/* Attempt whenever a cloud account has pending work — do NOT gate on
+		 * navigator.onLine (iOS reports a stale "offline" long after reconnect). */
+		if (!cloudMode || pending === 0) return;
 		void flushSyncOutbox();
 	}
 

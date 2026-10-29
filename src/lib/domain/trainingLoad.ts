@@ -4,6 +4,7 @@
  */
 import type { WorkoutSession } from './types';
 import { visibleSessionExerciseIndices } from './session';
+import { isProgressSet } from './sessionSetKind';
 
 const MS_DAY = 86_400_000;
 
@@ -44,6 +45,44 @@ export function mergeVolumeMaps(maps: readonly Map<string, number>[]): Map<strin
 	for (const map of maps) {
 		for (const [part, vol] of map) {
 			out.set(part, (out.get(part) ?? 0) + vol);
+		}
+	}
+	return out;
+}
+
+/**
+ * Completed working sets per catalog body_part in a session.
+ * Working sets = completed, non-warmup log entries (matches `isProgressSet`).
+ * Used for the "share by sets" view: legs squatting heavy leaves arms looking
+ * balanced, but a set is a set — this avoids the volume-weight bias.
+ */
+export function sessionSetsByBodyPart(
+	session: WorkoutSession,
+	bodyPartFor: (exerciseId: string) => string | null
+): Map<string, number> {
+	const map = new Map<string, number>();
+	for (const i of visibleSessionExerciseIndices(session)) {
+		const ex = session.exercises[i];
+		if (!ex) continue;
+		const part = bodyPartFor(ex.exerciseId);
+		if (!part) continue;
+		let count = 0;
+		for (const set of ex.sets) {
+			if (!set.completed || !isProgressSet(set)) continue;
+			count += 1;
+		}
+		if (count <= 0) continue;
+		map.set(part, (map.get(part) ?? 0) + count);
+	}
+	return map;
+}
+
+/** Aggregate per-part set counts across sessions. */
+export function mergeSetMaps(maps: readonly Map<string, number>[]): Map<string, number> {
+	const out = new Map<string, number>();
+	for (const map of maps) {
+		for (const [part, count] of map) {
+			out.set(part, (out.get(part) ?? 0) + count);
 		}
 	}
 	return out;

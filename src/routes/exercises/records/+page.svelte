@@ -35,7 +35,7 @@
 	import { onboarding } from '$lib/stores/onboarding';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { toasts } from '$lib/stores/toasts';
-	import { Bookmark, Trophy, Trash as Trash2 } from 'phosphor-svelte';
+	import { Heart, Trophy, Trash as Trash2 } from 'phosphor-svelte';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { browser } from '$app/environment';
@@ -271,7 +271,7 @@
 		return [
 			{
 				label: translate(lang, saved ? 'bookmarks.remove' : 'bookmarks.add'),
-				icon: Bookmark,
+				icon: Heart,
 				variant: 'accent',
 				busy: bookmarkBusyId === record.exerciseId,
 				onAction: () => void onToggleBookmark(record.exerciseId)

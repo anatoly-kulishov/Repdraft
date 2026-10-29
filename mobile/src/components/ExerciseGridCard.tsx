@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Bookmark, Check, Dumbbell, Plus, Target } from 'lucide-react-native';
+import { Check, Dumbbell, Heart, Plus, Target } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
 	Image,
@@ -21,7 +21,7 @@ import { catalogMediaUrl } from '../../src/catalog/mediaUrl';
 import { useAddToPlan } from '../../src/plan/useAddToPlan';
 import { useLocale } from '../../src/state/locale';
 import { bookmarksRepo } from '../../src/storage/bookmarksRepo';
-import { useAppColors } from '../../src/state/theme';
+import { useAppColors, useAppTheme } from '../../src/state/theme';
 import { fontFamily, radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
 type Props = {
@@ -32,6 +32,8 @@ export function ExerciseGridCard({ exercise }: Props) {
 	const router = useRouter();
 	const { locale, tt } = useLocale();
 	const colors = useAppColors();
+	const { mode } = useAppTheme();
+	const isDark = mode === 'dark';
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const { offerAddToPlan, sheet: addToPlanSheet } = useAddToPlan();
 	const [bookmarked, setBookmarked] = useState(false);
@@ -101,6 +103,7 @@ export function ExerciseGridCard({ exercise }: Props) {
 						<Dumbbell size={36} color={colors.muted} strokeWidth={1.5} />
 					</View>
 				)}
+				{isDark ? <View style={styles.mediaDarkOverlay} pointerEvents="none" /> : null}
 				<Pressable
 					style={({ pressed }) => [styles.bookmarkBtn, pressed && styles.pressed]}
 					onPress={toggleBookmark}
@@ -108,11 +111,11 @@ export function ExerciseGridCard({ exercise }: Props) {
 					accessibilityLabel={tt(bookmarked ? 'bookmarks.remove' : 'bookmarks.add')}
 					hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }}
 				>
-					<Bookmark
+					<Heart
 						size={16}
-						color="#ffffff"
+						color={bookmarked ? colors.accent : '#ffffff'}
 						strokeWidth={2}
-						fill={bookmarked ? '#ffffff' : 'transparent'}
+						fill={bookmarked ? colors.accent : 'transparent'}
 					/>
 				</Pressable>
 				<Pressable
@@ -175,6 +178,16 @@ function makeStyles(colors: ColorPalette) {
 			backgroundColor: '#ffffff',
 			overflow: 'hidden',
 			position: 'relative'
+		},
+		/** Dark theme only: soft scrim over the white media plate so it doesn't glare. */
+		mediaDarkOverlay: {
+			position: 'absolute',
+			top: 0,
+			left: 0,
+			right: 0,
+			bottom: 0,
+			backgroundColor: 'rgba(0, 0, 0, 0.20)',
+			zIndex: 1
 		},
 		image: {
 			width: '100%',
