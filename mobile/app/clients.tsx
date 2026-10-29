@@ -147,15 +147,6 @@ export default function ClientsScreen() {
 						</View>
 						<Text style={styles.emptyTitle}>{tt('coach.emptyTitle')}</Text>
 						<Text style={styles.emptyBody}>{tt('coach.emptyBody')}</Text>
-						<PrimaryButton
-							label={
-								coach.inviteCode
-									? tt('coach.inviteShare')
-									: tt('coach.inviteCreateShort')
-							}
-							disabled={coach.busy}
-							onPress={() => void coach.inviteFirstClient()}
-						/>
 					</View>
 				) : (
 					<View style={styles.listBlock}>
@@ -198,9 +189,7 @@ export default function ClientsScreen() {
 				onCloseHelp={() => setHelpOpen(false)}
 				menuOpen={inviteMenuOpen}
 				onCloseMenu={() => setInviteMenuOpen(false)}
-				hasCode={Boolean(coach.inviteCode)}
 				busy={coach.busy}
-				onCopy={() => void coach.copyInvite()}
 				onRefresh={() => setRefreshConfirmOpen(true)}
 				refreshConfirmOpen={refreshConfirmOpen}
 				onCloseRefreshConfirm={() => setRefreshConfirmOpen(false)}

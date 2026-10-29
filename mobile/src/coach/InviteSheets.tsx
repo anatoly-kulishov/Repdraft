@@ -12,24 +12,20 @@ type Props = {
 	onCloseHelp: () => void;
 	menuOpen: boolean;
 	onCloseMenu: () => void;
-	hasCode: boolean;
 	busy: boolean;
-	onCopy: () => void;
 	onRefresh: () => void;
 	refreshConfirmOpen: boolean;
 	onCloseRefreshConfirm: () => void;
 	onConfirmRefresh: () => void;
 };
 
-/** Help, ⋮ menu and destructive "refresh code" confirm for the invite card. */
+/** Help sheet and the destructive "new code" menu/confirm for the invite card. */
 export function InviteSheets({
 	helpOpen,
 	onCloseHelp,
 	menuOpen,
 	onCloseMenu,
-	hasCode,
 	busy,
-	onCopy,
 	onRefresh,
 	refreshConfirmOpen,
 	onCloseRefreshConfirm,
@@ -53,16 +49,6 @@ export function InviteSheets({
 
 			<BottomSheet open={menuOpen} onDismiss={onCloseMenu} label={tt('coach.inviteTitle')}>
 				<Text style={styles.title}>{tt('coach.inviteTitle')}</Text>
-				{hasCode ? (
-					<PrimaryButton
-						label={tt('coach.inviteCopy')}
-						variant="secondary"
-						onPress={() => {
-							onCloseMenu();
-							onCopy();
-						}}
-					/>
-				) : null}
 				<PrimaryButton
 					label={tt('coach.inviteRefresh')}
 					variant="danger"

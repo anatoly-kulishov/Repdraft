@@ -20,12 +20,14 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 				'ИИ-тренер: баланс за 30 дней и подсказки по группам, которых не было в последней тренировке',
 				'Упражнение добавляется в выбранный план, а «Отменить» возвращает всё одним тапом',
 				'Подсказку можно скрыть на 7 дней, а в профиле появится точка о новой',
+				'«Клиенты»: тап по коду копирует его, «Поделиться» — одна кнопка, лишние дубли убраны',
 				'Справочник: новые статьи про тренера, Прогресс и импорт истории'
 			],
 			en: [
 				'AI coach: a 30-day balance plus hints for groups missing from your last workout',
 				'Add an exercise to any plan — and undo it with one tap',
 				'Hide a hint for 7 days; a dot in Profile tells you when a new one is ready',
+				'Clients: tap the code to copy it, one Share button, duplicate actions removed',
 				'Guide: new articles on coaching, Progress, and importing history'
 			]
 		}

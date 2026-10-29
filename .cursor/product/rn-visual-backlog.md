@@ -120,3 +120,13 @@ Still open: RN help on Progress/Summary, поповер для sticky-хедер
 - Снимок плана (не ссылка): `parseCoachPlanExercises` в shared domain, self-check в `runCoachSelfCheck`.
 - SQL вне git: `~/.repdraft-sql/coach-plan-assignment.sql` (таблица + 4 RPC, RDC06/07/08).
 - Home не блокируется: назначение грузится после `getSession`, баннер появляется по факту ответа.
+
+## Invite card: одна копия, один share (2026-10-29)
+
+До правки на экране «Клиенты» было 4–5 точек входа под одно действие: иконка копирования в плашке + пункт «Скопировать» в ⋮, серая иконка share + primary «Поделиться» в пустой карточке.
+
+- Плашка кода целиком стала кнопкой копирования (`Pressable` в RN, `<button class="coach-code-plate">` на вебе); иконка внутри - только подсказка, после тапа `Check` на 1.5 с.
+- «Поделиться» - единственная primary-CTA карточки (акцентная кнопка на всю ширину), серая иконка-квадрат удалена.
+- Из пустой карточки «У вас пока нет клиентов» убран второй CTA: код и кнопка уже в блоке «Приглашение» выше. `inviteFirstClient` в `useCoachClients` удалён как мёртвый.
+- ⋮ остался только для редкого разрушающего «Обновить код» (+ confirm); дубль «Скопировать» из меню и из `InviteSheets` убран.
+- Web parity: markup + `coach.css` (`.coach-code-row` и `.coach-share` удалены, у плашки hover/focus-ring).
