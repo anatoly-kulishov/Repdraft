@@ -99,6 +99,38 @@ function parseLoggedSet(raw: unknown): LoggedSet | null {
 	};
 }
 
+/** Totals the coach can show for one read-only session (no WorkoutSession shell). */
+export function coachSessionTotals(detail: {
+	startedAt: string;
+	finishedAt: string;
+	exercises: WorkoutSession['exercises'];
+}): { minutes: number | null; sets: number; volumeKg: number } {
+	let sets = 0;
+	let volumeKg = 0;
+	for (const exercise of detail.exercises) {
+		if (exercise.skipped) continue;
+		for (const set of exercise.sets) {
+			if (!set.completed) continue;
+			sets += 1;
+			if (set.weightKg != null && set.reps != null && set.weightKg > 0 && set.reps > 0) {
+				volumeKg += set.weightKg * set.reps;
+			}
+		}
+	}
+	const ms = Date.parse(detail.finishedAt) - Date.parse(detail.startedAt);
+	const minutes = Number.isFinite(ms) && ms >= 60_000 ? Math.round(ms / 60_000) : null;
+	return { minutes, sets, volumeKg: Math.round(volumeKg) };
+}
+
+/** Two-letter initials for the compact client list avatar (no photo in link data). */
+export function clientInitials(name: string): string {
+	const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
+	if (parts.length === 0) return '?';
+	return parts
+		.map((part) => Array.from(part)[0]?.toUpperCase() ?? '')
+		.join('');
+}
+
 /** Parse session.exercises jsonb from coach RPCs into domain shapes. */
 export function parseCoachSessionExercises(raw: unknown): SessionExercise[] {
 	if (!Array.isArray(raw)) return [];

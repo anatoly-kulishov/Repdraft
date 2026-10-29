@@ -1,6 +1,7 @@
 import { authErrorMessageKey } from '../domain/authFlow';
 import { isQuotaExceededError } from '../domain/storageErrors';
 import type { AppLocale } from './locale';
+import { pluralRu } from './plural';
 
 /** Alias for React Native screens that used `Locale`. */
 export type Locale = AppLocale;
@@ -79,11 +80,7 @@ const ru: Dict = {
 	'coach.statusActive': 'Активен',
 	'coach.statusRevoked': 'Отключён',
 	'coach.pageTitle': 'Клиенты',
-	'coach.previewBadge': 'Режим тренера · предпросмотр',
-	'coach.pageLead': 'Пока локально: клиенты и приглашения хранятся на этом устройстве.',
-	'coach.cloudBadge': 'Режим тренера',
 	'coach.cloudLead': 'Клиенты подключаются по коду приглашения и синхронизируются с аккаунтом.',
-	'coach.clientsEmptyCloud': 'Пока нет подключённых клиентов. Создайте приглашение и передайте код.',
 	'coach.clientFallback': 'Клиент',
 	'coach.error.limit': 'Достигнут лимит клиентов',
 	'coach.error.notFound': 'Код не найден',
@@ -100,23 +97,50 @@ const ru: Dict = {
 	'coach.inviteAcceptCta': 'Подключиться',
 	'coach.inviteAccepted': 'Готово, тренер увидит ваши тренировки',
 	'coach.inviteInvalid': 'Код должен состоять из 8 символов',
+	'coach.help': 'Помощь',
+	'coach.more': 'Ещё',
+	'coach.settings': 'Настройки',
+	'coach.helpTitle': 'Как подключить клиента',
+	'coach.helpBody':
+		'Клиенты подключаются по коду приглашения. Передайте код — клиент введёт его в своём профиле, и его тренировки появятся здесь.',
+	'coach.inviteHint': 'Код для новых клиентов',
+	'coach.inviteHelp': 'Передайте код клиенту — он введёт его в своём профиле.',
+	'coach.inviteShare': 'Поделиться',
+	'coach.inviteCreateShort': 'Создать код',
+	'coach.inviteShareMessage':
+		'Код для подключения к тренеру: {code}\nВведите его в Repdraft → Профиль → «Мой тренер».',
+	'coach.inviteRefreshConfirmTitle': 'Обновить код?',
+	'coach.inviteRefreshConfirmLead': 'Старый код перестанет работать. Уже подключённые клиенты останутся.',
+	'coach.clientsCount': 'Мои клиенты • {n}',
+	'coach.searchPlaceholder': 'Поиск клиента',
+	'coach.noStats': 'Нет данных',
+	'coach.signInTitle': 'Войдите в аккаунт',
+	'coach.signInLead': 'Клиенты и приглашения доступны после входа в аккаунт.',
+	'coach.noMatches': 'Никого не найдено',
+	'coach.rowHint': 'Открыть последние тренировки',
+	'coach.weekActive': 'Активны за 7 дней: {n}',
+	'coach.trainedToday': 'Тренировался сегодня',
+	'coach.trainedYesterday': 'Тренировался вчера',
+	'coach.totalsLine': 'Всего: {sessions} тр. · {sets} подх. · {kg} кг',
+	'coach.lastSessionShort': 'Последняя: {name}',
+	'coach.sessionSummary': '{when} · {min} мин · {sets} подх. · {kg} кг',
+	'coach.connectedOn': 'Подключён {when}',
+	'coach.remind': 'Напомнить',
+	'coach.results': 'Результаты',
+	'coach.remindMessage':
+		'Привет, {name}! Как тренировки? Открой Repdraft и запиши прогресс — тренер увидит результаты.',
+	'coach.emptyTitle': 'У вас пока нет клиентов',
+	'coach.emptyBody':
+		'Отправьте код приглашения своему первому подопечному, чтобы начать отслеживать его прогресс.',
 	'coach.inviteTitle': 'Приглашение',
-	'coach.inviteLead': 'Передайте код клиенту - он введёт его у себя в профиле.',
-	'coach.inviteCreate': 'Создать приглашение',
 	'coach.inviteRefresh': 'Обновить код',
 	'coach.inviteCopy': 'Скопировать',
 	'coach.inviteCopied': 'Код скопирован',
 	'coach.inviteCopyFail': 'Не удалось скопировать',
-	'coach.inviteCollapsed': 'Новое приглашение',
 	'coach.clientsTitle': 'Клиенты',
-	'coach.clientsEmpty': 'Пока никого',
-	'coach.clientsEmptyLead': 'Добавьте демо-клиента, чтобы посмотреть, как выглядит дашборд.',
 	'coach.addDemo': 'Добавить демо-клиента',
-	'coach.lastSession': 'Последняя: {name}',
-	'coach.lastSessionWhen': '{when}',
 	'coach.never': 'Ещё не тренировалась',
 	'coach.activeNow': 'Тренировался недавно',
-	'coach.statWeek': '7 дней',
 	'coach.statSets': 'Подходы',
 	'coach.statVolume': 'Тоннаж, кг',
 	'coach.revoke': 'Отключить',
@@ -139,13 +163,8 @@ const ru: Dict = {
 	'profile.coachesConnected': 'Подключено тренеров: {n}',
 	'profile.coachConnectedHint': 'Тренировки, подходы и рекорды видны тренеру.',
 	'profile.coachFallback': 'Тренер',
-	'coach.summaryLine': 'Клиентов: {total} · занимались за 7 дней: {week}',
 	'coach.tierActive': 'Был(а) {n} дн. назад',
-	'coach.tierCalm': '{n} дн. с тренировки',
 	'coach.tierStale': '{n} дн. без тренировки',
-	'coach.tierSilent': 'Ещё не тренировалась',
-	'coach.showSessions': 'Последние тренировки',
-	'coach.hideSessions': 'Свернуть',
 	'coach.sessionMeta': '{when} · {sets} подх. · {volume} кг',
 	'coach.sessionDetailTitle': 'Тренировка',
 	'coach.sessionDetailEmpty': 'В этой тренировке нет подходов.',
@@ -174,9 +193,15 @@ const ru: Dict = {
 		'Сигнал в конце отдыха. На iPhone выключите бесшумный режим. В Safari вибрации нет.',
 	'home.title': 'Главная',
 	'home.readyTitle': 'Готов к тренировке?',
+	'home.planToday': 'Сегодня по плану',
+	'home.begin': 'Начать',
+	'home.pillExercises.one': '{n} упражнение',
+	'home.pillExercises.few': '{n} упражнения',
+	'home.pillExercises.many': '{n} упражнений',
+	'home.pillMinutes': '~{n} мин',
 	'home.readyLead': 'Выберите тренировку и начните.',
 	'home.startWorkout': 'Начать тренировку',
-	'home.startWorkoutShort': 'Старт',
+	'home.startWorkoutShort': 'Начать',
 	'home.startWorkoutNamed': 'Начать · {name}',
 	'home.nextPlanHint': 'Откроется экран перед стартом',
 	'home.setNextPlan': 'Сделать следующей',
@@ -216,6 +241,11 @@ const ru: Dict = {
 	'home.noPlansTitle': 'Нет сохранённых тренировок',
 	'home.noPlansLead': 'Создайте новую тренировку. Прошлые записи останутся в истории ниже.',
 	'home.progressOpen': 'Подробнее',
+	'home.progress30Title': 'Прогресс за 30 дней',
+	'home.recentDuration': '{n} мин',
+	'home.recentSets.one': '{n} подход',
+	'home.recentSets.few': '{n} подхода',
+	'home.recentSets.many': '{n} подходов',
 	'home.coachTitle': 'Тренер и клиенты',
 	'home.coachEntry': 'Кабинет тренера',
 	'home.coachEntryHint': 'Клиенты, приглашения и их прогресс',
@@ -225,7 +255,6 @@ const ru: Dict = {
 	'home.statsVolume': 'Объём',
 	'home.statsStreak': 'Серия',
 	'home.statsDays': '{n} дн.',
-	'home.recentMeta': '{when} · {min} мин · {sets} подходов',
 	'workouts.historyMeta': '{min} мин · {sets} подходов',
 	'home.plansTitle': 'Мои тренировки',
 	'home.plansCreateTitle': 'Новая тренировка',
@@ -239,6 +268,10 @@ const ru: Dict = {
 	'home.firstWorkoutHint':
 		'Нажмите «Старт» выше. Запишите подходы - тренировка появится в истории.',
 	'summary.title': 'Тренировка завершена',
+	'summary.help': 'Помощь',
+	'summary.helpTitle': 'Что в итогах',
+	'summary.helpBody':
+		'«Время» — от старта до завершения. «Подходы» — отмеченные подходы. «Тоннаж» — сумма «вес × повторы» по выполненным подходам. Тренировка уже сохранена в истории.',
 	'summary.done': 'Готово',
 	'summary.openSession': 'Посмотреть детали',
 	'summary.duration': 'Время',
@@ -727,6 +760,7 @@ const ru: Dict = {
 	'network.syncFailed': 'Не удалось синхронизировать',
 	'auth.loading': 'Загрузка…',
 	'common.loading': 'Загрузка…',
+	'common.sep': ' • ',
 	'common.cancel': 'Отмена',
 	'common.undo': 'Отменить',
 	'toast.undoSeconds': 'Отменить, осталось {seconds} сек',
@@ -1192,6 +1226,10 @@ const ru: Dict = {
 	'summary.addToPlan': 'В план',
 	'summary.addFail': 'Не удалось добавить. Создай план на главной.',
 	'progress.sectionTitle': 'Прогресс',
+	'progress.help': 'Помощь',
+	'progress.helpTitle': 'Как считаются показатели',
+	'progress.helpBody':
+		'Объём — сумма «вес × повторы» по завершённым подходам за выбранный период. Доля групп мышц считается по количеству подходов. «Отстаёт» отмечает группу с наименьшей долей и появляется только при достаточной выборке. Стрелки у упражнений показывают изменение рабочего веса.',
 	'progress.lead': 'Объём и частота по сохранённым тренировкам на этом телефоне.',
 	'progress.workouts30d': 'Тренировок, 30 д',
 	'progress.volume30d': 'Объём, кг, 30 д',
@@ -1331,6 +1369,8 @@ const ru: Dict = {
 	'exercises.customOk': 'Упражнение добавлено',
 	'exercises.equipment': 'Снаряд',
 	'exercises.hubLead': 'Выбери зону или начни поиск',
+	'exercises.frequentTitle': 'Часто тренируете',
+	'exercises.popularTitle': 'Популярное в зале',
 	'exercises.records': 'Рекорды',
 	'exercises.saved': 'Избранное',
 	'exercises.search': 'Поиск',
@@ -1513,11 +1553,7 @@ const en: Dict = {
 	'coach.statusActive': 'Active',
 	'coach.statusRevoked': 'Revoked',
 	'coach.pageTitle': 'Clients',
-	'coach.previewBadge': 'Coach mode · preview',
-	'coach.pageLead': 'Local for now: clients and invites stay on this device.',
-	'coach.cloudBadge': 'Coach mode',
 	'coach.cloudLead': 'Clients join with an invite code and sync with your account.',
-	'coach.clientsEmptyCloud': 'No clients yet. Create an invite and share the code.',
 	'coach.clientFallback': 'Client',
 	'coach.error.limit': 'Client limit reached',
 	'coach.error.notFound': 'Code not found',
@@ -1534,23 +1570,49 @@ const en: Dict = {
 	'coach.inviteAcceptCta': 'Connect',
 	'coach.inviteAccepted': 'Done. Your coach can see your workouts now',
 	'coach.inviteInvalid': 'The code must be 8 characters',
+	'coach.help': 'Help',
+	'coach.more': 'More',
+	'coach.settings': 'Settings',
+	'coach.helpTitle': 'How clients connect',
+	'coach.helpBody':
+		'Clients join with an invite code. Share the code — they enter it in their profile and their workouts appear here.',
+	'coach.inviteHint': 'Code for new clients',
+	'coach.inviteHelp': 'Share the code — the client enters it in their profile.',
+	'coach.inviteShare': 'Share',
+	'coach.inviteCreateShort': 'Create code',
+	'coach.inviteShareMessage':
+		'Coach invite code: {code}\nEnter it in Repdraft → Profile → "My coach".',
+	'coach.inviteRefreshConfirmTitle': 'Refresh the code?',
+	'coach.inviteRefreshConfirmLead': 'The old code stops working. Clients already connected stay.',
+	'coach.clientsCount': 'My clients • {n}',
+	'coach.searchPlaceholder': 'Search clients',
+	'coach.noStats': 'No data',
+	'coach.signInTitle': 'Sign in to your account',
+	'coach.signInLead': 'Clients and invites are available after you sign in.',
+	'coach.noMatches': 'No clients found',
+	'coach.rowHint': 'Open recent workouts',
+	'coach.weekActive': 'Active in 7 days: {n}',
+	'coach.trainedToday': 'Trained today',
+	'coach.trainedYesterday': 'Trained yesterday',
+	'coach.totalsLine': 'Total: {sessions} workouts · {sets} sets · {kg} kg',
+	'coach.lastSessionShort': 'Last: {name}',
+	'coach.sessionSummary': '{when} · {min} min · {sets} sets · {kg} kg',
+	'coach.connectedOn': 'Connected {when}',
+	'coach.remind': 'Remind',
+	'coach.results': 'Results',
+	'coach.remindMessage': 'Hey, {name}! How are the workouts? Open Repdraft and log your progress.',
+	'coach.emptyTitle': 'No clients yet',
+	'coach.emptyBody':
+		'Send the invite code to your first client to start following their progress.',
 	'coach.inviteTitle': 'Invite',
-	'coach.inviteLead': 'Give this code to a client - they enter it in their profile.',
-	'coach.inviteCreate': 'Create invite',
 	'coach.inviteRefresh': 'New code',
 	'coach.inviteCopy': 'Copy',
 	'coach.inviteCopied': 'Code copied',
 	'coach.inviteCopyFail': 'Could not copy',
-	'coach.inviteCollapsed': 'New invite',
 	'coach.clientsTitle': 'Clients',
-	'coach.clientsEmpty': 'Nobody yet',
-	'coach.clientsEmptyLead': 'Add a demo client to see what the dashboard looks like.',
 	'coach.addDemo': 'Add demo client',
-	'coach.lastSession': 'Last: {name}',
-	'coach.lastSessionWhen': '{when}',
 	'coach.never': 'No workouts yet',
 	'coach.activeNow': 'Trained recently',
-	'coach.statWeek': '7 days',
 	'coach.statSets': 'Sets',
 	'coach.statVolume': 'Volume, kg',
 	'coach.revoke': 'Disconnect',
@@ -1573,13 +1635,8 @@ const en: Dict = {
 	'profile.coachesConnected': 'Coaches connected: {n}',
 	'profile.coachConnectedHint': 'Your workouts, sets, and records are visible to your coach.',
 	'profile.coachFallback': 'Coach',
-	'coach.summaryLine': 'Clients: {total} · trained in the last 7 days: {week}',
 	'coach.tierActive': 'Trained {n} d ago',
-	'coach.tierCalm': '{n} d since last workout',
 	'coach.tierStale': '{n} d without a workout',
-	'coach.tierSilent': 'No workouts yet',
-	'coach.showSessions': 'Recent workouts',
-	'coach.hideSessions': 'Collapse',
 	'coach.sessionMeta': '{when} · {sets} sets · {volume} kg',
 	'coach.sessionDetailTitle': 'Workout',
 	'coach.sessionDetailEmpty': 'No sets in this workout.',
@@ -1608,6 +1665,11 @@ const en: Dict = {
 		'Chime when rest ends. On iPhone, turn off Silent Mode. Safari does not vibrate.',
 	'home.title': 'Home',
 	'home.readyTitle': 'Ready to train?',
+	'home.planToday': "Today's plan",
+	'home.begin': 'Start',
+	'home.pillExercises.one': '{n} exercise',
+	'home.pillExercises.many': '{n} exercises',
+	'home.pillMinutes': '~{n} min',
 	'home.readyLead': 'Pick a workout and start.',
 	'home.startWorkout': 'Start workout',
 	'home.startWorkoutShort': 'Start',
@@ -1650,6 +1712,10 @@ const en: Dict = {
 	'home.noPlansTitle': 'No saved workouts',
 	'home.noPlansLead': 'Create a new workout. Past entries stay in your history below.',
 	'home.progressOpen': 'Details',
+	'home.progress30Title': 'Last 30 days',
+	'home.recentDuration': '{n} min',
+	'home.recentSets.one': '{n} set',
+	'home.recentSets.many': '{n} sets',
 	'home.coachTitle': 'Coach & clients',
 	'home.coachEntry': 'Coach dashboard',
 	'home.coachEntryHint': 'Clients, invites and their progress',
@@ -1659,7 +1725,6 @@ const en: Dict = {
 	'home.statsVolume': 'Volume',
 	'home.statsStreak': 'Streak',
 	'home.statsDays': '{n} days',
-	'home.recentMeta': '{when} · {min} min · {sets} sets',
 	'workouts.historyMeta': '{min} min · {sets} sets',
 	'home.plansTitle': 'My workouts',
 	'home.plansCreateTitle': 'New workout',
@@ -1674,6 +1739,10 @@ const en: Dict = {
 	'summary.title': 'Workout complete',
 	'summary.done': 'Done',
 	'summary.openSession': 'View details',
+	'summary.help': 'Help',
+	'summary.helpTitle': 'What the summary shows',
+	'summary.helpBody':
+		'“Time” runs from start to finish. “Sets” are the sets you marked done. “Total lifted” is the sum of weight × reps across completed sets. The workout is already saved to history.',
 	'summary.duration': 'Time',
 	'summary.exercises': 'Exercises',
 	'summary.sets': 'Sets',
@@ -2157,6 +2226,7 @@ const en: Dict = {
 	'network.syncFailed': 'Sync failed',
 	'auth.loading': 'Loading…',
 	'common.loading': 'Loading…',
+	'common.sep': ' • ',
 	'common.cancel': 'Cancel',
 	'common.undo': 'Undo',
 	'toast.undoSeconds': 'Undo, {seconds}s left',
@@ -2621,6 +2691,10 @@ const en: Dict = {
 	'summary.addToPlan': 'Add to plan',
 	'summary.addFail': 'Could not add. Create a plan from Home.',
 	'progress.sectionTitle': 'Progress',
+	'progress.help': 'Help',
+	'progress.helpTitle': 'How the numbers are calculated',
+	'progress.helpBody':
+		'Volume is the sum of weight × reps across completed sets in the selected period. Muscle share is based on the number of sets. “Lagging” marks the group with the smallest share and only appears when there is enough data. Arrows next to exercises show the change in working weight.',
 	'progress.lead': 'Volume and frequency from saved workouts on this device.',
 	'progress.workouts30d': 'Workouts, 30 d',
 	'progress.volume30d': 'Volume, kg, 30 d',
@@ -2760,6 +2834,8 @@ const en: Dict = {
 	'exercises.customOk': 'Exercise added',
 	'exercises.equipment': 'Equipment',
 	'exercises.hubLead': 'Pick a zone or start searching',
+	'exercises.frequentTitle': 'You train often',
+	'exercises.popularTitle': 'Popular in the gym',
 	'exercises.records': 'Records',
 	'exercises.saved': 'Saved',
 	'exercises.search': 'Search',
@@ -2882,6 +2958,38 @@ export function translate(
 
 /** Alias for React Native screens that used `t`. */
 export const t = translate;
+
+/**
+ * Plural-aware lookup: keys are `base.one` / `base.few` / `base.many`
+ * (ru picks by `pluralRu`, en uses one/many). Falls back to `many`.
+ */
+export function translatePlural(
+	locale: AppLocale,
+	key: string,
+	n: number,
+	vars?: Record<string, string | number>
+): string {
+	const abs = Math.abs(Math.trunc(n));
+	const category: 'one' | 'few' | 'many' =
+		locale === 'ru'
+			? (pluralRu(abs, ['one', 'few', 'many'] as const) as 'one' | 'few' | 'many')
+			: abs === 1
+				? 'one'
+				: 'many';
+	const dict = tables[locale];
+	const text =
+		dict[`${key}.${category}`] ??
+		dict[`${key}.many`] ??
+		tables.ru[`${key}.${category}`] ??
+		tables.ru[`${key}.many`] ??
+		key;
+	let out = text;
+	const all = { ...vars, n };
+	for (const [name, value] of Object.entries(all)) {
+		out = out.replaceAll(`{${name}}`, String(value));
+	}
+	return out;
+}
 
 /** Maps AppError message keys (and unknown errors) to localized copy. */
 export function translateError(

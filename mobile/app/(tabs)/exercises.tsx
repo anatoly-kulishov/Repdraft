@@ -15,8 +15,14 @@ import {
 	TextInput,
 	View
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from 'react-native-svg';
 import { CUSTOM_EXERCISE_EQUIPMENT } from '@repdraft/domain/customExercises';
+import {
+	POPULAR_EXERCISE_IDS,
+	frequentExercises,
+	type FrequentExercise
+} from '@repdraft/domain/exerciseFrequency';
 import { labelBodyPart, labelEquipment } from '@repdraft/domain/labels.ru';
 import { hasLiftData } from '@repdraft/domain/records';
 import {
@@ -31,12 +37,14 @@ import { CatalogThumb } from '../../src/components/CatalogThumb';
 import { Chip } from '../../src/components/Chip';
 import { EmptyState } from '../../src/components/EmptyState';
 import { ExerciseGridCard } from '../../src/components/ExerciseGridCard';
+import { FrequentExercisesRail } from '../../src/components/FrequentExercisesRail';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { useBottomChromePad, useTabScreenPad } from '../../src/layout/safe';
 import { useLocale } from '../../src/state/locale';
 import { bookmarksRepo } from '../../src/storage/bookmarksRepo';
 import { customsRepo } from '../../src/storage/customsRepo';
 import { recordsRepo } from '../../src/storage/recordsRepo';
+import { sessionsRepo } from '../../src/storage/sessionsRepo';
 import { useAppColors } from '../../src/state/theme';
 import { fontFamily, radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
@@ -52,6 +60,7 @@ export default function ExercisesScreen() {
 	const [savedOnly, setSavedOnly] = useState(false);
 	const [bookmarks, setBookmarks] = useState<string[]>([]);
 	const [records, setRecords] = useState<number>(0);
+	const [frequent, setFrequent] = useState<FrequentExercise[]>([]);
 	const [tick, setTick] = useState(0);
 	const [creating, setCreating] = useState(false);
 	const [customName, setCustomName] = useState('');
@@ -64,6 +73,7 @@ export default function ExercisesScreen() {
 			setBookmarks(await bookmarksRepo.list());
 			const recs = await recordsRepo.list();
 			setRecords(recs.filter(hasLiftData).length);
+			setFrequent(frequentExercises(await sessionsRepo.list()));
 			setTick((n) => n + 1);
 		})();
 	}, []);
@@ -80,6 +90,15 @@ export default function ExercisesScreen() {
 	}, [tick]);
 	const parts = useMemo(() => uniqueBodyParts(all), [all]);
 	const covers = useMemo(() => zoneCoverMap(all), [all]);
+	const frequentItems = useMemo(() => {
+		const byId = new Map(all.map((item) => [item.id, item] as const));
+		const ids = frequent.length
+			? frequent.map((row) => row.exerciseId)
+			: [...POPULAR_EXERCISE_IDS];
+		return ids
+			.map((id) => byId.get(id))
+			.filter((item): item is NonNullable<typeof item> => Boolean(item));
+	}, [all, frequent]);
 	const counts = useMemo(() => {
 		const map = new Map<string, number>();
 		for (const ex of all) {
@@ -126,6 +145,7 @@ export default function ExercisesScreen() {
 				placeholderTextColor={colors.muted}
 				style={styles.search}
 			/>
+			<View style={styles.hubNavWrap}>
 			<ScrollView
 				horizontal
 				showsHorizontalScrollIndicator={false}
@@ -184,6 +204,14 @@ export default function ExercisesScreen() {
 					<Text style={styles.hubNavText}>{tt('articles.title')}</Text>
 				</Pressable>
 			</ScrollView>
+			<LinearGradient
+				colors={['transparent', colors.bg]}
+				start={{ x: 0, y: 0 }}
+				end={{ x: 1, y: 0 }}
+				style={styles.hubNavMask}
+				pointerEvents="none"
+			/>
+			</View>
 			<PrimaryButton
 				label={tt('exercises.custom')}
 				variant="ghost"
@@ -254,6 +282,17 @@ export default function ExercisesScreen() {
 					contentContainerStyle={[styles.grid, { paddingBottom: tabPad }]}
 				ListHeaderComponent={
 					<Text style={styles.hubLead}>{tt('exercises.hubLead')}</Text>
+				}
+				ListFooterComponent={
+					<FrequentExercisesRail
+						title={
+							frequent.length > 0
+								? tt('exercises.frequentTitle')
+								: tt('exercises.popularTitle')
+						}
+						items={frequentItems}
+						onPress={(item) => router.push(`/exercise/${item.id}`)}
+					/>
 				}
 				renderItem={({ item }) => {
 					const count = counts.get(item) ?? 0;
@@ -364,7 +403,9 @@ function makeStyles(colors: ColorPalette) {
 		fontSize: 16,
 		fontFamily: fontFamily.regular
 	},
+	hubNavWrap: { position: 'relative' },
 	hubNavScroll: { flexGrow: 0, flexShrink: 0 },
+	hubNavMask: { position: 'absolute', right: 0, top: 0, bottom: 0, width: 20 },
 	hubNav: { flexDirection: 'row', gap: space.sm, paddingRight: space.sm },
 	hubNavChip: {
 		flexDirection: 'row',

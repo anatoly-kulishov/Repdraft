@@ -117,6 +117,25 @@ export function finishedSessionsWithinDays(
 	});
 }
 
+/**
+ * Finished sessions in the window `[fromDays, toDays)` days ago - e.g. the
+ * previous week: `between(14, 7)`. Used for period-over-period deltas.
+ */
+export function finishedSessionsBetweenDays(
+	sessions: readonly WorkoutSession[],
+	fromDays: number,
+	toDays: number,
+	now: Date = new Date()
+): WorkoutSession[] {
+	const oldest = now.getTime() - fromDays * MS_DAY;
+	const newest = now.getTime() - toDays * MS_DAY;
+	return sessions.filter((s) => {
+		if (!s.finishedAt) return false;
+		const t = Date.parse(s.finishedAt);
+		return Number.isFinite(t) && t >= oldest && t < newest;
+	});
+}
+
 /** Parts strong in the window but weak or missing today (for "lagging" hints). */
 export function laggingBodyParts(
 	today: Map<string, number>,

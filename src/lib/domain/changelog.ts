@@ -14,6 +14,27 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.23.7',
+		highlights: {
+			ru: [
+				'Клиенты: видно, кто тренировался, что было на последней тренировке и итоги',
+				'На «Клиентах» появилась помощь — как подключить клиента по коду',
+				'На «Прогрессе» и в «Итогах» кнопка «?» объясняет, откуда берутся цифры',
+				'Упражнения: «Часто тренируете» добавляет недавнее упражнение в черновик одним тапом',
+				'Главная: план на сегодня с оценкой времени и динамикой за неделю',
+				'Вкладка браузера снова с новой иконкой'
+			],
+			en: [
+				'Clients: see who trained, their last workout and their totals',
+				'A help button on Clients explains how to connect a client by code',
+				'Progress and workout summary: the «?» button explains where the numbers come from',
+				'Exercises: "Frequently trained" adds a recent lift to your draft in one tap',
+				'Home: today’s plan with a time estimate and week-over-week trend',
+				'The browser tab shows the new icon again'
+			]
+		}
+	},
+	{
 		version: '0.23.6',
 		highlights: {
 			ru: [

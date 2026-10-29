@@ -63,6 +63,8 @@ function colorBlock(c, mode) {
 		`\t--color-surface-elevated: ${elevated};`,
 		`\t--color-ink: ${c.text};`,
 		`\t--color-muted: ${c.muted};`,
+		`\t--color-muted-soft: ${c.mutedSoft};`,
+		`\t--color-secondary: ${c.secondary};`,
 		`\t--color-placeholder: ${c.muted};`,
 		`\t--color-accent: ${c.accent};`,
 		`\t--color-accent-fill: ${c.accentFill};`,

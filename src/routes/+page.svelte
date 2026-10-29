@@ -11,21 +11,27 @@
 		completedExerciseCount,
 		completedSetCount,
 		isSessionFullyLogged,
-		sessionDurationMs,
+		sessionDurationMinutes,
 		totalSetCount
 	} from '$lib/domain/session';
-	import { resolveHomeNextPlan, planExerciseSlotCount, planTargetSummary } from '$lib/domain/workout';
+	import {
+		planEstimatedMinutes,
+		planExerciseSlotCount,
+		planTargetSummary,
+		resolveHomeNextPlan
+	} from '$lib/domain/workout';
 	import { HOME_RECENT_ROW_LIMIT, resolveHomeSkeletonVariant, shouldShowHomeChecklistSkeleton } from '$lib/domain/home';
 	import { progress30d } from '$lib/domain/progressOverview';
-	import type { ExerciseIndexItem } from '$lib/domain/types';
+	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
 	import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
 	import { greetingFirstName } from '$lib/domain/greetingName';
 	import { shouldShowChecklist, peekShouldShowChecklist } from '$lib/domain/onboarding';
-	import { formatDurationMinutes, formatRelativeDay } from '$lib/i18n/format';
+	import { formatKgInt } from '$lib/domain/format';
+	import { formatRelativeDayShort } from '$lib/i18n/format';
 	import { liveContinueHref } from '$lib/live/sessionUi';
-	import { translate, translateError } from '$lib/i18n/messages';
+	import { translate, translateError, translatePlural } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import JsonLd from '$lib/seo/JsonLd.svelte';
 	import { buildWebApplicationJsonLd, buildWebSiteJsonLd } from '$lib/seo/jsonLd';
@@ -81,6 +87,33 @@
 			/* ignore */
 		}
 		return peekLocalHistoryCount() > 0 ? HOME_RECENT_ROW_LIMIT : 0;
+	}
+
+	/** Week-over-week delta line on the 30-day cards (home.progress30Title). */
+	function deltaLabel(delta: number, kind: 'workouts' | 'volume'): string {
+		if (delta === 0) return translate(lang, 'progress.deltaNone');
+		const sign = delta > 0 ? '+' : '';
+		if (kind === 'workouts') {
+			return translate(lang, 'progress.deltaWorkouts', {
+				sign,
+				n: delta,
+				p: translate(lang, 'progress.periodPastWeek')
+			});
+		}
+		return translate(lang, 'progress.deltaVolume', { sign, n: formatKgInt(delta) });
+	}
+
+	/** "Сегодня • 45 мин • 18 подходов" without empty/dash placeholders. */
+	function recentMeta(session: WorkoutSession): string {
+		const minutes = sessionDurationMinutes(session);
+		const sets = completedSetCount(session);
+		return [
+			formatRelativeDayShort(session.finishedAt ?? session.startedAt, lang),
+			minutes != null ? translate(lang, 'home.recentDuration', { n: minutes }) : null,
+			sets > 0 ? translatePlural(lang, 'home.recentSets', sets) : null
+		]
+			.filter((part): part is string => Boolean(part))
+			.join(translate(lang, 'common.sep'));
 	}
 
 	let lang = $derived($resolvedLocale);
@@ -223,21 +256,24 @@
 		resolveHomeNextPlan($plans, recent[0]?.planId, $homeNextPlan)
 	);
 	let nextPlanMuscles = $derived.by(() =>
-		nextPlan && indexReady ? planTargetSummary(nextPlan, indexById, lang) : ''
+		nextPlan && indexReady ? planTargetSummary(nextPlan, indexById, lang, 3) : ''
 	);
-	/** One meta line: drop abbr. period before middot so we never get «упражн.·». */
+	/** Same pills as the phone hero: ~45 мин · 7 упражнений · Грудь • Трицепс. */
 	let nextPlanMeta = $derived.by(() => {
 		if (!nextPlan || !indexReady) return '';
-		const exCount = translate(lang, 'workouts.exCount', { n: planExerciseSlotCount(nextPlan) });
-		const muscles = nextPlanMuscles;
-		if (!muscles) return exCount;
-		const exLabel = exCount.replace(/\.$/, '');
-		return `${exLabel} · ${muscles}`;
+		const minutes = planEstimatedMinutes(nextPlan);
+		return [
+			minutes > 0 ? translate(lang, 'home.pillMinutes', { n: minutes }) : null,
+			translatePlural(lang, 'home.pillExercises', planExerciseSlotCount(nextPlan)),
+			nextPlanMuscles
+		]
+			.filter(Boolean)
+			.join(' · ');
 	});
 
 	let mockupSubtitle = $derived.by(() => {
 		if (hasActive) return translate(lang, 'home.readyTitle');
-		if (nextPlan || hasPlans) return translate(lang, 'home.readyTitle');
+		if (nextPlan || hasPlans) return translate(lang, 'home.planToday');
 		if (isFirstTimeHome) return translate(lang, 'home.welcomeLead');
 		return translate(lang, 'home.noPlansLead');
 	});
@@ -245,7 +281,7 @@
 		nextPlan ? `/workouts/${nextPlan.id}` : hasPlans ? '/workouts' : BUILDER_NEW_HREF
 	);
 	let mockupCtaLabel = $derived(
-		translate(lang, nextPlan || hasPlans ? 'home.startWorkout' : 'workouts.create')
+		translate(lang, nextPlan || hasPlans ? 'home.begin' : 'workouts.create')
 	);
 	let mockupCtaAria = $derived(
 		nextPlan
@@ -408,7 +444,7 @@
 							<BrandTagline class="brand-tagline--home-header" />
 						{/if}
 					{:else}
-						<p class="home-header__subtitle">{translate(lang, 'home.readyTitle')}</p>
+						<p class="home-header__subtitle">{translate(lang, 'home.planToday')}</p>
 						{#if hasPlans}
 							<p class="home-header__plan">{nextPlan?.name ?? '\u00a0'}</p>
 							<p class="home-header__meta" aria-busy={!nextPlan || !indexReady}>
@@ -509,7 +545,7 @@
 					{#if monthly.workouts > 0}
 						<div class="home-section">
 							<div class="home-section-head">
-								<h2 class="section-title">{translate(lang, 'progress.sectionTitle')}</h2>
+								<h2 class="section-title">{translate(lang, 'home.progress30Title')}</h2>
 								<a class="home-section-link" href="/progress">
 									{translate(lang, 'home.progressOpen')}
 									<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
@@ -521,12 +557,26 @@
 								aria-label={translate(lang, 'nav.progress')}
 							>
 								<div class="home-monthly__stat panel">
+									<span class="home-monthly__label">{translate(lang, 'progress.cardWorkouts')}</span>
 									<span class="home-monthly__value tabular-nums">{monthly.workouts}</span>
-									<span class="home-monthly__label">{translate(lang, 'progress.workouts30d')}</span>
+									<span
+										class:home-monthly__delta--flat={monthly.workoutsDeltaWeek <= 0}
+										class="home-monthly__delta"
+									>
+										{deltaLabel(monthly.workoutsDeltaWeek, 'workouts')}
+									</span>
 								</div>
 								<div class="home-monthly__stat panel">
-									<span class="home-monthly__value tabular-nums">{monthly.volumeKg}</span>
-									<span class="home-monthly__label">{translate(lang, 'progress.volume30d')}</span>
+									<span class="home-monthly__label">{translate(lang, 'progress.cardVolume')}</span>
+									<span class="home-monthly__value home-monthly__value--kg tabular-nums">
+										{formatKgInt(monthly.volumeKg)} кг
+									</span>
+									<span
+										class:home-monthly__delta--flat={monthly.volumeDeltaWeek <= 0}
+										class="home-monthly__delta"
+									>
+										{deltaLabel(monthly.volumeDeltaWeek, 'volume')}
+									</span>
 								</div>
 							</a>
 						</div>
@@ -549,22 +599,8 @@
 										>
 											<span class="entity-row__main">
 												<span class="entity-row__title">{session.planName}</span>
-												<span class="entity-row__meta">
-													{translate(lang, 'home.recentMeta', {
-														when: formatRelativeDay(
-															session.finishedAt ?? session.startedAt,
-															lang
-														),
-														min: formatDurationMinutes(sessionDurationMs(session)) ?? '-',
-														sets: completedSetCount(session)
-													})}
-												</span>
+												<span class="entity-row__meta">{recentMeta(session)}</span>
 											</span>
-											<LucideIcon
-												icon={ChevronRight}
-												size={ICON_SMALL}
-												class="entity-row__chevron"
-											/>
 										</a>
 									</li>
 								{/each}

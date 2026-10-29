@@ -2,11 +2,12 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
-	import type { CoachSessionDetail } from '$lib/domain/coach';
+	import { coachSessionTotals, type CoachSessionDetail } from '$lib/domain/coach';
+	import { formatKgInt } from '$lib/domain/format';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { loggedSetKind, setKindMessageKey } from '$lib/domain/session';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
-	import { formatRelativeDay } from '$lib/i18n/format';
+	import { formatRelativeDayShort } from '$lib/i18n/format';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 
@@ -25,6 +26,7 @@
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
+	let totals = $derived(detail ? coachSessionTotals(detail) : null);
 
 	function labelFor(exerciseId: string): string {
 		const meta = indexById.get(exerciseId);
@@ -44,8 +46,21 @@
 	<p id="coach-session-detail-title" class="bottom-sheet__title">
 		{detail?.planName?.trim() || translate(lang, 'coach.sessionDetailTitle')}
 	</p>
-	{#if detail?.finishedAt}
-		<p class="bottom-sheet__hint">{formatRelativeDay(detail.finishedAt, lang)}</p>
+	{#if detail?.finishedAt && totals}
+		<p class="bottom-sheet__hint">
+			{totals.minutes != null
+				? translate(lang, 'coach.sessionSummary', {
+						when: formatRelativeDayShort(detail.finishedAt, lang),
+						min: totals.minutes,
+						sets: totals.sets,
+						kg: formatKgInt(totals.volumeKg)
+					})
+				: translate(lang, 'coach.sessionMeta', {
+						when: formatRelativeDayShort(detail.finishedAt, lang),
+						sets: totals.sets,
+						volume: formatKgInt(totals.volumeKg)
+					})}
+		</p>
 	{/if}
 
 	{#if busy && !detail}

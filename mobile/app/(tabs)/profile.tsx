@@ -74,6 +74,7 @@ import {
 	suggestCatalogCandidates
 } from '@repdraft/domain/importCsv';
 import { customsRepo } from '../../src/storage/customsRepo';
+import { formatRelativeDay } from '@repdraft/i18n/format';
 import { coachRepo } from '../../src/storage/coachRepo';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { recordsRepo } from '../../src/storage/recordsRepo';
@@ -872,10 +873,16 @@ export default function ProfileScreen() {
 						myCoaches.map((coach) => (
 							<View key={coach.linkId} style={styles.coachBlock}>
 								<Text style={styles.rowText}>{coachDisplayName(coach)}</Text>
+								<Text style={styles.hint}>
+									{tt('coach.connectedOn', {
+										when: formatRelativeDay(coach.createdAt, locale)
+									})}
+								</Text>
 								<Text style={styles.hint}>{tt('profile.coachConnectedHint')}</Text>
 								<PrimaryButton
 									label={tt('coach.disconnect')}
-									variant="link"
+									variant="danger"
+									compact
 									onPress={() => setDisconnectTarget(coach)}
 								/>
 							</View>

@@ -15,6 +15,7 @@
 	} from '$lib/domain/authFlow';
 	import { isTurnstileConfigured } from '$lib/auth/publicAuthConfig';
 	import { assertStrongPassword } from '$lib/security/assertStrongPassword';
+	import { formatRelativeDay } from '$lib/i18n/format';
 	import { translate, translateError } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { auth } from '$lib/stores/auth';
@@ -1071,11 +1072,16 @@
 											<div class="coach-connect-status__text">
 												<p class="coach-connect-status__title">{coachDisplayName(coach)}</p>
 												<p class="coach-connect-status__hint">
+													{translate(lang, 'coach.connectedOn', {
+														when: formatRelativeDay(coach.createdAt, lang)
+													})}
+												</p>
+												<p class="coach-connect-status__hint">
 													{translate(lang, 'profile.coachConnectedHint')}
 												</p>
 												<AppButton
-													variant="link"
-													class="mt-1 !min-h-[48px] !px-0"
+													variant="ghost"
+													class="is-danger mt-1 !min-h-[48px]"
 													disabled={disconnectBusy}
 													onclick={() => requestDisconnectCoach(coach)}
 												>

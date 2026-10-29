@@ -56,6 +56,7 @@ export {
 	workoutPlanContentEqual,
 	planPrescribedSetCount,
 	planExerciseSlotCount,
+	planEstimatedMinutes,
 	mergeWorkoutPlans,
 	suggestNextPlan,
 	rotatePlanToEnd,

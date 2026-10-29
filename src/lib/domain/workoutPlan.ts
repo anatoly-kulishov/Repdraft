@@ -104,6 +104,25 @@ export function planExerciseSlotCount(plan: WorkoutPlan): number {
 	return count;
 }
 
+/**
+ * Rough session length for the home CTA: prescribed sets × (rest + ~30 s of
+ * work), rounded to 5 minutes. "Or" blocks count once (first alternative).
+ */
+export function planEstimatedMinutes(plan: WorkoutPlan): number {
+	let seconds = 0;
+	let i = 0;
+	const list = plan.exercises;
+	while (i < list.length) {
+		const ab = altGroupBounds(list, i);
+		const sets = Math.max(0, list[i]?.sets ?? 0);
+		seconds += sets * (Math.max(0, list[i]?.restSec ?? 0) + 30);
+		i = ab && ab.start === i && ab.end > ab.start ? ab.end + 1 : i + 1;
+	}
+	if (seconds <= 0) return 0;
+	const minutes = Math.round(seconds / 60 / 5) * 5;
+	return Math.max(10, minutes);
+}
+
 /** Union local + cloud without dropping device-only rows (empty cloud must not wipe UI). */
 export function mergeWorkoutPlans(local: WorkoutPlan[], cloud: WorkoutPlan[]): WorkoutPlan[] {
 	const map = new Map<string, WorkoutPlan>();

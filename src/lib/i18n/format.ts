@@ -59,6 +59,36 @@ export function formatRelativeDay(iso: string, lang: AppLocale): string {
 	return formatShortDate(iso, lang);
 }
 
+/** Day + month without weekday: 26 окт / Oct 26 (ru short months lose the dot). */
+export function formatDayMonth(iso: string, lang: AppLocale): string {
+	try {
+		return new Intl.DateTimeFormat(localeTag(lang), {
+			day: 'numeric',
+			month: 'short'
+		})
+			.format(new Date(iso))
+			.replace(/\.$/, '');
+	} catch {
+		return iso;
+	}
+}
+
+/**
+ * Home recent list: "Сегодня" / "Вчера" for the last two days, exact day+month
+ * for older rows (26 окт). No "-" or "N дн. назад" noise.
+ */
+export function formatRelativeDayShort(iso: string, lang: AppLocale): string {
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return iso;
+	const now = new Date();
+	const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+	const startThat = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+	const diffDays = Math.round((startToday - startThat) / 86_400_000);
+	if (diffDays === 0) return translate(lang, 'home.today');
+	if (diffDays === 1) return translate(lang, 'home.yesterday');
+	return formatDayMonth(iso, lang);
+}
+
 /** Local calendar day as `YYYY-MM-DD` (history filters / date input). */
 export function toLocalDayKey(isoOrDate: string | Date = new Date()): string {
 	const d = typeof isoOrDate === 'string' ? new Date(isoOrDate) : isoOrDate;

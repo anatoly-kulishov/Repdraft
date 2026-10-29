@@ -1,4 +1,5 @@
 import { Tabs } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import { ClipboardList, Dumbbell, House, UserRound } from 'lucide-react-native';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +8,15 @@ import { useLocale } from '../../src/state/locale';
 import { useAppColors, useAppTheme } from '../../src/state/theme';
 import { fontFamily, radius, type ColorPalette } from '../../src/theme';
 import type { ComponentType } from 'react';
+
+/** #RRGGBB → rgba(...) so the glass tab bar can sit on top of BlurView. */
+function withAlpha(hex: string, alpha: number): string {
+	if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex;
+	const r = Number.parseInt(hex.slice(1, 3), 16);
+	const g = Number.parseInt(hex.slice(3, 5), 16);
+	const b = Number.parseInt(hex.slice(5, 7), 16);
+	return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 function TabIcon({
 	icon: Icon,
@@ -56,8 +66,7 @@ export default function TabsLayout() {
 					paddingTop: 4,
 					paddingBottom: 4,
 					paddingHorizontal: 4,
-					backgroundColor: colors.panel,
-					borderTopWidth: 0,
+					backgroundColor: withAlpha(colors.panel, light ? 0.74 : 0.7),
 					borderWidth: 1,
 					borderColor: colors.border,
 					borderRadius: radius.xl,
@@ -72,6 +81,13 @@ export default function TabsLayout() {
 						android: { elevation: light ? 6 : 12 }
 					})
 				},
+				tabBarBackground: () => (
+					<BlurView
+						intensity={20}
+						tint={light ? 'light' : 'dark'}
+						style={StyleSheet.absoluteFill}
+					/>
+				),
 				tabBarActiveTintColor: colors.accentText,
 				tabBarInactiveTintColor: colors.muted,
 				tabBarLabelStyle: {

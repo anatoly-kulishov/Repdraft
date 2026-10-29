@@ -2,6 +2,8 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import HelpButton from '$lib/components/HelpButton.svelte';
+	import HelpPanel from '$lib/components/HelpPanel.svelte';
 	import SummaryLoadPanel from '$lib/components/SummaryLoadPanel.svelte';
 	import { pickCatalogExerciseForBodyPart } from '$lib/domain/trainingLoad';
 	import SummaryPageSkeleton from '$lib/components/summary/SummaryPageSkeleton.svelte';
@@ -41,6 +43,7 @@
 
 	let lang = $derived($resolvedLocale);
 	let session = $state<WorkoutSession | null>(null);
+	let helpOpen = $state(false);
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
 	let missing = $state(false);
 	let loading = $state(true);
@@ -186,6 +189,16 @@
 			backLabelVisible
 			backLabel={translate(lang, 'builder.backWorkouts')}
 			preferHistoryBack={false}
+		>
+			{#snippet actions()}
+				<HelpButton label={translate(lang, 'summary.help')} bind:open={helpOpen} />
+			{/snippet}
+		</ScreenHeader>
+
+		<HelpPanel
+			open={helpOpen}
+			title={translate(lang, 'summary.helpTitle')}
+			body={translate(lang, 'summary.helpBody')}
 		/>
 
 		<div class="summary-hero">

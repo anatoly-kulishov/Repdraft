@@ -117,8 +117,11 @@
 	line-height: 1.2;
 	letter-spacing: -0.02em;
 	color: var(--color-ink);
-	overflow-wrap: anywhere;
-	word-break: break-word;
+	overflow-wrap: break-word;
+	word-break: normal;
+	/* Long RU titles: hyphenate instead of leaving a one-letter last line. */
+	hyphens: auto;
+	text-wrap: pretty;
 }
 
 /* Truncated titles: tap to expand (card, header, builder). */
@@ -156,6 +159,67 @@
 
 .screen-header-actions:empty {
 	display: none;
+}
+
+/* Reusable «?» help: trigger sits in header actions, panel expands below the header. */
+.help-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border: 0;
+	border-radius: 12px;
+	background: transparent;
+	color: var(--color-muted);
+	cursor: pointer;
+	transition:
+		color 120ms ease,
+		background 120ms ease;
+}
+
+.help-btn:hover {
+	color: var(--color-accent-text);
+	background: var(--color-surface-muted);
+}
+
+.help-btn:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+
+.help-panel {
+	margin: 0 0 8px;
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	text-align: left;
+}
+
+.help-panel__title {
+	margin: 0;
+	font-size: 1rem;
+	font-weight: 700;
+	line-height: 1.35;
+	color: var(--color-ink);
+}
+
+.help-panel__body {
+	margin: 0;
+	font-size: 0.8125rem;
+	line-height: 1.45;
+	color: var(--color-muted);
+}
+
+.help-panel__list {
+	margin: 2px 0 0;
+	padding-left: 1.1rem;
+	font-size: 0.8125rem;
+	line-height: 1.5;
+	color: var(--color-muted);
 }
 
 @media (max-width: 1023px) {
