@@ -16,7 +16,10 @@ import { ClientsSkeleton } from '../src/coach/ClientsSkeleton';
 import { InviteCard } from '../src/coach/InviteCard';
 import { InviteSheets } from '../src/coach/InviteSheets';
 import { useCoachClients } from '../src/coach/useCoachClients';
+import { AssignPlanSheet } from '../src/coach/AssignPlanSheet';
+import { coachRepo } from '../src/storage/coachRepo';
 import { ConfirmSheet } from '../src/components/ConfirmSheet';
+import type { CoachAssignablePlan } from '@repdraft/domain/coach';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { useBottomChromePad } from '../src/layout/safe';
 import { useLocale } from '../src/state/locale';
@@ -34,6 +37,48 @@ export default function ClientsScreen() {
 	const [inviteMenuOpen, setInviteMenuOpen] = useState(false);
 	const [refreshConfirmOpen, setRefreshConfirmOpen] = useState(false);
 	const [query, setQuery] = useState('');
+	const [assignTarget, setAssignTarget] = useState<(typeof coach.rows)[number] | null>(null);
+	const [assignPlans, setAssignPlans] = useState<CoachAssignablePlan[]>([]);
+	const [assignLoading, setAssignLoading] = useState(false);
+	const [assignBusy, setAssignBusy] = useState(false);
+	const [assignToast, setAssignToast] = useState<string | null>(null);
+
+	async function openAssign(row: (typeof coach.rows)[number]) {
+		setAssignTarget(row);
+		setAssignPlans([]);
+		setAssignLoading(true);
+		try {
+			const result = await coachRepo.listAssignablePlans();
+			if (result.ok) setAssignPlans(result.value);
+			else setAssignToast(tt(`coach.error.${result.reason}`));
+		} finally {
+			setAssignLoading(false);
+		}
+	}
+
+	function dismissAssign() {
+		if (assignBusy) return;
+		setAssignTarget(null);
+		setAssignPlans([]);
+	}
+
+	async function pickAssign(plan: CoachAssignablePlan) {
+		const target = assignTarget;
+		if (!target || assignBusy) return;
+		setAssignBusy(true);
+		try {
+			const result = await coachRepo.assignPlan(target.clientUserId, plan.planId);
+			if (result.ok) {
+				setAssignToast(tt('coach.assignDone'));
+				setAssignTarget(null);
+				setAssignPlans([]);
+			} else {
+				setAssignToast(tt(`coach.error.${result.reason}`));
+			}
+		} finally {
+			setAssignBusy(false);
+		}
+	}
 
 	const filteredRows = useMemo(() => {
 		const needle = query.trim().toLowerCase();
@@ -70,6 +115,7 @@ export default function ClientsScreen() {
 				}
 			>
 				{coach.toast ? <Text style={styles.toast}>{coach.toast}</Text> : null}
+				{assignToast ? <Text style={styles.toast}>{assignToast}</Text> : null}
 
 				<InviteCard
 					code={coach.inviteCode}
@@ -140,6 +186,7 @@ export default function ClientsScreen() {
 								onQuickAction={onQuickAction}
 								onOpenSession={(id) => void coach.openSession(id)}
 								onRevoke={coach.setRevokeTarget}
+								onAssign={(row) => void openAssign(row)}
 							/>
 						)}
 					</View>
@@ -158,6 +205,16 @@ export default function ClientsScreen() {
 				refreshConfirmOpen={refreshConfirmOpen}
 				onCloseRefreshConfirm={() => setRefreshConfirmOpen(false)}
 				onConfirmRefresh={() => void coach.refreshInvite()}
+			/>
+
+			<AssignPlanSheet
+				open={assignTarget !== null}
+				clientLabel={assignTarget?.label ?? ''}
+				loading={assignLoading}
+				busy={assignBusy}
+				plans={assignPlans}
+				onPick={(plan) => void pickAssign(plan)}
+				onDismiss={dismissAssign}
 			/>
 
 			<ConfirmSheet

@@ -2,6 +2,7 @@
 	import '$lib/styles/blocks/coach.css';
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
+	import CoachAssignSheet from '$lib/components/coach/CoachAssignSheet.svelte';
 	import CoachSessionDetailSheet from '$lib/components/coach/CoachSessionDetailSheet.svelte';
 	import ConfirmSheet from '$lib/components/ConfirmSheet.svelte';
 	import HelpButton from '$lib/components/HelpButton.svelte';
@@ -13,6 +14,7 @@
 		clientInitials,
 		daysSinceLastSession,
 		formatInviteCode,
+		type CoachAssignablePlan,
 		type CoachClientLink,
 		type CoachSessionDetail,
 		type CoachSessionSummary
@@ -75,6 +77,11 @@
 	let sessionDetail = $state<CoachSessionDetail | null>(null);
 	let sessionBusy = $state(false);
 	let indexById = $state<Map<string, ExerciseIndexItem>>(new Map());
+
+	let assignTarget = $state<Row | null>(null);
+	let assignPlans = $state<CoachAssignablePlan[]>([]);
+	let assignLoading = $state(false);
+	let assignBusy = $state(false);
 
 	let rows = $derived.by<Row[]>(() => {
 		if (!cloud) {
@@ -366,6 +373,43 @@
 	function dismissSessionSheet() {
 		sessionSheetOpen = false;
 		sessionDetail = null;
+	}
+
+	async function openAssign(row: Row) {
+		assignTarget = row;
+		assignPlans = [];
+		assignLoading = true;
+		try {
+			const result = await coachRepository.listAssignablePlans();
+			if (result.ok) assignPlans = result.value;
+			else toasts.show(errorText(result.reason), 'error');
+		} finally {
+			assignLoading = false;
+		}
+	}
+
+	function dismissAssign() {
+		if (assignBusy) return;
+		assignTarget = null;
+		assignPlans = [];
+	}
+
+	async function pickAssign(plan: CoachAssignablePlan) {
+		const target = assignTarget;
+		if (!target || assignBusy) return;
+		assignBusy = true;
+		try {
+			const result = await coachRepository.assignPlan(target.clientUserId, plan.planId);
+			if (result.ok) {
+				toasts.show(translate(lang, 'coach.assignDone'), 'success');
+				assignTarget = null;
+				assignPlans = [];
+			} else {
+				toasts.show(errorText(result.reason), 'error');
+			}
+		} finally {
+			assignBusy = false;
+		}
 	}
 
 	/** Two-state status: today (green with dot) or a calm grey line. */
@@ -678,6 +722,15 @@
 									{/each}
 								{/if}
 								<div class="coach-expanded__actions">
+									{#if cloud}
+										<AppButton
+											variant="secondary"
+											disabled={cloudBusy}
+											onclick={() => void openAssign(row)}
+										>
+											{translate(lang, 'coach.assign')}
+										</AppButton>
+									{/if}
 									<AppButton
 										variant="ghost"
 										class="is-danger"
@@ -712,6 +765,16 @@
 	</div>
 	</div>
 </section>
+
+<CoachAssignSheet
+	open={assignTarget !== null}
+	clientLabel={assignTarget?.label ?? ''}
+	loading={assignLoading}
+	busy={assignBusy}
+	plans={assignPlans}
+	onPick={(plan) => void pickAssign(plan)}
+	onDismiss={dismissAssign}
+/>
 
 <CoachSessionDetailSheet
 	open={sessionSheetOpen}

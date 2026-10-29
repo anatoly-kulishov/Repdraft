@@ -1,8 +1,8 @@
 import { browser } from '$app/environment';
 import { duplicatePlan, mergeWorkoutPlans, sortPlansByUserOrder, withSavedName, workoutPlanContentEqual } from '$lib/domain/workout';
-import type { WorkoutPlan } from '$lib/domain/types';
+import type { WorkoutExercise, WorkoutPlan } from '$lib/domain/types';
 import { clampPlanName } from '$lib/domain/inputLimits';
-import { isCloudPersistableId } from '$lib/domain/id';
+import { isCloudPersistableId, newId } from '$lib/domain/id';
 import { CLOUD_REQUEST_MS } from '$lib/domain/networkTimeouts';
 import { withTimeout } from '$lib/domain/withTimeout';
 import { translate } from '$lib/i18n/messages';
@@ -219,6 +219,35 @@ import { resolvedLocale } from './locale';
 			await refresh({ cloud: synced && isCloudMode() });
 			return { plan: copy, synced: synced || !isCloudMode() };
 		},
+		async importPlan(input: {
+			name: string;
+			exercises: WorkoutExercise[];
+		}): Promise<{ plan: WorkoutPlan; synced: boolean }> {
+			const ts = new Date().toISOString();
+			const untitled = translate(get(resolvedLocale), 'builder.untitled');
+			const plan: WorkoutPlan = {
+				id: newId(),
+				name: clampPlanName(input.name.replace(/\s+/g, ' ').trim()) || untitled,
+				createdAt: ts,
+				updatedAt: ts,
+				exercises: input.exercises
+			};
+			const synced = await mirrorCloudWrite({
+				localWrite: () => localWorkoutRepository.save(plan),
+				cloudWrite: isCloudPersistableId(plan.id)
+					? () => supabaseWorkoutRepository.save(plan)
+					: undefined,
+				cloudId: plan.id,
+				label: 'plans.importPlan',
+				outboxOnFail: isCloudPersistableId(plan.id)
+					? { kind: 'plan.save', id: plan.id }
+					: undefined
+			});
+			planOrder.prepend(plan.id);
+			await refresh({ cloud: synced && isCloudMode() });
+			return { plan, synced: synced || !isCloudMode() };
+		},
+
 		async getPlan(id: string): Promise<WorkoutPlan | null> {
 			const cached = get(store).find((p) => p.id === id);
 			if (cached) return cached;

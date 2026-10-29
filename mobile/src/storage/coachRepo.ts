@@ -3,7 +3,10 @@
  * Schema: `~/.repdraft-sql/coach-mode.sql` + session-detail / client-revoke patch.
  */
 import {
+	parseCoachPlanExercises,
 	parseCoachSessionExercises,
+	type CoachAssignablePlan,
+	type CoachAssignment,
 	type CoachClientLink,
 	type CoachMyCoach,
 	type CoachSessionDetail,
@@ -19,6 +22,8 @@ export type CoachErrorReason =
 	| 'used'
 	| 'expired'
 	| 'self'
+	| 'noLink'
+	| 'emptyPlan'
 	| 'unknown';
 
 export type CoachResult<T> = { ok: true; value: T } | { ok: false; reason: CoachErrorReason };
@@ -61,6 +66,21 @@ type SessionDetailRow = {
 	exercises: unknown;
 };
 
+type AssignablePlanRow = {
+	plan_id: string;
+	name: string;
+	exercise_count: number | string;
+};
+
+type AssignmentRow = {
+	assignment_id: string;
+	coach_user_id: string;
+	coach_name: string | null;
+	plan_name: string;
+	plan_exercises: unknown;
+	assigned_at: string;
+};
+
 export type CoachClientStatsRow = {
 	clientUserId: string;
 	summary: CoachSessionSummary;
@@ -86,6 +106,12 @@ function reasonFromError(code: string | undefined, message: string | undefined):
 			return 'expired';
 		case 'RDC05':
 			return 'self';
+		case 'RDC06':
+			return 'notFound';
+		case 'RDC07':
+			return 'noLink';
+		case 'RDC08':
+			return 'emptyPlan';
 		case '28000':
 			return 'notConfigured';
 		default:
@@ -149,6 +175,25 @@ function rowToMyCoach(row: MyCoachRow): CoachMyCoach {
 		coachName: row.coach_name?.trim() ? row.coach_name.trim() : null,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at
+	};
+}
+
+function rowToAssignablePlan(row: AssignablePlanRow): CoachAssignablePlan {
+	return {
+		planId: row.plan_id,
+		name: row.name,
+		exerciseCount: num(row.exercise_count)
+	};
+}
+
+function rowToAssignment(row: AssignmentRow): CoachAssignment {
+	return {
+		assignmentId: row.assignment_id,
+		coachUserId: row.coach_user_id,
+		coachName: row.coach_name?.trim() ? row.coach_name.trim() : null,
+		planName: row.plan_name,
+		exercises: parseCoachPlanExercises(row.plan_exercises),
+		assignedAt: row.assigned_at
 	};
 }
 
@@ -239,6 +284,45 @@ export const coachRepo = {
 		const row = rows[0];
 		if (!row) return { ok: false, reason: 'notFound' };
 		return { ok: true, value: rowToSessionDetail(row) };
+	},
+
+	async listAssignablePlans(): Promise<CoachResult<CoachAssignablePlan[]>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { data, error } = await supabase.rpc('coach_list_assignable_plans');
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		return {
+			ok: true,
+			value: (data as AssignablePlanRow[] | null)?.map(rowToAssignablePlan) ?? []
+		};
+	},
+
+	async assignPlan(clientUserId: string, planId: string): Promise<CoachResult<string>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { data, error } = await supabase.rpc('coach_assign_plan', {
+			p_client: clientUserId,
+			p_plan_id: planId
+		});
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		return { ok: true, value: String(data ?? '') };
+	},
+
+	async myCurrentAssignment(): Promise<CoachResult<CoachAssignment | null>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { data, error } = await supabase.rpc('coach_my_current_assignment');
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		const row = (data as AssignmentRow[] | null)?.[0];
+		return { ok: true, value: row ? rowToAssignment(row) : null };
+	},
+
+	async discardAssignment(): Promise<CoachResult<true>> {
+		const supabase = getSupabase();
+		if (!supabase) return { ok: false, reason: 'notConfigured' };
+		const { error } = await supabase.rpc('coach_discard_my_assignment');
+		if (error) return { ok: false, reason: reasonFromError(error.code, error.message) };
+		return { ok: true, value: true };
 	},
 
 	async revoke(linkId: string): Promise<CoachResult<true>> {

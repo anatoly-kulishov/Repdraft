@@ -22,6 +22,8 @@
 	import { greetingName } from '$lib/stores/greetingName';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
+	import { homeNextPlan } from '$lib/stores/homeNextPlan';
+	import { plans } from '$lib/stores/plans';
 	import { resolveUserAvatarUrl } from '$lib/storage/avatarsRepository';
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
@@ -34,6 +36,7 @@
 		INVITE_CODE_LENGTH,
 		isValidInviteCode,
 		normalizeInviteCode,
+		type CoachAssignment,
 		type CoachMyCoach
 	} from '$lib/domain/coach';
 	import { isSupabaseConfigured } from '$lib/supabase/client';
@@ -75,6 +78,7 @@
 	import {
 		Camera,
 		CaretDown as ChevronDown,
+		ClipboardText,
 		DeviceMobile,
 		FileText,
 		Info,
@@ -128,6 +132,10 @@
 	let disconnectTarget = $state<CoachMyCoach | null>(null);
 	let disconnectBusy = $state(false);
 
+	let currentAssignment = $state<CoachAssignment | null>(null);
+	let assignmentLoadedFor = $state<string | null>(null);
+	let assignmentBusy = $state(false);
+
 	async function loadClientCoachLinks() {
 		const userId = ownUserId;
 		if (!coachCloud || !userId || clientCoachLoading) return;
@@ -141,9 +149,61 @@
 		}
 	}
 
+	async function loadCurrentAssignment() {
+		const userId = ownUserId;
+		if (!coachCloud || !userId || assignmentLoadedFor === userId) return;
+		const result = await coachRepository.myCurrentAssignment();
+		if (result.ok) currentAssignment = result.value;
+		assignmentLoadedFor = userId;
+	}
+
+	async function importAssignment() {
+		const assignment = currentAssignment;
+		if (!assignment || assignmentBusy) return;
+		assignmentBusy = true;
+		try {
+			const { plan } = await plans.importPlan({
+				name: assignment.planName,
+				exercises: assignment.exercises
+			});
+			homeNextPlan.pin(plan.id);
+			const discard = await coachRepository.discardAssignment();
+			currentAssignment = null;
+			toasts.show(translate(lang, 'coach.assignedAdded'), 'success');
+			if (!discard.ok) {
+				toasts.show(translate(lang, `coach.error.${discard.reason}`), 'error');
+			}
+		} catch {
+			toasts.show(translate(lang, 'coach.error.unknown'), 'error');
+		} finally {
+			assignmentBusy = false;
+		}
+	}
+
+	async function dismissAssignment() {
+		if (!currentAssignment || assignmentBusy) return;
+		assignmentBusy = true;
+		try {
+			const result = await coachRepository.discardAssignment();
+			if (result.ok) {
+				currentAssignment = null;
+				toasts.show(translate(lang, 'coach.assignedDismissed'), 'info');
+			} else {
+				toasts.show(translate(lang, `coach.error.${result.reason}`), 'error');
+			}
+		} finally {
+			assignmentBusy = false;
+		}
+	}
+
 	$effect(() => {
 		if (!coachCloud || !ownUserId || clientCoachLoaded || clientCoachLoading) return;
 		void loadClientCoachLinks();
+	});
+
+	$effect(() => {
+		if (!coachCloud || !ownUserId) return;
+		void loadCurrentAssignment();
 	});
 
 	function onCoachInviteInput(el: HTMLInputElement) {
@@ -169,7 +229,9 @@
 				coachInviteInput = '';
 				toasts.show(translate(lang, 'coach.inviteAccepted'), 'success');
 				clientCoachLoadedFor = null;
+				assignmentLoadedFor = null;
 				void loadClientCoachLinks();
+				void loadCurrentAssignment();
 			} else {
 				coachInviteError = translate(lang, `coach.error.${result.reason}`);
 			}
@@ -201,6 +263,8 @@
 			if (result.ok) {
 				myCoaches = myCoaches.filter((row) => row.linkId !== coach.linkId);
 				toasts.show(translate(lang, 'coach.disconnectDone'), 'success');
+				assignmentLoadedFor = null;
+				void loadCurrentAssignment();
 			} else {
 				toasts.show(translate(lang, `coach.error.${result.reason}`), 'error');
 			}
@@ -1050,6 +1114,41 @@
 					<div class="profile-settings-group panel text-left">
 						<p class="profile-settings-group__title">{translate(lang, 'profile.clients')}</p>
 						<p class="profile-settings-group__hint">{translate(lang, 'profile.clientsHint')}</p>
+
+						{#if currentAssignment}
+							<div class="coach-assigned">
+								<div class="coach-assigned__head">
+									<IconPlate icon={ClipboardText} tone="accent" />
+									<div class="coach-assigned__text">
+										<p class="coach-assigned__title">
+											{translate(lang, 'coach.assignedTitle')}
+										</p>
+										<p class="coach-assigned__body">
+											{currentAssignment.planName}
+											{#if currentAssignment.coachName}
+												· {currentAssignment.coachName}
+											{/if}
+										</p>
+									</div>
+								</div>
+								<div class="coach-assigned__actions">
+									<AppButton
+										block
+										disabled={assignmentBusy}
+										onclick={() => void importAssignment()}
+									>
+										{translate(lang, 'coach.assignedAdd')}
+									</AppButton>
+									<AppButton
+										variant="ghost"
+										disabled={assignmentBusy}
+										onclick={() => void dismissAssignment()}
+									>
+										{translate(lang, 'coach.assignedDismiss')}
+									</AppButton>
+								</div>
+							</div>
+						{/if}
 
 						<div class="coach-role-block">
 							<p class="profile-settings-group__subtitle">

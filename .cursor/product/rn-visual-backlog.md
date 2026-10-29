@@ -112,3 +112,11 @@ Code-level blockers for Open → plan → live → finish → summary: none foun
 - **Favicon.** Скруглённая градиентная плашка RP; ссылки root-relative + `v15`, чтобы localhost не тянул прод-кэш.
 
 Still open: RN help on Progress/Summary, поповер для sticky-хедеров, назначение плана клиенту (SQL).
+
+## Coach assignment (2026-10-29, v0.23.8)
+
+- Тренер: «Назначить тренировку» в раскрытой карточке клиента → `AssignPlanSheet` (web `CoachAssignSheet`).
+- Клиент: карточка «Тренер назначил план» на Главной (`HomeAssignmentCard`) и в профиле (`AssignedPlanCard`); «Добавить план» = локальный план + `homeNextPlan` pin, затем `discardAssignment`.
+- Снимок плана (не ссылка): `parseCoachPlanExercises` в shared domain, self-check в `runCoachSelfCheck`.
+- SQL вне git: `~/.repdraft-sql/coach-plan-assignment.sql` (таблица + 4 RPC, RDC06/07/08).
+- Home не блокируется: назначение грузится после `getSession`, баннер появляется по факту ответа.

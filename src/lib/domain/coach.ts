@@ -5,7 +5,7 @@
  * and read-only rollups the coach sees. No payments, no chat, no program
  * marketplace — the sacred loop must not get slower.
  */
-import type { LoggedSet, SessionExercise, SetKind, WorkoutSession } from './types';
+import type { LoggedSet, SessionExercise, SetKind, WorkoutExercise, WorkoutSession } from './types';
 
 export const INVITE_CODE_LENGTH = 8;
 /** Crockford-ish alphabet: no I/L/O/U to survive handwriting, QR and phone read-out. */
@@ -61,6 +61,27 @@ export type CoachMyCoach = {
 	coachName: string | null;
 	createdAt: string;
 	updatedAt: string;
+};
+
+/** One of the coach's own plans offered in the assign picker. */
+export type CoachAssignablePlan = {
+	planId: string;
+	name: string;
+	exerciseCount: number;
+};
+
+/**
+ * Plan a coach pinned for the client. A snapshot (not a live reference): the
+ * client imports it as their own plan, so later edits on either side do not
+ * leak into the other account.
+ */
+export type CoachAssignment = {
+	assignmentId: string;
+	coachUserId: string;
+	coachName: string | null;
+	planName: string;
+	exercises: WorkoutExercise[];
+	assignedAt: string;
 };
 
 function isSetKind(value: unknown): value is SetKind {
@@ -159,6 +180,42 @@ export function parseCoachSessionExercises(raw: unknown): SessionExercise[] {
 			...(row.skipped === true ? { skipped: true } : {}),
 			...(typeof row.note === 'string' ? { note: row.note } : {})
 		});
+	}
+	return out;
+}
+
+/**
+ * Plan snapshot (`WorkoutExercise[]`) stored in a coach assignment.
+ * Defensive: the coach's plan travels as JSON, so unknown fields are dropped
+ * and every number is clamped before it reaches the live session.
+ */
+export function parseCoachPlanExercises(raw: unknown): WorkoutExercise[] {
+	if (!Array.isArray(raw)) return [];
+	const out: WorkoutExercise[] = [];
+	for (const item of raw) {
+		if (!item || typeof item !== 'object') continue;
+		const row = item as Record<string, unknown>;
+		const exerciseId = typeof row.exerciseId === 'string' ? row.exerciseId.trim() : '';
+		if (!exerciseId) continue;
+		const exercise: WorkoutExercise = {
+			exerciseId,
+			sets: Math.max(0, Math.round(numField(row.sets))),
+			reps: Math.max(0, Math.round(numField(row.reps))),
+			restSec: Math.max(0, Math.round(numField(row.restSec)))
+		};
+		if (Array.isArray(row.repsScheme)) {
+			const scheme = row.repsScheme
+				.map((value) => Math.max(0, Math.round(numField(value))))
+				.filter((value) => Number.isFinite(value));
+			if (scheme.length > 0) exercise.repsScheme = scheme;
+		}
+		if (typeof row.groupId === 'string' || row.groupId === null) {
+			exercise.groupId = row.groupId as string | null;
+		}
+		if (typeof row.altGroupId === 'string' || row.altGroupId === null) {
+			exercise.altGroupId = row.altGroupId as string | null;
+		}
+		out.push(exercise);
 	}
 	return out;
 }
@@ -443,4 +500,31 @@ export function runCoachSelfCheck(): void {
 	if (parsed.length !== 1 || parsed[0]?.sets[0]?.kind !== 'warmup') {
 		throw new Error('coach: session exercise parse drifted');
 	}
+
+	const planSnapshot = parseCoachPlanExercises([
+		{
+			exerciseId: 'e1',
+			sets: 3,
+			reps: 8,
+			restSec: 90,
+			repsScheme: [8, 8, 10],
+			groupId: 'g1',
+			altGroupId: null,
+			weightKg: 999
+		},
+		{ exerciseId: '', sets: 3 },
+		{ sets: 2, reps: 10 }
+	]);
+	if (planSnapshot.length !== 1) throw new Error('coach: plan snapshot must drop bad rows');
+	const first = planSnapshot[0]!;
+	if (first.sets !== 3 || first.reps !== 8 || first.restSec !== 90) {
+		throw new Error('coach: plan snapshot numbers drifted');
+	}
+	if (first.repsScheme?.join(',') !== '8,8,10') {
+		throw new Error('coach: plan snapshot scheme drifted');
+	}
+	if (first.groupId !== 'g1' || first.altGroupId !== null) {
+		throw new Error('coach: plan snapshot groups drifted');
+	}
+	if ('weightKg' in first) throw new Error('coach: plan snapshot must drop unknown fields');
 }
