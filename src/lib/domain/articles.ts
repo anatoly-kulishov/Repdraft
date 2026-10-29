@@ -9,7 +9,10 @@ export type ArticleCoverIcon =
 	| 'library'
 	| 'flame'
 	| 'history'
-	| 'sparkles';
+	| 'sparkles'
+	| 'users'
+	| 'chart'
+	| 'upload';
 
 export type Article = {
 	slug: string;
@@ -131,7 +134,11 @@ const SLUG_COVER_ICONS: Partial<Record<string, ArticleCoverIcon>> = {
 	'legs-split': 'dumbbell',
 	'first-session': 'history',
 	'getting-started-quick-demo': 'play',
-	'ai-workout-draft': 'sparkles'
+	'ai-workout-draft': 'sparkles',
+	'coach-mode': 'users',
+	'ai-coach-hints': 'sparkles',
+	'progress-overview': 'chart',
+	'import-history': 'upload'
 };
 
 export function resolveArticleCoverIcon(article: Article): ArticleCoverIcon {

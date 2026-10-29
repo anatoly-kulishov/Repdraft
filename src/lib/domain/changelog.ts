@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.23.9',
+		highlights: {
+			ru: [
+				'ИИ-тренер: баланс за 30 дней и подсказки по группам, которых не было в последней тренировке',
+				'Упражнение добавляется в выбранный план, а «Отменить» возвращает всё одним тапом',
+				'Подсказку можно скрыть на 7 дней, а в профиле появится точка о новой',
+				'Справочник: новые статьи про тренера, Прогресс и импорт истории'
+			],
+			en: [
+				'AI coach: a 30-day balance plus hints for groups missing from your last workout',
+				'Add an exercise to any plan — and undo it with one tap',
+				'Hide a hint for 7 days; a dot in Profile tells you when a new one is ready',
+				'Guide: new articles on coaching, Progress, and importing history'
+			]
+		}
+	},
+	{
 		version: '0.23.8',
 		highlights: {
 			ru: [

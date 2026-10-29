@@ -160,12 +160,12 @@
 			toasts.show(translate(lang, 'summary.addFail'), 'error');
 			return;
 		}
-		const planId = await appendExerciseToHomePlan(exerciseId);
-		if (!planId) {
+		const patch = await appendExerciseToHomePlan(exerciseId);
+		if (!patch) {
 			toasts.show(translate(lang, 'summary.addFail'), 'error');
 			return;
 		}
-		await goto(`/builder/${planId}`);
+		await goto(`/builder/${patch.planId}`);
 	}
 </script>
 

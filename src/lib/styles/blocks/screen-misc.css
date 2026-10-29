@@ -2030,29 +2030,6 @@ button.live-local-save-cue {
 	padding-top: 0;
 }
 
-.profile-settings-group__subtitle {
-	margin: 0;
-	font-size: 0.8125rem;
-	font-weight: 650;
-	line-height: 1.3;
-	color: var(--color-ink);
-}
-
-/* Two roles in one card: "my coach" above, coach dashboard below the divider. */
-.coach-role-block {
-	margin-top: 0.85rem;
-}
-
-.coach-role-block > .profile-settings-group__hint {
-	margin-top: 0.25rem;
-}
-
-.coach-role-block > .coach-connect-status,
-.coach-role-block > .coach-connect-loading,
-.coach-role-block > .coach-my-list {
-	margin-top: 0.5rem;
-}
-
 .coach-my-list {
 	list-style: none;
 	margin: 0;
@@ -2062,19 +2039,11 @@ button.live-local-save-cue {
 	gap: 0.75rem;
 }
 
-.coach-connect-loading {
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-	padding-top: 0.15rem;
-}
-
 /* Connected coach: icon against the title + hint (+ disconnect) block. */
 .coach-connect-status {
 	display: flex;
 	align-items: flex-start;
 	gap: 0.75rem;
-	padding-top: 0.15rem;
 }
 
 .coach-connect-status__text {
@@ -2141,21 +2110,15 @@ button.live-local-save-cue {
 	gap: 0.4rem;
 }
 
-/* Invite code: field + submit stack in narrow cards, sit side-by-side when there is room. */
-.coach-invite-form {
+/* Invite code: single column, input above the submit — used inside the sheet. */
+.coach-connect-form {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
 	gap: 0.5rem;
 	margin-top: 0.5rem;
 }
 
-@container (min-width: 20rem) {
-	.coach-invite-form {
-		grid-template-columns: minmax(0, 1fr) auto;
-	}
-}
-
-.coach-invite-form__error {
+.coach-connect-form__error {
 	margin: 0.5rem 0 0;
 	font-size: 0.75rem;
 	line-height: 1.4;

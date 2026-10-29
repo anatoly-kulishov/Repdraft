@@ -96,12 +96,12 @@ export default function SummaryScreen() {
 			Alert.alert(tt('common.error'), tt('summary.addFail'));
 			return;
 		}
-		const planId = await appendExerciseToHomePlan(exerciseId);
-		if (!planId) {
+		const patch = await appendExerciseToHomePlan(exerciseId);
+		if (!patch) {
 			Alert.alert(tt('common.error'), tt('summary.addFail'));
 			return;
 		}
-		router.push(`/builder/${planId}`);
+		router.push(`/builder/${patch.planId}`);
 	}
 
 	return (

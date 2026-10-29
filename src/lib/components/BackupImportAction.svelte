@@ -13,7 +13,7 @@
 	} from '$lib/domain/importCsv';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
-	import { translate, translateError } from '$lib/i18n/messages';
+	import { translate, translateError, translatePlural } from '$lib/i18n/messages';
 	import { applyLocalBackupImport } from '$lib/storage/applyLocalBackupImport';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
@@ -212,8 +212,8 @@
 		{#if csvReport}
 			<p class="bottom-sheet__hint">
 				{translate(lang, 'settings.importCsvPreview', {
-					sessions: csvReport.sessions,
-					sets: csvReport.sets,
+					sessions: translatePlural(lang, 'settings.importCsvSessions', csvReport.sessions),
+					sets: translatePlural(lang, 'settings.importCsvSets', csvReport.sets),
 					from: csvReport.dateRange?.from.slice(0, 10) ?? '-',
 					to: csvReport.dateRange?.to.slice(0, 10) ?? '-',
 					matched: csvReport.matchedExercises,

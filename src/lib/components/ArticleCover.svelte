@@ -14,6 +14,9 @@
 		Play,
 		Sparkle as Sparkles,
 		Timer,
+		ChartLineUp,
+		UploadSimple,
+		UsersThree,
 	} from 'phosphor-svelte';
 
 	const COVER_ICONS = {
@@ -25,7 +28,10 @@
 		library: Library,
 		flame: Flame,
 		history: History,
-		sparkles: Sparkles
+		sparkles: Sparkles,
+		users: UsersThree,
+		chart: ChartLineUp,
+		upload: UploadSimple
 	} satisfies Record<string, Component<IconComponentProps>>;
 
 	let { article }: { article: Article } = $props();

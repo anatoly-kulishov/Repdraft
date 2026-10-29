@@ -9,7 +9,10 @@ import {
 	Play,
 	Search,
 	Sparkles,
-	Timer
+	Timer,
+	TrendingUp,
+	Upload,
+	Users
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
@@ -40,7 +43,10 @@ const ICON_MAP: Record<ArticleCoverIcon, React.ElementType> = {
 	library: Library,
 	flame: Flame,
 	history: History,
-	sparkles: Sparkles
+	sparkles: Sparkles,
+	users: Users,
+	chart: TrendingUp,
+	upload: Upload
 };
 
 const TONE_COLORS: Record<string, { bg: string; text: string }> = {
