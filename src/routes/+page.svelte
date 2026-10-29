@@ -39,6 +39,9 @@
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { resolveSiteOrigin } from '$lib/seo/site';
 	import { auth } from '$lib/stores/auth';
+	import { isSupabaseConfigured } from '$lib/supabase/client';
+	import { coachRepository } from '$lib/storage/coachRepository';
+	import type { CoachAssignment } from '$lib/domain/coach';
 	import { greetingName } from '$lib/stores/greetingName';
 	import { homeNextPlan } from '$lib/stores/homeNextPlan';
 	import { live } from '$lib/stores/live';
@@ -117,6 +120,42 @@
 	}
 
 	let lang = $derived($resolvedLocale);
+
+	let assignment = $state<CoachAssignment | null>(null);
+	let assignmentBusy = $state(false);
+	let assignmentHidden = $state(false);
+	let assignmentLoadedFor = $state<string | null>(null);
+
+	$effect(() => {
+		const userId = $auth.user?.id ?? null;
+		if (!browser || !userId || !isSupabaseConfigured()) return;
+		if (assignmentLoadedFor === userId) return;
+		assignmentLoadedFor = userId;
+		void coachRepository.myCurrentAssignment().then((result) => {
+			if (result.ok) assignment = result.value;
+		});
+	});
+
+	async function importAssignment() {
+		const current = assignment;
+		if (!current || assignmentBusy) return;
+		assignmentBusy = true;
+		try {
+			const { plan } = await plans.importPlan({
+				name: current.planName,
+				exercises: current.exercises
+			});
+			homeNextPlan.pin(plan.id);
+			const discard = await coachRepository.discardAssignment();
+			assignment = null;
+			toasts.show(translate(lang, 'coach.assignedAdded'), 'success');
+			if (!discard.ok) toasts.show(translate(lang, `coach.error.${discard.reason}`), 'error');
+		} catch {
+			toasts.show(translate(lang, 'coach.error.unknown'), 'error');
+		} finally {
+			assignmentBusy = false;
+		}
+	}
 	let seoLang = $derived(resolveSeoLang($page.data.seoLocale, lang));
 	let siteOrigin = $derived(resolveSiteOrigin($page.url.origin));
 	let websiteJsonLd = $derived(
@@ -475,6 +514,29 @@
 	{/if}
 
 	{#if !isBootLoading && !showBootSkeleton}
+	{#if assignment && !assignmentHidden}
+		<div class="panel home-assignment">
+			<div class="home-assignment__copy">
+				<p class="home-assignment__kicker">{translate(lang, 'coach.assignedTitle')}</p>
+				<p class="home-assignment__title">{assignment.planName}</p>
+				{#if assignment.coachName}
+					<p class="home-assignment__meta">{assignment.coachName}</p>
+				{/if}
+			</div>
+			<div class="home-assignment__actions">
+				<AppButton block disabled={assignmentBusy} onclick={() => void importAssignment()}>
+					{translate(lang, 'coach.assignedAdd')}
+				</AppButton>
+				<AppButton
+					variant="ghost"
+					disabled={assignmentBusy}
+					onclick={() => (assignmentHidden = true)}
+				>
+					{translate(lang, 'coach.assignedHide')}
+				</AppButton>
+			</div>
+		</div>
+	{/if}
 	{#if hasActive && active}
 		<a
 			class="home-continue-card panel"

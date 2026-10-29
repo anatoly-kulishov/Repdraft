@@ -40,6 +40,9 @@ import { kvSetJson } from '../storage/kv';
 import { plansRepo } from '../storage/plansRepo';
 import { readActiveSession, sessionsRepo } from '../storage/sessionsRepo';
 import { outboxCount } from '../sync/cloudSync';
+import { coachRepo } from '../storage/coachRepo';
+import type { CoachAssignment } from '@repdraft/domain/coach';
+import { importAssignedPlan } from '../coach/importAssignment';
 
 const RECENT_LIMIT = 3;
 
@@ -60,6 +63,8 @@ export function useHomeDashboard() {
 	const [authUser, setAuthUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [pendingSync, setPendingSync] = useState(0);
+	const [assignment, setAssignment] = useState<CoachAssignment | null>(null);
+	const [assignmentBusy, setAssignmentBusy] = useState(false);
 
 	const reload = useCallback(async () => {
 		setLoading(true);
@@ -91,6 +96,12 @@ export function useHomeDashboard() {
 		const supabase = getSupabase();
 		const user = supabase ? (await supabase.auth.getSession()).data.session?.user ?? null : null;
 		setAuthUser(user);
+		if (user) {
+			const current = await coachRepo.myCurrentAssignment();
+			setAssignment(current.ok ? current.value : null);
+		} else {
+			setAssignment(null);
+		}
 		setGreetingCustom(await loadGreetingName(user));
 		setPendingSync(outbox);
 		setLoading(false);
@@ -149,6 +160,27 @@ export function useHomeDashboard() {
 		setOnboarding(await dismissChecklist());
 	}, []);
 
+	const importAssignment = useCallback(async () => {
+		const current = assignment;
+		if (!current || assignmentBusy) return;
+		setAssignmentBusy(true);
+		try {
+			await importAssignedPlan(current);
+			await coachRepo.discardAssignment();
+			setAssignment(null);
+			await reload();
+			Alert.alert(tt('coach.assignedAdded'));
+		} catch {
+			Alert.alert(tt('common.error'), tt('coach.error.unknown'));
+		} finally {
+			setAssignmentBusy(false);
+		}
+	}, [assignment, assignmentBusy, reload, tt]);
+
+	const hideAssignment = useCallback(() => {
+		setAssignment(null);
+	}, []);
+
 	const next = useMemo(
 		() => resolveHomeNextPlan(plans, recent[0]?.planId ?? null, pinnedNextId),
 		[plans, recent, pinnedNextId]
@@ -204,7 +236,11 @@ export function useHomeDashboard() {
 		continueMeta,
 		createBlank,
 		dismissOnboarding,
-		tryDemo
+		tryDemo,
+		assignment,
+		assignmentBusy,
+		importAssignment,
+		hideAssignment
 	};
 }
 

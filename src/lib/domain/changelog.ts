@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.23.8',
+		highlights: {
+			ru: [
+				'Тренер может назначить вам тренировку — план появится на Главной',
+				'Одно нажатие «Добавить план» — и он уже ваш, закреплён следующим',
+				'План всегда один актуальный: новый заменяет прошлый',
+				'На Главной и в профиле видно, какой план назначил тренер'
+			],
+			en: [
+				'Your coach can assign you a workout — it shows up on Home',
+				'One tap on "Add plan" makes it yours, pinned as the next one',
+				'Only one active assignment: a new plan replaces the old one',
+				'Home and Profile show which plan your coach assigned'
+			]
+		}
+	},
+	{
 		version: '0.23.7',
 		highlights: {
 			ru: [

@@ -6,6 +6,7 @@ import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { Panel } from '../../src/components/Panel';
 import { HomeGuestPanel } from '../../src/home/HomeGuestPanel';
 import { HomeHeader } from '../../src/home/HomeHeader';
+import { HomeAssignmentCard } from '../../src/home/HomeAssignmentCard';
 import { HomeProgressCards } from '../../src/home/HomeProgressCards';
 import { PlanHeroCard } from '../../src/home/PlanHeroCard';
 import { RecentSessionsCard } from '../../src/home/RecentSessionsCard';
@@ -34,6 +35,15 @@ export default function WorkoutsScreen() {
 		>
 			<View style={styles.wrap}>
 				<HomeHeader avatarUrl={home.avatarUrl} greeting={home.greeting} />
+
+				{home.assignment ? (
+					<HomeAssignmentCard
+						assignment={home.assignment}
+						busy={home.assignmentBusy}
+						onImport={() => void home.importAssignment()}
+						onHide={home.hideAssignment}
+					/>
+				) : null}
 
 				{home.pendingSync > 0 ? (
 					<Panel style={styles.syncBanner}>

@@ -25,6 +25,7 @@ type Props = {
 	onQuickAction: (row: CoachClientRow) => void;
 	onOpenSession: (sessionId: string) => void;
 	onRevoke: (row: CoachClientRow) => void;
+	onAssign: (row: CoachClientRow) => void;
 };
 
 /** Shared-card client list: identical rows, quiet dividers, one quick action. */
@@ -40,7 +41,8 @@ export function ClientsList({
 	onToggle,
 	onQuickAction,
 	onOpenSession,
-	onRevoke
+	onRevoke,
+	onAssign
 }: Props) {
 	const { locale, tt } = useLocale();
 	const colors = useAppColors();
@@ -166,6 +168,17 @@ export function ClientsList({
 											</Pressable>
 										))
 									)}
+									<Pressable
+										accessibilityRole="button"
+										style={({ pressed }) => [
+											styles.assignBtn,
+											pressed && styles.pressed
+										]}
+										onPress={() => onAssign(row)}
+										disabled={busy}
+									>
+										<Text style={styles.assignText}>{tt('coach.assign')}</Text>
+									</Pressable>
 									<Pressable
 										accessibilityRole="button"
 										style={({ pressed }) => [
@@ -305,6 +318,21 @@ function makeStyles(colors: ColorPalette) {
 			borderRadius: radius.control,
 			borderWidth: 1,
 			borderColor: colors.border
+		},
+		assignBtn: {
+			alignSelf: 'stretch',
+			minHeight: touchMin,
+			alignItems: 'center',
+			justifyContent: 'center',
+			paddingHorizontal: space.md,
+			borderRadius: radius.control,
+			backgroundColor: colors.accentDim
+		},
+		assignText: {
+			color: colors.accentText,
+			fontSize: 14,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
 		},
 		revokeText: {
 			color: colors.danger,

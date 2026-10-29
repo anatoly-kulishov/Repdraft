@@ -26,6 +26,7 @@ import {
 	INVITE_CODE_LENGTH,
 	isValidInviteCode,
 	normalizeInviteCode,
+	type CoachAssignment,
 	type CoachMyCoach
 } from '@repdraft/domain/coach';
 import { clampGreetingName } from '@repdraft/domain/greetingName';
@@ -76,6 +77,8 @@ import {
 import { customsRepo } from '../../src/storage/customsRepo';
 import { formatRelativeDay } from '@repdraft/i18n/format';
 import { coachRepo } from '../../src/storage/coachRepo';
+import { AssignedPlanCard } from '../../src/coach/AssignedPlanCard';
+import { importAssignedPlan } from '../../src/coach/importAssignment';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { recordsRepo } from '../../src/storage/recordsRepo';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
@@ -146,6 +149,8 @@ export default function ProfileScreen() {
 	const [testerOn, setTesterOn] = useState(false);
 	const [myCoaches, setMyCoaches] = useState<CoachMyCoach[]>([]);
 	const [coachesLoaded, setCoachesLoaded] = useState(false);
+	const [assignment, setAssignment] = useState<CoachAssignment | null>(null);
+	const [assignmentBusy, setAssignmentBusy] = useState(false);
 	const [coachInviteInput, setCoachInviteInput] = useState('');
 	const [coachInviteBusy, setCoachInviteBusy] = useState(false);
 	const [disconnectTarget, setDisconnectTarget] = useState<CoachMyCoach | null>(null);
@@ -166,11 +171,15 @@ export default function ProfileScreen() {
 			if (!cloud || !session?.user) {
 				setMyCoaches([]);
 				setCoachesLoaded(false);
+				setAssignment(null);
 				return;
 			}
 			void coachRepo.listMyCoaches().then((result) => {
 				if (result.ok) setMyCoaches(result.value);
 				setCoachesLoaded(true);
+			});
+			void coachRepo.myCurrentAssignment().then((result) => {
+				if (result.ok) setAssignment(result.value);
 			});
 		}, [cloud, session?.user?.id])
 	);
@@ -246,6 +255,8 @@ export default function ProfileScreen() {
 				Alert.alert(tt('coach.inviteAccepted'));
 				const refreshed = await coachRepo.listMyCoaches();
 				if (refreshed.ok) setMyCoaches(refreshed.value);
+				const refreshedAssignment = await coachRepo.myCurrentAssignment();
+				if (refreshedAssignment.ok) setAssignment(refreshedAssignment.value);
 				setCoachesLoaded(true);
 			} else {
 				Alert.alert(tt('common.error'), tt(`coach.error.${result.reason}`));
@@ -260,8 +271,42 @@ export default function ProfileScreen() {
 		if (result.ok) {
 			setMyCoaches((prev) => prev.filter((row) => row.linkId !== coach.linkId));
 			Alert.alert(tt('coach.disconnectDone'));
+			const refreshed = await coachRepo.myCurrentAssignment();
+			if (refreshed.ok) setAssignment(refreshed.value);
 		} else {
 			Alert.alert(tt('common.error'), tt(`coach.error.${result.reason}`));
+		}
+	}
+
+	async function importCoachAssignment() {
+		const current = assignment;
+		if (!current || assignmentBusy) return;
+		setAssignmentBusy(true);
+		try {
+			await importAssignedPlan(current);
+			await coachRepo.discardAssignment();
+			setAssignment(null);
+			Alert.alert(tt('coach.assignedAdded'));
+		} catch {
+			Alert.alert(tt('common.error'), tt('coach.error.unknown'));
+		} finally {
+			setAssignmentBusy(false);
+		}
+	}
+
+	async function dismissCoachAssignment() {
+		if (!assignment || assignmentBusy) return;
+		setAssignmentBusy(true);
+		try {
+			const result = await coachRepo.discardAssignment();
+			if (result.ok) {
+				setAssignment(null);
+				Alert.alert(tt('coach.assignedDismissed'));
+			} else {
+				Alert.alert(tt('common.error'), tt(`coach.error.${result.reason}`));
+			}
+		} finally {
+			setAssignmentBusy(false);
 		}
 	}
 
@@ -864,6 +909,14 @@ export default function ProfileScreen() {
 				<Panel>
 					<Text style={styles.groupTitle}>{tt('profile.clients')}</Text>
 					<Text style={styles.hint}>{tt('profile.clientsHint')}</Text>
+					{assignment ? (
+						<AssignedPlanCard
+							assignment={assignment}
+							busy={assignmentBusy}
+							onImport={() => void importCoachAssignment()}
+							onDismiss={() => void dismissCoachAssignment()}
+						/>
+					) : null}
 					<Text style={[styles.groupTitle, { marginTop: space.md, fontSize: 15 }]}>
 						{tt('profile.myCoach')}
 					</Text>
