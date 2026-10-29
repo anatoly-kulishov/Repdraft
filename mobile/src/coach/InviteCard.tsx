@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Check, Copy, MoreVertical, Share2 } from 'lucide-react-native';
+import { Check, Copy, MoreVertical } from 'lucide-react-native';
 import { formatInviteCode } from '@repdraft/domain/coach';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
-import { fontFamily, radius, space, touchMin, type ColorPalette } from '../theme';
+import { fontFamily, radius, space, type ColorPalette } from '../theme';
 
 type Props = {
 	code: string | null;
@@ -16,7 +16,10 @@ type Props = {
 	onMenu: () => void;
 };
 
-/** Compact invite card: code plate with copy, share, and a ⋮ menu. */
+/**
+ * Invite card: tap the code plate to copy, one primary "share" CTA,
+ * and a ⋮ menu that only keeps the rare destructive "new code" action.
+ */
 export function InviteCard({ code, busy, onCreate, onCopy, onShare, onMenu }: Props) {
 	const { tt } = useLocale();
 	const colors = useAppColors();
@@ -58,35 +61,23 @@ export function InviteCard({ code, busy, onCreate, onCopy, onShare, onMenu }: Pr
 				</View>
 				{code ? (
 					<>
-						<View style={styles.codeRow}>
-							<View style={styles.codePlate}>
-								<Text style={styles.codeText} numberOfLines={1}>
-									{formatInviteCode(code)}
-								</Text>
-								<Pressable
-									accessibilityRole="button"
-									accessibilityLabel={tt('coach.inviteCopy')}
-									hitSlop={4}
-									style={({ pressed }) => [styles.copyBtn, pressed && styles.pressed]}
-									onPress={handleCopy}
-								>
-									{copied ? (
-										<Check color={colors.success} size={20} strokeWidth={2.5} />
-									) : (
-										<Copy color={colors.accentText} size={20} strokeWidth={2} />
-									)}
-								</Pressable>
-							</View>
-							<Pressable
-								accessibilityRole="button"
-								accessibilityLabel={tt('coach.inviteShare')}
-								style={({ pressed }) => [styles.shareBtn, pressed && styles.pressed]}
-								onPress={onShare}
-							>
-								<Share2 color={colors.accentText} size={20} strokeWidth={2} />
-							</Pressable>
-						</View>
+						<Pressable
+							accessibilityRole="button"
+							accessibilityLabel={tt('coach.inviteCopy')}
+							style={({ pressed }) => [styles.codePlate, pressed && styles.pressed]}
+							onPress={handleCopy}
+						>
+							<Text style={styles.codeText} numberOfLines={1}>
+								{formatInviteCode(code)}
+							</Text>
+							{copied ? (
+								<Check color={colors.success} size={20} strokeWidth={2.5} />
+							) : (
+								<Copy color={colors.accentText} size={20} strokeWidth={2} />
+							)}
+						</Pressable>
 						<Text style={styles.help}>{tt('coach.inviteHelp')}</Text>
+						<PrimaryButton label={tt('coach.inviteShare')} onPress={onShare} />
 					</>
 				) : (
 					<PrimaryButton
@@ -140,15 +131,13 @@ function makeStyles(colors: ColorPalette) {
 			alignItems: 'center',
 			justifyContent: 'center'
 		},
-		codeRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
 		codePlate: {
-			flex: 1,
 			minHeight: 56,
 			flexDirection: 'row',
 			alignItems: 'center',
 			gap: space.sm,
 			paddingLeft: space.lg,
-			paddingRight: space.sm,
+			paddingRight: space.md,
 			borderRadius: radius.control,
 			backgroundColor: colors.bg
 		},
@@ -161,20 +150,6 @@ function makeStyles(colors: ColorPalette) {
 			letterSpacing: 2,
 			fontVariant: ['tabular-nums'],
 			fontFamily: fontFamily.bold
-		},
-		copyBtn: {
-			width: touchMin,
-			height: touchMin,
-			alignItems: 'center',
-			justifyContent: 'center'
-		},
-		shareBtn: {
-			width: 52,
-			height: 52,
-			borderRadius: radius.control,
-			alignItems: 'center',
-			justifyContent: 'center',
-			backgroundColor: colors.panelRaised
 		},
 		pressed: { opacity: 0.85 }
 	});

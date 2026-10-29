@@ -185,12 +185,6 @@ export function useCoachClients() {
 		}
 	}
 
-	/** Empty state CTA: create the code if needed, then open the share sheet. */
-	async function inviteFirstClient() {
-		const code = inviteCode ?? (await createInvite());
-		if (code) await shareInvite(code);
-	}
-
 	async function remind(name?: string) {
 		try {
 			await Share.share({ message: tt('coach.remindMessage', { name: name ?? '' }) });
@@ -276,7 +270,6 @@ export function useCoachClients() {
 		reload,
 		createInvite,
 		refreshInvite,
-		inviteFirstClient,
 		copyInvite,
 		shareInvite,
 		remind,

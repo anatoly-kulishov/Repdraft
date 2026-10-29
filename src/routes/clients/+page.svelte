@@ -40,7 +40,6 @@
 		ChatCircle,
 		Copy,
 		Gear,
-		ShareNetwork,
 		UsersThree
 	} from 'phosphor-svelte';
 
@@ -522,32 +521,25 @@
 			</div>
 
 			{#if inviteCode}
-				<div class="coach-code-row">
-					<div class="coach-code-plate">
-						<span class="coach-code">{formatInviteCode(inviteCode)}</span>
-						<button
-							type="button"
-							class="coach-copy"
-							aria-label={translate(lang, 'coach.inviteCopy')}
-							onclick={() => void copyInvite()}
-						>
-							{#if inviteCopied}
-								<Check size={20} />
-							{:else}
-								<Copy size={20} />
-							{/if}
-						</button>
-					</div>
-					<button
-						type="button"
-						class="coach-share"
-						aria-label={translate(lang, 'coach.inviteShare')}
-						onclick={() => void shareInvite()}
-					>
-						<ShareNetwork size={20} />
-					</button>
-				</div>
+				<button
+					type="button"
+					class="coach-code-plate"
+					aria-label={translate(lang, 'coach.inviteCopy')}
+					onclick={() => void copyInvite()}
+				>
+					<span class="coach-code">{formatInviteCode(inviteCode)}</span>
+					<span class="coach-copy" aria-hidden="true">
+						{#if inviteCopied}
+							<Check size={20} />
+						{:else}
+							<Copy size={20} />
+						{/if}
+					</span>
+				</button>
 				<p class="coach-hint">{translate(lang, 'coach.inviteHelp')}</p>
+				<AppButton block onclick={() => void shareInvite()}>
+					{translate(lang, 'coach.inviteShare')}
+				</AppButton>
 			{:else}
 				<AppButton block disabled={cloudBusy} onclick={() => void createInvite()}>
 					{translate(lang, 'coach.inviteCreateShort')}
@@ -556,9 +548,6 @@
 
 			{#if inviteMenuOpen}
 				<div class="coach-menu">
-					<button type="button" class="coach-menu-item" onclick={() => void copyInvite()}>
-						{translate(lang, 'coach.inviteCopy')}
-					</button>
 					<button
 						type="button"
 						class="coach-menu-item coach-menu-item--danger"
@@ -593,15 +582,6 @@
 			<span class="coach-empty__icon"><UsersThree size={28} /></span>
 			<p class="coach-empty__title">{translate(lang, 'coach.emptyTitle')}</p>
 			<p class="coach-hint coach-empty__body">{translate(lang, 'coach.emptyBody')}</p>
-			{#if inviteCode}
-				<AppButton variant="secondary" onclick={() => void shareInvite()}>
-					{translate(lang, 'coach.inviteShare')}
-				</AppButton>
-			{:else}
-				<AppButton disabled={cloudBusy} onclick={() => void createInvite()}>
-					{translate(lang, 'coach.inviteCreateShort')}
-				</AppButton>
-			{/if}
 			{#if !cloud}
 				<AppButton variant="secondary" onclick={() => coachPreview.addDemoClient()}>
 					{translate(lang, 'coach.addDemo')}
