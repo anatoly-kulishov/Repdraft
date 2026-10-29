@@ -24,6 +24,7 @@ function compileDomain() {
 			'src/lib/domain/importCsv.ts',
 			'src/lib/domain/coach.ts',
 			'src/lib/domain/coachHints.ts',
+			'src/lib/domain/articles.ts',
 			'--ignoreConfig',
 			'--ignoreDeprecations',
 			'6.0',
@@ -56,6 +57,7 @@ function run() {
 	const domain = require(join(outDir, 'domain', 'importCsv.js'));
 	const coach = require(join(outDir, 'domain', 'coach.js'));
 	const coachHints = require(join(outDir, 'domain', 'coachHints.js'));
+	const articlesDomain = require(join(outDir, 'domain', 'articles.js'));
 	const catalog = JSON.parse(
 		readFileSync(join(root, 'static', 'data', 'exercises.index.json'), 'utf8')
 	);
@@ -66,6 +68,8 @@ function run() {
 	console.log('✓ coach self-check');
 	coachHints.runCoachHintsSelfCheck();
 	console.log('✓ coach hints self-check');
+	articlesDomain.runArticlesSelfCheck();
+	console.log('✓ articles self-check');
 
 	const failures = [];
 	for (const testCase of cases) {

@@ -79,6 +79,7 @@ import {
 } from '@repdraft/domain/importCsv';
 import { customsRepo } from '../../src/storage/customsRepo';
 import { formatRelativeDay } from '@repdraft/i18n/format';
+import { translatePlural } from '@repdraft/i18n/messages';
 import { coachRepo } from '../../src/storage/coachRepo';
 import { AssignedPlanCard } from '../../src/coach/AssignedPlanCard';
 import { importAssignedPlan } from '../../src/coach/importAssignment';
@@ -506,8 +507,8 @@ export default function ProfileScreen() {
 
 		const message = isCsv
 			? `${tt('settings.importCsvPreview', {
-					sessions: parsed.report.sessions,
-					sets: parsed.report.sets,
+					sessions: translatePlural(locale, 'settings.importCsvSessions', parsed.report.sessions),
+					sets: translatePlural(locale, 'settings.importCsvSets', parsed.report.sets),
 					from: parsed.report.dateRange?.from.slice(0, 10) ?? '-',
 					to: parsed.report.dateRange?.to.slice(0, 10) ?? '-',
 					matched: parsed.report.matchedExercises,
