@@ -37,7 +37,9 @@ html.e2e-stable *::after {
 		scroll-behavior: auto !important;
 	}
 
-	/* Skeletons: static solid, no shimmer gradient */
+	/* Skeletons: static, no shimmer gradient. Containers (e.g. .page-skeleton,
+	   .coach-skeleton, .catalog-*-skeleton) must stay transparent so the
+	   fallback paints only leaf bones, not a solid block. */
 	.skeleton-shimmer,
 	[class*='skel-bone'],
 	[class*='skeleton'],
@@ -47,6 +49,15 @@ html.e2e-stable *::after {
 	.account-avatar.is-skeleton {
 		animation: none !important;
 		background-image: none !important;
+	}
+
+	/* Leaf bones only: keep a solid fill under the (removed) gradient. */
+	.skeleton-shimmer,
+	[class*='skel-bone'],
+	.feed-skel,
+	.shell-home-greeting__line--skeleton,
+	.shell-theme-toggle__skeleton,
+	.account-avatar.is-skeleton {
 		background-color: var(--skeleton-base, var(--color-surface-muted));
 	}
 

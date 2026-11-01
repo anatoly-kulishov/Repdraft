@@ -1,14 +1,46 @@
 /* ——— Surfaces ——— */
 
 .panel {
-	border: 1px solid var(--color-border);
+	border: 1px solid var(--glass-panel-border);
 	border-radius: var(--radius-panel);
-	background-color: var(--color-surface);
-	background-image: none;
+	background-color: var(--glass-panel-bg);
+	background-image: var(--glass-sheen);
+	/* Liquid glass: translucent plate over the ambient page mesh. */
+	-webkit-backdrop-filter: blur(var(--glass-panel-blur)) saturate(var(--glass-saturate));
+	backdrop-filter: blur(var(--glass-panel-blur)) saturate(var(--glass-saturate));
 	min-width: 0;
 	max-width: 100%;
 	overflow: hidden;
-	box-shadow: var(--shadow-panel);
+	box-shadow: var(--glass-panel-shadow), var(--glass-inset);
+}
+
+/* No blur support → solid plate so text never sits on a see-through card. */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+	.panel {
+		background-color: var(--color-surface);
+		background-image: none;
+	}
+}
+
+/* Accessibility: users asking for less transparency get a solid plate, not glass. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+	.panel {
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+		background-color: var(--color-surface);
+		background-image: none;
+	}
+
+	/* Skeleton placeholders mirror the same solid fallback so reduced-transparency
+	   users get the opaque loading plate, not a see-through one. */
+	.page-skeleton-card,
+	.workouts-skeleton-card,
+	.catalog-exercise-skeleton__row,
+	.catalog-category-skeleton__card {
+		background-color: var(--color-surface);
+		background-image: none;
+		box-shadow: var(--skeleton-panel-shadow);
+	}
 }
 
 /* AppPanel = shadcn Card + .panel: align clip radius; kill Card ring (lime --ring). */
@@ -18,7 +50,7 @@
 	padding: 1rem !important;
 	border-radius: var(--radius-panel) !important;
 	overflow: hidden;
-	box-shadow: var(--shadow-panel) !important;
+	box-shadow: var(--glass-panel-shadow), var(--glass-inset) !important;
 	--tw-ring-shadow: 0 0 #0000;
 	--tw-ring-offset-shadow: 0 0 #0000;
 	--tw-inset-ring-shadow: 0 0 #0000;

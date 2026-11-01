@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.24.0',
+		highlights: {
+			ru: [
+				'Новый вид: панели и шапка стали полупрозрачными, интерфейс глубже и спокойнее',
+				'Экраны загрузки приведены к новому дизайну — ничего не прыгает, когда данные появляются',
+				'Каталог: карточки групп теперь квадратные, без резких белых плит в тёмной теме',
+				'Главная: блок тренера и баланс за 30 дней в новом оформлении'
+			],
+			en: [
+				'New look: panels and headers are translucent, for a deeper, calmer interface',
+				'Loading screens updated to match the new design — no jump when data loads',
+				'Catalog: group tiles are now square, with no harsh white plates in dark mode',
+				'Home: coach block and 30-day balance restyled'
+			]
+		}
+	},
+	{
 		version: '0.23.9',
 		highlights: {
 			ru: [

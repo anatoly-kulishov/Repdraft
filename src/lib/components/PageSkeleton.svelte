@@ -16,6 +16,7 @@
 		setRows = 3,
 		hideHeader = false,
 		groupBanner = 'none',
+		showBalance = false,
 		variant = 'default'
 	}: {
 		rows?: number;
@@ -26,6 +27,7 @@
 		setRows?: number;
 		hideHeader?: boolean;
 		groupBanner?: 'none' | 'hint' | 'coachmark';
+		showBalance?: boolean;
 		variant?:
 			| 'default'
 			| 'history'
@@ -34,7 +36,8 @@
 			| 'builder-empty'
 			| 'auth'
 			| 'auth-guest'
-			| 'summary';
+			| 'summary'
+			| 'coach';
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
@@ -258,7 +261,10 @@
 					<AppSkeleton class="page-skeleton-auth-group-title" />
 					<div class="page-skeleton-auth-pref-row">
 						<AppSkeleton class="page-skeleton-auth-pref-icon" />
-						<AppSkeleton class="page-skeleton-auth-pref-label" />
+						<span class="page-skeleton-auth-pref-labels">
+							<AppSkeleton class="page-skeleton-auth-pref-label" />
+							<AppSkeleton class="page-skeleton-auth-pref-label--hint" />
+						</span>
 					</div>
 					<div class="page-skeleton-auth-pref-row">
 						<AppSkeleton class="page-skeleton-auth-pref-icon" />
@@ -360,6 +366,36 @@
 		<AppSkeleton class="page-skeleton-row page-skeleton-row--action" />
 		<AppSkeleton class="page-skeleton-row page-skeleton-row--secondary" />
 		<AppSkeleton class="page-skeleton-row page-skeleton-row--summary-sticky" aria-hidden="true" />
+	{:else if variant === 'coach'}
+		{#if showBalance}
+			<AppPanel class="coach-balance text-left page-skeleton-coach-balance" aria-hidden="true">
+				<div class="page-skeleton-coach-balance__head">
+					<AppSkeleton class="page-skeleton-title page-skeleton-title--lg" />
+					<AppSkeleton class="page-skeleton-link" />
+				</div>
+				<AppSkeleton class="page-skeleton-line page-skeleton-line--coach-balance-hint" />
+				<div class="page-skeleton-coach-balance__list">
+					{#each [0, 1, 2] as i (i)}
+						<div class="page-skeleton-coach-balance__row">
+							<AppSkeleton class="page-skeleton-coach-balance__part" />
+							<AppSkeleton class="page-skeleton-coach-balance__track" />
+							<AppSkeleton class="page-skeleton-coach-balance__pct" />
+						</div>
+					{/each}
+				</div>
+			</AppPanel>
+		{/if}
+		{#each [0, 1] as i (i)}
+			<AppPanel class="coach-card text-left page-skeleton-coach-card" aria-hidden="true">
+				<AppSkeleton class="page-skeleton-coach-card__title" />
+				<AppSkeleton class="page-skeleton-coach-card__meta" />
+				<AppSkeleton class="page-skeleton-coach-card__why" />
+				<div class="page-skeleton-coach-card__actions">
+					<AppSkeleton class="page-skeleton-coach-card__btn page-skeleton-coach-card__btn--primary" />
+					<AppSkeleton class="page-skeleton-coach-card__btn" />
+				</div>
+			</AppPanel>
+		{/each}
 	{:else}
 		{#if showField}
 			<AppSkeleton class="page-skeleton-field" aria-hidden="true" />

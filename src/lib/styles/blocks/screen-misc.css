@@ -14,6 +14,24 @@
 	background: var(--chrome-header-bg);
 }
 
+/* Sub-route chrome (sticky and fixed): only a slight translucency, plus frost,
+   so rows scrolling underneath never read as ghost text. Embedded headers are
+   nested in their own sticky chrome and must stay transparent. */
+.shell-main--subroute .screen-header:not(.screen-header--embedded) {
+	background: var(--chrome-header-strong, var(--chrome-header-bg));
+	-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+	backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+/* Accessibility: no frost, fully opaque chrome. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+	.shell-main--subroute .screen-header:not(.screen-header--embedded) {
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+		background: var(--color-surface);
+	}
+}
+
 /* Nested in CatalogListStickyChrome: parent owns sticky / safe-area / shadow. */
 .screen-header--embedded,
 .shell-main--subroute .screen-header.screen-header--embedded,
@@ -1827,7 +1845,7 @@ button.live-local-save-cue {
 	display: flex;
 	flex-direction: column;
 	gap: 0;
-	padding: 1.05rem 1.1rem 1.15rem;
+	padding: 1rem 1.1rem;
 	margin-bottom: 1.15rem;
 	overflow: hidden;
 	container-type: inline-size;
@@ -2037,9 +2055,22 @@ button.live-local-save-cue {
 	display: flex;
 	flex-direction: column;
 	gap: 0.75rem;
+	max-height: min(46vh, 20rem);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	padding-right: 0.25rem;
+	scrollbar-width: none;
 }
 
-/* Connected coach: icon against the title + hint (+ disconnect) block. */
+.coach-my-list::-webkit-scrollbar {
+	display: none;
+}
+
+#coach-my-title {
+	margin-bottom: 0.6rem;
+	flex-shrink: 0;
+}
+
 .coach-connect-status {
 	display: flex;
 	align-items: flex-start;
@@ -2047,7 +2078,14 @@ button.live-local-save-cue {
 }
 
 .coach-connect-status__text {
+	flex: 1 1 auto;
 	min-width: 0;
+}
+
+/* Compact ghost icon action floated to the right of the text block. */
+.coach-connect-status__disconnect {
+	flex-shrink: 0;
+	align-self: flex-start;
 }
 
 .coach-connect-status__title {
@@ -2059,7 +2097,7 @@ button.live-local-save-cue {
 }
 
 .coach-connect-status__hint {
-	margin: 0.25rem 0 0;
+	margin: 0.15rem 0 0;
 	font-size: 0.75rem;
 	line-height: 1.45;
 	color: var(--color-muted);
@@ -2132,17 +2170,11 @@ button.live-local-save-cue {
 	grid-template-areas: 'icon label control';
 	align-items: center;
 	column-gap: 1rem;
-	row-gap: 0.28rem;
+	row-gap: 0.15rem;
 	width: 100%;
 	min-width: 0;
 	min-height: 3.75rem;
 	padding: 0.7rem 0;
-}
-
-.profile-settings-row:has(.profile-settings-row__hint) {
-	grid-template-areas:
-		'icon label control'
-		'. hint hint';
 }
 
 .profile-settings-row--cycle {
@@ -2228,21 +2260,23 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 .profile-settings-row__label {
 	grid-area: label;
 	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
 	font-size: 0.9375rem;
 	font-weight: 600;
 	line-height: 1.25;
 	color: var(--color-ink);
 	text-align: left;
+	overflow-wrap: anywhere;
 }
 
 .profile-settings-row__hint {
-	grid-area: hint;
-	min-width: 0;
-	font-size: 0.75rem;
-	line-height: 1.45;
+	font-weight: 450;
 	color: var(--color-muted);
-	text-align: left;
-	text-wrap: pretty;
+	line-height: 1.4;
+	margin-top: 0.1rem;
+	font-size: 0.75rem;
 }
 
 .profile-settings-row__control {
@@ -3940,14 +3974,17 @@ button.clip-composer__pick:hover:not(:disabled),
 }
 
 [data-slot='sheet-content'][data-side='bottom'].bottom-sheet .bottom-sheet__card {
-	background-color: var(--color-surface);
-	background-image: var(--surface-sheen);
+	background-color: var(--glass-bg-strong);
+	background-image: var(--glass-sheen);
 	position: relative;
 	z-index: 1;
 	pointer-events: auto;
 	padding: 1.1rem 1.05rem 1.15rem;
-	border: none;
+	border: 1px solid var(--glass-border);
 	border-radius: var(--radius-panel);
+	-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+	backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+	box-shadow: var(--glass-shadow), var(--glass-inset);
 	overflow: hidden;
 	min-width: 0;
 	overscroll-behavior: contain;
@@ -3958,6 +3995,27 @@ button.clip-composer__pick:hover:not(:disabled),
 	align-items: center;
 	padding-top: max(1rem, var(--safe-top));
 	padding-bottom: calc(var(--mobile-chrome-bottom, 0px) + 1rem);
+}
+
+/* Solid sheet plate for reduced transparency / higher contrast. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+	[data-slot='sheet-content'][data-side='bottom'].bottom-sheet .bottom-sheet__card {
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+		background-color: var(--color-surface);
+		background-image: none;
+	}
+}
+
+/* Apple: never stack a light translucent surface on another — inside a sheet
+   the nested panels go solid so text keeps its contrast. */
+.bottom-sheet__card .panel {
+	background-color: var(--color-surface);
+	background-image: none;
+	-webkit-backdrop-filter: none;
+	backdrop-filter: none;
+	border-color: var(--color-border);
+	box-shadow: none;
 }
 
 .bottom-sheet__title,
