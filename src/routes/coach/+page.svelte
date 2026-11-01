@@ -188,7 +188,7 @@
 		<p class="coach-lead">{reviewedLine}</p>
 	{/if}
 	{#if !indexReady}
-		<PageSkeleton rows={2} />
+		<PageSkeleton variant="coach" showBalance={overview.workouts30d > 0} />
 	{:else}
 		{#if balanceRows.length > 0}
 			<AppPanel class="coach-balance text-left">

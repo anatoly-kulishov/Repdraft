@@ -259,7 +259,6 @@
 		gap: 8px;
 	}
 	.coach-empty {
-		margin-top: 24px;
 		padding: 24px 16px;
 		display: flex;
 		flex-direction: column;
@@ -287,20 +286,18 @@
 		max-width: 34ch;
 	}
 
-.coach-skeleton {
-	margin-top: 24px;
-	padding: 16px;
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-	border-radius: var(--radius-panel, 16px);
-	background: var(--color-surface);
-	border: 1px solid var(--color-border);
+.coach-block--skeleton {
+	pointer-events: none;
 }
-.coach-skeleton__row {
-	display: flex;
-	align-items: center;
-	gap: 12px;
+.coach-skeleton__head-title {
+	height: 1.125rem;
+	width: 9rem;
+	border-radius: 6px;
+}
+.coach-skeleton__head-week {
+	height: 0.8125rem;
+	width: 5.5rem;
+	border-radius: 6px;
 }
 .coach-skeleton__avatar {
 	width: 40px;
@@ -308,21 +305,19 @@
 	border-radius: 50%;
 	flex-shrink: 0;
 }
-.coach-skeleton__copy {
-	flex: 1;
-	min-width: 0;
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
 .coach-skeleton__name {
-	height: 16px;
+	height: 1rem;
 	width: 45%;
 	border-radius: 6px;
 }
-.coach-skeleton__meta {
-	height: 12px;
-	width: 65%;
+.coach-skeleton__status {
+	height: 0.8125rem;
+	width: 55%;
+	border-radius: 6px;
+}
+.coach-skeleton__last {
+	height: 0.75rem;
+	width: 70%;
 	border-radius: 6px;
 }
 .coach-skeleton__chip {
@@ -330,6 +325,92 @@
 	height: 44px;
 	border-radius: 12px;
 	flex-shrink: 0;
+}
+
+/* /coach boot skeleton — mirrors .coach-balance + .coach-card (glass panels). */
+.page-skeleton-coach-balance {
+	pointer-events: none;
+}
+.page-skeleton-coach-balance__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-bottom: 0.5rem;
+}
+.page-skeleton-link {
+	width: 5.5rem;
+	height: 0.875rem;
+	border-radius: 999px;
+}
+.page-skeleton-line--coach-balance-hint {
+	width: min(70%, 22rem);
+	height: 0.8125rem;
+	margin-bottom: 0.85rem;
+	border-radius: 999px;
+}
+.page-skeleton-coach-balance__list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
+}
+.page-skeleton-coach-balance__row {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+.page-skeleton-coach-balance__part {
+	width: 4.5rem;
+	height: 0.875rem;
+	border-radius: 0.35rem;
+	flex-shrink: 0;
+}
+.page-skeleton-coach-balance__track {
+	flex: 1 1 auto;
+	height: 0.5rem;
+	border-radius: 999px;
+	min-width: 0;
+}
+.page-skeleton-coach-balance__pct {
+	width: 2.5rem;
+	height: 0.875rem;
+	border-radius: 0.35rem;
+	flex-shrink: 0;
+}
+.page-skeleton-coach-card {
+	pointer-events: none;
+}
+.page-skeleton-coach-card__title {
+	width: min(16rem, 55%);
+	height: 1.125rem;
+	border-radius: 0.4rem;
+	margin-bottom: 0.55rem;
+}
+.page-skeleton-coach-card__meta {
+	width: min(12rem, 45%);
+	height: 0.8125rem;
+	border-radius: 0.35rem;
+	margin-bottom: 0.5rem;
+}
+.page-skeleton-coach-card__why {
+	width: min(26rem, 90%);
+	height: 0.875rem;
+	border-radius: 0.35rem;
+}
+.page-skeleton-coach-card__actions {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-top: 0.85rem;
+}
+.page-skeleton-coach-card__btn {
+	width: 5rem;
+	height: 2.75rem;
+	border-radius: var(--radius-control);
+	flex-shrink: 0;
+}
+.page-skeleton-coach-card__btn--primary {
+	width: 7.5rem;
 }
 
 .coach-search {
@@ -395,7 +476,7 @@
 		align-items: start;
 		gap: 28px;
 	}
-	.coach-column > .coach-skeleton,
+	.coach-column > .coach-block--skeleton,
 	.coach-column > .coach-empty {
 		margin-top: 0;
 	}

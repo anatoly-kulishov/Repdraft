@@ -249,8 +249,8 @@
 
 .onboarding-coachmark__text {
 	margin: 0;
-	font-size: 0.875rem;
-	line-height: 1.35;
+	font-size: 0.8125rem;
+	line-height: 1.4;
 	color: var(--color-ink);
 }
 
@@ -300,11 +300,6 @@
 .draft-dock-wrap__hint {
 	width: 100%;
 	margin-bottom: 0;
-}
-
-.draft-dock-wrap__hint .onboarding-coachmark__text {
-	font-size: 0.8125rem;
-	line-height: 1.4;
 }
 
 body:has(.draft-dock-wrap__hint) {

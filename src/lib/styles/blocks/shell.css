@@ -9,8 +9,11 @@
 	background-color: var(--color-bg);
 	background-image: var(--app-bg-image);
 	background-repeat: no-repeat;
+	/* Viewport-anchored ambient: glass surfaces keep depth while scrolling.
+	   Old iOS ignores `fixed`; the 100dvh size keeps the current look then. */
+	background-attachment: fixed;
 	background-position: top center;
-	background-size: 100% min(100dvh, 56rem);
+	background-size: 100vw 100dvh;
 }
 
 /*
@@ -59,13 +62,32 @@ html[data-boot-pending] .draft-dock-wrap {
 .shell-header-mobile {
 	display: block;
 	background: var(--chrome-header-bg);
-	/* Keep page titles from painting through while sticky/fixed. */
-	isolation: isolate;
+	-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+	backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+	/* Soft hairline instead of a hard divider where content scrolls under. */
+	border-bottom-color: color-mix(in srgb, var(--color-border) 75%, transparent);
 }
 
 .shell-header-mobile--home {
 	border-bottom: none;
 	background: var(--color-bg);
+}
+
+/* Accessibility: no frost, opaque chrome. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+	.shell-header-mobile,
+	.shell-sidebar {
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+
+	.shell-header-mobile {
+		background: var(--color-surface);
+	}
+
+	.shell-sidebar {
+		background: var(--color-surface);
+	}
 }
 
 /*
@@ -419,8 +441,10 @@ html[data-pwa-standalone] .ios-pwa-top--bg {
 	max-height: 100dvh;
 	flex-shrink: 0;
 	overflow: hidden;
-	border-right: 1px solid var(--color-border);
-	background: transparent;
+	border-right: 1px solid var(--glass-panel-border);
+	background: var(--glass-panel-bg);
+	-webkit-backdrop-filter: blur(var(--glass-panel-blur)) saturate(var(--glass-saturate));
+	backdrop-filter: blur(var(--glass-panel-blur)) saturate(var(--glass-saturate));
 	padding: 1rem 0.65rem;
 }
 
@@ -711,8 +735,9 @@ html {
 	background-color: var(--color-bg);
 	background-image: var(--app-bg-image);
 	background-repeat: no-repeat;
+	background-attachment: fixed;
 	background-position: top center;
-	background-size: 100% min(100dvh, 56rem);
+	background-size: 100vw 100dvh;
 	max-width: 100%;
 	overflow-x: hidden;
 	overflow-x: clip;

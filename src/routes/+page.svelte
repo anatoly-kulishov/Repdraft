@@ -29,7 +29,7 @@
 	import { greetingFirstName } from '$lib/domain/greetingName';
 	import { shouldShowChecklist, peekShouldShowChecklist } from '$lib/domain/onboarding';
 	import { formatKgInt } from '$lib/domain/format';
-	import { formatRelativeDayShort } from '$lib/i18n/format';
+	import { formatRelativeDay, formatRelativeDayShort } from '$lib/i18n/format';
 	import { liveContinueHref } from '$lib/live/sessionUi';
 	import { translate, translateError, translatePlural } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
@@ -41,7 +41,7 @@
 	import { auth } from '$lib/stores/auth';
 	import { isSupabaseConfigured } from '$lib/supabase/client';
 	import { coachRepository } from '$lib/storage/coachRepository';
-	import type { CoachAssignment } from '$lib/domain/coach';
+	import type { CoachAssignment, CoachMyCoach } from '$lib/domain/coach';
 	import { greetingName } from '$lib/stores/greetingName';
 	import { homeNextPlan } from '$lib/stores/homeNextPlan';
 	import { live } from '$lib/stores/live';
@@ -68,6 +68,7 @@
 		Plus,
 		DeviceMobile as Smartphone,
 		User as UserRound,
+		UserCheck,
 		UsersThree,
 	} from 'phosphor-svelte';
 
@@ -125,6 +126,8 @@
 	let assignmentBusy = $state(false);
 	let assignmentHidden = $state(false);
 	let assignmentLoadedFor = $state<string | null>(null);
+	let myCoaches = $state<CoachMyCoach[]>([]);
+	let myCoachesLoadedFor = $state<string | null>(null);
 
 	$effect(() => {
 		const userId = $auth.user?.id ?? null;
@@ -134,6 +137,27 @@
 		void coachRepository.myCurrentAssignment().then((result) => {
 			if (result.ok) assignment = result.value;
 		});
+	});
+
+	$effect(() => {
+		const userId = $auth.user?.id ?? null;
+		if (!browser || !userId || !isSupabaseConfigured()) return;
+		if (myCoachesLoadedFor === userId) return;
+		myCoachesLoadedFor = userId;
+		void coachRepository.listMyCoaches().then((result) => {
+			if (result.ok) myCoaches = result.value;
+		});
+	});
+
+	/** Client side of the coach link: one row per connected coach + the coach dashboard row. */
+	let myCoachRows = $derived.by(() => {
+		if (myCoaches.length === 0) return [];
+		return myCoaches.map((coach) => ({
+			title: coach.coachName?.trim() || translate(lang, 'profile.coachFallback'),
+			meta: translate(lang, 'coach.connectedOn', {
+				when: formatRelativeDay(coach.createdAt, lang)
+			})
+		}));
 	});
 
 	async function importAssignment() {
@@ -461,6 +485,7 @@
 			recentRows={bootRecentRows}
 			hasActiveBoot={bootHasActiveSession}
 			showChecklist={bootShowChecklist}
+			showBalance={bootLikelySignedIn && (bootRecentRows > 0 || bootLikelyHasPlans)}
 		/>
 	{:else if isBootLoading}
 		<!-- Delay window: no skeleton, no content (avoids FOLS). -->
@@ -692,11 +717,31 @@
 						</div>
 					{/if}
 
-					<div class="home-section">
-						<div class="home-section-head">
-							<h2 class="section-title">{translate(lang, 'home.coachTitle')}</h2>
+					<div class="home-section home-coach-section">
+						<div class="home-section-head home-coach-section__head">
+							<h2 class="section-title">{translate(lang, 'home.coachSection')}</h2>
 						</div>
-						<ul class="entity-list">
+						<ul class="entity-list home-coach-list">
+							{#each myCoachRows as row (row.title)}
+								<li>
+									<a class="entity-row entity-row--link" href="/auth">
+										<LucideIcon
+											icon={UserCheck}
+											size={ICON_PRIMARY}
+											class="entity-row__icon"
+										/>
+										<span class="entity-row__main">
+											<span class="entity-row__title">{row.title}</span>
+											<span class="entity-row__meta">{row.meta}</span>
+										</span>
+										<LucideIcon
+											icon={ChevronRight}
+											size={ICON_SMALL}
+											class="entity-row__chevron"
+										/>
+									</a>
+								</li>
+							{/each}
 							<li>
 								<a class="entity-row entity-row--link" href="/clients">
 									<LucideIcon icon={UsersThree} size={ICON_PRIMARY} class="entity-row__icon" />

@@ -244,7 +244,9 @@
 	max-width: none;
 	height: auto;
 	min-height: 0;
-	aspect-ratio: 3 / 4;
+	/* Gym Visual hub plates are 180×180 (1:1) — matching the source means
+	   `contain` fills the tile with no letterbox bands on any plate colour. */
+	aspect-ratio: 1 / 1;
 	border-radius: 0;
 	border-right: 0;
 	box-shadow: none;
@@ -298,6 +300,8 @@ html:not([data-theme='light'])
 	.catalog-hub-grid
 	.zone-card__media--grid::after {
 	z-index: 1;
+	/* Dark card plate instead of the bright white Gym Visual well. */
+	background: var(--catalog-hub-zone-media-veil, var(--media-plate-scrim));
 }
 
 .content-page--catalog .catalog-hub-grid .zone-card__caption {
@@ -348,13 +352,13 @@ html:not([data-theme='light'])
 	min-width: 0;
 	overflow: hidden;
 	border-radius: 1rem;
-	border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+	border: 1px solid var(--catalog-hub-zone-card-border);
 	background: var(--catalog-category-skeleton-card-bg);
 	box-shadow: var(--catalog-category-skeleton-card-shadow);
 }
 
 .catalog-category-skeleton__media {
-	aspect-ratio: 3 / 4;
+	aspect-ratio: 1 / 1;
 	width: 100%;
 	border-radius: 0;
 	background: var(--catalog-category-skeleton-media-bg);
@@ -490,10 +494,11 @@ html:not([data-theme='light'])
 	gap: 0.85rem;
 	min-height: calc(4.75rem + 1.5rem);
 	padding: 0.75rem;
-	border: 1px solid var(--color-border);
+	border: 1px solid var(--skeleton-panel-border);
 	border-radius: 1.5rem;
-	background: var(--color-surface);
-	box-shadow: none;
+	background-color: var(--skeleton-panel-bg);
+	background-image: var(--skeleton-panel-sheen);
+	box-shadow: var(--skeleton-panel-shadow);
 }
 
 .catalog-exercise-skeleton__thumb {
@@ -542,9 +547,9 @@ html:not([data-theme='light'])
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
-	border: 1px solid var(--color-border);
+	border: 1px solid var(--catalog-grid-exercise-card-border);
 	border-radius: 1rem;
-	background: var(--color-surface);
+	background: var(--catalog-grid-exercise-card-bg);
 }
 
 .catalog-exercise-skeleton__media {
@@ -1386,10 +1391,11 @@ html[data-nav-back] .zone-card__media-skel {
 }
 
 .page-skeleton-card {
-	border: 1px solid var(--color-border);
+	border: 1px solid var(--skeleton-panel-border);
 	border-radius: var(--radius-panel);
-	background: var(--color-surface);
-	box-shadow: var(--shadow-panel);
+	background-color: var(--skeleton-panel-bg);
+	background-image: var(--skeleton-panel-sheen);
+	box-shadow: var(--skeleton-panel-shadow);
 	overflow: hidden;
 }
 
@@ -1713,6 +1719,21 @@ html[data-nav-back] .zone-card__media-skel {
 .page-skeleton-auth-pref-label {
 	width: min(8.5rem, 70%);
 	height: 0.95rem;
+	border-radius: 999px;
+}
+
+/* ProfileSettingsRow hint moved inside the label column (column flex) — mirror
+   the stacked title+hint so the skeleton matches the new row layout. */
+.page-skeleton-auth-pref-labels {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 0.1rem;
+	min-width: 0;
+}
+.page-skeleton-auth-pref-label--hint {
+	width: min(11rem, 80%);
+	height: 0.75rem;
 	border-radius: 999px;
 }
 
@@ -2788,10 +2809,13 @@ body:has(.sticky-actions) .draft-dock {
 	max-width: min(24rem, calc(100% - 1.25rem));
 	margin-inline: auto;
 	padding: var(--tabbar-inset);
-	border: 1px solid var(--color-border);
+	border: 1px solid var(--glass-border);
 	border-radius: var(--radius-button);
-	background: var(--color-surface);
-	box-shadow: var(--shadow-float);
+	background-color: var(--glass-bg);
+	background-image: var(--glass-sheen);
+	-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+	backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+	box-shadow: var(--glass-shadow), var(--glass-inset);
 	overflow: hidden;
 }
 
@@ -2862,25 +2886,30 @@ body:has(.sticky-actions) .draft-dock {
 	background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
 }
 
-/* Solid notebook chrome — frost re-blurs every scroll frame on iOS. */
-@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+/* Fallback only: browsers without backdrop-filter get the solid plate. */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
 	.shell-nav-tabbar__inner {
-		background: var(--color-surface);
+		background-color: var(--color-surface);
+		background-image: none;
+		box-shadow: var(--shadow-float);
+	}
+}
+
+/* Accessibility: solid pill for reduced transparency / higher contrast. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+	.shell-nav-tabbar__inner {
 		-webkit-backdrop-filter: none;
 		backdrop-filter: none;
+		background-color: var(--color-surface);
+		background-image: none;
 	}
 }
 
 /*
- * Phone/tablet: keep floating chrome opaque while content scrolls.
+ * Phone/tablet: keep floating chrome light. Glass stays on the tab bar
+ * (small fixed pill); heavy scroll-bound frost is still avoided below.
  */
 @media (max-width: 1023px) {
-	.shell-nav-tabbar__inner {
-		background: var(--color-surface);
-		-webkit-backdrop-filter: none;
-		backdrop-filter: none;
-	}
-
 	.sticky-actions--above-tabbar {
 		background: var(--color-bg);
 		-webkit-backdrop-filter: none;

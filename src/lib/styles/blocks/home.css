@@ -529,6 +529,12 @@ a.home-header__row--link:active .home-header__cta {
 	min-width: 0;
 }
 
+/* One depth language in the aside column: row lists lift like the stat panels,
+   instead of flat bordered boxes sitting next to shadowed glass cards. */
+.home-dashboard-aside .entity-list {
+	box-shadow: var(--glass-panel-shadow);
+}
+
 .home-dashboard-row {
 	display: flex;
 	flex-direction: column;
@@ -1516,30 +1522,6 @@ a.home-header__row--link:active .home-header__cta {
 	border-radius: 0.4rem;
 }
 
-.home-skeleton .entity-list.home-skeleton-recent-list {
-	gap: 0;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-lg);
-	background: var(--color-surface);
-	overflow: hidden;
-}
-
-.home-skeleton-recent-list > li {
-	position: relative;
-}
-
-.home-skeleton-recent-list > *:not(:last-child)::after {
-	content: '';
-	position: absolute;
-	right: 1rem;
-	bottom: 0;
-	left: 1rem;
-	height: 1px;
-	background: var(--color-border);
-	pointer-events: none;
-	z-index: 1;
-}
-
 .home-skeleton-recent-row {
 	pointer-events: none;
 	border: none;
@@ -1564,7 +1546,59 @@ a.home-header__row--link:active .home-header__cta {
 	border-radius: 0.35rem;
 }
 
-.home-skeleton-recent-chevron {
+/* 30-day balance panel bones — mirror .home-monthly__stat (glass) heights. */
+.home-skeleton-monthly-stat {
+	min-height: 6.25rem;
+	justify-content: space-between;
+	gap: 0.35rem;
+}
+.home-skeleton-monthly-label {
+	display: block;
+	width: min(5.5rem, 60%);
+	height: 0.75rem;
+	border-radius: 0.35rem;
+}
+.home-skeleton-monthly-value {
+	display: block;
+	width: min(4.5rem, 50%);
+	height: 1.5rem;
+	border-radius: 0.45rem;
+}
+.home-skeleton-monthly-delta {
+	display: block;
+	width: min(3rem, 40%);
+	height: 0.65rem;
+	border-radius: 999px;
+}
+
+/* Coach block bones — reuse .home-coach-section / .home-coach-list layout so the
+   mobile compact-card + desktop titled-section behaviour applies unchanged. */
+.home-skeleton-coach-list {
+	pointer-events: none;
+}
+.home-skeleton-coach-row {
+	pointer-events: none;
+}
+.home-skeleton-coach-icon {
+	width: 1.125rem;
+	height: 1.125rem;
+	border-radius: 0.35rem;
+	flex-shrink: 0;
+}
+.home-skeleton-coach-title {
+	display: block;
+	width: min(9rem, 62%);
+	height: 1rem;
+	border-radius: 0.35rem;
+}
+.home-skeleton-coach-meta {
+	display: block;
+	width: min(12rem, 82%);
+	height: 0.8125rem;
+	margin-top: 0.15rem;
+	border-radius: 0.35rem;
+}
+.home-skeleton-coach-chevron {
 	flex-shrink: 0;
 	width: 1rem;
 	height: 1rem;
@@ -1623,6 +1657,41 @@ a.home-header__row--link:active .home-header__cta {
 
 .home-section-link:hover {
 	color: var(--color-accent-text);
+}
+
+/* Coach rows (client side + dashboard) keep the home column breathable and
+   bounded so a long roster can't push content off the fold. */
+.home-coach-list {
+	max-height: 32vh;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+
+.home-coach-list::-webkit-scrollbar {
+	display: none;
+}
+
+/* Mobile first: the coach block is a single compact nav card (no heading), so
+   it slots right under «Недавние» without eating a full section. Desktop
+   (<1024px excludes) keeps the titled section. */
+@media (max-width: 1023px) {
+	.home-coach-section__head {
+		display: none;
+	}
+
+	.home-coach-section .home-coach-list {
+		max-height: none;
+		border-radius: var(--radius-panel);
+	}
+
+	.home-coach-section .home-coach-list > *:not(:last-child)::after {
+		content: none;
+	}
+
+	.home-coach-section .entity-row {
+		padding: 0.7rem 1rem;
+		min-height: 2.75rem;
+	}
 }
 
 .home-monthly {

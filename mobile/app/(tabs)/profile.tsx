@@ -1440,7 +1440,7 @@ function makeStyles(colors: ColorPalette) {
 	coachBlock: { gap: 4, marginBottom: space.sm },
 	coachRowBody: { flex: 1, minWidth: 0 },
 	coachRowLabel: { color: colors.text, fontSize: 14, fontFamily: fontFamily.semibold },
-	coachRowValue: { marginTop: 2, color: colors.muted, fontSize: 13, fontFamily: fontFamily.regular },
+	coachRowValue: { marginTop: 4, color: colors.muted, fontSize: 131, fontFamily: fontFamily.regular },
 	sheetTitle: {
 		color: colors.text,
 		fontSize: 18,

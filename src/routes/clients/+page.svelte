@@ -564,18 +564,29 @@
 	</div>
 	<div class="coach-column">
 	{#if cloudBusy && !cloudLoaded}
-		<div class="coach-skeleton" aria-busy="true" aria-live="polite">
+		<div class="coach-block coach-block--skeleton" aria-busy="true" aria-live="polite">
 			<span class="sr-only">{translate(lang, 'common.loading')}</span>
-			{#each [0, 1, 2] as row (row)}
-				<div class="coach-skeleton__row" aria-hidden="true">
-					<AppSkeleton class="coach-skeleton__avatar" />
-					<div class="coach-skeleton__copy">
-						<AppSkeleton class="coach-skeleton__name" />
-						<AppSkeleton class="coach-skeleton__meta" />
-					</div>
-					<AppSkeleton class="coach-skeleton__chip" />
-				</div>
-			{/each}
+			<div class="coach-list-head" aria-hidden="true">
+				<AppSkeleton class="coach-skeleton__head-title" />
+				<AppSkeleton class="coach-skeleton__head-week" />
+			</div>
+			<ul class="panel coach-list" aria-hidden="true">
+				{#each [0, 1, 2] as row (row)}
+					<li class="coach-row">
+						<div class="coach-row-main">
+							<span class="coach-row-open">
+								<AppSkeleton class="coach-skeleton__avatar" />
+								<span class="coach-row-copy">
+									<AppSkeleton class="coach-skeleton__name" />
+									<AppSkeleton class="coach-skeleton__status" />
+									<AppSkeleton class="coach-skeleton__last" />
+								</span>
+							</span>
+							<AppSkeleton class="coach-skeleton__chip" />
+						</div>
+					</li>
+				{/each}
+			</ul>
 		</div>
 	{:else if rows.length === 0}
 		<div class="panel coach-empty">

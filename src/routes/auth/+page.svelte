@@ -86,6 +86,7 @@
 		Timer,
 		User as UserRound,
 		UserCheck,
+		UserMinus,
 		UsersThree
 	} from 'phosphor-svelte';
 	import { tick } from 'svelte';
@@ -335,9 +336,27 @@
 			: myCoaches.length === 0
 				? translate(lang, 'profile.coachNone')
 				: myCoaches.length === 1
-					? translate(lang, 'profile.coachConnected')
+					? translate(lang, 'coach.connectedOn', {
+							when: formatRelativeDay(myCoaches[0].createdAt, lang)
+						})
 					: translate(lang, 'profile.coachesConnected', { n: myCoaches.length })
 	);
+	let coachRowLabel = $derived(
+		clientCoachLoaded && myCoaches.length === 1
+			? coachDisplayName(myCoaches[0])
+			: translate(lang, 'profile.myCoach')
+	);
+	let coachRowA11y = $derived.by(() => {
+		const base = translate(lang, 'profile.myCoach');
+		if (!clientCoachLoaded) return base;
+		const status =
+			myCoaches.length === 0
+				? translate(lang, 'profile.coachNone')
+				: myCoaches.length === 1
+					? coachDisplayName(myCoaches[0])
+					: translate(lang, 'profile.coachesConnected', { n: myCoaches.length });
+		return `${base}: ${status}`;
+	});
 	let showTesterTools = $derived(
 		testerToolsVisible({ pref: $testerModeEnabled, dev: import.meta.env.DEV })
 	);
@@ -1161,7 +1180,9 @@
 
 						<ProfileSettingsRow
 							icon={myCoaches.length > 0 ? UserCheck : UserRound}
-							label={translate(lang, 'profile.myCoach')}
+							iconTone={myCoaches.length > 0 ? 'accent' : 'muted'}
+							label={coachRowLabel}
+							ariaLabel={coachRowA11y}
 							hint={coachRowValue || undefined}
 							onclick={() => (coachSheetOpen = true)}
 						/>
@@ -1635,18 +1656,20 @@
 							<p class="coach-connect-status__hint">
 								{translate(lang, 'profile.coachConnectedHint')}
 							</p>
-							<AppButton
-								variant="ghost"
-								class="is-danger mt-1 !min-h-[48px]"
-								disabled={disconnectBusy}
-								onclick={() => {
-									coachSheetOpen = false;
-									requestDisconnectCoach(coach);
-								}}
-							>
-								{translate(lang, 'coach.disconnect')}
-							</AppButton>
 						</div>
+						<AppButton
+							variant="ghost"
+							size="icon"
+							class="is-danger coach-connect-status__disconnect"
+							aria-label={translate(lang, 'coach.disconnect')}
+							disabled={disconnectBusy}
+							onclick={() => {
+								coachSheetOpen = false;
+								requestDisconnectCoach(coach);
+							}}
+						>
+							<UserMinus weight="bold" />
+						</AppButton>
 					</li>
 				{/each}
 			</ul>

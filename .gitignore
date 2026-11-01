@@ -45,3 +45,5 @@ vite.config.ts.timestamp-*
 design-audit/
 static/data/exercises.full.json
 .local/
+
+.playwright-mcp/

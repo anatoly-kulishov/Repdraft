@@ -54,16 +54,16 @@
 			class="profile-settings-row__icon"
 		/>
 	{/if}
-	<span class="profile-settings-row__label">{label}</span>
+	<span class="profile-settings-row__label">
+		{label}
+		{#if hint}<span class="profile-settings-row__hint">{hint}</span>{/if}
+	</span>
 	{#if value}
 		<span class="profile-settings-row__value">{value}</span>
 	{:else if children}
 		<div class="profile-settings-row__control">
 			{@render children()}
 		</div>
-	{/if}
-	{#if hint}
-		<span class="profile-settings-row__hint">{hint}</span>
 	{/if}
 {/snippet}
 

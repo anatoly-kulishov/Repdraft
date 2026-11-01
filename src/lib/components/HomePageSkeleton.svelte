@@ -28,7 +28,8 @@
 		recentRows = 0,
 		showPlansColumn = false,
 		hasActiveBoot = false,
-		showChecklist = false
+		showChecklist = false,
+		showBalance = false
 	}: {
 		label: string;
 		/** create = guest empty hero; start = mockup CTA + aside */
@@ -41,6 +42,8 @@
 		hasActiveBoot?: boolean;
 		/** Onboarding checklist visible above hero on first visits. */
 		showChecklist?: boolean;
+		/** Signed-in: mirror the 30-day balance panel in the aside. */
+		showBalance?: boolean;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
@@ -154,8 +157,54 @@
 	</div>
 {/snippet}
 
+{#snippet balanceSkeleton()}
+	<div class="home-section home-skeleton-balance-section" aria-hidden="true">
+		<div class="home-section-head">
+			<AppSkeleton class="home-skeleton-heading" />
+			<AppSkeleton class="home-skeleton-section-link" />
+		</div>
+		<div class="home-monthly">
+			<div class="home-monthly__stat panel home-skeleton-monthly-stat">
+				<AppSkeleton class="home-skeleton-monthly-label" />
+				<AppSkeleton class="home-skeleton-monthly-value" />
+				<AppSkeleton class="home-skeleton-monthly-delta" />
+			</div>
+			<div class="home-monthly__stat panel home-skeleton-monthly-stat">
+				<AppSkeleton class="home-skeleton-monthly-label" />
+				<AppSkeleton class="home-skeleton-monthly-value" />
+				<AppSkeleton class="home-skeleton-monthly-delta" />
+			</div>
+		</div>
+	</div>
+{/snippet}
+
+{#snippet coachSkeleton()}
+	<div class="home-section home-coach-section home-skeleton-coach-section" aria-hidden="true">
+		<div class="home-section-head home-coach-section__head">
+			<AppSkeleton class="home-skeleton-heading" />
+		</div>
+		<ul class="entity-list home-coach-list home-skeleton-coach-list">
+			{#each [0, 1] as i (i)}
+				<li>
+					<div class="entity-row entity-row--link home-skeleton-coach-row">
+						<AppSkeleton class="entity-row__icon home-skeleton-coach-icon" />
+						<span class="entity-row__main">
+							<AppSkeleton class="home-skeleton-coach-title" />
+							<AppSkeleton class="home-skeleton-coach-meta" />
+						</span>
+						<AppSkeleton class="entity-row__chevron home-skeleton-coach-chevron" />
+					</div>
+				</li>
+			{/each}
+		</ul>
+	</div>
+{/snippet}
+
 {#snippet asideSkeleton()}
 	<div class="home-dashboard-aside">
+		{#if showBalance}
+			{@render balanceSkeleton()}
+		{/if}
 		<div class="home-section">
 			<div class="home-skeleton-section-head">
 				<AppSkeleton class="home-skeleton-heading" />
@@ -172,7 +221,6 @@
 									<AppSkeleton class="home-skeleton-recent-title" />
 									<AppSkeleton class="home-skeleton-recent-meta" />
 								</span>
-								<AppSkeleton class="home-skeleton-recent-chevron" />
 							</div>
 						</li>
 					{/each}
@@ -187,6 +235,7 @@
 				</div>
 			{/if}
 		</div>
+		{@render coachSkeleton()}
 	</div>
 {/snippet}
 

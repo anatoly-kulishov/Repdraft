@@ -59,8 +59,10 @@
 	--tabbar-h: 3.625rem;
 	--tabbar-inset: 0.1875rem;
 	--tabbar-segment-r: 0.6875rem;
-	/* Concentric end-cap radius: outer pill minus inset track. */
-	--tabbar-end-r: calc(var(--tabbar-h) / 2);
+	/* Concentric end-cap radius: track radius minus its 1px border and the
+	   inset the segment is pulled in by, so the active pill's corners follow
+	   the container curve exactly (a bigger radius leaves a crescent gap). */
+	--tabbar-end-r: calc(var(--radius-button) - 1px - var(--tabbar-inset));
 	--tabbar-float-gap: 0.5rem;
 	/* Pill border (1px top + bottom) — keeps FAB / draft dock above the real tabbar box. */
 	--tabbar-chrome-h: calc(var(--tabbar-h) + 2 * var(--tabbar-inset) + 2px);
@@ -142,11 +144,49 @@
 	--app-bg-wash: var(--color-bg);
 	--app-bg-image: none;
 	--surface-sheen: none;
+	/* Liquid glass — floating chrome only (tabbar, sheets, snackbars).
+	   Layered: translucent plate + top specular sheen + hairline inner light. */
+	--glass-blur: 26px;
+	--glass-saturate: 190%;
+	--glass-bg: color-mix(in srgb, var(--color-surface) 54%, transparent);
+	--glass-bg-strong: color-mix(in srgb, var(--color-surface) 78%, transparent);
+	--glass-border: color-mix(in srgb, var(--color-ink) 14%, transparent);
+	--glass-highlight: color-mix(in srgb, var(--color-ink) 26%, transparent);
+	--glass-sheen: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--color-ink) 9%, transparent),
+		transparent 40%
+	);
+	--glass-shadow:
+		0 16px 40px rgb(0 0 0 / 0.55),
+		0 2px 12px rgb(0 0 0 / 0.32);
+	/* Bright top edge + soft inner bottom = the material has thickness. */
+	--glass-inset: inset 0 1px 0 var(--glass-highlight), inset 0 -1px 0 rgb(0 0 0 / 0.28);
+	/* Panels/cards: quieter glass than floating chrome so text stays crisp. */
+	--glass-panel-blur: 18px;
+	--glass-panel-bg: color-mix(in srgb, var(--color-surface) 62%, transparent);
+	--glass-panel-border: color-mix(in srgb, var(--color-ink) 13%, transparent);
+	--glass-panel-shadow:
+		0 10px 26px rgb(0 0 0 / 0.38),
+		0 2px 8px rgb(0 0 0 / 0.2);
+	/* Ambient depth: glass needs something behind it to read as glass. */
+	--app-bg-image:
+		radial-gradient(115% 70% at 50% -12%, #2b1f44 0%, transparent 58%),
+		radial-gradient(90% 55% at 112% 8%, #152036 0%, transparent 62%);
 	/* Skeleton bones — readable on surface plates. */
 	--skeleton-base: #3a3a3c;
 	--skeleton-shine: #4a4a4e;
+	/* Skeleton card surface mirrors glass .panel so skeleton → content doesn't jump. */
+	--skeleton-panel-border: var(--glass-panel-border);
+	--skeleton-panel-bg: var(--glass-panel-bg);
+	--skeleton-panel-sheen: var(--glass-sheen);
+	--skeleton-panel-shadow: var(--glass-panel-shadow), var(--glass-inset);
+	/* Bone solid under reduced-motion (transparency keeps ambient readable). */
+	--skeleton-motion-bg: var(--skeleton-base);
 	/* Component tokens — override in html[data-theme='light'] (P4). */
-	--chrome-header-bg: var(--color-surface);
+	--chrome-header-bg: color-mix(in srgb, var(--color-surface) 74%, transparent);
+	/* Fixed sub-route header scrolls over content — denser so text can't ghost. */
+	--chrome-header-strong: color-mix(in srgb, var(--color-surface) 92%, transparent);
 	--icon-plate-bg: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
 	--icon-plate-color: color-mix(in srgb, var(--color-accent-text) 82%, var(--color-ink));
 	--icon-plate-accent-bg: color-mix(in srgb, var(--color-accent) 18%, var(--color-surface));
@@ -212,14 +252,18 @@
 	--builder-toolbar-save-hover-bg: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface-elevated));
 	--catalog-filter-chip-active-border: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
 	--catalog-filter-chip-active-hover-bg: color-mix(in srgb, var(--color-accent) 24%, var(--color-surface-elevated));
-	--catalog-grid-exercise-card-border: color-mix(in srgb, var(--color-border) 70%, transparent);
+	/* Gym Visual plates are white. On dark the pale hairline reads as a grey
+	   stroke, so frame the tile with a definite dark edge — otherwise the
+	   white plate reads as an unframed glowing blob. */
+	--catalog-grid-exercise-card-border: var(--color-border);
 	--catalog-grid-exercise-card-bg: color-mix(in srgb, var(--color-surface) 94%, #000);
 	--catalog-grid-exercise-card-title-color: rgb(255 255 255 / 0.94);
-	--catalog-hub-zone-card-border: color-mix(in srgb, var(--color-border) 70%, transparent);
-	/* Gym Visual plates are white — keep the whole hub tile on the plate. */
-	--catalog-hub-zone-card-bg: var(--media-plate-bg);
+	--catalog-hub-zone-card-border: rgb(0 0 0 / 0.5);
+	--catalog-hub-zone-card-bg: var(--color-surface);
+	--catalog-hub-zone-media-bg: var(--color-surface);
+	/* Stronger dark veil over the white Gym Visual plate on the hub tile. */
+	--catalog-hub-zone-media-veil: rgba(0, 0, 0, 0.26);
 	--catalog-hub-zone-card-shadow: var(--shadow-panel);
-	--catalog-hub-zone-media-bg: var(--media-plate-bg);
 	--catalog-hub-zone-img-top: 0;
 	--catalog-hub-zone-img-bg: transparent;
 	--catalog-hub-zone-img-radius: 0;
@@ -232,9 +276,9 @@
 	);
 	--catalog-hub-zone-title-color: rgb(252 252 252 / 0.96);
 	--catalog-hub-zone-count-color: rgb(255 255 255 / 0.6);
-	--catalog-category-skeleton-card-bg: var(--media-plate-bg);
-	--catalog-category-skeleton-card-shadow: var(--shadow-panel);
-	--catalog-category-skeleton-media-bg: var(--media-plate-bg);
+	--catalog-category-skeleton-card-bg: var(--catalog-hub-zone-card-bg);
+	--catalog-category-skeleton-card-shadow: var(--catalog-hub-zone-card-shadow);
+	--catalog-category-skeleton-media-bg: color-mix(in srgb, var(--media-plate-bg) 74%, #000);
 }
 
 @media (min-width: 768px) {
@@ -355,9 +399,48 @@ html[data-theme='light'] {
 	--app-bg-wash: var(--color-bg);
 	--app-bg-image: none;
 	--surface-sheen: none;
+	/* Liquid glass — floating chrome only, tuned for light plates. */
+	--glass-blur: 26px;
+	--glass-saturate: 200%;
+	--glass-bg: color-mix(in srgb, var(--color-surface) 50%, transparent);
+	--glass-bg-strong: color-mix(in srgb, var(--color-surface) 82%, transparent);
+	--glass-border: color-mix(in srgb, var(--color-ink) 10%, transparent);
+	--glass-highlight: rgb(255 255 255 / 0.98);
+	--glass-sheen: linear-gradient(
+		180deg,
+		rgb(255 255 255 / 0.6),
+		rgb(255 255 255 / 0.08) 18%,
+		rgb(255 255 255 / 0) 36%
+	);
+	--glass-shadow:
+		0 16px 40px rgb(18 20 26 / 0.18),
+		0 2px 10px rgb(18 20 26 / 0.08);
+	/* Light plates: only the specular top edge. An inner bottom line plus the
+	   border plus a drop shadow stacked into a dirty band under every card. */
+	--glass-inset: inset 0 1px 0 var(--glass-highlight);
+	/* Panels/cards: quieter glass than floating chrome so text stays crisp. */
+	--glass-panel-blur: 18px;
+	--glass-panel-bg: color-mix(in srgb, var(--color-surface) 62%, transparent);
+	/* Light-on-light needs a hairline darker than the plate, not a white one. */
+	--glass-panel-border: color-mix(in srgb, var(--color-ink) 10%, transparent);
+	--glass-panel-shadow: 0 4px 14px rgb(18 20 26 / 0.05);
+	/* Ambient mesh must be visible under the glass on white plates — muted
+	   enough that cards don't pick up noticeably different tints from
+	   position to position. */
+	--app-bg-image:
+		radial-gradient(120% 80% at 50% -14%, #eadffb 0%, transparent 60%),
+		radial-gradient(85% 60% at 110% 6%, #dde8ff 0%, transparent 64%),
+		radial-gradient(75% 55% at -8% 84%, #ffecf3 0%, transparent 62%);
 	--skeleton-base: #d1d1d6;
 	--skeleton-shine: #e8e8ed;
-	--chrome-header-bg: color-mix(in srgb, var(--color-surface) 94%, var(--color-bg));
+	/* Skeleton card surface mirrors glass .panel so skeleton → content doesn't jump. */
+	--skeleton-panel-border: var(--glass-panel-border);
+	--skeleton-panel-bg: var(--glass-panel-bg);
+	--skeleton-panel-sheen: var(--glass-sheen);
+	--skeleton-panel-shadow: var(--glass-panel-shadow), var(--glass-inset);
+	--skeleton-motion-bg: var(--skeleton-base);
+	--chrome-header-bg: color-mix(in srgb, var(--color-surface) 74%, transparent);
+	--chrome-header-strong: color-mix(in srgb, var(--color-surface) 95%, transparent);
 	--icon-plate-bg: color-mix(in srgb, var(--color-accent) 7%, var(--color-surface));
 	--icon-plate-color: color-mix(in srgb, var(--color-accent-text) 88%, var(--color-ink));
 	--icon-plate-accent-bg: color-mix(in srgb, var(--color-accent) 13%, var(--color-surface));
@@ -441,7 +524,7 @@ html[data-theme='light'] {
 	);
 	--catalog-hub-zone-title-color: #0f1012;
 	--catalog-hub-zone-count-color: #636366;
-	--catalog-category-skeleton-card-bg: var(--media-plate-bg);
-	--catalog-category-skeleton-card-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset;
+	--catalog-category-skeleton-card-bg: var(--catalog-hub-zone-card-bg);
+	--catalog-category-skeleton-card-shadow: var(--catalog-hub-zone-card-shadow);
 	--catalog-category-skeleton-media-bg: var(--media-plate-bg);
 }
