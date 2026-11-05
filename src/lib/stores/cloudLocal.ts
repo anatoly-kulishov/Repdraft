@@ -11,6 +11,7 @@ import { supabaseRecordRepository } from '$lib/storage/supabaseRecordRepository'
 import { supabaseSessionRepository } from '$lib/storage/supabaseSessionRepository';
 import { supabaseWorkoutRepository } from '$lib/storage/supabaseWorkoutRepository';
 import { syncState } from '$lib/stores/syncState';
+import { isRevokedSessionError, reportRevokedSession } from '$lib/stores/sessionRevoked';
 
 export type { CloudListRefreshResult, CloudSyncState } from '$lib/domain/cloudSync';
 export { isCloudListUncertain } from '$lib/domain/cloudSync';
@@ -71,6 +72,9 @@ export async function refreshLocalCloudList<T>(opts: {
 		return result;
 	} catch (err) {
 		console.warn(`${opts.label} cloud refresh failed`, err);
+		// A dead identity (invalid JWT / revoked refresh) must not be swallowed
+		// into just a sync toast — escalate so auth bounces the user to guest.
+		if (isRevokedSessionError(err)) reportRevokedSession();
 		// Keep local list (including under 24h policy) — never wipe on cloud error.
 		const result: CloudListRefreshResult<T> = { items: local, state: 'error' };
 		emit(result);
@@ -106,6 +110,7 @@ export async function mirrorCloudWrite(opts: {
 		return true;
 	} catch (err) {
 		console.warn(`${opts.label} cloud write failed`, err);
+		if (isRevokedSessionError(err)) reportRevokedSession();
 		if (opts.outboxOnFail) enqueueOutbox(opts.outboxOnFail);
 		return false;
 	}

@@ -3687,13 +3687,28 @@ body:has(.sticky-actions) .draft-dock {
 		margin-right: calc(-1 * max(var(--page-pad-x), var(--safe-right)));
 		padding: calc(var(--screen-header-pad-block) + var(--safe-top)) max(var(--page-pad-x), var(--safe-right))
 			var(--list-search-chrome-pad-block-end) max(var(--page-pad-x), var(--safe-left));
-		background: var(--chrome-header-bg);
+		/* Dense chrome + frost: filters scroll over cards, so without a strong bg the
+		   rows underneath ghost through the sticky strip (see --chrome-header-strong). */
+		background: var(--chrome-header-strong, var(--chrome-header-bg));
+		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 		box-shadow: none;
 		transition: box-shadow 160ms ease;
 	}
 
 	.content-page--catalog .catalog-list-layout__filters.is-scrolled {
 		box-shadow: var(--shadow-screen-header);
+	}
+
+	/* Accessibility: no frost, fully opaque chrome. */
+	@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+		.content-page--catalog .catalog-list-layout__filters--monolith,
+		.content-page--catalog .catalog-list-layout__filters--search-only,
+		.content-page--catalog .catalog-list-layout__filters:has(.catalog-filters-shell) {
+			-webkit-backdrop-filter: none;
+			backdrop-filter: none;
+			background: var(--color-surface);
+		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {

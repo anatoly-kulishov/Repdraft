@@ -41,6 +41,7 @@ import { localMergeConflict } from './localMergeConflict';
 import { plans } from './plans';
 import { records } from './records';
 import { resolvedLocale } from './locale';
+import { onRevokedSession } from './sessionRevoked';
 import { toasts } from './toasts';
 
 type AuthState = {
@@ -292,6 +293,27 @@ function createAuthStore() {
 		});
 	}
 
+	async function signOutToGuest(reason: string) {
+		console.warn(`auth → guest (${reason})`);
+		const current = get(store);
+		if (!current.user) return; // already guest — nothing to clear
+		// Clear the web auth store + the SDK's persisted token so a revoked session
+		// does not resurrect as a signed-in stub on reload.
+		try {
+			allowClearOnSignOut = true;
+			const supabase = getSupabase();
+			if (supabase) await supabase.auth.signOut({ scope: 'local' });
+		} catch (err) {
+			console.warn('auth signOutToGuest: local sign-out failed', err);
+		} finally {
+			allowClearOnSignOut = false;
+		}
+		// applySession(null) clears the local cache via syncLocalCacheUser, same
+		// path as an explicit sign-out — the device no longer belongs to that user.
+		toasts.show(translate(get(resolvedLocale), 'auth.signedOut'), 'info');
+		await applySession(null, { force: true, passwordRecovery: false });
+	}
+
 	async function init() {
 		if (!browser) {
 			set({
@@ -391,15 +413,21 @@ function createAuthStore() {
 					void applySession(null, { force: true, passwordRecovery: false });
 					return;
 				}
-				/* Soft logout: refresh failed offline / expired token without explicit sign-out. */
-				if (peekLikelySignedInUserId()) {
-					void continueWithLocalAccount('SIGNED_OUT soft');
-					return;
-				}
-				void applySession(null, { force: true, passwordRecovery: false });
+				/* Real SIGNED_OUT ≠ offline: the SDK only fires this when the refresh
+				 * token is genuinely rejected (access expired AND refresh revoked /
+				 * account signed out elsewhere), never on a retryable network error.
+				 * Bounce to guest instead of keeping a dead "signed-in" stub that
+				 * surfaces nothing but sync-error toasts. */
+				void signOutToGuest('SIGNED_OUT');
 				return;
 			}
 			void applySession(nextSession);
+		});
+
+		/* Cloud layers report a dead identity (invalid JWT / revoked refresh)
+		 * here so a lingering signed-in stub does not fake "authorized but empty". */
+		onRevokedSession(() => {
+			void signOutToGuest('revoked-session-report');
 		});
 	}
 
