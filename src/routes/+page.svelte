@@ -21,7 +21,8 @@
 		resolveHomeNextPlan
 	} from '$lib/domain/workout';
 	import { HOME_RECENT_ROW_LIMIT, resolveHomeSkeletonVariant, shouldShowHomeChecklistSkeleton } from '$lib/domain/home';
-	import { progress30d } from '$lib/domain/progressOverview';
+	import { computeProgressOverview } from '$lib/domain/progressOverview';
+	import type { ProgressPeriod } from '$lib/domain/progressOverview';
 	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
 	import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
@@ -46,6 +47,7 @@
 	import { homeNextPlan } from '$lib/stores/homeNextPlan';
 	import { live } from '$lib/stores/live';
 	import { plans } from '$lib/stores/plans';
+	import { progressPeriod } from '$lib/stores/progressPeriod';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { onboarding, onboardingHydrated } from '$lib/stores/onboarding';
 	import { exerciseName } from '$lib/domain/exerciseName';
@@ -93,15 +95,21 @@
 		return peekLocalHistoryCount() > 0 ? HOME_RECENT_ROW_LIMIT : 0;
 	}
 
-	/** Week-over-week delta line on the 30-day cards (home.progress30Title). */
-	function deltaLabel(delta: number, kind: 'workouts' | 'volume'): string {
-		if (delta === 0) return translate(lang, 'progress.deltaNone');
+	/** Week-over-week delta line on the period cards (home.progressTitle*). */
+	function periodNoun(p: ProgressPeriod): string {
+		if (p === 7) return translate(lang, 'progress.periodPastWeek');
+		if (p === 30 || p === 90) return translate(lang, 'progress.periodPastDays', { n: p });
+		return '';
+	}
+
+	function deltaLabel(delta: number | null, kind: 'workouts' | 'volume', p: ProgressPeriod): string {
+		if (delta == null || delta === 0) return delta == null ? '' : translate(lang, 'progress.deltaNone');
 		const sign = delta > 0 ? '+' : '';
 		if (kind === 'workouts') {
 			return translate(lang, 'progress.deltaWorkouts', {
 				sign,
 				n: delta,
-				p: translate(lang, 'progress.periodPastWeek')
+				p: periodNoun(p)
 			});
 		}
 		return translate(lang, 'progress.deltaVolume', { sign, n: formatKgInt(delta) });
@@ -196,7 +204,23 @@
 		return local && !local.finishedAt ? local : null;
 	});
 	let recent = $derived($live.history.slice(0, HOME_RECENT_ROW_LIMIT));
-	let monthly = $derived(progress30d($live.history, new Date()));
+	let monthly = $derived.by(() => {
+		const overview = computeProgressOverview($live.history, new Date(), undefined, {
+			period: $progressPeriod
+		});
+		return {
+			workouts: overview.cards.workouts,
+			volumeKg: overview.cards.volumeKg,
+			workoutsDelta: overview.cards.workoutsDelta,
+			volumeDelta: overview.cards.volumeKgDelta
+		};
+	});
+	/** Title for the Home progress block, adapted to the shared period. */
+	let progressTitle = $derived(
+		$progressPeriod === 'all'
+			? translate(lang, 'home.progressTitleAll')
+			: translate(lang, 'home.progressTitleDays', { n: $progressPeriod })
+	);
 	const peekedIndex = peekExerciseIndexWithCustoms();
 	let indexById = $state<Map<string, ExerciseIndexItem>>(
 		peekedIndex ? new Map(peekedIndex.map((item) => [item.id, item])) : new Map()
@@ -632,7 +656,7 @@
 					{#if monthly.workouts > 0}
 						<div class="home-section">
 							<div class="home-section-head">
-								<h2 class="section-title">{translate(lang, 'home.progress30Title')}</h2>
+								<h2 class="section-title">{progressTitle}</h2>
 								<a class="home-section-link" href="/progress">
 									{translate(lang, 'home.progressOpen')}
 									<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
@@ -647,10 +671,10 @@
 									<span class="home-monthly__label">{translate(lang, 'progress.cardWorkouts')}</span>
 									<span class="home-monthly__value tabular-nums">{monthly.workouts}</span>
 									<span
-										class:home-monthly__delta--flat={monthly.workoutsDeltaWeek <= 0}
+										class:home-monthly__delta--flat={monthly.workoutsDelta != null && monthly.workoutsDelta <= 0}
 										class="home-monthly__delta"
 									>
-										{deltaLabel(monthly.workoutsDeltaWeek, 'workouts')}
+										{deltaLabel(monthly.workoutsDelta, 'workouts', $progressPeriod)}
 									</span>
 								</div>
 								<div class="home-monthly__stat panel">
@@ -659,10 +683,10 @@
 										{formatKgInt(monthly.volumeKg)} кг
 									</span>
 									<span
-										class:home-monthly__delta--flat={monthly.volumeDeltaWeek <= 0}
+										class:home-monthly__delta--flat={monthly.volumeDelta != null && monthly.volumeDelta <= 0}
 										class="home-monthly__delta"
 									>
-										{deltaLabel(monthly.volumeDeltaWeek, 'volume')}
+										{deltaLabel(monthly.volumeDelta, 'volume', $progressPeriod)}
 									</span>
 								</div>
 							</a>

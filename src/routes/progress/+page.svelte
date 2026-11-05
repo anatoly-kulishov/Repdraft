@@ -19,10 +19,11 @@
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { live } from '$lib/stores/live';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { progressPeriod } from '$lib/stores/progressPeriod';
 
 	let lang = $derived($resolvedLocale);
 	let indexById = $state(new Map<string, ExerciseIndexItem>());
-	let period: ProgressPeriod = $state(30);
+	let period: ProgressPeriod = $derived($progressPeriod);
 	let helpOpen = $state(false);
 
 	let overview = $derived(
@@ -134,7 +135,7 @@
 				aria-selected={period === p}
 				class="progress-tab"
 				class:progress-tab--active={period === p}
-				onclick={() => (period = p)}
+				onclick={() => progressPeriod.set(p)}
 			>
 				{periodLabel(p)}
 			</button>

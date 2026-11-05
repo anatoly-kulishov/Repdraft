@@ -18,6 +18,22 @@ export type ProgressPeriod = 7 | 30 | 90 | 'all';
 
 export const PROGRESS_PERIODS: readonly ProgressPeriod[] = [7, 30, 90, 'all'];
 
+/** localStorage key for the persisted progress period (shared Home + Progress). */
+export const PROGRESS_PERIOD_STORAGE_KEY = 'repdraft:progress-period';
+
+/** Validate arbitrary input into a known period, falling back to the default. */
+export function parseProgressPeriod(raw: unknown, fallback: ProgressPeriod = 30): ProgressPeriod {
+	if (raw === 30) return 30;
+	if (raw === 7) return 7;
+	if (raw === 90) return 90;
+	if (raw === 'all') return 'all';
+	// Also accept numeric strings and the integer forms of `'all'` rejects above.
+	if (raw === '7') return 7;
+	if (raw === '30') return 30;
+	if (raw === '90') return 90;
+	return fallback;
+}
+
 /** Days of window for a period, or null for "all time". */
 function periodDays(period: ProgressPeriod): number | null {
 	return period === 'all' ? null : period;
