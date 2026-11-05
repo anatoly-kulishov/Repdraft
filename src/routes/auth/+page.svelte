@@ -834,6 +834,8 @@
 	class:auth-page--booting={showBootSkeleton}
 	class:auth-page--booting-account={showBootSkeleton && showAccountSkeleton}
 	class:auth-page--booting-guest={showBootSkeleton && showGuestSkeleton}
+	aria-busy={accountLocked || undefined}
+	inert={accountLocked}
 >
 	{#if $auth.ready && $auth.sessionKnown && !showBootSkeleton}
 		{#if accountMode}
