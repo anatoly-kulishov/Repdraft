@@ -47,6 +47,7 @@ export {
 	convertAltGroupToSuperset,
 	updateGroupSets,
 	updateGroupRest,
+	updateManySets,
 	type GroupMemberRole
 } from './workoutGroups';
 

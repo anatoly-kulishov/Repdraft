@@ -40,13 +40,19 @@
 		})()
 	);
 
+	/* When auth is still loading the greeting line is aria-hidden, so the link
+	 * would have no accessible name. Give it a stable label until ready. */
+	let linkAriaLabel = $derived(
+		$auth.ready && $auth.sessionKnown ? null : translate(lang, 'nav.profile')
+	);
+
 	$effect(() => {
 		avatarUrl;
 		avatarBroken = false;
 	});
 </script>
 
-<a class="shell-home-greeting" {href}>
+<a class="shell-home-greeting" {href} aria-label={linkAriaLabel ?? undefined}>
 	{#if !$auth.ready || !$auth.sessionKnown}
 		<span class="account-avatar is-skeleton shell-home-greeting__avatar" aria-hidden="true"></span>
 		<span class="shell-home-greeting__copy">

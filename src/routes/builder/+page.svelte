@@ -14,9 +14,9 @@
 	import { ICON_BUTTON, ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { AI_DRAFT_HREF, BUILDER_ADD_EXERCISE_HREF, WORKOUTS_HREF } from '$lib/domain/catalogLinks';
-	import { PLAN_NAME_MAX, clampPlanName } from '$lib/domain/inputLimits';
+	import { PLAN_NAME_MAX, clampPlanName, coerceSets, filterSetsInput, SETS } from '$lib/domain/inputLimits';
 	import type { ExerciseIndexItem, WorkoutExercise } from '$lib/domain/types';
-	import { altGroupMemberRole, groupMemberRole, workoutPlanContentEqual } from '$lib/domain/workout';
+	import { altGroupMemberRole, groupBounds, groupMemberRole, workoutPlanContentEqual } from '$lib/domain/workout';
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { navigateBack } from '$lib/navigation/back';
@@ -41,6 +41,8 @@
 		ArrowLeft,
 		Stack as Layers,
 		TreeStructure as ListTree,
+		ListNumbers,
+		Minus,
 		Sparkle as Sparkles,
 	} from 'phosphor-svelte';
 
@@ -52,6 +54,8 @@
 	let saving = $state(false);
 	let clearOfferOpen = $state(false);
 	let introOfferOpen = $state(false);
+	let changeSetsOpen = $state(false);
+	let changeSetsValue = $state('3');
 	let freshStartConsumed = $state(false);
 	let reorderFrom = $state<number | null>(null);
 	let reorderOver = $state<number | null>(null);
@@ -59,6 +63,9 @@
 	let lang = $derived($resolvedLocale);
 	let showBuilderSupersetCoachmark = $derived(shouldShowCoachmark($onboarding, 'builder.superset'));
 	let selectedCount = $derived(selectedIds.length);
+	let allSelected = $derived(
+		$draft.exercises.length > 0 && selectedIds.length === $draft.exercises.length
+	);
 	let pageReady = $derived(
 		$draftHydrated && ($draft.exercises.length === 0 || indexReady)
 	);
@@ -189,6 +196,14 @@
 		}
 	}
 
+	function toggleSelectAll() {
+		if (allSelected) {
+			selectedIds = [];
+		} else {
+			selectedIds = $draft.exercises.map((ex) => ex.exerciseId);
+		}
+	}
+
 	function removeExerciseFromBuilder(item: WorkoutExercise, index: number) {
 		const snapshot = structuredClone(item);
 		const wasSelected = selectedIds.includes(item.exerciseId);
@@ -228,6 +243,61 @@
 		selectedIds = selectedIds.filter((id) => !memberIds.has(id));
 	}
 
+	/** Distinct set counts among selected exercises (a superset counts once). */
+	function selectedSetCounts(): number[] {
+		const seenGroups = new Set<string>();
+		const out: number[] = [];
+		for (const ex of $draft.exercises) {
+			if (!selectedIds.includes(ex.exerciseId)) continue;
+			if (ex.groupId) {
+				const groupId = ex.groupId;
+				if (seenGroups.has(groupId)) continue;
+				seenGroups.add(groupId);
+			}
+			out.push(ex.sets);
+		}
+		return out;
+	}
+
+	function openChangeSets() {
+		if (selectedIds.length === 0) return;
+		const counts = selectedSetCounts();
+		const mode =
+			counts.length === 0
+				? SETS.min
+				: [...counts]
+						.sort(
+							(a, b) =>
+								counts.filter((c) => c === b).length - counts.filter((c) => c === a).length
+						)[0]!;
+		changeSetsValue = String(mode);
+		changeSetsOpen = true;
+	}
+
+	function dismissChangeSets() {
+		changeSetsOpen = false;
+	}
+
+	function changeSetsInput(el: HTMLInputElement) {
+		const next = filterSetsInput(el.value, changeSetsValue);
+		changeSetsValue = next;
+		if (el.value !== next) el.value = next;
+	}
+
+	function bumpChangeSets(delta: -1 | 1) {
+		const current = coerceSets(changeSetsValue);
+		const next = Math.min(SETS.max, Math.max(SETS.min, current + delta));
+		changeSetsValue = String(next);
+	}
+
+	function applyChangeSets() {
+		if (selectedIds.length === 0) return;
+		const sets = coerceSets(changeSetsValue);
+		draft.updateManySets(selectedIds, sets);
+		changeSetsOpen = false;
+		selectedIds = [];
+	}
+
 	let headerTitle = $derived($draft.name.trim() || translate(lang, 'builder.namePh'));
 </script>
 
@@ -240,6 +310,28 @@
 		<LucideIcon icon={ListTree} size={ICON_SMALL} />
 		{translate(lang, 'builder.or', { n: selectedCount })}
 	</AppButton>
+	<AppButton variant="secondary" class="builder-group-bar__btn" onclick={openChangeSets}>
+		<LucideIcon icon={ListNumbers} size={ICON_SMALL} />
+		{translate(lang, 'builder.sets')}
+	</AppButton>
+{/snippet}
+
+{#snippet builderGroupBarLabel()}
+	<p class="builder-group-bar__label">
+		<span class="builder-group-bar__selected">
+			{translate(lang, allSelected ? 'builder.groupSelectedWithAll' : 'builder.groupSelected', {
+				n: selectedCount
+			})}
+		</span>
+		<button
+			type="button"
+			class="builder-group-bar__select-all"
+			onclick={toggleSelectAll}
+			aria-pressed={allSelected || undefined}
+		>
+			{translate(lang, allSelected ? 'builder.deselectAll' : 'builder.selectAll')}
+		</button>
+	</p>
 {/snippet}
 
 {#snippet builderClearAction()}
@@ -314,9 +406,7 @@
 				role="toolbar"
 				aria-label={translate(lang, 'builder.groupToolbarAria')}
 			>
-				<p class="builder-group-bar__label">
-					{translate(lang, 'builder.groupSelected', { n: selectedCount })}
-				</p>
+				{@render builderGroupBarLabel()}
 				<div class="builder-group-bar__actions">
 					{@render builderGroupButtons()}
 				</div>
@@ -391,9 +481,7 @@
 					<p class="section-title">{translate(lang, 'builder.exercisesSection')}</p>
 					{#if selectedCount >= 2}
 						<div class="builder-group-bar builder-group-bar--inline">
-							<p class="builder-group-bar__label">
-								{translate(lang, 'builder.groupSelected', { n: selectedCount })}
-							</p>
+							{@render builderGroupBarLabel()}
 							<div class="builder-group-bar__actions">
 								{@render builderGroupButtons()}
 							</div>
@@ -421,6 +509,10 @@
 						{@const role = groupMemberRole($draft.exercises, index)}
 						{@const altRole = altGroupMemberRole($draft.exercises, index)}
 						{@const meta = indexById.get(item.exerciseId) ?? null}
+						{@const roleBounds = groupBounds($draft.exercises, index)}
+						{@const groupRest = role === 'first' && roleBounds
+							? ($draft.exercises[roleBounds.end]?.restSec ?? 0)
+							: undefined}
 						<div
 							class="builder-exercise-item"
 							class:builder-exercise-item--or={Boolean(item.altGroupId)}
@@ -441,6 +533,7 @@
 									{aiTuneAvailable}
 									groupRole={role}
 									{altRole}
+									{groupRest}
 									onupdate={(patch) => draft.updateExercise(item.exerciseId, patch)}
 									onreorder={(from, to) => draft.moveExercise(from, to)}
 									onremove={() => removeExerciseFromBuilder(item, index)}
@@ -553,3 +646,79 @@
 		</AppButton>
 	{/snippet}
 </BottomSheet>
+
+<BottomSheet
+	open={changeSetsOpen}
+	titleId="builder-change-sets-title"
+	onDismiss={dismissChangeSets}
+>
+	<p id="builder-change-sets-title" class="bottom-sheet__title">
+		{translate(lang, 'builder.changeSetsTitle')}
+	</p>
+	<p class="bottom-sheet__lead">{translate(lang, 'builder.changeSetsLead')}</p>
+	<div class="builder-change-sets__stepper">
+		<button
+			type="button"
+			class="builder-change-sets__step"
+			aria-label="−"
+			disabled={coerceSets(changeSetsValue) <= SETS.min}
+			onclick={() => bumpChangeSets(-1)}
+		>
+			<Minus size={22} />
+		</button>
+		<AppInput
+			class="text-center text-xl font-bold tabular-nums"
+			type="text"
+			inputmode="numeric"
+			autocomplete="off"
+			enterkeyhint="done"
+			value={changeSetsValue}
+			maxlength={String(SETS.max).length}
+			aria-label={translate(lang, 'builder.sets')}
+			oninput={(e) => changeSetsInput(e.currentTarget as HTMLInputElement)}
+		/>
+		<button
+			type="button"
+			class="builder-change-sets__step"
+			aria-label="+"
+			disabled={coerceSets(changeSetsValue) >= SETS.max}
+			onclick={() => bumpChangeSets(1)}
+		>
+			<Plus size={22} />
+		</button>
+	</div>
+	{#snippet actions()}
+		<AppButton variant="secondary" onclick={dismissChangeSets}>
+			{translate(lang, 'common.cancel')}
+		</AppButton>
+		<AppButton onclick={applyChangeSets}>{translate(lang, 'builder.changeSetsCta')}</AppButton>
+	{/snippet}
+</BottomSheet>
+
+<style>
+	.builder-change-sets__stepper {
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		gap: 0.5rem;
+		align-items: center;
+		margin-top: 1rem;
+	}
+	.builder-change-sets__step {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 3rem;
+		height: 3rem;
+		border-radius: 0.75rem;
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+		color: var(--color-ink);
+		font-size: 1.25rem;
+		line-height: 1;
+		cursor: pointer;
+	}
+	.builder-change-sets__step:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+</style>

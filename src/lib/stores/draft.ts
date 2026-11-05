@@ -15,6 +15,7 @@ import {
 	updateExercise as updateExerciseInPlan,
 	updateGroupRest as updateGroupRestInPlan,
 	updateGroupSets as updateGroupSetsInPlan,
+	updateManySets as updateManySetsInPlan,
 	type AddExerciseResult,
 	type ExerciseRestHint
 } from '$lib/domain/workout';
@@ -109,6 +110,9 @@ function createDraftStore() {
 		},
 		updateGroupRest(groupId: string, restSec: number) {
 			update((plan) => updateGroupRestInPlan(plan, groupId, restSec));
+		},
+		updateManySets(exerciseIds: string[], sets: number) {
+			update((plan) => updateManySetsInPlan(plan, exerciseIds, sets));
 		},
 		setName(name: string) {
 			update((plan) => ({ ...plan, name: clampPlanName(name) }));
