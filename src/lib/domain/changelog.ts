@@ -14,6 +14,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.24.1',
+		highlights: {
+			ru: [
+				'Конструктор: подходы у нескольких упражнений меняются разом; «Выбрать все» — в один тап',
+				'Отдых суперсета больше не обнуляется: введённое время остаётся и применяется к кругу',
+				'Прогресс: выбранный период общий на Главной и в «Прогрессе»'
+			],
+			en: [
+				'Builder: change sets across several exercises at once; select all in one tap',
+				'Superset rest no longer resets: the time you enter stays and applies to the round',
+				'Progress: the period you pick is shared between Home and Progress'
+			]
+		}
+	},
+	{
 		version: '0.24.0',
 		highlights: {
 			ru: [

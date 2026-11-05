@@ -321,6 +321,43 @@ export function updateGroupSets(plan: WorkoutPlan, groupId: string, sets: number
 	);
 }
 
+/**
+ * Set the same set count on many exercises at once (bulk edit).
+ *
+ * Superset members share one count: when `groupId` is present, every member of
+ * that group is updated once (the first member with the id drives the change).
+ * "Or" alternatives are independent exercises, so each is updated individually.
+ * Changing sets invalidates any per-set reps scheme, which is cleared — matching
+ * the single-exercise behavior in `updateExercise`.
+ */
+export function updateManySets(
+	plan: WorkoutPlan,
+	exerciseIds: Iterable<string>,
+	sets: number
+): WorkoutPlan {
+	const target = new Set(exerciseIds);
+	const next = Math.min(SETS.max, Math.max(SETS.min, Math.round(sets)));
+	const handledGroups = new Set<string>();
+
+	const touched = (ex: WorkoutExercise): boolean => {
+		if (!target.has(ex.exerciseId)) return false;
+		if (ex.groupId) {
+			if (handledGroups.has(ex.groupId)) return false;
+			handledGroups.add(ex.groupId);
+		}
+		return true;
+	};
+
+	return withUpdated(
+		plan,
+		plan.exercises.map((ex) => {
+			if (!touched(ex)) return ex;
+			const { repsScheme: _drop, ...rest } = ex;
+			return { ...rest, sets: next };
+		})
+	);
+}
+
 export function updateGroupRest(plan: WorkoutPlan, groupId: string, restSec: number): WorkoutPlan {
 	const next = Math.min(REST_SEC.max, Math.max(0, restSec));
 	const indices = plan.exercises

@@ -70,7 +70,8 @@
 		ondissolveOr,
 		onConvertToSuperset,
 		ongroupSets,
-		ongroupRest
+		ongroupRest,
+		groupRest
 	}: {
 		item: WorkoutExercise;
 		meta: ExerciseIndexItem | null;
@@ -89,6 +90,10 @@
 		onConvertToSuperset?: () => void;
 		ongroupSets?: (sets: number) => void;
 		ongroupRest?: (restSec: number) => void;
+		/** Effective rest for a superset group (stored on its last member). Passed
+		 * for the group's first member so the rest field mirrors what will actually
+		 * be saved instead of the first member's `restSec`, which is always 0. */
+		groupRest?: number;
 	} = $props();
 
 	let lang = $derived($resolvedLocale);
@@ -195,7 +200,7 @@
 
 	const setsChip = (): ChipDraft => ({ draft: setsDraft, stored: () => item.sets });
 	const repsChip = (): ChipDraft => ({ draft: repsDraft, stored: () => item.reps });
-	const restChip = (): ChipDraft => ({ draft: restDraft, stored: () => item.restSec });
+	const restChip = (): ChipDraft => ({ draft: restDraft, stored: () => groupRest ?? item.restSec });
 
 	function openLadderSheet() {
 		if (item.repsScheme && item.repsScheme.length >= 2) {
@@ -310,7 +315,7 @@
 						enterkeyhint="done"
 						maxlength={REST_INPUT_MAX_LEN}
 						value={chipValue(restChip())}
-						onfocus={(e) => onChipFocus(e.currentTarget, (v) => (restDraft = v), () => item.restSec)}
+						onfocus={(e) => onChipFocus(e.currentTarget, (v) => (restDraft = v), () => groupRest ?? item.restSec)}
 						oninput={(e) => {
 							const el = e.currentTarget as HTMLInputElement;
 							onChipInput(el, restChip(), (v) => (restDraft = v), filterRestSecInput);
