@@ -5,7 +5,11 @@
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
-	import { buildCoachHints, suggestPlanReplace } from '$lib/domain/coachHints';
+	import {
+		buildCoachHints,
+		coachUndertrainedParts,
+		suggestPlanReplace
+	} from '$lib/domain/coachHints';
 	import { computeProgressOverview } from '$lib/domain/progressOverview';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelBodyPart } from '$lib/domain/labels.ru';
@@ -79,11 +83,25 @@
 		$plans.flatMap((plan) => plan.exercises.map((ex) => ex.exerciseId))
 	);
 
+	let finishedHistory = $derived(
+		$live.history
+			.filter((s) => s.finishedAt)
+			.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''))
+	);
+
+	let undertrained = $derived.by(() => {
+		if (indexById.size === 0) return { shares: [], undertrained: [] as string[] };
+		return coachUndertrainedParts(
+			finishedHistory,
+			(id) => indexById.get(id)?.body_part ?? null
+		);
+	});
+
 	let replace = $derived.by(() => {
-		if (!homePlan || indexById.size === 0 || !overview.laggingBodyPart) return null;
+		if (!homePlan || indexById.size === 0 || undertrained.undertrained.length === 0) return null;
 		return suggestPlanReplace(
 			homePlan.exercises.map((ex) => ex.exerciseId),
-			[overview.laggingBodyPart],
+			undertrained.undertrained,
 			[...indexById.values()],
 			(id) => indexById.get(id)?.body_part ?? null
 		);
@@ -91,18 +109,21 @@
 
 	let replaceSharePct = $derived.by(() => {
 		if (!replace) return null;
-		return overview.bodyParts.find((part) => part.bodyPart === replace.bodyPart)?.sharePct ?? null;
+		return (
+			undertrained.shares.find((part) => part.bodyPart === replace.bodyPart)?.sharePct ?? null
+		);
 	});
 
 	let hints = $derived.by(() => {
-		const finished = $live.history
-			.filter((s) => s.finishedAt)
-			.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''));
-		const focus = finished[0];
+		const focus = finishedHistory[0];
 		if (!focus || indexById.size === 0) return [];
 		const catalog = [...indexById.values()];
 		const bodyPartFor = (id: string) => indexById.get(id)?.body_part ?? null;
-		return buildCoachHints(focus, finished, catalog, bodyPartFor, { planExerciseIds });
+		const excludeBodyParts = replace ? new Set([replace.bodyPart]) : undefined;
+		return buildCoachHints(focus, finishedHistory, catalog, bodyPartFor, {
+			planExerciseIds,
+			excludeBodyParts
+		});
 	});
 
 	let visibleHints = $derived(hints.filter((hint) => !hintHidden($coachHidden, hint.bodyPart)));
@@ -112,7 +133,11 @@
 
 	let balanceRows = $derived(overview.bodyParts.slice(0, 4));
 
-	let laggingParts = $derived(new Set(visibleHints.map((hint) => hint.bodyPart)));
+	let laggingParts = $derived.by(() => {
+		const parts = new Set(visibleHints.map((hint) => hint.bodyPart));
+		if (replace) parts.add(replace.bodyPart);
+		return parts;
+	});
 
 	async function replaceHint() {
 		if (!replace) return;

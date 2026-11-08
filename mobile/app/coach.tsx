@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import {
 	buildCoachHints,
+	coachUndertrainedParts,
 	hideCoachPart,
 	suggestPlanReplace,
 	unhideCoachPart,
@@ -105,23 +106,37 @@ export default function CoachScreen() {
 		() => sessions.filter((session) => session.finishedAt).length,
 		[sessions]
 	);
+	const finishedHistory = useMemo(
+		() =>
+			sessions
+				.filter((s) => s.finishedAt)
+				.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? '')),
+		[sessions]
+	);
+
+	const undertrained = useMemo(
+		() =>
+			coachUndertrainedParts(finishedHistory, (id) => getIndexItem(id)?.body_part ?? null),
+		[finishedHistory]
+	);
+
 	const replace = useMemo(() => {
-		if (!homePlan || !overview.laggingBodyPart) return null;
+		if (!homePlan || undertrained.undertrained.length === 0) return null;
 		return suggestPlanReplace(
 			homePlan.exercises.map((ex) => ex.exerciseId),
-			[overview.laggingBodyPart],
+			undertrained.undertrained,
 			loadExerciseIndex(),
 			(id) => getIndexItem(id)?.body_part ?? null
 		);
-	}, [homePlan, overview.laggingBodyPart]);
+	}, [homePlan, undertrained.undertrained]);
 
 	const replaceSharePct = useMemo(
 		() =>
 			replace
-				? (overview.bodyParts.find((part) => part.bodyPart === replace.bodyPart)?.sharePct ??
+				? (undertrained.shares.find((part) => part.bodyPart === replace.bodyPart)?.sharePct ??
 					null)
 				: null,
-		[replace, overview.bodyParts]
+		[replace, undertrained.shares]
 	);
 
 	const planExerciseIds = useMemo(
@@ -130,22 +145,24 @@ export default function CoachScreen() {
 	);
 
 	const hints = useMemo(() => {
-		const finished = sessions
-			.filter((s) => s.finishedAt)
-			.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''));
-		const focus = finished[0];
+		const focus = finishedHistory[0];
 		if (!focus) return [];
 		const catalog = loadExerciseIndex();
 		const bodyPartFor = (id: string) => getIndexItem(id)?.body_part ?? null;
-		return buildCoachHints(focus, finished, catalog, bodyPartFor, { planExerciseIds });
-	}, [sessions, planExerciseIds]);
+		const excludeBodyParts = replace ? new Set([replace.bodyPart]) : undefined;
+		return buildCoachHints(focus, finishedHistory, catalog, bodyPartFor, {
+			planExerciseIds,
+			excludeBodyParts
+		});
+	}, [finishedHistory, planExerciseIds, replace]);
 
 	const visibleHints = hints.filter((hint) => (hidden[hint.bodyPart] ?? 0) <= Date.now());
 	const shownHints = hintsExpanded ? visibleHints : visibleHints.slice(0, 1);
-	const laggingParts = useMemo(
-		() => new Set(visibleHints.map((hint) => hint.bodyPart)),
-		[visibleHints]
-	);
+	const laggingParts = useMemo(() => {
+		const parts = new Set(visibleHints.map((hint) => hint.bodyPart));
+		if (replace) parts.add(replace.bodyPart);
+		return parts;
+	}, [visibleHints, replace]);
 	const balanceRows = overview.bodyParts.slice(0, 4);
 
 	const reviewedLine = useMemo(() => {
