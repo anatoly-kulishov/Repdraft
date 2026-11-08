@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import AppButton from '$lib/components/AppButton.svelte';
+	import IconPlate from '$lib/components/IconPlate.svelte';
 	import {
 		proFromAppMetadata,
 		type BillingProvider,
@@ -13,7 +14,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { getSupabase } from '$lib/supabase/client';
-	import { CrownSimple } from 'phosphor-svelte';
+	import { Camera, CrownSimple } from 'phosphor-svelte';
 	import { onMount } from 'svelte';
 
 	let lang = $derived($resolvedLocale);
@@ -24,7 +25,8 @@
 
 	let busyPlan = $state<ProPlan | null>(null);
 	let portalBusy = $state(false);
-	let billingReady = $state(false);
+	/** null = probing checkout availability; avoid flashing «unavailable». */
+	let billingReady = $state<boolean | null>(null);
 	let providers = $state<{ yookassa: boolean; stripe: boolean; defaultProvider: BillingProvider }>({
 		yookassa: false,
 		stripe: false,
@@ -182,9 +184,9 @@
 	}
 
 	onMount(() => {
-		if (!browser) return;
+		if (!browser || !user) return;
 		void loadAvailability();
-		if (user) void refreshStatus();
+		void refreshStatus();
 
 		const flag = $page.url.searchParams.get('billing');
 		if (flag === 'success' || flag === 'portal') {
@@ -201,47 +203,62 @@
 	});
 </script>
 
-<div id="pro" class="profile-settings-group panel profile-settings-group--compact text-left">
-	<p class="profile-settings-group__title billing-title">
-		<span class="billing-title__icon" aria-hidden="true">
-			<CrownSimple size={18} weight="fill" />
-		</span>
-		{translate(lang, 'billing.title')}
-	</p>
+{#if user}
+	<section id="pro" class="billing-card panel text-left" aria-labelledby="billing-pro-title">
+		<header class="billing-card__head">
+			<IconPlate icon={CrownSimple} tone="accent" weight="fill" />
+			<div class="billing-card__head-text">
+				<div class="billing-card__title-row">
+					<h2 id="billing-pro-title" class="billing-card__title">
+						{translate(lang, 'billing.title')}
+					</h2>
+					{#if snap.pro}
+						<span class="billing-card__badge">{translate(lang, 'billing.activeBadge')}</span>
+					{/if}
+				</div>
+				<p class="billing-card__lead">
+					{snap.pro ? periodLabel : translate(lang, 'billing.lead')}
+				</p>
+			</div>
+		</header>
 
-	{#if snap.pro}
-		<p class="profile-settings-group__hint">{periodLabel}</p>
-		<p class="profile-settings-group__hint">{translate(lang, 'billing.benefitRecognize')}</p>
-		{#if snap.provider === 'stripe'}
-			<AppButton
-				variant="secondary"
-				block
-				class="min-h-[48px] mt-2"
-				disabled={portalBusy}
-				onclick={() => void openPortal()}
-			>
-				{portalBusy ? '…' : translate(lang, 'billing.manage')}
-			</AppButton>
-		{:else if snap.provider === 'yookassa' && snap.status !== 'canceled'}
-			<AppButton
-				variant="ghost"
-				block
-				class="min-h-[48px] mt-2"
-				disabled={portalBusy}
-				onclick={() => void openPortal()}
-			>
-				{portalBusy ? '…' : translate(lang, 'billing.cancel')}
-			</AppButton>
-		{/if}
-	{:else}
-		<p class="profile-settings-group__hint">{translate(lang, 'billing.lead')}</p>
-		<ul class="billing-benefits">
-			<li>{translate(lang, 'billing.benefitRecognize')}</li>
-		</ul>
-		{#if !billingReady}
-			<p class="profile-settings-group__hint">{translate(lang, 'billing.unavailable')}</p>
+		<div class="billing-card__feature">
+			<span class="billing-card__feature-icon" aria-hidden="true">
+				<Camera size={20} weight="duotone" />
+			</span>
+			<p class="billing-card__feature-text">{translate(lang, 'billing.benefitRecognize')}</p>
+		</div>
+
+		{#if snap.pro}
+			{#if snap.provider === 'stripe'}
+				<AppButton
+					variant="secondary"
+					block
+					class="min-h-[48px] mt-1"
+					disabled={portalBusy}
+					onclick={() => void openPortal()}
+				>
+					{portalBusy ? '…' : translate(lang, 'billing.manage')}
+				</AppButton>
+			{:else if snap.provider === 'yookassa' && snap.status !== 'canceled'}
+				<AppButton
+					variant="ghost"
+					block
+					class="min-h-[48px] mt-1"
+					disabled={portalBusy}
+					onclick={() => void openPortal()}
+				>
+					{portalBusy ? '…' : translate(lang, 'billing.cancel')}
+				</AppButton>
+			{/if}
+		{:else if billingReady === null}
+			<p class="billing-card__status" aria-live="polite">{translate(lang, 'billing.checking')}</p>
+		{:else if !billingReady}
+			<p class="billing-card__status billing-card__status--muted">
+				{translate(lang, 'billing.unavailable')}
+			</p>
 		{:else}
-			<div class="billing-actions">
+			<div class="billing-card__actions">
 				<AppButton
 					variant="primary"
 					block
@@ -262,29 +279,129 @@
 				</AppButton>
 			</div>
 		{/if}
-	{/if}
-</div>
+	</section>
+{/if}
 
 <style>
-	.billing-title {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-	.billing-title__icon {
-		display: inline-flex;
-		color: var(--color-accent, #c4f542);
-	}
-	.billing-benefits {
-		margin: 0.5rem 0 0;
-		padding-left: 1.1rem;
-		font-size: 0.9rem;
-		color: var(--color-muted, #9ca3af);
-	}
-	.billing-actions {
+	.billing-card {
 		display: flex;
 		flex-direction: column;
+		gap: 0.85rem;
+		padding: 1rem 1.05rem 1.1rem;
+		border: 1px solid color-mix(in srgb, var(--color-accent) 28%, var(--color-border));
+		background:
+			radial-gradient(
+				120% 90% at 0% 0%,
+				color-mix(in srgb, var(--color-accent) 16%, transparent) 0%,
+				transparent 55%
+			),
+			var(--color-panel, var(--color-surface));
+		box-shadow: 0 1px 0 color-mix(in srgb, var(--color-accent) 12%, transparent);
+	}
+
+	.billing-card__head {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+	}
+
+	.billing-card__head-text {
+		min-width: 0;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+
+	.billing-card__title-row {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.4rem 0.55rem;
+	}
+
+	.billing-card__title {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+		color: var(--color-text);
+		line-height: 1.25;
+	}
+
+	.billing-card__badge {
+		display: inline-flex;
+		align-items: center;
+		min-height: 1.5rem;
+		padding: 0.1rem 0.55rem;
+		border-radius: 999px;
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+		color: var(--color-accent-ink, #fff);
+		background: var(--color-accent-fill, var(--color-accent));
+	}
+
+	.billing-card__lead {
+		margin: 0;
+		font-size: 0.875rem;
+		line-height: 1.4;
+		color: var(--color-muted);
+	}
+
+	.billing-card__feature {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+		min-height: 48px;
+		padding: 0.65rem 0.75rem;
+		border-radius: 0.85rem;
+		border: 1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border));
+		background: color-mix(in srgb, var(--color-accent) 8%, var(--color-panel, var(--color-surface)));
+	}
+
+	.billing-card__feature-icon {
+		display: grid;
+		place-items: center;
+		width: 2rem;
+		height: 2rem;
+		flex-shrink: 0;
+		border-radius: 0.55rem;
+		color: var(--color-accent-text, var(--color-accent));
+		background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+	}
+
+	.billing-card__feature-text {
+		margin: 0;
+		font-size: 0.92rem;
+		font-weight: 600;
+		line-height: 1.35;
+		color: var(--color-text);
+	}
+
+	.billing-card__actions {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
 		gap: 0.5rem;
-		margin-top: 0.75rem;
+	}
+
+	@media (max-width: 380px) {
+		.billing-card__actions {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.billing-card__status {
+		margin: 0;
+		font-size: 0.8125rem;
+		line-height: 1.35;
+		color: var(--color-muted);
+	}
+
+	.billing-card__status--muted {
+		padding: 0.55rem 0.7rem;
+		border-radius: 0.7rem;
+		background: color-mix(in srgb, var(--color-surface-muted, #888) 18%, transparent);
 	}
 </style>

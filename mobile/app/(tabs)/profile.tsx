@@ -19,7 +19,7 @@ import {
 	TextInput,
 	View
 } from 'react-native';
-import { ChevronDown, UserRound } from 'lucide-react-native';
+import { Camera, ChevronDown, Crown, UserRound } from 'lucide-react-native';
 import type { Session } from '@supabase/supabase-js';
 import { userCustomAvatarPath, userDisplayName } from '@repdraft/domain/authFlow';
 import { proFromAppMetadata } from '@repdraft/domain/entitlement';
@@ -1027,27 +1027,40 @@ export default function ProfileScreen() {
 			</Panel>
 
 			{session?.user && cloud ? (
-				<Panel>
-					<Text style={styles.groupTitle}>{tt('billing.title')}</Text>
-					{showPro ? (
-						<>
+				<Panel accent style={styles.billingPanel}>
+					<View style={styles.billingHead}>
+						<View style={styles.billingCrown}>
+							<Crown color={colors.accent} size={18} strokeWidth={2.25} />
+						</View>
+						<View style={styles.billingHeadText}>
+							<View style={styles.billingTitleRow}>
+								<Text style={styles.groupTitle}>{tt('billing.title')}</Text>
+								{showPro ? (
+									<Text style={styles.billingBadge}>{tt('billing.activeBadge')}</Text>
+								) : null}
+							</View>
 							<Text style={styles.hint}>
-								{proUntilLabel
-									? tt('billing.activeUntil', { date: proUntilLabel.slice(0, 10) })
-									: tt('billing.active')}
+								{showPro
+									? proUntilLabel
+										? tt('billing.activeUntil', { date: proUntilLabel.slice(0, 10) })
+										: tt('billing.active')
+									: tt('billing.lead')}
 							</Text>
-							<Text style={styles.hint}>{tt('billing.benefitRecognize')}</Text>
-						</>
-					) : (
+						</View>
+					</View>
+					<View style={styles.billingFeature}>
+						<Camera color={colors.accent} size={18} strokeWidth={2.25} />
+						<Text style={styles.billingFeatureText}>{tt('billing.benefitRecognize')}</Text>
+					</View>
+					{!showPro ? (
 						<>
-							<Text style={styles.hint}>{tt('billing.lead')}</Text>
 							<Text style={styles.hint}>{tt('billing.openOnWebHint')}</Text>
 							<PrimaryButton
 								label={tt('billing.openOnWeb')}
 								onPress={() => void WebBrowser.openBrowserAsync(billingSubscribeUrl())}
 							/>
 						</>
-					)}
+					) : null}
 				</Panel>
 			) : null}
 
@@ -1489,6 +1502,64 @@ function makeStyles(colors: ColorPalette) {
 		textTransform: 'uppercase',
 		letterSpacing: 0.8,
 		marginBottom: space.sm
+	},
+	billingPanel: {
+		gap: space.md
+	},
+	billingHead: {
+		flexDirection: 'row',
+		alignItems: 'flex-start',
+		gap: space.sm
+	},
+	billingCrown: {
+		width: 40,
+		height: 40,
+		borderRadius: radius.sm,
+		backgroundColor: colors.accentDim,
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	billingHeadText: {
+		flex: 1,
+		minWidth: 0,
+		gap: 2
+	},
+	billingTitleRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		flexWrap: 'wrap',
+		gap: space.xs
+	},
+	billingBadge: {
+		color: colors.accentInk,
+		backgroundColor: colors.accentFill,
+		overflow: 'hidden',
+		borderRadius: radius.pill,
+		paddingHorizontal: space.sm,
+		paddingVertical: 2,
+		fontSize: 11,
+		fontWeight: '700',
+		fontFamily: fontFamily.bold,
+		textTransform: 'uppercase'
+	},
+	billingFeature: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: space.sm,
+		minHeight: touchMin,
+		paddingHorizontal: space.md,
+		paddingVertical: space.sm,
+		borderRadius: radius.sm,
+		borderWidth: 1,
+		borderColor: colors.border,
+		backgroundColor: colors.accentDim
+	},
+	billingFeatureText: {
+		flex: 1,
+		color: colors.text,
+		fontSize: 14,
+		fontWeight: '600',
+		fontFamily: fontFamily.semibold
 	},
 	hint: { color: colors.muted, fontSize: 13, lineHeight: 18, fontFamily: fontFamily.regular },
 	coachBlock: { gap: 4, marginBottom: space.sm },

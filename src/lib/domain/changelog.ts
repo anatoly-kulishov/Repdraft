@@ -18,13 +18,13 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		highlights: {
 			ru: [
 				'Repdraft Pro: подписка в профиле (оплата на сайте через ЮKassa или Stripe)',
-				'В приложении Pro оформляется в браузере, статус подтягивается после оплаты',
-				'Pro откроет распознавание программы с фото и Excel в следующем обновлении'
+				'Распознавание программы с фото листа или из Excel/CSV в редактор (Pro)',
+				'Черновик с ИИ: лимит 10 запросов в сутки (план и подсказки в редакторе)'
 			],
 			en: [
 				'Repdraft Pro: subscribe in Profile (pay on the website via YooKassa or Stripe)',
-				'In the app, Pro opens in the browser; status updates after payment',
-				'Pro will unlock photo and Excel program recognition in a later update'
+				'Recognize a program from a paper photo or Excel/CSV into the builder (Pro)',
+				'AI draft: 10 requests per day (plan and builder tune tips)'
 			]
 		}
 	},

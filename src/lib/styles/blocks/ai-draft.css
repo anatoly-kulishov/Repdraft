@@ -90,16 +90,27 @@
 	mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 1.25rem), transparent 100%);
 }
 
-.ai-draft-page__chip {
-	min-height: var(--control-height);
-	min-width: var(--control-height);
-	padding-inline: 0.875rem;
+.catalog-filter-chip.ai-draft-page__chip {
+	/* Flat pill visually; ::after keeps ≥48 hit without turning short labels into circles. */
+	position: relative;
+	min-height: 2.25rem;
+	min-width: 0;
+	height: 2.25rem;
+	padding: 0 0.9rem;
 	font-size: 0.8125rem;
+	line-height: 1;
 	touch-action: manipulation;
 	-webkit-tap-highlight-color: transparent;
 }
 
-.ai-draft-page__chip:active:not(:disabled) {
+.catalog-filter-chip.ai-draft-page__chip::after {
+	content: '';
+	position: absolute;
+	inset: -0.375rem -0.15rem;
+	display: block;
+}
+
+.catalog-filter-chip.ai-draft-page__chip:active:not(:disabled) {
 	transform: scale(0.98);
 	transition-duration: 0s;
 }
@@ -502,11 +513,11 @@ a.ai-draft-page__exercise-title:focus-visible {
 	.ai-draft-page__composer::before,
 	.ai-draft-page__clear,
 	.ai-draft-page__mic,
-	.ai-draft-page__chip {
+	.catalog-filter-chip.ai-draft-page__chip {
 		transition: none;
 	}
 
-	.ai-draft-page__chip:active:not(:disabled) {
+	.catalog-filter-chip.ai-draft-page__chip:active:not(:disabled) {
 		transform: none;
 	}
 

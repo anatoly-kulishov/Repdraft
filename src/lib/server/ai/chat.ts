@@ -4,7 +4,12 @@ import http from 'node:http';
 import { URL } from 'node:url';
 import type { AiConfig } from './config';
 
-type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
+export type ChatMessage = {
+	role: 'system' | 'user' | 'assistant';
+	content: string;
+	/** GigaChat file ids from uploadFile (vision). */
+	attachments?: string[];
+};
 
 type FunctionDef = {
 	name: string;
@@ -23,22 +28,30 @@ type HttpResult = { status: number; text: string };
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
+type RequestBody = string | Buffer;
+
+function bodyByteLength(body: RequestBody): number {
+	return typeof body === 'string' ? Buffer.byteLength(body) : body.byteLength;
+}
+
 /** Scoped TLS bypass for GigaChat when GIGACHAT_SSL_VERIFY=false (no undici dep). */
 function requestRaw(
 	url: string,
 	init: {
 		method: string;
 		headers: Record<string, string>;
-		body?: string;
+		body?: RequestBody;
 		sslVerify: boolean;
+		timeoutMs?: number;
 	}
 ): Promise<HttpResult> {
 	const u = new URL(url);
 	const isHttps = u.protocol === 'https:';
 	const lib = isHttps ? https : http;
 	const headers = { ...init.headers };
+	const timeoutMs = init.timeoutMs ?? REQUEST_TIMEOUT_MS;
 	if (init.body && !headers['Content-Length']) {
-		headers['Content-Length'] = String(Buffer.byteLength(init.body));
+		headers['Content-Length'] = String(bodyByteLength(init.body));
 	}
 
 	return new Promise((resolve, reject) => {
@@ -64,8 +77,8 @@ function requestRaw(
 			}
 		);
 		req.on('error', reject);
-		req.setTimeout(REQUEST_TIMEOUT_MS, () => {
-			req.destroy(new Error(`Request timeout after ${REQUEST_TIMEOUT_MS}ms`));
+		req.setTimeout(timeoutMs, () => {
+			req.destroy(new Error(`Request timeout after ${timeoutMs}ms`));
 		});
 		if (init.body) req.write(init.body);
 		req.end();
@@ -77,18 +90,26 @@ async function aiFetch(
 	init: {
 		method: string;
 		headers: Record<string, string>;
-		body?: string;
+		body?: RequestBody;
+		timeoutMs?: number;
 	},
 	sslVerify: boolean
 ): Promise<HttpResult> {
+	const timeoutMs = init.timeoutMs ?? REQUEST_TIMEOUT_MS;
 	if (sslVerify) {
 		const ctrl = new AbortController();
-		const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
+		const timer = setTimeout(() => ctrl.abort(), timeoutMs);
 		try {
+			const body =
+				init.body == null
+					? undefined
+					: typeof init.body === 'string'
+						? init.body
+						: new Uint8Array(init.body);
 			const res = await fetch(url, {
 				method: init.method,
 				headers: init.headers,
-				body: init.body,
+				body,
 				signal: ctrl.signal
 			});
 			return { status: res.status, text: await res.text() };
@@ -96,7 +117,7 @@ async function aiFetch(
 			clearTimeout(timer);
 		}
 	}
-	return requestRaw(url, { ...init, sslVerify: false });
+	return requestRaw(url, { ...init, sslVerify: false, timeoutMs });
 }
 
 /** Extract human-readable error from LLM response body. */
@@ -119,7 +140,12 @@ function isTransient(status: number): boolean {
 /** One retry on transient upstream / network errors. */
 async function aiFetchWithRetry(
 	url: string,
-	init: { method: string; headers: Record<string, string>; body?: string },
+	init: {
+		method: string;
+		headers: Record<string, string>;
+		body?: RequestBody;
+		timeoutMs?: number;
+	},
 	sslVerify: boolean
 ): Promise<HttpResult> {
 	try {
@@ -129,7 +155,7 @@ async function aiFetchWithRetry(
 			return aiFetch(url, init, sslVerify);
 		}
 		return res;
-	} catch (err) {
+	} catch {
 		await new Promise((r) => setTimeout(r, 800));
 		return aiFetch(url, init, sslVerify);
 	}
@@ -262,4 +288,94 @@ export async function chatCompletion(
 		content: msg?.content ?? null,
 		functionArguments: typeof fnArgs === 'string' ? fnArgs : fnArgs ? JSON.stringify(fnArgs) : null
 	};
+}
+
+const FILE_UPLOAD_TIMEOUT_MS = 60_000;
+
+/**
+ * Upload a file to GigaChat storage (`POST /files`, purpose=general).
+ * Returns the file id for `attachments` on chat messages.
+ */
+export async function uploadFile(
+	cfg: AiConfig,
+	bytes: Buffer,
+	filename: string,
+	contentType: string
+): Promise<string> {
+	if (cfg.provider !== 'gigachat') {
+		throw new Error('File upload is only supported for GigaChat');
+	}
+	const boundary = `----Repdraft${randomUUID().replace(/-/g, '')}`;
+	const head = Buffer.from(
+		[
+			`--${boundary}`,
+			`Content-Disposition: form-data; name="purpose"`,
+			'',
+			'general',
+			`--${boundary}`,
+			`Content-Disposition: form-data; name="file"; filename="${filename.replace(/"/g, '')}"`,
+			`Content-Type: ${contentType}`,
+			'',
+			''
+		].join('\r\n'),
+		'utf8'
+	);
+	const tail = Buffer.from(`\r\n--${boundary}--\r\n`, 'utf8');
+	const body = Buffer.concat([head, bytes, tail]);
+	const url = `${cfg.baseUrl}/files`;
+	const sslVerify = cfg.sslVerify;
+
+	const run = async (forceRefresh: boolean) => {
+		const token = await bearer(cfg, forceRefresh);
+		return aiFetchWithRetry(
+			url,
+			{
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					Accept: 'application/json',
+					'Content-Type': `multipart/form-data; boundary=${boundary}`
+				},
+				body,
+				timeoutMs: FILE_UPLOAD_TIMEOUT_MS
+			},
+			sslVerify
+		);
+	};
+
+	let res = await run(false);
+	if (isExpiredTokenError(res.status, res.text)) {
+		cachedToken = null;
+		res = await run(true);
+	}
+	if (res.status < 200 || res.status >= 300) {
+		throw new Error(`GigaChat file upload failed (${extractUpstreamMessage(res.status, res.text)})`);
+	}
+	const json = JSON.parse(res.text) as { id?: string };
+	if (!json.id || typeof json.id !== 'string') {
+		throw new Error(`GigaChat file upload: no id in ${res.text.slice(0, 200)}`);
+	}
+	return json.id;
+}
+
+/** Best-effort delete of a GigaChat storage file (privacy). */
+export async function deleteFile(cfg: AiConfig, fileId: string): Promise<void> {
+	if (cfg.provider !== 'gigachat' || !fileId.trim()) return;
+	const url = `${cfg.baseUrl}/files/${encodeURIComponent(fileId.trim())}`;
+	try {
+		const token = await bearer(cfg, false);
+		await aiFetch(
+			url,
+			{
+				method: 'DELETE',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					Accept: 'application/json'
+				}
+			},
+			cfg.sslVerify
+		);
+	} catch {
+		/* ignore */
+	}
 }

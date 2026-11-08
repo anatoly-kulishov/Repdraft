@@ -137,6 +137,10 @@
 			};
 			if (myGen !== gen) return;
 			if (!res.ok || !data.ok || !data.prescription) {
+				if (res.status === 429 || data.code === 'rate_limit') {
+					toasts.show(translate(lang, 'aiDraft.rateLimit'), 'error');
+					return;
+				}
 				const authFail =
 					res.status === 503 ||
 					data.code === 'unavailable' ||

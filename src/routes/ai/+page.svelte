@@ -7,6 +7,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
+	import RecognizeProgramAction from '$lib/components/program/RecognizeProgramAction.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import {
@@ -95,7 +96,7 @@
 
 	type GenerateErr = {
 		ok: false;
-		code: 'unavailable' | 'invalid_brief' | 'invalid_plan' | 'upstream';
+		code: 'unavailable' | 'invalid_brief' | 'invalid_plan' | 'upstream' | 'rate_limit';
 		error?: string;
 	};
 
@@ -349,6 +350,8 @@
 				return translate(lang, 'aiDraft.emptyBrief');
 			case 'invalid_plan':
 				return err.error || translate(lang, 'aiDraft.generateFailed');
+			case 'rate_limit':
+				return translate(lang, 'aiDraft.rateLimit');
 			case 'upstream':
 			default:
 				return translate(lang, 'aiDraft.upstreamError');
@@ -630,6 +633,12 @@
 				</AppButton>
 			{/if}
 		</form>
+
+		{#if !plan && !busy}
+			<div class="mt-2">
+				<RecognizeProgramAction variant="secondary" block />
+			</div>
+		{/if}
 
 		{#if busy}
 			<div

@@ -19,6 +19,7 @@ import { aiPlanEndpoint } from '../src/catalog/mediaUrl';
 import { Panel } from '../src/components/Panel';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { useBottomChromePad, useStackHeaderOffset } from '../src/layout/safe';
+import { RecognizeProgramSheet } from '../src/program/RecognizeProgramSheet';
 import { useLocale } from '../src/state/locale';
 import { plansRepo } from '../src/storage/plansRepo';
 import { pushPlan } from '../src/sync/cloudSync';
@@ -47,7 +48,7 @@ type AiOk = {
 
 type AiErr = {
 	ok: false;
-	code: 'unavailable' | 'invalid_brief' | 'invalid_plan' | 'upstream';
+	code: 'unavailable' | 'invalid_brief' | 'invalid_plan' | 'upstream' | 'rate_limit';
 	error?: string;
 };
 
@@ -90,6 +91,7 @@ export default function AiDraftScreen() {
 	const [plan, setPlan] = useState<AiPlanPayload | null>(null);
 	const [planMeta, setPlanMeta] = useState<{ provider: string; model: string; dropped: number } | null>(null);
 	const [index, setIndex] = useState<Map<string, { name: string; name_ru?: string; target: string }>>(new Map());
+	const [recognizeOpen, setRecognizeOpen] = useState(false);
 
 	useEffect(() => {
 		const list = loadExerciseIndex();
@@ -105,6 +107,8 @@ export default function AiDraftScreen() {
 				return tt('aiDraft.emptyBrief');
 			case 'invalid_plan':
 				return err.error || tt('aiDraft.generateFailed');
+			case 'rate_limit':
+				return tt('aiDraft.rateLimit');
 			case 'upstream':
 			default:
 				return tt('aiDraft.upstreamError');
@@ -301,13 +305,25 @@ export default function AiDraftScreen() {
 						disabled={busy || !brief.trim()}
 					/>
 				) : (
-					<PrimaryButton
-						label={busy ? tt('aiDraft.generating') : tt('aiDraft.generate')}
-						onPress={() => void generate()}
-						disabled={busy || !brief.trim()}
-					/>
+					<>
+						<PrimaryButton
+							label={busy ? tt('aiDraft.generating') : tt('aiDraft.generate')}
+							onPress={() => void generate()}
+							disabled={busy || !brief.trim()}
+						/>
+						{!busy ? (
+							<View style={styles.recognizeWrap}>
+								<PrimaryButton
+									label={tt('recognize.cta')}
+									variant="secondary"
+									onPress={() => setRecognizeOpen(true)}
+								/>
+							</View>
+						) : null}
+					</>
 				)}
 			</ScrollView>
+			<RecognizeProgramSheet open={recognizeOpen} onDismiss={() => setRecognizeOpen(false)} />
 		</KeyboardAvoidingView>
 	);
 }
@@ -401,6 +417,7 @@ function makeStyles(colors: ColorPalette) {
 			fontFamily: fontFamily.bold
 		},
 		spec: { color: colors.muted, fontSize: 13, fontFamily: fontFamily.regular },
-		planAction: { marginTop: space.sm }
+		planAction: { marginTop: space.sm },
+		recognizeWrap: { marginTop: space.sm }
 	});
 }

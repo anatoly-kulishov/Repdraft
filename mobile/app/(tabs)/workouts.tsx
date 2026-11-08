@@ -22,6 +22,7 @@ import { MuscleFilterSheet } from '../../src/components/MuscleFilterSheet';
 import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
+import { RecognizeProgramSheet } from '../../src/program/RecognizeProgramSheet';
 import { useLocale } from '../../src/state/locale';
 import { useTabScreenPad } from '../../src/layout/safe';
 import { useAppColors } from '../../src/state/theme';
@@ -47,6 +48,7 @@ export default function WorkoutsTab() {
 	const [plansVisibleLimit, setPlansVisibleLimit] = useState(PLANS_PAGE_SIZE);
 	const [muscleFilter, setMuscleFilter] = useState('');
 	const [muscleSheetOpen, setMuscleSheetOpen] = useState(false);
+	const [recognizeOpen, setRecognizeOpen] = useState(false);
 
 	const reload = useCallback(async () => {
 		const [list, sessions, order, pinned] = await Promise.all([
@@ -237,12 +239,23 @@ export default function WorkoutsTab() {
 					</View>
 				}
 				ListEmptyComponent={
-					<EmptyState
-						title={searchActive ? tt('builder.noMatches') : tt('workouts.emptyTitle')}
-						description={searchActive ? undefined : tt('workouts.emptyDesc')}
-						actionLabel={searchActive ? undefined : tt('workouts.create')}
-						onAction={searchActive ? undefined : () => void createBlank()}
-					/>
+					<View>
+						<EmptyState
+							title={searchActive ? tt('builder.noMatches') : tt('workouts.emptyTitle')}
+							description={searchActive ? undefined : tt('workouts.emptyDesc')}
+							actionLabel={searchActive ? undefined : tt('workouts.create')}
+							onAction={searchActive ? undefined : () => void createBlank()}
+						/>
+						{!searchActive ? (
+							<View style={styles.emptyRecognize}>
+								<PrimaryButton
+									label={tt('recognize.cta')}
+									variant="secondary"
+									onPress={() => setRecognizeOpen(true)}
+								/>
+							</View>
+						) : null}
+					</View>
 				}
 				onEndReached={loadMorePlans}
 				onEndReachedThreshold={0.5}
@@ -336,6 +349,7 @@ export default function WorkoutsTab() {
 					</LinearGradient>
 				</Pressable>
 			) : null}
+			<RecognizeProgramSheet open={recognizeOpen} onDismiss={() => setRecognizeOpen(false)} />
 			<MuscleFilterSheet
 				open={muscleSheetOpen}
 				selected={muscleFilter}
@@ -437,6 +451,10 @@ function makeStyles(colors: ColorPalette) {
 			marginTop: space.xs
 		},
 		aiRowText: { ...type.body, color: colors.text, flex: 1 },
+		emptyRecognize: {
+			marginHorizontal: space.md,
+			marginTop: space.sm
+		},
 		filterRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
 		filterBtn: {
 			minHeight: touchMin,
