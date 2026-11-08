@@ -27,10 +27,12 @@ import {
 	altGroupNeedsPick,
 	applyRepsToOpenSets,
 	applyWeightToOpenSets,
+	canRemoveSessionExercise,
 	chooseAltExercise,
 	completedSetCount,
 	exerciseBestWeightKg,
 	finishSession,
+	insertSessionExercise,
 	isSessionFullyLogged,
 	lastPerformance,
 	loggedSetKind,
@@ -39,6 +41,8 @@ import {
 	nextSetKind,
 	previousSetAtIndex,
 	removeLoggedSet,
+	replaceSessionExercise,
+	replaceSessionPlan,
 	restSecAfterSet,
 	seedOpenSetsFromLastPerformance,
 	setKindMessageKey,
@@ -52,10 +56,15 @@ import {
 } from '@repdraft/domain/session';
 import { exerciseWeightByWeek, nextWeightHint, weightAboveLast } from '@repdraft/domain/sessionPayoff';
 import { isBodyweightEquipment, isCardioBodyPart } from '@repdraft/domain/workout';
-import type { LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
+import type { ExerciseIndexItem, LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { unlockRestAudioFromGesture } from '../../src/audio/restChime';
 import { signalRestDone } from '../../src/audio/restDone';
-import { exerciseDisplayName, getIndexItem, refreshCustomsCache } from '../../src/catalog/loadIndex';
+import {
+	exerciseDisplayName,
+	getIndexItem,
+	loadExerciseIndex,
+	refreshCustomsCache
+} from '../../src/catalog/loadIndex';
 import { CatalogThumb } from '../../src/components/CatalogThumb';
 import { ConfirmSheet, type ConfirmAction } from '../../src/components/ConfirmSheet';
 import { ElapsedClock } from '../../src/components/ElapsedClock';
@@ -65,6 +74,7 @@ import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { RestTimer } from '../../src/components/RestTimer';
 import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { TechniqueSheet } from '../../src/components/TechniqueSheet';
+import { LiveExercisePickSheet } from '../../src/live/LiveExercisePickSheet';
 import { advanceHomeNextAfterFinish } from '../../src/live/homeNext';
 import { movePlanToEnd } from '../../src/live/planOrder';
 import { readRestUntil, shiftRestUntil, writeRestUntil } from '../../src/live/restUntil';
@@ -138,6 +148,8 @@ export default function LiveScreen() {
 		actions: ConfirmAction[];
 		showCancel?: boolean;
 	} | null>(null);
+	const [exercisePickMode, setExercisePickMode] = useState<'replace' | 'add' | null>(null);
+	const [catalogItems, setCatalogItems] = useState<ExerciseIndexItem[]>([]);
 	const finishOfferedRef = useRef(false);
 
 	const persist = useCallback(async (next: WorkoutSession, nextRest: number | null = restUntil) => {
@@ -163,11 +175,23 @@ export default function LiveScreen() {
 		[]
 	);
 
-	const startNew = useCallback(
-		async (plan: WorkoutPlan, hist: WorkoutSession[]) => {
-			await beginSession(plan, hist);
+	const applyPlanReplace = useCallback(
+		async (plan: WorkoutPlan, current: WorkoutSession, hist: WorkoutSession[]) => {
+			let next = replaceSessionPlan(current, plan);
+			next = seedOpenSetsFromLastPerformance(next, (exerciseId) =>
+				lastPerformance(hist, exerciseId)
+			);
+			await writeActiveSession(next);
+			await writeRestUntil(null);
+			setRestUntil(null);
+			setSession(next);
+			setSelectedEi(pickDefaultExerciseIndex(next));
+			finishOfferedRef.current = false;
+			if (planId !== plan.id) {
+				router.replace(`/live/${plan.id}`);
+			}
 		},
-		[beginSession]
+		[planId, router]
 	);
 
 	useEffect(() => {
@@ -181,6 +205,7 @@ export default function LiveScreen() {
 				readRestUntil()
 			]);
 			if (cancelled) return;
+			setCatalogItems(loadExerciseIndex());
 			const hints = hintSessions(hist);
 			setHistory(hints);
 			setRestUntil(rest);
@@ -214,8 +239,9 @@ export default function LiveScreen() {
 					if (!cancelled) {
 						setBootReady(true);
 						setConfirm({
-							title: tt('live.switchStartNew'),
+							title: tt('live.switchOfferTitle'),
 							message: tt('live.switchOfferHint'),
+							showCancel: false,
 							actions: [
 								{
 									label: tt('live.switchKeepCurrent'),
@@ -226,9 +252,9 @@ export default function LiveScreen() {
 								},
 								{
 									label: tt('live.switchStartNew'),
-									variant: 'danger',
+									variant: 'primary',
 									onPress: () => {
-										void startNew(plan, hints);
+										void applyPlanReplace(plan, active, hints);
 									}
 								}
 							]
@@ -253,7 +279,7 @@ export default function LiveScreen() {
 				}
 				return;
 			}
-			await startNew(plan, hints);
+			await beginSession(plan, hints);
 			if (!cancelled) setBootReady(true);
 		})();
 		return () => {
@@ -576,6 +602,67 @@ export default function LiveScreen() {
 		});
 	}
 
+	function offerRemoveExercise() {
+		if (!session || !ex) return;
+		if (!canRemoveSessionExercise(session, selectedEi)) {
+			setConfirm({
+				title: tt('live.removeExercise'),
+				message: tt('live.removeExerciseBlocked'),
+				showCancel: false,
+				actions: [{ label: tt('common.cancel'), variant: 'secondary', onPress: () => undefined }]
+			});
+			return;
+		}
+		const ei = selectedEi;
+		const snapshot = session;
+		const name = exerciseDisplayName(ex.exerciseId, locale);
+		setConfirm({
+			title: tt('live.removeExercise'),
+			message: tt('live.removeExerciseConfirm', { name }),
+			actions: [
+				{
+					label: tt('live.removeExercise'),
+					variant: 'danger',
+					onPress: () => {
+						void (async () => {
+							if (!canRemoveSessionExercise(snapshot, ei)) return;
+							const next = skipSessionExercise(snapshot, ei);
+							await persist(next, null);
+							if (next.exercises.length === 0) {
+								await writeActiveSession(null);
+								router.replace('/');
+								return;
+							}
+							setSelectedEi(pickDefaultExerciseIndex(next));
+							setForceAltPick(false);
+						})();
+					}
+				}
+			]
+		});
+	}
+
+	function onPickLiveExercise(exerciseId: string) {
+		const mode = exercisePickMode;
+		setExercisePickMode(null);
+		if (!session || !mode) return;
+		void (async () => {
+			if (mode === 'replace') {
+				let next = replaceSessionExercise(session, selectedEi, exerciseId);
+				next = seedOpenSetsFromLastPerformance(next, (id) => lastPerformance(history, id));
+				await persist(next, null);
+				setForceAltPick(false);
+				return;
+			}
+			const insertAt = selectedEi + 1;
+			let next = insertSessionExercise(session, insertAt, exerciseId);
+			next = seedOpenSetsFromLastPerformance(next, (id) => lastPerformance(history, id));
+			await persist(next, restUntil);
+			setSelectedEi(insertAt);
+			setForceAltPick(false);
+		})();
+	}
+
 	function offerDiscard() {
 		setConfirm({
 			title: tt('live.confirmDiscard'),
@@ -694,9 +781,11 @@ export default function LiveScreen() {
 				>
 					<ChevronLeft size={22} color={colors.text} strokeWidth={2.25} />
 				</Pressable>
-				<Text style={styles.plan} numberOfLines={1}>
-					{session.planName}
-				</Text>
+				<View style={styles.planBtn}>
+					<Text style={styles.plan} numberOfLines={1}>
+						{session.planName}
+					</Text>
+				</View>
 				<View style={styles.headerTimer}>
 					<ElapsedClock startedAt={session.startedAt} />
 				</View>
@@ -793,6 +882,23 @@ export default function LiveScreen() {
 								variant="ghost"
 								onPress={() => setTechniqueId(ex.exerciseId)}
 							/>
+							<PrimaryButton
+								label={tt('live.replaceExercise')}
+								variant="ghost"
+								onPress={() => setExercisePickMode('replace')}
+							/>
+							<PrimaryButton
+								label={tt('live.addExercise')}
+								variant="ghost"
+								onPress={() => setExercisePickMode('add')}
+							/>
+							{canRemoveSessionExercise(session, selectedEi) ? (
+								<PrimaryButton
+									label={tt('live.removeExercise')}
+									variant="ghost"
+									onPress={offerRemoveExercise}
+								/>
+							) : null}
 							{ex.altGroupId ? (
 								<PrimaryButton
 									label={tt('live.swapAlternative')}
@@ -965,6 +1071,16 @@ export default function LiveScreen() {
 				) : null}
 			</View>
 			<TechniqueSheet exerciseId={techniqueId} onClose={() => setTechniqueId(null)} />
+			<LiveExercisePickSheet
+				open={exercisePickMode != null}
+				mode={exercisePickMode ?? 'add'}
+				catalog={catalogItems}
+				history={history}
+				seedBodyPart={ex ? getIndexItem(ex.exerciseId)?.body_part ?? null : null}
+				busy={finishing}
+				onPick={onPickLiveExercise}
+				onDismiss={() => setExercisePickMode(null)}
+			/>
 			<ConfirmSheet
 				open={Boolean(confirm)}
 				title={confirm?.title ?? ''}
@@ -1089,8 +1205,18 @@ function makeStyles(colors: ColorPalette) {
 		},
 		scroll: { padding: space.lg, gap: space.md },
 		center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
+		planBtn: {
+			flex: 1,
+			minHeight: touchMin,
+			minWidth: touchMin,
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 4,
+			paddingHorizontal: space.xs
+		},
 		plan: {
 			flex: 1,
+			minWidth: 0,
 			color: colors.text,
 			fontSize: 18,
 			fontWeight: '800',

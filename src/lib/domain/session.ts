@@ -25,17 +25,24 @@ export {
 	removeLoggedSet,
 	removeLoggedExercise,
 	skipSessionExercise,
-	restSecAfterSet
+	insertSessionExercise,
+	replaceSessionExercise,
+	canRemoveSessionExercise,
+	restSecAfterSet,
+	runSessionLogSelfCheck,
+	type NewSessionExerciseOpts
 } from './sessionLog';
 
 export {
 	startSessionFromPlan,
 	syncSessionPrescriptionFromPlan,
+	replaceSessionPlan,
 	finishSession,
 	mergeWorkoutSessions,
 	planDraftFromSession,
 	sessionDurationMs,
-	sessionDurationMinutes
+	sessionDurationMinutes,
+	runSessionLifecycleSelfCheck
 } from './sessionLifecycle';
 
 export {

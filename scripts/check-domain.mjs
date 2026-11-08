@@ -25,6 +25,8 @@ function compileDomain() {
 			'src/lib/domain/coach.ts',
 			'src/lib/domain/coachHints.ts',
 			'src/lib/domain/articles.ts',
+			'src/lib/domain/sessionLifecycle.ts',
+			'src/lib/domain/sessionLog.ts',
 			'--ignoreConfig',
 			'--ignoreDeprecations',
 			'6.0',
@@ -58,6 +60,8 @@ function run() {
 	const coach = require(join(outDir, 'domain', 'coach.js'));
 	const coachHints = require(join(outDir, 'domain', 'coachHints.js'));
 	const articlesDomain = require(join(outDir, 'domain', 'articles.js'));
+	const sessionLifecycle = require(join(outDir, 'domain', 'sessionLifecycle.js'));
+	const sessionLog = require(join(outDir, 'domain', 'sessionLog.js'));
 	const catalog = JSON.parse(
 		readFileSync(join(root, 'static', 'data', 'exercises.index.json'), 'utf8')
 	);
@@ -70,6 +74,10 @@ function run() {
 	console.log('✓ coach hints self-check');
 	articlesDomain.runArticlesSelfCheck();
 	console.log('✓ articles self-check');
+	sessionLifecycle.runSessionLifecycleSelfCheck();
+	console.log('✓ session lifecycle self-check');
+	sessionLog.runSessionLogSelfCheck();
+	console.log('✓ session log self-check');
 
 	const failures = [];
 	for (const testCase of cases) {

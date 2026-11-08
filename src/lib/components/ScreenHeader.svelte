@@ -1,12 +1,12 @@
 <script lang="ts">
 	import ExpandableText from '$lib/components/ExpandableText.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_PRIMARY } from '$lib/components/icons/sizes';
+	import { ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { backLabelForHref } from '$lib/i18n/backLabel';
 	import { translate } from '$lib/i18n/messages';
 	import { navigateBack } from '$lib/navigation/back';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ArrowLeft } from 'phosphor-svelte';
+	import { ArrowLeft, CaretDown as ChevronDown } from 'phosphor-svelte';
 
 	let {
 		title,
@@ -21,6 +21,9 @@
 		embedded = false,
 		/** Collapsed line clamp for long titles (tap expands). */
 		titleLines = 2,
+		/** When set, title becomes a tappable control (e.g. change live plan). */
+		onTitleClick = undefined as (() => void) | undefined,
+		titleActionLabel = undefined as string | undefined,
 		actions
 	}: {
 		title: string;
@@ -36,6 +39,8 @@
 		fixed?: boolean;
 		embedded?: boolean;
 		titleLines?: number;
+		onTitleClick?: () => void;
+		titleActionLabel?: string;
 		actions?: import('svelte').Snippet;
 	} = $props();
 
@@ -102,14 +107,28 @@
 			</div>
 		{/if}
 	</div>
-	<ExpandableText
-		as="h1"
-		id={titleId}
-		text={title}
-		lines={titleLines}
-		class="screen-header-title"
-		titleAttr
-	/>
+	{#if onTitleClick}
+		<button
+			type="button"
+			id={titleId}
+			class="screen-header-title screen-header-title-action"
+			aria-label={titleActionLabel ?? title}
+			title={titleActionLabel ?? title}
+			onclick={onTitleClick}
+		>
+			<span class="screen-header-title-action__label">{title}</span>
+			<LucideIcon icon={ChevronDown} size={ICON_SMALL} />
+		</button>
+	{:else}
+		<ExpandableText
+			as="h1"
+			id={titleId}
+			text={title}
+			lines={titleLines}
+			class="screen-header-title"
+			titleAttr
+		/>
+	{/if}
 </header>
 {#if fixed && !embedded}
 	<div

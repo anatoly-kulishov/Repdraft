@@ -185,8 +185,9 @@
 	position: relative;
 	display: flex;
 	align-items: center;
+	gap: 0.55rem;
 	margin-bottom: 0.85rem;
-	padding: 0.75rem 2.85rem 0.75rem 0.85rem;
+	padding: 0.65rem 0.45rem 0.65rem 0.85rem;
 	border-color: color-mix(in srgb, var(--color-accent) 30%, var(--color-border));
 	background:
 		linear-gradient(
@@ -222,16 +223,16 @@
 }
 
 .onboarding-coachmark__dismiss {
-	position: absolute;
-	top: 50%;
-	right: 0.35rem;
+	position: static;
+	flex: 0 0 auto;
+	align-self: center;
 	z-index: 1;
 	min-width: 2.75rem;
 	min-height: 2.75rem;
 	margin: 0;
 	padding: 0;
 	color: var(--color-muted);
-	transform: translateY(-50%);
+	transform: none;
 }
 
 .onboarding-coachmark__icon {
@@ -256,7 +257,7 @@
 
 /* Beat .panel { padding } / card slot padding when coachmark uses .panel class. */
 .onboarding-coachmark.panel {
-	padding: 0.75rem 2.85rem 0.75rem 0.85rem !important;
+	padding: 0.65rem 0.45rem 0.65rem 0.85rem !important;
 }
 
 .home-dashboard-top--onboarding {
@@ -294,7 +295,7 @@
 }
 
 .onboarding-coachmark.draft-dock-wrap__hint.panel {
-	padding: 0.65rem 2.65rem 0.65rem 0.75rem;
+	padding: 0.65rem 0.45rem 0.65rem 0.75rem;
 }
 
 .draft-dock-wrap__hint {

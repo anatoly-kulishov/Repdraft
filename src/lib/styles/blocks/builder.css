@@ -358,13 +358,15 @@
 }
 
 .builder-coachmark-skeleton__dismiss {
-	position: absolute;
-	top: 50%;
-	right: 0.35rem;
+	position: static;
+	flex: 0 0 auto;
+	align-self: center;
 	width: 2.75rem;
 	height: 2.75rem;
+	min-width: 2.75rem;
+	min-height: 2.75rem;
 	border-radius: 999px;
-	transform: translateY(-50%);
+	transform: none;
 	background-color: var(--skeleton-base);
 	background-image: linear-gradient(
 		90deg,
