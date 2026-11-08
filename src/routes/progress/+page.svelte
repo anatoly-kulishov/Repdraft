@@ -78,13 +78,13 @@
 		return d > 0 ? '+' : d < 0 ? '−' : '';
 	}
 
-	/** Human range for a Monday-based weekKey: "21–27 сент." */
+	/** Human range for a Monday-based weekKey: "21-27 сент." */
 	function weekRange(weekKey: string): string {
 		const monday = new Date(`${weekKey}T00:00:00`);
 		const sunday = new Date(monday);
 		sunday.setDate(monday.getDate() + 6);
 		const month = new Intl.DateTimeFormat(lang, { month: 'short' }).format(sunday);
-		return `${monday.getDate()}–${sunday.getDate()} ${month}`;
+		return `${monday.getDate()}-${sunday.getDate()} ${month}`;
 	}
 
 	function formatWeight(kg: number): string {

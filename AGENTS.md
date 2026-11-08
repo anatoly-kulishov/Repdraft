@@ -4,7 +4,7 @@
 
 ## North star
 
-Sacred workout loop. Not feature count. Fast on weak phones.  
+Sacred workout loop. Not feature count. Fast on weak phones. 
 [`.cursor/rules/mvp.mdc`](.cursor/rules/mvp.mdc) · [`.cursor/product/native-rewrite-plan.md`](.cursor/product/native-rewrite-plan.md).
 
 ## Stack
@@ -18,14 +18,14 @@ React Native (Expo in `mobile/`) + SvelteKit web/PWA. Shared `src/lib/domain`.
 ```bash
 npm install
 cp .env.example .env
-npm run dev            # web / PWA
-npm run mobile         # Expo (repo root)
-npm run dev:all        # web + Expo together
-npm run check          # web
-npm run check:mobile   # tsc in mobile/
-npm run check:all      # web + mobile typecheck
-npm run check:parity   # tokens + versions + check:all
-npm run build:tokens   # after editing src/lib/design/tokens.ts
+npm run dev # web / PWA
+npm run mobile # Expo (repo root)
+npm run dev:all # web + Expo together
+npm run check # web
+npm run check:mobile # tsc in mobile/
+npm run check:all # web + mobile typecheck
+npm run check:parity # tokens + versions + check:all
+npm run build:tokens # after editing src/lib/design/tokens.ts
 npm run build
 ```
 
@@ -35,7 +35,7 @@ Legal before public: real `PUBLIC_PRIVACY_*` in Vercel; lawyer review `/privacy`
 
 ## Mobile notes
 
-- **Expo Go SDK:** app targets Expo SDK 58 — matches the current Expo Go on iOS. For native modules (Health) or stable runs use a dev build: `npx expo run:ios --device` (needs `expo-dev-client` + Apple ID in Xcode for signing).
+- **Expo Go SDK:** app targets Expo SDK 58 - matches the current Expo Go on iOS. For native modules (Health) or stable runs use a dev build: `npx expo run:ios --device` (needs `expo-dev-client` + Apple ID in Xcode for signing).
 - **Turnstile:** Cloudflare captcha is web-only for now. RN auth in Expo Go has no Turnstile widget; test signup/reset on web when captcha is required in Supabase.
 - **Health read:** Apple Health / Health Connect needs a **development build** + config plugins (not Expo Go). Toggle lives in Profile; adapter is stub until native modules are wired. See `mobile/src/health/`.
 - **Watches:** separate native UI; ownership spike in [`.cursor/product/watch-session-ownership.md`](.cursor/product/watch-session-ownership.md).
