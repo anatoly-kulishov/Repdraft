@@ -23,6 +23,7 @@ import { ChevronDown, UserRound } from 'lucide-react-native';
 import type { Session } from '@supabase/supabase-js';
 import { userCustomAvatarPath, userDisplayName } from '@repdraft/domain/authFlow';
 import {
+	COACH_ASSIGNMENT_HIDDEN_KEY,
 	INVITE_CODE_LENGTH,
 	isValidInviteCode,
 	normalizeInviteCode,
@@ -96,6 +97,7 @@ import { loadOnboarding } from '../../src/state/onboarding';
 import { isTesterModeEnabled, setTesterModeEnabled } from '../../src/state/testerPrefs';
 import { outboxCount, pullAndMergeFromCloud } from '../../src/sync/cloudSync';
 import { wipeMobileAppStorage } from '../../src/storage/wipeAppStorage';
+import { kvRemove } from '../../src/storage/kv';
 import { fontFamily, radius, space, touchMin, type, type ColorPalette } from '../../src/theme';
 
 const APP_VERSION =
@@ -292,9 +294,10 @@ export default function ProfileScreen() {
 		const result = await coachRepo.revokeAsClient(coach.linkId);
 		if (result.ok) {
 			setMyCoaches((prev) => prev.filter((row) => row.linkId !== coach.linkId));
-			Alert.alert(tt('coach.disconnectDone'));
+			await kvRemove(COACH_ASSIGNMENT_HIDDEN_KEY);
 			const refreshed = await coachRepo.myCurrentAssignment();
-			if (refreshed.ok) setAssignment(refreshed.value);
+			setAssignment(refreshed.ok ? refreshed.value : null);
+			Alert.alert(tt('coach.disconnectDone'));
 		} else {
 			Alert.alert(tt('common.error'), tt(`coach.error.${result.reason}`));
 		}
@@ -307,6 +310,7 @@ export default function ProfileScreen() {
 		try {
 			await importAssignedPlan(current);
 			await coachRepo.discardAssignment();
+			await kvRemove(COACH_ASSIGNMENT_HIDDEN_KEY);
 			setAssignment(null);
 			Alert.alert(tt('coach.assignedAdded'));
 		} catch {
@@ -322,6 +326,7 @@ export default function ProfileScreen() {
 		try {
 			const result = await coachRepo.discardAssignment();
 			if (result.ok) {
+				await kvRemove(COACH_ASSIGNMENT_HIDDEN_KEY);
 				setAssignment(null);
 				Alert.alert(tt('coach.assignedDismissed'));
 			} else {

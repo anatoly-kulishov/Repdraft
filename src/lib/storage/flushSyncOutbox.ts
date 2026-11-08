@@ -1,3 +1,4 @@
+import { isNetworkFailure } from '$lib/domain/networkError';
 import { CLOUD_REQUEST_MS } from '$lib/domain/networkTimeouts';
 import { isCloudPersistableId } from '$lib/domain/id';
 import { withTimeout } from '$lib/domain/withTimeout';
@@ -17,44 +18,72 @@ import { supabaseWorkoutRepository } from '$lib/storage/supabaseWorkoutRepositor
 
 const FLUSH_MS = CLOUD_REQUEST_MS;
 
+export type FlushSyncOutboxOpts = {
+	/**
+	 * Quiet probe (offline interval / post-finish): no "Syncing…" pill.
+	 * Success flash only when at least one entry actually left the outbox.
+	 */
+	silent?: boolean;
+};
+
 let inflight: Promise<void> | null = null;
 
 /**
  * Replay failed cloud mirrors when the network returns.
  * Local data is source of truth; failures leave entries in the outbox.
  */
-export async function flushSyncOutbox(): Promise<void> {
+export async function flushSyncOutbox(opts: FlushSyncOutboxOpts = {}): Promise<void> {
 	/* Do NOT bail on `!navigator.onLine`: iOS/Safari often reports a stale "offline"
 	 * after the network returns, which used to strand the outbox forever. A real
 	 * failure just leaves entries queued (the fetch rejects quickly when offline). */
 	if (!isCloudMode()) return;
 	if (inflight) return inflight;
 
+	const silent = opts.silent === true;
+
 	inflight = (async () => {
 		purgeLocalOnlyOutboxEntries();
 		const startedWith = listOutbox().length;
 		if (startedWith === 0) {
-			outboxSyncUi.markFlushIdle();
+			if (!silent) outboxSyncUi.markFlushIdle();
 			return;
 		}
 
-		outboxSyncUi.beginFlush();
+		if (!silent) outboxSyncUi.beginFlush();
 		let stalled = false;
+		let networkStalled = false;
 		const entries = listOutbox();
 		for (const entry of entries) {
 			try {
 				await flushOne(entry);
 				removeOutboxEntry(entry);
 			} catch (err) {
-				console.warn('sync outbox flush stalled', entry.kind, err);
-				stalled = true;
+				if (isNetworkFailure(err)) {
+					networkStalled = true;
+					console.warn('sync outbox flush waiting for network', entry.kind, err);
+				} else {
+					stalled = true;
+					console.warn('sync outbox flush stalled', entry.kind, err);
+				}
 				break;
 			}
 		}
 
 		const remaining = listOutbox().length;
+		const flushedAny = remaining < startedWith;
+
+		if (networkStalled) {
+			/* Offline / timeout: keep pending chip, do not flash Sync failed. */
+			outboxSyncUi.markFlushIdle();
+			return;
+		}
 		if (stalled || remaining > 0) {
-			outboxSyncUi.markFlushError();
+			if (!silent) outboxSyncUi.markFlushError();
+			else outboxSyncUi.markFlushIdle();
+			return;
+		}
+		if (silent && !flushedAny) {
+			outboxSyncUi.markFlushIdle();
 			return;
 		}
 		outboxSyncUi.markFlushSuccess();

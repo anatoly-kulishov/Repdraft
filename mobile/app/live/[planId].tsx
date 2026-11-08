@@ -557,7 +557,7 @@ export default function LiveScreen() {
 				if (kept) await pushRecord(kept);
 			}
 		} catch {
-			/* offline */
+			/* offline: session already on device; outbox retries later */
 		}
 		setFinishing(false);
 		router.replace(`/summary/${done.id}`);

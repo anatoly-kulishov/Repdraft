@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
+	Alert,
 	RefreshControl,
 	ScrollView,
 	StyleSheet,
@@ -9,6 +10,8 @@ import {
 	View
 } from 'react-native';
 import { Users } from 'lucide-react-native';
+import { createEmptyDraft } from '@repdraft/domain/workout';
+import type { CoachAssignablePlan } from '@repdraft/domain/coach';
 import { ClientSessionSheet } from '../src/coach/ClientSessionSheet';
 import { ClientsHeader } from '../src/coach/ClientsHeader';
 import { ClientsList } from '../src/coach/ClientsList';
@@ -19,11 +22,11 @@ import { useCoachClients } from '../src/coach/useCoachClients';
 import { AssignPlanSheet } from '../src/coach/AssignPlanSheet';
 import { coachRepo } from '../src/storage/coachRepo';
 import { ConfirmSheet } from '../src/components/ConfirmSheet';
-import type { CoachAssignablePlan } from '@repdraft/domain/coach';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { useBottomChromePad } from '../src/layout/safe';
 import { useLocale } from '../src/state/locale';
 import { useAppColors } from '../src/state/theme';
+import { plansRepo } from '../src/storage/plansRepo';
 import { fontFamily, radius, space, touchMin, type ColorPalette } from '../src/theme';
 
 export default function ClientsScreen() {
@@ -72,11 +75,28 @@ export default function ClientsScreen() {
 				setAssignToast(tt('coach.assignDone'));
 				setAssignTarget(null);
 				setAssignPlans([]);
+				coach.collapseRow(target.key);
 			} else {
 				setAssignToast(tt(`coach.error.${result.reason}`));
 			}
 		} finally {
 			setAssignBusy(false);
+		}
+	}
+
+	async function openBuilderFromAssign() {
+		dismissAssign();
+		try {
+			const plan = createEmptyDraft(tt('workouts.newName'));
+			await plansRepo.save(plan);
+			const check = await plansRepo.get(plan.id);
+			if (!check) {
+				Alert.alert(tt('builder.saveFail'));
+				return;
+			}
+			router.push(`/builder/${plan.id}`);
+		} catch {
+			Alert.alert(tt('builder.saveFail'));
 		}
 	}
 
@@ -204,6 +224,7 @@ export default function ClientsScreen() {
 				plans={assignPlans}
 				onPick={(plan) => void pickAssign(plan)}
 				onDismiss={dismissAssign}
+				onOpenBuilder={() => void openBuilderFromAssign()}
 			/>
 
 			<ConfirmSheet

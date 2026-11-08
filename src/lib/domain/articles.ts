@@ -42,8 +42,46 @@ function escapeHtml(value: string): string {
 const ORDERED_ITEM = /^(\d+)\.\s+(.*)$/;
 const IMAGE_LINE = /^!\[([^\]]*)\]\(([^)\s]+)\)$/;
 
-/** ponytail: minimal markdown — headings, ul/ol, images, paragraphs, links only. */
-export function renderArticleBody(markdown: string): string {
+/** Default (RU) article screenshots. EN lives under `…/en/` when present. */
+export const ARTICLE_IMAGES_PREFIX = '/images/articles/';
+export const ARTICLE_IMAGES_EN_PREFIX = '/images/articles/en/';
+
+export type RenderArticleBodyOptions = {
+	locale?: AppLocale;
+	/**
+	 * Basenames available under `/images/articles/en/` (web inventory).
+	 * Without this set EN articles keep the RU screenshot paths (no 404).
+	 */
+	enScreenshots?: ReadonlySet<string>;
+};
+
+/**
+ * Locale-aware screenshot path. Theme is intentionally ignored: one dark
+ * canonical shot per locale. RN can keep calling without options.
+ */
+export function resolveArticleImageSrc(
+	src: string,
+	locale: AppLocale = 'ru',
+	enScreenshots?: ReadonlySet<string>
+): string {
+	if (locale !== 'en') return src;
+	if (!enScreenshots || enScreenshots.size === 0) return src;
+	if (!src.startsWith(ARTICLE_IMAGES_PREFIX) || src.startsWith(ARTICLE_IMAGES_EN_PREFIX)) {
+		return src;
+	}
+	const file = src.slice(ARTICLE_IMAGES_PREFIX.length);
+	if (!file || file.includes('/')) return src;
+	if (!enScreenshots.has(file)) return src;
+	return `${ARTICLE_IMAGES_EN_PREFIX}${file}`;
+}
+
+/** ponytail: minimal markdown - headings, ul/ol, images, paragraphs, links only. */
+export function renderArticleBody(
+	markdown: string,
+	options: RenderArticleBodyOptions = {}
+): string {
+	const locale = options.locale ?? 'ru';
+	const enScreenshots = options.enScreenshots;
 	const lines = markdown.replace(/\r\n/g, '\n').split('\n');
 	const out: string[] = [];
 	let listTag: 'ul' | 'ol' | null = null;
@@ -78,7 +116,8 @@ export function renderArticleBody(markdown: string): string {
 		if (image) {
 			closeList();
 			const alt = escapeHtml(image[1] ?? '');
-			const src = escapeHtml(image[2] ?? '');
+			const rawSrc = image[2] ?? '';
+			const src = escapeHtml(resolveArticleImageSrc(rawSrc, locale, enScreenshots));
 			out.push(
 				`<img class="article-body__img" src="${src}" alt="${alt}" loading="lazy" decoding="async">`
 			);
@@ -195,6 +234,20 @@ export function runArticlesSelfCheck(): void {
 		)
 	) {
 		throw new Error('renderArticleBody image failed');
+	}
+	const enHtml = renderArticleBody(
+		'![Form](/images/articles/ai-draft-form.jpg)',
+		{ locale: 'en', enScreenshots: new Set(['ai-draft-form.jpg']) }
+	);
+	if (!enHtml.includes('src="/images/articles/en/ai-draft-form.jpg"')) {
+		throw new Error('renderArticleBody en screenshot rewrite failed');
+	}
+	const enFallback = renderArticleBody('![Form](/images/articles/ai-draft-form.jpg)', {
+		locale: 'en',
+		enScreenshots: new Set()
+	});
+	if (!enFallback.includes('src="/images/articles/ai-draft-form.jpg"')) {
+		throw new Error('renderArticleBody en screenshot fallback failed');
 	}
 	const articles: Article[] = [
 		{

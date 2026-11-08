@@ -4,6 +4,7 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import BrandTagline from '$lib/components/BrandTagline.svelte';
+	import CoachAssignedCard from '$lib/components/coach/CoachAssignedCard.svelte';
 	import HomePageSkeleton from '$lib/components/HomePageSkeleton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
@@ -42,7 +43,12 @@
 	import { auth } from '$lib/stores/auth';
 	import { isSupabaseConfigured } from '$lib/supabase/client';
 	import { coachRepository } from '$lib/storage/coachRepository';
-	import type { CoachAssignment, CoachMyCoach } from '$lib/domain/coach';
+	import {
+		COACH_ASSIGNMENT_HIDDEN_KEY,
+		isAssignmentHiddenOnHome,
+		type CoachAssignment,
+		type CoachMyCoach
+	} from '$lib/domain/coach';
 	import { greetingName } from '$lib/stores/greetingName';
 	import { homeNextPlan } from '$lib/stores/homeNextPlan';
 	import { live } from '$lib/stores/live';
@@ -132,10 +138,15 @@
 
 	let assignment = $state<CoachAssignment | null>(null);
 	let assignmentBusy = $state(false);
-	let assignmentHidden = $state(false);
+	let assignmentHiddenId = $state<string | null>(null);
 	let assignmentLoadedFor = $state<string | null>(null);
 	let myCoaches = $state<CoachMyCoach[]>([]);
 	let myCoachesLoadedFor = $state<string | null>(null);
+
+	$effect(() => {
+		if (!browser) return;
+		assignmentHiddenId = localStorage.getItem(COACH_ASSIGNMENT_HIDDEN_KEY);
+	});
 
 	$effect(() => {
 		const userId = $auth.user?.id ?? null;
@@ -146,6 +157,22 @@
 			if (result.ok) assignment = result.value;
 		});
 	});
+
+	let showHomeAssignment = $derived(
+		Boolean(assignment) && !isAssignmentHiddenOnHome(assignment, assignmentHiddenId)
+	);
+
+	function hideHomeAssignment() {
+		const id = assignment?.assignmentId;
+		if (!id || !browser) return;
+		localStorage.setItem(COACH_ASSIGNMENT_HIDDEN_KEY, id);
+		assignmentHiddenId = id;
+	}
+
+	function clearHomeAssignmentHide() {
+		if (browser) localStorage.removeItem(COACH_ASSIGNMENT_HIDDEN_KEY);
+		assignmentHiddenId = null;
+	}
 
 	$effect(() => {
 		const userId = $auth.user?.id ?? null;
@@ -180,6 +207,7 @@
 			homeNextPlan.pin(plan.id);
 			const discard = await coachRepository.discardAssignment();
 			assignment = null;
+			clearHomeAssignmentHide();
 			toasts.show(translate(lang, 'coach.assignedAdded'), 'success');
 			if (!discard.ok) toasts.show(translate(lang, `coach.error.${discard.reason}`), 'error');
 		} catch {
@@ -563,28 +591,16 @@
 	{/if}
 
 	{#if !isBootLoading && !showBootSkeleton}
-	{#if assignment && !assignmentHidden}
-		<div class="panel home-assignment">
-			<div class="home-assignment__copy">
-				<p class="home-assignment__kicker">{translate(lang, 'coach.assignedTitle')}</p>
-				<p class="home-assignment__title">{assignment.planName}</p>
-				{#if assignment.coachName}
-					<p class="home-assignment__meta">{assignment.coachName}</p>
-				{/if}
-			</div>
-			<div class="home-assignment__actions">
-				<AppButton block disabled={assignmentBusy} onclick={() => void importAssignment()}>
-					{translate(lang, 'coach.assignedAdd')}
-				</AppButton>
-				<AppButton
-					variant="ghost"
-					disabled={assignmentBusy}
-					onclick={() => (assignmentHidden = true)}
-				>
-					{translate(lang, 'coach.assignedHide')}
-				</AppButton>
-			</div>
-		</div>
+	{#if showHomeAssignment && assignment}
+		<CoachAssignedCard
+			assignment={assignment}
+			{lang}
+			busy={assignmentBusy}
+			secondary="hide"
+			panel
+			onPrimary={() => void importAssignment()}
+			onSecondary={hideHomeAssignment}
+		/>
 	{/if}
 	{#if hasActive && active}
 		<a
@@ -680,7 +696,7 @@
 								<div class="home-monthly__stat panel">
 									<span class="home-monthly__label">{translate(lang, 'progress.cardVolume')}</span>
 									<span class="home-monthly__value home-monthly__value--kg tabular-nums">
-										{formatKgInt(monthly.volumeKg)} кг
+										{formatKgInt(monthly.volumeKg)} {translate(lang, 'common.kg')}
 									</span>
 									<span
 										class:home-monthly__delta--flat={monthly.volumeDelta != null && monthly.volumeDelta <= 0}

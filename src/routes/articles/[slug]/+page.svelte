@@ -39,7 +39,13 @@
 	let articlePath = $derived(`/articles/${article.slug}`);
 	let backHref = $derived(resolveBackFrom(readSearchParam($page.url, 'from'), '/articles'));
 	let backLabel = $derived(backLabelForHref(backHref, lang));
-	let bodyHtml = $derived(renderArticleBody(article.bodyMd));
+	let enScreenshots = $derived(new Set(data.enArticleScreenshots ?? []));
+	let bodyHtml = $derived(
+		renderArticleBody(article.bodyMd, {
+			locale: article.locale,
+			enScreenshots
+		})
+	);
 	let ctaHref = $derived(withFromParam(article.ctaHref ?? '/exercises', articlePath));
 	let ctaLabel = $derived(
 		translate(lang, article.ctaLabelKey ?? 'articles.ctaExercises')

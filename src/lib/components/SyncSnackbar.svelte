@@ -13,15 +13,16 @@
 	import { WarningCircle as AlertCircle, Check } from 'phosphor-svelte';
 	import { onMount } from 'svelte';
 
-	/** iOS often skips `online`; keep trying while the chip is visible. */
-	const RETRY_MS = 12_000;
+	/** Online: keep probing (iOS often skips `online`). Offline: rare silent probe. */
+	const ONLINE_RETRY_MS = 12_000;
+	const OFFLINE_PROBE_MS = 60_000;
 
 	let lang = $derived($resolvedLocale);
 	let phase = $derived($outboxSyncUi);
 	let online = $state(true);
 	let pending = $state(0);
 	let cloudMode = $state(false);
-	/** Undo / status toasts sit in the same band; do not stack "Успешно сохранено" under them. */
+	/** Undo / status toasts sit in the same band; do not stack success under them. */
 	let toastCueActive = $derived($toasts.length > 0);
 
 	function refresh() {
@@ -31,39 +32,74 @@
 		cloudMode = isCloudMode();
 	}
 
-	function tryFlush() {
+	function tryFlush(opts: { silent?: boolean; forceVisible?: boolean } = {}) {
 		refresh();
-		/* Attempt whenever a cloud account has pending work — do NOT gate on
-		 * navigator.onLine (iOS reports a stale "offline" long after reconnect). */
 		if (!cloudMode || pending === 0) return;
-		void flushSyncOutbox();
+		/* Offline: only silent probes so we do not flash Syncing / Sync failed. */
+		if (!online && !opts.forceVisible) {
+			void flushSyncOutbox({ silent: true });
+			return;
+		}
+		void flushSyncOutbox({ silent: opts.silent === true && !opts.forceVisible });
 	}
 
 	onMount(() => {
 		refresh();
-		const onChange = () => refresh();
+		let onlineTimer: number | undefined;
+		let offlineTimer: number | undefined;
+
+		const clearTimers = () => {
+			if (onlineTimer !== undefined) window.clearInterval(onlineTimer);
+			if (offlineTimer !== undefined) window.clearInterval(offlineTimer);
+			onlineTimer = undefined;
+			offlineTimer = undefined;
+		};
+
+		const armTimers = () => {
+			clearTimers();
+			refresh();
+			if (online) {
+				onlineTimer = window.setInterval(() => tryFlush(), ONLINE_RETRY_MS);
+			} else {
+				offlineTimer = window.setInterval(
+					() => tryFlush({ silent: true }),
+					OFFLINE_PROBE_MS
+				);
+			}
+		};
+
+		const onChange = () => {
+			refresh();
+			armTimers();
+		};
 		const onOnlineOrCloud = () => {
 			refresh();
-			tryFlush();
+			armTimers();
+			/* Visible flush after reconnect / cloud unlock. */
+			tryFlush({ forceVisible: true });
 		};
 		const onVisible = () => {
 			onChange();
-			if (document.visibilityState === 'visible') tryFlush();
+			if (document.visibilityState === 'visible') {
+				tryFlush({ silent: !online, forceVisible: online });
+			}
 		};
+
 		window.addEventListener('online', onOnlineOrCloud);
 		window.addEventListener('offline', onChange);
 		document.addEventListener('visibilitychange', onVisible);
 		window.addEventListener('repdraft:outbox', onChange);
 		window.addEventListener('repdraft:cloud-mode', onOnlineOrCloud);
-		const retryTimer = window.setInterval(tryFlush, RETRY_MS);
-		tryFlush();
+		armTimers();
+		tryFlush({ silent: !online, forceVisible: online });
+
 		return () => {
 			window.removeEventListener('online', onOnlineOrCloud);
 			window.removeEventListener('offline', onChange);
 			document.removeEventListener('visibilitychange', onVisible);
 			window.removeEventListener('repdraft:outbox', onChange);
 			window.removeEventListener('repdraft:cloud-mode', onOnlineOrCloud);
-			window.clearInterval(retryTimer);
+			clearTimers();
 		};
 	});
 
@@ -72,14 +108,15 @@
 	let mode = $derived.by((): SnackbarMode => {
 		switch (phase) {
 			case 'syncing':
-				return 'syncing';
+				/* Offline probe must not keep the Syncing spinner visible. */
+				return online ? 'syncing' : 'offline';
 			case 'success':
 				return 'success';
 			case 'error':
-				return 'error';
+				return online ? 'error' : 'offline';
 			case 'idle':
-				if (pending > 0) return 'pending';
 				if (!online) return 'offline';
+				if (pending > 0) return 'pending';
 				return 'hidden';
 			default: {
 				const _exhaustive: never = phase;
@@ -96,6 +133,12 @@
 	function retry() {
 		void flushSyncOutbox();
 	}
+
+	let offlineLabel = $derived(
+		pending > 0
+			? translate(lang, 'network.offlineWaiting', { n: pending })
+			: translate(lang, 'network.offlineChip')
+	);
 </script>
 
 {#if visible}
@@ -163,7 +206,7 @@
 				role="status"
 				aria-live="polite"
 			>
-				<span class="sync-snackbar__label">{translate(lang, 'network.offlineChip')}</span>
+				<span class="sync-snackbar__label">{offlineLabel}</span>
 			</div>
 		{/if}
 	</div>

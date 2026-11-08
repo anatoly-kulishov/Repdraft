@@ -274,6 +274,7 @@ export function useCoachClients() {
 		shareInvite,
 		remind,
 		toggleRow,
+		collapseRow: (key: string) => setExpanded((prev) => ({ ...prev, [key]: false })),
 		openSession,
 		closeSession,
 		revokeRow

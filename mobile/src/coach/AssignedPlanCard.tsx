@@ -14,7 +14,7 @@ type Props = {
 	onDismiss: () => void;
 };
 
-/** Client-side card: coach assigned a plan → import it or dismiss. */
+/** Profile card: import assigned plan or discard (RPC). Layout matches HomeAssignmentCard. */
 export function AssignedPlanCard({ assignment, busy, onImport, onDismiss }: Props) {
 	const { tt } = useLocale();
 	const colors = useAppColors();
@@ -27,25 +27,25 @@ export function AssignedPlanCard({ assignment, busy, onImport, onDismiss }: Prop
 					<ClipboardList color={colors.accentText} size={20} strokeWidth={2} />
 				</View>
 				<View style={styles.text}>
-					<Text style={styles.title}>{tt('coach.assignedTitle')}</Text>
-					<Text style={styles.body} numberOfLines={2}>
+					<Text style={styles.kicker}>{tt('coach.assignedTitle')}</Text>
+					<Text style={styles.title} numberOfLines={2}>
 						{assignment.planName}
-						{assignment.coachName ? ` · ${assignment.coachName}` : ''}
 					</Text>
+					{assignment.coachName ? (
+						<Text style={styles.meta}>{assignment.coachName}</Text>
+					) : null}
 				</View>
 			</View>
-			<PrimaryButton
-				label={tt('coach.assignedAdd')}
-				onPress={onImport}
-				disabled={busy}
-			/>
-			<PrimaryButton
-				label={tt('coach.assignedDismiss')}
-				variant="ghost"
-				compact
-				onPress={onDismiss}
-				disabled={busy}
-			/>
+			<View style={styles.actions}>
+				<PrimaryButton label={tt('coach.assignedAdd')} onPress={onImport} disabled={busy} />
+				<PrimaryButton
+					label={tt('coach.assignedDismiss')}
+					variant="ghost"
+					compact
+					onPress={onDismiss}
+					disabled={busy}
+				/>
+			</View>
 		</View>
 	);
 }
@@ -55,7 +55,7 @@ function makeStyles(colors: ColorPalette) {
 		card: {
 			marginTop: space.md,
 			padding: space.md,
-			gap: space.sm,
+			gap: space.md,
 			borderWidth: 1,
 			borderColor: colors.accentDim,
 			borderRadius: radius.md,
@@ -71,12 +71,20 @@ function makeStyles(colors: ColorPalette) {
 			backgroundColor: colors.panel
 		},
 		text: { flex: 1, minWidth: 0 },
+		kicker: {
+			color: colors.secondary,
+			fontSize: 12,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
+		},
 		title: {
+			marginTop: 2,
 			color: colors.text,
-			fontSize: 15,
+			fontSize: 16,
 			fontWeight: '700',
 			fontFamily: fontFamily.bold
 		},
-		body: { marginTop: 2, color: colors.secondary, fontSize: 13, lineHeight: 18 }
+		meta: { marginTop: 2, color: colors.muted, fontSize: 13 },
+		actions: { gap: space.sm }
 	});
 }

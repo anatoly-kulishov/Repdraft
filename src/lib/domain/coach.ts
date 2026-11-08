@@ -84,6 +84,18 @@ export type CoachAssignment = {
 	assignedAt: string;
 };
 
+/** localStorage / AsyncStorage: Home "Hide" for this assignment id (not a discard). */
+export const COACH_ASSIGNMENT_HIDDEN_KEY = 'repdraft:coach-assignment-hidden-id';
+
+/** True when Home should suppress the banner for this assignment. */
+export function isAssignmentHiddenOnHome(
+	assignment: CoachAssignment | null | undefined,
+	hiddenAssignmentId: string | null | undefined
+): boolean {
+	if (!assignment?.assignmentId || !hiddenAssignmentId) return false;
+	return assignment.assignmentId === hiddenAssignmentId;
+}
+
 function isSetKind(value: unknown): value is SetKind {
 	return value === 'work' || value === 'warmup' || value === 'drop' || value === 'failure';
 }

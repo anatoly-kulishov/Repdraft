@@ -65,18 +65,26 @@ function markSessionsCloudDown(err: unknown) {
 	console.warn('session cloud skipped', err);
 }
 
-/** Always durable on device; also mirrors to cloud when available. */
-export async function persistSession(session: WorkoutSession): Promise<void> {
-	syncState.beginLocalSave();
-	try {
-		await localSessionRepository.save(session);
-		syncState.markLocalSaved();
-	} catch (err) {
-		syncState.markLocalSaveError();
-		throw err;
-	}
+export type PersistSessionOpts = {
+	/**
+	 * `await` (default): wait for cloud mirror/queue.
+	 * `background`: return after local save; cloud mirror runs without blocking UI.
+	 */
+	mirror?: 'await' | 'background';
+};
+
+function isBrowserOffline(): boolean {
+	return typeof navigator !== 'undefined' && navigator.onLine === false;
+}
+
+async function mirrorSessionToCloud(session: WorkoutSession): Promise<void> {
 	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
 	if (!isCloudPersistableId(session.id)) return;
+	/* Airplane mode: skip the 8s timeout dance and queue immediately. */
+	if (isBrowserOffline()) {
+		enqueueOutbox({ kind: 'session.save', id: session.id });
+		return;
+	}
 	try {
 		await withTimeout(supabaseSessionRepository.save(session), CLOUD_REQUEST_MS);
 	} catch (err) {
@@ -85,9 +93,30 @@ export async function persistSession(session: WorkoutSession): Promise<void> {
 		if (isSessionsTableMissing(e) || e?.message === 'SESSIONS_TABLE_MISSING') {
 			markSessionsCloudDown(err);
 		} else {
-			console.warn('session cloud save failed — queued for retry', err);
+			console.warn('session cloud save failed - queued for retry', err);
 		}
 	}
+}
+
+/** Always durable on device; also mirrors to cloud when available. */
+export async function persistSession(
+	session: WorkoutSession,
+	opts: PersistSessionOpts = {}
+): Promise<void> {
+	syncState.beginLocalSave();
+	try {
+		await localSessionRepository.save(session);
+		syncState.markLocalSaved();
+	} catch (err) {
+		syncState.markLocalSaveError();
+		throw err;
+	}
+	const mirror = opts.mirror ?? 'await';
+	if (mirror === 'background') {
+		void mirrorSessionToCloud(session);
+		return;
+	}
+	await mirrorSessionToCloud(session);
 }
 
 export async function deleteSession(id: string): Promise<void> {
@@ -104,6 +133,10 @@ export async function deleteSession(id: string): Promise<void> {
 	}
 	if (!cloudMode || !sessionsCloudOk || isSessionsTableUnavailable()) return;
 	if (!isCloudPersistableId(id)) return;
+	if (isBrowserOffline()) {
+		enqueueOutbox({ kind: 'session.delete', id });
+		return;
+	}
 	try {
 		await withTimeout(supabaseSessionRepository.remove(id), CLOUD_REQUEST_MS);
 	} catch (err) {
@@ -112,7 +145,7 @@ export async function deleteSession(id: string): Promise<void> {
 		if (isSessionsTableMissing(e) || e?.message === 'SESSIONS_TABLE_MISSING') {
 			markSessionsCloudDown(err);
 		} else {
-			console.warn('session cloud delete failed — queued for retry', err);
+			console.warn('session cloud delete failed - queued for retry', err);
 		}
 	}
 }

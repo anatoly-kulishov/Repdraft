@@ -13,10 +13,19 @@
 		plans: CoachAssignablePlan[];
 		onPick: (plan: CoachAssignablePlan) => void;
 		onDismiss: () => void;
+		onOpenBuilder?: () => void;
 	};
 
-	let { open, clientLabel, loading = false, busy = false, plans, onPick, onDismiss }: Props =
-		$props();
+	let {
+		open,
+		clientLabel,
+		loading = false,
+		busy = false,
+		plans,
+		onPick,
+		onDismiss,
+		onOpenBuilder
+	}: Props = $props();
 
 	let lang = $derived($resolvedLocale);
 </script>
@@ -38,6 +47,13 @@
 		</div>
 	{:else if plans.length === 0}
 		<p class="bottom-sheet__hint">{translate(lang, 'coach.assignEmpty')}</p>
+		{#if onOpenBuilder}
+			<div class="coach-assign-empty-cta">
+				<AppButton block disabled={busy} onclick={onOpenBuilder}>
+					{translate(lang, 'coach.assignOpenBuilder')}
+				</AppButton>
+			</div>
+		{/if}
 	{:else}
 		<ul class="coach-assign-list">
 			{#each plans as plan (plan.planId)}
@@ -64,3 +80,9 @@
 		</AppButton>
 	{/snippet}
 </BottomSheet>
+
+<style>
+	.coach-assign-empty-cta {
+		margin-top: 0.75rem;
+	}
+</style>

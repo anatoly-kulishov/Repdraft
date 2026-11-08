@@ -36,12 +36,16 @@ import { readPlanOrder, writePlanOrder } from '../live/planOrder';
 import { loadGreetingName } from '../state/greetingName';
 import { useLocale } from '../state/locale';
 import { dismissChecklist, noteChecklist } from '../state/onboarding';
-import { kvSetJson } from '../storage/kv';
+import { kvGet, kvRemove, kvSet, kvSetJson } from '../storage/kv';
 import { plansRepo } from '../storage/plansRepo';
 import { readActiveSession, sessionsRepo } from '../storage/sessionsRepo';
 import { outboxCount } from '../sync/cloudSync';
 import { coachRepo } from '../storage/coachRepo';
-import type { CoachAssignment } from '@repdraft/domain/coach';
+import {
+	COACH_ASSIGNMENT_HIDDEN_KEY,
+	isAssignmentHiddenOnHome,
+	type CoachAssignment
+} from '@repdraft/domain/coach';
 import { importAssignedPlan } from '../coach/importAssignment';
 
 const RECENT_LIMIT = 3;
@@ -97,8 +101,12 @@ export function useHomeDashboard() {
 		const user = supabase ? (await supabase.auth.getSession()).data.session?.user ?? null : null;
 		setAuthUser(user);
 		if (user) {
-			const current = await coachRepo.myCurrentAssignment();
-			setAssignment(current.ok ? current.value : null);
+			const [current, hiddenId] = await Promise.all([
+				coachRepo.myCurrentAssignment(),
+				kvGet(COACH_ASSIGNMENT_HIDDEN_KEY)
+			]);
+			const next = current.ok ? current.value : null;
+			setAssignment(isAssignmentHiddenOnHome(next, hiddenId) ? null : next);
 		} else {
 			setAssignment(null);
 		}
@@ -167,6 +175,7 @@ export function useHomeDashboard() {
 		try {
 			await importAssignedPlan(current);
 			await coachRepo.discardAssignment();
+			await kvRemove(COACH_ASSIGNMENT_HIDDEN_KEY);
 			setAssignment(null);
 			await reload();
 			Alert.alert(tt('coach.assignedAdded'));
@@ -177,9 +186,11 @@ export function useHomeDashboard() {
 		}
 	}, [assignment, assignmentBusy, reload, tt]);
 
-	const hideAssignment = useCallback(() => {
+	const hideAssignment = useCallback(async () => {
+		const id = assignment?.assignmentId;
+		if (id) await kvSet(COACH_ASSIGNMENT_HIDDEN_KEY, id);
 		setAssignment(null);
-	}, []);
+	}, [assignment]);
 
 	const next = useMemo(
 		() => resolveHomeNextPlan(plans, recent[0]?.planId ?? null, pinnedNextId),

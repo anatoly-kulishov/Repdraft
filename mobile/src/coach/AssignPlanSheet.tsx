@@ -15,10 +15,20 @@ type Props = {
 	plans: CoachAssignablePlan[];
 	onPick: (plan: CoachAssignablePlan) => void;
 	onDismiss: () => void;
+	onOpenBuilder?: () => void;
 };
 
 /** Plan picker for "assign a workout" (web `CoachAssignSheet` twin). */
-export function AssignPlanSheet({ open, clientLabel, loading, busy, plans, onPick, onDismiss }: Props) {
+export function AssignPlanSheet({
+	open,
+	clientLabel,
+	loading,
+	busy,
+	plans,
+	onPick,
+	onDismiss,
+	onOpenBuilder
+}: Props) {
 	const { tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -48,7 +58,16 @@ export function AssignPlanSheet({ open, clientLabel, loading, busy, plans, onPic
 					<ActivityIndicator color={colors.accentText} />
 				</View>
 			) : plans.length === 0 ? (
-				<Text style={styles.muted}>{tt('coach.assignEmpty')}</Text>
+				<View style={styles.empty}>
+					<Text style={styles.muted}>{tt('coach.assignEmpty')}</Text>
+					{onOpenBuilder ? (
+						<PrimaryButton
+							label={tt('coach.assignOpenBuilder')}
+							onPress={onOpenBuilder}
+							disabled={busy}
+						/>
+					) : null}
+				</View>
 			) : (
 				<ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
 					{plans.map((plan) => (
@@ -82,7 +101,8 @@ function makeStyles(colors: ColorPalette) {
 			color: colors.text
 		},
 		hint: { marginTop: space.xs, fontSize: 13, lineHeight: 19, color: colors.muted },
-		muted: { marginTop: space.md, fontSize: 13, lineHeight: 19, color: colors.muted },
+		empty: { marginTop: space.md, gap: space.md },
+		muted: { fontSize: 13, lineHeight: 19, color: colors.muted },
 		loading: { paddingVertical: space.xl, alignItems: 'center' },
 		list: { marginTop: space.md, maxHeight: 320 },
 		listContent: { gap: space.sm },

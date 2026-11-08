@@ -110,9 +110,9 @@ const ru: Dict = {
 	'coach.settings': 'Настройки',
 	'coach.helpTitle': 'Как подключить клиента',
 	'coach.helpBody':
-		'Клиенты подключаются по коду приглашения. Передайте код — клиент введёт его в своём профиле, и его тренировки появятся здесь.',
+		'Клиенты подключаются по коду приглашения. Передайте код: клиент введёт его в своём профиле, и его тренировки появятся здесь.',
 	'coach.inviteHint': 'Код для новых клиентов',
-	'coach.inviteHelp': 'Передайте код клиенту — он введёт его в своём профиле.',
+	'coach.inviteHelp': 'Передайте код клиенту: он введёт его в своём профиле.',
 	'coach.inviteShare': 'Поделиться',
 	'coach.inviteCreateShort': 'Создать код',
 	'coach.inviteShareMessage':
@@ -125,6 +125,7 @@ const ru: Dict = {
 	'coach.assignHint': 'Клиент добавит его к себе и увидит на Главной.',
 	'coach.assignPick': 'Выберите план',
 	'coach.assignEmpty': 'У вас пока нет планов. Соберите план в редакторе.',
+	'coach.assignOpenBuilder': 'Открыть редактор',
 	'coach.assignExercises': '{n} упр.',
 	'coach.assignDone': 'План назначен клиенту',
 	'coach.assignedTitle': 'Тренер назначил план',
@@ -800,6 +801,7 @@ const ru: Dict = {
 	'sync.savedAccountSheetBody':
 		'Сначала на телефон, затем в аккаунт. Без сети данные не пропадут. Если синхронизация не прошла, над меню появится подсказка.',
 	'network.offlineChip': 'Без сети. Данные на телефоне.',
+	'network.offlineWaiting': 'Без сети. Ждёт отправки: {n}',
 	'network.outboxChip': '{n} изменений ждут сохранения',
 	'network.waitingToSave': 'Ждёт сохранения: {n}',
 	'network.syncing': 'Синхронизируем…',
@@ -1637,9 +1639,9 @@ const en: Dict = {
 	'coach.settings': 'Settings',
 	'coach.helpTitle': 'How clients connect',
 	'coach.helpBody':
-		'Clients join with an invite code. Share the code — they enter it in their profile and their workouts appear here.',
+		'Clients join with an invite code. Share the code: they enter it in their profile and their workouts appear here.',
 	'coach.inviteHint': 'Code for new clients',
-	'coach.inviteHelp': 'Share the code — the client enters it in their profile.',
+	'coach.inviteHelp': 'Share the code: the client enters it in their profile.',
 	'coach.inviteShare': 'Share',
 	'coach.inviteCreateShort': 'Create code',
 	'coach.inviteShareMessage':
@@ -1652,6 +1654,7 @@ const en: Dict = {
 	'coach.assignHint': 'The client adds it to their plans and sees it on Home.',
 	'coach.assignPick': 'Pick a plan',
 	'coach.assignEmpty': 'You have no plans yet. Build one in the editor.',
+	'coach.assignOpenBuilder': 'Open editor',
 	'coach.assignExercises': '{n} exercises',
 	'coach.assignDone': 'Plan assigned to the client',
 	'coach.assignedTitle': 'Your coach assigned a plan',
@@ -2320,6 +2323,7 @@ const en: Dict = {
 	'sync.savedAccountSheetBody':
 		'We write on this phone first, then to your account. Offline data stays safe. If sync fails, a hint appears above the tab bar.',
 	'network.offlineChip': 'Offline. Data stays on this phone.',
+	'network.offlineWaiting': 'Offline. Waiting to save: {n}',
 	'network.outboxChip': '{n} changes waiting to save',
 	'network.waitingToSave': 'Waiting to save: {n}',
 	'network.syncing': 'Syncing…',

@@ -53,7 +53,7 @@ export function ClientsList({
 			<View style={styles.head}>
 				<Text style={styles.blockTitle}>{tt('coach.clientsCount', { n: totalCount })}</Text>
 				<Text style={styles.weekActive}>
-					{statsReady ? tt('coach.weekActive', { n: weekActive }) : '—'}
+					{statsReady ? tt('coach.weekActive', { n: weekActive }) : tt('coach.noStats')}
 				</Text>
 			</View>
 			<View style={styles.card}>
@@ -269,7 +269,8 @@ function makeStyles(colors: ColorPalette) {
 		statusActive: { color: colors.success },
 		statusNeutral: { color: colors.mutedSoft },
 		quickChip: {
-			minWidth: 64,
+			minWidth: touchMin,
+			minHeight: touchMin,
 			alignItems: 'center',
 			justifyContent: 'center',
 			gap: 4,

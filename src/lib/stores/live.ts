@@ -486,7 +486,8 @@ function createLiveStore() {
 				.filter((ex) => ex.sets.some((s) => s.completed))
 				.map((ex) => ex.exerciseId);
 			exerciseStats.recordUses(usedIds);
-			await persistSession(done);
+			/* Local-first: do not await cloud mirror (offline can stall finish 8s+). */
+			await persistSession(done, { mirror: 'background' });
 			persistActive(null, null);
 			store.update((s) => ({
 				...s,
@@ -503,8 +504,8 @@ function createLiveStore() {
 				planOrder.moveToEnd(done.planId);
 				plans.resort();
 			}
-			await refreshHistory();
-			void flushSyncOutbox();
+			await refreshHistory({ cloud: false });
+			void flushSyncOutbox({ silent: true });
 			return done;
 		},
 		discard() {
@@ -517,20 +518,23 @@ function createLiveStore() {
 				history: s.history.filter((x) => x.id !== id)
 			}));
 			await deleteSession(id);
-			await refreshHistory();
+			await refreshHistory({ cloud: false });
+			void flushSyncOutbox({ silent: true });
 		},
 		async restoreSession(session: WorkoutSession) {
 			clearSessionTombstone(session.id);
-			await persistSession(session);
-			await refreshHistory();
+			await persistSession(session, { mirror: 'background' });
+			await refreshHistory({ cloud: false });
+			void flushSyncOutbox({ silent: true });
 		},
 		async restoreHistory(sessions: WorkoutSession[]) {
 			if (sessions.length === 0) return;
 			for (const session of sessions) {
 				clearSessionTombstone(session.id);
-				await persistSession(session);
+				await persistSession(session, { mirror: 'background' });
 			}
-			await refreshHistory();
+			await refreshHistory({ cloud: false });
+			void flushSyncOutbox({ silent: true });
 		},
 		/**
 		 * Patch a finished (history) session and persist changes locally + mirror to cloud.
@@ -571,8 +575,9 @@ function createLiveStore() {
 
 			if (finishedSessionLogEqual(session, patched)) return true;
 
-			await persistSession(patched);
-			await refreshHistory();
+			await persistSession(patched, { mirror: 'background' });
+			await refreshHistory({ cloud: false });
+			void flushSyncOutbox({ silent: true });
 			return true;
 		},
 		async clearHistory() {

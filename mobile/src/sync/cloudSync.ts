@@ -37,33 +37,34 @@ export async function isCloudReady(): Promise<boolean> {
 
 export async function pushPlan(plan: WorkoutPlan): Promise<void> {
 	await enqueueOutbox({ kind: 'plan.save', id: plan.id });
-	await flushOutbox();
+	/* Do not await flush: offline finish must not stall on cloud. */
+	void flushOutbox();
 }
 
 export async function pushSession(session: WorkoutSession): Promise<void> {
 	await enqueueOutbox({ kind: 'session.save', id: session.id });
-	await flushOutbox();
+	void flushOutbox();
 }
 
 export async function pushRecord(record: PersonalRecord): Promise<void> {
 	await enqueueOutbox({ kind: 'record.save', exerciseId: record.exerciseId });
-	await flushOutbox();
+	void flushOutbox();
 }
 
 export async function deleteSessionRemote(id: string): Promise<void> {
 	await addSessionTombstone(id);
 	await enqueueOutbox({ kind: 'session.delete', id });
-	await flushOutbox();
+	void flushOutbox();
 }
 
 export async function deletePlanRemote(id: string): Promise<void> {
 	await enqueueOutbox({ kind: 'plan.delete', id });
-	await flushOutbox();
+	void flushOutbox();
 }
 
 export async function deleteRecordRemote(exerciseId: string): Promise<void> {
 	await enqueueOutbox({ kind: 'record.delete', exerciseId });
-	await flushOutbox();
+	void flushOutbox();
 }
 
 async function upsertPlan(plan: WorkoutPlan): Promise<void> {
