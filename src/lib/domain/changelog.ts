@@ -1,6 +1,6 @@
 /**
  * In-app “What’s new” for Profile version tap.
- * Update on each release: newest first. Keep 4–6 entries; short athlete-facing bullets.
+ * Update on each release: newest first. Keep 4-6 entries; short athlete-facing bullets.
  * Plain language only: no sticky / toast / PWA / lightbox jargon.
  */
 import type { AppLocale } from '../i18n/locale';
@@ -13,6 +13,19 @@ export type ChangelogRelease = {
 
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
+	{
+		version: '0.25.1',
+		highlights: {
+			ru: [
+				'Pro: 149 ₽ в месяц или 1490 ₽ в год',
+				'Описание в поиске и тексты справочника без длинных тире'
+			],
+			en: [
+				'Pro: 149 RUB/month or 1490 RUB/year',
+				'Search description and guide copy without long dashes'
+			]
+		}
+	},
 	{
 		version: '0.25.0',
 		highlights: {
@@ -32,7 +45,7 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.24.1',
 		highlights: {
 			ru: [
-				'Конструктор: подходы у нескольких упражнений меняются разом; «Выбрать все» — в один тап',
+				'Конструктор: подходы у нескольких упражнений меняются разом; «Выбрать все» - в один тап',
 				'Отдых суперсета больше не обнуляется: введённое время остаётся и применяется к кругу',
 				'Прогресс: выбранный период общий на Главной и в «Прогрессе»'
 			],
@@ -48,13 +61,13 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		highlights: {
 			ru: [
 				'Новый вид: панели и шапка стали полупрозрачными, интерфейс глубже и спокойнее',
-				'Экраны загрузки приведены к новому дизайну — ничего не прыгает, когда данные появляются',
+				'Экраны загрузки приведены к новому дизайну - ничего не прыгает, когда данные появляются',
 				'Каталог: карточки групп теперь квадратные, без резких белых плит в тёмной теме',
 				'Главная: блок тренера и баланс за 30 дней в новом оформлении'
 			],
 			en: [
 				'New look: panels and headers are translucent, for a deeper, calmer interface',
-				'Loading screens updated to match the new design — no jump when data loads',
+				'Loading screens updated to match the new design - no jump when data loads',
 				'Catalog: group tiles are now square, with no harsh white plates in dark mode',
 				'Home: coach block and 30-day balance restyled'
 			]
@@ -67,12 +80,12 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 				'ИИ-тренер: баланс за 30 дней и подсказки по группам, которых не было в последней тренировке',
 				'Упражнение добавляется в выбранный план, а «Отменить» возвращает всё одним тапом',
 				'Подсказку можно скрыть на 7 дней, а в профиле появится точка о новой',
-				'«Клиенты»: тап по коду копирует его, «Поделиться» — одна кнопка, лишние дубли убраны',
+				'«Клиенты»: тап по коду копирует его, «Поделиться» - одна кнопка, лишние дубли убраны',
 				'Справочник: новые статьи про тренера, Прогресс и импорт истории'
 			],
 			en: [
 				'AI coach: a 30-day balance plus hints for groups missing from your last workout',
-				'Add an exercise to any plan — and undo it with one tap',
+				'Add an exercise to any plan - and undo it with one tap',
 				'Hide a hint for 7 days; a dot in Profile tells you when a new one is ready',
 				'Clients: tap the code to copy it, one Share button, duplicate actions removed',
 				'Guide: new articles on coaching, Progress, and importing history'
@@ -83,13 +96,13 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.23.8',
 		highlights: {
 			ru: [
-				'Тренер может назначить вам тренировку — план появится на Главной',
-				'Одно нажатие «Добавить план» — и он уже ваш, закреплён следующим',
+				'Тренер может назначить вам тренировку - план появится на Главной',
+				'Одно нажатие «Добавить план» - и он уже ваш, закреплён следующим',
 				'План всегда один актуальный: новый заменяет прошлый',
 				'На Главной и в профиле видно, какой план назначил тренер'
 			],
 			en: [
-				'Your coach can assign you a workout — it shows up on Home',
+				'Your coach can assign you a workout - it shows up on Home',
 				'One tap on "Add plan" makes it yours, pinned as the next one',
 				'Only one active assignment: a new plan replaces the old one',
 				'Home and Profile show which plan your coach assigned'
@@ -101,7 +114,7 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		highlights: {
 			ru: [
 				'Клиенты: видно, кто тренировался, что было на последней тренировке и итоги',
-				'На «Клиентах» появилась помощь — как подключить клиента по коду',
+				'На «Клиентах» появилась помощь - как подключить клиента по коду',
 				'На «Прогрессе» и в «Итогах» кнопка «?» объясняет, откуда берутся цифры',
 				'Упражнения: «Часто тренируете» добавляет недавнее упражнение в черновик одним тапом',
 				'Главная: план на сегодня с оценкой времени и динамикой за неделю',
@@ -206,15 +219,15 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.23.1',
 		highlights: {
 			ru: [
-				'Главная: итоги за 30 дней — тренировки и тоннаж, со ссылкой на прогресс',
-				'Фото профиля: заметная кнопка «Выбрать фото», само меню выбора — снизу экрана',
-				'ИИ-тренер: честные подсказки — если данных мало, так и говорит',
+				'Главная: итоги за 30 дней - тренировки и тоннаж, со ссылкой на прогресс',
+				'Фото профиля: заметная кнопка «Выбрать фото», само меню выбора - снизу экрана',
+				'ИИ-тренер: честные подсказки - если данных мало, так и говорит',
 				'Тренировки и объём считаются одинаково на телефоне и в вебе'
 			],
 			en: [
-				'Home: 30-day totals — workouts and volume, with a link to progress',
+				'Home: 30-day totals - workouts and volume, with a link to progress',
 				'Profile photo: a clear Choose photo button, the picker opens at the bottom of the screen',
-				'AI coach: honest hints — it says so when there is not enough data yet',
+				'AI coach: honest hints - it says so when there is not enough data yet',
 				'Workouts and volume count the same on phone and web'
 			]
 		}
@@ -314,11 +327,11 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.22.2',
 		highlights: {
 			ru: [
-				'Пропуск знакомства на старте — сразу к тренировке',
+				'Пропуск знакомства на старте - сразу к тренировке',
 				'Прогресс переехал в профиль; внизу 4 вкладки',
 				'«Вес по неделям» над графиком веса в живой тренировке',
 				'На сайте и телефоне: компактнее таймер отдыха и карточки конструктора',
-				'Порядок тренировок на сайте — перетаскиванием, без кнопок «Выше» и «Ниже»',
+				'Порядок тренировок на сайте - перетаскиванием, без кнопок «Выше» и «Ниже»',
 				'На телефоне стартовый экран не сливается с текстом на светлом фоне'
 			],
 			en: [
@@ -406,18 +419,18 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.19.1',
 		highlights: {
 			ru: [
-				'Свои упражнения: создавайте движения которых нет в каталоге — они сохраняются локально и доступны в любом плане',
+				'Свои упражнения: создавайте движения которых нет в каталоге - они сохраняются локально и доступны в любом плане',
 				'В истории упражнения: прибавка или потеря веса относительно предыдущей сессии',
 				'На экране результата: тоннаж vs предыдущая тренировка этого же плана',
 				'Свои упражнения входят в резервную копию (экспорт / импорт)',
-				'Страница упражнения стала намного легче — быстрее открывается на старых телефонах и слабой сети'
+				'Страница упражнения стала намного легче - быстрее открывается на старых телефонах и слабой сети'
 			],
 			en: [
-				'Custom exercises: create movements not in the catalog — saved locally, work in any plan',
+				'Custom exercises: create movements not in the catalog - saved locally, work in any plan',
 				'Exercise history: weight delta vs previous session',
 				'Summary screen: tonnage vs previous workout of the same plan',
 				'Custom exercises are included in data backups (export / import)',
-				'Exercise pages are now much lighter — faster on older phones and weak connections'
+				'Exercise pages are now much lighter - faster on older phones and weak connections'
 			]
 		}
 	},
@@ -426,7 +439,7 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		highlights: {
 			ru: [
 				'В Справочнике: статья «Тренировка с ИИ» со скриншотами',
-				'В Сохранённых: свайп влево — быстрый перенос упражнения в конструктор',
+				'В Сохранённых: свайп влево - быстрый перенос упражнения в конструктор',
 				'Упражнения без сети: фотография подстраховывает, если гифку ещё не скачали',
 				'В конструкторе: «Подобрать с ИИ» для подходов, повторов и отдыха',
 				'ИИ опирается на шаблоны и похожие упражнения из каталога',

@@ -39,8 +39,8 @@ export function resolveYooKassaConfig(): YooKassaConfig | null {
 	return {
 		shopId,
 		secretKey,
-		amountMonthly: trim(privateEnv.YOOKASSA_AMOUNT_MONTHLY) || '299.00',
-		amountYearly: trim(privateEnv.YOOKASSA_AMOUNT_YEARLY) || '2490.00',
+		amountMonthly: trim(privateEnv.YOOKASSA_AMOUNT_MONTHLY) || '149.00',
+		amountYearly: trim(privateEnv.YOOKASSA_AMOUNT_YEARLY) || '1490.00',
 		currency: trim(privateEnv.YOOKASSA_CURRENCY) || 'RUB'
 	};
 }

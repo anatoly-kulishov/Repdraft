@@ -1,0 +1,33 @@
+---
+description: Ban AI writing tells in user-facing copy (em/en dash, filler verbs)
+alwaysApply: true
+---
+
+# No AI markers in product text
+
+User-facing copy (i18n, SEO, articles, UI, changelog, legal shown to users) must not read as LLM output.
+
+## Hard ban: long dashes
+
+Never use `—` (em dash, U+2014) or `–` (en dash, U+2013).
+
+| Bad | Good |
+|-----|------|
+| `Repdraft — дневник` | `Repdraft - дневник` or `Repdraft: дневник` |
+| `21–27 сент.` | `21-27 сент.` |
+| empty placeholder `—` | `-` |
+
+Same for agent replies, PR/commit text, and new comments in this repo.
+
+## Other AI tells (avoid)
+
+- Filler verbs: elevate, seamless, unleash, empower, delightful, robust (as fluff)
+- Mock-poetic labels, performative micro-copy
+- Em-dash as punctuation habit in every sentence
+
+Prefer short gym-plain language. Empty UI placeholders: hyphen `-`.
+
+## Scope
+
+- **Always** for new or edited strings in `src/lib/i18n/messages.ts`, SEO meta, articles, changelog.
+- Do not mass-rewrite unrelated files unless the user asks to clean dashes.

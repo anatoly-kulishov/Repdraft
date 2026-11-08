@@ -24,7 +24,7 @@ const ru: Dict = {
 	'brand.tagline': 'ЗАПИСЬ. ПОДХОД. ГОТОВО.',
 	'app.name': 'Repdraft',
 	'app.metaDescription':
-		'Repdraft — бесплатный дневник тренировок в зале: планы упражнений, запись подходов с весом, каталог с техникой. Работает офлайн в браузере телефона.',
+		'Repdraft - бесплатный дневник тренировок в зале: планы упражнений, запись подходов с весом, каталог с техникой. Работает офлайн в браузере телефона.',
 	'seo.exercisesDescription':
 		'Каталог упражнений с GIF и техникой: зоны по группам мышц и поиск по названию на русском и английском.',
 	'seo.catalogZoneDescription':
@@ -67,7 +67,7 @@ const ru: Dict = {
 	'settings.importFail': 'Не удалось восстановить из файла',
 	'settings.importCsvTitle': 'Импорт тренировок из CSV',
 	'settings.importCsvPreview':
-		'{sessions}, {sets} · {from} — {to}. Совпало с каталогом упражнений: {matched}. Новых упражнений: {custom}. Пропущено строк: {skipped}.',
+		'{sessions}, {sets} · {from} - {to}. Совпало с каталогом упражнений: {matched}. Новых упражнений: {custom}. Пропущено строк: {skipped}.',
 	'settings.importCsvSessions.one': '{n} тренировка',
 	'settings.importCsvSessions.few': '{n} тренировки',
 	'settings.importCsvSessions.many': '{n} тренировок',
@@ -198,7 +198,7 @@ const ru: Dict = {
 	'coach.remind': 'Напомнить',
 	'coach.results': 'Результаты',
 	'coach.remindMessage':
-		'Привет, {name}! Как тренировки? Открой Repdraft и запиши прогресс — тренер увидит результаты.',
+		'Привет, {name}! Как тренировки? Открой Repdraft и запиши прогресс - тренер увидит результаты.',
 	'coach.emptyTitle': 'У вас пока нет клиентов',
 	'coach.emptyBody':
 		'Отправьте код приглашения своему первому подопечному, чтобы начать отслеживать его прогресс.',
@@ -343,7 +343,7 @@ const ru: Dict = {
 	'summary.help': 'Помощь',
 	'summary.helpTitle': 'Что в итогах',
 	'summary.helpBody':
-		'«Время» — от старта до завершения. «Подходы» — отмеченные подходы. «Тоннаж» — сумма «вес × повторы» по выполненным подходам. Тренировка уже сохранена в истории.',
+		'«Время» - от старта до завершения. «Подходы» - отмеченные подходы. «Тоннаж» - сумма «вес × повторы» по выполненным подходам. Тренировка уже сохранена в истории.',
 	'summary.done': 'Готово',
 	'summary.openSession': 'Посмотреть детали',
 	'summary.duration': 'Время',
@@ -414,7 +414,7 @@ const ru: Dict = {
 	'custom.createNamed': 'Создать «{name}»',
 	'custom.created': 'Добавлено в «Мои»',
 	'custom.duplicate': 'Такое своё упражнение уже есть',
-	'custom.full': 'Слишком много своих упражнений — удалите старое',
+	'custom.full': 'Слишком много своих упражнений - удалите старое',
 	'custom.section': 'Мои упражнения',
 	'custom.badge': 'Своё',
 	'custom.deleteAria': 'Удалить своё упражнение',
@@ -1327,7 +1327,7 @@ const ru: Dict = {
 	'progress.help': 'Помощь',
 	'progress.helpTitle': 'Как считаются показатели',
 	'progress.helpBody':
-		'Объём — сумма «вес × повторы» по завершённым подходам за выбранный период. Доля групп мышц считается по количеству подходов. «Отстаёт» отмечает группу с наименьшей долей и появляется только при достаточной выборке. Стрелки у упражнений показывают изменение рабочего веса.',
+		'Объём - сумма «вес × повторы» по завершённым подходам за выбранный период. Доля групп мышц считается по количеству подходов. «Отстаёт» отмечает группу с наименьшей долей и появляется только при достаточной выборке. Стрелки у упражнений показывают изменение рабочего веса.',
 	'progress.lead': 'Объём и частота по сохранённым тренировкам на этом телефоне.',
 	'progress.workouts30d': 'Тренировок, 30 д',
 	'progress.volume30d': 'Объём, кг, 30 д',
@@ -1389,7 +1389,7 @@ const ru: Dict = {
 	'coach.replaceWhat': 'Замена: другое упражнение на ту же группу, которого нет в плане.',
 	'coach.replaceWhyGeneric': 'Почему: эта группа получает меньше всего подходов за 30 дней.',
 	'coach.reviewed': 'Разобрал {n} за 30 дней',
-	'coach.nothingYet': 'Подсказки появятся, когда будет что сравнивать. Завершите ещё 1–2 тренировки.',
+	'coach.nothingYet': 'Подсказки появятся, когда будет что сравнивать. Завершите ещё 1-2 тренировки.',
 	'coach.added': 'Упражнение добавлено в план.',
 	'coach.noPlan': 'Сначала создай план на главной.',
 	'achievements.newUnlock': 'Новое достижение',
@@ -1605,7 +1605,7 @@ const en: Dict = {
 	'brand.tagline': 'LOG. SET. CONQUER.',
 	'app.name': 'Repdraft',
 	'app.metaDescription':
-		'Repdraft — free gym workout log: exercise plans, set-by-set logging with weight, and a technique catalog. Works offline in your phone browser.',
+		'Repdraft - free gym workout log: exercise plans, set-by-set logging with weight, and a technique catalog. Works offline in your phone browser.',
 	'seo.exercisesDescription':
 		'Exercise catalog with GIF demos and technique: muscle zones and RU/EN search.',
 	'seo.catalogZoneDescription':
@@ -1648,7 +1648,7 @@ const en: Dict = {
 	'settings.importFail': 'Could not restore from file',
 	'settings.importCsvTitle': 'Import workouts from CSV',
 	'settings.importCsvPreview':
-		'{sessions}, {sets} · {from} — {to}. Matched to the exercise catalog: {matched}. New exercises: {custom}. Skipped rows: {skipped}.',
+		'{sessions}, {sets} · {from} - {to}. Matched to the exercise catalog: {matched}. New exercises: {custom}. Skipped rows: {skipped}.',
 	'settings.importCsvSessions.one': '{n} workout',
 	'settings.importCsvSessions.many': '{n} workouts',
 	'settings.importCsvSets.one': '{n} set',
@@ -1988,7 +1988,7 @@ const en: Dict = {
 	'custom.createNamed': 'Create “{name}”',
 	'custom.created': 'Added to My exercises',
 	'custom.duplicate': 'You already have an exercise with this name',
-	'custom.full': 'Too many custom exercises — delete an old one',
+	'custom.full': 'Too many custom exercises - delete an old one',
 	'custom.section': 'My exercises',
 	'custom.badge': 'Custom',
 	'custom.deleteAria': 'Delete custom exercise',
