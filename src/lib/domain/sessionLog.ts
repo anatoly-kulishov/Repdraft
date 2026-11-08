@@ -6,8 +6,106 @@ import {
 	clampStoredWeightKg,
 	sanitizeNote
 } from './inputLimits';
-import type { LastPerformance, LoggedSet, SetKind, WorkoutSession } from './types';
+import { visibleSessionExerciseIndices } from './sessionAlts';
+import type {
+	LastPerformance,
+	LoggedSet,
+	SessionExercise,
+	SetKind,
+	WorkoutSession
+} from './types';
 import { loggedSetKind } from './sessionSetKind';
+import { DEFAULT_REPS, DEFAULT_REST_SEC, DEFAULT_SETS } from './workoutDefaults';
+
+export type NewSessionExerciseOpts = {
+	sets?: number;
+	reps?: number;
+	restSec?: number;
+};
+
+function blankSessionExercise(
+	exerciseId: string,
+	opts: NewSessionExerciseOpts = {}
+): SessionExercise {
+	const sets = Math.max(1, opts.sets ?? DEFAULT_SETS);
+	const reps = opts.reps ?? DEFAULT_REPS;
+	const restSec = opts.restSec ?? DEFAULT_REST_SEC;
+	return {
+		exerciseId,
+		groupId: null,
+		altGroupId: null,
+		targetSets: sets,
+		targetReps: reps,
+		restSec,
+		sets: Array.from({ length: sets }, () => ({
+			weightKg: null,
+			reps,
+			completed: false,
+			kind: 'work' as const
+		}))
+	};
+}
+
+/** Insert a fresh exercise slot into a live session (after `atIndex - 1`). */
+export function insertSessionExercise(
+	session: WorkoutSession,
+	atIndex: number,
+	exerciseId: string,
+	opts: NewSessionExerciseOpts = {}
+): WorkoutSession {
+	const id = exerciseId.trim();
+	if (!id) return session;
+	const i = Math.max(0, Math.min(Math.round(atIndex), session.exercises.length));
+	const next = blankSessionExercise(id, opts);
+	return {
+		...session,
+		exercises: [...session.exercises.slice(0, i), next, ...session.exercises.slice(i)]
+	};
+}
+
+/**
+ * Replace one live slot with another catalog exercise.
+ * Drops logs/note for that slot; keeps target set count and groupId (superset).
+ * Clears altGroupId so an “or” slot becomes a fixed exercise.
+ */
+export function replaceSessionExercise(
+	session: WorkoutSession,
+	exerciseIndex: number,
+	exerciseId: string,
+	opts: NewSessionExerciseOpts = {}
+): WorkoutSession {
+	const id = exerciseId.trim();
+	const prev = session.exercises[exerciseIndex];
+	if (!prev || !id) return session;
+	if (prev.exerciseId === id) return session;
+
+	const next = blankSessionExercise(id, {
+		sets: opts.sets ?? prev.targetSets,
+		reps: opts.reps ?? prev.targetReps,
+		restSec: opts.restSec ?? prev.restSec
+	});
+	next.groupId = prev.groupId ?? null;
+
+	const altChoices = { ...(session.altChoices ?? {}) };
+	for (const [groupId, chosenId] of Object.entries(altChoices)) {
+		if (chosenId === prev.exerciseId) delete altChoices[groupId];
+	}
+
+	return {
+		...session,
+		exercises: session.exercises.map((ex, ei) => (ei === exerciseIndex ? next : ex)),
+		altChoices
+	};
+}
+
+/** True when removing this visible slot would leave at least one other visible exercise. */
+export function canRemoveSessionExercise(
+	session: WorkoutSession,
+	exerciseIndex: number
+): boolean {
+	const visible = visibleSessionExerciseIndices(session);
+	return visible.length > 1 && visible.includes(exerciseIndex);
+}
 
 export function updateLoggedSet(
 	session: WorkoutSession,
@@ -260,4 +358,63 @@ export function restSecAfterSet(
 		if (set && loggedSetKind(set) === 'warmup') return 0;
 	}
 	return Math.max(0, ex.restSec);
+}
+
+/** Throws if live insert/replace/remove guards regress. */
+export function runSessionLogSelfCheck(): void {
+	const base: WorkoutSession = {
+		id: 's1',
+		planId: 'p1',
+		planName: 'P',
+		startedAt: '2026-01-01T10:00:00.000Z',
+		finishedAt: null,
+		exercises: [
+			{
+				exerciseId: 'bench',
+				targetSets: 3,
+				targetReps: 8,
+				restSec: 90,
+				sets: [
+					{ weightKg: 40, reps: 8, completed: true, kind: 'work' },
+					{ weightKg: null, reps: 8, completed: false, kind: 'work' },
+					{ weightKg: null, reps: 8, completed: false, kind: 'work' }
+				]
+			},
+			{
+				exerciseId: 'fly',
+				targetSets: 3,
+				targetReps: 12,
+				restSec: 60,
+				sets: [
+					{ weightKg: null, reps: 12, completed: false, kind: 'work' },
+					{ weightKg: null, reps: 12, completed: false, kind: 'work' },
+					{ weightKg: null, reps: 12, completed: false, kind: 'work' }
+				]
+			}
+		]
+	};
+
+	const replaced = replaceSessionExercise(base, 0, 'row');
+	if (replaced.exercises[0]?.exerciseId !== 'row') {
+		throw new Error('replaceSessionExercise must change exerciseId');
+	}
+	if (replaced.exercises[0]?.sets.some((s) => s.completed)) {
+		throw new Error('replaceSessionExercise must drop previous logs');
+	}
+	if (replaced.exercises[0]?.targetSets !== 3) {
+		throw new Error('replaceSessionExercise must keep target set count');
+	}
+
+	const inserted = insertSessionExercise(base, 1, 'curl');
+	if (inserted.exercises.length !== 3 || inserted.exercises[1]?.exerciseId !== 'curl') {
+		throw new Error('insertSessionExercise must insert at index');
+	}
+
+	if (!canRemoveSessionExercise(base, 0) || !canRemoveSessionExercise(base, 1)) {
+		throw new Error('canRemoveSessionExercise should allow when 2+ visible');
+	}
+	const solo = { ...base, exercises: [base.exercises[0]!] };
+	if (canRemoveSessionExercise(solo, 0)) {
+		throw new Error('canRemoveSessionExercise must block last visible exercise');
+	}
 }

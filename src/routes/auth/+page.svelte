@@ -29,9 +29,12 @@
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import AuthInterfacePrefs from '$lib/components/AuthInterfacePrefs.svelte';
+	import ProBillingPanel from '$lib/components/billing/ProBillingPanel.svelte';
+	import CoachAssignedCard from '$lib/components/coach/CoachAssignedCard.svelte';
 	import IconPlate from '$lib/components/IconPlate.svelte';
 	import ProfileInsightsPanel from '$lib/components/ProfileInsightsPanel.svelte';
 	import {
+		COACH_ASSIGNMENT_HIDDEN_KEY,
 		INVITE_CODE_LENGTH,
 		isValidInviteCode,
 		normalizeInviteCode,
@@ -77,7 +80,6 @@
 	import {
 		Camera,
 		CaretDown as ChevronDown,
-		ClipboardText,
 		DeviceMobile,
 		FileText,
 		Info,
@@ -158,6 +160,10 @@
 		assignmentLoadedFor = userId;
 	}
 
+	function clearHomeAssignmentHide() {
+		if (browser) localStorage.removeItem(COACH_ASSIGNMENT_HIDDEN_KEY);
+	}
+
 	async function importAssignment() {
 		const assignment = currentAssignment;
 		if (!assignment || assignmentBusy) return;
@@ -170,6 +176,7 @@
 			homeNextPlan.pin(plan.id);
 			const discard = await coachRepository.discardAssignment();
 			currentAssignment = null;
+			clearHomeAssignmentHide();
 			toasts.show(translate(lang, 'coach.assignedAdded'), 'success');
 			if (!discard.ok) {
 				toasts.show(translate(lang, `coach.error.${discard.reason}`), 'error');
@@ -188,6 +195,7 @@
 			const result = await coachRepository.discardAssignment();
 			if (result.ok) {
 				currentAssignment = null;
+				clearHomeAssignmentHide();
 				toasts.show(translate(lang, 'coach.assignedDismissed'), 'info');
 			} else {
 				toasts.show(translate(lang, `coach.error.${result.reason}`), 'error');
@@ -264,6 +272,8 @@
 			const result = await coachRepository.revokeAsClient(coach.linkId);
 			if (result.ok) {
 				myCoaches = myCoaches.filter((row) => row.linkId !== coach.linkId);
+				clearHomeAssignmentHide();
+				currentAssignment = null;
 				toasts.show(translate(lang, 'coach.disconnectDone'), 'success');
 				assignmentLoadedFor = null;
 				void loadCurrentAssignment();
@@ -1141,43 +1151,20 @@
 				</div>
 
 				<div class="profile-settings-stack-full">
+					<ProBillingPanel />
 					<ProfileInsightsPanel />
 					<div class="profile-settings-group panel text-left">
 						<p class="profile-settings-group__title">{translate(lang, 'profile.clients')}</p>
 
 						{#if currentAssignment}
-							<div class="coach-assigned">
-								<div class="coach-assigned__head">
-									<IconPlate icon={ClipboardText} tone="accent" />
-									<div class="coach-assigned__text">
-										<p class="coach-assigned__title">
-											{translate(lang, 'coach.assignedTitle')}
-										</p>
-										<p class="coach-assigned__body">
-											{currentAssignment.planName}
-											{#if currentAssignment.coachName}
-												· {currentAssignment.coachName}
-											{/if}
-										</p>
-									</div>
-								</div>
-								<div class="coach-assigned__actions">
-									<AppButton
-										block
-										disabled={assignmentBusy}
-										onclick={() => void importAssignment()}
-									>
-										{translate(lang, 'coach.assignedAdd')}
-									</AppButton>
-									<AppButton
-										variant="ghost"
-										disabled={assignmentBusy}
-										onclick={() => void dismissAssignment()}
-									>
-										{translate(lang, 'coach.assignedDismiss')}
-									</AppButton>
-								</div>
-							</div>
+							<CoachAssignedCard
+								assignment={currentAssignment}
+								{lang}
+								busy={assignmentBusy}
+								secondary="dismiss"
+								onPrimary={() => void importAssignment()}
+								onSecondary={() => void dismissAssignment()}
+							/>
 						{/if}
 
 						<ProfileSettingsRow

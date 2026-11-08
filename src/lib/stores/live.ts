@@ -3,13 +3,17 @@ import {
 	addLoggedSet,
 	applyWeightToOpenSets as fillOpenSetsWeight,
 	applyRepsToOpenSets as fillOpenSetsReps,
+	canRemoveSessionExercise,
 	chooseAltExercise,
 	completedSetCount,
 	finishSession,
 	finishedSessionLogEqual,
+	insertSessionExercise,
 	lastPerformance,
 	mergeWorkoutSessions,
 	removeLoggedSet,
+	replaceSessionExercise,
+	replaceSessionPlan,
 	restSecAfterSet,
 	seedOpenSetsFromLastPerformance,
 	skipSessionExercise,
@@ -273,6 +277,21 @@ function createLiveStore() {
 			void refreshHistory();
 			return session;
 		},
+		/**
+		 * Remount the active session onto another plan, keeping completed overlap sets.
+		 * Clears the rest timer. Returns null when there is no unfinished session.
+		 */
+		replacePlan(plan: WorkoutPlan): WorkoutSession | null {
+			const current = get(store).session;
+			if (!current || current.finishedAt) return null;
+			const history = get(store).history;
+			const session = seedOpenSetsFromLastPerformance(replaceSessionPlan(current, plan), (id) =>
+				lastPerformance(history, id)
+			);
+			persistActive(session, null);
+			store.update((s) => ({ ...s, session, restUntil: null }));
+			return session;
+		},
 		resetHistoryHydration() {
 			clearLastSyncedAt('sessions');
 			store.update((s) => ({ ...s, historyHydrated: false, history: [] }));
@@ -386,6 +405,41 @@ function createLiveStore() {
 				return { ...s, session, restUntil: null };
 			});
 		},
+		/** Live mini-editor: remove/skip current exercise when another remains. */
+		removeExercise(exerciseIndex: number): WorkoutSession | null {
+			const prev = get(store);
+			if (!prev.session) return null;
+			if (!canRemoveSessionExercise(prev.session, exerciseIndex)) return null;
+			const session = skipSessionExercise(prev.session, exerciseIndex);
+			persistActive(session, null);
+			store.set({ ...prev, session, restUntil: null });
+			return session;
+		},
+		/** Live mini-editor: insert a catalog exercise at index. */
+		insertExercise(atIndex: number, exerciseId: string): WorkoutSession | null {
+			const prev = get(store);
+			if (!prev.session || prev.session.finishedAt) return null;
+			let session = insertSessionExercise(prev.session, atIndex, exerciseId);
+			session = seedOpenSetsFromLastPerformance(session, (id) =>
+				lastPerformance(prev.history, id)
+			);
+			persistActive(session, prev.restUntil);
+			store.set({ ...prev, session });
+			return session;
+		},
+		/** Live mini-editor: replace one slot; clears logs for that exercise. */
+		replaceExercise(exerciseIndex: number, exerciseId: string): WorkoutSession | null {
+			const prev = get(store);
+			if (!prev.session || prev.session.finishedAt) return null;
+			let session = replaceSessionExercise(prev.session, exerciseIndex, exerciseId);
+			if (session === prev.session) return prev.session;
+			session = seedOpenSetsFromLastPerformance(session, (id) =>
+				lastPerformance(prev.history, id)
+			);
+			persistActive(session, null);
+			store.set({ ...prev, session, restUntil: null });
+			return session;
+		},
 		skipRest() {
 			store.update((s) => {
 				persistActive(s.session, null);
@@ -432,7 +486,8 @@ function createLiveStore() {
 				.filter((ex) => ex.sets.some((s) => s.completed))
 				.map((ex) => ex.exerciseId);
 			exerciseStats.recordUses(usedIds);
-			await persistSession(done);
+			/* Local-first: do not await cloud mirror (offline can stall finish 8s+). */
+			await persistSession(done, { mirror: 'background' });
 			persistActive(null, null);
 			store.update((s) => ({
 				...s,
@@ -449,8 +504,8 @@ function createLiveStore() {
 				planOrder.moveToEnd(done.planId);
 				plans.resort();
 			}
-			await refreshHistory();
-			void flushSyncOutbox();
+			await refreshHistory({ cloud: false });
+			void flushSyncOutbox({ silent: true });
 			return done;
 		},
 		discard() {
@@ -463,20 +518,23 @@ function createLiveStore() {
 				history: s.history.filter((x) => x.id !== id)
 			}));
 			await deleteSession(id);
-			await refreshHistory();
+			await refreshHistory({ cloud: false });
+			void flushSyncOutbox({ silent: true });
 		},
 		async restoreSession(session: WorkoutSession) {
 			clearSessionTombstone(session.id);
-			await persistSession(session);
-			await refreshHistory();
+			await persistSession(session, { mirror: 'background' });
+			await refreshHistory({ cloud: false });
+			void flushSyncOutbox({ silent: true });
 		},
 		async restoreHistory(sessions: WorkoutSession[]) {
 			if (sessions.length === 0) return;
 			for (const session of sessions) {
 				clearSessionTombstone(session.id);
-				await persistSession(session);
+				await persistSession(session, { mirror: 'background' });
 			}
-			await refreshHistory();
+			await refreshHistory({ cloud: false });
+			void flushSyncOutbox({ silent: true });
 		},
 		/**
 		 * Patch a finished (history) session and persist changes locally + mirror to cloud.
@@ -517,8 +575,9 @@ function createLiveStore() {
 
 			if (finishedSessionLogEqual(session, patched)) return true;
 
-			await persistSession(patched);
-			await refreshHistory();
+			await persistSession(patched, { mirror: 'background' });
+			await refreshHistory({ cloud: false });
+			void flushSyncOutbox({ silent: true });
 			return true;
 		},
 		async clearHistory() {

@@ -28,6 +28,7 @@
 |------|------|
 | `native-rewrite-plan.md` | Native-first rewrite, phases, north star (фаза F: тренер ↔ клиент) |
 | `delivery.md` | RN + web roles |
+| `billing-pro.md` | Pro: YooKassa/Stripe, entitlements, recognize photo/Excel, AI daily quota |
 | `exercise-rag.md` | `/ai` catalog RAG: pgvector SQL + `npm run build:embeddings` |
 | `watch-session-ownership.md` | Watch companion spike: session lease / finish race |
 | `rn-visual-backlog.md` | Mobile theme + visual QA findings |

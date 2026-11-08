@@ -14,6 +14,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.0',
+		highlights: {
+			ru: [
+				'Repdraft Pro: подписка в профиле (оплата на сайте через ЮKassa или Stripe)',
+				'Распознавание программы с фото листа или из Excel/CSV в редактор (Pro)',
+				'Черновик с ИИ: лимит 10 запросов в сутки (план и подсказки в редакторе)'
+			],
+			en: [
+				'Repdraft Pro: subscribe in Profile (pay on the website via YooKassa or Stripe)',
+				'Recognize a program from a paper photo or Excel/CSV into the builder (Pro)',
+				'AI draft: 10 requests per day (plan and builder tune tips)'
+			]
+		}
+	},
+	{
 		version: '0.24.1',
 		highlights: {
 			ru: [

@@ -25,6 +25,11 @@ function compileDomain() {
 			'src/lib/domain/coach.ts',
 			'src/lib/domain/coachHints.ts',
 			'src/lib/domain/articles.ts',
+			'src/lib/domain/sessionLifecycle.ts',
+			'src/lib/domain/sessionLog.ts',
+			'src/lib/domain/networkError.ts',
+			'src/lib/domain/entitlement.ts',
+			'src/lib/domain/recognizeProgram.ts',
 			'--ignoreConfig',
 			'--ignoreDeprecations',
 			'6.0',
@@ -58,6 +63,11 @@ function run() {
 	const coach = require(join(outDir, 'domain', 'coach.js'));
 	const coachHints = require(join(outDir, 'domain', 'coachHints.js'));
 	const articlesDomain = require(join(outDir, 'domain', 'articles.js'));
+	const sessionLifecycle = require(join(outDir, 'domain', 'sessionLifecycle.js'));
+	const sessionLog = require(join(outDir, 'domain', 'sessionLog.js'));
+	const networkError = require(join(outDir, 'domain', 'networkError.js'));
+	const entitlement = require(join(outDir, 'domain', 'entitlement.js'));
+	const recognizeProgram = require(join(outDir, 'domain', 'recognizeProgram.js'));
 	const catalog = JSON.parse(
 		readFileSync(join(root, 'static', 'data', 'exercises.index.json'), 'utf8')
 	);
@@ -70,6 +80,16 @@ function run() {
 	console.log('✓ coach hints self-check');
 	articlesDomain.runArticlesSelfCheck();
 	console.log('✓ articles self-check');
+	sessionLifecycle.runSessionLifecycleSelfCheck();
+	console.log('✓ session lifecycle self-check');
+	sessionLog.runSessionLogSelfCheck();
+	console.log('✓ session log self-check');
+	networkError.runNetworkErrorSelfCheck();
+	console.log('✓ network error self-check');
+	entitlement.runEntitlementSelfCheck();
+	console.log('✓ entitlement self-check');
+	recognizeProgram.runRecognizeProgramSelfCheck();
+	console.log('✓ recognize program self-check');
 
 	const failures = [];
 	for (const testCase of cases) {

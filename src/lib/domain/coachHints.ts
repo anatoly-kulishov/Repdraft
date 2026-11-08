@@ -2,11 +2,11 @@ import type { ExerciseIndexItem } from './types';
 import type { WorkoutSession } from './types';
 import {
 	finishedSessionsWithinDays,
-	laggingBodyParts,
+	mergeSetMaps,
 	pickCatalogExerciseForBodyPart,
-	sessionVolumeByBodyPart,
-	mergeVolumeMaps,
-	volumeShares
+	sessionSetsByBodyPart,
+	setShares,
+	undertrainedBodyParts
 } from './trainingLoad';
 
 export type CoachHint = {
@@ -14,14 +14,16 @@ export type CoachHint = {
 	bodyPart: string;
 	exerciseId: string;
 	reasonKey: 'coach.hintLagging';
-	/** Share of the 30-day volume on this body part, % (rounded). */
+	/** Share of 30-day working sets on this body part, % (rounded). */
 	sharePct: number;
 };
 
 export type CoachHintOptions = {
 	now?: Date;
-	/** Exercises already in the target plan - never suggest them again. */
+	/** Exercises already in any plan - never suggest them again. */
 	planExerciseIds?: readonly string[];
+	/** Body parts already covered by a replace card - skip duplicate Add. */
+	excludeBodyParts?: ReadonlySet<string>;
 };
 
 /** Local (device) storage keys for coach hints. */
@@ -93,7 +95,25 @@ export type CoachReplace = {
 	bodyPart: string;
 };
 
-/** Swap one plan exercise that sits on a lagging body part. */
+/** Window set-shares + undertrained parts for coach Add/Replace (same signal). */
+export function coachUndertrainedParts(
+	finishedSessions: readonly WorkoutSession[],
+	bodyPartFor: (exerciseId: string) => string | null,
+	opts: { now?: Date; limit?: number } = {}
+): { shares: ReturnType<typeof setShares>; undertrained: string[] } {
+	const now = opts.now ?? new Date();
+	const recent = finishedSessionsWithinDays([...finishedSessions], 30, now);
+	if (recent.length === 0) return { shares: [], undertrained: [] };
+	const shares = setShares(
+		mergeSetMaps(recent.map((s) => sessionSetsByBodyPart(s, bodyPartFor)))
+	);
+	return {
+		shares,
+		undertrained: undertrainedBodyParts(shares, { limit: opts.limit ?? 3 })
+	};
+}
+
+/** Swap one plan exercise that sits on an undertrained body part. */
 export function suggestPlanReplace(
 	planExerciseIds: readonly string[],
 	lagging: readonly string[],
@@ -115,27 +135,24 @@ export function suggestPlanReplace(
 }
 
 export function buildCoachHints(
-	focusSession: WorkoutSession,
+	_focusSession: WorkoutSession,
 	finishedSessions: readonly WorkoutSession[],
 	catalog: readonly ExerciseIndexItem[],
 	bodyPartFor: (exerciseId: string) => string | null,
 	opts: CoachHintOptions = {}
 ): CoachHint[] {
-	const now = opts.now ?? new Date();
-	const recent = finishedSessionsWithinDays([...finishedSessions], 30, now);
-	if (recent.length === 0) return [];
+	const { shares, undertrained } = coachUndertrainedParts(finishedSessions, bodyPartFor, {
+		now: opts.now
+	});
+	if (undertrained.length === 0) return [];
 
-	const todayMap = sessionVolumeByBodyPart(focusSession, bodyPartFor);
-	const windowMaps = recent.map((s) => sessionVolumeByBodyPart(s, bodyPartFor));
-	const windowMap = mergeVolumeMaps(windowMaps);
-	const lagging = laggingBodyParts(todayMap, windowMap);
-	const shareByPart = new Map(
-		volumeShares(windowMap).map((row) => [row.bodyPart, row.sharePct] as const)
-	);
+	const shareByPart = new Map(shares.map((row) => [row.bodyPart, row.sharePct] as const));
 	const exclude = new Set(opts.planExerciseIds ?? []);
+	const skipParts = opts.excludeBodyParts ?? new Set<string>();
 
 	const hints: CoachHint[] = [];
-	for (const part of lagging) {
+	for (const part of undertrained) {
+		if (skipParts.has(part)) continue;
 		const exerciseId = pickCatalogExerciseForBodyPart(catalog, part, exclude);
 		if (!exerciseId) continue;
 		hints.push({
@@ -150,7 +167,12 @@ export function buildCoachHints(
 	return hints;
 }
 
-function selfCheckSession(id: string, finishedAt: string, exerciseId: string): WorkoutSession {
+function selfCheckSession(
+	id: string,
+	finishedAt: string,
+	exerciseId: string,
+	sets = 1
+): WorkoutSession {
 	return {
 		id,
 		planId: null,
@@ -160,57 +182,133 @@ function selfCheckSession(id: string, finishedAt: string, exerciseId: string): W
 		exercises: [
 			{
 				exerciseId,
-				targetSets: 1,
+				targetSets: sets,
 				targetReps: 5,
 				restSec: 90,
-				sets: [{ weightKg: 100, reps: 5, completed: true }]
+				sets: Array.from({ length: sets }, () => ({
+					weightKg: 100,
+					reps: 5,
+					completed: true,
+					kind: 'work' as const
+				}))
 			}
 		]
 	};
 }
 
-/** Guards the hint contract: numbers in the card and plan-aware picking. */
+/** Guards the hint contract: undertrained set-share + popularity-aware pick. */
 export function runCoachHintsSelfCheck(): void {
 	const now = new Date('2026-02-10T12:00:00.000Z');
-	const partFor = (id: string): string | null =>
-		id.startsWith('back') ? 'back' : id.startsWith('chest') ? 'chest' : null;
+	const partFor = (id: string): string | null => {
+		if (id.startsWith('back')) return 'back';
+		if (id.startsWith('chest')) return 'chest';
+		if (id.startsWith('arm')) return 'upper arms';
+		return null;
+	};
 	const catalog: ExerciseIndexItem[] = [
-		{ id: 'back-1', body_part: 'back' },
-		{ id: 'back-2', body_part: 'back' },
-		{ id: 'chest-1', body_part: 'chest' }
-	] as ExerciseIndexItem[];
-	const focus = selfCheckSession('s-focus', '2026-02-10T09:00:00.000Z', 'chest-1');
-	const older = selfCheckSession('s-old', '2026-02-07T09:00:00.000Z', 'back-1');
-	const sessions = [focus, older];
+		{
+			id: 'back-assisted',
+			name: 'assisted pull-up',
+			body_part: 'back',
+			equipment: 'band',
+			target: 'lats',
+			muscle_group: 'back',
+			secondary_muscles: [],
+			image: '',
+			globalPopularity: 90
+		},
+		{
+			id: 'back-staple',
+			name: 'pull-up',
+			body_part: 'back',
+			equipment: 'body weight',
+			target: 'lats',
+			muscle_group: 'back',
+			secondary_muscles: [],
+			image: '',
+			globalPopularity: 80
+		},
+		{
+			id: 'chest-1',
+			name: 'bench press',
+			body_part: 'chest',
+			equipment: 'barbell',
+			target: 'pectorals',
+			muscle_group: 'chest',
+			secondary_muscles: [],
+			image: '',
+			globalPopularity: 95
+		},
+		{
+			id: 'arm-1',
+			name: 'curl',
+			body_part: 'upper arms',
+			equipment: 'dumbbell',
+			target: 'biceps',
+			muscle_group: 'arms',
+			secondary_muscles: [],
+			image: '',
+			globalPopularity: 70
+		}
+	];
+
+	// Chest dominates sets; back is undertrained. Last session was chest-only
+	// (old skip-usual would have suggested chest Add - must NOT).
+	const focus = selfCheckSession('s-focus', '2026-02-10T09:00:00.000Z', 'chest-1', 6);
+	const olderChest = selfCheckSession('s-chest', '2026-02-07T09:00:00.000Z', 'chest-1', 4);
+	const olderBack = selfCheckSession('s-back', '2026-02-05T09:00:00.000Z', 'back-staple', 1);
+	const sessions = [focus, olderChest, olderBack];
 
 	const hints = buildCoachHints(focus, sessions, catalog, partFor, { now });
-	if (hints.length !== 1) throw new Error('coachHints: only the skipped part must be hinted');
-	if (hints[0].bodyPart !== 'back') throw new Error('coachHints: lagging part drifted');
-	if (hints[0].exerciseId !== 'back-1') {
-		throw new Error('coachHints: catalog pick must stay stable');
+	if (hints.some((h) => h.bodyPart === 'chest')) {
+		throw new Error('coachHints: dominant chest must not get an Add hint');
 	}
-	if (hints[0].sharePct !== 50) {
-		throw new Error(`coachHints: share must be 50%, got ${hints[0].sharePct}`);
+	if (hints.length < 1 || hints[0]!.bodyPart !== 'back') {
+		throw new Error('coachHints: undertrained back must be hinted first');
+	}
+	if (hints[0]!.exerciseId !== 'back-staple') {
+		throw new Error('coachHints: pick must prefer non-assisted over higher popularity assisted');
+	}
+	if (hints[0]!.sharePct >= 50) {
+		throw new Error(`coachHints: undertrained share must be low, got ${hints[0]!.sharePct}`);
 	}
 
 	const excluded = buildCoachHints(focus, sessions, catalog, partFor, {
 		now,
-		planExerciseIds: ['back-1', 'chest-1']
+		planExerciseIds: ['back-staple', 'chest-1']
 	});
-	if (excluded.length !== 1 || excluded[0].exerciseId !== 'back-2') {
+	if (excluded.length !== 1 || excluded[0]!.exerciseId !== 'back-assisted') {
 		throw new Error('coachHints: plan exercises must not be suggested');
+	}
+
+	const skipBack = buildCoachHints(focus, sessions, catalog, partFor, {
+		now,
+		excludeBodyParts: new Set(['back'])
+	});
+	if (skipBack.some((h) => h.bodyPart === 'back')) {
+		throw new Error('coachHints: replace body part must not duplicate as Add');
 	}
 
 	const exhausted = buildCoachHints(focus, sessions, catalog, partFor, {
 		now,
-		planExerciseIds: ['back-1', 'back-2']
+		planExerciseIds: ['back-staple', 'back-assisted']
 	});
-	if (exhausted.length !== 0) {
-		throw new Error('coachHints: no hint when every candidate is already in the plan');
+	if (exhausted.some((h) => h.bodyPart === 'back')) {
+		throw new Error('coachHints: no back hint when every candidate is already in the plan');
 	}
 
 	if (buildCoachHints(focus, [], catalog, partFor, { now }).length !== 0) {
 		throw new Error('coachHints: no hints without finished sessions');
+	}
+
+	const replace = suggestPlanReplace(
+		['back-staple', 'chest-1'],
+		['back'],
+		catalog,
+		partFor
+	);
+	if (!replace || replace.fromExerciseId !== 'back-staple' || replace.toExerciseId !== 'back-assisted') {
+		throw new Error('coachHints: replace must swap undertrained plan slot');
 	}
 
 	const nowMs = now.getTime();

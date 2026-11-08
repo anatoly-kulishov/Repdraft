@@ -14,6 +14,20 @@ export type BodyPartShare = {
 	sharePct: number;
 };
 
+/** Share of completed working sets per body_part (coach balance / undertrained). */
+export type BodyPartSetShare = {
+	bodyPart: string;
+	sets: number;
+	sharePct: number;
+};
+
+export type CatalogPickItem = {
+	id: string;
+	body_part: string;
+	name?: string;
+	globalPopularity?: number;
+};
+
 function setVolumeKg(weightKg: number | null, reps: number | null): number {
 	if (weightKg == null || reps == null || weightKg <= 0 || reps <= 0) return 0;
 	return weightKg * reps;
@@ -136,7 +150,10 @@ export function finishedSessionsBetweenDays(
 	});
 }
 
-/** Parts strong in the window but weak or missing today (for "lagging" hints). */
+/**
+ * Parts strong in the window but weak or missing today.
+ * Kept for summary "missed usual work" chips; coach Add/Replace use undertrainedBodyParts.
+ */
 export function laggingBodyParts(
 	today: Map<string, number>,
 	window: Map<string, number>,
@@ -156,14 +173,60 @@ export function laggingBodyParts(
 	return lagging.slice(0, 3);
 }
 
+/** Percent share of set counts, descending by sets. */
+export function setShares(map: Map<string, number>): BodyPartSetShare[] {
+	let total = 0;
+	for (const v of map.values()) total += v;
+	if (total <= 0) return [];
+	const rows: BodyPartSetShare[] = [];
+	for (const [bodyPart, sets] of map) {
+		rows.push({ bodyPart, sets, sharePct: Math.round((sets / total) * 100) });
+	}
+	rows.sort((a, b) => b.sets - a.sets);
+	return rows;
+}
+
+/**
+ * Body parts below fair set-share (100/n), lowest first.
+ * Needs ≥2 parts so a single-group log does not look "undertrained".
+ */
+export function undertrainedBodyParts(
+	shares: readonly Pick<BodyPartSetShare, 'bodyPart' | 'sharePct'>[],
+	opts?: { limit?: number; fairShareFactor?: number }
+): string[] {
+	const limit = opts?.limit ?? 3;
+	const fairShareFactor = opts?.fairShareFactor ?? 1;
+	if (shares.length < 2) return [];
+	const fair = (100 / shares.length) * fairShareFactor;
+	return [...shares]
+		.filter((row) => row.sharePct < fair)
+		.sort((a, b) => a.sharePct - b.sharePct || a.bodyPart.localeCompare(b.bodyPart))
+		.slice(0, limit)
+		.map((row) => row.bodyPart);
+}
+
+/** Assisted / machine-support variants rank below free staples for coach picks. */
+const ASSISTED_NAME =
+	/\b(assisted|support|with support|kneeling|on knees|band[ -]?assisted|smith)\b|с поддержк|на колен|с полотенц/i;
+
+function pickScore(item: CatalogPickItem): number {
+	const popularity = item.globalPopularity ?? 0;
+	const assisted = ASSISTED_NAME.test(item.name ?? '') ? 40 : 0;
+	return popularity * 2 - assisted;
+}
+
 export function pickCatalogExerciseForBodyPart(
-	catalog: readonly { id: string; body_part: string }[],
+	catalog: readonly CatalogPickItem[],
 	bodyPart: string,
 	excludeIds?: ReadonlySet<string>
 ): string | null {
 	const candidates = catalog
 		.filter((e) => e.body_part === bodyPart)
 		.filter((e) => !excludeIds?.has(e.id))
-		.sort((a, b) => a.id.localeCompare(b.id));
+		.sort((a, b) => {
+			const diff = pickScore(b) - pickScore(a);
+			if (diff !== 0) return diff;
+			return a.id.localeCompare(b.id);
+		});
 	return candidates[0]?.id ?? null;
 }

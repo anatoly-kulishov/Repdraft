@@ -63,6 +63,14 @@ export function resolveAiConfig(): AiConfig | null {
 	return gigachatConfig(trim(privateEnv.GIGACHAT_MODEL) || 'GigaChat-2');
 }
 
+/** Vision-capable GigaChat model (GigaChat-2 has no vision; default Max). */
+export function resolveVisionAiConfig(): AiConfig | null {
+	const base = resolveAiConfig();
+	if (!base || base.provider !== 'gigachat') return null;
+	const model = trim(privateEnv.AI_VISION_MODEL) || 'GigaChat-2-Max';
+	return { ...base, model };
+}
+
 export function aiAvailability(): {
 	available: boolean;
 	provider: AiProvider | null;
@@ -75,6 +83,23 @@ export function aiAvailability(): {
 			provider: null,
 			reason: 'missing_credentials'
 		};
+	}
+	return { available: true, provider: cfg.provider, reason: null };
+}
+
+/** Photo recognition needs GigaChat + vision model credentials. */
+export function aiVisionAvailability(): {
+	available: boolean;
+	provider: AiProvider | null;
+	reason: string | null;
+} {
+	const cfg = resolveVisionAiConfig();
+	if (!cfg) {
+		const base = resolveAiConfig();
+		if (!base) {
+			return { available: false, provider: null, reason: 'missing_credentials' };
+		}
+		return { available: false, provider: base.provider, reason: 'vision_unavailable' };
 	}
 	return { available: true, provider: cfg.provider, reason: null };
 }

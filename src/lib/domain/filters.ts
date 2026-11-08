@@ -253,13 +253,51 @@ function tokenMatches(haystack: string, token: string): boolean {
 	return variants.some((v) => v.length > 0 && haystack.includes(v));
 }
 
+/**
+ * Exact zone label / slug query («Шея», «chest»).
+ * Multi-word queries stay on normal synonym search.
+ */
+export function resolveBodyPartFromQuery(query: string, _locale: AppLocale = 'ru'): BodyPart | null {
+	const q = normalizeSearchText(query);
+	if (!q || q.includes(' ')) return null;
+	if (isBodyPart(q)) return q;
+	for (const [part, label] of Object.entries(BODY_PART_LABELS)) {
+		if (normalizeSearchText(label) !== q) continue;
+		if (isBodyPart(part)) return part;
+	}
+	return null;
+}
+
+/**
+ * Zone-label queries must not match only via EN jargon (e.g. RU «Шея» →
+ * synonym neck → «standing behind neck press» while body_part is shoulders).
+ */
+function passesZoneQuery(
+	item: ExerciseIndexItem,
+	fields: SearchFields,
+	query: string,
+	zone: BodyPart
+): boolean {
+	if (item.body_part === zone) return true;
+	if (fields.name.includes(query) || fields.nameRu.includes(query)) return true;
+	const zoneLabel = normalizeSearchText(BODY_PART_LABELS[zone] ?? '');
+	if (zoneLabel && (fields.name.includes(zoneLabel) || fields.nameRu.includes(zoneLabel))) {
+		return true;
+	}
+	return false;
+}
+
 function scoreMatchFields(
 	fields: SearchFields,
 	query: string,
 	tokens: string[],
-	tokenVariants: string[][]
+	tokenVariants: string[][],
+	item: ExerciseIndexItem,
+	locale: AppLocale
 ): number {
 	const { haystack, name, nameEn, nameRu } = fields;
+	const zone = resolveBodyPartFromQuery(query, locale);
+	if (zone && !passesZoneQuery(item, fields, query, zone)) return -1;
 
 	let fuzzyTokens = 0;
 	for (let i = 0; i < tokens.length; i++) {
@@ -273,6 +311,8 @@ function scoreMatchFields(
 		v.length > 1 && (name.includes(v) || nameEn.includes(v) || nameRu.includes(v));
 
 	let score = 10;
+
+	if (zone && item.body_part === zone) score += 55;
 
 	if (name === query || nameEn === query || nameRu === query) score += 100;
 	else if (name.startsWith(query) || nameEn.startsWith(query) || nameRu.startsWith(query)) score += 70;
@@ -291,7 +331,7 @@ function scoreMatchFields(
 function scoreMatch(item: ExerciseIndexItem, query: string, tokens: string[], locale: AppLocale): number {
 	const fields = getSearchFields(item, locale);
 	const tokenVariants = tokens.map((t) => expandToken(t));
-	return scoreMatchFields(fields, query, tokens, tokenVariants);
+	return scoreMatchFields(fields, query, tokens, tokenVariants, item, locale);
 }
 
 function passesFacets(item: ExerciseIndexItem, filters: ExerciseFilters): boolean {
@@ -323,7 +363,7 @@ function filterAndSortExercises(
 		.reduce<{ item: ExerciseIndexItem; score: number }[]>((acc, item) => {
 			if (!passesFacets(item, filters)) return acc;
 			const fields = getSearchFields(item, locale);
-			const score = scoreMatchFields(fields, query, tokens, tokenVariants);
+			const score = scoreMatchFields(fields, query, tokens, tokenVariants, item, locale);
 			if (score >= 0) acc.push({ item, score });
 			return acc;
 		}, [])
@@ -367,7 +407,7 @@ export function filterCatalogWithFacets(
 		}
 
 		const fields = getSearchFields(item, locale);
-		const queryOk = scoreMatchFields(fields, query, tokens, tokenVariants) >= 0;
+		const queryOk = scoreMatchFields(fields, query, tokens, tokenVariants, item, locale) >= 0;
 		if (!queryOk) continue;
 
 		if (filters.target === 'all' || item.target === filters.target) {
@@ -378,7 +418,7 @@ export function filterCatalogWithFacets(
 		}
 
 		if (!passesFacets(item, filters)) continue;
-		const score = scoreMatchFields(fields, query, tokens, tokenVariants);
+		const score = scoreMatchFields(fields, query, tokens, tokenVariants, item, locale);
 		if (score >= 0) scored.push({ item, score });
 	}
 
@@ -919,5 +959,50 @@ export function runFiltersSelfCheck(): void {
 	);
 	if (squatHits.some((h) => h.id === 'h1')) {
 		throw new Error('«присед» must not fuzzy-match unrelated hammer exercise');
+	}
+
+	const neckZoneCatalog: ExerciseIndexItem[] = [
+		{
+			id: 'neck-stretch',
+			name: 'side neck stretch',
+			name_ru: 'Боковая растяжка шеи',
+			body_part: 'neck',
+			equipment: 'body weight',
+			target: 'levator scapulae',
+			muscle_group: 'neck',
+			secondary_muscles: [],
+			globalPopularity: 10,
+			image: ''
+		},
+		{
+			id: 'behind-neck',
+			name: 'standing behind neck press',
+			name_ru: 'Жим из-за головы стоя',
+			body_part: 'shoulders',
+			equipment: 'barbell',
+			target: 'delts',
+			muscle_group: 'shoulders',
+			secondary_muscles: [],
+			globalPopularity: 20,
+			image: ''
+		}
+	];
+	const neckRu = filterExercises(
+		neckZoneCatalog,
+		{ query: 'Шея', bodyPart: 'all', equipment: 'all', target: 'all' },
+		'ru'
+	);
+	if (neckRu.length !== 1 || neckRu[0]!.id !== 'neck-stretch') {
+		throw new Error(
+			`RU «Шея» must keep neck zone only, got ${neckRu.map((i) => i.id).join(',')}`
+		);
+	}
+	const neckEn = filterExercises(
+		neckZoneCatalog,
+		{ query: 'neck', bodyPart: 'all', equipment: 'all', target: 'all' },
+		'en'
+	);
+	if (!neckEn.some((h) => h.id === 'neck-stretch') || !neckEn.some((h) => h.id === 'behind-neck')) {
+		throw new Error('EN «neck» should keep zone + title hits (behind neck press)');
 	}
 }

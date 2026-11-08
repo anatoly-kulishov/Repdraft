@@ -1,5 +1,3 @@
-import { env as publicEnv } from '$env/dynamic/public';
-import { env as privateEnv } from '$env/dynamic/private';
 import {
 	AVATAR_CACHE_CONTROL,
 	AVATAR_MAX_OUTPUT_BYTES,
@@ -7,43 +5,12 @@ import {
 	isValidCustomAvatarPath
 } from '$lib/domain/avatarImage';
 import { newId } from '$lib/domain/id';
-import { createClient } from '@supabase/supabase-js';
+import { accountCorsHeaders, requireUser } from '$lib/server/auth/requireUser';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-function publicUrl(): string {
-	return (publicEnv.PUBLIC_SUPABASE_URL ?? '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
-}
-
-function anonKey(): string {
-	return (publicEnv.PUBLIC_SUPABASE_ANON_KEY ?? '').trim();
-}
-
-function serviceRoleKey(): string {
-	return (privateEnv.SUPABASE_SERVICE_ROLE_KEY ?? '').trim();
-}
-
-function webOriginAllowlist(): string[] {
-	const origins = [
-		(publicEnv.PUBLIC_SITE_URL ?? '').trim().replace(/\/$/, ''),
-		(publicEnv.PUBLIC_WEB_ORIGIN ?? '').trim().replace(/\/$/, '')
-	].filter((o) => o.startsWith('https://') || o.startsWith('http://'));
-	return [...new Set(origins)];
-}
-
 function corsHeaders(request: Request): HeadersInit {
-	const origin = request.headers.get('origin') ?? '';
-	const allow = webOriginAllowlist();
-	const headers: Record<string, string> = {
-		'Access-Control-Allow-Methods': 'POST, DELETE, OPTIONS',
-		'Access-Control-Allow-Headers': 'Authorization, Content-Type, Accept',
-		'Access-Control-Max-Age': '86400'
-	};
-	if (!origin || allow.includes(origin)) {
-		headers['Access-Control-Allow-Origin'] = origin || '*';
-		if (origin) headers.Vary = 'Origin';
-	}
-	return headers;
+	return accountCorsHeaders(request, 'POST, DELETE, OPTIONS');
 }
 
 function jsonWithCors(request: Request, body: unknown, init?: ResponseInit) {
@@ -56,41 +23,13 @@ function jsonWithCors(request: Request, body: unknown, init?: ResponseInit) {
 export const OPTIONS: RequestHandler = async ({ request }) =>
 	new Response(null, { status: 204, headers: corsHeaders(request) });
 
-async function requireUser(request: Request) {
-	const url = publicUrl();
-	const anon = anonKey();
-	const service = serviceRoleKey();
-	if (!url.startsWith('https://') || !anon || !service) {
-		return { error: jsonWithCors(request, { error: 'auth.avatar.uploadFail' }, { status: 503 }) };
-	}
-
-	const authHeader = request.headers.get('authorization') ?? request.headers.get('Authorization');
-	if (!authHeader?.toLowerCase().startsWith('bearer ')) {
-		return { error: jsonWithCors(request, { error: 'errors.needAuth' }, { status: 401 }) };
-	}
-
-	const userClient = createClient(url, anon, {
-		global: { headers: { Authorization: authHeader } },
-		auth: { persistSession: false, autoRefreshToken: false }
-	});
-	const {
-		data: { user },
-		error: userError
-	} = await userClient.auth.getUser();
-	if (userError || !user) {
-		return { error: jsonWithCors(request, { error: 'errors.needAuth' }, { status: 401 }) };
-	}
-
-	const admin = createClient(url, service, {
-		auth: { persistSession: false, autoRefreshToken: false }
-	});
-	return { user, admin };
-}
-
 /** Upload avatar object under `{userId}/{id}.{ext}` (service role bypasses Storage RLS). */
 export const POST: RequestHandler = async ({ request }) => {
 	const gate = await requireUser(request);
-	if ('error' in gate && gate.error) return gate.error;
+	if (!gate.ok) {
+		const errorKey = gate.status === 503 ? 'auth.avatar.uploadFail' : gate.errorKey;
+		return jsonWithCors(request, { error: errorKey }, { status: gate.status });
+	}
 	const { user, admin } = gate;
 
 	let form: FormData;
@@ -144,7 +83,9 @@ export const POST: RequestHandler = async ({ request }) => {
 /** Delete an avatar object owned by the signed-in user. */
 export const DELETE: RequestHandler = async ({ request }) => {
 	const gate = await requireUser(request);
-	if ('error' in gate && gate.error) return gate.error;
+	if (!gate.ok) {
+		return jsonWithCors(request, { error: gate.errorKey }, { status: gate.status });
+	}
 	const { user, admin } = gate;
 
 	let path: string | null = null;

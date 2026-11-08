@@ -1,20 +1,23 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
+	import ConfirmSheet from '$lib/components/ConfirmSheet.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import LiveAltPicker from '$lib/components/live/LiveAltPicker.svelte';
 	import LiveExerciseNav from '$lib/components/live/LiveExerciseNav.svelte';
+	import LiveExercisePickSheet from '$lib/components/live/LiveExercisePickSheet.svelte';
 	import LiveSessionActions from '$lib/components/live/LiveSessionActions.svelte';
 	import LiveSetPanel from '$lib/components/live/LiveSetPanel.svelte';
 	import LivePageSkeleton from '$lib/components/live/LivePageSkeleton.svelte';
 	import LiveLocalSaveCue from '$lib/components/live/LiveLocalSaveCue.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_SMALL, ICON_BUTTON } from '$lib/components/icons/sizes';
+	import { ICON_BUTTON } from '$lib/components/icons/sizes';
 	import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import {
 		altGroupNeedsPick,
+		canRemoveSessionExercise,
 		completedSetCount,
 		isSessionFullyLogged,
 		nextManualExerciseFocus,
@@ -34,7 +37,6 @@
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { navigateBack } from '$lib/navigation/back';
 	import { live } from '$lib/stores/live';
-	import { plans } from '$lib/stores/plans';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { forceNormalShell, syncForceNormalShell } from '$lib/stores/shellChrome';
 	import { toasts } from '$lib/stores/toasts';
@@ -69,11 +71,13 @@
 	let loading = $state(true);
 	let switching = $state(false);
 	let names = $state(new Map<string, ExerciseIndexItem>());
+	let catalogItems = $state<ExerciseIndexItem[]>([]);
 
 	$effect.pre(() => {
 		if (!liveSessionMatchesPlan(params.planId)) return;
 		const cached = peekExerciseIndexWithCustoms();
 		if (!cached) return;
+		catalogItems = cached;
 		names = new Map(cached.map((ex) => [ex.id, ex]));
 		loading = false;
 	});
@@ -81,6 +85,8 @@
 	let finishOfferOpen = $state(false);
 	let discardOfferOpen = $state(false);
 	let skipExerciseOfferOpen = $state(false);
+	let removeExerciseOfferOpen = $state(false);
+	let exercisePickMode = $state<'replace' | 'add' | null>(null);
 	let switchOfferOpen = $state(false);
 	let pendingSwitchPlan = $state<WorkoutPlan | null>(null);
 	let resumeActivePlanId = $state<string | null>(null);
@@ -248,6 +254,7 @@
 		} catch {
 			index = [];
 		}
+		catalogItems = index;
 		names = new Map(index.map((ex) => [ex.id, ex]));
 
 		try {
@@ -381,10 +388,15 @@
 		return item ? exerciseName(item, lang) : translate(lang, 'records.fallback', { id });
 	}
 
+	let canRemoveSelected = $derived(
+		session ? canRemoveSessionExercise(session, selectedExerciseIndex) : false
+	);
+
 	function onSkipExercise() {
 		if (finishing || !session) return;
 		finishOfferOpen = false;
 		discardOfferOpen = false;
+		removeExerciseOfferOpen = false;
 		skipExerciseOfferOpen = true;
 	}
 
@@ -393,11 +405,7 @@
 		skipExerciseOfferOpen = false;
 	}
 
-	function commitSkipExercise() {
-		if (finishing || !session) return;
-		const ei = selectedExerciseIndex;
-		live.skipExercise(ei);
-		skipExerciseOfferOpen = false;
+	function afterExerciseRemoved() {
 		justDoneSetIndex = null;
 		invalidSetIndex = null;
 		invalidKind = null;
@@ -412,6 +420,74 @@
 		if (isSessionFullyLogged(next)) {
 			finishOfferOpen = true;
 		}
+	}
+
+	function commitSkipExercise() {
+		if (finishing || !session) return;
+		live.skipExercise(selectedExerciseIndex);
+		skipExerciseOfferOpen = false;
+		afterExerciseRemoved();
+	}
+
+	function onRemoveExercise() {
+		if (finishing || !session || !canRemoveSelected) return;
+		finishOfferOpen = false;
+		discardOfferOpen = false;
+		skipExerciseOfferOpen = false;
+		removeExerciseOfferOpen = true;
+	}
+
+	function dismissRemoveExerciseOffer() {
+		if (finishing) return;
+		removeExerciseOfferOpen = false;
+	}
+
+	function commitRemoveExercise() {
+		if (finishing || !session) return;
+		const next = live.removeExercise(selectedExerciseIndex);
+		removeExerciseOfferOpen = false;
+		if (!next) {
+			toasts.show(translate(lang, 'live.removeExerciseBlocked'), 'error');
+			return;
+		}
+		afterExerciseRemoved();
+	}
+
+	function openReplaceExercisePicker() {
+		if (finishing || !session) return;
+		exercisePickMode = 'replace';
+	}
+
+	function openAddExercisePicker() {
+		if (finishing || !session) return;
+		exercisePickMode = 'add';
+	}
+
+	function dismissExercisePicker() {
+		if (switching) return;
+		exercisePickMode = null;
+	}
+
+	function onPickLiveExercise(exerciseId: string) {
+		const mode = exercisePickMode;
+		exercisePickMode = null;
+		if (!session || !mode || finishing) return;
+		if (mode === 'replace') {
+			const next = live.replaceExercise(selectedExerciseIndex, exerciseId);
+			if (!next) return;
+			justDoneSetIndex = null;
+			invalidSetIndex = null;
+			invalidKind = null;
+			restChimeArmed = false;
+			return;
+		}
+		const insertAt = selectedExerciseIndex + 1;
+		const next = live.insertExercise(insertAt, exerciseId);
+		if (!next) return;
+		selectedExerciseIndex = insertAt;
+		justDoneSetIndex = null;
+		invalidSetIndex = null;
+		invalidKind = null;
 	}
 
 	function onChooseAlt(exerciseId: string) {
@@ -510,20 +586,28 @@
 		else void goto('/live/active');
 	}
 
+	function applyPlanReplace(plan: WorkoutPlan): boolean {
+		const next = live.replacePlan(plan);
+		if (!next) return false;
+		selectedExerciseIndex = pickDefaultExerciseIndex(next);
+		const href = `/live/${encodeURIComponent(plan.id)}`;
+		if (params.planId !== plan.id) {
+			void goto(href, { replaceState: true });
+		}
+		return true;
+	}
+
 	async function confirmSwitchLivePlan() {
 		const plan = pendingSwitchPlan;
 		switchOfferOpen = false;
 		pendingSwitchPlan = null;
 		resumeActivePlanId = null;
 		if (!plan) return;
-		live.discard();
 		switching = true;
 		try {
-			await live.startFromPlan(plan);
-			const started = get(live).session;
-			if (started) selectedExerciseIndex = pickDefaultExerciseIndex(started);
+			if (!applyPlanReplace(plan)) missing = true;
 		} catch (err) {
-			console.error('live switch start failed', err);
+			console.error('live switch replace failed', err);
 			missing = true;
 		} finally {
 			switching = false;
@@ -548,14 +632,14 @@
 		onDismiss={keepCurrentLiveSession}
 	>
 		<p id="live-switch-offer-title" class="bottom-sheet__title">
-			{translate(lang, 'live.confirmDiscard')}
+			{translate(lang, 'live.switchOfferTitle')}
 		</p>
 		<p class="bottom-sheet__hint">{translate(lang, 'live.switchOfferHint')}</p>
 		{#snippet actions()}
 			<AppButton variant="secondary" onclick={keepCurrentLiveSession}>
 				{translate(lang, 'live.switchKeepCurrent')}
 			</AppButton>
-			<AppButton variant="danger" onclick={() => void confirmSwitchLivePlan()}>
+			<AppButton variant="primary" onclick={() => void confirmSwitchLivePlan()}>
 				{translate(lang, 'live.switchStartNew')}
 			</AppButton>
 		{/snippet}
@@ -639,7 +723,9 @@
 				>
 					<LucideIcon icon={ArrowLeft} size={ICON_BUTTON} />
 				</button>
-				<h1 class="live-plan-title">{session.planName}</h1>
+				<p class="live-plan-title">
+					<span class="live-plan-title__label">{session.planName}</span>
+				</p>
 			</div>
 			<div class="live-header-meta">
 				<p class="live-progress-pill">
@@ -699,6 +785,10 @@
 									forceAltPick = true;
 								}}
 								onSkip={onSkipExercise}
+								onReplaceExercise={openReplaceExercisePicker}
+								onAddExercise={openAddExercisePicker}
+								onRemoveExercise={onRemoveExercise}
+								canRemoveExercise={canRemoveSelected}
 								onWeight={(si, v) => onWeight(ei, si, v)}
 								onReps={(si, v) => onReps(ei, si, v)}
 								onComplete={(si) => onComplete(ei, si)}
@@ -866,5 +956,31 @@
 				{/snippet}
 			</BottomSheet>
 		{/if}
+
+		<LiveExercisePickSheet
+			open={exercisePickMode != null}
+			mode={exercisePickMode ?? 'add'}
+			catalog={catalogItems}
+			history={$live.history}
+			seedBodyPart={names.get(session.exercises[selectedExerciseIndex]?.exerciseId ?? '')
+				?.body_part ?? null}
+			{lang}
+			busy={finishing || switching}
+			onPick={onPickLiveExercise}
+			onDismiss={dismissExercisePicker}
+		/>
+		<ConfirmSheet
+			open={removeExerciseOfferOpen}
+			titleId="live-remove-exercise-title"
+			title={translate(lang, 'live.removeExercise')}
+			hint={translate(lang, 'live.removeExerciseConfirm', {
+				name: skipExerciseTitle(selectedExerciseIndex)
+			})}
+			confirmLabel={translate(lang, 'live.removeExercise')}
+			variant="danger"
+			busy={finishing}
+			onConfirm={commitRemoveExercise}
+			onDismiss={dismissRemoveExerciseOffer}
+		/>
 	</section>
 {/if}

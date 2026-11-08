@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '$lib/styles/blocks/coach.css';
+	import { goto } from '$app/navigation';
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import CoachAssignSheet from '$lib/components/coach/CoachAssignSheet.svelte';
@@ -403,12 +404,18 @@
 				toasts.show(translate(lang, 'coach.assignDone'), 'success');
 				assignTarget = null;
 				assignPlans = [];
+				expanded = { ...expanded, [target.key]: false };
 			} else {
 				toasts.show(errorText(result.reason), 'error');
 			}
 		} finally {
 			assignBusy = false;
 		}
+	}
+
+	function openBuilderFromAssign() {
+		dismissAssign();
+		void goto('/builder');
 	}
 
 	/** Two-state status: today (green with dot) or a calm grey line. */
@@ -536,6 +543,9 @@
 						{/if}
 					</span>
 				</button>
+				<p class="sr-only" aria-live="polite">
+					{inviteCopied ? translate(lang, 'coach.inviteCopied') : ''}
+				</p>
 				<p class="coach-hint">{translate(lang, 'coach.inviteHelp')}</p>
 				<AppButton block onclick={() => void shareInvite()}>
 					{translate(lang, 'coach.inviteShare')}
@@ -606,7 +616,9 @@
 					{translate(lang, 'coach.clientsCount', { n: rows.length })}
 				</h2>
 				<span class="coach-week">
-					{statsReady ? translate(lang, 'coach.weekActive', { n: weekActive }) : '—'}
+					{statsReady
+						? translate(lang, 'coach.weekActive', { n: weekActive })
+						: translate(lang, 'coach.noStats')}
 				</span>
 			</div>
 			{#if rows.length > 4}
@@ -765,6 +777,7 @@
 	plans={assignPlans}
 	onPick={(plan) => void pickAssign(plan)}
 	onDismiss={dismissAssign}
+	onOpenBuilder={openBuilderFromAssign}
 />
 
 <CoachSessionDetailSheet

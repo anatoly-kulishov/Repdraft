@@ -33,7 +33,7 @@ Fixed:
 - `Chip` inactive used Tailwind `text-muted` → shadcn plate color (near-invisible). Now product `--color-muted`.
 - `AppChip` / catalog hub chips: min-height → 48px (`--control-height`).
 - Achievements `Chip`: `min-w-12` (short labels like "All" were 44px wide).
-- AI draft example chips: were `2.25rem` override → `--control-height`.
+- AI draft example chips: flat 2.25rem pills + `::after` ≥48 hit (short labels no longer look circular).
 - AI clear / mic: 36px → 48px; brief padding follows.
 - RN `Chip`: `minWidth: touchMin` to match.
 

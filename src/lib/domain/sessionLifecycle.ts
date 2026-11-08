@@ -88,6 +88,198 @@ export function syncSessionPrescriptionFromPlan(
 	});
 	return changed ? { ...session, exercises } : session;
 }
+
+function sessionExerciseFromPlan(ex: WorkoutExercise): SessionExercise {
+	return {
+		exerciseId: ex.exerciseId,
+		groupId: ex.groupId ?? null,
+		altGroupId: ex.altGroupId ?? null,
+		targetSets: ex.sets,
+		targetReps: ex.reps,
+		restSec: ex.restSec,
+		sets: emptySets(ex.sets, ex.reps, ex.repsScheme)
+	};
+}
+
+function hasCompletedSet(ex: SessionExercise): boolean {
+	return ex.sets.some((s) => s.completed);
+}
+
+/**
+ * Remount an active session onto another plan.
+ * Keeps session id / startedAt. Matching exerciseIds (in order, once each) keep
+ * completed sets + note; open tails are dropped and padded to the new target.
+ * Skipped slots without completed sets do not match. Exercises only on the old
+ * session are dropped, even with logged sets.
+ */
+export function replaceSessionPlan(
+	session: WorkoutSession,
+	plan: WorkoutPlan
+): WorkoutSession {
+	const used = new Set<number>();
+	const exercises = plan.exercises.map((planEx) => {
+		const matchIndex = session.exercises.findIndex((prev, i) => {
+			if (used.has(i)) return false;
+			if (prev.exerciseId !== planEx.exerciseId) return false;
+			if (prev.skipped && !hasCompletedSet(prev)) return false;
+			return true;
+		});
+		if (matchIndex < 0) return sessionExerciseFromPlan(planEx);
+
+		const prev = session.exercises[matchIndex]!;
+		used.add(matchIndex);
+		if (!hasCompletedSet(prev)) return sessionExerciseFromPlan(planEx);
+
+		const completed = prev.sets.filter((s) => s.completed);
+		const targetCount = Math.max(1, planEx.sets);
+		const openNeeded = Math.max(0, targetCount - completed.length);
+		const openTail =
+			openNeeded > 0 ? emptySets(openNeeded, planEx.reps, undefined) : [];
+		const note = prev.note?.trim() ? prev.note : undefined;
+		return {
+			exerciseId: planEx.exerciseId,
+			groupId: planEx.groupId ?? null,
+			altGroupId: planEx.altGroupId ?? null,
+			targetSets: planEx.sets,
+			targetReps: planEx.reps,
+			restSec: planEx.restSec,
+			sets: [...completed, ...openTail],
+			...(note ? { note } : {})
+		};
+	});
+
+	const planExerciseIds = new Set(plan.exercises.map((ex) => ex.exerciseId));
+	const planAltGroups = new Set(
+		plan.exercises
+			.map((ex) => ex.altGroupId)
+			.filter((id): id is string => typeof id === 'string' && id.length > 0)
+	);
+	const altChoices: Record<string, string> = {};
+	for (const [groupId, exerciseId] of Object.entries(session.altChoices ?? {})) {
+		if (!planAltGroups.has(groupId)) continue;
+		if (!planExerciseIds.has(exerciseId)) continue;
+		altChoices[groupId] = exerciseId;
+	}
+
+	return {
+		...session,
+		planId: plan.id,
+		planName: plan.name,
+		finishedAt: null,
+		exercises,
+		altChoices
+	};
+}
+
+/** Throws if mid-session plan replace invariants regress. */
+export function runSessionLifecycleSelfCheck(): void {
+	const planA: WorkoutPlan = {
+		id: 'plan-a',
+		name: 'A',
+		createdAt: '2026-01-01T00:00:00.000Z',
+		updatedAt: '2026-01-01T00:00:00.000Z',
+		exercises: [
+			{ exerciseId: 'bench', sets: 3, reps: 8, restSec: 90 },
+			{ exerciseId: 'fly', sets: 3, reps: 12, restSec: 60 }
+		]
+	};
+	const planB: WorkoutPlan = {
+		id: 'plan-b',
+		name: 'B',
+		createdAt: '2026-01-01T00:00:00.000Z',
+		updatedAt: '2026-01-01T00:00:00.000Z',
+		exercises: [
+			{ exerciseId: 'bench', sets: 4, reps: 6, restSec: 120 },
+			{ exerciseId: 'row', sets: 3, reps: 10, restSec: 90 }
+		]
+	};
+	const started = startSessionFromPlan(planA);
+	const withLogs: WorkoutSession = {
+		...started,
+		exercises: [
+			{
+				...started.exercises[0]!,
+				sets: [
+					{ weightKg: 40, reps: 8, completed: true, kind: 'work' },
+					{ weightKg: 40, reps: 8, completed: false, kind: 'work' },
+					{ weightKg: null, reps: 8, completed: false, kind: 'work' }
+				],
+				note: 'pause'
+			},
+			{
+				...started.exercises[1]!,
+				sets: [
+					{ weightKg: 12, reps: 12, completed: true, kind: 'work' },
+					{ weightKg: null, reps: 12, completed: false, kind: 'work' },
+					{ weightKg: null, reps: 12, completed: false, kind: 'work' }
+				]
+			}
+		]
+	};
+
+	const kept = replaceSessionPlan(withLogs, planB);
+	if (kept.id !== withLogs.id || kept.startedAt !== withLogs.startedAt) {
+		throw new Error('replaceSessionPlan must keep id and startedAt');
+	}
+	if (kept.planId !== 'plan-b' || kept.planName !== 'B') {
+		throw new Error('replaceSessionPlan must adopt new plan meta');
+	}
+	if (kept.exercises.length !== 2) throw new Error('replaceSessionPlan exercise count');
+	const bench = kept.exercises[0]!;
+	if (bench.exerciseId !== 'bench' || bench.sets.filter((s) => s.completed).length !== 1) {
+		throw new Error('replaceSessionPlan must keep completed overlap sets');
+	}
+	if (bench.sets.length !== 4 || bench.note !== 'pause') {
+		throw new Error('replaceSessionPlan must pad to new target and keep note');
+	}
+	if (kept.exercises[1]?.exerciseId !== 'row' || kept.exercises.some((e) => e.exerciseId === 'fly')) {
+		throw new Error('replaceSessionPlan must drop non-overlap and add new slots');
+	}
+
+	const dupPlan: WorkoutPlan = {
+		id: 'plan-dup',
+		name: 'Dup',
+		createdAt: '2026-01-01T00:00:00.000Z',
+		updatedAt: '2026-01-01T00:00:00.000Z',
+		exercises: [
+			{ exerciseId: 'bench', sets: 2, reps: 5, restSec: 60 },
+			{ exerciseId: 'bench', sets: 2, reps: 5, restSec: 60 }
+		]
+	};
+	const dupSession: WorkoutSession = {
+		id: 's-dup',
+		planId: 'old',
+		planName: 'Old',
+		startedAt: '2026-01-01T10:00:00.000Z',
+		finishedAt: null,
+		exercises: [
+			{
+				exerciseId: 'bench',
+				targetSets: 2,
+				targetReps: 5,
+				restSec: 60,
+				sets: [
+					{ weightKg: 50, reps: 5, completed: true, kind: 'work' },
+					{ weightKg: null, reps: 5, completed: false, kind: 'work' }
+				]
+			},
+			{
+				exerciseId: 'bench',
+				targetSets: 2,
+				targetReps: 5,
+				restSec: 60,
+				sets: [
+					{ weightKg: 55, reps: 5, completed: true, kind: 'work' },
+					{ weightKg: null, reps: 5, completed: false, kind: 'work' }
+				]
+			}
+		]
+	};
+	const dup = replaceSessionPlan(dupSession, dupPlan);
+	if (dup.exercises[0]?.sets[0]?.weightKg !== 50 || dup.exercises[1]?.sets[0]?.weightKg !== 55) {
+		throw new Error('replaceSessionPlan must match duplicate exerciseIds in order');
+	}
+}
 function pruneSkippedEmpty(session: WorkoutSession): WorkoutSession {
 	const exercises = session.exercises
 		.filter((ex) => !ex.skipped || ex.sets.some((s) => s.completed))

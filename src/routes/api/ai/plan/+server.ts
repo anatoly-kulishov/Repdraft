@@ -1,4 +1,5 @@
 import type { RequestHandler } from './$types';
+import { aiQuotaKey, aiDailyLimit, consumeAiDailyQuota } from '$lib/server/ai/aiDailyQuota';
 import { aiAvailability } from '$lib/server/ai/config';
 import { generateWorkoutPlan } from '$lib/server/ai/generatePlan';
 import { corsJson, corsPreflight } from '$lib/server/cors';
@@ -7,7 +8,10 @@ export const OPTIONS: RequestHandler = async () => corsPreflight();
 
 export const GET: RequestHandler = async () => {
 	const status = aiAvailability();
-	return corsJson(status, { status: status.available ? 200 : 503 });
+	return corsJson(
+		{ ...status, dailyLimit: aiDailyLimit() },
+		{ status: status.available ? 200 : 503 }
+	);
 };
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -26,6 +30,28 @@ export const POST: RequestHandler = async ({ request }) => {
 			? String((body as { brief: unknown }).brief ?? '')
 			: '';
 
+	if (!brief.trim()) {
+		return corsJson(
+			{ ok: false, code: 'invalid_brief', error: 'Brief is required' },
+			{ status: 400 }
+		);
+	}
+
+	const key = await aiQuotaKey(request);
+	const quota = consumeAiDailyQuota(key);
+	if (!quota.ok) {
+		return corsJson(
+			{
+				ok: false,
+				code: 'rate_limit',
+				error: 'aiDraft.rateLimit',
+				limit: quota.limit,
+				remaining: 0
+			},
+			{ status: 429 }
+		);
+	}
+
 	const result = await generateWorkoutPlan(brief);
 	if (!result.ok) {
 		const status =
@@ -38,5 +64,5 @@ export const POST: RequestHandler = async ({ request }) => {
 						: 502;
 		return corsJson(result, { status });
 	}
-	return corsJson(result);
+	return corsJson({ ...result, remaining: quota.remaining, limit: quota.limit });
 };

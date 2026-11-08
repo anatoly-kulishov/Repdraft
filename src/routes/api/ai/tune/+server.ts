@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { AI_TUNE_NOTE_MAX, sanitizeAiBrief } from '$lib/domain/inputLimits';
+import { aiQuotaKey, consumeAiDailyQuota } from '$lib/server/ai/aiDailyQuota';
 import {
 	clampTuneAbsolute,
 	isTuneGoal,
@@ -75,6 +76,21 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json(
 			{ ok: false, code: 'invalid_input', error: 'Missing exerciseId' },
 			{ status: 400 }
+		);
+	}
+
+	const key = await aiQuotaKey(request);
+	const quota = consumeAiDailyQuota(key);
+	if (!quota.ok) {
+		return json(
+			{
+				ok: false,
+				code: 'rate_limit',
+				error: 'aiDraft.rateLimit',
+				limit: quota.limit,
+				remaining: 0
+			},
+			{ status: 429 }
 		);
 	}
 

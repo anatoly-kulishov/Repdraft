@@ -49,3 +49,7 @@ export function articleMediaUrl(src: string | null | undefined): string | null {
 export function aiPlanEndpoint(): string {
 	return `${webOrigin()}/api/ai/plan`;
 }
+
+export function recognizePlanEndpoint(): string {
+	return `${webOrigin()}/api/ai/recognize-plan`;
+}

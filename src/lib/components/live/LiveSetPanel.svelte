@@ -28,6 +28,7 @@
 		ClockCounterClockwise as History,
 		Plus,
 		ArrowsClockwise as RefreshCw,
+		ArrowsLeftRight as Replace,
 		SkipForward,
 		Note as StickyNote,
 		Trash as Trash2,
@@ -57,6 +58,10 @@
 		canSwapAlternative = false,
 		onSwapAlternative = undefined,
 		onSkip = undefined,
+		onReplaceExercise = undefined,
+		onAddExercise = undefined,
+		onRemoveExercise = undefined,
+		canRemoveExercise = false,
 		onWeight,
 		onReps,
 		onComplete,
@@ -80,6 +85,10 @@
 		canSwapAlternative?: boolean;
 		onSwapAlternative?: () => void;
 		onSkip?: () => void;
+		onReplaceExercise?: () => void;
+		onAddExercise?: () => void;
+		onRemoveExercise?: () => void;
+		canRemoveExercise?: boolean;
 		onWeight: (setIndex: number, value: string) => string;
 		onReps: (setIndex: number, value: string) => string;
 		onComplete: (setIndex: number) => void;
@@ -679,8 +688,7 @@
 			{translate(lang, 'live.actionsMenuTitle')}
 		</p>
 		<div
-			class="live-actions-sheet live-actions-sheet--icons"
-			class:live-actions-sheet--icons-4={Boolean(canSwapAlternative && onSwapAlternative && onSkip)}
+			class="live-actions-sheet live-actions-sheet--icons live-actions-sheet--icons-wide"
 			role="group"
 			aria-labelledby={`live-actions-${exercise.exerciseId}`}
 		>
@@ -704,6 +712,51 @@
 				</span>
 				<span class="live-actions-tile__label">{translate(lang, 'live.note')}</span>
 			</button>
+			{#if onReplaceExercise}
+				<button
+					type="button"
+					class="live-actions-tile"
+					onclick={() => {
+						const replace = onReplaceExercise;
+						if (replace) runActionsItem(replace);
+					}}
+				>
+					<span class="live-actions-tile__well" aria-hidden="true">
+						<LucideIcon icon={Replace} size={ICON_BUTTON} />
+					</span>
+					<span class="live-actions-tile__label">{translate(lang, 'live.replaceExercise')}</span>
+				</button>
+			{/if}
+			{#if onAddExercise}
+				<button
+					type="button"
+					class="live-actions-tile"
+					onclick={() => {
+						const add = onAddExercise;
+						if (add) runActionsItem(add);
+					}}
+				>
+					<span class="live-actions-tile__well" aria-hidden="true">
+						<LucideIcon icon={Plus} size={ICON_BUTTON} />
+					</span>
+					<span class="live-actions-tile__label">{translate(lang, 'live.addExercise')}</span>
+				</button>
+			{/if}
+			{#if canRemoveExercise && onRemoveExercise}
+				<button
+					type="button"
+					class="live-actions-tile"
+					onclick={() => {
+						const remove = onRemoveExercise;
+						if (remove) runActionsItem(remove);
+					}}
+				>
+					<span class="live-actions-tile__well" aria-hidden="true">
+						<LucideIcon icon={Trash2} size={ICON_BUTTON} />
+					</span>
+					<span class="live-actions-tile__label">{translate(lang, 'live.removeExercise')}</span>
+				</button>
+			{/if}
 			{#if canSwapAlternative && onSwapAlternative}
 				<button
 					type="button"
