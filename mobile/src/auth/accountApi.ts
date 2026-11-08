@@ -1,4 +1,5 @@
 import { CUSTOM_AVATAR_PATH_KEY } from '@repdraft/domain/avatarImage';
+import type { BillingProvider, EntitlementStatus, ProPlan } from '@repdraft/domain/entitlement';
 import { getSupabase } from './supabase';
 import { webOrigin } from '../catalog/mediaUrl';
 
@@ -75,6 +76,39 @@ export async function uploadAvatarMultipart(
 	});
 	if (error || !data.user) throw error ?? new Error('auth.avatar.uploadFail');
 	return body.path;
+}
+
+export type BillingStatusResponse = {
+	pro: boolean;
+	status: EntitlementStatus;
+	plan: ProPlan | null;
+	provider: BillingProvider | null;
+	currentPeriodEnd: string | null;
+};
+
+export async function fetchBillingStatus(): Promise<BillingStatusResponse | null> {
+	const token = await accessToken().catch(() => null);
+	if (!token) return null;
+	const res = await fetch(`${webOrigin()}/api/billing/status`, {
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json'
+		}
+	});
+	if (!res.ok) return null;
+	const body = (await res.json().catch(() => null)) as Partial<BillingStatusResponse> | null;
+	if (!body) return null;
+	return {
+		pro: Boolean(body.pro),
+		status: (body.status as EntitlementStatus) || 'none',
+		plan: (body.plan as ProPlan | null) ?? null,
+		provider: (body.provider as BillingProvider | null) ?? null,
+		currentPeriodEnd: typeof body.currentPeriodEnd === 'string' ? body.currentPeriodEnd : null
+	};
+}
+
+export function billingSubscribeUrl(): string {
+	return `${webOrigin()}/auth?billing=1#pro`;
 }
 
 export async function removeAvatarRemote(path: string | null): Promise<void> {

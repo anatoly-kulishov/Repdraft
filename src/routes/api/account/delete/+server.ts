@@ -1,7 +1,6 @@
-import { env as publicEnv } from '$env/dynamic/public';
-import { env as privateEnv } from '$env/dynamic/private';
 import { AVATARS_BUCKET } from '$lib/domain/avatarImage';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { accountCorsHeaders, requireUser } from '$lib/server/auth/requireUser';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -9,47 +8,16 @@ const USER_TABLES = [
 	'technique_clips',
 	'workout_sessions',
 	'personal_records',
-	'workout_plans'
+	'workout_plans',
+	'entitlements'
 ] as const;
 
 const CLIP_BUCKET = 'technique-gifs';
 const AVATAR_BUCKET = AVATARS_BUCKET;
 const REMOVE_CHUNK = 80;
 
-function publicUrl(): string {
-	return (publicEnv.PUBLIC_SUPABASE_URL ?? '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
-}
-
-function anonKey(): string {
-	return (publicEnv.PUBLIC_SUPABASE_ANON_KEY ?? '').trim();
-}
-
-function serviceRoleKey(): string {
-	return (privateEnv.SUPABASE_SERVICE_ROLE_KEY ?? '').trim();
-}
-
-function webOriginAllowlist(): string[] {
-	const origins = [
-		(publicEnv.PUBLIC_SITE_URL ?? '').trim().replace(/\/$/, ''),
-		(publicEnv.PUBLIC_WEB_ORIGIN ?? '').trim().replace(/\/$/, '')
-	].filter((o) => o.startsWith('https://') || o.startsWith('http://'));
-	return [...new Set(origins)];
-}
-
 function corsHeaders(request: Request): HeadersInit {
-	const origin = request.headers.get('origin') ?? '';
-	const allow = webOriginAllowlist();
-	const headers: Record<string, string> = {
-		'Access-Control-Allow-Methods': 'POST, OPTIONS',
-		'Access-Control-Allow-Headers': 'Authorization, Content-Type, Accept',
-		'Access-Control-Max-Age': '86400'
-	};
-	/* Same-origin or allowlisted PUBLIC_SITE_URL / PUBLIC_WEB_ORIGIN. */
-	if (!origin || allow.includes(origin)) {
-		headers['Access-Control-Allow-Origin'] = origin || '*';
-		if (origin) headers.Vary = 'Origin';
-	}
-	return headers;
+	return accountCorsHeaders(request, 'POST, OPTIONS');
 }
 
 function jsonWithCors(request: Request, body: unknown, init?: ResponseInit) {
@@ -110,36 +78,17 @@ export const OPTIONS: RequestHandler = async ({ request }) =>
 
 /** Delete the signed-in Auth user and their cloud rows (152-FZ / GDPR right to erasure). */
 export const POST: RequestHandler = async ({ request }) => {
-	const url = publicUrl();
-	const anon = anonKey();
-	const service = serviceRoleKey();
-
-	if (!url.startsWith('https://') || !anon || !service) {
-		return jsonWithCors(request, { error: 'auth.deleteNotConfigured' }, { status: 503 });
+	const gate = await requireUser(request);
+	if (!gate.ok) {
+		const errorKey =
+			gate.status === 503
+				? 'auth.deleteNotConfigured'
+				: gate.status === 401
+					? 'auth.deleteUnauthorized'
+					: gate.errorKey;
+		return jsonWithCors(request, { error: errorKey }, { status: gate.status });
 	}
-
-	const authHeader = request.headers.get('authorization') ?? request.headers.get('Authorization');
-	if (!authHeader?.toLowerCase().startsWith('bearer ')) {
-		return jsonWithCors(request, { error: 'auth.deleteUnauthorized' }, { status: 401 });
-	}
-
-	const userClient = createClient(url, anon, {
-		global: { headers: { Authorization: authHeader } },
-		auth: { persistSession: false, autoRefreshToken: false }
-	});
-
-	const {
-		data: { user },
-		error: userError
-	} = await userClient.auth.getUser();
-
-	if (userError || !user) {
-		return jsonWithCors(request, { error: 'auth.deleteUnauthorized' }, { status: 401 });
-	}
-
-	const admin = createClient(url, service, {
-		auth: { persistSession: false, autoRefreshToken: false }
-	});
+	const { user, admin } = gate;
 
 	const { data: clips, error: clipsError } = await admin
 		.from('technique_clips')

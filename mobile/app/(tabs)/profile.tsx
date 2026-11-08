@@ -22,6 +22,7 @@ import {
 import { ChevronDown, UserRound } from 'lucide-react-native';
 import type { Session } from '@supabase/supabase-js';
 import { userCustomAvatarPath, userDisplayName } from '@repdraft/domain/authFlow';
+import { proFromAppMetadata } from '@repdraft/domain/entitlement';
 import {
 	COACH_ASSIGNMENT_HIDDEN_KEY,
 	INVITE_CODE_LENGTH,
@@ -39,7 +40,9 @@ import {
 	type LoopMetricsSnapshot
 } from '@repdraft/domain/loopMetrics';
 import {
+	billingSubscribeUrl,
 	deleteCloudAccount,
+	fetchBillingStatus,
 	removeAvatarRemote,
 	signOutEverywhere,
 	uploadAvatarMultipart
@@ -162,6 +165,8 @@ export default function ProfileScreen() {
 	const [coachSheetOpen, setCoachSheetOpen] = useState(false);
 	const [coachBadge, setCoachBadge] = useState(false);
 	const [disconnectTarget, setDisconnectTarget] = useState<CoachMyCoach | null>(null);
+	const [proActive, setProActive] = useState(false);
+	const [proUntil, setProUntil] = useState<string | null>(null);
 	const versionUnlockTaps = useRef(0);
 	const versionUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const cloud = isSupabaseConfigured();
@@ -178,6 +183,15 @@ export default function ProfileScreen() {
 			: myCoaches.length === 1
 				? tt('profile.coachConnected')
 				: tt('profile.coachesConnected', { n: myCoaches.length });
+	const metaPro = useMemo(
+		() =>
+			proFromAppMetadata(
+				(session?.user?.app_metadata as Record<string, unknown> | undefined) ?? undefined
+			),
+		[session?.user?.app_metadata]
+	);
+	const showPro = proActive || metaPro.pro;
+	const proUntilLabel = proUntil || metaPro.proUntil;
 
 	useFocusEffect(
 		useCallback(() => {
@@ -204,6 +218,16 @@ export default function ProfileScreen() {
 			void coachRepo.myCurrentAssignment().then((result) => {
 				if (result.ok) setAssignment(result.value);
 			});
+			if (session?.user?.id) {
+				void fetchBillingStatus().then((status) => {
+					if (!status) return;
+					setProActive(status.pro);
+					setProUntil(status.currentPeriodEnd);
+				});
+			} else {
+				setProActive(false);
+				setProUntil(null);
+			}
 		}, [cloud, session?.user?.id])
 	);
 
@@ -1001,6 +1025,31 @@ export default function ProfileScreen() {
 					</Text>
 				</Pressable>
 			</Panel>
+
+			{session?.user && cloud ? (
+				<Panel>
+					<Text style={styles.groupTitle}>{tt('billing.title')}</Text>
+					{showPro ? (
+						<>
+							<Text style={styles.hint}>
+								{proUntilLabel
+									? tt('billing.activeUntil', { date: proUntilLabel.slice(0, 10) })
+									: tt('billing.active')}
+							</Text>
+							<Text style={styles.hint}>{tt('billing.benefitRecognize')}</Text>
+						</>
+					) : (
+						<>
+							<Text style={styles.hint}>{tt('billing.lead')}</Text>
+							<Text style={styles.hint}>{tt('billing.openOnWebHint')}</Text>
+							<PrimaryButton
+								label={tt('billing.openOnWeb')}
+								onPress={() => void WebBrowser.openBrowserAsync(billingSubscribeUrl())}
+							/>
+						</>
+					)}
+				</Panel>
+			) : null}
 
 			<Panel>
 				<Text style={styles.groupTitle}>{tt('settings.sessionTitle')}</Text>

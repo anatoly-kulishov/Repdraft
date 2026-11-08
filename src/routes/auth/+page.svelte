@@ -29,6 +29,7 @@
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import AuthInterfacePrefs from '$lib/components/AuthInterfacePrefs.svelte';
+	import ProBillingPanel from '$lib/components/billing/ProBillingPanel.svelte';
 	import CoachAssignedCard from '$lib/components/coach/CoachAssignedCard.svelte';
 	import IconPlate from '$lib/components/IconPlate.svelte';
 	import ProfileInsightsPanel from '$lib/components/ProfileInsightsPanel.svelte';
@@ -1150,6 +1151,7 @@
 				</div>
 
 				<div class="profile-settings-stack-full">
+					<ProBillingPanel />
 					<ProfileInsightsPanel />
 					<div class="profile-settings-group panel text-left">
 						<p class="profile-settings-group__title">{translate(lang, 'profile.clients')}</p>

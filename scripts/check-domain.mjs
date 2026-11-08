@@ -28,6 +28,7 @@ function compileDomain() {
 			'src/lib/domain/sessionLifecycle.ts',
 			'src/lib/domain/sessionLog.ts',
 			'src/lib/domain/networkError.ts',
+			'src/lib/domain/entitlement.ts',
 			'--ignoreConfig',
 			'--ignoreDeprecations',
 			'6.0',
@@ -64,6 +65,7 @@ function run() {
 	const sessionLifecycle = require(join(outDir, 'domain', 'sessionLifecycle.js'));
 	const sessionLog = require(join(outDir, 'domain', 'sessionLog.js'));
 	const networkError = require(join(outDir, 'domain', 'networkError.js'));
+	const entitlement = require(join(outDir, 'domain', 'entitlement.js'));
 	const catalog = JSON.parse(
 		readFileSync(join(root, 'static', 'data', 'exercises.index.json'), 'utf8')
 	);
@@ -82,6 +84,8 @@ function run() {
 	console.log('✓ session log self-check');
 	networkError.runNetworkErrorSelfCheck();
 	console.log('✓ network error self-check');
+	entitlement.runEntitlementSelfCheck();
+	console.log('✓ entitlement self-check');
 
 	const failures = [];
 	for (const testCase of cases) {
