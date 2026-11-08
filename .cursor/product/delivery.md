@@ -17,6 +17,8 @@
 
 **Parity:** новые product-фичи без native API - domain + i18n + web + RN в одной задаче, см. [dual-client-parity.mdc](../rules/dual-client-parity.mdc). Verify: `npm run check:parity`.
 
+**Pro (v0.25+):** оплата только на web; RN ведёт на сайт. Pro = распознавание программы (фото/Excel). См. [billing-pro.md](billing-pro.md).
+
 **Не делать:** Capacitor / Cordova. Часы - отдельный native UI, не RN-экран.
 
 **Запуск на iOS:** Expo Go ставится только последней версии, поэтому SDK проекта должен совпадать с актуальной Expo Go (сейчас SDK 58). Для нативных модулей (Health) и стабильных запусков - dev build: `npx expo run:ios --device` (нужен `expo-dev-client` + Apple ID в Xcode для подписи). Запускать с домашнего экрана телефона, не через Expo Go.
