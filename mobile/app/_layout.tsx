@@ -17,6 +17,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LocaleProvider, useLocale } from '../src/state/locale';
 import { ThemeProvider, useAppColors, useAppTheme } from '../src/state/theme';
 import { BootSplash } from '../src/boot/BootSplash';
+import { IntakeGate } from '../src/components/IntakeGate';
 import { flushOutbox } from '../src/sync/cloudSync';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -58,6 +59,7 @@ function RootStack() {
 				name="clients"
 				options={{ title: tt('coach.pageTitle'), headerShown: false }}
 			/>
+			<Stack.Screen name="settings" options={{ headerShown: false }} />
 		</Stack>
 	);
 }
@@ -91,6 +93,7 @@ export default function RootLayout() {
 					<LocaleProvider>
 						<ThemedStatusBar />
 						<RootStack />
+						{!booting ? <IntakeGate /> : null}
 						{booting ? <BootSplash onDone={() => setBooting(false)} /> : null}
 					</LocaleProvider>
 				</ThemeProvider>

@@ -45,7 +45,9 @@
 	import { browser, dev } from '$app/environment';
 	import { injectAnalytics } from '@vercel/analytics/sveltekit';
 	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
-	import { webAnalyticsEnabled } from '$lib/stores/prefs';
+	import { athleteProfile, webAnalyticsEnabled } from '$lib/stores/prefs';
+	import { needsIntakeStepper } from '$lib/domain/athleteProfile';
+	import IntakeStepper from '$lib/components/onboarding/IntakeStepper.svelte';
 
 	let webAnalyticsInjected = false;
 	function ensureWebAnalyticsInjected() {
@@ -431,3 +433,6 @@
 <ToastStack items={$toasts} />
 <LocalMergeConflictSheet />
 <DraftDock />
+{#if browser && needsIntakeStepper($athleteProfile)}
+	<IntakeStepper open={true} />
+{/if}

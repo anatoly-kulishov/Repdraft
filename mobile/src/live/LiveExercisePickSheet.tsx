@@ -12,12 +12,14 @@ import {
 	POPULAR_EXERCISE_IDS,
 	frequentExercises
 } from '@repdraft/domain/exerciseFrequency';
+import { HOME_EQUIPMENT_FILTER, type HomeKitOptionalId } from '@repdraft/domain/homeKit';
 import { exerciseMetaHint, labelBodyPart } from '@repdraft/domain/labels.ru';
 import type { ExerciseIndexItem, WorkoutSession } from '@repdraft/domain/types';
 import { BottomSheet } from '../components/BottomSheet';
 import { CatalogThumb } from '../components/CatalogThumb';
 import { exerciseDisplayName, filterExercises, uniqueBodyParts } from '../catalog/loadIndex';
 import { useLocale } from '../state/locale';
+import { getHomeKitSelection } from '../state/prefs';
 import { useAppColors } from '../state/theme';
 import { fontFamily, radius, space, touchMin, type ColorPalette } from '../theme';
 
@@ -54,15 +56,20 @@ export function LiveExercisePickSheet({
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const [query, setQuery] = useState('');
 	const [bodyPart, setBodyPart] = useState<string | 'all'>('all');
+	const [equipment, setEquipment] = useState<'all' | typeof HOME_EQUIPMENT_FILTER>('all');
+	const [homeKit, setHomeKit] = useState<HomeKitOptionalId[]>([]);
 
 	useEffect(() => {
 		if (!open) {
 			setQuery('');
 			setBodyPart('all');
+			setEquipment('all');
 			return;
 		}
 		setQuery('');
+		setEquipment('all');
 		setBodyPart(mode === 'replace' && seedBodyPart ? seedBodyPart : 'all');
+		void getHomeKitSelection().then(setHomeKit);
 	}, [mode, open, seedBodyPart]);
 
 	const byId = useMemo(() => {
@@ -93,14 +100,20 @@ export function LiveExercisePickSheet({
 	const results = useMemo(() => {
 		if (!open) return [] as ExerciseIndexItem[];
 		const q = query.trim();
-		if (!q && bodyPart === 'all') return suggestItems;
-		return filterExercises(catalog, { query: q, bodyPart, locale }).slice(0, SEARCH_CAP);
-	}, [bodyPart, catalog, locale, open, query, suggestItems]);
+		if (!q && bodyPart === 'all' && equipment === 'all') return suggestItems;
+		return filterExercises(catalog, {
+			query: q,
+			bodyPart,
+			locale,
+			equipment,
+			homeKit
+		}).slice(0, SEARCH_CAP);
+	}, [bodyPart, catalog, equipment, homeKit, locale, open, query, suggestItems]);
 
 	const title =
 		mode === 'replace' ? tt('live.replaceExerciseTitle') : tt('live.addExerciseTitle');
 	const emptyLabel =
-		query.trim() || bodyPart !== 'all'
+		query.trim() || bodyPart !== 'all' || equipment !== 'all'
 			? tt('live.pickExerciseEmpty')
 			: tt('live.pickExerciseSuggest');
 
@@ -137,22 +150,50 @@ export function LiveExercisePickSheet({
 				keyboardShouldPersistTaps="handled"
 			>
 				<Pressable
-					style={[styles.chip, bodyPart === 'all' && styles.chipOn]}
+					style={[styles.chip, bodyPart === 'all' && equipment === 'all' && styles.chipOn]}
 					disabled={busy}
-					onPress={() => setBodyPart('all')}
+					onPress={() => {
+						setBodyPart('all');
+						setEquipment('all');
+					}}
 				>
-					<Text style={[styles.chipText, bodyPart === 'all' && styles.chipTextOn]}>
+					<Text
+						style={[
+							styles.chipText,
+							bodyPart === 'all' && equipment === 'all' && styles.chipTextOn
+						]}
+					>
 						{tt('exercises.all')}
 					</Text>
 				</Pressable>
+				<Pressable
+					style={[styles.chip, equipment === HOME_EQUIPMENT_FILTER && styles.chipOn]}
+					disabled={busy}
+					onPress={() => {
+						setEquipment(HOME_EQUIPMENT_FILTER);
+						setBodyPart('all');
+					}}
+				>
+					<Text
+						style={[
+							styles.chipText,
+							equipment === HOME_EQUIPMENT_FILTER && styles.chipTextOn
+						]}
+					>
+						{tt('place.home')}
+					</Text>
+				</Pressable>
 				{zoneParts.map((part) => {
-					const on = bodyPart === part;
+					const on = bodyPart === part && equipment === 'all';
 					return (
 						<Pressable
 							key={part}
 							style={[styles.chip, on && styles.chipOn]}
 							disabled={busy}
-							onPress={() => setBodyPart(part)}
+							onPress={() => {
+								setBodyPart(part);
+								setEquipment('all');
+							}}
 						>
 							<Text style={[styles.chipText, on && styles.chipTextOn]} numberOfLines={1}>
 								{labelBodyPart(part, locale)}

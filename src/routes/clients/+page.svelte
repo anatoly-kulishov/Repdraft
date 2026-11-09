@@ -2,8 +2,8 @@
 	import '$lib/styles/blocks/coach.css';
 	import { goto } from '$app/navigation';
 	import AppButton from '$lib/components/AppButton.svelte';
-	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import CoachAssignSheet from '$lib/components/coach/CoachAssignSheet.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import CoachSessionDetailSheet from '$lib/components/coach/CoachSessionDetailSheet.svelte';
 	import ConfirmSheet from '$lib/components/ConfirmSheet.svelte';
 	import HelpButton from '$lib/components/HelpButton.svelte';
@@ -36,6 +36,7 @@
 		type CoachRecentSession
 	} from '$lib/storage/coachRepository';
 	import {
+		ArrowsClockwise,
 		ChartLineUp,
 		Check,
 		ChatCircle,
@@ -62,8 +63,13 @@
 	let cloudSessions = $state<Record<string, CoachRecentSession[]>>({});
 	let cloudBusy = $state(false);
 	let cloudLoaded = $state(false);
+	let cloudBooting = $state(false);
 	let cloudStatsReady = $state(true);
-	let inviteMenuOpen = $state(false);
+	/**
+	 * Wait for auth + first links fetch. Use empty-card loading (not fake rows):
+	 * coaches with 0 clients must not jump 22rem skeleton → short empty.
+	 */
+	let showClientsBoot = $derived(!$auth.sessionKnown || (cloud && !cloudLoaded));
 	let inviteCopied = $state(false);
 	let inviteCopiedTimer: ReturnType<typeof setTimeout> | null = null;
 	let helpOpen = $state(false);
@@ -153,8 +159,8 @@
 	}
 
 	async function loadCloud() {
-		if (!cloud || cloudBusy) return;
-		cloudBusy = true;
+		if (!cloud || cloudBooting) return;
+		cloudBooting = true;
 		try {
 			const [links, stats] = await Promise.all([
 				coachRepository.listLinks(),
@@ -173,14 +179,14 @@
 					toasts.show(errorText(stats.reason), 'error');
 				}
 			}
-			cloudLoaded = true;
 		} finally {
-			cloudBusy = false;
+			cloudLoaded = true;
+			cloudBooting = false;
 		}
 	}
 
 	$effect(() => {
-		if (cloud && !cloudLoaded) void loadCloud();
+		if (cloud && !cloudLoaded && !cloudBooting) void loadCloud();
 	});
 
 	async function createInvite() {
@@ -221,24 +227,6 @@
 		}
 	}
 
-	async function shareInvite() {
-		const code = inviteCode;
-		if (!code) return;
-		const text = translate(lang, 'coach.inviteShareMessage', {
-			code: formatInviteCode(code)
-		});
-		try {
-			if (typeof navigator !== 'undefined' && navigator.share) {
-				await navigator.share({ text });
-				return;
-			}
-			await navigator.clipboard.writeText(text);
-			toasts.show(translate(lang, 'coach.inviteCopied'), 'success');
-		} catch {
-			/* user dismissed the share sheet */
-		}
-	}
-
 	async function remind(row: Row) {
 		const text = translate(lang, 'coach.remindMessage', { name: row.label });
 		try {
@@ -254,7 +242,6 @@
 	}
 
 	function requestRefresh() {
-		inviteMenuOpen = false;
 		refreshTarget = true;
 	}
 
@@ -512,20 +499,7 @@
 	<div class="coach-block">
 		<h2 class="coach-block-title">{translate(lang, 'coach.inviteTitle')}</h2>
 		<div class="panel coach-card">
-			<div class="coach-card-top">
-				<span class="coach-hint">{translate(lang, 'coach.inviteHint')}</span>
-				{#if inviteCode}
-					<button
-						type="button"
-						class="coach-more"
-						aria-label={translate(lang, 'coach.more')}
-						aria-expanded={inviteMenuOpen}
-						onclick={() => (inviteMenuOpen = !inviteMenuOpen)}
-					>
-						⋮
-					</button>
-				{/if}
-			</div>
+			<p class="coach-hint">{translate(lang, 'coach.inviteHint')}</p>
 
 			{#if inviteCode}
 				<button
@@ -547,56 +521,31 @@
 					{inviteCopied ? translate(lang, 'coach.inviteCopied') : ''}
 				</p>
 				<p class="coach-hint">{translate(lang, 'coach.inviteHelp')}</p>
-				<AppButton block onclick={() => void shareInvite()}>
-					{translate(lang, 'coach.inviteShare')}
+				<AppButton
+					variant="secondary"
+					block
+					class="min-h-[48px]"
+					disabled={cloudBusy}
+					onclick={requestRefresh}
+				>
+					<span class="inline-flex items-center justify-center gap-2">
+						<ArrowsClockwise size={18} weight="bold" aria-hidden="true" />
+						{translate(lang, 'coach.inviteRefresh')}
+					</span>
 				</AppButton>
 			{:else}
 				<AppButton block disabled={cloudBusy} onclick={() => void createInvite()}>
 					{translate(lang, 'coach.inviteCreateShort')}
 				</AppButton>
 			{/if}
-
-			{#if inviteMenuOpen}
-				<div class="coach-menu">
-					<button
-						type="button"
-						class="coach-menu-item coach-menu-item--danger"
-						disabled={cloudBusy}
-						onclick={requestRefresh}
-					>
-						{translate(lang, 'coach.inviteRefresh')}
-					</button>
-				</div>
-			{/if}
 		</div>
 	</div>
 
 	</div>
 	<div class="coach-column">
-	{#if cloudBusy && !cloudLoaded}
-		<div class="coach-block coach-block--skeleton" aria-busy="true" aria-live="polite">
-			<span class="sr-only">{translate(lang, 'common.loading')}</span>
-			<div class="coach-list-head" aria-hidden="true">
-				<AppSkeleton class="coach-skeleton__head-title" />
-				<AppSkeleton class="coach-skeleton__head-week" />
-			</div>
-			<ul class="panel coach-list" aria-hidden="true">
-				{#each [0, 1, 2] as row (row)}
-					<li class="coach-row">
-						<div class="coach-row-main">
-							<span class="coach-row-open">
-								<AppSkeleton class="coach-skeleton__avatar" />
-								<span class="coach-row-copy">
-									<AppSkeleton class="coach-skeleton__name" />
-									<AppSkeleton class="coach-skeleton__status" />
-									<AppSkeleton class="coach-skeleton__last" />
-								</span>
-							</span>
-							<AppSkeleton class="coach-skeleton__chip" />
-						</div>
-					</li>
-				{/each}
-			</ul>
+	{#if showClientsBoot}
+		<div class="panel coach-empty coach-empty--boot" aria-busy="true">
+			<Spinner label={translate(lang, 'common.loading')} size="md" />
 		</div>
 	{:else if rows.length === 0}
 		<div class="panel coach-empty">

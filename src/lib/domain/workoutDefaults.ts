@@ -1,3 +1,4 @@
+import { usesExtraKgField } from './homeKit';
 import { LADDER_REPS, SETS } from './inputLimits';
 
 export const DEFAULT_SETS = 3;
@@ -5,6 +6,8 @@ export const DEFAULT_REPS = 10;
 export const DEFAULT_REST_SEC = 90;
 /** Squat / bench / deadlift family — longer recovery between heavy sets. */
 export const HEAVY_COMPOUND_REST_SEC = 180;
+/** Band / jump rope / roller / bodyweight family when adding to a plan. */
+export const LIGHT_EQUIPMENT_REST_SEC = 60;
 
 /** Inclusive linear ladder (5→1 or 1→5). Caps length at SETS.max; ends at LADDER_REPS.max. */
 export function buildLadderScheme(from: number, to: number): number[] {
@@ -62,6 +65,8 @@ export function isBodyweightEquipment(equipment: string | null | undefined): boo
 	return /^body weight$/i.test((equipment ?? '').trim());
 }
 
+export { usesExtraKgField } from './homeKit';
+
 /** Catalog zone: machines / conditioning where weight × reps is the wrong log shape. */
 export function isCardioBodyPart(bodyPart: string | null | undefined): boolean {
 	return /^cardio$/i.test((bodyPart ?? '').trim());
@@ -74,14 +79,16 @@ const HEAVY_REST_LIGHT_VARIANT =
 	/jump|прыж|split|bulgarian|болгар|one.?leg|single.?leg|pistol|пистолет|goblet|sissy|wall.?sit|curtsy|lunge|выпад/i;
 
 /**
- * Default rest when adding to a plan. Heavy barbell/smith compounds → 180s; else 90s.
+ * Default rest when adding to a plan. Heavy → 180s; soft home gear → 60s; else 90s.
  * Uses catalog EN name + equipment (stable); does not rewrite saved plans.
  */
 export function defaultRestSecForExercise(hint?: ExerciseRestHint): number {
 	if (!hint?.name) return DEFAULT_REST_SEC;
-	return isHeavyCompoundLift(hint.name, hint.equipment ?? '')
-		? HEAVY_COMPOUND_REST_SEC
-		: DEFAULT_REST_SEC;
+	if (isHeavyCompoundLift(hint.name, hint.equipment ?? '')) return HEAVY_COMPOUND_REST_SEC;
+	if (usesExtraKgField({ equipment: hint.equipment, name: hint.name })) {
+		return LIGHT_EQUIPMENT_REST_SEC;
+	}
+	return DEFAULT_REST_SEC;
 }
 
 function isHeavyCompoundLift(name: string, equipment: string): boolean {

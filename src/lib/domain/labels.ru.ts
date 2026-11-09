@@ -85,6 +85,8 @@ export const EQUIPMENT_LABELS: Record<string, string> = {
 	'elliptical machine': 'Эллипсоид',
 	'ez barbell': 'EZ-гриф',
 	hammer: 'Молот',
+	/** Virtual catalog filter (home kit), not a raw ExerciseDB key. */
+	home: 'Домашний',
 	kettlebell: 'Гиря',
 	'leverage machine': 'Рычажный тренажёр',
 	'medicine ball': 'Медбол',
@@ -101,8 +103,19 @@ export const EQUIPMENT_LABELS: Record<string, string> = {
 	tire: 'Покрышка',
 	'trap bar': 'Трэп-гриф',
 	'upper body ergometer': 'Арм-эргометр',
-	weighted: 'С отягощением',
+	weighted: 'Утяжелитель',
 	'wheel roller': 'Гимнастическое колесо'
+};
+
+/** Custom-exercise picker: `rope` means jump rope at home, not battle rope. */
+export const CUSTOM_EQUIPMENT_LABEL_OVERRIDES_RU: Record<string, string> = {
+	rope: 'Скакалка',
+	weighted: 'Утяжелитель'
+};
+
+export const CUSTOM_EQUIPMENT_LABEL_OVERRIDES_EN: Record<string, string> = {
+	rope: 'Jump rope',
+	weighted: 'Weighted vest'
 };
 
 function normalizeKey(value: string): string {
@@ -123,8 +136,20 @@ export function labelTarget(value: string, locale: AppLocale = 'ru'): string {
 
 export function labelEquipment(value: string, locale: AppLocale = 'ru'): string {
 	const key = normalizeKey(value);
+	if (key === 'home') return locale === 'en' ? 'Home' : EQUIPMENT_LABELS.home;
 	if (locale === 'en') return titleCaseEn(key);
 	return EQUIPMENT_LABELS[key] ?? value;
+}
+
+/** Equipment picker for custom exercises (rope → jump rope, not battle rope). */
+export function labelCustomEquipment(value: string, locale: AppLocale = 'ru'): string {
+	const key = normalizeKey(value);
+	const override =
+		locale === 'en'
+			? CUSTOM_EQUIPMENT_LABEL_OVERRIDES_EN[key]
+			: CUSTOM_EQUIPMENT_LABEL_OVERRIDES_RU[key];
+	if (override) return override;
+	return labelEquipment(value, locale);
 }
 
 /** Meta line for any id-resolved exercise; local exercises (no target) fall back to body part. */

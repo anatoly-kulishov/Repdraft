@@ -108,7 +108,7 @@ export async function fetchBillingStatus(): Promise<BillingStatusResponse | null
 }
 
 export function billingSubscribeUrl(): string {
-	return `${webOrigin()}/auth?billing=1#pro`;
+	return `${webOrigin()}/auth/pro?billing=1`;
 }
 
 export async function removeAvatarRemote(path: string | null): Promise<void> {

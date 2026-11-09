@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
 	isProActive,
 	periodEndIso,
+	stackPeriodEnd,
 	PRO_APP_META_KEY,
 	PRO_PLAN_APP_META_KEY,
 	PRO_PROVIDER_APP_META_KEY,
@@ -97,4 +98,13 @@ export async function loadEntitlementRow(
 /** Grant period from a successful one-shot payment (YooKassa). */
 export function grantPeriodEnd(plan: ProPlan, from: Date = new Date()): string {
 	return periodEndIso(plan, from);
+}
+
+/** Extend an existing open period, or start a fresh one from `from`. */
+export function grantStackedPeriodEnd(
+	plan: ProPlan,
+	existingEnd: string | null | undefined,
+	from: Date = new Date()
+): string {
+	return stackPeriodEnd(plan, existingEnd, from);
 }

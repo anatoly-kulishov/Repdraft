@@ -35,12 +35,19 @@ export const GET: RequestHandler = async ({ request }) => {
 		const row = await loadEntitlementRow(gate.admin, gate.user.id);
 		if (row) {
 			const pro = isProActive({ status: row.status, proUntil: row.currentPeriodEnd });
+			const cancelable = pro && row.provider === 'yookassa' && row.status === 'active';
+			const manageable = Boolean(
+				pro && row.provider === 'stripe' && row.providerCustomerId
+			);
 			return jsonWithCors(request, {
 				pro,
 				status: row.status,
 				plan: row.plan,
 				provider: row.provider,
 				currentPeriodEnd: row.currentPeriodEnd,
+				managed: true,
+				cancelable,
+				manageable,
 				billing: avail
 			});
 		}
@@ -48,12 +55,16 @@ export const GET: RequestHandler = async ({ request }) => {
 		console.warn('billing status entitlements', err);
 	}
 
+	/* Metadata-only grant (ops): Pro access without a cancelable subscription row. */
 	return jsonWithCors(request, {
 		pro: fromMeta.pro,
 		status: fromMeta.status,
 		plan: fromMeta.plan,
 		provider: fromMeta.provider,
 		currentPeriodEnd: fromMeta.proUntil,
+		managed: false,
+		cancelable: false,
+		manageable: false,
 		billing: avail
 	});
 };

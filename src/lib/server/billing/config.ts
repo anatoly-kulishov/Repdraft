@@ -16,7 +16,7 @@ export function siteUrl(): string {
 }
 
 export function billingReturnUrl(result: 'success' | 'cancel'): string {
-	return `${siteUrl()}/auth?billing=${result}#pro`;
+	return `${siteUrl()}/auth/pro?billing=${result}`;
 }
 
 export function defaultBillingProvider(): BillingProvider {

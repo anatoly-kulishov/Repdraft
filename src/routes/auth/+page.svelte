@@ -28,11 +28,8 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppLabel from '$lib/components/AppLabel.svelte';
-	import AuthInterfacePrefs from '$lib/components/AuthInterfacePrefs.svelte';
-	import ProBillingPanel from '$lib/components/billing/ProBillingPanel.svelte';
-	import CoachAssignedCard from '$lib/components/coach/CoachAssignedCard.svelte';
 	import IconPlate from '$lib/components/IconPlate.svelte';
-	import ProfileInsightsPanel from '$lib/components/ProfileInsightsPanel.svelte';
+	import ProfileSettingsHub from '$lib/components/profile/ProfileSettingsHub.svelte';
 	import {
 		COACH_ASSIGNMENT_HIDDEN_KEY,
 		INVITE_CODE_LENGTH,
@@ -56,41 +53,19 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import TurnstileWidget from '$lib/components/TurnstileWidget.svelte';
-	import DataExportSection from '$lib/components/DataExportSection.svelte';
-	import LoopMetricsPanel from '$lib/components/LoopMetricsPanel.svelte';
-	import ProfileDevWipePanel from '$lib/components/ProfileDevWipePanel.svelte';
 	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
 	import WhatsNewSheet from '$lib/components/WhatsNewSheet.svelte';
+	import AppIconButton from '$lib/components/AppIconButton.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_SMALL } from '$lib/components/icons/sizes';
+	import { ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import {
 		GREETING_NAME_MAX,
 		clampGreetingName,
 		greetingNameMatchesStored
 	} from '$lib/domain/greetingName';
 	import { checklistProgress } from '$lib/domain/onboarding';
-	import { isIosDevice } from '$lib/domain/pwaInstall';
 	import { onboarding } from '$lib/stores/onboarding';
-	import {
-		restHapticEnabled,
-		restSoundEnabled,
-		testerModeEnabled
-	} from '$lib/stores/prefs';
-	import { testerToolsVisible } from '$lib/domain/prefs';
-	import {
-		Camera,
-		CaretDown as ChevronDown,
-		DeviceMobile,
-		FileText,
-		Info,
-		ShieldCheck,
-		SignOut,
-		Timer,
-		User as UserRound,
-		UserCheck,
-		UserMinus,
-		UsersThree
-	} from 'phosphor-svelte';
+	import { Camera, Check, User as UserRound } from 'phosphor-svelte';
 	import { tick } from 'svelte';
 
 	let { data } = $props();
@@ -124,6 +99,8 @@
 	let coachInviteError = $state<string | null>(null);
 	let coachInviteHasChars = $derived(normalizeInviteCode(coachInviteInput).length > 0);
 	let coachSheetOpen = $state(false);
+	let homeKitSheetOpen = $state(false);
+	let intakeEditOpen = $state(false);
 
 	let coachCloud = $derived(isSupabaseConfigured() && Boolean($auth.user));
 	let ownUserId = $derived($auth.user?.id ?? null);
@@ -340,36 +317,6 @@
 	}
 
 	let lang = $derived($resolvedLocale);
-	let coachRowValue = $derived(
-		!clientCoachLoaded
-			? '…'
-			: myCoaches.length === 0
-				? translate(lang, 'profile.coachNone')
-				: myCoaches.length === 1
-					? translate(lang, 'coach.connectedOn', {
-							when: formatRelativeDay(myCoaches[0].createdAt, lang)
-						})
-					: translate(lang, 'profile.coachesConnected', { n: myCoaches.length })
-	);
-	let coachRowLabel = $derived(
-		clientCoachLoaded && myCoaches.length === 1
-			? coachDisplayName(myCoaches[0])
-			: translate(lang, 'profile.myCoach')
-	);
-	let coachRowA11y = $derived.by(() => {
-		const base = translate(lang, 'profile.myCoach');
-		if (!clientCoachLoaded) return base;
-		const status =
-			myCoaches.length === 0
-				? translate(lang, 'profile.coachNone')
-				: myCoaches.length === 1
-					? coachDisplayName(myCoaches[0])
-					: translate(lang, 'profile.coachesConnected', { n: myCoaches.length });
-		return `${base}: ${status}`;
-	});
-	let showTesterTools = $derived(
-		testerToolsVisible({ pref: $testerModeEnabled, dev: import.meta.env.DEV })
-	);
 	let onboardingProgress = $derived(checklistProgress($onboarding));
 	let onboardingComplete = $derived(
 		onboardingProgress.total > 0 && onboardingProgress.done >= onboardingProgress.total
@@ -377,19 +324,6 @@
 	let confirmMismatchHint = $derived(
 		confirmMismatchVisible ? translate(lang, 'auth.errors.passwordMismatch') : null
 	);
-	let restSoundHintKey = $derived(
-		browser &&
-			isIosDevice({
-				ua: navigator.userAgent,
-				platform: navigator.platform,
-				maxTouchPoints: navigator.maxTouchPoints,
-				coarsePointer: window.matchMedia('(pointer: coarse)').matches
-			})
-			? 'settings.restSoundHintIos'
-			: 'settings.restSoundHint'
-	);
-	let deleteConfirmWord = $derived(translate(lang, 'auth.deleteConfirmWord'));
-	let deleteConfirmReady = $derived(deleteConfirmText.trim() === deleteConfirmWord);
 	let nextPath = $derived(safeRedirectPath($page.url.searchParams.get('next')));
 	let recoveryMode = $derived($auth.passwordRecovery);
 	let profileName = $derived(userDisplayName($auth.user));
@@ -611,83 +545,6 @@
 		}
 	}
 
-	async function logout() {
-		if (accountBusy) return;
-		accountBusy = 'logout';
-		try {
-			await auth.signOut();
-			toasts.show(translate(lang, 'auth.signedOut'), 'info');
-		} catch (err) {
-			toasts.show(mapErr(err) || translateError(lang, err, 'auth.signOutError'), 'error');
-		} finally {
-			accountBusy = null;
-		}
-	}
-
-	function openLogoutConfirm() {
-		if (accountBusy) return;
-		logoutConfirmOpen = true;
-	}
-
-	function dismissLogoutConfirm() {
-		logoutConfirmOpen = false;
-	}
-
-	function openLogoutEverywhereConfirm() {
-		if (accountBusy) return;
-		logoutEverywhereConfirmOpen = true;
-	}
-
-	function dismissLogoutEverywhereConfirm() {
-		logoutEverywhereConfirmOpen = false;
-	}
-
-	async function logoutEverywhere() {
-		if (accountBusy) return;
-		logoutEverywhereConfirmOpen = false;
-		accountBusy = 'logoutEverywhere';
-		try {
-			await auth.signOutEverywhere();
-			toasts.show(translate(lang, 'auth.logoutEverywhereDone'), 'info');
-		} catch (err) {
-			toasts.show(mapErr(err) || translateError(lang, err, 'auth.signOutError'), 'error');
-		} finally {
-			accountBusy = null;
-		}
-	}
-
-	function toggleDeleteZone() {
-		deleteZoneOpen = !deleteZoneOpen;
-		if (!deleteZoneOpen) cancelDeleteConfirm();
-	}
-
-	async function openDeleteConfirm() {
-		deleteZoneOpen = true;
-		deleteConfirmOpen = true;
-		deleteConfirmText = '';
-		await tick();
-		document.getElementById('auth-delete-confirm')?.focus();
-	}
-
-	function cancelDeleteConfirm() {
-		deleteConfirmOpen = false;
-		deleteConfirmText = '';
-	}
-
-	async function deleteAccount() {
-		if (accountBusy || !deleteConfirmReady) return;
-		accountBusy = 'delete';
-		try {
-			await auth.deleteAccount();
-			toasts.show(translate(lang, 'auth.deleteDone'), 'info');
-			await goto('/', { replaceState: true });
-		} catch (err) {
-			toasts.show(mapErr(err) || translateError(lang, err, 'auth.deleteFail'), 'error');
-		} finally {
-			accountBusy = null;
-		}
-	}
-
 	function setPanel(next: Panel) {
 		panel = next;
 		message = null;
@@ -834,6 +691,16 @@
 		}
 	}
 
+	$effect(() => {
+		if (!browser || !$auth.ready || !$auth.sessionKnown) return;
+		const billing = $page.url.searchParams.get('billing');
+		const hash = $page.url.hash;
+		if (billing || hash === '#pro') {
+			const qs = billing ? `?billing=${encodeURIComponent(billing)}` : '';
+			void goto(`/auth/pro${qs}`, { replaceState: true });
+		}
+	});
+
 </script>
 
 <SeoHead title={translate(lang, accountMode ? 'nav.profile' : 'nav.user')} noindex />
@@ -949,8 +816,8 @@
 									class="account-avatar is-photo profile-hero__avatar"
 									src={profileAvatar}
 									alt=""
-									width="96"
-									height="96"
+									width="64"
+									height="64"
 									referrerpolicy="no-referrer"
 									decoding="async"
 									onerror={() => {
@@ -963,7 +830,7 @@
 								>
 							{:else}
 								<span class="account-avatar is-guest profile-hero__avatar" aria-hidden="true">
-									<LucideIcon icon={UserRound} size={40} />
+									<LucideIcon icon={UserRound} size={ICON_PRIMARY} />
 								</span>
 							{/if}
 							{#if avatarBusy}
@@ -979,33 +846,35 @@
 					</button>
 				</div>
 
-				<h2 class="profile-hero__name">
-					<button
-						type="button"
-						class="profile-hero__copy"
-						title={translate(lang, 'profile.copyNameAria')}
-						aria-label={translate(lang, 'profile.copyNameAria')}
-						onclick={() => void copyProfileValue(profileName || profileEmail, 'name')}
-					>
-						{profileName || $auth.user.email}
-					</button>
-				</h2>
-				{#if profileName && $auth.user.email}
-					<p class="profile-hero__meta">
+				<div class="profile-hero__identity">
+					<h2 class="profile-hero__name">
 						<button
 							type="button"
 							class="profile-hero__copy"
-							title={translate(lang, 'profile.copyEmailAria')}
-							aria-label={translate(lang, 'profile.copyEmailAria')}
-							onclick={() => void copyProfileValue(profileEmail, 'email')}
+							title={translate(lang, 'profile.copyNameAria')}
+							aria-label={translate(lang, 'profile.copyNameAria')}
+							onclick={() => void copyProfileValue(profileName || profileEmail, 'name')}
 						>
-							{$auth.user.email}
+							{profileName || $auth.user.email}
 						</button>
-					</p>
-				{/if}
-				{#if profileProviderLabel}
-					<span class="auth-provider-badge profile-hero__badge">{profileProviderLabel}</span>
-				{/if}
+					</h2>
+					{#if profileName && $auth.user.email}
+						<p class="profile-hero__meta">
+							<button
+								type="button"
+								class="profile-hero__copy"
+								title={translate(lang, 'profile.copyEmailAria')}
+								aria-label={translate(lang, 'profile.copyEmailAria')}
+								onclick={() => void copyProfileValue(profileEmail, 'email')}
+							>
+								{$auth.user.email}
+							</button>
+						</p>
+					{/if}
+					{#if profileProviderLabel}
+						<span class="auth-provider-badge profile-hero__badge">{profileProviderLabel}</span>
+					{/if}
+				</div>
 			</header>
 
 			<ProfileAvatarSheet
@@ -1070,293 +939,70 @@
 			</BottomSheet>
 
 			<div class="profile-settings-stack">
-				<div class="profile-settings-cols">
-					<div class="profile-settings-col">
-						<form
-							id="auth-greeting-panel"
-							class="profile-settings-group panel profile-settings-group--compact"
-							onsubmit={(e) => {
-								e.preventDefault();
-								void saveGreetingName();
-							}}
-						>
-							<p class="profile-settings-group__title">{translate(lang, 'auth.greetingNameLabel')}</p>
-							<AppInput
-								id="auth-greeting-name"
-								class="profile-settings-group__field"
-								type="text"
-								autocomplete="nickname"
-								maxlength={GREETING_NAME_MAX}
-								placeholder={translate(lang, 'auth.greetingNamePh')}
-								value={greetingNameInput}
-								aria-label={translate(lang, 'auth.greetingNameLabel')}
-								oninput={(e) => {
-									const el = e.currentTarget as HTMLInputElement;
-									const next = clampGreetingName(el.value);
-									greetingNameInput = next;
-									greetingNameTouched = true;
-									if (el.value !== next) el.value = next;
-								}}
-							/>
-							<p class="profile-settings-group__hint">{translate(lang, 'auth.greetingNameHint')}</p>
-							<AppButton
-								type="submit"
-								variant={greetingNameDirty ? 'primary' : 'secondary'}
-								class="profile-settings-group__action"
-								disabled={greetingNameSaving || !greetingNameDirty}
-							>
-								{#if greetingNameSaving}
-									<span class="inline-flex items-center gap-2">
-										<Spinner size="sm" block={false} />
-										{translate(lang, 'auth.wait')}
-									</span>
-								{:else}
-									{translate(lang, 'auth.greetingNameSave')}
-								{/if}
-							</AppButton>
-						</form>
-
-						<div class="profile-settings-group panel profile-settings-group--compact">
-							<p class="profile-settings-group__title">{translate(lang, 'settings.sessionTitle')}</p>
-							<ProfileSettingsRow icon={Timer} label={translate(lang, 'settings.restSound')}>
-								<input
-									type="checkbox"
-									class="auth-pref-toggle__input profile-settings-row__toggle"
-									checked={$restSoundEnabled}
-									aria-label={translate(lang, 'settings.restSound')}
-									onchange={(e) => {
-										restSoundEnabled.set((e.currentTarget as HTMLInputElement).checked);
-									}}
-								/>
-							</ProfileSettingsRow>
-							<ProfileSettingsRow icon={DeviceMobile} label={translate(lang, 'profile.hapticRest')}>
-								<input
-									type="checkbox"
-									class="auth-pref-toggle__input profile-settings-row__toggle"
-									checked={$restHapticEnabled}
-									aria-label={translate(lang, 'profile.hapticRest')}
-									onchange={(e) => {
-										restHapticEnabled.set((e.currentTarget as HTMLInputElement).checked);
-									}}
-								/>
-							</ProfileSettingsRow>
-							<p class="profile-settings-group__hint">{translate(lang, restSoundHintKey)}</p>
-						</div>
-					</div>
-
-					<div class="profile-settings-col">
-						<AuthInterfacePrefs surface="panel" />
-						{@render onboardingAuthHelpCard()}
-					</div>
-				</div>
-
-				<div class="profile-settings-stack-full">
-					<ProBillingPanel />
-					<ProfileInsightsPanel />
-					<div class="profile-settings-group panel text-left">
-						<p class="profile-settings-group__title">{translate(lang, 'profile.clients')}</p>
-
-						{#if currentAssignment}
-							<CoachAssignedCard
-								assignment={currentAssignment}
-								{lang}
-								busy={assignmentBusy}
-								secondary="dismiss"
-								onPrimary={() => void importAssignment()}
-								onSecondary={() => void dismissAssignment()}
-							/>
-						{/if}
-
-						<ProfileSettingsRow
-							icon={myCoaches.length > 0 ? UserCheck : UserRound}
-							iconTone={myCoaches.length > 0 ? 'accent' : 'muted'}
-							label={coachRowLabel}
-							ariaLabel={coachRowA11y}
-							hint={coachRowValue || undefined}
-							onclick={() => (coachSheetOpen = true)}
-						/>
-
-						<div class="profile-settings-group__section profile-settings-group__section--row">
-							<ProfileSettingsRow
-								icon={UsersThree}
-								label={translate(lang, 'profile.clientsRow')}
-								href="/clients"
-							/>
-						</div>
-					</div>
-					{#if !onboardingComplete}
-						<OnboardingChecklist readonly onTryDemo={() => {}} />
-					{/if}
-				</div>
-
-				<div class="profile-settings-group panel profile-settings-group--data profile-settings-stack-full">
-					<p class="profile-settings-group__title">{translate(lang, 'settings.exportTitle')}</p>
-					<p class="profile-settings-group__hint">{translate(lang, 'settings.exportHint')}</p>
-					<DataExportSection embedded />
-				</div>
-
-				{#if showTesterTools}
-					<LoopMetricsPanel />
-					<ProfileDevWipePanel />
-				{/if}
-
-				<div
-					class="auth-danger-zone profile-settings-stack-full"
-					class:auth-danger-zone--open={deleteZoneOpen}
+				<form
+					id="auth-greeting-panel"
+					class="profile-greeting-edit panel"
+					onsubmit={(e) => {
+						e.preventDefault();
+						void saveGreetingName();
+					}}
 				>
-					<button
-						type="button"
-						class="auth-danger-zone__disclosure"
-						aria-expanded={deleteZoneOpen}
-						aria-controls={deleteZoneOpen ? 'auth-danger-body' : undefined}
-						disabled={accountLocked}
-						onclick={toggleDeleteZone}
-					>
-						<span class="auth-danger-zone__disclosure-text">
-							<span class="auth-danger-zone__eyebrow">
-								{translate(lang, 'auth.deleteZoneLabel')}
-							</span>
-							<span id="auth-danger-title" class="auth-danger-zone__title">
-								{translate(lang, 'auth.deleteTitle')}
-							</span>
+					<div class="profile-greeting-edit__head">
+						<span class="profile-greeting-edit__icon" aria-hidden="true">
+							<LucideIcon icon={UserRound} size={ICON_SMALL} />
 						</span>
-						<LucideIcon
-							icon={ChevronDown}
-							size={ICON_SMALL}
-							class="auth-danger-zone__chevron"
+						<label class="profile-greeting-edit__label" for="auth-greeting-name">
+							{translate(lang, 'auth.greetingNameLabel')}
+						</label>
+					</div>
+					<div class="profile-greeting-edit__row">
+						<AppInput
+							id="auth-greeting-name"
+							class="profile-greeting-edit__input"
+							type="text"
+							autocomplete="nickname"
+							maxlength={GREETING_NAME_MAX}
+							placeholder={translate(lang, 'auth.greetingNamePh')}
+							value={greetingNameInput}
+							aria-describedby="auth-greeting-hint"
+							oninput={(e) => {
+								const el = e.currentTarget as HTMLInputElement;
+								const next = clampGreetingName(el.value);
+								greetingNameInput = next;
+								greetingNameTouched = true;
+								if (el.value !== next) el.value = next;
+							}}
 						/>
-					</button>
-
-					{#if deleteZoneOpen}
-						<div id="auth-danger-body" class="auth-danger-zone__body">
-							<p class="auth-danger-zone__lead">{translate(lang, 'auth.deleteLead')}</p>
-							<ul class="auth-danger-zone__list">
-								<li>{translate(lang, 'auth.deleteBulletPlans')}</li>
-								<li>{translate(lang, 'auth.deleteBulletRecords')}</li>
-								<li>{translate(lang, 'auth.deleteBulletSessions')}</li>
-								<li>{translate(lang, 'auth.deleteBulletClips')}</li>
-							</ul>
-
-							{#if !deleteConfirmOpen}
-								<AppButton
-									variant="danger"
-									class="auth-danger-zone__trigger"
-									disabled={accountLocked}
-									onclick={openDeleteConfirm}
-								>
-									{translate(lang, 'auth.deleteButton')}
-								</AppButton>
-							{:else}
-								<div
-									class="auth-danger-zone__confirm"
-									role="group"
-									aria-labelledby="auth-delete-confirm-hint"
-								>
-									<AppLabel for="auth-delete-confirm">
-										<span id="auth-delete-confirm-hint">
-											{translate(lang, 'auth.deleteConfirmHint', {
-												word: deleteConfirmWord
-											})}
-										</span>
-										<AppInput
-											id="auth-delete-confirm"
-											class="mt-1 w-full"
-											type="text"
-											autocomplete="off"
-											autocapitalize="characters"
-											spellcheck="false"
-											placeholder={deleteConfirmWord}
-											bind:value={deleteConfirmText}
-											disabled={accountLocked}
-											onkeydown={(e) => {
-												if (e.key === 'Escape') cancelDeleteConfirm();
-											}}
-										/>
-									</AppLabel>
-									<div class="auth-danger-zone__confirm-actions">
-										<AppButton
-											variant="secondary"
-											disabled={accountLocked}
-											onclick={cancelDeleteConfirm}
-										>
-											{translate(lang, 'auth.deleteCancel')}
-										</AppButton>
-										<AppButton
-											variant="danger"
-											disabled={accountLocked || !deleteConfirmReady}
-											aria-busy={accountBusy === 'delete'}
-											onclick={deleteAccount}
-										>
-											{#if accountBusy === 'delete'}
-												<span class="inline-flex items-center gap-2">
-													<Spinner size="sm" block={false} />
-													{translate(lang, 'auth.deleteButtonFinal')}
-												</span>
-											{:else}
-												{translate(lang, 'auth.deleteButtonFinal')}
-											{/if}
-										</AppButton>
-									</div>
-								</div>
-							{/if}
-						</div>
-					{/if}
-				</div>
-
-				<div
-					class="profile-settings-group profile-settings-group--account panel profile-settings-stack-full"
-					class:profile-settings-group--busy={accountLocked}
-					aria-busy={accountLocked || undefined}
-				>
-					<p class="profile-settings-group__title">{translate(lang, 'settings.accountTitle')}</p>
-					<ProfileSettingsRow
-						icon={FileText}
-						iconTone="accent"
-						label={translate(lang, 'terms.link')}
-						href="/terms"
-						disabled={accountLocked}
-					/>
-					<ProfileSettingsRow
-						icon={ShieldCheck}
-						iconTone="accent"
-						label={translate(lang, 'privacy.link')}
-						href="/privacy"
-						disabled={accountLocked}
-					/>
-					<ProfileSettingsRow
-						icon={SignOut}
-						iconTone="accent"
-						label={translate(lang, 'auth.logout')}
-						ariaLabel={translate(lang, 'auth.logout')}
-						busy={accountBusy === 'logout'}
-						disabled={accountLocked}
-						onclick={openLogoutConfirm}
-					/>
-					<div class="profile-settings-group__session-footer">
-						<div class="auth-session-note">
-							<LucideIcon icon={Info} size={ICON_SMALL} class="auth-session-note__icon" />
-							<p>{translate(lang, 'auth.logoutEverywhereHint')}</p>
-						</div>
-						<button
-							type="button"
-							class="profile-settings-group__text-action"
-							disabled={accountLocked}
-							aria-busy={accountBusy === 'logoutEverywhere' || undefined}
-							onclick={openLogoutEverywhereConfirm}
-						>
-							{#if accountBusy === 'logoutEverywhere'}
-								<span class="profile-settings-group__text-action-busy">
+						{#if greetingNameDirty || greetingNameSaving}
+							{#if greetingNameSaving}
+								<span class="profile-greeting-edit__busy" aria-live="polite">
 									<Spinner size="sm" block={false} />
-									{translate(lang, 'auth.logoutEverywhere')}
+									<span class="sr-only">{translate(lang, 'auth.wait')}</span>
 								</span>
 							{:else}
-								{translate(lang, 'auth.logoutEverywhere')}
+								<AppIconButton
+									type="submit"
+									class="profile-greeting-edit__save"
+									aria-label={translate(lang, 'auth.greetingNameSave')}
+								>
+									<LucideIcon icon={Check} size={ICON_PRIMARY} />
+								</AppIconButton>
 							{/if}
-						</button>
+						{/if}
 					</div>
-				</div>
+					<p id="auth-greeting-hint" class="profile-greeting-edit__hint">
+						{translate(lang, 'auth.greetingNameHint')}
+					</p>
+				</form>
+
+				{#if !onboardingComplete}
+					<OnboardingChecklist readonly onTryDemo={() => {}} />
+				{/if}
+
+				<ProfileSettingsHub signedIn showPro showCoach showWorkout />
+
+				<WhatsNewSheet />
 			</div>
-			<WhatsNewSheet />
 			<!-- iOS anchors the native file-picker popup to this input's on-screen
 			     frame. Keep it fixed at the bottom edge (1px, invisible) so the
 			     popup appears near the thumb for both triggers: the avatar tap
@@ -1618,195 +1264,10 @@
 	{/if}
 </section>
 
-{#if $auth.user}
-	<BottomSheet
-		bind:open={coachSheetOpen}
-		titleId="coach-my-title"
-		label={translate(lang, 'profile.myCoach')}
-		raised={myCoaches.length === 0}
-		dismissible={!coachInviteBusy}
-		onDismiss={() => (coachSheetOpen = false)}
-	>
-		<p id="coach-my-title" class="bottom-sheet__title">{translate(lang, 'profile.myCoach')}</p>
-		{#if coachCloud && !clientCoachLoaded}
-			<p class="bottom-sheet__hint">…</p>
-		{:else if myCoaches.length > 0}
-			<ul class="coach-my-list">
-				{#each myCoaches as coach (coach.linkId)}
-					<li class="coach-connect-status">
-						<IconPlate icon={UserCheck} tone="accent" />
-						<div class="coach-connect-status__text">
-							<p class="coach-connect-status__title">{coachDisplayName(coach)}</p>
-							<p class="coach-connect-status__hint">
-								{translate(lang, 'coach.connectedOn', {
-									when: formatRelativeDay(coach.createdAt, lang)
-								})}
-							</p>
-							<p class="coach-connect-status__hint">
-								{translate(lang, 'profile.coachConnectedHint')}
-							</p>
-						</div>
-						<AppButton
-							variant="ghost"
-							size="icon"
-							class="is-danger coach-connect-status__disconnect"
-							aria-label={translate(lang, 'coach.disconnect')}
-							disabled={disconnectBusy}
-							onclick={() => {
-								coachSheetOpen = false;
-								requestDisconnectCoach(coach);
-							}}
-						>
-							<UserMinus weight="bold" />
-						</AppButton>
-					</li>
-				{/each}
-			</ul>
-		{:else}
-			<p class="bottom-sheet__hint">{translate(lang, 'coach.inviteAcceptLead')}</p>
-			<form
-				class="coach-connect-form"
-				onsubmit={(e) => {
-					e.preventDefault();
-					void acceptCoachInvite();
-				}}
-			>
-				<AppInput
-					type="text"
-					inputmode="text"
-					autocomplete="off"
-					autocapitalize="characters"
-					enterkeyhint="done"
-					maxlength={INVITE_CODE_LENGTH + 1}
-					spellcheck={false}
-					class="w-full font-mono tracking-[0.12em]"
-					placeholder={translate(lang, 'coach.inviteAcceptPlaceholder')}
-					aria-label={translate(lang, 'coach.inviteAcceptLabel')}
-					aria-invalid={coachInviteError ? 'true' : undefined}
-					aria-describedby={coachInviteError ? 'coach-invite-error' : undefined}
-					value={coachInviteInput}
-					oninput={(e) => onCoachInviteInput(e.currentTarget)}
-				/>
-				<AppButton type="submit" block disabled={coachInviteBusy || !coachInviteHasChars}>
-					{#if coachInviteBusy}
-						<span class="inline-flex items-center gap-2">
-							<Spinner size="sm" block={false} />
-							{translate(lang, 'auth.wait')}
-						</span>
-					{:else}
-						{translate(lang, 'coach.inviteAcceptCta')}
-					{/if}
-				</AppButton>
-			</form>
-			{#if coachInviteError}
-				<p id="coach-invite-error" class="coach-connect-form__error" role="alert">
-					{coachInviteError}
-				</p>
-			{/if}
-		{/if}
-	</BottomSheet>
-	<ConfirmSheet
-		open={disconnectTarget !== null}
-		titleId="coach-disconnect-title"
-		title={translate(lang, 'coach.disconnectConfirmTitle')}
-		hint={translate(lang, 'coach.disconnectConfirmLead', {
-			name: disconnectTarget ? coachDisplayName(disconnectTarget) : ''
-		})}
-		confirmLabel={translate(lang, 'coach.disconnect')}
-		busy={disconnectBusy}
-		onConfirm={confirmDisconnectCoach}
-		onDismiss={dismissDisconnectCoach}
-	/>
-	<ConfirmSheet
-		open={logoutConfirmOpen}
-		titleId="auth-logout-title"
-		title={translate(lang, 'auth.logoutConfirmTitle')}
-		hint={translate(lang, 'auth.logoutConfirmLead')}
-		confirmLabel={translate(lang, 'auth.logout')}
-		variant="primary"
-		busy={accountBusy === 'logout'}
-		onConfirm={() => {
-			logoutConfirmOpen = false;
-			void logout();
-		}}
-		onDismiss={dismissLogoutConfirm}
-	/>
-	<BottomSheet
-		open={logoutEverywhereConfirmOpen}
-		titleId="auth-logout-everywhere-title"
-		onDismiss={dismissLogoutEverywhereConfirm}
-	>
-		<p id="auth-logout-everywhere-title" class="bottom-sheet__title">
-			{translate(lang, 'auth.logoutEverywhereConfirmTitle')}
-		</p>
-		<p class="bottom-sheet__hint">{translate(lang, 'auth.logoutEverywhereConfirmLead')}</p>
-		{#snippet actions()}
-			<AppButton variant="secondary" onclick={dismissLogoutEverywhereConfirm}>
-				{translate(lang, 'common.cancel')}
-			</AppButton>
-			<AppButton
-				variant="danger"
-				onclick={() => {
-					void logoutEverywhere();
-				}}
-				disabled={accountLocked}
-				aria-busy={accountBusy === 'logoutEverywhere'}
-			>
-				{#if accountBusy === 'logoutEverywhere'}
-					<span class="inline-flex items-center gap-2">
-						<Spinner size="sm" block={false} />
-						{translate(lang, 'auth.logoutEverywhereConfirmAction')}
-					</span>
-				{:else}
-					{translate(lang, 'auth.logoutEverywhereConfirmAction')}
-				{/if}
-			</AppButton>
-		{/snippet}
-	</BottomSheet>
-{/if}
-
 {#snippet guestSettingsPanel()}
-	{@render onboardingAuthHelpCard()}
 	{#if !onboardingComplete}
 		<OnboardingChecklist readonly onTryDemo={() => {}} />
 	{/if}
-	<AuthInterfacePrefs surface="panel" />
-	<ProfileInsightsPanel />
-	<div class="profile-settings-group panel profile-settings-group--data">
-		<p class="profile-settings-group__title">{translate(lang, 'settings.exportTitle')}</p>
-		<p class="profile-settings-group__hint">{translate(lang, 'settings.exportHint')}</p>
-		<DataExportSection embedded />
-	</div>
-	{#if showTesterTools}
-		<LoopMetricsPanel />
-		<ProfileDevWipePanel />
-	{/if}
-	<div class="profile-settings-group panel">
-		<p class="profile-settings-group__title">{translate(lang, 'auth.privacyHint')}</p>
-		<div class="auth-prefs__stack">
-			<ProfileSettingsRow
-				icon={FileText}
-				iconTone="accent"
-				label={translate(lang, 'terms.link')}
-				href="/terms"
-			/>
-			<ProfileSettingsRow
-				icon={ShieldCheck}
-				iconTone="accent"
-				label={translate(lang, 'privacy.link')}
-				href="/privacy"
-			/>
-		</div>
-	</div>
+	<ProfileSettingsHub signedIn={false} showPro={false} showCoach={false} showWorkout={false} />
 	<WhatsNewSheet />
-{/snippet}
-
-{#snippet onboardingAuthHelpCard()}
-	<div class="profile-settings-group panel onboarding-auth-help">
-		<p class="profile-settings-group__title">{translate(lang, 'onboarding.authHelp')}</p>
-		<p class="profile-settings-group__hint">{translate(lang, 'onboarding.authHelpLead')}</p>
-		<AppButton variant="secondary" block href="/articles">
-			{translate(lang, 'articles.viewAll')}
-		</AppButton>
-	</div>
 {/snippet}

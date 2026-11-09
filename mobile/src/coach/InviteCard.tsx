@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Check, Copy, MoreVertical } from 'lucide-react-native';
+import { Check, Copy } from 'lucide-react-native';
 import { formatInviteCode } from '@repdraft/domain/coach';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { useLocale } from '../state/locale';
@@ -12,15 +12,14 @@ type Props = {
 	busy: boolean;
 	onCreate: () => void;
 	onCopy: () => void;
-	onShare: () => void;
-	onMenu: () => void;
+	onRefresh: () => void;
 };
 
 /**
- * Invite card: tap the code plate to copy, one primary "share" CTA,
- * and a ⋮ menu that only keeps the rare destructive "new code" action.
+ * Invite card: tap code to copy (main pass-to-client action),
+ * secondary refresh (confirm sheet for the destructive step).
  */
-export function InviteCard({ code, busy, onCreate, onCopy, onShare, onMenu }: Props) {
+export function InviteCard({ code, busy, onCreate, onCopy, onRefresh }: Props) {
 	const { tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -45,20 +44,7 @@ export function InviteCard({ code, busy, onCreate, onCopy, onShare, onMenu }: Pr
 		<View style={styles.block}>
 			<Text style={styles.blockTitle}>{tt('coach.inviteTitle')}</Text>
 			<View style={styles.card}>
-				<View style={styles.cardTopRow}>
-					<Text style={styles.cardHint}>{tt('coach.inviteHint')}</Text>
-					{code ? (
-						<Pressable
-							accessibilityRole="button"
-							accessibilityLabel={tt('coach.more')}
-							hitSlop={4}
-							style={({ pressed }) => [styles.moreBtn, pressed && styles.pressed]}
-							onPress={onMenu}
-						>
-							<MoreVertical color={colors.muted} size={20} strokeWidth={2} />
-						</Pressable>
-					) : null}
-				</View>
+				<Text style={styles.cardHint}>{tt('coach.inviteHint')}</Text>
 				{code ? (
 					<>
 						<Pressable
@@ -77,7 +63,12 @@ export function InviteCard({ code, busy, onCreate, onCopy, onShare, onMenu }: Pr
 							)}
 						</Pressable>
 						<Text style={styles.help}>{tt('coach.inviteHelp')}</Text>
-						<PrimaryButton label={tt('coach.inviteShare')} onPress={onShare} />
+						<PrimaryButton
+							label={tt('coach.inviteRefresh')}
+							variant="secondary"
+							disabled={busy}
+							onPress={onRefresh}
+						/>
 					</>
 				) : (
 					<PrimaryButton
@@ -107,12 +98,6 @@ function makeStyles(colors: ColorPalette) {
 			padding: space.lg,
 			gap: space.md
 		},
-		cardTopRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'space-between',
-			gap: space.sm
-		},
 		cardHint: {
 			color: colors.muted,
 			fontSize: 13,
@@ -124,12 +109,6 @@ function makeStyles(colors: ColorPalette) {
 			fontSize: 12,
 			lineHeight: 17,
 			fontFamily: fontFamily.regular
-		},
-		moreBtn: {
-			width: 48,
-			height: 48,
-			alignItems: 'center',
-			justifyContent: 'center'
 		},
 		codePlate: {
 			minHeight: 56,

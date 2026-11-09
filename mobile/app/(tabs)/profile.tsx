@@ -19,7 +19,7 @@ import {
 	TextInput,
 	View
 } from 'react-native';
-import { Camera, ChevronDown, Crown, UserRound } from 'lucide-react-native';
+import { Check, ChevronDown, UserRound } from 'lucide-react-native';
 import type { Session } from '@supabase/supabase-js';
 import { userCustomAvatarPath, userDisplayName } from '@repdraft/domain/authFlow';
 import { proFromAppMetadata } from '@repdraft/domain/entitlement';
@@ -90,17 +90,12 @@ import { importAssignedPlan } from '../../src/coach/importAssignment';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { recordsRepo } from '../../src/storage/recordsRepo';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
-import {
-	isHapticRestEnabled,
-	isRestSoundEnabled,
-	setHapticRestEnabled,
-	setRestSoundEnabled
-} from '../../src/state/prefs';
 import { loadOnboarding } from '../../src/state/onboarding';
 import { isTesterModeEnabled, setTesterModeEnabled } from '../../src/state/testerPrefs';
 import { outboxCount, pullAndMergeFromCloud } from '../../src/sync/cloudSync';
 import { wipeMobileAppStorage } from '../../src/storage/wipeAppStorage';
 import { kvRemove } from '../../src/storage/kv';
+import { SettingsHub } from '../../src/profile/SettingsHub';
 import { fontFamily, radius, space, touchMin, type, type ColorPalette } from '../../src/theme';
 
 const APP_VERSION =
@@ -133,8 +128,6 @@ export default function ProfileScreen() {
 	const [busy, setBusy] = useState(false);
 	const [loopSnap, setLoopSnap] = useState<LoopMetricsSnapshot | null>(null);
 	const [pendingSync, setPendingSync] = useState(0);
-	const [restSound, setRestSound] = useState(true);
-	const [hapticRest, setHapticRest] = useState(true);
 	const [greetingName, setGreetingNameState] = useState('');
 	const [greetingNameInput, setGreetingNameInput] = useState('');
 	const [legalAccepted, setLegalAccepted] = useState(false);
@@ -248,11 +241,8 @@ export default function ProfileScreen() {
 	useEffect(() => {
 		let unsub: (() => void) | undefined;
 		void (async () => {
-			setHealthOn(await isHealthReadEnabled());
 			const testerPref = await isTesterModeEnabled();
 			setTesterOn(testerPref || __DEV__);
-			setRestSound(await isRestSoundEnabled());
-			setHapticRest(await isHapticRestEnabled());
 			const sb = getSupabase();
 			const { data } = sb ? await sb.auth.getSession() : { data: { session: null } };
 			setSession(data.session ?? null);
@@ -936,214 +926,59 @@ export default function ProfileScreen() {
 			) : null}
 
 			<Panel>
-				<Text style={styles.groupTitle}>{tt('auth.greetingNameLabel')}</Text>
-				<TextInput
-					style={styles.input}
-					placeholder={tt('auth.greetingNameLabel')}
-					placeholderTextColor={colors.muted}
-					value={greetingNameInput}
-					maxLength={24}
-					returnKeyType="done"
-					onChangeText={(v) => setGreetingNameInput(clampGreetingName(v))}
-					onEndEditing={() => void saveGreetingNameField()}
-				/>
-				<Text style={styles.hint}>{tt('auth.greetingNameHint')}</Text>
-				<PrimaryButton
-					label={tt('common.ok')}
-					variant={greetingNameInput.trim() !== greetingName ? 'primary' : 'ghost'}
-					onPress={() => void saveGreetingNameField()}
-					disabled={greetingNameInput.trim() === greetingName}
-				/>
-			</Panel>
-
-			{session?.user && cloud ? (
-				<Panel>
-					<Text style={styles.groupTitle}>{tt('profile.clients')}</Text>
-					{assignment ? (
-						<AssignedPlanCard
-							assignment={assignment}
-							busy={assignmentBusy}
-							onImport={() => void importCoachAssignment()}
-							onDismiss={() => void dismissCoachAssignment()}
-						/>
+				<View style={styles.greetingHead}>
+					<UserRound size={16} color={colors.muted} strokeWidth={2} />
+					<Text style={styles.greetingLabel}>{tt('auth.greetingNameLabel')}</Text>
+				</View>
+				<View style={styles.greetingRow}>
+					<TextInput
+						style={[styles.input, styles.greetingInput]}
+						placeholder={tt('auth.greetingNamePh')}
+						placeholderTextColor={colors.muted}
+						value={greetingNameInput}
+						maxLength={24}
+						returnKeyType="done"
+						onChangeText={(v) => setGreetingNameInput(clampGreetingName(v))}
+						onSubmitEditing={() => void saveGreetingNameField()}
+					/>
+					{greetingNameInput.trim() !== greetingName ? (
+						<Pressable
+							accessibilityRole="button"
+							accessibilityLabel={tt('auth.greetingNameSave')}
+							style={styles.greetingSave}
+							onPress={() => void saveGreetingNameField()}
+						>
+							<Check size={20} color={colors.accent} strokeWidth={2.5} />
+						</Pressable>
 					) : null}
-					<Pressable
-						style={styles.row}
-						accessibilityRole="button"
-						accessibilityLabel={`${tt('profile.myCoach')}, ${coachRowValue}`}
-						onPress={() => setCoachSheetOpen(true)}
-					>
-						<View style={styles.coachRowBody}>
-							<Text style={styles.coachRowLabel}>{tt('profile.myCoach')}</Text>
-							<Text style={styles.coachRowValue} numberOfLines={1}>
-								{coachRowValue}
-							</Text>
-						</View>
-						<Text style={styles.rowValue}>→</Text>
-					</Pressable>
-					<Pressable
-						style={styles.row}
-						accessibilityRole="button"
-						onPress={() => router.push('/clients')}
-					>
-						<Text style={styles.rowText}>{tt('profile.clientsRow')}</Text>
-						<Text style={styles.rowValue}>→</Text>
-					</Pressable>
-				</Panel>
+				</View>
+				<Text style={styles.greetingHint}>{tt('auth.greetingNameHint')}</Text>
+			</Panel>
+
+			{onboarding && !onboardingComplete ? (
+				<OnboardingChecklistPanel state={onboarding} readonly />
 			) : null}
 
-			<Panel>
-				<Text style={styles.groupTitle}>{tt('progress.sectionTitle')}</Text>
-				<Pressable style={styles.row} onPress={() => router.push('/progress')}>
-					<Text style={styles.rowText}>{tt('nav.progress')}</Text>
-					<Text style={styles.rowValue}>→</Text>
-				</Pressable>
-				<Pressable
-					style={styles.row}
-					accessibilityRole="button"
-					accessibilityHint={coachBadge ? tt('coach.newHints') : undefined}
-					onPress={() => router.push('/coach')}
-				>
-					<View style={styles.rowBadgeWrap}>
-						<Text style={styles.rowText}>{tt('nav.coach')}</Text>
-						{coachBadge ? <View style={styles.rowBadge} /> : null}
-					</View>
-					<Text style={styles.rowValue}>→</Text>
-				</Pressable>
-			</Panel>
-
-			<Panel>
-				<Text style={styles.groupTitle}>{tt('settings.interfaceTitle')}</Text>
-				<Pressable style={styles.row} onPress={() => setLocale(locale === 'ru' ? 'en' : 'ru')}>
-					<Text style={styles.rowText}>{tt('profile.locale')}</Text>
-					<Text style={styles.rowValue}>{locale === 'ru' ? 'RU' : 'EN'}</Text>
-				</Pressable>
-				<Pressable style={styles.row} onPress={cycleMode}>
-					<Text style={styles.rowText}>{tt('settings.theme')}</Text>
-					<Text style={styles.rowValue}>
-						{mode === 'dark' ? tt('settings.themeDark') : tt('settings.themeLight')}
-					</Text>
-				</Pressable>
-			</Panel>
-
-			{session?.user && cloud ? (
-				<Panel accent style={styles.billingPanel}>
-					<View style={styles.billingHead}>
-						<View style={styles.billingCrown}>
-							<Crown color={colors.accent} size={18} strokeWidth={2.25} />
-						</View>
-						<View style={styles.billingHeadText}>
-							<View style={styles.billingTitleRow}>
-								<Text style={styles.groupTitle}>{tt('billing.title')}</Text>
-								{showPro ? (
-									<Text style={styles.billingBadge}>{tt('billing.activeBadge')}</Text>
-								) : null}
-							</View>
-							<Text style={styles.hint}>
-								{showPro
-									? proUntilLabel
-										? tt('billing.activeUntil', { date: proUntilLabel.slice(0, 10) })
-										: tt('billing.active')
-									: tt('billing.lead')}
-							</Text>
-						</View>
-					</View>
-					<View style={styles.billingFeature}>
-						<Camera color={colors.accent} size={18} strokeWidth={2.25} />
-						<Text style={styles.billingFeatureText}>{tt('billing.benefitRecognize')}</Text>
-					</View>
-					{!showPro ? (
-						<>
-							<Text style={styles.hint}>{tt('billing.openOnWebHint')}</Text>
-							<PrimaryButton
-								label={tt('billing.openOnWeb')}
-								onPress={() => void WebBrowser.openBrowserAsync(billingSubscribeUrl())}
-							/>
-						</>
-					) : null}
-				</Panel>
-			) : null}
-
-			<Panel>
-				<Text style={styles.groupTitle}>{tt('settings.sessionTitle')}</Text>
-				<View style={styles.row}>
-					<Text style={styles.rowText} numberOfLines={2}>
-						{tt('profile.restSound')}
-					</Text>
-					<Switch
-						value={restSound}
-						trackColor={switchColors.trackColor}
-						thumbColor={switchColors.thumbColor}
-						onValueChange={(v) => {
-							setRestSound(v);
-							void setRestSoundEnabled(v);
-							if (v) {
-								unlockRestAudioFromGesture();
-								void playRestDoneChime();
-							}
-						}}
-					/>
-				</View>
-				<View style={styles.row}>
-					<Text style={styles.rowText} numberOfLines={2}>
-						{tt('profile.hapticRest')}
-					</Text>
-					<Switch
-						value={hapticRest}
-						trackColor={switchColors.trackColor}
-						thumbColor={switchColors.thumbColor}
-						onValueChange={(v) => {
-							setHapticRest(v);
-							void setHapticRestEnabled(v);
-						}}
-					/>
-				</View>
-				<Text style={styles.hint}>{tt('settings.restSoundHint')}</Text>
-			</Panel>
-
-			<Panel>
-				<Text style={styles.groupTitle}>{tt('health.title')}</Text>
-				<View style={styles.row}>
-					<Text style={styles.rowText} numberOfLines={2}>
-						{tt('health.toggle')}
-					</Text>
-					<Switch
-						value={healthOn}
-						trackColor={switchColors.trackColor}
-						thumbColor={switchColors.thumbColor}
-						onValueChange={(v) => void toggleHealth(v)}
-					/>
-				</View>
-				<Text style={styles.hint}>
-					{healthAvailable ? tt('health.hint') : tt('health.needDevBuild')}
-				</Text>
-			</Panel>
-
-			{testerOn && loopSnap ? (
-				<Panel>
-					<Text style={styles.groupTitle}>{tt('loopMetrics.title')}</Text>
-					<Text style={styles.hint}>{tt('loopMetrics.hint')}</Text>
-					<Text style={styles.metricLine}>
-						{tt('loopMetrics.started')}: {loopSnap.sessionStarted}
-					</Text>
-					<Text style={styles.metricLine}>
-						{tt('loopMetrics.finished')}: {loopSnap.sessionFinished}
-					</Text>
-					<Text style={styles.metricLine}>
-						{tt('loopMetrics.completion')}: {formatRatePercent(loopSnap.completionRate)}
-					</Text>
-					<Text style={styles.metricLine}>
-						{tt('loopMetrics.activation')}: {boolLabel(tt, loopSnap.activatedWithin7d)}
-					</Text>
-					<Text style={styles.metricLine}>
-						{tt('loopMetrics.week4')}: {boolLabel(tt, loopSnap.week4Retained)}
-					</Text>
-				</Panel>
-			) : null}
+			<SettingsHub
+				signedIn={Boolean(session?.user)}
+				showPro={Boolean(session?.user && cloud)}
+				showCoach={Boolean(session?.user && cloud)}
+				showWorkout
+			/>
 
 			<Panel>
 				<Text style={styles.groupTitle}>{tt('settings.exportTitle')}</Text>
 				<Text style={styles.hint}>{tt('profile.backupHint')}</Text>
+				{session?.user && pendingSync > 0 ? (
+					<Text style={styles.hint}>{tt('profile.outbox', { n: pendingSync })}</Text>
+				) : null}
+				{session?.user ? (
+					<PrimaryButton
+						label={busy ? '…' : tt('profile.sync')}
+						onPress={() => void syncCloud()}
+						disabled={busy}
+					/>
+				) : null}
 				<PrimaryButton label={tt('profile.export')} onPress={() => void exportBackup()} />
 				<PrimaryButton
 					label={tt('profile.import')}
@@ -1152,101 +987,6 @@ export default function ProfileScreen() {
 					disabled={busy}
 				/>
 			</Panel>
-
-			{session?.user ? (
-				<Panel>
-					<Text style={styles.groupTitle}>{tt('settings.accountTitle')}</Text>
-					{pendingSync > 0 ? (
-						<Text style={styles.hint}>{tt('profile.outbox', { n: pendingSync })}</Text>
-					) : null}
-					<PrimaryButton
-						label={busy ? '…' : tt('profile.sync')}
-						onPress={() => void syncCloud()}
-						disabled={busy}
-					/>
-					<PrimaryButton
-						label={tt('profile.signOut')}
-						variant="ghost"
-						onPress={openSignOutConfirm}
-					/>
-					<Text style={[styles.hint, styles.accountHint]}>{tt('auth.logoutEverywhereHint')}</Text>
-					<PrimaryButton
-						label={tt('auth.logoutEverywhere')}
-						variant="ghost"
-						onPress={() => openLogoutEverywhereConfirm()}
-					/>
-				</Panel>
-			) : null}
-
-			{session?.user ? (
-				<Panel>
-					<Pressable
-						accessibilityRole="button"
-						accessibilityState={{ expanded: deleteZoneOpen }}
-						onPress={() => {
-							if (deleteZoneOpen) {
-								setDeleteOpen(false);
-								setDeleteWord('');
-							}
-							setDeleteZoneOpen(!deleteZoneOpen);
-						}}
-						style={styles.dangerHeader}
-					>
-						<View style={styles.dangerHeaderText}>
-							<Text style={styles.groupTitle}>{tt('auth.deleteZoneLabel')}</Text>
-							<Text style={styles.dangerTitle}>{tt('auth.deleteTitle')}</Text>
-						</View>
-						<View style={[styles.dangerChevron, deleteZoneOpen && styles.dangerChevronOpen]}>
-							<ChevronDown color={colors.danger} size={18} strokeWidth={2.25} />
-						</View>
-					</Pressable>
-					{deleteZoneOpen ? (
-						<>
-							<Text style={styles.hint}>{tt('auth.deleteLead')}</Text>
-							<Text style={styles.metricLine}>• {tt('auth.deleteBulletPlans')}</Text>
-							<Text style={styles.metricLine}>• {tt('auth.deleteBulletRecords')}</Text>
-							<Text style={styles.metricLine}>• {tt('auth.deleteBulletSessions')}</Text>
-							{!deleteOpen ? (
-								<PrimaryButton
-									label={tt('auth.deleteButton')}
-									variant="danger"
-									onPress={() => setDeleteOpen(true)}
-								/>
-							) : (
-								<>
-									<Text style={styles.hint}>
-										{tt('auth.deleteConfirmHint', {
-											word: tt('auth.deleteConfirmWord')
-										})}
-									</Text>
-									<TextInput
-										style={styles.input}
-										value={deleteWord}
-										onChangeText={setDeleteWord}
-										autoCapitalize="characters"
-										placeholder={tt('auth.deleteConfirmWord')}
-										placeholderTextColor={colors.muted}
-									/>
-									<PrimaryButton
-										label={tt('auth.deleteButtonFinal')}
-										variant="danger"
-										disabled={busy || deleteWord.trim() !== tt('auth.deleteConfirmWord')}
-										onPress={() => void confirmDeleteAccount()}
-									/>
-									<PrimaryButton
-										label={tt('auth.deleteCancel')}
-										variant="ghost"
-										onPress={() => {
-											setDeleteOpen(false);
-											setDeleteWord('');
-										}}
-									/>
-								</>
-							)}
-						</>
-					) : null}
-				</Panel>
-			) : null}
 
 			{onboarding ? (
 				<Panel>
@@ -1257,7 +997,6 @@ export default function ProfileScreen() {
 						variant="ghost"
 						onPress={() => router.push('/articles')}
 					/>
-					{!onboardingComplete ? <OnboardingChecklistPanel state={onboarding} readonly /> : null}
 				</Panel>
 			) : null}
 
@@ -1502,6 +1241,39 @@ function makeStyles(colors: ColorPalette) {
 		textTransform: 'uppercase',
 		letterSpacing: 0.8,
 		marginBottom: space.sm
+	},
+	greetingHead: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6,
+		marginBottom: 6
+	},
+	greetingLabel: {
+		fontFamily: fontFamily.medium,
+		fontSize: 13,
+		color: colors.muted
+	},
+	greetingRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6
+	},
+	greetingInput: {
+		flex: 1,
+		marginBottom: 0
+	},
+	greetingSave: {
+		width: touchMin,
+		height: touchMin,
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	greetingHint: {
+		fontFamily: fontFamily.regular,
+		fontSize: 12,
+		lineHeight: 16,
+		color: colors.muted,
+		marginTop: 6
 	},
 	billingPanel: {
 		gap: space.md

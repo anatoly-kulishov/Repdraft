@@ -105,37 +105,46 @@ export function useCoachClients() {
 	);
 
 	const refresh = useCallback(async () => {
-		if (!cloud) return;
-		const sb = getSupabase();
-		const { data } = sb ? await sb.auth.getSession() : { data: { session: null } };
-		const userId = data.session?.user?.id ?? '';
-		setMe(userId);
-		setSignedOut(!userId);
-		if (!userId) {
+		if (!cloud) {
+			setSignedOut(true);
 			setLoaded(true);
 			return;
 		}
-		const [linkRes, statsRes] = await Promise.all([coachRepo.listLinks(), coachRepo.stats()]);
-		if (linkRes.ok) setLinks(linkRes.value);
-		else showToast(tt(`coach.error.${linkRes.reason}`));
-		if (statsRes.ok) {
-			setStats(Object.fromEntries(statsRes.value.map((row) => [row.clientUserId, row.summary])));
-			setStatsReady(true);
-		} else {
-			setStatsReady(false);
-			if (statsRes.reason !== 'notConfigured') {
-				showToast(tt(`coach.error.${statsRes.reason}`));
+		try {
+			const sb = getSupabase();
+			const { data } = sb ? await sb.auth.getSession() : { data: { session: null } };
+			const userId = data.session?.user?.id ?? '';
+			setMe(userId);
+			setSignedOut(!userId);
+			if (!userId) return;
+			const [linkRes, statsRes] = await Promise.all([coachRepo.listLinks(), coachRepo.stats()]);
+			if (linkRes.ok) setLinks(linkRes.value);
+			else showToast(tt(`coach.error.${linkRes.reason}`));
+			if (statsRes.ok) {
+				setStats(Object.fromEntries(statsRes.value.map((row) => [row.clientUserId, row.summary])));
+				setStatsReady(true);
+			} else {
+				setStatsReady(false);
+				if (statsRes.reason !== 'notConfigured') {
+					showToast(tt(`coach.error.${statsRes.reason}`));
+				}
 			}
+		} finally {
+			setLoaded(true);
 		}
-		setLoaded(true);
 	}, [cloud, showToast, tt]);
 
 	useFocusEffect(
 		useCallback(() => {
 			void refreshCustomsCache();
-			if (!cloud || loaded) return;
-			setBusy(true);
-			void refresh().finally(() => setBusy(false));
+			if (loaded) return;
+			if (!cloud) {
+				setSignedOut(true);
+				setLoaded(true);
+				return;
+			}
+			/* Boot load must not share `busy` with invite/revoke (that blocked list forever). */
+			void refresh();
 		}, [cloud, loaded, refresh])
 	);
 
@@ -172,17 +181,6 @@ export function useCoachClients() {
 		if (!inviteCode) return;
 		await Clipboard.setStringAsync(formatInviteCode(inviteCode));
 		showToast(tt('coach.inviteCopied'));
-	}
-
-	async function shareInvite(inviteCodeArg?: string) {
-		const source = inviteCodeArg ?? inviteCode;
-		if (!source) return;
-		const code = formatInviteCode(source);
-		try {
-			await Share.share({ message: tt('coach.inviteShareMessage', { code }) });
-		} catch {
-			await copyInvite();
-		}
 	}
 
 	async function remind(name?: string) {
@@ -271,7 +269,6 @@ export function useCoachClients() {
 		createInvite,
 		refreshInvite,
 		copyInvite,
-		shareInvite,
 		remind,
 		toggleRow,
 		collapseRow: (key: string) => setExpanded((prev) => ({ ...prev, [key]: false })),

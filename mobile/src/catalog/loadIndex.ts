@@ -2,6 +2,11 @@ import {
 	customExerciseToIndexItem,
 	type CustomExercise
 } from '@repdraft/domain/customExercises';
+import {
+	exerciseMatchesHomeKit,
+	isHomeEquipmentFilter,
+	resolveHomeKitGroups
+} from '@repdraft/domain/homeKit';
 import type { ExerciseIndexItem } from '@repdraft/domain/types';
 import { customsRepo } from '../storage/customsRepo';
 
@@ -44,11 +49,26 @@ export function exerciseDisplayName(id: string, locale: 'ru' | 'en'): string {
 
 export function filterExercises(
 	items: ExerciseIndexItem[],
-	opts: { query: string; bodyPart: string | 'all'; locale: 'ru' | 'en' }
+	opts: {
+		query: string;
+		bodyPart: string | 'all';
+		locale: 'ru' | 'en';
+		equipment?: string | 'all';
+		homeKit?: readonly string[];
+	}
 ): ExerciseIndexItem[] {
 	const q = opts.query.trim().toLowerCase().replace(/ё/g, 'е');
+	const equipment = opts.equipment ?? 'all';
+	const homeGroups = isHomeEquipmentFilter(equipment)
+		? resolveHomeKitGroups(opts.homeKit)
+		: null;
 	return items.filter((ex) => {
 		if (opts.bodyPart !== 'all' && ex.body_part !== opts.bodyPart) return false;
+		if (homeGroups) {
+			if (!exerciseMatchesHomeKit(ex, homeGroups)) return false;
+		} else if (equipment !== 'all' && ex.equipment !== equipment) {
+			return false;
+		}
 		if (!q) return true;
 		const hay = `${ex.name} ${ex.name_ru ?? ''} ${ex.target} ${ex.equipment}`
 			.toLowerCase()

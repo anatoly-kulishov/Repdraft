@@ -7,10 +7,12 @@
 		frequentExercises
 	} from '$lib/domain/exerciseFrequency';
 	import { filterExercises, isBodyPart, uniqueSorted } from '$lib/domain/filters';
+	import { HOME_EQUIPMENT_FILTER } from '$lib/domain/homeKit';
 	import { exerciseMetaHint, labelBodyPart } from '$lib/domain/labels.ru';
 	import type { BodyPart, ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
+	import { homeKitSelection } from '$lib/stores/prefs';
 
 	const SEARCH_CAP = 40;
 	const SUGGEST_CAP = 12;
@@ -45,14 +47,17 @@
 
 	let query = $state('');
 	let bodyPart = $state<ZoneFilter>('all');
+	let equipment = $state<'all' | typeof HOME_EQUIPMENT_FILTER>('all');
 
 	$effect(() => {
 		if (!open) {
 			query = '';
 			bodyPart = 'all';
+			equipment = 'all';
 			return;
 		}
 		query = '';
+		equipment = 'all';
 		if (mode === 'replace' && seedBodyPart && isBodyPart(seedBodyPart)) bodyPart = seedBodyPart;
 		else bodyPart = 'all';
 	});
@@ -84,10 +89,16 @@
 
 	let results = $derived.by(() => {
 		const q = query.trim();
-		if (!q && bodyPart === 'all') return suggestItems;
+		if (!q && bodyPart === 'all' && equipment === 'all') return suggestItems;
 		return filterExercises(
 			catalog,
-			{ query: q, bodyPart, equipment: 'all', target: 'all' },
+			{
+				query: q,
+				bodyPart,
+				equipment,
+				target: 'all',
+				...(equipment === HOME_EQUIPMENT_FILTER ? { homeKit: $homeKitSelection } : {})
+			},
 			lang
 		).slice(0, SEARCH_CAP);
 	});
@@ -96,7 +107,9 @@
 		mode === 'replace' ? 'live.replaceExerciseTitle' : 'live.addExerciseTitle'
 	);
 	let emptyHintKey = $derived(
-		query.trim() || bodyPart !== 'all' ? 'live.pickExerciseEmpty' : 'live.pickExerciseSuggest'
+		query.trim() || bodyPart !== 'all' || equipment !== 'all'
+			? 'live.pickExerciseEmpty'
+			: 'live.pickExerciseSuggest'
 	);
 </script>
 
@@ -123,23 +136,37 @@
 			<button
 				type="button"
 				class="live-exercise-pick__chip"
-				class:is-on={bodyPart === 'all'}
+				class:is-on={bodyPart === 'all' && equipment === 'all'}
 				disabled={busy}
 				onclick={() => {
 					bodyPart = 'all';
+					equipment = 'all';
 				}}
 			>
 				{translate(lang, 'exercises.all')}
+			</button>
+			<button
+				type="button"
+				class="live-exercise-pick__chip"
+				class:is-on={equipment === HOME_EQUIPMENT_FILTER}
+				disabled={busy}
+				onclick={() => {
+					equipment = HOME_EQUIPMENT_FILTER;
+					bodyPart = 'all';
+				}}
+			>
+				{translate(lang, 'place.home')}
 			</button>
 			{#each zoneParts as part (part)}
 				{#if isBodyPart(part)}
 					<button
 						type="button"
 						class="live-exercise-pick__chip"
-						class:is-on={bodyPart === part}
+						class:is-on={bodyPart === part && equipment === 'all'}
 						disabled={busy}
 						onclick={() => {
 							bodyPart = part;
+							equipment = 'all';
 						}}
 					>
 						{labelBodyPart(part, lang)}

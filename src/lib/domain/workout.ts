@@ -16,8 +16,10 @@ export {
 	formatExercisePrescription,
 	normalizeRepsScheme,
 	isBodyweightEquipment,
+	usesExtraKgField,
 	isCardioBodyPart,
 	defaultRestSecForExercise,
+	LIGHT_EQUIPMENT_REST_SEC,
 	type ExerciseRestHint
 } from './workoutDefaults';
 

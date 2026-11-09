@@ -27,7 +27,7 @@
 <AppButton href={BUILDER_NEW_HREF} variant={preferDemo ? 'secondary' : undefined} block>
 	{translate(lang, 'workouts.create')}
 </AppButton>
-<RecognizeProgramAction variant="secondary" block />
+<RecognizeProgramAction variant="ghost" block />
 {#if !preferDemo}
 	<AppButton
 		variant="secondary"

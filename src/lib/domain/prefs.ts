@@ -1,5 +1,14 @@
 /** Local device preferences (not synced to cloud). */
 
+import {
+	HOME_KIT_STORAGE_KEY,
+	parseHomeKitStorage,
+	serializeHomeKitStorage,
+	type HomeKitOptionalId
+} from './homeKit';
+
+export { HOME_KIT_STORAGE_KEY };
+
 export const REST_SOUND_STORAGE_KEY = 'repdraft:rest-sound';
 export const REST_HAPTIC_STORAGE_KEY = 'repdraft:haptic-rest-done';
 export const WEB_ANALYTICS_STORAGE_KEY = 'repdraft:web-analytics';
@@ -8,6 +17,14 @@ export const TESTER_MODE_STORAGE_KEY = 'repdraft:tester-mode';
 export const TESTER_MODE_UNLOCK_TAPS = 7;
 export const INSTALL_HINT_DISMISSED_KEY = 'repdraft:install-hint-dismissed';
 export const PWA_INSTALLED_KEY = 'repdraft:pwa-installed';
+
+export function parseHomeKitPref(raw: string | null | undefined): HomeKitOptionalId[] {
+	return parseHomeKitStorage(raw);
+}
+
+export function serializeHomeKitPref(selected: readonly string[]): string {
+	return serializeHomeKitStorage(selected);
+}
 
 export function parseRestSoundEnabled(raw: string | null | undefined): boolean {
 	if (raw === '0' || raw === 'false') return false;

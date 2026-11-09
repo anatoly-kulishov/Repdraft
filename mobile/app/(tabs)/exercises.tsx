@@ -23,7 +23,12 @@ import {
 	frequentExercises,
 	type FrequentExercise
 } from '@repdraft/domain/exerciseFrequency';
-import { labelBodyPart, labelEquipment } from '@repdraft/domain/labels.ru';
+import {
+	catalogEquipmentForPlace,
+	type AthleteProfile
+} from '@repdraft/domain/athleteProfile';
+import { HOME_EQUIPMENT_FILTER, type HomeKitOptionalId } from '@repdraft/domain/homeKit';
+import { labelBodyPart, labelCustomEquipment } from '@repdraft/domain/labels.ru';
 import { hasLiftData } from '@repdraft/domain/records';
 import {
 	filterExercises,
@@ -41,6 +46,11 @@ import { FrequentExercisesRail } from '../../src/components/FrequentExercisesRai
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { useBottomChromePad, useTabScreenPad } from '../../src/layout/safe';
 import { useLocale } from '../../src/state/locale';
+import {
+	getAthleteProfile,
+	getHomeKitSelection,
+	setAthleteProfile
+} from '../../src/state/prefs';
 import { bookmarksRepo } from '../../src/storage/bookmarksRepo';
 import { customsRepo } from '../../src/storage/customsRepo';
 import { recordsRepo } from '../../src/storage/recordsRepo';
@@ -57,6 +67,9 @@ export default function ExercisesScreen() {
 	const tabPad = useTabScreenPad(space.lg);
 	const [query, setQuery] = useState('');
 	const [bodyPart, setBodyPart] = useState<string | 'all'>('all');
+	const [equipment, setEquipment] = useState<'all' | typeof HOME_EQUIPMENT_FILTER>('all');
+	const [homeKit, setHomeKit] = useState<HomeKitOptionalId[]>([]);
+	const [athlete, setAthlete] = useState<AthleteProfile | null>(null);
 	const [savedOnly, setSavedOnly] = useState(false);
 	const [bookmarks, setBookmarks] = useState<string[]>([]);
 	const [records, setRecords] = useState<number>(0);
@@ -74,9 +87,25 @@ export default function ExercisesScreen() {
 			const recs = await recordsRepo.list();
 			setRecords(recs.filter(hasLiftData).length);
 			setFrequent(frequentExercises(await sessionsRepo.list()));
+			const kit = await getHomeKitSelection();
+			const profile = await getAthleteProfile();
+			setHomeKit(kit);
+			setAthlete(profile);
+			setEquipment(catalogEquipmentForPlace(profile.trainingPlace));
 			setTick((n) => n + 1);
 		})();
 	}, []);
+
+	async function choosePlace(place: 'gym' | 'home') {
+		const base = athlete ?? (await getAthleteProfile());
+		const next = { ...base, trainingPlace: place };
+		await setAthleteProfile(next);
+		setAthlete(next);
+		setEquipment(catalogEquipmentForPlace(place));
+		setBodyPart('all');
+		setSavedOnly(false);
+		setQuery('');
+	}
 
 	useFocusEffect(
 		useCallback(() => {
@@ -108,13 +137,19 @@ export default function ExercisesScreen() {
 	}, [all]);
 
 	const filtered = useMemo(() => {
-		let list = filterExercises(all, { query, bodyPart, locale });
+		let list = filterExercises(all, {
+			query,
+			bodyPart,
+			locale,
+			equipment,
+			homeKit
+		});
 		if (savedOnly) {
 			const set = new Set(bookmarks);
 			list = list.filter((ex) => set.has(ex.id));
 		}
 		return list;
-	}, [all, query, bodyPart, locale, savedOnly, bookmarks]);
+	}, [all, query, bodyPart, equipment, homeKit, locale, savedOnly, bookmarks]);
 
 	function zoneLabel(part: string): string {
 		return part === 'all' ? tt('exercises.all') : labelBodyPart(part, locale);
@@ -145,6 +180,48 @@ export default function ExercisesScreen() {
 				placeholderTextColor={colors.muted}
 				style={styles.search}
 			/>
+			<View
+				style={styles.placeSegment}
+				accessibilityRole="tablist"
+				accessibilityLabel={tt('place.row')}
+			>
+				<Pressable
+					style={[
+						styles.placeTab,
+						equipment !== HOME_EQUIPMENT_FILTER && styles.placeTabActive
+					]}
+					onPress={() => void choosePlace('gym')}
+					accessibilityRole="tab"
+					accessibilityState={{ selected: equipment !== HOME_EQUIPMENT_FILTER }}
+				>
+					<Text
+						style={[
+							styles.placeTabText,
+							equipment !== HOME_EQUIPMENT_FILTER && styles.placeTabTextActive
+						]}
+					>
+						{tt('place.gym')}
+					</Text>
+				</Pressable>
+				<Pressable
+					style={[
+						styles.placeTab,
+						equipment === HOME_EQUIPMENT_FILTER && styles.placeTabActive
+					]}
+					onPress={() => void choosePlace('home')}
+					accessibilityRole="tab"
+					accessibilityState={{ selected: equipment === HOME_EQUIPMENT_FILTER }}
+				>
+					<Text
+						style={[
+							styles.placeTabText,
+							equipment === HOME_EQUIPMENT_FILTER && styles.placeTabTextActive
+						]}
+					>
+						{tt('place.home')}
+					</Text>
+				</Pressable>
+			</View>
 			<View style={styles.hubNavWrap}>
 			<ScrollView
 				horizontal
@@ -155,9 +232,7 @@ export default function ExercisesScreen() {
 				<Pressable
 					style={({ pressed }) => [styles.hubNavChip, pressed && styles.pressed]}
 					onPress={() => {
-						setSavedOnly(false);
-						setBodyPart('all');
-						setQuery('');
+						void choosePlace('gym');
 					}}
 					accessibilityRole="button"
 				>
@@ -173,6 +248,7 @@ export default function ExercisesScreen() {
 					onPress={() => {
 						setSavedOnly((v) => !v);
 						setBodyPart('all');
+						setEquipment('all');
 						setQuery('');
 					}}
 					accessibilityRole="button"
@@ -217,7 +293,7 @@ export default function ExercisesScreen() {
 				variant="ghost"
 				onPress={() => setCreating(true)}
 			/>
-			{query.trim() || savedOnly || bodyPart !== 'all' ? (
+			{query.trim() || savedOnly || bodyPart !== 'all' || equipment !== 'all' ? (
 				<>
 					<FlatList
 						horizontal
@@ -229,8 +305,15 @@ export default function ExercisesScreen() {
 					renderItem={({ item }) => (
 						<Chip
 							label={zoneLabel(item)}
-							selected={bodyPart === item}
-							onPress={() => setBodyPart(item)}
+							selected={bodyPart === item && equipment !== HOME_EQUIPMENT_FILTER}
+							onPress={() => {
+								setBodyPart(item);
+								if (equipment === HOME_EQUIPMENT_FILTER) {
+									void choosePlace('gym');
+								} else {
+									setEquipment('all');
+								}
+							}}
 						/>
 					)}
 				/>
@@ -370,10 +453,10 @@ export default function ExercisesScreen() {
 							contentContainerStyle={styles.chips}
 							renderItem={({ item }) => (
 						<Chip
-								label={labelEquipment(item, locale)}
-								selected={customEq === item}
-								onPress={() => setCustomEq(item)}
-							/>
+								label={labelCustomEquipment(item, locale)}
+									selected={customEq === item}
+									onPress={() => setCustomEq(item)}
+								/>
 							)}
 						/>
 						<PrimaryButton label={tt('exercises.customCreate')} onPress={() => void createCustom()} />
@@ -402,6 +485,34 @@ function makeStyles(colors: ColorPalette) {
 		paddingHorizontal: space.md,
 		fontSize: 16,
 		fontFamily: fontFamily.regular
+	},
+	placeSegment: {
+		flexDirection: 'row',
+		gap: 4,
+		padding: 4,
+		borderRadius: radius.sm,
+		backgroundColor: colors.panelRaised ?? colors.panel,
+		borderWidth: 1,
+		borderColor: colors.border
+	},
+	placeTab: {
+		flex: 1,
+		minHeight: touchMin,
+		alignItems: 'center',
+		justifyContent: 'center',
+		borderRadius: radius.sm
+	},
+	placeTabActive: {
+		backgroundColor: colors.panel
+	},
+	placeTabText: {
+		fontFamily: fontFamily.semibold,
+		fontSize: 14,
+		color: colors.muted
+	},
+	placeTabTextActive: {
+		color: colors.text,
+		fontFamily: fontFamily.bold
 	},
 	hubNavWrap: { position: 'relative' },
 	hubNavScroll: { flexGrow: 0, flexShrink: 0 },

@@ -44,4 +44,9 @@
 	.lucide-icon-wrap :global(svg) {
 		display: block;
 	}
+
+	/* Phosphor spacer: keep fill=none rect from inheriting stroke:currentColor. */
+	.lucide-icon-wrap :global(svg > rect[width='256'][height='256'][fill='none']) {
+		stroke: none;
+	}
 </style>

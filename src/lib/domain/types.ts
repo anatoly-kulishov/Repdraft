@@ -66,6 +66,11 @@ export type ExerciseFilters = {
 	bodyPart: BodyPart | 'all' | 'legs';
 	equipment: string | 'all';
 	target: string | 'all';
+	/**
+	 * Optional home kit groups when `equipment === 'home'`.
+	 * Bodyweight is always matched; empty = bodyweight only.
+	 */
+	homeKit?: readonly string[];
 };
 
 /** Optional personal best for an exercise — any fields may be empty except exerciseId. */
