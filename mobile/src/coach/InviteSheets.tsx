@@ -10,23 +10,15 @@ import { fontFamily, type ColorPalette } from '../theme';
 type Props = {
 	helpOpen: boolean;
 	onCloseHelp: () => void;
-	menuOpen: boolean;
-	onCloseMenu: () => void;
-	busy: boolean;
-	onRefresh: () => void;
 	refreshConfirmOpen: boolean;
 	onCloseRefreshConfirm: () => void;
 	onConfirmRefresh: () => void;
 };
 
-/** Help sheet and the destructive "new code" menu/confirm for the invite card. */
+/** Help sheet + confirm for invite code refresh. */
 export function InviteSheets({
 	helpOpen,
 	onCloseHelp,
-	menuOpen,
-	onCloseMenu,
-	busy,
-	onRefresh,
 	refreshConfirmOpen,
 	onCloseRefreshConfirm,
 	onConfirmRefresh
@@ -44,19 +36,6 @@ export function InviteSheets({
 					label={tt('common.close')}
 					variant="secondary"
 					onPress={onCloseHelp}
-				/>
-			</BottomSheet>
-
-			<BottomSheet open={menuOpen} onDismiss={onCloseMenu} label={tt('coach.inviteTitle')}>
-				<Text style={styles.title}>{tt('coach.inviteTitle')}</Text>
-				<PrimaryButton
-					label={tt('coach.inviteRefresh')}
-					variant="danger"
-					disabled={busy}
-					onPress={() => {
-						onCloseMenu();
-						onRefresh();
-					}}
 				/>
 			</BottomSheet>
 

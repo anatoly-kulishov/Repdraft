@@ -1,6 +1,10 @@
 import { getSupabaseAdmin } from '$lib/server/supabase/admin';
 import { resolveYooKassaConfig, yooKassaAmount } from '$lib/server/billing/config';
-import { grantPeriodEnd, upsertEntitlement } from '$lib/server/billing/syncEntitlement';
+import {
+	grantStackedPeriodEnd,
+	loadEntitlementRow,
+	upsertEntitlement
+} from '$lib/server/billing/syncEntitlement';
 import {
 	fetchYooKassaPayment,
 	parseYooWebhook,
@@ -73,6 +77,11 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 
 	try {
+		const existing = await loadEntitlementRow(admin, userId).catch(() => null);
+		/* Idempotent: same payment must not re-stack the period on webhook retries. */
+		if (existing?.providerSubscriptionId === verified.id) {
+			return json({ ok: true, duplicate: true });
+		}
 		await upsertEntitlement(admin, {
 			userId,
 			status: 'active',
@@ -80,7 +89,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			provider: 'yookassa',
 			providerCustomerId: null,
 			providerSubscriptionId: verified.id,
-			currentPeriodEnd: grantPeriodEnd(plan)
+			currentPeriodEnd: grantStackedPeriodEnd(plan, existing?.currentPeriodEnd)
 		});
 	} catch (err) {
 		console.error('yookassa webhook upsert', err);

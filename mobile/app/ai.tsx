@@ -11,9 +11,14 @@ import {
 	TextInput,
 	View
 } from 'react-native';
+import { appendAthleteProfileToBrief } from '@repdraft/domain/athleteProfile';
+import { proFromAppMetadata } from '@repdraft/domain/entitlement';
+import { appendHomeKitToBrief } from '@repdraft/domain/homeKit';
 import { AI_BRIEF_MAX, sanitizeAiBrief } from '@repdraft/domain/inputLimits';
 import { labelTarget } from '@repdraft/domain/labels.ru';
 import { addExercise, createEmptyDraft, updateExercise } from '@repdraft/domain/workout';
+import { fetchBillingStatus } from '../src/auth/accountApi';
+import { getSupabase } from '../src/auth/supabase';
 import { loadExerciseIndex } from '../src/catalog/loadIndex';
 import { aiPlanEndpoint } from '../src/catalog/mediaUrl';
 import { Panel } from '../src/components/Panel';
@@ -21,6 +26,7 @@ import { PrimaryButton } from '../src/components/PrimaryButton';
 import { useBottomChromePad, useStackHeaderOffset } from '../src/layout/safe';
 import { RecognizeProgramSheet } from '../src/program/RecognizeProgramSheet';
 import { useLocale } from '../src/state/locale';
+import { getAthleteProfile, getHomeKitSelection } from '../src/state/prefs';
 import { plansRepo } from '../src/storage/plansRepo';
 import { pushPlan } from '../src/sync/cloudSync';
 import { useAppColors } from '../src/state/theme';
@@ -92,6 +98,23 @@ export default function AiDraftScreen() {
 	const [planMeta, setPlanMeta] = useState<{ provider: string; model: string; dropped: number } | null>(null);
 	const [index, setIndex] = useState<Map<string, { name: string; name_ru?: string; target: string }>>(new Map());
 	const [recognizeOpen, setRecognizeOpen] = useState(false);
+	const [isPro, setIsPro] = useState(false);
+
+	useEffect(() => {
+		void (async () => {
+			const sb = getSupabase();
+			if (!sb) {
+				setIsPro(false);
+				return;
+			}
+			const { data } = await sb.auth.getSession();
+			const metaPro = proFromAppMetadata(
+				data.session?.user?.app_metadata as Record<string, unknown> | undefined
+			).pro;
+			const remote = await fetchBillingStatus();
+			setIsPro(remote?.pro ?? metaPro);
+		})();
+	}, []);
 
 	useEffect(() => {
 		const list = loadExerciseIndex();
@@ -125,10 +148,17 @@ export default function AiDraftScreen() {
 		}
 		setBusy(true);
 		try {
+			const kit = await getHomeKitSelection();
+			const profile = await getAthleteProfile();
+			const withProfile = appendAthleteProfileToBrief(cleaned, profile, locale);
+			const requestBrief =
+				profile.trainingPlace === 'home'
+					? appendHomeKitToBrief(withProfile, kit, locale)
+					: withProfile;
 			const res = await fetch(aiPlanEndpoint(), {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-				body: JSON.stringify({ brief: cleaned })
+				body: JSON.stringify({ brief: requestBrief })
 			});
 			const data = (await res.json()) as AiOk | AiErr;
 			if (!res.ok || !data || !('ok' in data) || !data.ok) {
@@ -311,11 +341,11 @@ export default function AiDraftScreen() {
 							onPress={() => void generate()}
 							disabled={busy || !brief.trim()}
 						/>
-						{!busy ? (
+						{!busy && isPro ? (
 							<View style={styles.recognizeWrap}>
 								<PrimaryButton
 									label={tt('recognize.cta')}
-									variant="secondary"
+									variant="ghost"
 									onPress={() => setRecognizeOpen(true)}
 								/>
 							</View>

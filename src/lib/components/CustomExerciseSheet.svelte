@@ -3,12 +3,11 @@
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppSelect from '$lib/components/AppSelect.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
-	import { BODY_PART_LABELS } from '$lib/domain/labels.ru';
+	import { BODY_PART_LABELS, labelCustomEquipment } from '$lib/domain/labels.ru';
 	import {
 		CUSTOM_EXERCISE_EQUIPMENT,
 		CUSTOM_EXERCISE_NAME_MAX,
 		findDuplicateCustom,
-		labelEquipmentSafe,
 		type CustomExercise
 	} from '$lib/domain/customExercises';
 	import { translate } from '$lib/i18n/messages';
@@ -97,7 +96,7 @@
 					}}
 				>
 					{#each CUSTOM_EXERCISE_EQUIPMENT as value (value)}
-						<option value={value}>{labelEquipmentSafe(value)}</option>
+						<option value={value}>{labelCustomEquipment(value, lang)}</option>
 					{/each}
 				</AppSelect>
 			</label>

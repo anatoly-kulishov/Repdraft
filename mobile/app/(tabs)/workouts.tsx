@@ -4,6 +4,7 @@ import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-nativ
 import { FlatList } from 'react-native-gesture-handler';
 import { ChevronRight, Plus, SlidersHorizontal, Sparkles } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { proFromAppMetadata } from '@repdraft/domain/entitlement';
 import { buildDemoPlan } from '@repdraft/domain/onboarding';
 import {
 	collectPlanTargetFacets,
@@ -16,6 +17,8 @@ import {
 } from '@repdraft/domain/workout';
 import { PLANS_PAGE_SIZE } from '@repdraft/domain/home';
 import type { WorkoutPlan } from '@repdraft/domain/types';
+import { fetchBillingStatus } from '../../src/auth/accountApi';
+import { getSupabase } from '../../src/auth/supabase';
 import { loadExerciseIndex } from '../../src/catalog/loadIndex';
 import { EmptyState } from '../../src/components/EmptyState';
 import { MuscleFilterSheet } from '../../src/components/MuscleFilterSheet';
@@ -48,6 +51,7 @@ export default function WorkoutsTab() {
 	const [plansVisibleLimit, setPlansVisibleLimit] = useState(PLANS_PAGE_SIZE);
 	const [muscleFilter, setMuscleFilter] = useState('');
 	const [muscleSheetOpen, setMuscleSheetOpen] = useState(false);
+	const [isPro, setIsPro] = useState(false);
 	const [recognizeOpen, setRecognizeOpen] = useState(false);
 
 	const reload = useCallback(async () => {
@@ -67,6 +71,17 @@ export default function WorkoutsTab() {
 		setPlans(ordered);
 		setRecentPlanId(lastFinished?.planId ?? null);
 		setPinnedNextId(pinned);
+		const sb = getSupabase();
+		if (sb) {
+			const { data } = await sb.auth.getSession();
+			const metaPro = proFromAppMetadata(
+				data.session?.user?.app_metadata as Record<string, unknown> | undefined
+			).pro;
+			const remote = await fetchBillingStatus();
+			setIsPro(remote?.pro ?? metaPro);
+		} else {
+			setIsPro(false);
+		}
 		setLoading(false);
 	}, []);
 
@@ -246,11 +261,11 @@ export default function WorkoutsTab() {
 							actionLabel={searchActive ? undefined : tt('workouts.create')}
 							onAction={searchActive ? undefined : () => void createBlank()}
 						/>
-						{!searchActive ? (
+						{!searchActive && isPro ? (
 							<View style={styles.emptyRecognize}>
 								<PrimaryButton
 									label={tt('recognize.cta')}
-									variant="secondary"
+									variant="ghost"
 									onPress={() => setRecognizeOpen(true)}
 								/>
 							</View>

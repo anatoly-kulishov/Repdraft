@@ -15,7 +15,7 @@
 	import { exerciseMetaHint } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, SessionExercise, SetKind, WorkoutSession } from '$lib/domain/types';
 	import { NOTE_MAX, REPS_INPUT_MAX_LEN, WEIGHT_INPUT_MAX_LEN, clampNote } from '$lib/domain/inputLimits';
-	import { isBodyweightEquipment, isCardioBodyPart } from '$lib/domain/workout';
+	import { isCardioBodyPart, usesExtraKgField } from '$lib/domain/workout';
 	import { exerciseWeightByWeek, nextWeightHint, weightAboveLast } from '$lib/domain/sessionPayoff';
 	import { exerciseBestWeightKg, loggedSetKind, setKindMessageKey } from '$lib/domain/session';
 	import type { AppLocale } from '$lib/i18n/locale';
@@ -226,9 +226,14 @@
 				(s.weightKg !== last.weightKg || s.reps !== last.reps)
 		);
 	});
-	let bodyweight = $derived(
-		isBodyweightEquipment(names.get(exercise.exerciseId)?.equipment)
-	);
+	let bodyweight = $derived.by(() => {
+		const meta = names.get(exercise.exerciseId);
+		return usesExtraKgField({
+			equipment: meta?.equipment,
+			name: meta?.name,
+			name_ru: meta?.name_ru
+		});
+	});
 	let cardio = $derived(isCardioBodyPart(names.get(exercise.exerciseId)?.body_part));
 	let notePh = $derived(translate(lang, cardio ? 'live.notePhCardio' : 'live.notePh'));
 	let weightLabel = $derived(

@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.3',
+		highlights: {
+			ru: [
+				'Профиль-хаб: место, тренировка, Pro и аккаунт на отдельных экранах',
+				'Короткий опрос и режим Дом: каталог и ИИ по вашему набору',
+				'Pro: статус и отмена только по реальной подписке, без ложных тостов',
+				'Клиенты: спокойная загрузка, код копируется с пластины без лишней кнопки'
+			],
+			en: [
+				'Profile hub: place, workout, Pro, and account on their own screens',
+				'Short intake and Home mode: catalog and AI follow your kit',
+				'Pro: status and cancel follow a real subscription, no false toasts',
+				'Clients: calm loading; copy the invite from the code plate'
+			]
+		}
+	},
+	{
 		version: '0.25.2',
 		highlights: {
 			ru: ['Мелкий технический патч: чище и тише сборка сайта'],

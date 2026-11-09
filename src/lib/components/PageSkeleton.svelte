@@ -190,9 +190,11 @@
 				<div class="page-skeleton-auth-hero__stage">
 					<AppSkeleton class="page-skeleton-auth-avatar" />
 				</div>
-				<AppSkeleton class="page-skeleton-auth-name" />
-				<AppSkeleton class="page-skeleton-auth-meta" />
-				<AppSkeleton class="page-skeleton-auth-badge" />
+				<div class="page-skeleton-auth-hero__identity">
+					<AppSkeleton class="page-skeleton-auth-name" />
+					<AppSkeleton class="page-skeleton-auth-meta" />
+					<AppSkeleton class="page-skeleton-auth-badge" />
+				</div>
 			</header>
 
 			<div class="page-skeleton-auth__stack">

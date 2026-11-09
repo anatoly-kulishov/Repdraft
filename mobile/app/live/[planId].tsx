@@ -55,7 +55,7 @@ import {
 	visibleSessionExerciseIndices
 } from '@repdraft/domain/session';
 import { exerciseWeightByWeek, nextWeightHint, weightAboveLast } from '@repdraft/domain/sessionPayoff';
-import { isBodyweightEquipment, isCardioBodyPart } from '@repdraft/domain/workout';
+import { isCardioBodyPart, usesExtraKgField } from '@repdraft/domain/workout';
 import type { ExerciseIndexItem, LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { unlockRestAudioFromGesture } from '../../src/audio/restChime';
 import { signalRestDone } from '../../src/audio/restDone';
@@ -305,7 +305,12 @@ export default function LiveScreen() {
 	);
 	const skipLift = Boolean(ex && isCardioBodyPart(getIndexItem(ex.exerciseId)?.body_part));
 	const bodyweight = Boolean(
-		ex && isBodyweightEquipment(getIndexItem(ex.exerciseId)?.equipment)
+		ex &&
+			usesExtraKgField({
+				equipment: getIndexItem(ex.exerciseId)?.equipment,
+				name: getIndexItem(ex.exerciseId)?.name,
+				name_ru: getIndexItem(ex.exerciseId)?.name_ru
+			})
 	);
 
 	useEffect(() => {

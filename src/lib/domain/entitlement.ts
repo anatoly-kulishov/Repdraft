@@ -45,6 +45,22 @@ export function periodEndIso(plan: ProPlan, from: Date = new Date()): string {
 }
 
 /**
+ * Stack a new paid period onto an existing one (renew / second YooKassa payment).
+ * If current period is still open, extend from its end; otherwise from `from`.
+ */
+export function stackPeriodEnd(
+	plan: ProPlan,
+	existingEnd: string | null | undefined,
+	from: Date = new Date()
+): string {
+	const existingMs =
+		typeof existingEnd === 'string' && existingEnd.trim() ? Date.parse(existingEnd) : Number.NaN;
+	const start =
+		Number.isFinite(existingMs) && existingMs > from.getTime() ? new Date(existingMs) : from;
+	return periodEndIso(plan, start);
+}
+
+/**
  * True when the user should get Pro features.
  * `past_due` still counts until `proUntil` (grace).
  */
@@ -159,5 +175,21 @@ export function runEntitlementSelfCheck(): void {
 	const end = periodEndIso('monthly', new Date('2026-01-15T00:00:00.000Z'));
 	if (!end.startsWith('2026-02-15')) {
 		throw new Error(`periodEndIso monthly got ${end}`);
+	}
+	const stacked = stackPeriodEnd(
+		'monthly',
+		'2026-07-01T00:00:00.000Z',
+		new Date('2026-06-01T12:00:00.000Z')
+	);
+	if (!stacked.startsWith('2026-08-01')) {
+		throw new Error(`stackPeriodEnd open period got ${stacked}`);
+	}
+	const stackedFresh = stackPeriodEnd(
+		'monthly',
+		'2026-05-01T00:00:00.000Z',
+		new Date('2026-06-01T12:00:00.000Z')
+	);
+	if (!stackedFresh.startsWith('2026-07-01')) {
+		throw new Error(`stackPeriodEnd expired period got ${stackedFresh}`);
 	}
 }

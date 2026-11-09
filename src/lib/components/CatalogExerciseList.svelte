@@ -16,7 +16,7 @@
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { filterCatalogWithFacets, isBodyPart, isFilterConflict } from '$lib/domain/filters';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { pickFrequent, pickPopular, sortByScore } from '$lib/domain/exerciseScore';
+	import { pickFrequent, pickPopular } from '$lib/domain/exerciseScore';
 	import {
 		catalogZoneBodyParts,
 		isBuilderReturnPath,
@@ -30,6 +30,14 @@
 		sortCustomsNewest,
 		type CustomExercise
 	} from '$lib/domain/customExercises';
+	import {
+		catalogEquipmentForPlace
+	} from '$lib/domain/athleteProfile';
+	import {
+		exerciseMatchesHomeKit,
+		isHomeEquipmentFilter,
+		resolveHomeKitGroups
+	} from '$lib/domain/homeKit';
 	import {
 		addLocalCustomExercise,
 		peekLocalCustomExercises,
@@ -50,6 +58,7 @@
 	import { exerciseStats } from '$lib/stores/exerciseStats';
 	import { onboarding } from '$lib/stores/onboarding';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { athleteProfile, homeKitSelection } from '$lib/stores/prefs';
 	import { toasts } from '$lib/stores/toasts';
 	import { browser } from '$app/environment';
 	import { createDelayedTrue } from '$lib/browser/delayedTrue.svelte';
@@ -106,20 +115,29 @@
 		const urlBody =
 			bodyPartParam && isBodyPart(bodyPartParam) ? bodyPartParam : ('all' as const);
 
+		const kit = browser ? get(homeKitSelection) : [];
+		const placeDefault = browser
+			? catalogEquipmentForPlace(get(athleteProfile).trainingPlace)
+			: 'all';
+		const equipment = urlHasEquipment ? equipmentParam : placeDefault;
+		const withKit: ExerciseFilters = {
+			query: urlHasQuery ? q : '',
+			bodyPart: 'all',
+			equipment,
+			target: urlHasTarget ? targetParam : 'all',
+			...(isHomeEquipmentFilter(equipment) ? { homeKit: kit } : {})
+		};
+
 		if (presetBodyPart !== 'all' && isCatalogZone(presetBodyPart)) {
 			return {
-				query: urlHasQuery ? q : '',
-				bodyPart: presetBodyPart as ExerciseFilters['bodyPart'],
-				equipment: urlHasEquipment ? equipmentParam : 'all',
-				target: urlHasTarget ? targetParam : 'all'
+				...withKit,
+				bodyPart: presetBodyPart as ExerciseFilters['bodyPart']
 			};
 		}
 
 		return {
-			query: urlHasQuery ? q : '',
-			bodyPart: urlBody,
-			equipment: urlHasEquipment ? equipmentParam : 'all',
-			target: urlHasTarget ? targetParam : 'all'
+			...withKit,
+			bodyPart: urlBody
 		};
 	}
 
@@ -193,9 +211,37 @@
 	let visibleCustoms = $derived.by(() => {
 		if (savedOnly) return [];
 		const allowed = zoneLocked && zoneBodyParts.length > 0 ? new Set(zoneBodyParts) : null;
-		return filterCustomExercises(customs, filters.query, allowed ?? undefined).map(
+		let list = filterCustomExercises(customs, filters.query, allowed ?? undefined).map(
 			customExerciseToIndexItem
 		);
+		if (isHomeEquipmentFilter(filters.equipment)) {
+			const groups = resolveHomeKitGroups(filters.homeKit ?? $homeKitSelection);
+			list = list.filter((item) => exerciseMatchesHomeKit(item, groups));
+		} else if (filters.equipment !== 'all') {
+			list = list.filter((item) => item.equipment === filters.equipment);
+		}
+		return list;
+	});
+
+	/** Keep home kit groups on filters when the pref changes or URL selects `home`. */
+	$effect(() => {
+		const kit = $homeKitSelection;
+		if (!isHomeEquipmentFilter(filters.equipment)) {
+			if (filters.homeKit) {
+				untrack(() => {
+					const { homeKit: _drop, ...rest } = filters;
+					filters = rest;
+				});
+			}
+			return;
+		}
+		const same =
+			filters.homeKit?.length === kit.length &&
+			filters.homeKit.every((id, i) => id === kit[i]);
+		if (same) return;
+		untrack(() => {
+			filters = { ...filters, homeKit: kit };
+		});
 	});
 	let catalogFiltered = $derived.by(() => {
 		const allowed = zoneLocked && zoneBodyParts.length > 0 ? new Set(zoneBodyParts) : null;
@@ -224,19 +270,17 @@
 		);
 	});
 	let useSections = $derived(!savedOnly && !filters.query.trim() && visible.length > 0);
+	/** Gym-staple rail; hide under home kit - title and ranking are hall-oriented. */
+	let showGymPopular = $derived(useSections && !isHomeEquipmentFilter(filters.equipment));
 	let frequentItems = $derived(useSections ? pickFrequent(visible, statsMap, 12) : []);
 	let frequentIds = $derived(new Set(frequentItems.map((ex) => ex.id)));
-	let popularItems = $derived(useSections ? pickPopular(visible, frequentIds, 12) : []);
+	let popularItems = $derived(showGymPopular ? pickPopular(visible, frequentIds, 12) : []);
 	let sectionExcludeIds = $derived(
 		new Set([...frequentItems, ...popularItems].map((ex) => ex.id))
 	);
+	/** Keep filterCatalogWithFacets score order; re-sorting 1k+ rows on place toggle was jank. */
 	let allSectionItems = $derived(
-		useSections
-			? sortByScore(
-					visible.filter((ex) => !sectionExcludeIds.has(ex.id)),
-					statsMap
-				)
-			: visible
+		useSections ? visible.filter((ex) => !sectionExcludeIds.has(ex.id)) : visible
 	);
 	let shownAll = $derived(allSectionItems.slice(0, visibleLimit));
 	let shownFlat = $derived(
@@ -455,9 +499,11 @@
 		// Wait until facet pools exist — empty options on first paint must not wipe URL facets.
 		if (equipmentOptions.length === 0 && filters.equipment !== 'all') return;
 		const nextEq =
-			filters.equipment !== 'all' && !equipmentOptions.includes(filters.equipment)
-				? 'all'
-				: filters.equipment;
+			isHomeEquipmentFilter(filters.equipment)
+				? filters.equipment
+				: filters.equipment !== 'all' && !equipmentOptions.includes(filters.equipment)
+					? 'all'
+					: filters.equipment;
 		const nextTarget =
 			targetOptions.length <= 1
 				? 'all'

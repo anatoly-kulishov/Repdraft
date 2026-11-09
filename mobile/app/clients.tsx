@@ -37,7 +37,6 @@ export default function ClientsScreen() {
 	const bottomPad = useBottomChromePad(space.lg);
 	const coach = useCoachClients();
 	const [helpOpen, setHelpOpen] = useState(false);
-	const [inviteMenuOpen, setInviteMenuOpen] = useState(false);
 	const [refreshConfirmOpen, setRefreshConfirmOpen] = useState(false);
 	const [query, setQuery] = useState('');
 	const [assignTarget, setAssignTarget] = useState<(typeof coach.rows)[number] | null>(null);
@@ -142,11 +141,10 @@ export default function ClientsScreen() {
 					busy={coach.busy}
 					onCreate={() => void coach.createInvite()}
 					onCopy={() => void coach.copyInvite()}
-					onShare={() => void coach.shareInvite()}
-					onMenu={() => setInviteMenuOpen(true)}
+					onRefresh={() => setRefreshConfirmOpen(true)}
 				/>
 
-				{!coach.loaded && coach.busy ? (
+				{!coach.loaded ? (
 					<ClientsSkeleton />
 				) : coach.signedOut ? (
 					<View style={styles.emptyCard}>
@@ -207,10 +205,6 @@ export default function ClientsScreen() {
 			<InviteSheets
 				helpOpen={helpOpen}
 				onCloseHelp={() => setHelpOpen(false)}
-				menuOpen={inviteMenuOpen}
-				onCloseMenu={() => setInviteMenuOpen(false)}
-				busy={coach.busy}
-				onRefresh={() => setRefreshConfirmOpen(true)}
 				refreshConfirmOpen={refreshConfirmOpen}
 				onCloseRefreshConfirm={() => setRefreshConfirmOpen(false)}
 				onConfirmRefresh={() => void coach.refreshInvite()}
@@ -289,7 +283,9 @@ function makeStyles(colors: ColorPalette) {
 			borderRadius: radius.md,
 			paddingHorizontal: space.lg,
 			paddingVertical: 24,
+			minHeight: 184,
 			alignItems: 'center',
+			justifyContent: 'center',
 			gap: space.sm
 		},
 		emptyIcon: {

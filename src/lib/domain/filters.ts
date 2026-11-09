@@ -1,11 +1,24 @@
 import type { AppLocale } from '../i18n/locale';
 import { exerciseName, exerciseNameSortLocale } from './exerciseName';
+import {
+	exerciseMatchesHomeKit,
+	isHomeEquipmentFilter,
+	resolveHomeKitGroups
+} from './homeKit';
 import { BODY_PART_LABELS, EQUIPMENT_LABELS, TARGET_LABELS } from './labels.ru';
 import { SEARCH_SYNONYMS } from './searchSynonyms';
 import { catalogTargetPrimaryZone } from './catalogLinks';
 import type { BodyPart, ExerciseFilters, ExerciseIndexItem } from './types';
 import type { UserExerciseStatsMap } from './exerciseScore';
 import { getScore } from './exerciseScore';
+
+function equipmentFacetMatches(item: ExerciseIndexItem, filters: ExerciseFilters): boolean {
+	if (filters.equipment === 'all') return true;
+	if (isHomeEquipmentFilter(filters.equipment)) {
+		return exerciseMatchesHomeKit(item, resolveHomeKitGroups(filters.homeKit));
+	}
+	return item.equipment === filters.equipment;
+}
 
 export function uniqueSorted(
 	items: ExerciseIndexItem[],
@@ -336,7 +349,7 @@ function scoreMatch(item: ExerciseIndexItem, query: string, tokens: string[], lo
 
 function passesFacets(item: ExerciseIndexItem, filters: ExerciseFilters): boolean {
 	if (filters.bodyPart !== 'all' && item.body_part !== filters.bodyPart) return false;
-	if (filters.equipment !== 'all' && item.equipment !== filters.equipment) return false;
+	if (!equipmentFacetMatches(item, filters)) return false;
 	// Target chip = primary muscle only. Secondary stays in search fields, not facets —
 	// otherwise «Икры» floods with squats that list calves as assist.
 	if (filters.target !== 'all' && item.target !== filters.target) return false;
@@ -356,20 +369,24 @@ function filterAndSortExercises(
 	if (!query) {
 		return items
 			.filter((item) => passesFacets(item, filters))
-			.sort((a, b) => exerciseName(a, locale).localeCompare(exerciseName(b, locale), sortLocale));
+			.map((item) => ({ item, name: exerciseName(item, locale) }))
+			.sort((a, b) => a.name.localeCompare(b.name, sortLocale))
+			.map((row) => row.item);
 	}
 
 	return items
-		.reduce<{ item: ExerciseIndexItem; score: number }[]>((acc, item) => {
+		.reduce<{ item: ExerciseIndexItem; score: number; name: string }[]>((acc, item) => {
 			if (!passesFacets(item, filters)) return acc;
 			const fields = getSearchFields(item, locale);
 			const score = scoreMatchFields(fields, query, tokens, tokenVariants, item, locale);
-			if (score >= 0) acc.push({ item, score });
+			if (score >= 0) {
+				acc.push({ item, score, name: exerciseName(item, locale) });
+			}
 			return acc;
 		}, [])
 		.sort((a, b) => {
 			if (b.score !== a.score) return b.score - a.score;
-			return exerciseName(a.item, locale).localeCompare(exerciseName(b.item, locale), sortLocale);
+			return a.name.localeCompare(b.name, sortLocale);
 		})
 		.map((row) => row.item);
 }
@@ -399,7 +416,7 @@ export function filterCatalogWithFacets(
 			if (filters.target === 'all' || item.target === filters.target) {
 				equipmentPool.add(item.equipment);
 			}
-			if (filters.equipment === 'all' || item.equipment === filters.equipment) {
+			if (equipmentFacetMatches(item, filters)) {
 				targetPool.add(item.target);
 			}
 			if (passesFacets(item, filters)) matched.push(item);
@@ -413,7 +430,7 @@ export function filterCatalogWithFacets(
 		if (filters.target === 'all' || item.target === filters.target) {
 			equipmentPool.add(item.equipment);
 		}
-		if (filters.equipment === 'all' || item.equipment === filters.equipment) {
+		if (equipmentFacetMatches(item, filters)) {
 			targetPool.add(item.target);
 		}
 
@@ -422,21 +439,31 @@ export function filterCatalogWithFacets(
 		if (score >= 0) scored.push({ item, score });
 	}
 
+	// Precompute name/score once: localeCompare(exerciseName()) inside sort was ~180ms on 1.3k rows.
 	const resultItems = query
 		? scored
+				.map((row) => ({
+					...row,
+					hybrid: getScore(row.item, statsMap[row.item.id]),
+					name: exerciseName(row.item, locale)
+				}))
 				.sort((a, b) => {
 					if (b.score !== a.score) return b.score - a.score;
-					const hybrid =
-						getScore(b.item, statsMap[b.item.id]) - getScore(a.item, statsMap[a.item.id]);
-					if (hybrid !== 0) return hybrid;
-					return exerciseName(a.item, locale).localeCompare(exerciseName(b.item, locale), sortLocale);
+					if (b.hybrid !== a.hybrid) return b.hybrid - a.hybrid;
+					return a.name.localeCompare(b.name, sortLocale);
 				})
 				.map((row) => row.item)
-		: matched.sort((a, b) => {
-				const hybrid = getScore(b, statsMap[b.id]) - getScore(a, statsMap[a.id]);
-				if (hybrid !== 0) return hybrid;
-				return exerciseName(a, locale).localeCompare(exerciseName(b, locale), sortLocale);
-			});
+		: matched
+				.map((item) => ({
+					item,
+					hybrid: getScore(item, statsMap[item.id]),
+					name: exerciseName(item, locale)
+				}))
+				.sort((a, b) => {
+					if (b.hybrid !== a.hybrid) return b.hybrid - a.hybrid;
+					return a.name.localeCompare(b.name, sortLocale);
+				})
+				.map((row) => row.item);
 
 	return {
 		items: resultItems,

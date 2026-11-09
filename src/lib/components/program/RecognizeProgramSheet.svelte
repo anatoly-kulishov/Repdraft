@@ -300,7 +300,7 @@
 			{translate(lang, 'common.cancel')}
 		</AppButton>
 		{#if phase === 'paywall'}
-			<AppButton href="/auth#pro" disabled={busy}>
+			<AppButton href="/auth/pro" disabled={busy}>
 				{translate(lang, 'billing.subscribe')}
 			</AppButton>
 		{:else if phase === 'review'}

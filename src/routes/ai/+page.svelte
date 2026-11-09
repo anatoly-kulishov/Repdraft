@@ -27,8 +27,11 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { scrollFieldIntoView } from '$lib/dom/scrollFieldIntoView';
+	import { appendAthleteProfileToBrief } from '$lib/domain/athleteProfile';
+	import { appendHomeKitToBrief } from '$lib/domain/homeKit';
 	import { AI_BRIEF_MAX, sanitizeAiBrief } from '$lib/domain/inputLimits';
 	import { withFromParam } from '$lib/domain/navigation';
+	import { athleteProfile, homeKitSelection } from '$lib/stores/prefs';
 	import {
 		Microphone as Mic,
 		MicrophoneSlash as MicOff,
@@ -37,6 +40,7 @@
 		X,
 	} from 'phosphor-svelte';
 	import { onMount, tick } from 'svelte';
+	import { get } from 'svelte/store';
 	import type { Snapshot } from './$types';
 	import '$lib/styles/blocks/ai-draft.css';
 
@@ -417,12 +421,17 @@
 			return;
 		}
 		brief = text;
+		const withProfile = appendAthleteProfileToBrief(text, get(athleteProfile), lang);
+		const requestBrief =
+			get(athleteProfile).trainingPlace === 'home'
+				? appendHomeKitToBrief(withProfile, get(homeKitSelection), lang)
+				: withProfile;
 		busy = true;
 		try {
 			const res = await fetch('/api/ai/plan', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-				body: JSON.stringify({ brief: text })
+				body: JSON.stringify({ brief: requestBrief })
 			});
 			const data = (await res.json()) as GenerateOk | GenerateErr;
 			if (!res.ok || !data.ok) {
@@ -635,9 +644,7 @@
 		</form>
 
 		{#if !plan && !busy}
-			<div class="mt-2">
-				<RecognizeProgramAction variant="secondary" block />
-			</div>
+			<RecognizeProgramAction variant="ghost" block class="ai-draft-page__recognize" />
 		{/if}
 
 		{#if busy}

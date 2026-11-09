@@ -69,7 +69,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		return jsonWithCors(request, {
-			url: `${siteUrl()}/auth#pro`,
+			url: `${siteUrl()}/auth/pro`,
 			provider: 'yookassa',
 			currentPeriodEnd: row.currentPeriodEnd
 		});

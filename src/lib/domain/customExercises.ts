@@ -1,5 +1,5 @@
 import { newId } from './id';
-import { BODY_PART_LABELS, EQUIPMENT_LABELS } from './labels.ru';
+import { BODY_PART_LABELS, labelCustomEquipment } from './labels.ru';
 import type { ExerciseIndexItem } from './types';
 
 export const CUSTOM_EXERCISE_ID_PREFIX = 'custom-';
@@ -11,15 +11,21 @@ export const CUSTOM_EXERCISE_IMAGE = 'images/custom-exercise.svg';
 /** Common catalog equipment values — labels + rest hints stay consistent. */
 export const CUSTOM_EXERCISE_EQUIPMENT = [
 	'body weight',
-	'barbell',
+	'band',
 	'dumbbell',
 	'kettlebell',
+	'rope',
+	'roller',
+	'weighted',
+	'stability ball',
+	'medicine ball',
+	'wheel roller',
+	'barbell',
 	'ez barbell',
 	'cable',
 	'leverage machine',
 	'smith machine',
-	'resistance band',
-	'medicine ball'
+	'resistance band'
 ] as const;
 
 const BODY_PART_VALUES = Object.keys(BODY_PART_LABELS);
@@ -170,7 +176,7 @@ export function mergeCustomExercises(
 }
 
 export function labelEquipmentSafe(value: string): string {
-	return EQUIPMENT_LABELS[value] ?? value;
+	return labelCustomEquipment(value, 'ru');
 }
 
 export function runCustomExercisesSelfCheck(): void {

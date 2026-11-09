@@ -1,5 +1,15 @@
 import { browser } from '$app/environment';
 import {
+	ATHLETE_PROFILE_STORAGE_KEY,
+	defaultAthleteProfile,
+	normalizeAthleteProfile,
+	parseAthleteProfileStorage,
+	serializeAthleteProfileStorage,
+	type AthleteProfile
+} from '$lib/domain/athleteProfile';
+import { HOME_KIT_STORAGE_KEY, type HomeKitOptionalId } from '$lib/domain/homeKit';
+import {
+	parseHomeKitPref,
 	parseRestHapticEnabled,
 	parseRestSoundEnabled,
 	parseTesterModeEnabled,
@@ -7,6 +17,7 @@ import {
 	playRestDoneChime,
 	REST_HAPTIC_STORAGE_KEY,
 	REST_SOUND_STORAGE_KEY,
+	serializeHomeKitPref,
 	TESTER_MODE_STORAGE_KEY,
 	WEB_ANALYTICS_STORAGE_KEY,
 	unlockAudioFromGesture
@@ -97,3 +108,78 @@ export const testerModeEnabled = createLocalBoolPref({
 	parse: parseTesterModeEnabled,
 	fallback: false
 });
+
+function readHomeKit(): HomeKitOptionalId[] {
+	if (!browser) return [];
+	try {
+		return parseHomeKitPref(localStorage.getItem(HOME_KIT_STORAGE_KEY));
+	} catch {
+		return [];
+	}
+}
+
+/** Local home equipment kit (optional groups). Empty = gym default / bodyweight-only home filter. */
+export const homeKitSelection = (() => {
+	const { subscribe, set, update } = writable<HomeKitOptionalId[]>(readHomeKit());
+
+	if (browser) {
+		subscribe((groups) => {
+			try {
+				localStorage.setItem(HOME_KIT_STORAGE_KEY, serializeHomeKitPref(groups));
+			} catch {
+				/* ignore */
+			}
+		});
+	}
+
+	return {
+		subscribe,
+		set(groups: HomeKitOptionalId[]) {
+			set(parseHomeKitPref(JSON.stringify(groups)));
+		},
+		update,
+		toggle(id: HomeKitOptionalId) {
+			update((prev) =>
+				prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
+			);
+		}
+	};
+})();
+
+function readAthleteProfile(): AthleteProfile {
+	if (!browser) return defaultAthleteProfile();
+	try {
+		return parseAthleteProfileStorage(localStorage.getItem(ATHLETE_PROFILE_STORAGE_KEY));
+	} catch {
+		return defaultAthleteProfile();
+	}
+}
+
+/** Local intake / place / body prefs for catalog default and AI brief. */
+export const athleteProfile = (() => {
+	const { subscribe, set, update } = writable<AthleteProfile>(readAthleteProfile());
+
+	if (browser) {
+		subscribe((profile) => {
+			try {
+				localStorage.setItem(
+					ATHLETE_PROFILE_STORAGE_KEY,
+					serializeAthleteProfileStorage(profile)
+				);
+			} catch {
+				/* ignore */
+			}
+		});
+	}
+
+	return {
+		subscribe,
+		set(next: AthleteProfile) {
+			set(normalizeAthleteProfile(next));
+		},
+		update,
+		patch(partial: Partial<AthleteProfile>) {
+			update((prev) => normalizeAthleteProfile({ ...prev, ...partial }));
+		}
+	};
+})();

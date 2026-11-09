@@ -17,6 +17,7 @@ export function backLabelForHref(href: string, lang: AppLocale): string {
 	if (path === '/progress') return translate(lang, 'nav.progress');
 	if (path === '/coach') return translate(lang, 'nav.coach');
 	if (path === '/achievements') return translate(lang, 'achievements.title');
+	if (path === '/auth' || path.startsWith('/auth/')) return translate(lang, 'settings.backProfile');
 
 	return translate(lang, 'a11y.back');
 }

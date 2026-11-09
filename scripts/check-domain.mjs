@@ -30,6 +30,8 @@ function compileDomain() {
 			'src/lib/domain/networkError.ts',
 			'src/lib/domain/entitlement.ts',
 			'src/lib/domain/recognizeProgram.ts',
+			'src/lib/domain/homeKit.ts',
+			'src/lib/domain/athleteProfile.ts',
 			'--ignoreConfig',
 			'--ignoreDeprecations',
 			'6.0',
@@ -68,6 +70,8 @@ function run() {
 	const networkError = require(join(outDir, 'domain', 'networkError.js'));
 	const entitlement = require(join(outDir, 'domain', 'entitlement.js'));
 	const recognizeProgram = require(join(outDir, 'domain', 'recognizeProgram.js'));
+	const homeKit = require(join(outDir, 'domain', 'homeKit.js'));
+	const athleteProfile = require(join(outDir, 'domain', 'athleteProfile.js'));
 	const catalog = JSON.parse(
 		readFileSync(join(root, 'static', 'data', 'exercises.index.json'), 'utf8')
 	);
@@ -90,6 +94,10 @@ function run() {
 	console.log('✓ entitlement self-check');
 	recognizeProgram.runRecognizeProgramSelfCheck();
 	console.log('✓ recognize program self-check');
+	homeKit.runHomeKitSelfCheck();
+	console.log('✓ home kit self-check');
+	athleteProfile.runAthleteProfileSelfCheck();
+	console.log('✓ athlete profile self-check');
 
 	const failures = [];
 	for (const testCase of cases) {

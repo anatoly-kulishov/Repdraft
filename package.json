@@ -1,7 +1,7 @@
 {
   "name": "repdraft",
   "private": true,
-  "version": "0.25.2",
+  "version": "0.25.3",
   "description": "Gym workout log - React Native (mobile/) + SvelteKit web/PWA, shared domain",
   "type": "module",
   "scripts": {
@@ -29,6 +29,7 @@
     "check:versions": "node scripts/check-versions.mjs",
     "check:domain": "node scripts/check-domain.mjs",
     "check:rf": "node scripts/check-rf-access.mjs",
+    "check:billing": "node scripts/check-billing-ready.mjs",
     "rf:proxy": "node scripts/rf-proxy-setup.mjs",
     "check:parity": "npm run check:tokens && npm run check:versions && npm run check:domain && npm run check:all",
     "bump:version": "node scripts/bump-version.mjs",

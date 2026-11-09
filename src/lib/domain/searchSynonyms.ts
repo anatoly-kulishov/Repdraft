@@ -168,6 +168,10 @@ export const SEARCH_SYNONYMS: Record<string, string[]> = {
 	степпер: ['stepmill', 'cardio'],
 	скакалка: ['jump rope', 'cardio', 'rope'],
 	канаты: ['rope', 'battle'],
+	утяжелитель: ['weighted', 'vest', 'ankle'],
+	утяжелители: ['weighted', 'vest', 'ankle'],
+	манжеты: ['weighted', 'ankle', 'cuff'],
+	жилет: ['weighted', 'vest'],
 
 	// —— Olympic / functional ——
 	рывок: ['snatch'],

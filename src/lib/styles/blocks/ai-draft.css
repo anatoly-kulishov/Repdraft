@@ -121,6 +121,13 @@
 	gap: 0.5rem;
 }
 
+/* Pro-only recognize: quiet under Generate, not a second CTA. */
+.ai-draft-page__recognize {
+	margin-top: 0.15rem;
+	color: var(--color-muted);
+	font-weight: 550;
+}
+
 .ai-draft-page__field {
 	display: flex;
 	flex-direction: column;

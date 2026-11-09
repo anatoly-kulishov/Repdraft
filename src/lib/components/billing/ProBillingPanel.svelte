@@ -3,9 +3,12 @@
 	import { page } from '$app/stores';
 	import AppButton from '$lib/components/AppButton.svelte';
 	import IconPlate from '$lib/components/IconPlate.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import {
 		proFromAppMetadata,
 		type BillingProvider,
+		type EntitlementStatus,
 		type ProPlan
 	} from '$lib/domain/entitlement';
 	import { formatShortDate } from '$lib/i18n/format';
@@ -14,7 +17,7 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { getSupabase } from '$lib/supabase/client';
-	import { Camera, CrownSimple } from 'phosphor-svelte';
+	import { Camera, CrownSimple, Info } from 'phosphor-svelte';
 	import { onMount } from 'svelte';
 
 	let lang = $derived($resolvedLocale);
@@ -33,7 +36,14 @@
 		defaultProvider: 'yookassa'
 	});
 	let statusPeriodEnd = $state<string | null>(null);
+	/** null until /api/billing/status returns; prefer over stale app_metadata. */
+	let remotePro = $state<boolean | null>(null);
+	let remoteStatus = $state<EntitlementStatus | null>(null);
+	let remoteProvider = $state<BillingProvider | null>(null);
+	let cancelable = $state(false);
+	let manageable = $state(false);
 
+	let effectivePro = $derived(remotePro ?? snap.pro);
 	let periodLabel = $derived.by(() => {
 		const until = statusPeriodEnd || snap.proUntil;
 		if (!until) return translate(lang, 'billing.active');
@@ -44,9 +54,9 @@
 		});
 	});
 
-	async function refreshStatus() {
+	async function refreshStatus(): Promise<boolean> {
 		const supabase = getSupabase();
-		if (!supabase) return;
+		if (!supabase) return false;
 		try {
 			await supabase.auth.refreshSession();
 		} catch {
@@ -56,18 +66,40 @@
 			data: { session }
 		} = await supabase.auth.getSession();
 		const token = session?.access_token;
-		if (!token) return;
+		if (!token) return false;
 
 		const res = await fetch('/api/billing/status', {
 			headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }
 		});
-		if (!res.ok) return;
+		if (!res.ok) return false;
 		const body = (await res.json()) as {
 			pro?: boolean;
+			status?: string | null;
+			provider?: string | null;
 			currentPeriodEnd?: string | null;
+			cancelable?: boolean;
+			manageable?: boolean;
 			billing?: { yookassa?: boolean; stripe?: boolean; defaultProvider?: BillingProvider };
 		};
+		if (typeof body.pro === 'boolean') remotePro = body.pro;
 		if (body.currentPeriodEnd) statusPeriodEnd = body.currentPeriodEnd;
+		else if (body.pro === false) statusPeriodEnd = null;
+		if (
+			body.status === 'active' ||
+			body.status === 'past_due' ||
+			body.status === 'canceled' ||
+			body.status === 'expired' ||
+			body.status === 'none'
+		) {
+			remoteStatus = body.status;
+		}
+		if (body.provider === 'yookassa' || body.provider === 'stripe') {
+			remoteProvider = body.provider;
+		} else {
+			remoteProvider = null;
+		}
+		cancelable = Boolean(body.cancelable);
+		manageable = Boolean(body.manageable);
 		if (body.billing) {
 			providers = {
 				yookassa: Boolean(body.billing.yookassa),
@@ -75,6 +107,16 @@
 				defaultProvider: body.billing.defaultProvider === 'stripe' ? 'stripe' : 'yookassa'
 			};
 			billingReady = providers.yookassa || providers.stripe;
+		}
+		return body.pro === true;
+	}
+
+	/** Webhook can lag behind return_url; poll until Pro shows or attempts run out. */
+	async function refreshStatusUntilPro(attempts = 6) {
+		for (let i = 0; i < attempts; i++) {
+			const ok = await refreshStatus();
+			if (ok) return;
+			await new Promise((r) => setTimeout(r, 700));
 		}
 	}
 
@@ -152,7 +194,8 @@
 			const token = session?.access_token;
 			if (!token) throw new Error('errors.needAuth');
 
-			const action = snap.provider === 'yookassa' ? 'cancel' : 'manage';
+			const provider = remoteProvider ?? snap.provider;
+			const action = provider === 'yookassa' ? 'cancel' : 'manage';
 			const res = await fetch('/api/billing/portal', {
 				method: 'POST',
 				headers: {
@@ -167,7 +210,10 @@
 				ok?: boolean;
 				error?: string;
 			} | null;
-			if (!res.ok) throw new Error(body?.error ?? 'billing.portalFail');
+			if (!res.ok) {
+				await refreshStatus();
+				throw new Error(body?.error ?? 'billing.portalFail');
+			}
 			if (body?.url) {
 				window.location.assign(body.url);
 				return;
@@ -191,14 +237,14 @@
 		const flag = $page.url.searchParams.get('billing');
 		if (flag === 'success' || flag === 'portal') {
 			toasts.show(translate(lang, 'billing.success'), 'success');
-			void refreshStatus();
+			void refreshStatusUntilPro();
 		} else if (flag === 'cancel') {
 			toasts.show(translate(lang, 'billing.cancelled'), 'info');
 		}
 		if (flag) {
 			const url = new URL($page.url);
 			url.searchParams.delete('billing');
-			history.replaceState({}, '', `${url.pathname}${url.search}${url.hash || '#pro'}`);
+			history.replaceState({}, '', `${url.pathname}${url.search}`);
 		}
 	});
 </script>
@@ -212,50 +258,54 @@
 					<h2 id="billing-pro-title" class="billing-card__title">
 						{translate(lang, 'billing.title')}
 					</h2>
-					{#if snap.pro}
+					{#if effectivePro}
 						<span class="billing-card__badge">{translate(lang, 'billing.activeBadge')}</span>
 					{/if}
 				</div>
 				<p class="billing-card__lead">
-					{snap.pro ? periodLabel : translate(lang, 'billing.lead')}
+					{effectivePro ? periodLabel : translate(lang, 'billing.lead')}
 				</p>
 			</div>
 		</header>
 
 		<div class="billing-card__feature">
-			<span class="billing-card__feature-icon" aria-hidden="true">
-				<Camera size={20} weight="duotone" />
-			</span>
+			<IconPlate icon={Camera} tone="accent" />
 			<p class="billing-card__feature-text">{translate(lang, 'billing.benefitRecognize')}</p>
 		</div>
 
-		{#if snap.pro}
-			{#if snap.provider === 'stripe'}
+		{#if effectivePro}
+			{#if manageable}
 				<AppButton
 					variant="secondary"
 					block
-					class="min-h-[48px] mt-1"
+					class="min-h-[48px]"
 					disabled={portalBusy}
 					onclick={() => void openPortal()}
 				>
 					{portalBusy ? '…' : translate(lang, 'billing.manage')}
 				</AppButton>
-			{:else if snap.provider === 'yookassa' && snap.status !== 'canceled'}
+			{:else if cancelable}
 				<AppButton
 					variant="ghost"
 					block
-					class="min-h-[48px] mt-1"
+					class="min-h-[48px]"
 					disabled={portalBusy}
 					onclick={() => void openPortal()}
 				>
 					{portalBusy ? '…' : translate(lang, 'billing.cancel')}
 				</AppButton>
+			{:else if remoteStatus === 'canceled'}
+				<p class="billing-card__note" role="status">
+					<LucideIcon icon={Info} size={ICON_SMALL} class="billing-card__note-icon" />
+					<span>{translate(lang, 'billing.cancelDone')}</span>
+				</p>
 			{/if}
 		{:else if billingReady === null}
 			<p class="billing-card__status" aria-live="polite">{translate(lang, 'billing.checking')}</p>
 		{:else if !billingReady}
-			<p class="billing-card__status billing-card__status--muted">
-				{translate(lang, 'billing.unavailable')}
+			<p class="billing-card__note" role="status">
+				<LucideIcon icon={Info} size={ICON_SMALL} class="billing-card__note-icon" />
+				<span>{translate(lang, 'billing.unavailable')}</span>
 			</p>
 		{:else}
 			<div class="billing-card__actions">
@@ -284,19 +334,29 @@
 
 <style>
 	.billing-card {
+		position: relative;
 		display: flex;
 		flex-direction: column;
-		gap: 0.85rem;
-		padding: 1rem 1.05rem 1.1rem;
-		border: 1px solid color-mix(in srgb, var(--color-accent) 28%, var(--color-border));
+		gap: 0.9rem;
+		padding: 1rem 1.05rem 1.05rem 1.15rem;
+		overflow: hidden;
+		border-color: var(--color-border);
 		background:
-			radial-gradient(
-				120% 90% at 0% 0%,
-				color-mix(in srgb, var(--color-accent) 16%, transparent) 0%,
-				transparent 55%
-			),
-			var(--color-panel, var(--color-surface));
-		box-shadow: 0 1px 0 color-mix(in srgb, var(--color-accent) 12%, transparent);
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--color-accent) 7%, var(--color-panel, var(--color-surface))) 0%,
+				var(--color-panel, var(--color-surface)) 42%
+			);
+	}
+
+	.billing-card::before {
+		content: '';
+		position: absolute;
+		inset: 0 auto 0 0;
+		width: 3px;
+		background: color-mix(in srgb, var(--color-accent) 72%, transparent);
+		border-radius: inherit 0 0 inherit;
+		pointer-events: none;
 	}
 
 	.billing-card__head {
@@ -310,7 +370,7 @@
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		gap: 0.2rem;
+		gap: 0.15rem;
 	}
 
 	.billing-card__title-row {
@@ -353,28 +413,15 @@
 	.billing-card__feature {
 		display: flex;
 		align-items: center;
-		gap: 0.7rem;
+		gap: 0.75rem;
 		min-height: 48px;
-		padding: 0.65rem 0.75rem;
-		border-radius: 0.85rem;
-		border: 1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border));
-		background: color-mix(in srgb, var(--color-accent) 8%, var(--color-panel, var(--color-surface)));
-	}
-
-	.billing-card__feature-icon {
-		display: grid;
-		place-items: center;
-		width: 2rem;
-		height: 2rem;
-		flex-shrink: 0;
-		border-radius: 0.55rem;
-		color: var(--color-accent-text, var(--color-accent));
-		background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+		padding: 0.85rem 0 0;
+		border-top: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
 	}
 
 	.billing-card__feature-text {
 		margin: 0;
-		font-size: 0.92rem;
+		font-size: 0.9375rem;
 		font-weight: 600;
 		line-height: 1.35;
 		color: var(--color-text);
@@ -399,9 +446,23 @@
 		color: var(--color-muted);
 	}
 
-	.billing-card__status--muted {
-		padding: 0.55rem 0.7rem;
-		border-radius: 0.7rem;
-		background: color-mix(in srgb, var(--color-surface-muted, #888) 18%, transparent);
+	.billing-card__note {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		margin: 0;
+		min-height: 48px;
+		padding: 0.55rem 0.75rem;
+		border-radius: 0.75rem;
+		border: 1px dashed color-mix(in srgb, var(--color-border) 90%, transparent);
+		background: color-mix(in srgb, var(--color-surface-muted, #888) 10%, transparent);
+		font-size: 0.8125rem;
+		line-height: 1.35;
+		color: var(--color-muted);
+	}
+
+	.billing-card__note :global(.billing-card__note-icon) {
+		flex-shrink: 0;
+		color: var(--color-muted);
 	}
 </style>

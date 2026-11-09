@@ -785,6 +785,11 @@ a {
 	stroke: currentColor;
 }
 
+/* Phosphor ships a 256 spacer rect (fill=none). Inherited stroke paints a square frame. */
+svg > rect[width='256'][height='256'][fill='none'] {
+	stroke: none;
+}
+
 button,
 a,
 input,

@@ -137,7 +137,7 @@ export function hintsFromBrief(brief: string): BodyHint {
 		if (re.test(t)) parts.push(...vals);
 	}
 
-	const eqRules: Array<[RegExp, string]> = [
+	const eqRules: Array<[RegExp, string | string[]]> = [
 		[/штан|barbell/, 'barbell'],
 		[/гантел|dumbbell/, 'dumbbell'],
 		[/кабел|cable|блок/, 'cable'],
@@ -145,10 +145,18 @@ export function hintsFromBrief(brief: string): BodyHint {
 		[/тренаж|machine|lever/, 'leverage machine'],
 		[/смит|smith/, 'smith machine'],
 		[/гир|kettle/, 'kettlebell'],
-		[/эспан|band/, 'band']
+		[/эспан|резин|band|resistance/, ['band', 'resistance band']],
+		[/скакал|jump\s*rope/, 'rope'],
+		[/роллер|foam\s*roll|\broller\b/, 'roller'],
+		[/утяжел|жилет|weighted|weight\s*vest/, 'weighted'],
+		[/фитбол|stability\s*ball|swiss\s*ball/, 'stability ball'],
+		[/медбол|medicine\s*ball/, 'medicine ball'],
+		[/колес|ab\s*wheel|wheel\s*roller/, 'wheel roller']
 	];
 	for (const [re, eq] of eqRules) {
-		if (re.test(t)) equipment.push(eq);
+		if (!re.test(t)) continue;
+		if (Array.isArray(eq)) equipment.push(...eq);
+		else equipment.push(eq);
 	}
 
 	return { parts: [...new Set(parts)], equipment: [...new Set(equipment)] };
