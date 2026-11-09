@@ -54,7 +54,7 @@
 	.shell-main:has(> .live-page) {
 		display: flex;
 		flex-direction: column;
-		/* Safe-area lives inside the fixed CTA bar — avoid a black gap under it. */
+		/* Safe-area lives inside the fixed CTA bar - avoid a black gap under it. */
 		padding-bottom: 0;
 	}
 
@@ -146,7 +146,7 @@
 }
 
 .live-mobile-meta {
-	/* Phone + tablet — hidden from lg via Tailwind `lg:hidden`. */
+	/* Phone + tablet - hidden from lg via Tailwind `lg:hidden`. */
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -275,7 +275,7 @@
 	animation: kineticsToastIn 0.45s var(--ease-toast) both;
 }
 
-/* Rest sits inside sticky / desktop actions — one chrome, no floating overlay. */
+/* Rest sits inside sticky / desktop actions - one chrome, no floating overlay. */
 .live-rest--sticky {
 	margin: 0 0 0.55rem;
 	padding: 0.35rem 0.35rem 0.5rem;
@@ -840,7 +840,7 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	}
 }
 
-.live-panel-add-set :global(svg) {
+.live-panel-add-set svg {
 	flex-shrink: 0;
 	opacity: 0.85;
 }
@@ -1568,7 +1568,7 @@ button.live-last-chip,
 	white-space: nowrap;
 }
 
-.live-last-chip__action :global(svg) {
+.live-last-chip__action svg {
 	flex-shrink: 0;
 	opacity: 0.9;
 }
@@ -1631,7 +1631,7 @@ button.live-last-chip,
 	white-space: nowrap;
 }
 
-.live-panel-note-preview :global(svg) {
+.live-panel-note-preview svg {
 	flex-shrink: 0;
 	opacity: 0.85;
 }
@@ -3638,7 +3638,7 @@ button.live-panel-thumb {
 	background: color-mix(in srgb, var(--color-accent) 16%, var(--color-surface));
 }
 
-.live-session-next--soft :global(svg) {
+.live-session-next--soft svg {
 	color: var(--color-accent-text);
 }
 
@@ -3659,7 +3659,7 @@ button.live-panel-thumb {
 	text-underline-offset: 2px;
 }
 
-/* Pair discard: danger outline — distinct from accent Next. */
+/* Pair discard: danger outline - distinct from accent Next. */
 .live-session-discard-btn.btn-danger,
 [data-slot='button'].live-session-discard-btn.btn-danger {
 	color: var(--color-danger);
@@ -3724,7 +3724,7 @@ button.live-panel-thumb {
 }
 
 .live-desktop-actions {
-	/* Tablet+ — under the active exercise panel (not under nav). */
+	/* Tablet+ - under the active exercise panel (not under nav). */
 	display: none;
 	flex-wrap: wrap;
 	align-items: center;
@@ -3801,7 +3801,7 @@ button.live-panel-thumb {
 	}
 }
 
-/* Live workout skeleton — mirror ready mobile layout (ScreenHeader + nav + set log). */
+/* Live workout skeleton - mirror ready mobile layout (ScreenHeader + nav + set log). */
 .page-skeleton--live {
 	gap: 0;
 }

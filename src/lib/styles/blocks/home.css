@@ -716,7 +716,7 @@ a.home-header__row--link:active .home-header__cta {
 		gap: 1.25rem;
 	}
 
-	/* Keep cards wide enough for muscle labels — never force 4 skinny columns. */
+	/* Keep cards wide enough for muscle labels - never force 4 skinny columns. */
 	.home-dashboard-plans .entity-list {
 		grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
 	}
@@ -750,7 +750,7 @@ a.home-header__row--link:active .home-header__cta {
 	margin-top: 0.15rem;
 }
 
-/* Mobile: same list row as plans — accent title only, no nested dashed box. */
+/* Mobile: same list row as plans - accent title only, no nested dashed box. */
 .home-dashboard-plans .entity-row--create {
 	background: transparent;
 	border: none;
@@ -1070,7 +1070,7 @@ a.home-header__row--link:active .home-header__cta {
 	margin-bottom: 0.5rem;
 }
 
-/* Home loading skeleton — same grid as loaded mid (plans | aside) */
+/* Home loading skeleton - same grid as loaded mid (plans | aside) */
 .home-skeleton {
 	pointer-events: none;
 }
@@ -1276,7 +1276,7 @@ a.home-header__row--link:active .home-header__cta {
 	color: transparent !important;
 }
 
-.home-skeleton-create-hero .home-skel-bone--icon :global(svg) {
+.home-skeleton-create-hero .home-skel-bone--icon svg {
 	opacity: 0;
 }
 
@@ -1294,7 +1294,7 @@ a.home-header__row--link:active .home-header__cta {
 	border-radius: var(--radius-button);
 }
 
-.home-skeleton-create-hero .home-skel-bone--cta :global(svg) {
+.home-skeleton-create-hero .home-skel-bone--cta svg {
 	opacity: 0;
 	flex-shrink: 0;
 }
@@ -1473,7 +1473,7 @@ a.home-header__row--link:active .home-header__cta {
 	color: transparent !important;
 }
 
-.home-skeleton-mockup .home-skel-bone--cta-round :global(svg),
+.home-skeleton-mockup .home-skel-bone--cta-round svg,
 .home-skeleton-mockup .home-header__cta-text {
 	opacity: 0;
 }
@@ -1505,7 +1505,7 @@ a.home-header__row--link:active .home-header__cta {
 	color: transparent !important;
 }
 
-.home-skeleton-continue-card .home-skel-bone--cta-round :global(svg),
+.home-skeleton-continue-card .home-skel-bone--cta-round svg,
 .home-skeleton-continue-card .home-continue-card__cta-text {
 	opacity: 0;
 }
@@ -1546,7 +1546,7 @@ a.home-header__row--link:active .home-header__cta {
 	border-radius: 0.35rem;
 }
 
-/* 30-day balance panel bones — mirror .home-monthly__stat (glass) heights. */
+/* 30-day balance panel bones - mirror .home-monthly__stat (glass) heights. */
 .home-skeleton-monthly-stat {
 	min-height: 6.25rem;
 	justify-content: space-between;
@@ -1571,7 +1571,7 @@ a.home-header__row--link:active .home-header__cta {
 	border-radius: 999px;
 }
 
-/* Coach block bones — reuse .home-coach-section / .home-coach-list layout so the
+/* Coach block bones - reuse .home-coach-section / .home-coach-list layout so the
    mobile compact-card + desktop titled-section behaviour applies unchanged. */
 .home-skeleton-coach-list {
 	pointer-events: none;

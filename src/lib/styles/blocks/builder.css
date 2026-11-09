@@ -119,8 +119,8 @@
 		box-shadow: none;
 	}
 
-	.builder-chrome__actions :is(.btn-ghost.is-danger, [data-slot='button'].is-danger) :global(svg),
-	.builder-chrome__actions :is(.builder-chrome__clear, [data-slot='button'].builder-chrome__clear) :global(svg) {
+	.builder-chrome__actions :is(.btn-ghost.is-danger, [data-slot='button'].is-danger) svg,
+	.builder-chrome__actions :is(.builder-chrome__clear, [data-slot='button'].builder-chrome__clear) svg {
 		stroke: currentColor;
 	}
 
@@ -184,7 +184,7 @@
 		animation: skeletonShimmer 1.25s ease-in-out infinite;
 	}
 
-	/* builder-chrome carries the mobile header boot — hide duplicate PageSkeleton chrome. */
+	/* builder-chrome carries the mobile header boot - hide duplicate PageSkeleton chrome. */
 	.builder-page .page-skeleton--builder .page-skeleton-header--builder-mobile,
 	.builder-page .page-skeleton--builder .page-skeleton-field {
 		display: none;
@@ -491,7 +491,7 @@
 	transform: scale(0.98);
 }
 
-.builder-group-bar__actions :is(.builder-group-bar__btn, [data-slot='button'].builder-group-bar__btn) :global(svg) {
+.builder-group-bar__actions :is(.builder-group-bar__btn, [data-slot='button'].builder-group-bar__btn) svg {
 	flex-shrink: 0;
 }
 
@@ -500,7 +500,7 @@
 		.builder-group-bar__btn:not(.builder-group-bar__btn--primary),
 		[data-slot='button'].builder-group-bar__btn:not(.builder-group-bar__btn--primary)
 	)
-	:global(svg) {
+	svg {
 	color: var(--color-accent-text);
 	opacity: 0.92;
 }
@@ -644,7 +644,7 @@
 	min-height: 3rem;
 	align-items: center;
 	justify-content: center;
-	/* Long “Добавить упражнение” — allow wrap, keep thumb-friendly height. */
+	/* Long “Добавить упражнение” - allow wrap, keep thumb-friendly height. */
 	white-space: normal;
 	text-align: center;
 	line-height: 1.2;
@@ -700,7 +700,7 @@
 	background: var(--color-surface);
 }
 
-/* One outer panel — inner swipe rows stay square (per-row radius = corner notches). */
+/* One outer panel - inner swipe rows stay square (per-row radius = corner notches). */
 .builder-exercise-list .swipe-to-delete,
 .builder-exercise-list .swipe-to-delete.is-enabled {
 	border: none;
@@ -778,7 +778,7 @@
 	-webkit-text-fill-color: #fff;
 }
 
-.builder-exercise-list .workout-ex-head__actions :is(.btn-ghost.is-danger, [data-slot='button'].is-danger) :global(svg) {
+.builder-exercise-list .workout-ex-head__actions :is(.btn-ghost.is-danger, [data-slot='button'].is-danger) svg {
 	stroke: currentColor;
 }
 
@@ -797,7 +797,7 @@
 
 	/*
 	 * Phone: row 1 = check · thumb · title (reorder overlays top-right).
-	 * Row 2 = sets × reps rest on full card width — no left indent under thumb.
+	 * Row 2 = sets × reps rest on full card width - no left indent under thumb.
 	 */
 	.builder-exercise-list .workout-ex-head {
 		position: relative;
@@ -834,7 +834,7 @@
 
 	/*
 	 * Phone: dissolve the actions cluster into the card grid.
-	 * Grip stays in the header (row 1) — away from set/reps/rest inputs.
+	 * Grip stays in the header (row 1) - away from set/reps/rest inputs.
 	 * Menu drops to the fields row (row 2); accidental menu open is cheaper than reorder.
 	 */
 	.builder-exercise-list .workout-ex-head__actions {
@@ -894,7 +894,7 @@
 	/*
 	 * Superset member (phone): title needs real width to stay readable.
 	 * Copy is a column under the title cell: name, then compact reps chip.
-	 * Do not put title + reps on one horizontal line — names become "Пр…".
+	 * Do not put title + reps on one horizontal line - names become "Пр…".
 	 */
 	.builder-exercise-list .workout-ex-head--group {
 		grid-template-rows: auto auto;
@@ -935,7 +935,7 @@
 		align-self: flex-start;
 	}
 
-	/* Ladder scheme needs the full title column — 8rem shrink-wrap collapses the chip. */
+	/* Ladder scheme needs the full title column - 8rem shrink-wrap collapses the chip. */
 	.builder-exercise-list .workout-ex-head--group .workout-ex-fields--group:has(.workout-ex-chip--ladder) {
 		width: 100%;
 		max-width: 100%;
@@ -1208,7 +1208,7 @@ html.is-builder-reorder-active .exercise-reorder-handle {
 	color: var(--color-accent-ink);
 }
 
-.builder-exercise-list .workout-ex-head__checkbox[data-slot='checkbox'] [data-slot='checkbox-indicator'] :global(svg) {
+.builder-exercise-list .workout-ex-head__checkbox[data-slot='checkbox'] [data-slot='checkbox-indicator'] svg {
 	width: 0.95rem;
 	height: 0.95rem;
 	stroke-width: 2.75;
@@ -1249,7 +1249,7 @@ html.is-builder-reorder-active .exercise-reorder-handle {
 	align-self: start;
 }
 
-/* Superset member: title + reps — row on wide screens, column on phone (see mobile block). */
+/* Superset member: title + reps - row on wide screens, column on phone (see mobile block). */
 .workout-ex-head--group .workout-ex-head__copy {
 	flex-direction: row;
 	align-items: center;
@@ -1336,7 +1336,7 @@ html.is-builder-reorder-active .exercise-reorder-handle {
 	min-width: 0;
 }
 
-/* Superset member: only reps (or ladder) — not the full sets × reps · rest grid. */
+/* Superset member: only reps (or ladder) - not the full sets × reps · rest grid. */
 .workout-ex-fields--group {
 	display: flex;
 	flex-direction: column;
@@ -1455,7 +1455,7 @@ button.workout-ex-chip--ladder {
 	font-variant-numeric: tabular-nums;
 }
 
-/* Pill radius + outline-offset clips into corner arcs — border focus only. */
+/* Pill radius + outline-offset clips into corner arcs - border focus only. */
 .workout-ex-ladder-sheet__field input[data-slot='input']:focus-visible {
 	outline: none;
 	border-color: var(--color-accent);
@@ -1727,7 +1727,7 @@ button.workout-ex-chip--ladder {
 	margin: -0.1rem 0 0.75rem;
 	min-width: 0;
 	padding-bottom: 0.55rem;
-	/* Full token — 55% mix disappeared on light grey card surfaces. */
+	/* Full token - 55% mix disappeared on light grey card surfaces. */
 	border-bottom: 1px solid var(--color-border);
 }
 

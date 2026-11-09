@@ -1,4 +1,4 @@
-/* ——— Shared page + list patterns ——— */
+/* --- Shared page + list patterns --- */
 
 .content-page {
 	width: 100%;
@@ -228,7 +228,7 @@
 	z-index: 1;
 }
 
-/* Mobile card lists: each swipe row is its own panel — drop the outer list box. */
+/* Mobile card lists: each swipe row is its own panel - drop the outer list box. */
 @media (max-width: 639px) {
 	.entity-list--cards {
 		border: none;
@@ -402,7 +402,7 @@ a.entity-row--link:hover,
 	-webkit-text-fill-color: #fff !important;
 }
 
-.entity-row__actions :is(.btn-ghost.is-danger, [data-slot='button'].is-danger) :global(svg) {
+.entity-row__actions :is(.btn-ghost.is-danger, [data-slot='button'].is-danger) svg {
 	stroke: currentColor;
 }
 
@@ -671,8 +671,8 @@ a.entity-row--link:hover,
 	background: color-mix(in srgb, var(--color-muted) 55%, var(--color-ink)) !important;
 }
 
-.swipe-to-delete__delete :global(svg),
-.swipe-to-delete__action :global(svg) {
+.swipe-to-delete__delete svg,
+.swipe-to-delete__action svg {
 	stroke: currentColor;
 }
 
@@ -735,7 +735,7 @@ a.entity-row--link:hover,
 	overflow: hidden;
 }
 
-/* Workouts / home plan rows — host owns radius; inner row stays square (records-list pattern). */
+/* Workouts / home plan rows - host owns radius; inner row stays square (records-list pattern). */
 .entity-list .swipe-to-delete.is-enabled {
 	border: 1px solid var(--color-border);
 	box-shadow: var(--shadow-panel);
@@ -748,7 +748,7 @@ a.entity-row--link:hover,
 }
 
 @media (max-width: 1023px) {
-	/* Swipe covers delete — inline actions would clash with the red rail at rounded seams. */
+	/* Swipe covers delete - inline actions would clash with the red rail at rounded seams. */
 	.entity-list .swipe-to-delete.is-enabled .entity-row__actions {
 		display: none;
 	}
@@ -790,7 +790,7 @@ a.entity-row--link:hover,
 	}
 }
 
-.entity-row__actions .entity-row__pin.is-pinned :global(svg) {
+.entity-row__actions .entity-row__pin.is-pinned svg {
 	stroke: currentColor;
 }
 

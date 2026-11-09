@@ -264,7 +264,7 @@
 
 @media (max-width: 1023px) {
 	:root {
-		/* Content row + pads — sticky filters must sit fully below. */
+		/* Content row + pads - sticky filters must sit fully below. */
 		--screen-header-chrome-h: calc(
 			var(--screen-header-min-h) + 2 * var(--screen-header-pad-block) + var(--safe-top)
 		);
@@ -720,11 +720,11 @@ button.live-local-save-cue {
 .catalog-exercise-list
 	.exercise-card--list
 	.exercise-card-add--inline
-	:global(.exercise-card-add-icon),
+	.exercise-card-add-icon,
 .catalog-exercise-list
 	.exercise-card--list
 	.exercise-card-add--inline
-	:global(.exercise-card-add-icon svg) {
+	.exercise-card-add-icon svg {
 	position: relative;
 	z-index: 1;
 	display: block;
@@ -1708,7 +1708,7 @@ button.live-local-save-cue {
 
 /* 1px fixed input: WebKit anchors the native file-picker popup to its
    on-screen frame, so pin it to the viewport bottom edge (not the page
-   bottom — an off-screen anchor falls back to screen center). */
+   bottom - an off-screen anchor falls back to screen center). */
 .profile-avatar-file-input {
 	position: fixed;
 	left: 0;
@@ -1856,7 +1856,7 @@ button.live-local-save-cue {
 	min-width: 0;
 }
 
-/* Spacing between cards comes from the stack gap — drop the extra card margin. */
+/* Spacing between cards comes from the stack gap - drop the extra card margin. */
 .profile-settings-stack > .profile-settings-group.panel,
 .profile-settings-stack-full > .profile-settings-group.panel,
 .profile-settings-cols > .profile-settings-col > .profile-settings-group.panel {
@@ -2170,7 +2170,7 @@ button.live-local-save-cue {
 	gap: 0.4rem;
 }
 
-/* Invite code: single column, input above the submit — used inside the sheet. */
+/* Invite code: single column, input above the submit - used inside the sheet. */
 .coach-connect-form {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
@@ -2741,7 +2741,7 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	}
 
 	/*
-	 * Account ScreenHeader: same desktop chrome as other subroutes —
+	 * Account ScreenHeader: same desktop chrome as other subroutes -
 	 * shell supplies --page-pad-x; header pad-inline stays 0 (see catalog.css).
 	 * Center with the catalog column so ← Назад lines up with card edges.
 	 */
@@ -2925,7 +2925,7 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	gap: var(--page-section-gap);
 }
 
-/* Cards already sit in a gapped column — drop the extra card margin. */
+/* Cards already sit in a gapped column - drop the extra card margin. */
 .auth-guest-stack > .panel,
 .auth-guest-stack > .profile-settings-group {
 	margin-bottom: 0;
@@ -3223,7 +3223,7 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	padding: 0.65rem;
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-panel);
-	/* Gym Visual plates are white — match catalog cards. */
+	/* Gym Visual plates are white - match catalog cards. */
 	background: var(--media-plate-bg);
 	overflow: hidden;
 	-webkit-user-select: none;
@@ -3573,7 +3573,7 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	gap: 1rem;
 }
 
-/* Mobile: bookmark in ScreenHeader. Desktop (lg+): beside hero — same breakpoint as ScreenHeader hide. */
+/* Mobile: bookmark in ScreenHeader. Desktop (lg+): beside hero - same breakpoint as ScreenHeader hide. */
 .exercise-detail-page__toolbar {
 	display: none;
 }
@@ -3610,7 +3610,7 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 		display: inline-flex;
 	}
 
-	/* Desktop: bookmark lives beside the hero — hide the ScreenHeader one to avoid duplication. */
+	/* Desktop: bookmark lives beside the hero - hide the ScreenHeader one to avoid duplication. */
 	.exercise-detail-bookmark:not(.exercise-detail-bookmark--page) {
 		display: none;
 	}
@@ -3719,7 +3719,7 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	}
 }
 
-/* — moved from builder.css (P5) — */
+/* - moved from builder.css (P5) - */
 .exercise-detail-sticky {
 	display: flex;
 	flex-direction: column;
@@ -3859,7 +3859,7 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	padding: 0;
 }
 
-/* Ghost AppButton alone reads as decoration — force a clear tap plate. */
+/* Ghost AppButton alone reads as decoration - force a clear tap plate. */
 .clip-composer__pick.btn-ghost,
 button.clip-composer__pick,
 [data-slot='button'].clip-composer__pick {
@@ -3917,7 +3917,7 @@ button.clip-composer__pick:hover:not(:disabled),
 	line-clamp: 2;
 }
 
-/* Bottom sheets — global (auth, live, builder, workouts, catalog). Was in live.css. */
+/* Bottom sheets - global (auth, live, builder, workouts, catalog). Was in live.css. */
 .live-finish-offer {
 	position: fixed;
 	inset: 0;
@@ -4029,7 +4029,7 @@ button.clip-composer__pick:hover:not(:disabled),
 	}
 }
 
-/* Apple: never stack a light translucent surface on another — inside a sheet
+/* Apple: never stack a light translucent surface on another - inside a sheet
    the nested panels go solid so text keeps its contrast. */
 .bottom-sheet__card .panel {
 	background-color: var(--color-surface);
@@ -4380,7 +4380,7 @@ button.clip-composer__pick:hover:not(:disabled),
 	border-radius: var(--radius-control);
 	background: transparent;
 	font-size: 0.875rem;
-	/* Keep weight stable — bold on active used to reflow and “shrink” labels. */
+	/* Keep weight stable - bold on active used to reflow and “shrink” labels. */
 	font-weight: 600;
 	line-height: 1.2;
 	letter-spacing: -0.01em;
@@ -4866,7 +4866,7 @@ button.clip-composer__pick:hover:not(:disabled),
 	}
 }
 
-/* Records list skeleton — mirror search shell, count, and .records-list-card. */
+/* Records list skeleton - mirror search shell, count, and .records-list-card. */
 .records-skeleton {
 	display: flex;
 	flex-direction: column;
@@ -5059,7 +5059,7 @@ button.catalog-zone-crumb-link {
 	color: var(--color-ink);
 }
 
-/* Mobile: icon-only back — 48×48 hit area, no plate. */
+/* Mobile: icon-only back - 48×48 hit area, no plate. */
 @media (max-width: 1023px) {
 	.subroute-back--icon {
 		width: 3rem;
@@ -5219,18 +5219,18 @@ button.catalog-zone-crumb-link {
 	transform: translateY(0);
 }
 
-/* Toast + left scroll FAB + right + in one row is unreadable — yield to the toast. */
+/* Toast + left scroll FAB + right + in one row is unreadable - yield to the toast. */
 body:has(.toast-stack) .scroll-to-top-fab.is-visible {
 	opacity: 0;
 	pointer-events: none;
 	transform: translateY(0.35rem);
 }
 
-.scroll-to-top-fab :global(.lucide-icon-wrap) {
+.scroll-to-top-fab .lucide-icon-wrap {
 	line-height: 0;
 }
 
-.scroll-to-top-fab :global(svg) {
+.scroll-to-top-fab svg {
 	display: block;
 }
 
