@@ -1,8 +1,8 @@
-/* Catalog grid cards — image tile, bookmark top-left, round + bottom-right, meta row. */
+/* Catalog grid cards - image tile, bookmark top-left, round + bottom-right, meta row. */
 .content-page--catalog {
 	--catalog-card-action: var(--color-accent-fill);
 	--catalog-card-action-ink: var(--color-accent-ink);
-	/* Gym Visual plates are white — match the well so contain letterbox disappears. */
+	/* Gym Visual plates are white - match the well so contain letterbox disappears. */
 	--catalog-card-media-bg: var(--media-plate-bg);
 }
 
@@ -79,7 +79,7 @@
 }
 
 .content-page--catalog .catalog-grid .exercise-card-bookmark:not(.exercise-card-bookmark--inline)
-	:global(.exercise-card-bookmark-icon svg) {
+	.exercise-card-bookmark-icon svg {
 	width: 0.8rem;
 	height: 0.8rem;
 	stroke-width: 2.25;
@@ -203,7 +203,7 @@
 	box-shadow: var(--exercise-card-bookmark-grid-active-shadow);
 }
 
-/* Catalog category cards — same grid shell as exercise cards */
+/* Catalog category cards - same grid shell as exercise cards */
 .content-page--catalog .catalog-hub-grid {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -244,7 +244,7 @@
 	max-width: none;
 	height: auto;
 	min-height: 0;
-	/* Gym Visual hub plates are 180×180 (1:1) — matching the source means
+	/* Gym Visual hub plates are 180×180 (1:1) - matching the source means
 	   `contain` fills the tile with no letterbox bands on any plate colour. */
 	aspect-ratio: 1 / 1;
 	border-radius: 0;
@@ -293,7 +293,7 @@
 }
 
 /* Dark theme: dim the hub illustration too. The zone image is z-index:1, so the
-   shared media-well veil (auto z) would paint behind it — lift it above (scrim
+   shared media-well veil (auto z) would paint behind it - lift it above (scrim
    z-2 / caption z-3 stay on top). Light theme: veil is transparent, no-op. */
 html:not([data-theme='light'])
 	.content-page--catalog
@@ -344,7 +344,7 @@ html:not([data-theme='light'])
 	color: var(--catalog-hub-zone-count-color);
 }
 
-/* Category grid skeleton — matches overlay caption CatalogCategoryCard */
+/* Category grid skeleton - matches overlay caption CatalogCategoryCard */
 .catalog-category-skeleton__card {
 	position: relative;
 	display: flex;
@@ -454,7 +454,7 @@ html:not([data-theme='light'])
 	}
 }
 
-/* Catalog exercise list skeleton — mirror .catalog-grid breakpoints and card shell. */
+/* Catalog exercise list skeleton - mirror .catalog-grid breakpoints and card shell. */
 .catalog-exercise-skeleton__search {
 	display: block;
 	width: 100%;
@@ -669,7 +669,7 @@ html:not([data-theme='light'])
 	line-height: 0;
 }
 
-.exercise-card-add-icon :global(svg) {
+.exercise-card-add-icon svg {
 	display: block;
 }
 
@@ -744,15 +744,15 @@ html:not([data-theme='light'])
 	display: none;
 }
 
-.exercise-card-bookmark :global(.exercise-card-bookmark-icon),
-.exercise-card-bookmark :global(.loader) {
+.exercise-card-bookmark .exercise-card-bookmark-icon,
+.exercise-card-bookmark .loader {
 	position: relative;
 	z-index: 1;
 	display: inline-flex;
 	color: inherit;
 }
 
-.exercise-card-bookmark :global(.exercise-card-bookmark-icon svg) {
+.exercise-card-bookmark .exercise-card-bookmark-icon svg {
 	display: block;
 	width: 0.8rem;
 	height: 0.8rem;
@@ -812,12 +812,12 @@ html:not([data-theme='light'])
 	filter: none;
 }
 
-.exercise-card-bookmark.is-active :global(.exercise-card-bookmark-icon svg),
-.exercise-card-bookmark--inline.is-active :global(.exercise-card-bookmark-icon svg) {
+.exercise-card-bookmark.is-active .exercise-card-bookmark-icon svg,
+.exercise-card-bookmark--inline.is-active .exercise-card-bookmark-icon svg {
 	stroke: currentColor;
 }
 
-/* Quiet note cue on catalog thumbs — only when a PR note exists. */
+/* Quiet note cue on catalog thumbs - only when a PR note exists. */
 .exercise-card-note {
 	position: absolute;
 	z-index: 6;
@@ -843,14 +843,14 @@ html:not([data-theme='light'])
 	top: 0.25rem;
 }
 
-.exercise-card-note :global(.exercise-card-note-icon),
-.exercise-card-note :global(.exercise-card-note-icon svg) {
+.exercise-card-note .exercise-card-note-icon,
+.exercise-card-note .exercise-card-note-icon svg {
 	display: block;
 	width: 0.7rem;
 	height: 0.7rem;
 }
 
-/* Community technique GIF cue — bottom-left on thumb; add stays bottom-right. */
+/* Community technique GIF cue - bottom-left on thumb; add stays bottom-right. */
 .exercise-card-clip {
 	position: absolute;
 	z-index: 6;
@@ -877,8 +877,8 @@ html:not([data-theme='light'])
 	top: auto;
 }
 
-.exercise-card-clip :global(.exercise-card-clip-icon),
-.exercise-card-clip :global(.exercise-card-clip-icon svg) {
+.exercise-card-clip .exercise-card-clip-icon,
+.exercise-card-clip .exercise-card-clip-icon svg {
 	display: block;
 	width: 0.7rem;
 	height: 0.7rem;
@@ -1049,7 +1049,7 @@ html:not([data-theme='light'])
 	background: var(--color-accent-muted);
 }
 
-.exercise-detail-bookmark.is-active :global(svg) {
+.exercise-detail-bookmark.is-active svg {
 	stroke: currentColor;
 }
 
@@ -1067,7 +1067,7 @@ html:not([data-theme='light'])
 
 @media (pointer: fine) {
 	.exercise-card-add:not(.exercise-card-add--inline) {
-		/* Keep absolute — `relative` pulls the chip into document flow (top-left drift). */
+		/* Keep absolute - `relative` pulls the chip into document flow (top-left drift). */
 		width: 2rem;
 		height: 2rem;
 		min-width: 2rem;
@@ -1135,7 +1135,7 @@ html:not([data-theme='light'])
 	}
 
 	.content-page--catalog .catalog-grid .exercise-card-bookmark:not(.exercise-card-bookmark--inline)
-		:global(.exercise-card-bookmark-icon svg) {
+		.exercise-card-bookmark-icon svg {
 		width: 0.75rem;
 		height: 0.75rem;
 	}
@@ -1722,7 +1722,7 @@ html[data-nav-back] .zone-card__media-skel {
 	border-radius: 999px;
 }
 
-/* ProfileSettingsRow hint moved inside the label column (column flex) — mirror
+/* ProfileSettingsRow hint moved inside the label column (column flex) - mirror
    the stacked title+hint so the skeleton matches the new row layout. */
 .page-skeleton-auth-pref-labels {
 	display: flex;
@@ -2485,7 +2485,7 @@ html[data-nav-back] .zone-card__media-skel {
 .sticky-actions {
 	position: fixed;
 	inset-inline: 0;
-	/* Visual viewport bottom — keyboard and iOS chrome (see app.html). */
+	/* Visual viewport bottom - keyboard and iOS chrome (see app.html). */
 	bottom: var(--vv-fixed-bottom, 0px);
 	z-index: 30;
 	border-top: 1px solid var(--color-border);
@@ -2496,7 +2496,7 @@ html[data-nav-back] .zone-card__media-skel {
 	max-width: 100%;
 	overflow: hidden;
 	box-shadow: var(--shadow-float-top);
-	/* Own layer — reduces iOS “fixed stuck mid-scroll” after resume */
+	/* Own layer - reduces iOS “fixed stuck mid-scroll” after resume */
 	transform: translateZ(0);
 	-webkit-backface-visibility: hidden;
 }
@@ -2637,7 +2637,7 @@ body:has(.live-finish-coachmark--mobile) {
 	color: inherit;
 }
 
-.draft-dock :global(svg) {
+.draft-dock svg {
 	stroke: currentColor;
 }
 
@@ -2700,7 +2700,7 @@ body:has(.sticky-actions) .draft-dock {
 	);
 }
 
-/* Phones + tablet (< sidebar): icon FAB + count badge — stays clear of titles / tabbar. */
+/* Phones + tablet (< sidebar): icon FAB + count badge - stays clear of titles / tabbar. */
 @media (max-width: 1023px) {
 	.draft-dock {
 		left: auto;
@@ -2758,7 +2758,7 @@ body:has(.sticky-actions) .draft-dock {
 
 	body:has(.app-fab:not(.app-fab--hidden)):has(.draft-dock) .draft-dock,
 	body:has(.workouts-fab:not(.workouts-fab--hidden)) .draft-dock {
-		/* Stack above Create FAB — vertical offset (both are bottom-right). */
+		/* Stack above Create FAB - vertical offset (both are bottom-right). */
 		right: max(1rem, var(--safe-right));
 		bottom: calc(
 			var(--mobile-chrome-bottom) + var(--fab-above-tabbar) + 3.5rem + 0.75rem +
@@ -2983,7 +2983,7 @@ body:has(.sticky-actions) .draft-dock {
 	}
 }
 
-/* FO-inspired shell — catalog sub-routes hide app header on phone+tablet (tabbar era). */
+/* FO-inspired shell - catalog sub-routes hide app header on phone+tablet (tabbar era). */
 @media (max-width: 1023px) {
 	.shell-header-mobile-hidden {
 		display: none;
@@ -2993,7 +2993,7 @@ body:has(.sticky-actions) .draft-dock {
 		padding-top: 0;
 	}
 
-	/* Auth, settings, etc.: no sticky ScreenHeader — keep safe-area + page pad. */
+	/* Auth, settings, etc.: no sticky ScreenHeader - keep safe-area + page pad. */
 	.shell-main--subroute.shell-main--flow:not(:has(.screen-header)):not(
 			:has(.workouts-history-skeleton-head)
 		):not(:has(.history-detail-skeleton-head)):not(:has(.builder-page)):not(:has(.auth-page--account)):not(
@@ -3021,7 +3021,7 @@ body:has(.sticky-actions) .draft-dock {
 		background: var(--chrome-header-bg);
 		border-bottom: none;
 		box-shadow: var(--shadow-screen-header);
-		/* Title ellipsis lives on .screen-header-title — keep overflow visible for shadow. */
+		/* Title ellipsis lives on .screen-header-title - keep overflow visible for shadow. */
 		overflow: visible;
 		min-width: 0;
 	}
@@ -3061,7 +3061,7 @@ body:has(.sticky-actions) .draft-dock {
 	border-bottom-color: var(--color-border);
 }
 
-/* List row: [media start] · content · [actions end] — zone-card, exercise-card--list, records-preview, workout-preview */
+/* List row: [media start] · content · [actions end] - zone-card, exercise-card--list, records-preview, workout-preview */
 .hero-card,
 .zone-card {
 	position: relative;
@@ -3183,13 +3183,13 @@ body:has(.sticky-actions) .draft-dock {
 	overflow-wrap: anywhere;
 }
 
-/* Moved from home.css — catalog hub + records-preview chips (P5). */
+/* Moved from home.css - catalog hub + records-preview chips (P5). */
 .catalog-hub-intro {
 	margin-bottom: 0.75rem;
 }
 
 @media (max-width: 1023px) {
-	/* Builder pick-flow: header → search → chips → zones — no hub intro duplicate. */
+	/* Builder pick-flow: header → search → chips → zones - no hub intro duplicate. */
 	.shell-main--subroute:has(.catalog-hub--from-builder) .catalog-pick-header.screen-header {
 		padding-top: calc(0.25rem + var(--safe-top));
 		padding-bottom: 0.25rem;
@@ -3250,7 +3250,7 @@ body:has(.sticky-actions) .draft-dock {
 	min-width: 0;
 }
 
-/* Chips live inside the toolbar — don't stack a second bottom margin. */
+/* Chips live inside the toolbar - don't stack a second bottom margin. */
 .catalog-hub-toolbar .catalog-hub-chips {
 	margin-bottom: 0;
 	padding-bottom: 0;
@@ -3332,7 +3332,7 @@ body:has(.sticky-actions) .draft-dock {
 	display: none;
 }
 
-/* Compact chip row between search and zone cards — not a second nav grid. */
+/* Compact chip row between search and zone cards - not a second nav grid. */
 .catalog-hub-chips {
 	display: flex;
 	flex-wrap: nowrap;
@@ -3398,7 +3398,7 @@ body:has(.sticky-actions) .draft-dock {
 	color: inherit;
 }
 
-.catalog-hub-nav-link--primary :global(svg) {
+.catalog-hub-nav-link--primary svg {
 	stroke: currentColor;
 }
 
@@ -3421,7 +3421,7 @@ body:has(.sticky-actions) .draft-dock {
 	display: none;
 }
 
-/* Inline count — soft lime tint (same language as light-theme fields) */
+/* Inline count - soft lime tint (same language as light-theme fields) */
 .catalog-hub-nav-count {
 	display: inline-flex;
 	flex-shrink: 0;
@@ -3621,7 +3621,7 @@ body:has(.sticky-actions) .draft-dock {
 	max-width: 32rem;
 }
 
-/* — moved from builder.css (P5) — */
+/* - moved from builder.css (P5) - */
 .catalog-filters-shell {
 	margin-bottom: var(--page-section-gap);
 }
@@ -3719,8 +3719,8 @@ body:has(.sticky-actions) .draft-dock {
 		}
 	}
 
-	.content-page--catalog .catalog-list-layout__filters--search-only > :global(label),
-	.content-page--catalog .catalog-list-layout__filters--search-only > :global(.records-skeleton__search) {
+	.content-page--catalog .catalog-list-layout__filters--search-only > label,
+	.content-page--catalog .catalog-list-layout__filters--search-only > .records-skeleton__search {
 		display: block;
 		width: 100%;
 		min-width: 0;

@@ -1,4 +1,4 @@
-/* ——— Error / 404 ——— */
+/* --- Error / 404 --- */
 .error-page {
 	display: flex;
 	justify-content: center;
@@ -135,7 +135,7 @@
 	}
 }
 
-/* ——— Articles / guide ——— */
+/* --- Articles / guide --- */
 .articles-hub-page,
 .articles-hub {
 	--screen-header-content-gap: 0.35rem;
@@ -157,7 +157,7 @@
 	margin: 0;
 }
 
-/* Desktop crumb+title already sit in catalog-subroute-header — don't stack its
+/* Desktop crumb+title already sit in catalog-subroute-header - don't stack its
    margin with page-header margin and section gap (felt like empty air above search). */
 @media (min-width: 768px) {
 	.articles-hub {
@@ -281,7 +281,7 @@
 	color: var(--color-accent-text);
 }
 
-.article-cover :global(.lucide-icon-wrap) {
+.article-cover .lucide-icon-wrap {
 	width: 100%;
 	height: 100%;
 }
@@ -311,7 +311,7 @@
 	color: #e11d48;
 }
 
-.article-cover__icon :global(svg) {
+.article-cover__icon svg {
 	color: currentColor;
 	stroke: currentColor;
 }
@@ -384,7 +384,7 @@
 	justify-content: center;
 }
 
-/* Mobile: title lives in ScreenHeader — excerpt is alone in the hero row. */
+/* Mobile: title lives in ScreenHeader - excerpt is alone in the hero row. */
 .article-page__hero-text > .article-page__excerpt:only-child {
 	margin-top: 0;
 }
@@ -441,7 +441,7 @@
 	padding: 0.75rem 0.85rem 0.9rem;
 }
 
-/* layout.css is global — do not use Svelte :global() here; it never matches. */
+/* layout.css is global - do not use Svelte :global() here; it never matches. */
 .prose-article h2 {
 	margin: 1.15rem 0 0.45rem;
 	font-size: 1.05rem;

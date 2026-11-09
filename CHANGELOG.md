@@ -3,6 +3,13 @@
 Формат - [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версии - [SemVer](https://semver.org/lang/ru/).
 Записи ведутся начиная с `0.23.1`.
 
+## [0.25.2] - 2026-11-09
+
+### Исправлено
+
+- **CSS minify на Vercel.** Убран неверный Svelte `:global()` из глобальных `src/lib/styles` (lightningcss больше не сыпется варнингами).
+- **Сборка adapter-vercel.** Добавлен optional `@opentelemetry/api`, чтобы убрать предупреждение о missing dependency у supabase-js.
+
 ## [0.25.1] - 2026-11-08
 
 ### Изменено

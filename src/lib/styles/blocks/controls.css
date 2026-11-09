@@ -1,4 +1,4 @@
-/* ——— Controls ——— */
+/* --- Controls --- */
 
 .field {
 	border: 1px solid var(--color-field-border);
@@ -59,7 +59,7 @@ textarea[data-slot='textarea'] {
 	line-height: 1.25;
 }
 
-/* Override shadcn h-9 / px-2.5 / py-1 — text looked cramped & high. */
+/* Override shadcn h-9 / px-2.5 / py-1 - text looked cramped & high. */
 input[data-slot='input']:not([type='file']) {
 	min-height: var(--control-height);
 	height: var(--control-height);
@@ -78,12 +78,12 @@ textarea[data-slot='textarea']::placeholder {
 	opacity: 1;
 }
 
-/* SearchInput: icon inset + optional clear — must beat generic input padding shorthand above. */
+/* SearchInput: icon inset + optional clear - must beat generic input padding shorthand above. */
 input[data-slot='input'].search-field-with-icon:not([type='file']) {
 	padding-left: 2.65rem;
 }
 
-/* Builder prescription chips — compact width, full touch height (≥48px). */
+/* Builder prescription chips - compact width, full touch height (≥48px). */
 input[data-slot='input'].workout-ex-chip__input:not([type='file']) {
 	padding: 0.3rem 0.45rem;
 	height: var(--control-height, 3rem);
@@ -297,7 +297,7 @@ select.field:focus-visible {
 	border-color: var(--color-danger);
 }
 
-/* shadcn AppInput: danger border only — no transform shake (iOS shifts caret/text). */
+/* shadcn AppInput: danger border only - no transform shake (iOS shifts caret/text). */
 input[data-slot='input'][aria-invalid='true'] {
 	border-color: var(--color-danger);
 	box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 22%, transparent);
@@ -390,7 +390,7 @@ button:focus-visible {
 	min-height: var(--control-height);
 	min-width: var(--control-min-width);
 	cursor: pointer;
-	/* Kinetics: Push Button — settle spring after press */
+	/* Kinetics: Push Button - settle spring after press */
 	transition:
 		background 160ms ease,
 		background-image 160ms ease,
@@ -412,8 +412,8 @@ button:focus-visible {
 	font-weight: 650;
 }
 
-.btn-primary :global(svg),
-.btn-action :global(svg) {
+.btn-primary svg,
+.btn-action svg {
 	stroke: currentColor;
 }
 
@@ -643,7 +643,7 @@ button:focus-visible {
 	max-width: 22rem;
 }
 
-/* Match sticky hide (`lg:hidden`) — avoid duplicate CTAs on tablet. */
+/* Match sticky hide (`lg:hidden`) - avoid duplicate CTAs on tablet. */
 @media (min-width: 1024px) {
 	.actions-inline {
 		display: flex;
@@ -747,7 +747,7 @@ button:focus-visible {
 	}
 }
 
-/* Kinetics: Toast spring enter — slide up + overshoot settle */
+/* Kinetics: Toast spring enter - slide up + overshoot settle */
 @keyframes kineticsToastIn {
 	from {
 		opacity: 0;
@@ -781,7 +781,7 @@ button:focus-visible {
 	}
 }
 
-/* Kinetics: Digit bump — rest timer / set counter */
+/* Kinetics: Digit bump - rest timer / set counter */
 @keyframes kineticsDigitBump {
 	from {
 		transform: scale(1.12) translateY(-2px);
@@ -852,7 +852,7 @@ button:focus-visible {
 }
 
 .badge-pop {
-	/* no bounce — avoids nav flicker when draft hydrates */
+	/* no bounce - avoids nav flicker when draft hydrates */
 }
 
 .catalog-grid {

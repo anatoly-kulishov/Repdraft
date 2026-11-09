@@ -303,7 +303,7 @@ html[data-pwa-standalone] .ios-pwa-top--bg {
 		--mobile-chrome-bottom: var(--safe-bottom);
 	}
 
-	/* Tabbar is a sibling of .app-shell, not a descendant — class alone must hide it. */
+	/* Tabbar is a sibling of .app-shell, not a descendant - class alone must hide it. */
 	.shell-nav-tabbar.shell-nav-tabbar-hidden {
 		display: none;
 	}
@@ -352,7 +352,7 @@ html[data-pwa-standalone] .ios-pwa-top--bg {
 		padding-bottom: calc(var(--page-pad-y) + var(--safe-bottom));
 	}
 
-	/* Sticky CTA already reserves space via .pb-mobile-actions — don't stack shell pad. */
+	/* Sticky CTA already reserves space via .pb-mobile-actions - don't stack shell pad. */
 	.app-shell--immersive:has(.sticky-actions) .shell-main,
 	.app-shell--immersive:has(.sticky-actions) .shell-main--subroute,
 	.app-shell--immersive:has(.sticky-actions) .shell-main--flow {
@@ -678,7 +678,7 @@ button.sidebar-link {
 }
 
 
-.sidebar-link-icon :global(svg) {
+.sidebar-link-icon svg {
 	display: block;
 	width: 1.25rem;
 	height: 1.25rem;
@@ -781,7 +781,7 @@ a {
 	text-decoration: none;
 }
 
-.lucide-icon-wrap :global(svg) {
+.lucide-icon-wrap svg {
 	stroke: currentColor;
 }
 
@@ -792,7 +792,7 @@ select {
 	touch-action: manipulation;
 }
 
-/* — moved from builder.css (P5) — */
+/* - moved from builder.css (P5) - */
 .workouts-fab,
 .app-fab {
 	position: fixed;
@@ -821,14 +821,14 @@ select {
 		bottom 180ms ease;
 }
 
-.app-fab :global(.lucide-icon-wrap),
-.workouts-fab :global(.lucide-icon-wrap) {
+.app-fab .lucide-icon-wrap,
+.workouts-fab .lucide-icon-wrap {
 	display: flex;
 	line-height: 0;
 }
 
-.app-fab :global(svg),
-.workouts-fab :global(svg) {
+.app-fab svg,
+.workouts-fab svg {
 	display: block;
 	stroke: currentColor;
 	/* Lucide Plus reads high in a round FAB; 1px optical nudge. */
@@ -974,7 +974,7 @@ button.sync-snackbar__pill {
 	}
 }
 
-/* PWA install hint — compact inline bar in root layout shell bundle. */
+/* PWA install hint - compact inline bar in root layout shell bundle. */
 .pwa-install {
 	display: flex;
 	flex-direction: column;
