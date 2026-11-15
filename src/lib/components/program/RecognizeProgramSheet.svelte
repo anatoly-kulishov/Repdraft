@@ -29,7 +29,8 @@
 	let lang = $derived($resolvedLocale);
 	let user = $derived($auth.user);
 
-	let fileInput = $state<HTMLInputElement | null>(null);
+	let photoInput = $state<HTMLInputElement | null>(null);
+	let tableInput = $state<HTMLInputElement | null>(null);
 	let busy = $state(false);
 	let phase = $state<'pick' | 'paywall' | 'review'>('pick');
 	let errorKey = $state<string | null>(null);
@@ -50,7 +51,8 @@
 		errorKey = null;
 		program = null;
 		overrides = {};
-		if (fileInput) fileInput.value = '';
+		if (photoInput) photoInput.value = '';
+		if (tableInput) tableInput.value = '';
 	}
 
 	function dismiss() {
@@ -59,9 +61,14 @@
 		onDismiss?.();
 	}
 
-	function openPicker() {
+	function openPhotoPicker() {
 		errorKey = null;
-		fileInput?.click();
+		photoInput?.click();
+	}
+
+	function openTablePicker() {
+		errorKey = null;
+		tableInput?.click();
 	}
 
 	async function accessToken(): Promise<string | null> {
@@ -88,7 +95,7 @@
 		}
 	}
 
-	async function onFileChange(e: Event) {
+	async function onFileChange(e: Event, kind: 'photo' | 'table') {
 		const input = e.currentTarget as HTMLInputElement;
 		const file = input.files?.[0];
 		input.value = '';
@@ -97,6 +104,25 @@
 		errorKey = null;
 		if (!user) {
 			errorKey = 'recognize.needAuth';
+			return;
+		}
+
+		const isImage =
+			(file.type || '').startsWith('image/') ||
+			/\.(jpe?g|png|webp|heic|heif|gif)$/i.test(file.name);
+		const isTable =
+			/\.(xlsx|xls|csv)$/i.test(file.name) ||
+			(file.type || '').includes('sheet') ||
+			(file.type || '').includes('excel') ||
+			(file.type || '').includes('csv') ||
+			(file.type || '') === 'text/plain';
+
+		if (kind === 'photo' && !isImage) {
+			errorKey = 'recognize.invalidFile';
+			return;
+		}
+		if (kind === 'table' && !isTable) {
+			errorKey = 'recognize.invalidFile';
 			return;
 		}
 
@@ -116,9 +142,6 @@
 			}
 
 			const form = new FormData();
-			const isImage =
-				(file.type || '').startsWith('image/') ||
-				/\.(jpe?g|png|webp|heic|heif|gif)$/i.test(file.name);
 			if (isImage) {
 				const compressed = await compressProgramImage(file);
 				form.append('file', compressed.blob, compressed.filename);
@@ -202,14 +225,22 @@
 	}
 </script>
 
+<!-- No capture= : that forces the camera on phones and blocks Excel. -->
 <input
-	bind:this={fileInput}
+	bind:this={photoInput}
 	type="file"
-	accept="image/*,.xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
-	capture="environment"
+	accept="image/*,image/jpeg,image/png,image/webp,image/heic,.jpg,.jpeg,.png,.webp,.heic"
 	class="sr-only"
 	tabindex="-1"
-	onchange={(e) => void onFileChange(e)}
+	onchange={(e) => void onFileChange(e, 'photo')}
+/>
+<input
+	bind:this={tableInput}
+	type="file"
+	accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,text/comma-separated-values"
+	class="sr-only"
+	tabindex="-1"
+	onchange={(e) => void onFileChange(e, 'table')}
 />
 
 <BottomSheet
@@ -286,6 +317,20 @@
 				<Spinner size="sm" block={false} />
 				<span class="text-sm">{translate(lang, 'recognize.working')}</span>
 			</div>
+		{:else}
+			<div class="recognize-pick-actions">
+				<AppButton disabled={busy} aria-busy={busy} onclick={openPhotoPicker}>
+					{translate(lang, 'recognize.pickPhoto')}
+				</AppButton>
+				<AppButton
+					variant="secondary"
+					disabled={busy}
+					aria-busy={busy}
+					onclick={openTablePicker}
+				>
+					{translate(lang, 'recognize.pickSpreadsheet')}
+				</AppButton>
+			</div>
 		{/if}
 	{/if}
 
@@ -310,10 +355,15 @@
 			>
 				{translate(lang, 'recognize.openBuilder')}
 			</AppButton>
-		{:else}
-			<AppButton disabled={busy} aria-busy={busy} onclick={openPicker}>
-				{translate(lang, 'recognize.pickFile')}
-			</AppButton>
 		{/if}
 	{/snippet}
 </BottomSheet>
+
+<style>
+	.recognize-pick-actions {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		margin-top: 0.85rem;
+	}
+</style>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
+	import ProfileSettingsSection from '$lib/components/profile/ProfileSettingsSection.svelte';
 	import { isIosDevice } from '$lib/domain/pwaInstall';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -22,9 +23,8 @@
 	});
 </script>
 
-<div class="profile-settings-group panel">
-	<p class="profile-settings-group__title">{translate(lang, 'settings.sessionTitle')}</p>
-	<ProfileSettingsRow icon={Timer} label={translate(lang, 'settings.restSound')}>
+<ProfileSettingsSection hint={translate(lang, restSoundHintKey)}>
+	<ProfileSettingsRow icon={Timer} label={translate(lang, 'settings.restSound')} chevron={false}>
 		<input
 			type="checkbox"
 			class="auth-pref-toggle__input profile-settings-row__toggle"
@@ -35,7 +35,11 @@
 			}}
 		/>
 	</ProfileSettingsRow>
-	<ProfileSettingsRow icon={DeviceMobile} label={translate(lang, 'profile.hapticRest')}>
+	<ProfileSettingsRow
+		icon={DeviceMobile}
+		label={translate(lang, 'profile.hapticRest')}
+		chevron={false}
+	>
 		<input
 			type="checkbox"
 			class="auth-pref-toggle__input profile-settings-row__toggle"
@@ -46,5 +50,4 @@
 			}}
 		/>
 	</ProfileSettingsRow>
-	<p class="profile-settings-group__hint">{translate(lang, restSoundHintKey)}</p>
-</div>
+</ProfileSettingsSection>

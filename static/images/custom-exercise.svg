@@ -1,5 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
-	<rect width="120" height="120" rx="16" fill="#1A1A1D" />
-	<circle cx="60" cy="60" r="26" fill="none" stroke="#8B5CF6" stroke-width="4" opacity="0.55" />
-	<path d="M60 44v32M44 60h32" stroke="#8B5CF6" stroke-width="4" stroke-linecap="round" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-hidden="true">
+	<!-- Transparent plate: media-well clips to card radius; CSS supplies the wash. -->
+	<circle cx="60" cy="60" r="34" fill="#7C5CBF" fill-opacity="0.14"/>
+	<g fill="#7C5CBF" fill-opacity="0.78">
+		<rect x="22" y="46" width="12" height="28" rx="3"/>
+		<rect x="86" y="46" width="12" height="28" rx="3"/>
+		<rect x="32" y="52" width="8" height="16" rx="2"/>
+		<rect x="80" y="52" width="8" height="16" rx="2"/>
+		<rect x="38" y="56" width="44" height="8" rx="2.5"/>
+	</g>
 </svg>

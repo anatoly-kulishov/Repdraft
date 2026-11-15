@@ -1,11 +1,13 @@
 <script lang="ts">
-	import IconPlate from '$lib/components/IconPlate.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import type { IconComponentProps, IconWeight } from 'phosphor-svelte';
+	import { CaretRight as ChevronRight } from 'phosphor-svelte';
 	import type { Component } from 'svelte';
 
 	type Props = {
-		icon: Component<IconComponentProps>;
+		icon?: Component<IconComponentProps>;
 		label: string;
 		hint?: string;
 		iconTone?: 'default' | 'accent' | 'muted';
@@ -14,7 +16,9 @@
 		ariaLabel?: string;
 		href?: string;
 		onclick?: () => void;
-		/** Destructive action: red label and red icon plate. */
+		/** Show trailing chevron on navigable / cycle rows. */
+		chevron?: boolean;
+		/** Destructive action: red label. */
 		danger?: boolean;
 		/** Show inline spinner in the icon slot; keeps the label readable. */
 		busy?: boolean;
@@ -32,6 +36,7 @@
 		ariaLabel,
 		href,
 		onclick,
+		chevron,
 		danger = false,
 		busy = false,
 		disabled = false,
@@ -39,6 +44,10 @@
 	}: Props = $props();
 
 	let locked = $derived(disabled || busy);
+	let showChevron = $derived(
+		chevron ?? Boolean((href || onclick) && !children && !busy)
+	);
+	let hasTrailing = $derived(Boolean(value || children || showChevron));
 </script>
 
 {#snippet body()}
@@ -46,24 +55,37 @@
 		<span class="profile-settings-row__icon profile-settings-row__busy" aria-hidden="true">
 			<Spinner size="sm" block={false} />
 		</span>
-	{:else}
-		<IconPlate
-			{icon}
-			tone={iconTone}
-			weight={iconWeight}
+	{:else if icon}
+		<span
 			class="profile-settings-row__icon"
-		/>
+			class:profile-settings-row__icon--accent={iconTone === 'accent'}
+			class:profile-settings-row__icon--muted={iconTone === 'muted'}
+			class:profile-settings-row__icon--danger={danger}
+			aria-hidden="true"
+		>
+			<LucideIcon {icon} size={ICON_PRIMARY} weight={iconWeight} />
+		</span>
 	{/if}
 	<span class="profile-settings-row__label">
 		{label}
 		{#if hint}<span class="profile-settings-row__hint">{hint}</span>{/if}
 	</span>
-	{#if value}
-		<span class="profile-settings-row__value">{value}</span>
-	{:else if children}
-		<div class="profile-settings-row__control">
-			{@render children()}
-		</div>
+	{#if hasTrailing}
+		<span class="profile-settings-row__trailing">
+			{#if value}
+				<span class="profile-settings-row__value">{value}</span>
+			{/if}
+			{#if children}
+				<span class="profile-settings-row__control">
+					{@render children()}
+				</span>
+			{/if}
+			{#if showChevron}
+				<span class="profile-settings-row__chevron" aria-hidden="true">
+					<LucideIcon icon={ChevronRight} size={ICON_SMALL} />
+				</span>
+			{/if}
+		</span>
 	{/if}
 {/snippet}
 
@@ -72,6 +94,7 @@
 		class="profile-settings-row profile-settings-row--cycle"
 		class:profile-settings-row--busy={busy}
 		class:profile-settings-row--danger={danger}
+		class:profile-settings-row--no-icon={!icon && !busy}
 		aria-label={ariaLabel ?? label}
 		aria-busy={busy || undefined}
 		aria-disabled={locked || undefined}
@@ -89,6 +112,7 @@
 		class="profile-settings-row profile-settings-row--cycle"
 		class:profile-settings-row--busy={busy}
 		class:profile-settings-row--danger={danger}
+		class:profile-settings-row--no-icon={!icon && !busy}
 		aria-label={ariaLabel ?? label}
 		aria-busy={busy || undefined}
 		disabled={locked}
@@ -97,7 +121,13 @@
 		{@render body()}
 	</button>
 {:else}
-	<div class="profile-settings-row" class:profile-settings-row--busy={busy} class:profile-settings-row--danger={danger} aria-busy={busy || undefined}>
+	<div
+		class="profile-settings-row"
+		class:profile-settings-row--busy={busy}
+		class:profile-settings-row--danger={danger}
+		class:profile-settings-row--no-icon={!icon && !busy}
+		aria-busy={busy || undefined}
+	>
 		{@render body()}
 	</div>
 {/if}

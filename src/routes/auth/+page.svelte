@@ -38,7 +38,7 @@
 		type CoachAssignment,
 		type CoachMyCoach
 	} from '$lib/domain/coach';
-	import { isSupabaseConfigured } from '$lib/supabase/client';
+	import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
 	import { coachRepository } from '$lib/storage/coachRepository';
 	import AuthLegalConsent from '$lib/components/AuthLegalConsent.svelte';
 	import BrandTagline from '$lib/components/BrandTagline.svelte';
@@ -63,10 +63,11 @@
 		clampGreetingName,
 		greetingNameMatchesStored
 	} from '$lib/domain/greetingName';
+	import { proFromAppMetadata } from '$lib/domain/entitlement';
 	import { checklistProgress } from '$lib/domain/onboarding';
 	import { onboarding } from '$lib/stores/onboarding';
-	import { Camera, Check, User as UserRound } from 'phosphor-svelte';
-	import { tick } from 'svelte';
+	import { Camera, Check, CrownSimple, User as UserRound } from 'phosphor-svelte';
+	import { onMount, tick } from 'svelte';
 
 	let { data } = $props();
 
@@ -343,6 +344,43 @@
 		return translate(lang, 'auth.provider.other', {
 			name: bare.charAt(0).toUpperCase() + bare.slice(1)
 		});
+	});
+	let remotePro = $state<boolean | null>(null);
+	let metaPro = $derived(
+		proFromAppMetadata($auth.user?.app_metadata as Record<string, unknown> | undefined).pro
+	);
+	let profilePro = $derived(Boolean($auth.user) && (remotePro ?? metaPro));
+
+	$effect(() => {
+		if (!$auth.user) remotePro = null;
+	});
+
+	onMount(() => {
+		if (!browser || !$auth.user) return;
+		void (async () => {
+			const supabase = getSupabase();
+			if (!supabase) return;
+			try {
+				await supabase.auth.refreshSession();
+			} catch {
+				/* ignore */
+			}
+			const {
+				data: { session }
+			} = await supabase.auth.getSession();
+			const token = session?.access_token;
+			if (!token) return;
+			try {
+				const res = await fetch('/api/billing/status', {
+					headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }
+				});
+				if (!res.ok) return;
+				const body = (await res.json()) as { pro?: boolean };
+				if (typeof body.pro === 'boolean') remotePro = body.pro;
+			} catch {
+				/* ignore */
+			}
+		})();
 	});
 
 	$effect(() => {
@@ -806,7 +844,11 @@
 					<button
 						type="button"
 						class="profile-hero__avatar-btn"
-						aria-label={translate(lang, 'auth.avatar.editAria')}
+						aria-label={
+							profilePro
+								? `${translate(lang, 'auth.avatar.editAria')}. ${translate(lang, 'billing.active')}`
+								: translate(lang, 'auth.avatar.editAria')
+						}
 						disabled={avatarBusy || !$auth.configured}
 						onclick={openAvatarSheet}
 					>
@@ -831,6 +873,15 @@
 							{:else}
 								<span class="account-avatar is-guest profile-hero__avatar" aria-hidden="true">
 									<LucideIcon icon={UserRound} size={ICON_PRIMARY} />
+								</span>
+							{/if}
+							{#if profilePro}
+								<span
+									class="profile-hero__pro-crown"
+									title={translate(lang, 'billing.title')}
+									aria-label={translate(lang, 'billing.active')}
+								>
+									<LucideIcon icon={CrownSimple} size={ICON_SMALL} weight="fill" />
 								</span>
 							{/if}
 							{#if avatarBusy}

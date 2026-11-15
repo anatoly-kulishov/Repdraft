@@ -36,7 +36,8 @@ const PART_RULES: Array<[RegExp, string[]]> = [
 	// «leg(s)» as word (not college); RU slang булки/галифе
 	[/ног|\blegs?\b|квадр|ягод|glute|бедр|ляшк|галифе|булк/, ['upper legs', 'lower legs']],
 	[/пресс|core|waist|абдом/, ['waist']],
-	[/икр|\bcalf\b|\bcalves\b/, ['lower legs']],
+	// «голень/голени», but not «голеностоп» (ankle).
+	[/икр|голен(?!остоп)|\bcalf\b|\bcalves\b/, ['lower legs']],
 	[/предплеч|forearm|wrist/, ['lower arms']],
 	[/шея|neck/, ['neck']],
 	[/кардио|cardio|бег/, ['cardio']],
@@ -171,7 +172,7 @@ export function targetsFromBrief(brief: string): string[] {
 	if (/дельт|боков(ая|ые)|средн(яя|ие)\s*дельт|lateral/.test(t)) targets.push('delts');
 	if (/квадр|quad/.test(t)) targets.push('quads');
 	if (/ягод|glute|булк|галифе/.test(t)) targets.push('glutes');
-	if (/икр|\bcalf\b|\bcalves\b/.test(t)) targets.push('calves');
+	if (/икр|голен(?!остоп)|ослик|\bcalf\b|\bcalves\b/.test(t)) targets.push('calves');
 	if (/пресс|абдом|abs?\b|core/.test(t)) targets.push('abs');
 	return [...new Set(targets)];
 }

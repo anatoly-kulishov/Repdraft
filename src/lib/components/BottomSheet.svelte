@@ -37,6 +37,7 @@
 
 	function dismissBackdrop() {
 		if (!dismissible) return;
+		open = false;
 		onDismiss?.();
 	}
 

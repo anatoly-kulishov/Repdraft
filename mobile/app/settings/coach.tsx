@@ -1,16 +1,19 @@
-import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Users } from 'lucide-react-native';
+import { SettingsGroup } from '../../src/profile/SettingsGroup';
+import { SettingsRow } from '../../src/profile/SettingsRow';
 import { useLocale } from '../../src/state/locale';
 import { useAppColors } from '../../src/state/theme';
-import { fontFamily, space, touchMin, type ColorPalette } from '../../src/theme';
+import { space } from '../../src/theme';
 import { useBottomChromePad } from '../../src/layout/safe';
 
 export default function SettingsCoachScreen() {
 	const router = useRouter();
 	const { tt } = useLocale();
 	const colors = useAppColors();
-	const styles = useMemo(() => makeStyles(colors), [colors]);
+	const styles = useMemo(() => makeStyles(colors.bg), [colors.bg]);
 	const bottomPad = useBottomChromePad(space.lg);
 
 	return (
@@ -18,32 +21,20 @@ export default function SettingsCoachScreen() {
 			style={styles.scroll}
 			contentContainerStyle={[styles.root, { paddingBottom: bottomPad }]}
 		>
-			<Text style={styles.hint}>{tt('settings.section.coachHint')}</Text>
-			<Pressable style={styles.row} onPress={() => router.push('/clients')}>
-				<Text style={styles.rowText}>{tt('profile.clientsRow')}</Text>
-				<Text style={styles.value}>→</Text>
-			</Pressable>
+			<SettingsGroup hint={tt('settings.section.coachHint')}>
+				<SettingsRow
+					icon={Users}
+					label={tt('profile.clientsRow')}
+					onPress={() => router.push('/clients')}
+				/>
+			</SettingsGroup>
 		</ScrollView>
 	);
 }
 
-function makeStyles(colors: ColorPalette) {
+function makeStyles(bg: string) {
 	return StyleSheet.create({
-		scroll: { flex: 1, backgroundColor: colors.bg },
-		root: { padding: space.lg, gap: 10 },
-		hint: { fontFamily: fontFamily.regular, fontSize: 13, color: colors.muted },
-		row: {
-			minHeight: touchMin,
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'space-between',
-			borderWidth: 1,
-			borderColor: colors.border,
-			borderRadius: 12,
-			paddingHorizontal: 14,
-			backgroundColor: colors.panel
-		},
-		rowText: { fontFamily: fontFamily.medium, fontSize: 15, color: colors.text },
-		value: { fontFamily: fontFamily.medium, color: colors.muted }
+		scroll: { flex: 1, backgroundColor: bg },
+		root: { padding: space.lg, gap: space.md }
 	});
 }

@@ -8,17 +8,21 @@
 		options,
 		value,
 		onchange,
-		ariaLabel
+		ariaLabel,
+		size = 'default'
 	}: {
 		options: SegmentOption[];
 		value: string;
 		onchange: (id: string) => void;
 		ariaLabel: string;
+		/** Compact pill for place / short 2-option toggles. */
+		size?: 'default' | 'compact';
 	} = $props();
 </script>
 
 <div
 	class="segment-control"
+	class:segment-control--compact={size === 'compact'}
 	style:--segment-count={options.length}
 	role="tablist"
 	aria-label={ariaLabel}

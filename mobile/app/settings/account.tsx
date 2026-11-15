@@ -1,20 +1,26 @@
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
+import { FileText, Shield } from 'lucide-react-native';
 import { deleteCloudAccount, signOutEverywhere } from '../../src/auth/accountApi';
 import { getSupabase } from '../../src/auth/supabase';
 import { webOrigin } from '../../src/catalog/mediaUrl';
 import { ConfirmSheet } from '../../src/components/ConfirmSheet';
-import { PrimaryButton } from '../../src/components/PrimaryButton';
+import { SettingsGroup } from '../../src/profile/SettingsGroup';
+import {
+	SettingsDeleteButton,
+	SettingsFooterButton,
+	SettingsRow
+} from '../../src/profile/SettingsRow';
 import { useLocale } from '../../src/state/locale';
 import { useAppColors } from '../../src/state/theme';
-import { fontFamily, space, touchMin, type ColorPalette } from '../../src/theme';
+import { space } from '../../src/theme';
 import { useBottomChromePad } from '../../src/layout/safe';
 
 export default function SettingsAccountScreen() {
 	const { tt } = useLocale();
 	const colors = useAppColors();
-	const styles = useMemo(() => makeStyles(colors), [colors]);
+	const styles = useMemo(() => makeStyles(colors.bg), [colors.bg]);
 	const bottomPad = useBottomChromePad(space.lg);
 	const [logoutOpen, setLogoutOpen] = useState(false);
 	const [logoutEverywhereOpen, setLogoutEverywhereOpen] = useState(false);
@@ -68,42 +74,38 @@ export default function SettingsAccountScreen() {
 				style={styles.scroll}
 				contentContainerStyle={[styles.root, { paddingBottom: bottomPad }]}
 			>
-				<Pressable
-					style={styles.row}
-					onPress={() => void WebBrowser.openBrowserAsync(`${webOrigin()}/terms`)}
-				>
-					<Text style={styles.rowText}>{tt('terms.link')}</Text>
-					<Text style={styles.value}>→</Text>
-				</Pressable>
-				<Pressable
-					style={styles.row}
-					onPress={() => void WebBrowser.openBrowserAsync(`${webOrigin()}/privacy`)}
-				>
-					<Text style={styles.rowText}>{tt('privacy.link')}</Text>
-					<Text style={styles.value}>→</Text>
-				</Pressable>
-				<PrimaryButton
-					label={tt('profile.signOut')}
-					variant="ghost"
-					onPress={() => setLogoutOpen(true)}
-					disabled={busy}
-				/>
-				<Text style={styles.hint}>{tt('auth.logoutEverywhereHint')}</Text>
-				<PrimaryButton
-					label={tt('auth.logoutEverywhere')}
-					variant="ghost"
-					onPress={() => setLogoutEverywhereOpen(true)}
-					disabled={busy}
-				/>
-				<View style={styles.danger}>
-					<Text style={styles.dangerTitle}>{tt('auth.deleteTitle')}</Text>
-					<PrimaryButton
-						label={tt('auth.deleteButton')}
-						variant="ghost"
-						onPress={confirmDelete}
-						disabled={busy}
+				<SettingsGroup label={tt('settings.group.support')}>
+					<SettingsRow
+						icon={FileText}
+						label={tt('terms.link')}
+						onPress={() => void WebBrowser.openBrowserAsync(`${webOrigin()}/terms`)}
 					/>
-				</View>
+					<SettingsRow
+						icon={Shield}
+						label={tt('privacy.link')}
+						onPress={() => void WebBrowser.openBrowserAsync(`${webOrigin()}/privacy`)}
+					/>
+				</SettingsGroup>
+
+				<SettingsGroup label={tt('settings.group.account')} hint={tt('auth.logoutEverywhereHint')}>
+					<SettingsRow
+						label={tt('auth.logoutEverywhere')}
+						chevron={false}
+						disabled={busy}
+						onPress={() => setLogoutEverywhereOpen(true)}
+					/>
+				</SettingsGroup>
+
+				<SettingsFooterButton
+					label={tt('profile.signOut')}
+					disabled={busy}
+					onPress={() => setLogoutOpen(true)}
+				/>
+				<SettingsDeleteButton
+					label={tt('auth.deleteButton')}
+					disabled={busy}
+					onPress={confirmDelete}
+				/>
 			</ScrollView>
 			<ConfirmSheet
 				open={logoutOpen}
@@ -134,31 +136,9 @@ export default function SettingsAccountScreen() {
 	);
 }
 
-function makeStyles(colors: ColorPalette) {
+function makeStyles(bg: string) {
 	return StyleSheet.create({
-		scroll: { flex: 1, backgroundColor: colors.bg },
-		root: { padding: space.lg, gap: 10 },
-		row: {
-			minHeight: touchMin,
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'space-between',
-			borderWidth: 1,
-			borderColor: colors.border,
-			borderRadius: 12,
-			paddingHorizontal: 14,
-			backgroundColor: colors.panel
-		},
-		rowText: { fontFamily: fontFamily.medium, fontSize: 15, color: colors.text },
-		value: { fontFamily: fontFamily.medium, color: colors.muted },
-		hint: { fontFamily: fontFamily.regular, fontSize: 13, color: colors.muted },
-		danger: {
-			marginTop: space.md,
-			gap: 8,
-			borderTopWidth: StyleSheet.hairlineWidth,
-			borderTopColor: colors.border,
-			paddingTop: space.md
-		},
-		dangerTitle: { fontFamily: fontFamily.bold, fontSize: 15, color: colors.danger }
+		scroll: { flex: 1, backgroundColor: bg },
+		root: { padding: space.lg, gap: space.md }
 	});
 }

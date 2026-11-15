@@ -3,6 +3,7 @@
 	import LoopMetricsPanel from '$lib/components/LoopMetricsPanel.svelte';
 	import ProfileDevWipePanel from '$lib/components/ProfileDevWipePanel.svelte';
 	import ProfileSettingsPage from '$lib/components/profile/ProfileSettingsPage.svelte';
+	import ProfileSettingsSection from '$lib/components/profile/ProfileSettingsSection.svelte';
 	import { testerToolsVisible } from '$lib/domain/prefs';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -15,11 +16,12 @@
 </script>
 
 <ProfileSettingsPage title={translate(lang, 'settings.exportTitle')}>
-	<div class="profile-settings-group panel profile-settings-group--data">
-		<p class="profile-settings-group__title">{translate(lang, 'settings.exportTitle')}</p>
-		<p class="profile-settings-group__hint">{translate(lang, 'settings.exportHint')}</p>
+	<ProfileSettingsSection
+		class="profile-settings-group--data"
+		hint={translate(lang, 'settings.exportHint')}
+	>
 		<DataExportSection embedded />
-	</div>
+	</ProfileSettingsSection>
 	{#if showTesterTools}
 		<LoopMetricsPanel />
 		<ProfileDevWipePanel />

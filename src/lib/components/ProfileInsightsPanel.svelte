@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
+	import ProfileSettingsSection from '$lib/components/profile/ProfileSettingsSection.svelte';
 	import { coachBadgeVisible } from '$lib/domain/coachHints';
 	import { translate } from '$lib/i18n/messages';
 	import { peekLocalFinishedSessions } from '$lib/storage/localSessionRepository';
@@ -13,27 +14,23 @@
 
 	onMount(() => {
 		const latest = peekLocalFinishedSessions().reduce<string | null>(
-			(acc, session) => (session.finishedAt && (!acc || session.finishedAt > acc) ? session.finishedAt : acc),
+			(acc, session) =>
+				session.finishedAt && (!acc || session.finishedAt > acc) ? session.finishedAt : acc,
 			null
 		);
 		coachBadge = coachBadgeVisible(latest, readCoachSeenAt());
 	});
 </script>
 
-<div class="profile-settings-group panel">
-	<p class="profile-settings-group__title">{translate(lang, 'progress.sectionTitle')}</p>
-	<ProfileSettingsRow
-		icon={ChartBar}
-		label={translate(lang, 'nav.progress')}
-		href="/progress"
-	/>
-	<ProfileSettingsRow icon={Robot} label={translate(lang, 'nav.coach')} href="/coach">
+<ProfileSettingsSection>
+	<ProfileSettingsRow icon={ChartBar} label={translate(lang, 'nav.progress')} href="/progress" />
+	<ProfileSettingsRow icon={Robot} label={translate(lang, 'nav.coach')} href="/coach" chevron>
 		{#if coachBadge}
 			<span class="coach-badge" aria-hidden="true"></span>
 			<span class="sr-only">{translate(lang, 'coach.newHints')}</span>
 		{/if}
 	</ProfileSettingsRow>
-</div>
+</ProfileSettingsSection>
 
 <style>
 	.coach-badge {

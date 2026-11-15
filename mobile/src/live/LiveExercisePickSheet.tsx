@@ -148,6 +148,8 @@ export function LiveExercisePickSheet({
 				style={styles.chipStrip}
 				contentContainerStyle={styles.chips}
 				keyboardShouldPersistTaps="handled"
+				nestedScrollEnabled
+				directionalLockEnabled
 			>
 				<Pressable
 					style={[styles.chip, bodyPart === 'all' && equipment === 'all' && styles.chipOn]}
@@ -275,7 +277,12 @@ function makeStyles(colors: ColorPalette) {
 			backgroundColor: colors.panel,
 			textAlign: 'left'
 		},
-		chipStrip: { marginTop: space.sm, flexGrow: 0, flexShrink: 0 },
+		chipStrip: {
+			marginTop: space.sm,
+			flexGrow: 0,
+			flexShrink: 0,
+			height: touchMin
+		},
 		chips: { gap: space.sm, alignItems: 'center', paddingVertical: 0 },
 		chip: {
 			justifyContent: 'center',

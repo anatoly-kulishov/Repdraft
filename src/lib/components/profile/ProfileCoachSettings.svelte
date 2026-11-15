@@ -190,9 +190,7 @@
 	}
 </script>
 
-<div class="profile-settings-group panel text-left">
-	<p class="profile-settings-group__title">{translate(lang, 'profile.clients')}</p>
-
+<div class="profile-settings-stack text-left">
 	{#if currentAssignment}
 		<CoachAssignedCard
 			assignment={currentAssignment}
@@ -204,18 +202,22 @@
 		/>
 	{/if}
 
-	<ProfileSettingsRow
-		icon={myCoaches.length > 0 ? UserCheck : UserRound}
-		iconTone={myCoaches.length > 0 ? 'accent' : 'muted'}
-		label={translate(lang, 'profile.myCoach')}
-		hint={coachRowValue || undefined}
-		onclick={() => (coachSheetOpen = true)}
-	/>
-	<ProfileSettingsRow
-		icon={UsersThree}
-		label={translate(lang, 'profile.clientsRow')}
-		href="/clients"
-	/>
+	<section class="profile-settings-section">
+		<div class="profile-settings-group panel profile-settings-section__card">
+			<ProfileSettingsRow
+				icon={myCoaches.length > 0 ? UserCheck : UserRound}
+				iconTone={myCoaches.length > 0 ? 'accent' : 'muted'}
+				label={translate(lang, 'profile.myCoach')}
+				value={coachRowValue || undefined}
+				onclick={() => (coachSheetOpen = true)}
+			/>
+			<ProfileSettingsRow
+				icon={UsersThree}
+				label={translate(lang, 'profile.clientsRow')}
+				href="/clients"
+			/>
+		</div>
+	</section>
 </div>
 
 {#if $auth.user}

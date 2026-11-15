@@ -252,6 +252,18 @@
 	{/if}
 {/snippet}
 
+{#snippet customBadge(placement: 'list' | 'grid')}
+	{#if isCustom}
+		<span
+			class="exercise-card-custom-badge"
+			class:exercise-card-custom-badge--list={placement === 'list'}
+			class:exercise-card-custom-badge--grid={placement === 'grid'}
+		>
+			{translate(lang, 'custom.badge')}
+		</span>
+	{/if}
+{/snippet}
+
 {#snippet listActions()}
 	<div class="exercise-card-actions exercise-card-actions--list">
 		<AppIconButton
@@ -290,6 +302,7 @@
 					bind:this={mediaEl}
 					href={exerciseHref(exercise.id)}
 					class="exercise-card-media media-well relative shrink-0 overflow-hidden"
+					class:exercise-card-media--custom={isCustom}
 					style:view-transition-name={mediaVtName}
 					onpointerdown={armMediaVt}
 					aria-label={title}
@@ -310,6 +323,7 @@
 					/>
 					{@render noteBadge('list')}
 					{@render clipBadge('list')}
+					{@render customBadge('list')}
 				</a>
 				<div class="exercise-card-bookmark-slot">
 					{@render bookmarkButton(false)}
@@ -322,9 +336,6 @@
 				aria-label={title}
 			>
 				<span class="exercise-card-list-title font-semibold leading-snug text-[var(--color-ink)]">
-					{#if isCustom}
-						<span class="exercise-card-custom-badge">{translate(lang, 'custom.badge')}</span>
-					{/if}
 					<ExpandableText text={title} lines={2} class="exercise-card-list-title__text" />
 				</span>
 				{#if recordChips.length > 0}
@@ -356,6 +367,7 @@
 		<div
 			bind:this={mediaEl}
 			class="exercise-card-media exercise-card-media--grid media-well relative aspect-square min-w-0 overflow-hidden"
+			class:exercise-card-media--custom={isCustom}
 			style:view-transition-name={mediaVtName}
 		>
 			<a
@@ -380,6 +392,7 @@
 			{@render bookmarkButton(false)}
 			{@render noteBadge('grid')}
 			{@render clipBadge('grid')}
+			{@render customBadge('grid')}
 			<AppIconButton
 				class={cn(
 					'exercise-card-add p-0',
@@ -404,9 +417,6 @@
 			onpointerdown={armMediaVt}
 		>
 			<h2 class="exercise-card-grid-title text-[13px] font-semibold leading-snug">
-				{#if isCustom}
-					<span class="exercise-card-custom-badge">{translate(lang, 'custom.badge')}</span>
-				{/if}
 				<ExpandableText text={title} lines={2} as="span" class="exercise-card-grid-title__text" />
 			</h2>
 			<div class="exercise-card-grid-meta">

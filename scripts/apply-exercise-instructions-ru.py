@@ -72,6 +72,11 @@ def polish_step(text: str) -> str:
 	s = re.sub(r"Сядьте на фитбол,", "Сядьте на фитбол,", s)
 	s = re.sub(r"Поместите фитбол на пол", "Положите фитбол на пол", s)
 	s = re.sub(r"\bстабильность мяч\b", "фитбол", s, flags=re.I)
+	# Sledge hammer calque (GigaChat often renders it as a kettlebell).
+	s = re.sub(r"гирю-лом", "кувалду", s, flags=re.I)
+	s = re.sub(r"гирей-лом\w*", "кувалдой", s, flags=re.I)
+	s = re.sub(r"гири-лом\w*", "кувалды", s, flags=re.I)
+	s = re.sub(r"гиря-лом", "кувалда", s, flags=re.I)
 	s = re.sub(r"\s{2,}", " ", s).strip()
 	return s
 

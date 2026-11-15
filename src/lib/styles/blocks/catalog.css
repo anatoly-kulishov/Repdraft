@@ -4104,18 +4104,59 @@ body:has(.sticky-actions) .draft-dock {
 	color: var(--color-danger, #c44);
 }
 
+/* Local exercise plate: CSS wash fills the well; SVG glyph is transparent. */
+.exercise-card-media--custom {
+	background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface-muted));
+}
+
+.content-page--catalog .catalog-grid .exercise-card-media--custom.exercise-card-media--grid .exercise-card-img,
+.exercise-card-media--custom .exercise-card-img {
+	object-fit: contain;
+	object-position: center;
+	/* Beat media-well plate scrim looking like a second rounded tile. */
+	background: transparent;
+}
+
 .exercise-card-custom-badge {
-	display: inline-block;
-	margin-inline-end: 6px;
-	padding: 1px 6px;
-	border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+	position: absolute;
+	z-index: 6;
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	max-width: calc(100% - 0.7rem);
+	padding: 0.15rem 0.45rem;
+	border: 1px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
 	border-radius: 999px;
-	font-size: 10px;
-	font-weight: 600;
-	line-height: 1.5;
-	vertical-align: 2px;
-	color: var(--color-accent);
-	background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+	font-size: 0.625rem;
+	font-weight: 650;
+	line-height: 1.3;
+	letter-spacing: 0.01em;
+	color: var(--color-accent-text, var(--color-accent));
+	background: color-mix(in srgb, var(--color-surface) 92%, var(--color-accent));
+	box-shadow: 0 1px 2px color-mix(in srgb, var(--color-ink) 12%, transparent);
+	pointer-events: none;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.exercise-card-custom-badge--grid {
+	left: 0.35rem;
+	bottom: 0.35rem;
+}
+
+.exercise-card-custom-badge--list {
+	left: 0.25rem;
+	bottom: 0.25rem;
+}
+
+/* Sit above the technique-clip cue when both are present. */
+.exercise-card-media:has(.exercise-card-clip) .exercise-card-custom-badge--grid {
+	bottom: 1.45rem;
+}
+
+.exercise-card-media:has(.exercise-card-clip) .exercise-card-custom-badge--list {
+	bottom: 1.3rem;
 }
 
 /* «Мои упражнения» header + create affordances (local exercises). */

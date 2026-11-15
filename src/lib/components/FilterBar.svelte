@@ -121,6 +121,7 @@
 	<div class={cn('catalog-filters', lockBodyPart && 'catalog-filters--zone')}>
 		<div class="catalog-place-segment">
 			<SegmentControl
+				size="compact"
 				options={placeOptions}
 				value={placeValue}
 				ariaLabel={translate(lang, 'place.row')}
@@ -193,11 +194,8 @@
 
 <style>
 	.catalog-place-segment {
+		display: block;
 		width: 100%;
-		padding: 0 0 0.55rem;
-	}
-
-	.catalog-place-segment :global(.segment-control__tab) {
-		min-height: 48px;
+		padding: 0 0 0.4rem;
 	}
 </style>

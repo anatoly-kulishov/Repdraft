@@ -74,7 +74,7 @@ const TARGET_COVER_WEIGHTS: Partial<Record<string, [RegExp, number][]>> = {
 	],
 	calves: [
 		[/standing calf|подъём на носки(?!.*сидя)/i, 16],
-		[/calf raise|подъём на носк|икронож|calves/i, 12],
+		[/calf raise|подъём на носк|икронож|голен(?!остоп)|calves/i, 12],
 		[/jump rope|скакал/i, 5]
 	],
 	abductors: [[/abduct|абдукт|outer thigh|внешн/i, 15]],
@@ -141,7 +141,7 @@ const ZONE_COVER_WEIGHTS: Partial<Record<string, [RegExp, number][]>> = {
 		[/leg press|жим ног/i, 10],
 		[/leg extension|разгибание ног/i, 8]
 	],
-	'lower legs': [[/standing calf|подъём на носки(?!.*сидя)|calf raise|икронож/i, 14]]
+	'lower legs': [[/standing calf|подъём на носки(?!.*сидя)|calf raise|икронож|голен(?!остоп)/i, 14]]
 };
 
 /** Dataset has only stretch plates for neck — pick the cleaner side stretch. */
