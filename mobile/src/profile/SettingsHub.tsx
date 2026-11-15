@@ -1,5 +1,6 @@
-import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import {
 	BarChart3,
 	CloudDownload,
@@ -10,10 +11,13 @@ import {
 	Smartphone,
 	Users
 } from 'lucide-react-native';
+import type { AthleteProfile } from '@repdraft/domain/athleteProfile';
+import { getAthleteProfile } from '../state/prefs';
 import { useLocale } from '../state/locale';
-import { useAppColors } from '../state/theme';
-import { fontFamily, space, touchMin, type ColorPalette } from '../theme';
-import { useMemo } from 'react';
+import { useAppTheme } from '../state/theme';
+import { space } from '../theme';
+import { SettingsGroup } from './SettingsGroup';
+import { SettingsRow } from './SettingsRow';
 
 type Props = {
 	signedIn: boolean;
@@ -29,146 +33,89 @@ export function SettingsHub({
 	showWorkout = true
 }: Props) {
 	const router = useRouter();
-	const { tt } = useLocale();
-	const colors = useAppColors();
-	const styles = useMemo(() => makeStyles(colors), [colors]);
+	const { locale, tt } = useLocale();
+	const { mode } = useAppTheme();
+	const [athlete, setAthlete] = useState<AthleteProfile | null>(null);
 
-	const rows: {
-		key: string;
-		label: string;
-		hint: string;
-		href: string;
-		icon: typeof Home;
-		show: boolean;
-	}[] = [
-		{
-			key: 'workout',
-			label: tt('settings.sessionTitle'),
-			hint: tt('settings.section.workoutHint'),
-			href: '/settings/workout',
-			icon: Smartphone,
-			show: showWorkout
-		},
-		{
-			key: 'training',
-			label: tt('settings.trainingProfileTitle'),
-			hint: tt('settings.section.trainingHint'),
-			href: '/settings/training',
-			icon: Home,
-			show: true
-		},
-		{
-			key: 'interface',
-			label: tt('settings.interfaceTitle'),
-			hint: tt('settings.section.interfaceHint'),
-			href: '/settings/interface',
-			icon: Languages,
-			show: true
-		},
-		{
-			key: 'progress',
-			label: tt('progress.sectionTitle'),
-			hint: tt('settings.section.progressHint'),
-			href: '/settings/progress',
-			icon: BarChart3,
-			show: true
-		},
-		{
-			key: 'pro',
-			label: tt('billing.title'),
-			hint: tt('settings.section.proHint'),
-			href: '/settings/pro',
-			icon: Crown,
-			show: showPro && signedIn
-		},
-		{
-			key: 'coach',
-			label: tt('profile.clients'),
-			hint: tt('settings.section.coachHint'),
-			href: '/settings/coach',
-			icon: Users,
-			show: showCoach && signedIn
-		},
-		{
-			key: 'data',
-			label: tt('settings.exportTitle'),
-			hint: tt('settings.section.dataHint'),
-			href: '/settings/data',
-			icon: CloudDownload,
-			show: true
-		},
-		{
-			key: 'account',
-			label: tt('settings.accountTitle'),
-			hint: tt('settings.section.accountHint'),
-			href: '/settings/account',
-			icon: Shield,
-			show: signedIn
-		}
-	];
+	useFocusEffect(
+		useCallback(() => {
+			void getAthleteProfile().then(setAthlete);
+		}, [])
+	);
+
+	const placeValue = useMemo(
+		() => tt(athlete?.trainingPlace === 'home' ? 'place.home' : 'place.gym'),
+		[athlete?.trainingPlace, tt]
+	);
+	const interfaceValue = useMemo(
+		() =>
+			[
+				locale === 'ru' ? 'RU' : 'EN',
+				tt(mode === 'light' ? 'settings.themeLight' : 'settings.themeDark')
+			].join(', '),
+		[locale, mode, tt]
+	);
 
 	return (
-		<View style={styles.panel}>
-			<Text style={styles.title}>{tt('settings.title')}</Text>
-			<Text style={styles.hint}>{tt('settings.hubLead')}</Text>
-			{rows
-				.filter((row) => row.show)
-				.map((row) => {
-					const Icon = row.icon;
-					return (
-						<Pressable
-							key={row.key}
-							style={styles.row}
-							accessibilityRole="button"
-							onPress={() => router.push(row.href as never)}
-						>
-							<Icon color={colors.text} size={18} strokeWidth={2} />
-							<View style={styles.rowBody}>
-								<Text style={styles.rowText}>{row.label}</Text>
-								<Text style={styles.rowHint} numberOfLines={1}>
-									{row.hint}
-								</Text>
-							</View>
-							<Text style={styles.chevron}>→</Text>
-						</Pressable>
-					);
-				})}
+		<View style={{ gap: space.md }}>
+			<SettingsGroup label={tt('settings.group.account')}>
+				<SettingsRow
+					icon={Home}
+					label={tt('settings.trainingProfileTitle')}
+					value={placeValue}
+					onPress={() => router.push('/settings/training')}
+				/>
+				{showPro && signedIn ? (
+					<SettingsRow
+						icon={Crown}
+						label={tt('billing.title')}
+						onPress={() => router.push('/settings/pro')}
+					/>
+				) : null}
+				{showCoach && signedIn ? (
+					<SettingsRow
+						icon={Users}
+						label={tt('profile.clients')}
+						onPress={() => router.push('/settings/coach')}
+					/>
+				) : null}
+				{signedIn ? (
+					<SettingsRow
+						icon={Shield}
+						label={tt('settings.accountTitle')}
+						onPress={() => router.push('/settings/account')}
+					/>
+				) : null}
+			</SettingsGroup>
+
+			<SettingsGroup label={tt('settings.group.preferences')}>
+				{showWorkout ? (
+					<SettingsRow
+						icon={Smartphone}
+						label={tt('settings.sessionTitle')}
+						onPress={() => router.push('/settings/workout')}
+					/>
+				) : null}
+				<SettingsRow
+					icon={Languages}
+					label={tt('settings.interfaceTitle')}
+					value={interfaceValue}
+					onPress={() => router.push('/settings/interface')}
+				/>
+				<SettingsRow
+					icon={BarChart3}
+					label={tt('progress.sectionTitle')}
+					onPress={() => router.push('/settings/progress')}
+				/>
+			</SettingsGroup>
+
+			<SettingsGroup label={tt('settings.group.support')}>
+				<SettingsRow
+					icon={CloudDownload}
+					label={tt('settings.exportTitle')}
+					onPress={() => router.push('/settings/data')}
+				/>
+			</SettingsGroup>
 		</View>
 	);
-}
-
-function makeStyles(colors: ColorPalette) {
-	return StyleSheet.create({
-		panel: {
-			borderWidth: 1,
-			borderColor: colors.border,
-			borderRadius: 16,
-			padding: space.md,
-			gap: 4,
-			backgroundColor: colors.panel
-		},
-		title: {
-			fontFamily: fontFamily.bold,
-			fontSize: 16,
-			color: colors.text,
-			marginBottom: 2
-		},
-		hint: {
-			fontFamily: fontFamily.regular,
-			fontSize: 13,
-			color: colors.muted,
-			marginBottom: 8
-		},
-		row: {
-			minHeight: touchMin,
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 10,
-			paddingVertical: 8
-		},
-		rowBody: { flex: 1, minWidth: 0 },
-		rowText: { fontFamily: fontFamily.medium, fontSize: 15, color: colors.text },
-		rowHint: { fontFamily: fontFamily.regular, fontSize: 12, color: colors.muted, marginTop: 2 },
-		chevron: { fontFamily: fontFamily.medium, color: colors.muted, fontSize: 16 }
-	});
 }

@@ -1001,12 +1001,16 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 .live-exercise-pick__chips {
 	display: flex;
 	flex-wrap: nowrap;
+	align-items: center;
 	gap: 0.4rem;
 	margin-top: 0.55rem;
 	padding-bottom: 0.15rem;
+	min-width: 0;
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: none;
+	overscroll-behavior-x: contain;
+	touch-action: pan-x;
 }
 
 .live-exercise-pick__chips::-webkit-scrollbar {

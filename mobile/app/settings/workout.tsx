@@ -1,6 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import { Activity, Smartphone, Timer } from 'lucide-react-native';
+import { SettingsGroup } from '../../src/profile/SettingsGroup';
+import { SettingsRow } from '../../src/profile/SettingsRow';
 import { useLocale } from '../../src/state/locale';
 import {
 	isHapticRestEnabled,
@@ -9,7 +12,7 @@ import {
 	setRestSoundEnabled
 } from '../../src/state/prefs';
 import { useAppColors } from '../../src/state/theme';
-import { fontFamily, space, touchMin, type ColorPalette } from '../../src/theme';
+import { space } from '../../src/theme';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { playRestDoneChime, unlockRestAudioFromGesture } from '../../src/audio/restChime';
 import { getHealthAdapter } from '../../src/health';
@@ -18,7 +21,7 @@ import { isHealthReadEnabled, setHealthReadEnabled } from '../../src/state/healt
 export default function SettingsWorkoutScreen() {
 	const { tt } = useLocale();
 	const colors = useAppColors();
-	const styles = useMemo(() => makeStyles(colors), [colors]);
+	const styles = useMemo(() => makeStyles(colors.bg), [colors.bg]);
 	const bottomPad = useBottomChromePad(space.lg);
 	const [restSound, setRestSound] = useState(true);
 	const [hapticRest, setHapticRest] = useState(true);
@@ -47,81 +50,74 @@ export default function SettingsWorkoutScreen() {
 			style={styles.scroll}
 			contentContainerStyle={[styles.root, { paddingBottom: bottomPad }]}
 		>
-			<View style={styles.row}>
-				<Text style={styles.rowText} numberOfLines={2}>
-					{tt('profile.restSound')}
-				</Text>
-				<Switch
-					value={restSound}
-					trackColor={switchColors.trackColor}
-					thumbColor={switchColors.thumbColor}
-					onValueChange={(v) => {
-						setRestSound(v);
-						void setRestSoundEnabled(v);
-						if (v) {
-							unlockRestAudioFromGesture();
-							void playRestDoneChime();
-						}
-					}}
+			<SettingsGroup hint={tt('settings.restSoundHint')}>
+				<SettingsRow
+					icon={Timer}
+					label={tt('profile.restSound')}
+					chevron={false}
+					trailing={
+						<Switch
+							value={restSound}
+							trackColor={switchColors.trackColor}
+							thumbColor={switchColors.thumbColor}
+							onValueChange={(v) => {
+								setRestSound(v);
+								void setRestSoundEnabled(v);
+								if (v) {
+									unlockRestAudioFromGesture();
+									void playRestDoneChime();
+								}
+							}}
+						/>
+					}
 				/>
-			</View>
-			<View style={styles.row}>
-				<Text style={styles.rowText} numberOfLines={2}>
-					{tt('profile.hapticRest')}
-				</Text>
-				<Switch
-					value={hapticRest}
-					trackColor={switchColors.trackColor}
-					thumbColor={switchColors.thumbColor}
-					onValueChange={(v) => {
-						setHapticRest(v);
-						void setHapticRestEnabled(v);
-					}}
+				<SettingsRow
+					icon={Smartphone}
+					label={tt('profile.hapticRest')}
+					chevron={false}
+					trailing={
+						<Switch
+							value={hapticRest}
+							trackColor={switchColors.trackColor}
+							thumbColor={switchColors.thumbColor}
+							onValueChange={(v) => {
+								setHapticRest(v);
+								void setHapticRestEnabled(v);
+							}}
+						/>
+					}
 				/>
-			</View>
-			<Text style={styles.hint}>{tt('settings.restSoundHint')}</Text>
+			</SettingsGroup>
 
-			<Text style={styles.groupTitle}>{tt('health.title')}</Text>
-			<View style={styles.row}>
-				<Text style={styles.rowText} numberOfLines={2}>
-					{tt('health.toggle')}
-				</Text>
-				<Switch
-					value={healthOn}
-					trackColor={switchColors.trackColor}
-					thumbColor={switchColors.thumbColor}
-					onValueChange={(v) => {
-						setHealthOn(v);
-						void setHealthReadEnabled(v);
-					}}
-					disabled={!healthAvailable}
+			<SettingsGroup
+				label={tt('health.title')}
+				hint={healthAvailable ? tt('health.hint') : tt('health.needDevBuild')}
+			>
+				<SettingsRow
+					icon={Activity}
+					label={tt('health.toggle')}
+					chevron={false}
+					trailing={
+						<Switch
+							value={healthOn}
+							trackColor={switchColors.trackColor}
+							thumbColor={switchColors.thumbColor}
+							onValueChange={(v) => {
+								setHealthOn(v);
+								void setHealthReadEnabled(v);
+							}}
+							disabled={!healthAvailable}
+						/>
+					}
 				/>
-			</View>
-			<Text style={styles.hint}>
-				{healthAvailable ? tt('health.hint') : tt('health.needDevBuild')}
-			</Text>
+			</SettingsGroup>
 		</ScrollView>
 	);
 }
 
-function makeStyles(colors: ColorPalette) {
+function makeStyles(bg: string) {
 	return StyleSheet.create({
-		scroll: { flex: 1, backgroundColor: colors.bg },
-		root: { padding: space.lg, gap: 10 },
-		groupTitle: {
-			fontFamily: fontFamily.bold,
-			fontSize: 16,
-			color: colors.text,
-			marginTop: space.md
-		},
-		row: {
-			minHeight: touchMin,
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'space-between',
-			gap: 12
-		},
-		rowText: { flex: 1, fontFamily: fontFamily.medium, fontSize: 15, color: colors.text },
-		hint: { fontFamily: fontFamily.regular, fontSize: 13, color: colors.muted }
+		scroll: { flex: 1, backgroundColor: bg },
+		root: { padding: space.lg, gap: space.md }
 	});
 }

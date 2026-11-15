@@ -128,6 +128,7 @@ export const SEARCH_SYNONYMS: Record<string, string[]> = {
 	квадры: ['quads'],
 	икры: ['calves'],
 	икронож: ['calves'],
+	голень: ['calves', 'lower legs'],
 	голени: ['calves', 'lower legs'],
 	ослик: ['donkey', 'calf'],
 	осла: ['donkey', 'calf'],

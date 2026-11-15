@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.4',
+		highlights: {
+			ru: [
+				'Настройки: группы Аккаунт, Предпочтения и Поддержка, проще найти нужное',
+				'Своё упражнение и распознавание с фото или Excel: стабильнее удаление и выбор файла',
+				'Техника: правки описаний под реальные движения',
+				'Выйти: отдельная кнопка внизу страницы аккаунта'
+			],
+			en: [
+				'Settings: Account, Preferences, and Support groups so items are easier to find',
+				'Custom exercise and photo/Excel recognize: steadier delete and file pick',
+				'Technique: descriptions matched to the real moves',
+				'Sign out: its own button at the bottom of the account page'
+			]
+		}
+	},
+	{
 		version: '0.25.3',
 		highlights: {
 			ru: [

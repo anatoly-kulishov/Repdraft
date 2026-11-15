@@ -231,6 +231,24 @@ export function homeKitGroupBriefLabel(
 	return locale === 'en' ? BRIEF_LABEL_EN[group] : BRIEF_LABEL_RU[group];
 }
 
+/**
+ * Compact settings-row summary for optional kit picks.
+ * Caps length so a right-aligned value does not clip mid-list (leading comma).
+ */
+export function formatHomeKitSummary(
+	selected: readonly string[],
+	labelOf: (id: HomeKitOptionalId) => string,
+	emptyLabel: string,
+	maxItems = 2
+): string {
+	const labels = normalizeHomeKitSelection(selected)
+		.map((id) => labelOf(id).trim())
+		.filter(Boolean);
+	if (!labels.length) return emptyLabel;
+	if (labels.length <= maxItems) return labels.join(', ');
+	return `${labels.slice(0, maxItems).join(', ')}…`;
+}
+
 /** Append kit gear to an AI brief. No-op when only bodyweight (empty optional kit). */
 export function appendHomeKitToBrief(
 	brief: string,
@@ -399,6 +417,18 @@ export function runHomeKitSelfCheck(): void {
 	}
 	if (normalizeHomeKitSelection(['band', 'band', 'nope', 'bodyweight']).join() !== 'band') {
 		throw new Error('normalize selection');
+	}
+	const summary = formatHomeKitSummary(
+		['jumpRope', 'band', 'weighted', 'roller'],
+		(id) => id,
+		'empty',
+		2
+	);
+	if (summary !== 'jumpRope, band…') {
+		throw new Error(`summary cap: ${summary}`);
+	}
+	if (formatHomeKitSummary([], () => '', 'empty') !== 'empty') {
+		throw new Error('summary empty');
 	}
 	const stored = parseHomeKitStorage(serializeHomeKitStorage(['jumpRope', 'band']));
 	if (stored.join() !== 'band,jumpRope' && stored.join() !== 'jumpRope,band') {

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
-	import AppPanel from '$lib/components/AppPanel.svelte';
 	import AppSkeleton from '$lib/components/AppSkeleton.svelte';
 	import CatalogExerciseListSkeleton from '$lib/components/CatalogExerciseListSkeleton.svelte';
 	import CustomExerciseSheet from '$lib/components/CustomExerciseSheet.svelte';
@@ -801,61 +800,14 @@
 	</p>
 	{#if !hasAnyRows}
 		{#if filterConflict}
-			<AppPanel dashed class="flex flex-col items-start gap-3 py-6 text-left md:py-8">
-				<h2 class="section-title">{translate(lang, 'catalog.conflictTitle')}</h2>
-				<p class="max-w-md text-sm leading-relaxed text-[var(--color-muted)]">
-					{translate(lang, 'catalog.conflictDesc')}
-				</p>
-				<div class="flex flex-wrap gap-2">
-					{#if filters.target !== 'all'}
-						<AppButton
-							variant="secondary"
-							class="text-sm"
-							onclick={() => {
-								filters = { ...filters, target: 'all' };
-							}}
-						>
-							{translate(lang, 'catalog.clearMuscle')}
-						</AppButton>
-					{/if}
-					{#if filters.bodyPart !== 'all' && !zoneLocked}
-						<AppButton
-							variant="secondary"
-							class="text-sm"
-							onclick={() => {
-								filters = { ...filters, bodyPart: 'all' };
-							}}
-						>
-							{translate(lang, 'catalog.clearBody')}
-						</AppButton>
-					{/if}
-					{#if filters.equipment !== 'all'}
-						<AppButton
-							variant="secondary"
-							class="text-sm"
-							onclick={() => {
-								filters = { ...filters, equipment: 'all' };
-							}}
-						>
-							{translate(lang, 'catalog.clearEquipment')}
-						</AppButton>
-					{/if}
-					<AppButton
-						class="text-sm"
-						onclick={() => {
-							filters = {
-								...filters,
-								bodyPart: zoneLocked ? filters.bodyPart : 'all',
-								equipment: 'all',
-								target: 'all'
-							};
-						}}
-					>
-						{translate(lang, 'catalog.reset')}
-					</AppButton>
-				</div>
-			</AppPanel>
-	{:else}
+			<EmptyState
+				class={emptyStateClass}
+				title={translate(lang, 'catalog.conflictTitle')}
+				description={translate(lang, 'catalog.conflictDesc')}
+				actionLabel={translate(lang, 'catalog.reset')}
+				actionOnclick={resetCatalogFilters}
+			/>
+		{:else}
 		<EmptyState
 			class={emptyStateClass}
 			centered={savedOnly}
@@ -889,7 +841,7 @@
 			}
 		>
 			{#snippet actions()}
-				{#if filtersActive && !(savedOnly && filters.query.trim())}
+				{#if showCreateCta && filtersActive}
 					<AppButton variant="secondary" class="mt-2 text-sm" onclick={resetCatalogFilters}>
 						{translate(lang, 'catalog.reset')}
 					</AppButton>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import AppButton from '$lib/components/AppButton.svelte';
+	import AppIconButton from '$lib/components/AppIconButton.svelte';
 	import AppInput from '$lib/components/AppInput.svelte';
 	import AppSelect from '$lib/components/AppSelect.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
@@ -12,6 +13,7 @@
 	} from '$lib/domain/customExercises';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { X } from 'phosphor-svelte';
 
 	let {
 		open = $bindable(false),
@@ -40,6 +42,11 @@
 	const duplicate = $derived(findDuplicateCustom(existing, name));
 	const canSave = $derived(name.trim().length >= 2 && !duplicate);
 
+	function dismiss() {
+		open = false;
+		onDismiss();
+	}
+
 	function save() {
 		if (!canSave) return;
 		const made = onCreate(name, bodyPart, equipment);
@@ -50,12 +57,18 @@
 </script>
 
 {#if open}
-	<BottomSheet {open} raised titleId="custom-exercise-sheet" {onDismiss}>
+	<BottomSheet bind:open raised titleId="custom-exercise-sheet" onDismiss={dismiss}>
 		<div class="bottom-sheet__head">
 			<p id="custom-exercise-sheet" class="bottom-sheet__title">{translate(lang, 'custom.new')}</p>
 			<p class="bottom-sheet__hint">{translate(lang, 'custom.hint')}</p>
+			<div class="bottom-sheet__close">
+				<AppIconButton type="button" aria-label={translate(lang, 'a11y.close')} onclick={dismiss}>
+					<X size={22} weight="bold" aria-hidden="true" />
+				</AppIconButton>
+			</div>
 		</div>
 		<form
+			id="custom-exercise-form"
 			class="custom-exercise-form"
 			onsubmit={(e) => {
 				e.preventDefault();
@@ -100,10 +113,15 @@
 					{/each}
 				</AppSelect>
 			</label>
-			<AppButton type="submit" disabled={!canSave}>
+		</form>
+		{#snippet actions()}
+			<AppButton type="submit" form="custom-exercise-form" disabled={!canSave}>
 				{translate(lang, 'custom.create')}
 			</AppButton>
-		</form>
+			<AppButton variant="secondary" type="button" onclick={dismiss}>
+				{translate(lang, 'common.cancel')}
+			</AppButton>
+		{/snippet}
 	</BottomSheet>
 {/if}
 
@@ -112,7 +130,8 @@
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
-		padding: 4px 16px 20px;
+		/* Card already pads horizontally; only a little space under the head. */
+		padding: 0.35rem 0 0;
 	}
 	.custom-exercise-form__field {
 		display: flex;

@@ -151,6 +151,21 @@ export function RecognizeProgramSheet({ open, onDismiss }: Props) {
 		return token;
 	}
 
+	async function uploadPickedImage(asset: ImagePicker.ImagePickerAsset) {
+		setBusy(true);
+		try {
+			const token = await ensureProGate();
+			if (!token) return;
+			const mime = asset.mimeType || 'image/jpeg';
+			const name = asset.fileName || 'program.jpg';
+			await uploadFile(asset.uri, name, mime, token);
+		} catch {
+			setErrorKey('recognize.fail');
+		} finally {
+			setBusy(false);
+		}
+	}
+
 	async function pickPhoto() {
 		setErrorKey(null);
 		const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -164,44 +179,48 @@ export function RecognizeProgramSheet({ open, onDismiss }: Props) {
 			allowsEditing: false
 		});
 		if (picked.canceled || !picked.assets?.[0]?.uri) return;
-
-		setBusy(true);
-		try {
-			const token = await ensureProGate();
-			if (!token) return;
-			const asset = picked.assets[0];
-			const mime = asset.mimeType || 'image/jpeg';
-			const name = asset.fileName || 'program.jpg';
-			await uploadFile(asset.uri, name, mime, token);
-		} catch {
-			setErrorKey('recognize.fail');
-		} finally {
-			setBusy(false);
-		}
+		await uploadPickedImage(picked.assets[0]);
 	}
 
 	async function pickDocument() {
 		setErrorKey(null);
+		// Narrow MIME filters break Excel on some iOS builds; pick broadly then validate.
 		const picked = await DocumentPicker.getDocumentAsync({
-			type: [
-				'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-				'application/vnd.ms-excel',
-				'text/csv',
-				'text/comma-separated-values',
-				'text/plain'
-			],
-			copyToCacheDirectory: true
+			type: '*/*',
+			copyToCacheDirectory: true,
+			multiple: false
 		});
 		if (picked.canceled || !picked.assets?.[0]?.uri) return;
+
+		const asset = picked.assets[0];
+		const name = asset.name || 'program.xlsx';
+		const mime = (asset.mimeType || '').toLowerCase();
+		const okExt = /\.(xlsx|xls|csv)$/i.test(name);
+		const okMime =
+			mime.includes('sheet') ||
+			mime.includes('excel') ||
+			mime.includes('csv') ||
+			mime === 'text/plain' ||
+			mime === 'application/octet-stream';
+		if (!okExt && !okMime) {
+			setErrorKey('recognize.invalidFile');
+			return;
+		}
+		if (!okExt && mime === 'application/octet-stream') {
+			setErrorKey('recognize.invalidFile');
+			return;
+		}
 
 		setBusy(true);
 		try {
 			const token = await ensureProGate();
 			if (!token) return;
-			const asset = picked.assets[0];
-			const mime = asset.mimeType || 'application/octet-stream';
-			const name = asset.name || 'program.xlsx';
-			await uploadFile(asset.uri, name, mime, token);
+			const sendMime =
+				asset.mimeType ||
+				(name.toLowerCase().endsWith('.csv')
+					? 'text/csv'
+					: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+			await uploadFile(asset.uri, name, sendMime, token);
 		} catch {
 			setErrorKey('recognize.fail');
 		} finally {
@@ -294,25 +313,12 @@ export function RecognizeProgramSheet({ open, onDismiss }: Props) {
 						/>
 					</>
 				) : (
-					<>
-						<PrimaryButton
-							label={tt('common.cancel')}
-							variant="ghost"
-							onPress={dismiss}
-							disabled={busy}
-						/>
-						<PrimaryButton
-							label={tt('recognize.pickPhoto')}
-							onPress={() => void pickPhoto()}
-							disabled={busy}
-						/>
-						<PrimaryButton
-							label={tt('recognize.pickFile')}
-							variant="secondary"
-							onPress={() => void pickDocument()}
-							disabled={busy}
-						/>
-					</>
+					<PrimaryButton
+						label={tt('common.cancel')}
+						variant="ghost"
+						onPress={dismiss}
+						disabled={busy}
+					/>
 				)
 			}
 		>
@@ -388,7 +394,21 @@ export function RecognizeProgramSheet({ open, onDismiss }: Props) {
 							<ActivityIndicator color={colors.accent} />
 							<Text style={styles.hint}>{tt('recognize.working')}</Text>
 						</View>
-					) : null}
+					) : (
+						<View style={styles.pickActions}>
+							<PrimaryButton
+								label={tt('recognize.pickPhoto')}
+								onPress={() => void pickPhoto()}
+								disabled={busy}
+							/>
+							<PrimaryButton
+								label={tt('recognize.pickSpreadsheet')}
+								variant="secondary"
+								onPress={() => void pickDocument()}
+								disabled={busy}
+							/>
+						</View>
+					)}
 				</>
 			)}
 
@@ -474,6 +494,10 @@ function makeStyles(colors: ColorPalette) {
 			alignItems: 'center',
 			gap: space.sm,
 			marginTop: space.md
+		},
+		pickActions: {
+			marginTop: space.md,
+			gap: space.sm
 		},
 		error: {
 			color: colors.danger,

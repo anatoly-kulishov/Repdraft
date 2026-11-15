@@ -50,4 +50,4 @@ routes / components
 
 ## Релизы
 
-См. `release-branches.mdc`: ветка `cursor/vX.Y.Z-slug`, semver patch/minor.
+См. `release-branches.mdc`: ветка `feat/vX.Y.Z-slug`, semver patch/minor.

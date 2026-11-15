@@ -79,7 +79,7 @@ const SYSTEM_TEMPLATE = `Ты — API генерации плана тренир
 Программирование sets / reps / restSec (обязательно варьируй, не копируй один шаблон на все):
 7. База (жим/тяга/присед/гребля и аналоги): sets 3–5, reps 5–8, restSec 120–180.
 8. Вспомогательные compound: sets 3–4, reps 8–12, restSec 90–120.
-9. Изоляция (бицепс/трицепс/дельты/икры и т.п.): sets 2–3, reps 10–15, restSec 45–75.
+9. Изоляция (бицепс/трицепс/дельты/икры/голень и т.п.): sets 2-3, reps 10-15, restSec 45-75.
 10. Кор / лёгкая техника: sets 2–3, reps 12–20, restSec 30–60.
 11. В одном плане минимум 3 разных комбинации (sets,reps,restSec). Не ставь всем одинаковые 3×10×90.
 12. Диапазоны чисел: sets 2–5, reps 5–20, restSec 30–180 (целые).
@@ -171,16 +171,14 @@ export function parsePlanPayload(raw: unknown): AiPlan {
 	return { name, exercises };
 }
 
-/** Exported for domain selfchecks. */
+/** Drop unknown ids. Empty result is OK: caller pads from the slim catalog. */
 export function filterKnownIds(plan: AiPlan, allowed: Set<string>): AiPlan {
 	const kept = plan.exercises.filter((e) => allowed.has(e.exerciseId));
-	if (!kept.length) {
-		throw new Error('После whitelist не осталось упражнений — модель вернула неизвестные id');
-	}
 	return { name: plan.name, exercises: kept };
 }
 
-/** Keep only exercises whose body_part is in brief hints (when hints exist). */
+/** Keep only exercises whose body_part is in brief hints (when hints exist).
+ *  Empty result is OK: caller pads from the zone slim catalog. */
 export function filterToBodyHints(
 	plan: AiPlan,
 	index: ReturnType<typeof loadExerciseIndex>,
@@ -191,9 +189,6 @@ export function filterToBodyHints(
 		index.filter((ex) => parts.includes(ex.body_part)).map((ex) => ex.id)
 	);
 	const kept = plan.exercises.filter((e) => ok.has(e.exerciseId));
-	if (!kept.length) {
-		throw new Error('После фильтра зоны не осталось упражнений');
-	}
 	return { name: plan.name, exercises: kept };
 }
 

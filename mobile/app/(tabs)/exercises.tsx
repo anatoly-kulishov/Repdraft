@@ -420,6 +420,12 @@ export default function ExercisesScreen() {
 					style={styles.sheetWrap}
 					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
 				>
+					<Pressable
+						accessibilityRole="button"
+						accessibilityLabel={tt('common.close')}
+						style={StyleSheet.absoluteFill}
+						onPress={() => setCreating(false)}
+					/>
 					<View style={[styles.sheet, { paddingBottom: bottomPad }]}>
 						<Text style={styles.sheetTitle}>{tt('exercises.custom')}</Text>
 						<TextInput
@@ -487,27 +493,36 @@ function makeStyles(colors: ColorPalette) {
 		fontFamily: fontFamily.regular
 	},
 	placeSegment: {
+		alignSelf: 'stretch',
+		width: '100%',
 		flexDirection: 'row',
-		gap: 4,
-		padding: 4,
-		borderRadius: radius.sm,
+		gap: 2,
+		padding: 2,
+		borderRadius: 999,
 		backgroundColor: colors.panelRaised ?? colors.panel,
-		borderWidth: 1,
+		borderWidth: StyleSheet.hairlineWidth,
 		borderColor: colors.border
 	},
 	placeTab: {
 		flex: 1,
 		minHeight: touchMin,
+		paddingHorizontal: 14,
 		alignItems: 'center',
 		justifyContent: 'center',
-		borderRadius: radius.sm
+		borderRadius: 999
 	},
 	placeTabActive: {
-		backgroundColor: colors.panel
+		backgroundColor: colors.panel,
+		shadowColor: '#000',
+		shadowOpacity: 0.08,
+		shadowRadius: 2,
+		shadowOffset: { width: 0, height: 1 },
+		elevation: 1
 	},
 	placeTabText: {
 		fontFamily: fontFamily.semibold,
-		fontSize: 14,
+		fontSize: 13,
+		letterSpacing: 0.2,
 		color: colors.muted
 	},
 	placeTabTextActive: {

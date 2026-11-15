@@ -19,7 +19,7 @@ import {
 	TextInput,
 	View
 } from 'react-native';
-import { Check, ChevronDown, UserRound } from 'lucide-react-native';
+import { Check, ChevronDown, Crown, UserRound } from 'lucide-react-native';
 import type { Session } from '@supabase/supabase-js';
 import { userCustomAvatarPath, userDisplayName } from '@repdraft/domain/authFlow';
 import { proFromAppMetadata } from '@repdraft/domain/entitlement';
@@ -773,18 +773,41 @@ export default function ProfileScreen() {
 			<View style={styles.brandRow}>
 				<Pressable
 					accessibilityRole="button"
+					accessibilityLabel={
+						session?.user
+							? showPro
+								? `${tt('auth.avatar.editAria')}. ${tt('billing.active')}`
+								: tt('auth.avatar.editAria')
+							: undefined
+					}
 					onPress={() => {
 						if (session?.user && !avatarBusy) setAvatarSheetOpen(true);
 					}}
 					style={styles.avatarBtn}
 				>
-					{avatarUrl ? (
-						<Image source={{ uri: avatarUrl }} style={styles.avatarImg} />
-					) : (
-						<View style={[styles.avatarImg, styles.avatarFallback]}>
-							<UserRound size={28} color={colors.text} strokeWidth={2} />
-						</View>
-					)}
+					<View style={styles.avatarWrap}>
+						{avatarUrl ? (
+							<Image source={{ uri: avatarUrl }} style={styles.avatarImg} />
+						) : (
+							<View style={[styles.avatarImg, styles.avatarFallback]}>
+								<UserRound size={28} color={colors.text} strokeWidth={2} />
+							</View>
+						)}
+						{showPro && session?.user ? (
+							<View
+								style={styles.proCrown}
+								accessibilityElementsHidden
+								importantForAccessibility="no-hide-descendants"
+							>
+								<Crown
+									size={11}
+									color={colors.accentInk}
+									strokeWidth={2.4}
+									fill={colors.accentInk}
+								/>
+							</View>
+						) : null}
+					</View>
 				</Pressable>
 				<View style={styles.brandBody}>
 					<Pressable
@@ -1224,6 +1247,11 @@ function makeStyles(colors: ColorPalette) {
 		paddingBottom: space.xs
 	},
 	avatarBtn: { minWidth: touchMin, minHeight: touchMin },
+	avatarWrap: {
+		width: 52,
+		height: 52,
+		position: 'relative'
+	},
 	avatarImg: {
 		width: 52,
 		height: 52,
@@ -1231,6 +1259,20 @@ function makeStyles(colors: ColorPalette) {
 		backgroundColor: colors.panelRaised
 	},
 	avatarFallback: { alignItems: 'center', justifyContent: 'center' },
+	proCrown: {
+		position: 'absolute',
+		top: -6,
+		left: '50%',
+		marginLeft: -11,
+		width: 22,
+		height: 22,
+		borderRadius: 11,
+		alignItems: 'center',
+		justifyContent: 'center',
+		backgroundColor: colors.accent,
+		borderWidth: 1.5,
+		borderColor: colors.bg
+	},
 	brandBody: { flex: 1 },
 	brandTitle: { ...type.title, color: colors.text },
 	brandHint: { ...type.meta, color: colors.muted, marginTop: 2 },

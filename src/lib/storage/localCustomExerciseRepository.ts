@@ -50,10 +50,10 @@ export function addLocalCustomExercise(
 
 export function removeLocalCustomExercise(id: string): CustomExercise[] {
 	const items = readAll();
-	const removed = items.find((ex) => ex.id === id);
 	const next = items.filter((ex) => ex.id !== id);
 	writeAll(next);
-	return removed ? [removed, ...next] : next;
+	// Return the remaining list only (do not prepend the removed item).
+	return next;
 }
 
 export function restoreLocalCustomExercise(item: CustomExercise): CustomExercise[] {

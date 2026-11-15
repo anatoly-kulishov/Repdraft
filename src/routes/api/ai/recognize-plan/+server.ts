@@ -174,6 +174,17 @@ export const POST: RequestHandler = async ({ request }) => {
 		const ext = extOf(filename);
 		if (ext === 'csv' || (entry.type || '').includes('csv') || (entry.type || '') === 'text/plain') {
 			program = recognizedProgramFromCsv(bytes.toString('utf8'), filename.replace(/\.[^.]+$/, ''));
+		} else if (ext === 'xls') {
+			// exceljs reads .xlsx only; old binary .xls needs a different parser.
+			return jsonWithCors(
+				request,
+				{
+					ok: false,
+					code: 'invalid_file',
+					error: 'Save as .xlsx or CSV and try again'
+				},
+				{ status: 400 }
+			);
 		} else {
 			try {
 				program = await recognizedProgramFromXlsx(bytes, filename.replace(/\.[^.]+$/, ''));
