@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
-import { FileText, Shield } from 'lucide-react-native';
+import { FileText, Smartphone, Shield } from 'lucide-react-native';
 import { deleteCloudAccount, signOutEverywhere } from '../../src/auth/accountApi';
 import { getSupabase } from '../../src/auth/supabase';
 import { webOrigin } from '../../src/catalog/mediaUrl';
@@ -89,6 +89,7 @@ export default function SettingsAccountScreen() {
 
 				<SettingsGroup label={tt('settings.group.account')} hint={tt('auth.logoutEverywhereHint')}>
 					<SettingsRow
+						icon={Smartphone}
 						label={tt('auth.logoutEverywhere')}
 						chevron={false}
 						disabled={busy}

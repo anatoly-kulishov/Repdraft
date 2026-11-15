@@ -1920,22 +1920,6 @@ button.live-local-save-cue {
 	padding: 1.05rem 1.1rem 1.15rem !important;
 }
 
-.profile-settings-group.panel:has(.profile-settings-group__session-footer),
-.profile-settings-group.panel.profile-settings-group--session {
-	padding-bottom: 0.55rem;
-}
-
-.profile-settings-group.panel[data-slot='card']:has(.profile-settings-group__session-footer),
-.profile-settings-group.panel[data-slot='card'].profile-settings-group--session {
-	padding-bottom: 0.55rem !important;
-}
-
-.profile-settings-group--session {
-	display: flex;
-	flex-direction: column;
-	gap: 0.25rem;
-}
-
 .profile-settings-group__title {
 	margin: 0 0 0.75rem;
 	font-size: 0.875rem;
@@ -1961,83 +1945,6 @@ button.live-local-save-cue {
 
 .profile-settings-group.panel > .profile-settings-group__hint:last-child {
 	margin-bottom: 0.15rem;
-}
-
-.profile-settings-group__hint--session {
-	margin: 0;
-}
-
-.profile-settings-group__session-footer {
-	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-	gap: 0.25rem;
-	padding: 0.45rem 0 0;
-	border-top: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
-}
-
-/* Quiet explainer for a secondary account action (sign out everywhere). */
-.auth-session-note {
-	display: flex;
-	align-items: flex-start;
-	gap: 0.45rem;
-	margin: 0;
-	padding: 0.5rem 0.6rem;
-	border: 1px solid color-mix(in srgb, var(--color-accent) 14%, var(--color-border));
-	border-radius: var(--radius-control);
-	background: color-mix(in srgb, var(--color-accent) 5%, var(--color-surface-elevated));
-	color: var(--color-muted);
-}
-
-.auth-session-note p {
-	margin: 0;
-	font-size: 0.75rem;
-	line-height: 1.45;
-	text-wrap: pretty;
-}
-
-.auth-session-note__icon {
-	margin-top: 0.1em;
-	color: var(--color-accent-text);
-}
-
-.profile-settings-group__text-action {
-	display: inline-flex;
-	align-items: center;
-	min-height: 3rem;
-	padding: 0.35rem 0;
-	border: 0;
-	background: transparent;
-	font: inherit;
-	font-size: 0.8125rem;
-	font-weight: 600;
-	line-height: 1.35;
-	color: var(--color-muted);
-	text-align: left;
-	cursor: pointer;
-	text-wrap: pretty;
-}
-
-.profile-settings-group__text-action:hover:not(:disabled) {
-	color: var(--color-accent-text);
-	text-decoration: underline;
-}
-
-.profile-settings-group__text-action:disabled {
-	opacity: 0.55;
-	cursor: not-allowed;
-}
-
-.profile-settings-group__text-action:focus-visible {
-	outline: none;
-	border-radius: var(--radius-control);
-	box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
-}
-
-.profile-settings-group__text-action-busy {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.45rem;
 }
 
 .profile-settings-group--busy {
@@ -2162,8 +2069,14 @@ button.live-local-save-cue {
 	border-top: none;
 }
 
+/* Action cards (not settings rows): section__card zeroes vertical padding for rows.
+   Restore even inset on all sides. */
+.profile-settings-group.panel.profile-settings-section__card.profile-settings-group--data {
+	padding: 0.85rem;
+}
+
 .profile-settings-group--data .data-export-actions--embedded {
-	margin-top: 0.75rem;
+	margin-top: 0;
 }
 
 /* Divider between the coach dashboard link and the invite-code form. */
@@ -2400,6 +2313,14 @@ button.live-local-save-cue {
 	text-overflow: ellipsis;
 }
 
+.profile-settings-row__badge {
+	width: 0.45rem;
+	height: 0.45rem;
+	flex-shrink: 0;
+	border-radius: 999px;
+	background: var(--color-accent);
+}
+
 .profile-settings-row__chevron {
 	display: inline-flex;
 	align-items: center;
@@ -2495,15 +2416,27 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	align-items: center;
 	justify-content: flex-end;
 	width: max-content;
-	min-height: 3rem;
 	min-width: 3rem;
+	/* Do not set min-height here: it made toggle/badge rows taller than neighbors
+	   (48px control + row padding ≈ 68px vs 52px). Row min-height covers the rest. */
 }
 
 .profile-settings-row__toggle {
-	/* Visual pill; row control supplies ≥48px hit area. */
+	/* Visual pill; ::before expands the tap target without growing the row. */
 	width: 2.75rem;
 	height: 1.55rem;
 	margin-top: 0;
+	position: relative;
+}
+
+.profile-settings-row__toggle::before {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 3rem;
+	height: 3rem;
+	transform: translate(-50%, -50%);
 }
 
 .profile-settings-row__mini-btn {

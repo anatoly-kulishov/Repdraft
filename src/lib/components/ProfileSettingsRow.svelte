@@ -18,6 +18,8 @@
 		onclick?: () => void;
 		/** Show trailing chevron on navigable / cycle rows. */
 		chevron?: boolean;
+		/** Small accent dot before the chevron (e.g. new coach hints). */
+		badge?: boolean;
 		/** Destructive action: red label. */
 		danger?: boolean;
 		/** Show inline spinner in the icon slot; keeps the label readable. */
@@ -37,6 +39,7 @@
 		href,
 		onclick,
 		chevron,
+		badge = false,
 		danger = false,
 		busy = false,
 		disabled = false,
@@ -47,7 +50,7 @@
 	let showChevron = $derived(
 		chevron ?? Boolean((href || onclick) && !children && !busy)
 	);
-	let hasTrailing = $derived(Boolean(value || children || showChevron));
+	let hasTrailing = $derived(Boolean(value || children || badge || showChevron));
 </script>
 
 {#snippet body()}
@@ -79,6 +82,9 @@
 				<span class="profile-settings-row__control">
 					{@render children()}
 				</span>
+			{/if}
+			{#if badge}
+				<span class="profile-settings-row__badge" aria-hidden="true"></span>
 			{/if}
 			{#if showChevron}
 				<span class="profile-settings-row__chevron" aria-hidden="true">

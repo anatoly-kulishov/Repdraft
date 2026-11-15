@@ -24,19 +24,13 @@
 
 <ProfileSettingsSection>
 	<ProfileSettingsRow icon={ChartBar} label={translate(lang, 'nav.progress')} href="/progress" />
-	<ProfileSettingsRow icon={Robot} label={translate(lang, 'nav.coach')} href="/coach" chevron>
-		{#if coachBadge}
-			<span class="coach-badge" aria-hidden="true"></span>
-			<span class="sr-only">{translate(lang, 'coach.newHints')}</span>
-		{/if}
-	</ProfileSettingsRow>
+	<ProfileSettingsRow
+		icon={Robot}
+		label={translate(lang, 'nav.coach')}
+		href="/coach"
+		badge={coachBadge}
+		ariaLabel={coachBadge
+			? `${translate(lang, 'nav.coach')}. ${translate(lang, 'coach.newHints')}`
+			: undefined}
+	/>
 </ProfileSettingsSection>
-
-<style>
-	.coach-badge {
-		width: 0.45rem;
-		height: 0.45rem;
-		border-radius: 999px;
-		background: var(--color-accent);
-	}
-</style>
