@@ -5,8 +5,6 @@
 	import AppLabel from '$lib/components/AppLabel.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import ConfirmSheet from '$lib/components/ConfirmSheet.svelte';
-	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
 	import ProfileSettingsSection from '$lib/components/profile/ProfileSettingsSection.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -14,7 +12,7 @@
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
-	import { FileText, Info, ShieldCheck } from 'phosphor-svelte';
+	import { Devices, FileText, ShieldCheck } from 'phosphor-svelte';
 
 	let lang = $derived($resolvedLocale);
 	let accountBusy = $state<'logout' | 'logoutEverywhere' | 'delete' | null>(null);
@@ -101,33 +99,21 @@
 		/>
 	</ProfileSettingsSection>
 
-	<section class="profile-settings-section">
-		<p class="profile-settings-section__label">{translate(lang, 'settings.group.account')}</p>
-		<div class="profile-settings-group panel profile-settings-section__card profile-settings-group--session">
-			<div class="auth-session-note">
-				<LucideIcon icon={Info} size={ICON_SMALL} class="auth-session-note__icon" />
-				<p>{translate(lang, 'auth.logoutEverywhereHint')}</p>
-			</div>
-			<button
-				type="button"
-				class="profile-settings-group__text-action"
-				disabled={accountLocked}
-				aria-busy={accountBusy === 'logoutEverywhere' || undefined}
-				onclick={() => {
-					if (!accountBusy) logoutEverywhereConfirmOpen = true;
-				}}
-			>
-				{#if accountBusy === 'logoutEverywhere'}
-					<span class="profile-settings-group__text-action-busy">
-						<Spinner size="sm" block={false} />
-						{translate(lang, 'auth.logoutEverywhere')}
-					</span>
-				{:else}
-					{translate(lang, 'auth.logoutEverywhere')}
-				{/if}
-			</button>
-		</div>
-	</section>
+	<ProfileSettingsSection
+		label={translate(lang, 'settings.group.account')}
+		hint={translate(lang, 'auth.logoutEverywhereHint')}
+	>
+		<ProfileSettingsRow
+			icon={Devices}
+			label={translate(lang, 'auth.logoutEverywhere')}
+			chevron={false}
+			busy={accountBusy === 'logoutEverywhere'}
+			disabled={accountLocked}
+			onclick={() => {
+				if (!accountBusy) logoutEverywhereConfirmOpen = true;
+			}}
+		/>
+	</ProfileSettingsSection>
 
 	<div class="profile-settings-actions">
 		<button

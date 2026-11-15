@@ -14,6 +14,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.5',
+		highlights: {
+			ru: [
+				'Настройки: одинаковая высота строк с тогглером и без',
+				'Резервная копия: ровные отступы в карточке',
+				'Аккаунт: «Выйти на всех устройствах» как обычная строка, подсказка под карточкой'
+			],
+			en: [
+				'Settings: even row height with or without a toggle',
+				'Backup: even padding inside the card',
+				'Account: Sign out on all devices as a normal row, hint under the card'
+			]
+		}
+	},
+	{
 		version: '0.25.4',
 		highlights: {
 			ru: [
