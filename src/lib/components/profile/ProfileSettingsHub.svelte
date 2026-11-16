@@ -44,12 +44,6 @@
 
 <div class="profile-settings-hub">
 	<ProfileSettingsSection label={translate(lang, 'settings.group.account')}>
-		<ProfileSettingsRow
-			icon={House}
-			label={translate(lang, 'settings.trainingProfileTitle')}
-			value={placeValue}
-			href="/auth/training"
-		/>
 		{#if showPro && signedIn}
 			<ProfileSettingsRow
 				icon={CrownSimple}
@@ -58,6 +52,12 @@
 				href="/auth/pro"
 			/>
 		{/if}
+		<ProfileSettingsRow
+			icon={House}
+			label={translate(lang, 'settings.trainingProfileTitle')}
+			value={placeValue}
+			href="/auth/training"
+		/>
 		{#if showCoach && signedIn}
 			<ProfileSettingsRow
 				icon={UsersThree}

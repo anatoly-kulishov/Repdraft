@@ -34,6 +34,7 @@
 	} from '$lib/domain/athleteProfile';
 	import {
 		exerciseMatchesHomeKit,
+		HOME_EQUIPMENT_FILTER,
 		isHomeEquipmentFilter,
 		resolveHomeKitGroups
 	} from '$lib/domain/homeKit';
@@ -118,7 +119,15 @@
 		const placeDefault = browser
 			? catalogEquipmentForPlace(get(athleteProfile).trainingPlace)
 			: 'all';
-		const equipment = urlHasEquipment ? equipmentParam : placeDefault;
+		/** Place is owned by settings: home profile always filters by kit, gym never. */
+		const equipment =
+			placeDefault === HOME_EQUIPMENT_FILTER
+				? HOME_EQUIPMENT_FILTER
+				: isHomeEquipmentFilter(equipmentParam)
+					? 'all'
+					: urlHasEquipment
+						? equipmentParam
+						: 'all';
 		const withKit: ExerciseFilters = {
 			query: urlHasQuery ? q : '',
 			bodyPart: 'all',
@@ -381,7 +390,7 @@
 			...filters,
 			query: '',
 			bodyPart: zoneLocked ? filters.bodyPart : 'all',
-			equipment: 'all',
+			equipment: catalogEquipmentForPlace($athleteProfile.trainingPlace),
 			target: 'all'
 		};
 	}
@@ -390,6 +399,27 @@
 		if (!zoneLocked || !isCatalogZone(presetBodyPart)) return;
 		if (filters.bodyPart === presetBodyPart) return;
 		filters = { ...filters, bodyPart: presetBodyPart as ExerciseFilters['bodyPart'] };
+	});
+
+	/**
+	 * Place is owned by settings/intake, not by the catalog: a mounted list must
+	 * follow it (e.g. the intake sheet over the page switches gym → home).
+	 */
+	$effect(() => {
+		const placeHome =
+			catalogEquipmentForPlace($athleteProfile.trainingPlace) === HOME_EQUIPMENT_FILTER;
+		if (placeHome) {
+			if (!isHomeEquipmentFilter(filters.equipment)) {
+				untrack(() => {
+					filters = { ...filters, equipment: HOME_EQUIPMENT_FILTER };
+				});
+			}
+		} else if (isHomeEquipmentFilter(filters.equipment)) {
+			untrack(() => {
+				const { homeKit: _drop, ...rest } = filters;
+				filters = { ...rest, equipment: 'all' };
+			});
+		}
 	});
 
 	/** Apply facets from the live URL when navigation changes — not when local filters edit. */

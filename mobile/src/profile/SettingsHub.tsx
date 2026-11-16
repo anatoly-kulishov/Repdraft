@@ -59,12 +59,6 @@ export function SettingsHub({
 	return (
 		<View style={{ gap: space.md }}>
 			<SettingsGroup label={tt('settings.group.account')}>
-				<SettingsRow
-					icon={Home}
-					label={tt('settings.trainingProfileTitle')}
-					value={placeValue}
-					onPress={() => router.push('/settings/training')}
-				/>
 				{showPro && signedIn ? (
 					<SettingsRow
 						icon={Crown}
@@ -72,6 +66,12 @@ export function SettingsHub({
 						onPress={() => router.push('/settings/pro')}
 					/>
 				) : null}
+				<SettingsRow
+					icon={Home}
+					label={tt('settings.trainingProfileTitle')}
+					value={placeValue}
+					onPress={() => router.push('/settings/training')}
+				/>
 				{showCoach && signedIn ? (
 					<SettingsRow
 						icon={Users}

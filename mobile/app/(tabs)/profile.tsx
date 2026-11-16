@@ -1261,7 +1261,7 @@ function makeStyles(colors: ColorPalette) {
 	avatarFallback: { alignItems: 'center', justifyContent: 'center' },
 	proCrown: {
 		position: 'absolute',
-		top: -6,
+		top: -9,
 		left: '50%',
 		marginLeft: -11,
 		width: 22,

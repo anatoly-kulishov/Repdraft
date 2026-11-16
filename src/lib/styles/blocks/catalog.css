@@ -1599,6 +1599,8 @@ html[data-nav-back] .zone-card__media-skel {
 	flex-shrink: 0;
 	width: 4.25rem;
 	height: 4.25rem;
+	/* Matches .profile-hero__stage so boot → loaded does not shift. */
+	margin-top: 0.35rem;
 }
 
 .page-skeleton-auth-hero__identity {

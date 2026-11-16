@@ -1591,7 +1591,8 @@ button.live-local-save-cue {
 	flex-shrink: 0;
 	width: 4.25rem;
 	height: 4.25rem;
-	margin-top: 0;
+	/* Clearance so the Pro crown is not clipped by the hero's overflow. */
+	margin-top: 0.35rem;
 }
 
 .profile-hero__avatar-btn {
@@ -1655,11 +1656,11 @@ button.live-local-save-cue {
 	min-width: 0;
 }
 
-/* Crown sits on the top rim when Pro is active. */
+/* Crown floats just above the top rim when Pro is active. */
 .profile-hero__pro-crown {
 	position: absolute;
 	z-index: 2;
-	top: -0.4rem;
+	top: -0.65rem;
 	left: 50%;
 	display: inline-flex;
 	align-items: center;

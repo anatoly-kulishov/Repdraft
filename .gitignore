@@ -47,3 +47,4 @@ static/data/exercises.full.json
 .local/
 
 .playwright-mcp/
+.playwright-cli/

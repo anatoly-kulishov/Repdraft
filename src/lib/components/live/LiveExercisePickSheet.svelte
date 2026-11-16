@@ -1,6 +1,8 @@
 <script lang="ts">
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import ListSearchBar from '$lib/components/ListSearchBar.svelte';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { MagnifyingGlass as Search } from 'phosphor-svelte';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import {
 		POPULAR_EXERCISE_IDS,
@@ -108,7 +110,7 @@
 	);
 	let emptyHintKey = $derived(
 		query.trim() || bodyPart !== 'all' || equipment !== 'all'
-			? 'live.pickExerciseEmpty'
+			? 'live.pickExerciseEmptyHint'
 			: 'live.pickExerciseSuggest'
 	);
 </script>
@@ -176,7 +178,13 @@
 		</div>
 
 		{#if results.length === 0}
-			<p class="bottom-sheet__hint">{translate(lang, emptyHintKey)}</p>
+			<div class="live-exercise-pick__empty" role="status">
+				<div class="live-exercise-pick__empty-icon" aria-hidden="true">
+					<LucideIcon icon={Search} size={22} />
+				</div>
+				<p class="live-exercise-pick__empty-title">{translate(lang, 'live.pickExerciseEmpty')}</p>
+				<p class="live-exercise-pick__empty-hint">{translate(lang, emptyHintKey)}</p>
+			</div>
 		{:else}
 			<ul class="live-exercise-pick__list">
 				{#each results as item (item.id)}

@@ -86,6 +86,8 @@
 	let discardOfferOpen = $state(false);
 	let skipExerciseOfferOpen = $state(false);
 	let removeExerciseOfferOpen = $state(false);
+	let replaceExerciseConfirmOpen = $state(false);
+	let pendingReplaceExerciseId = $state<string | null>(null);
 	let exercisePickMode = $state<'replace' | 'add' | null>(null);
 	let switchOfferOpen = $state(false);
 	let pendingSwitchPlan = $state<WorkoutPlan | null>(null);
@@ -468,17 +470,38 @@
 		exercisePickMode = null;
 	}
 
+	function pickedExerciseName(exerciseId: string): string {
+		const item = names.get(exerciseId);
+		return item ? exerciseName(item, lang) : translate(lang, 'records.fallback', { id: exerciseId });
+	}
+
+	function dismissReplaceExerciseConfirm() {
+		if (finishing) return;
+		replaceExerciseConfirmOpen = false;
+		pendingReplaceExerciseId = null;
+	}
+
+	function commitReplaceExercise() {
+		if (finishing || !session) return;
+		const exerciseId = pendingReplaceExerciseId;
+		replaceExerciseConfirmOpen = false;
+		pendingReplaceExerciseId = null;
+		if (!exerciseId) return;
+		const next = live.replaceExercise(selectedExerciseIndex, exerciseId);
+		if (!next) return;
+		justDoneSetIndex = null;
+		invalidSetIndex = null;
+		invalidKind = null;
+		restChimeArmed = false;
+	}
+
 	function onPickLiveExercise(exerciseId: string) {
 		const mode = exercisePickMode;
 		exercisePickMode = null;
 		if (!session || !mode || finishing) return;
 		if (mode === 'replace') {
-			const next = live.replaceExercise(selectedExerciseIndex, exerciseId);
-			if (!next) return;
-			justDoneSetIndex = null;
-			invalidSetIndex = null;
-			invalidKind = null;
-			restChimeArmed = false;
+			pendingReplaceExerciseId = exerciseId;
+			replaceExerciseConfirmOpen = true;
 			return;
 		}
 		const insertAt = selectedExerciseIndex + 1;
@@ -981,6 +1004,22 @@
 			busy={finishing}
 			onConfirm={commitRemoveExercise}
 			onDismiss={dismissRemoveExerciseOffer}
+		/>
+		<ConfirmSheet
+			open={replaceExerciseConfirmOpen}
+			titleId="live-replace-exercise-title"
+			title={translate(lang, 'live.replaceExerciseTitle')}
+			hint={pendingReplaceExerciseId
+				? translate(lang, 'live.replaceExerciseConfirm', {
+						old: skipExerciseTitle(selectedExerciseIndex),
+						new: pickedExerciseName(pendingReplaceExerciseId)
+					})
+				: translate(lang, 'live.replaceExerciseHint')}
+			confirmLabel={translate(lang, 'live.replaceExercise')}
+			variant="primary"
+			busy={finishing}
+			onConfirm={commitReplaceExercise}
+			onDismiss={dismissReplaceExerciseConfirm}
 		/>
 	</section>
 {/if}

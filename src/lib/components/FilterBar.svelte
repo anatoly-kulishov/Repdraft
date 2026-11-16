@@ -3,22 +3,13 @@
 	import AppChip from '$lib/components/AppChip.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import ListSearchBar from '$lib/components/ListSearchBar.svelte';
-	import SegmentControl from '$lib/components/SegmentControl.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
-	import {
-		catalogEquipmentForPlace,
-		type TrainingPlace
-	} from '$lib/domain/athleteProfile';
-	import {
-		HOME_EQUIPMENT_FILTER,
-		isHomeEquipmentFilter
-	} from '$lib/domain/homeKit';
+	import { isHomeEquipmentFilter } from '$lib/domain/homeKit';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseFilters } from '$lib/domain/types';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { athleteProfile, homeKitSelection } from '$lib/stores/prefs';
 	import { cn } from '$lib/utils.js';
 	import { Check } from 'phosphor-svelte';
 
@@ -42,12 +33,8 @@
 
 	let lang = $derived($resolvedLocale);
 	let equipmentSheetOpen = $state(false);
+	/** Home place (owned by settings) uses the kit filter, not a single ExerciseDB key. */
 	let placeHome = $derived(isHomeEquipmentFilter(filters.equipment));
-	let placeValue = $derived(placeHome ? ('home' as const) : ('gym' as const));
-	let placeOptions = $derived([
-		{ id: 'gym', label: translate(lang, 'place.gym') },
-		{ id: 'home', label: translate(lang, 'place.home') }
-	]);
 
 	let showTargetFilters = $derived(lockBodyPart && !hideTargetChips && targets.length > 1);
 
@@ -80,18 +67,6 @@
 		filters = { ...filters, equipment: 'all' };
 		equipmentSheetOpen = false;
 	}
-
-	function setPlace(place: TrainingPlace) {
-		athleteProfile.patch({ trainingPlace: place });
-		const equipmentNext = catalogEquipmentForPlace(place);
-		filters = {
-			...filters,
-			equipment: equipmentNext,
-			...(equipmentNext === HOME_EQUIPMENT_FILTER
-				? { homeKit: $homeKitSelection }
-				: { homeKit: undefined })
-		};
-	}
 </script>
 
 {#snippet equipmentOption(value: string, label: string, active: boolean)}
@@ -119,17 +94,6 @@
 
 <div class="catalog-filters-shell">
 	<div class={cn('catalog-filters', lockBodyPart && 'catalog-filters--zone')}>
-		<div class="catalog-place-segment">
-			<SegmentControl
-				size="compact"
-				options={placeOptions}
-				value={placeValue}
-				ariaLabel={translate(lang, 'place.row')}
-				onchange={(id) => {
-					if (id === 'gym' || id === 'home') setPlace(id);
-				}}
-			/>
-		</div>
 		<ListSearchBar
 			bind:value={filters.query}
 			debounceMs={150}
@@ -192,10 +156,3 @@
 	</BottomSheet>
 {/if}
 
-<style>
-	.catalog-place-segment {
-		display: block;
-		width: 100%;
-		padding: 0 0 0.4rem;
-	}
-</style>

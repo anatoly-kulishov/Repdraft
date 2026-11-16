@@ -14,6 +14,29 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.6',
+		highlights: {
+			ru: [
+				'Анкета: показывается только после входа в аккаунт, сразу после логина',
+				'Замена упражнения: фильтры по зонам свайпаются по горизонтали',
+				'Замена упражнения: «Ничего не найдено» стало аккуратным состоянием с подсказкой',
+				'Замена упражнения: подтверждение перед сбросом подходов',
+				'Зал или дом: место выбирается в настройках, каталог подстраивается сам',
+				'Домашний режим: число упражнений в карточках зон совпадает с домашним набором',
+				'Профиль: корона Pro выше аватарки, «Repdraft Pro» — первой строкой в аккаунте'
+			],
+			en: [
+				'Intake: shown only to signed-in users, right after sign-in',
+				'Replace exercise: zone chips now swipe horizontally',
+				'Replace exercise: a neat "Nothing found" state with a hint',
+				'Replace exercise: confirmation before sets are reset',
+				'Gym or home: pick your place in settings, the catalog follows',
+				'Home mode: zone cards show counts from your home kit',
+				'Profile: Pro crown above the avatar, "Repdraft Pro" first in the account section'
+			]
+		}
+	},
+	{
 		version: '0.25.5',
 		highlights: {
 			ru: [

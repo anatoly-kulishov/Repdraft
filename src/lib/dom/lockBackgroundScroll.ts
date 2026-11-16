@@ -10,15 +10,20 @@
 let lockCount = 0;
 let prevHtmlOverflow = '';
 let prevBodyOverflow = '';
+let startX = 0;
 let startY = 0;
 
-function isVerticallyScrollable(el: HTMLElement): boolean {
-	const { overflowY } = getComputedStyle(el);
-	if (overflowY !== 'auto' && overflowY !== 'scroll' && overflowY !== 'overlay') return false;
-	return el.scrollHeight > el.clientHeight + 1;
+function isScrollableOnAxis(el: HTMLElement, horizontal: boolean): boolean {
+	const style = getComputedStyle(el);
+	const overflow = horizontal ? style.overflowX : style.overflowY;
+	if (overflow !== 'auto' && overflow !== 'scroll' && overflow !== 'overlay') return false;
+	return horizontal
+		? el.scrollWidth > el.clientWidth + 1
+		: el.scrollHeight > el.clientHeight + 1;
 }
 
 function onTouchStart(event: TouchEvent) {
+	startX = event.touches[0]?.clientX ?? 0;
 	startY = event.touches[0]?.clientY ?? 0;
 }
 
@@ -30,16 +35,21 @@ function isRangeInput(target: EventTarget | null): boolean {
 function onTouchMove(event: TouchEvent) {
 	if (event.touches.length > 1) return;
 	if (isRangeInput(event.target)) return;
+	const x = event.touches[0]?.clientX ?? 0;
 	const y = event.touches[0]?.clientY ?? 0;
+	const deltaX = startX - x;
 	const deltaY = startY - y;
+	const horizontal = Math.abs(deltaX) > Math.abs(deltaY);
 	let node = event.target instanceof HTMLElement ? event.target : null;
 	while (node && node !== document.body) {
-		if (isVerticallyScrollable(node)) {
-			const atTop = node.scrollTop <= 0;
-			const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - 1;
-			if ((deltaY < 0 && atTop) || (deltaY > 0 && atBottom)) {
-				event.preventDefault();
-			}
+		if (isScrollableOnAxis(node, horizontal)) {
+			const atStart = horizontal ? node.scrollLeft <= 0 : node.scrollTop <= 0;
+			const atEnd = horizontal
+				? node.scrollLeft + node.clientWidth >= node.scrollWidth - 1
+				: node.scrollTop + node.clientHeight >= node.scrollHeight - 1;
+			const beyondStart = horizontal ? deltaX < 0 : deltaY < 0;
+			const beyondEnd = horizontal ? deltaX > 0 : deltaY > 0;
+			if ((beyondStart && atStart) || (beyondEnd && atEnd)) event.preventDefault();
 			return;
 		}
 		node = node.parentElement;

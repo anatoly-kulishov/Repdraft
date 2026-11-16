@@ -433,6 +433,6 @@
 <ToastStack items={$toasts} />
 <LocalMergeConflictSheet />
 <DraftDock />
-{#if browser && needsIntakeStepper($athleteProfile)}
+{#if browser && $auth.ready && $auth.sessionKnown && $auth.user && needsIntakeStepper($athleteProfile)}
 	<IntakeStepper open={true} />
 {/if}

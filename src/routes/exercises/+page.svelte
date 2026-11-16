@@ -9,10 +9,15 @@
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import {
 		CATALOG_HUB_ZONE_COUNT,
+		catalogZoneBodyParts,
 		isBuilderReturnPath,
 		labelCatalogZone,
 		withFromParam
 	} from '$lib/domain/catalogLinks';
+	import {
+		exerciseMatchesHomeKit,
+		resolveHomeKitGroups
+	} from '$lib/domain/homeKit';
 	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import {
@@ -31,6 +36,7 @@
 	import { onboarding } from '$lib/stores/onboarding';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
 	import { records } from '$lib/stores/records';
+	import { athleteProfile, homeKitSelection } from '$lib/stores/prefs';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { goto } from '$app/navigation';
@@ -135,6 +141,22 @@
 		onboarding.dismissCoachmark('exercises.saved');
 		blurActiveElement();
 	}
+
+	/** Home place: hub cards count the home-kit subset, not the full catalog. */
+	let homeZoneCounts = $derived.by(() => {
+		if ($athleteProfile.trainingPlace !== 'home' || indexById.size === 0) return null;
+		const groups = resolveHomeKitGroups($homeKitSelection);
+		const zoneParts = data.hubZones.map((zone) => new Set(catalogZoneBodyParts(zone)));
+		const counts: Record<string, number> = {};
+		for (const zone of data.hubZones) counts[zone] = 0;
+		for (const item of indexById.values()) {
+			if (!exerciseMatchesHomeKit(item, groups)) continue;
+			for (let i = 0; i < data.hubZones.length; i++) {
+				if (zoneParts[i]!.has(item.body_part)) counts[data.hubZones[i]!]! += 1;
+			}
+		}
+		return counts;
+	});
 </script>
 
 <SeoHead title={seoHeaderTitle} descriptionKey="seo.exercisesDescription" path="/exercises" />
@@ -200,7 +222,11 @@
 				<CatalogCategoryCard
 					label={labelCatalogZone(bodyPart, lang)}
 					href={withFromParam(`/catalog/${encodeURIComponent(bodyPart)}`, fromParam)}
-					count={data.zoneCounts[bodyPart] ?? 0}
+					count={
+						homeZoneCounts
+							? homeZoneCounts[bodyPart] ?? 0
+							: (data.zoneCounts[bodyPart] ?? 0)
+					}
 					coverImage={data.zoneCovers[bodyPart] ?? null}
 					priority={index === 0}
 				/>

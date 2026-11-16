@@ -6,12 +6,25 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import ScrollToTopFab from '$lib/components/ScrollToTopFab.svelte';
 	import {
+		catalogZoneBodyParts,
 		catalogZonePath,
 		CATALOG_HUB_ZONE_COUNT,
 		isBuilderReturnPath,
 		labelCatalogZone,
 		withFromParam
 	} from '$lib/domain/catalogLinks';
+	import {
+		exerciseMatchesHomeKit,
+		resolveHomeKitGroups
+	} from '$lib/domain/homeKit';
+	import {
+		equipmentCountsForZone,
+		targetChipsForZoneBrowse,
+		targetCountsForZone
+	} from '$lib/domain/filters';
+	import { loadExerciseIndex, peekExerciseIndex } from '$lib/data/loadExercises';
+	import type { ExerciseIndexItem } from '$lib/domain/types';
+	import { athleteProfile, homeKitSelection } from '$lib/stores/prefs';
 	import { resolveBackFrom } from '$lib/domain/navigation';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import { translate } from '$lib/i18n/messages';
@@ -38,8 +51,43 @@
 	let effectiveTarget = $derived(data.initialTarget || urlTarget);
 	let effectiveEquipment = $derived(data.initialEquipment || urlEquipment);
 	let effectiveBrowse = $derived(data.initialBrowse || urlBrowse);
-	let hasTargetBrowse = $derived(data.bodyPart !== 'all' && data.targetChips.length >= 2);
-	let hasEquipmentBrowse = $derived(!hasTargetBrowse && data.equipmentChips.length >= 2);
+	/** Home place: server data is the full catalog — re-count the browse grid over the home kit. */
+	let homePlace = $derived($athleteProfile.trainingPlace === 'home');
+	let homeIndex = $state<ExerciseIndexItem[] | null>(null);
+	$effect(() => {
+		if (!homePlace) {
+			homeIndex = null;
+			return;
+		}
+		const peeked = peekExerciseIndex();
+		if (peeked) {
+			homeIndex = peeked;
+			return;
+		}
+		let cancelled = false;
+		void loadExerciseIndex().then((index) => {
+			if (!cancelled) homeIndex = index;
+		});
+		return () => {
+			cancelled = true;
+		};
+	});
+	let homeZoneMeta = $derived.by(() => {
+		if (!homePlace || !homeIndex || data.bodyPart === 'all') return null;
+		const parts = catalogZoneBodyParts(data.bodyPart);
+		const groups = resolveHomeKitGroups($homeKitSelection);
+		const inZone = homeIndex.filter(
+			(ex) => parts.includes(ex.body_part) && exerciseMatchesHomeKit(ex, groups)
+		);
+		const targetChips = targetChipsForZoneBrowse(targetCountsForZone(inZone, parts), data.bodyPart);
+		const equipmentChips = targetChips.length < 2 ? equipmentCountsForZone(inZone, parts) : [];
+		return { zoneCount: inZone.length, targetChips, equipmentChips };
+	});
+	let zoneCount = $derived(homeZoneMeta?.zoneCount ?? data.zoneCount);
+	let targetChips = $derived(homeZoneMeta?.targetChips ?? data.targetChips);
+	let equipmentChips = $derived(homeZoneMeta?.equipmentChips ?? data.equipmentChips);
+	let hasTargetBrowse = $derived(data.bodyPart !== 'all' && targetChips.length >= 2);
+	let hasEquipmentBrowse = $derived(!hasTargetBrowse && equipmentChips.length >= 2);
 	let showTargetBrowse = $derived(
 		hasTargetBrowse && !effectiveTarget && effectiveBrowse !== 'all'
 	);
@@ -147,8 +195,8 @@
 		{:else if showTargetBrowse}
 			<CatalogTargetGrid
 				bodyPart={data.bodyPart}
-				chips={data.targetChips}
-				zoneCount={data.zoneCount}
+				chips={targetChips}
+				zoneCount={zoneCount}
 				targetCovers={data.targetCovers}
 				zoneCover={data.zoneCover}
 				equipment={data.initialEquipment}
@@ -158,8 +206,8 @@
 		{:else if showEquipmentBrowse}
 			<CatalogEquipmentGrid
 				bodyPart={data.bodyPart}
-				chips={data.equipmentChips}
-				zoneCount={data.zoneCount}
+				chips={equipmentChips}
+				zoneCount={zoneCount}
 				equipmentCovers={data.equipmentCovers}
 				zoneCover={data.zoneCover}
 				query={data.initialQuery}
