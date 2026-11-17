@@ -58,7 +58,7 @@
 	import { onboarding, onboardingHydrated } from '$lib/stores/onboarding';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
-	import { BorderBeam, MetalFx, magnetic } from '$lib/components/fx';
+	import { BorderBeam, MetalFx } from '$lib/components/fx';
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
@@ -656,22 +656,21 @@
 								{translate(lang, 'home.guestCreateLocal')}
 							</AppButton>
 						{:else}
-							<div class="w-full" {@attach magnetic({ strength: 0.24, radius: 64 })}>
-								<MetalFx class="w-full">
-									<AppButton
-										href={BUILDER_NEW_HREF}
-										class="home-hero-cta fx-cta-sheen items-center justify-center gap-2"
-										block
-									>
-										<LucideIcon icon={Plus} size={ICON_PRIMARY} />
-										{translate(lang, 'home.guestCreateLocal')}
-									</AppButton>
-								</MetalFx>
-							</div>
+							<MetalFx class="w-full">
+								<AppButton
+									href={BUILDER_NEW_HREF}
+									class="home-hero-cta fx-cta-sheen items-center justify-center gap-2"
+									block
+								>
+									<LucideIcon icon={Plus} size={ICON_PRIMARY} />
+									{translate(lang, 'home.guestCreateLocal')}
+								</AppButton>
+							</MetalFx>
 						{/if}
 						<AppButton
 							variant="secondary"
 							href={authHref}
+							block
 							class="home-hero-secondary items-center justify-center gap-2"
 						>
 							<LucideIcon icon={LogIn} size={ICON_PRIMARY} />

@@ -402,12 +402,15 @@ button:focus-visible {
 
 .btn-primary,
 .btn-action {
-	/* Brand violet CTA wash; secondary stays quiet surface */
+	/* Brand violet CTA wash; secondary stays quiet surface.
+	   No 1px transparent border: with bg-clip-padding it read as a dark fringe,
+	   worse on press. */
 	background-color: var(--color-accent-fill);
 	background-image: var(--color-accent-gradient);
+	background-clip: border-box;
 	color: var(--color-accent-ink);
 	-webkit-text-fill-color: var(--color-accent-ink);
-	border: 1px solid transparent;
+	border: none;
 	box-shadow: none;
 	font-weight: 650;
 }
@@ -423,42 +426,50 @@ button:focus-visible {
 	background-image: var(--color-accent-gradient-hover);
 	color: var(--color-accent-ink);
 	-webkit-text-fill-color: var(--color-accent-ink);
-	border-color: transparent;
 }
 
 .btn-primary:active:not(:disabled),
 .btn-action:active:not(:disabled) {
-	transform: scale(0.98);
-}
-
-.btn-secondary:active:not(:disabled),
-.btn-danger:active:not(:disabled) {
-	transform: scale(0.97);
+	transform: scale(0.99);
+	border: none;
+	outline: none;
+	box-shadow: none;
 }
 
 .btn-secondary,
 [data-slot='button'].btn-secondary {
 	background: var(--btn-secondary-bg);
 	color: var(--color-ink);
-	border: 1px solid var(--btn-secondary-border);
-	box-shadow: var(--btn-secondary-shadow);
+	border: 1px solid color-mix(in srgb, var(--btn-secondary-border) 70%, transparent);
+	box-shadow: none;
 }
 
 .btn-secondary:hover,
 [data-slot='button'].btn-secondary:hover,
 [data-slot='button'].btn-secondary[aria-expanded='true'] {
-	border-color: color-mix(in srgb, var(--color-border) 55%, var(--color-ink));
+	border-color: color-mix(in srgb, var(--color-border) 65%, var(--color-ink));
 	color: var(--color-ink);
 	background: var(--color-surface-muted);
+}
+
+.btn-secondary:active:not(:disabled),
+[data-slot='button'].btn-secondary:active:not(:disabled) {
+	transform: scale(0.99);
+	border-color: color-mix(in srgb, var(--btn-secondary-border) 55%, transparent);
+}
+
+.btn-danger:active:not(:disabled) {
+	transform: scale(0.99);
 }
 
 [data-slot='button'].btn-primary,
 [data-slot='button'].btn-action {
 	background-color: var(--color-accent-fill) !important;
 	background-image: var(--color-accent-gradient) !important;
+	background-clip: border-box !important;
 	color: var(--color-accent-ink) !important;
 	-webkit-text-fill-color: var(--color-accent-ink) !important;
-	border: 1px solid transparent !important;
+	border: none !important;
 	border-radius: var(--radius-button) !important;
 	box-shadow: none !important;
 }
@@ -496,16 +507,20 @@ button:focus-visible {
 	background: var(--btn-secondary-bg) !important;
 	color: var(--color-ink) !important;
 	-webkit-text-fill-color: var(--color-ink) !important;
-	border: 1px solid var(--btn-secondary-border) !important;
-	box-shadow: var(--btn-secondary-shadow) !important;
+	border: 1px solid color-mix(in srgb, var(--btn-secondary-border) 70%, transparent) !important;
+	box-shadow: none !important;
 }
 
 [data-slot='button'].btn-secondary:hover:not(:disabled),
 [data-slot='button'].btn-secondary[aria-expanded='true'] {
-	border-color: color-mix(in srgb, var(--color-border) 55%, var(--color-ink)) !important;
+	border-color: color-mix(in srgb, var(--color-border) 65%, var(--color-ink)) !important;
 	color: var(--color-ink) !important;
 	-webkit-text-fill-color: var(--color-ink) !important;
 	background: var(--color-surface-muted) !important;
+}
+
+[data-slot='button'].btn-secondary:active:not(:disabled) {
+	border-color: color-mix(in srgb, var(--btn-secondary-border) 55%, transparent) !important;
 }
 
 [data-slot='button'].btn-danger {
@@ -524,11 +539,14 @@ button:focus-visible {
 }
 
 :is([data-slot='button'].btn-primary, [data-slot='button'].btn-action):active:not(:disabled) {
-	transform: scale(0.98);
+	transform: scale(0.99);
+	border: none !important;
+	outline: none;
+	box-shadow: none !important;
 }
 
 :is([data-slot='button'].btn-secondary, [data-slot='button'].btn-danger):active:not(:disabled) {
-	transform: scale(0.97);
+	transform: scale(0.99);
 }
 
 .btn-danger {
@@ -627,6 +645,7 @@ button:focus-visible {
 	color: var(--color-accent-text);
 	text-decoration: underline;
 	text-underline-offset: 2px;
+	cursor: pointer;
 }
 
 .btn-link:disabled {

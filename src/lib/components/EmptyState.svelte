@@ -2,7 +2,7 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { BorderBeam, MetalFx } from '$lib/components/fx';
+	import { BorderBeam } from '$lib/components/fx';
 	import type { IconComponentProps } from 'phosphor-svelte';
 	import type { Component, Snippet } from 'svelte';
 
@@ -56,17 +56,9 @@
 		{#if hasPrimary || actions}
 			<div class="empty-state__actions flex w-full flex-col items-stretch">
 				{#if actionHref && actionLabel}
-					<MetalFx class="w-full">
-						<AppButton block href={actionHref} class="empty-state__action fx-cta-sheen"
-							>{actionLabel}</AppButton
-						>
-					</MetalFx>
+					<AppButton block href={actionHref} class="empty-state__action">{actionLabel}</AppButton>
 				{:else if actionLabel && actionOnclick}
-					<MetalFx class="w-full">
-						<AppButton block class="empty-state__action fx-cta-sheen" onclick={actionOnclick}
-							>{actionLabel}</AppButton
-						>
-					</MetalFx>
+					<AppButton block class="empty-state__action" onclick={actionOnclick}>{actionLabel}</AppButton>
 				{/if}
 				{#if actions}
 					{@render actions()}

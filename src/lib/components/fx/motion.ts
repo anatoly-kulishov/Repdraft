@@ -2,6 +2,7 @@ import type { Attachment } from 'svelte/attachments';
 
 export function prefersReducedMotion(): boolean {
 	if (typeof window === 'undefined') return true;
+	if (document.documentElement.dataset.reduceMotion === 'true') return true;
 	return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 

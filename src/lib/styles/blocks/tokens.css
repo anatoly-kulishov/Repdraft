@@ -162,17 +162,25 @@
 		0 2px 12px rgb(0 0 0 / 0.32);
 	/* Bright top edge + soft inner bottom = the material has thickness. */
 	--glass-inset: inset 0 1px 0 var(--glass-highlight), inset 0 -1px 0 rgb(0 0 0 / 0.28);
-	/* Panels/cards: quieter glass than floating chrome so text stays crisp. */
+	/* Panels/cards: quieter glass than floating chrome so text stays crisp.
+	   Tint toward the ambient violet so plates don't read as cold grey slabs
+	   on the purple page wash (especially wide desktop columns). */
+	--ambient-spot: #2b1f44;
+	--ambient-spot-secondary: #152036;
 	--glass-panel-blur: 18px;
-	--glass-panel-bg: color-mix(in srgb, var(--color-surface) 62%, transparent);
-	--glass-panel-border: color-mix(in srgb, var(--color-ink) 13%, transparent);
+	--glass-panel-bg: color-mix(
+		in srgb,
+		color-mix(in srgb, var(--color-surface) 78%, var(--ambient-spot)) 54%,
+		transparent
+	);
+	--glass-panel-border: color-mix(in srgb, var(--color-ink) 12%, transparent);
 	--glass-panel-shadow:
-		0 10px 26px rgb(0 0 0 / 0.38),
-		0 2px 8px rgb(0 0 0 / 0.2);
+		0 8px 22px rgb(0 0 0 / 0.3),
+		0 1px 6px rgb(0 0 0 / 0.16);
 	/* Ambient depth: glass needs something behind it to read as glass. */
 	--app-bg-image:
-		radial-gradient(115% 70% at 50% -12%, #2b1f44 0%, transparent 58%),
-		radial-gradient(90% 55% at 112% 8%, #152036 0%, transparent 62%);
+		radial-gradient(115% 70% at 50% -12%, var(--ambient-spot) 0%, transparent 58%),
+		radial-gradient(90% 55% at 112% 8%, var(--ambient-spot-secondary) 0%, transparent 62%);
 	/* Skeleton bones — readable on surface plates. */
 	--skeleton-base: #3a3a3c;
 	--skeleton-shine: #4a4a4e;
@@ -418,19 +426,28 @@ html[data-theme='light'] {
 	/* Light plates: only the specular top edge. An inner bottom line plus the
 	   border plus a drop shadow stacked into a dirty band under every card. */
 	--glass-inset: inset 0 1px 0 var(--glass-highlight);
-	/* Panels/cards: quieter glass than floating chrome so text stays crisp. */
+	/* Panels/cards: quieter glass than floating chrome so text stays crisp.
+	   Same family as the lavender/blue page wash so cards don't float as
+	   pure white bricks on desktop. */
+	--ambient-spot: #eadffb;
+	--ambient-spot-secondary: #dde8ff;
+	--ambient-spot-tertiary: #ffecf3;
 	--glass-panel-blur: 18px;
-	--glass-panel-bg: color-mix(in srgb, var(--color-surface) 62%, transparent);
+	--glass-panel-bg: color-mix(
+		in srgb,
+		color-mix(in srgb, var(--color-surface) 88%, var(--ambient-spot)) 58%,
+		transparent
+	);
 	/* Light-on-light needs a hairline darker than the plate, not a white one. */
 	--glass-panel-border: color-mix(in srgb, var(--color-ink) 10%, transparent);
 	--glass-panel-shadow: 0 4px 14px rgb(18 20 26 / 0.05);
-	/* Ambient mesh must be visible under the glass on white plates — muted
+	/* Ambient mesh must be visible under the glass on white plates - muted
 	   enough that cards don't pick up noticeably different tints from
 	   position to position. */
 	--app-bg-image:
-		radial-gradient(120% 80% at 50% -14%, #eadffb 0%, transparent 60%),
-		radial-gradient(85% 60% at 110% 6%, #dde8ff 0%, transparent 64%),
-		radial-gradient(75% 55% at -8% 84%, #ffecf3 0%, transparent 62%);
+		radial-gradient(120% 80% at 50% -14%, var(--ambient-spot) 0%, transparent 60%),
+		radial-gradient(85% 60% at 110% 6%, var(--ambient-spot-secondary) 0%, transparent 64%),
+		radial-gradient(75% 55% at -8% 84%, var(--ambient-spot-tertiary) 0%, transparent 62%);
 	--skeleton-base: #d1d1d6;
 	--skeleton-shine: #e8e8ed;
 	/* Skeleton card surface mirrors glass .panel so skeleton → content doesn't jump. */

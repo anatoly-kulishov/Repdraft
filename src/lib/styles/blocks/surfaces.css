@@ -3,8 +3,9 @@
 .panel {
 	border: 1px solid var(--glass-panel-border);
 	border-radius: var(--radius-panel);
-	background-color: var(--glass-panel-bg);
-	background-image: var(--glass-sheen);
+	/* Beat utility bg-* (e.g. leftover bg-card) so ambient-tinted glass wins. */
+	background-color: var(--glass-panel-bg) !important;
+	background-image: var(--glass-sheen) !important;
 	/* Liquid glass: translucent plate over the ambient page mesh. */
 	-webkit-backdrop-filter: blur(var(--glass-panel-blur)) saturate(var(--glass-saturate));
 	backdrop-filter: blur(var(--glass-panel-blur)) saturate(var(--glass-saturate));
@@ -17,8 +18,8 @@
 /* No blur support → solid plate so text never sits on a see-through card. */
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
 	.panel {
-		background-color: var(--color-surface);
-		background-image: none;
+		background-color: var(--color-surface) !important;
+		background-image: none !important;
 	}
 }
 
@@ -27,8 +28,8 @@
 	.panel {
 		-webkit-backdrop-filter: none;
 		backdrop-filter: none;
-		background-color: var(--color-surface);
-		background-image: none;
+		background-color: var(--color-surface) !important;
+		background-image: none !important;
 	}
 
 	/* Skeleton placeholders mirror the same solid fallback so reduced-transparency
@@ -74,16 +75,23 @@
 .panel-inset {
 	border: 1px solid var(--color-field-border);
 	border-radius: var(--radius-panel);
-	background: var(--color-surface);
+	background-color: var(--color-surface) !important;
+	background-image: none !important;
 	padding: 0.75rem;
 }
 
 .panel-dashed {
 	border: 1px dashed var(--color-field-border);
 	border-radius: var(--radius-panel);
-	background: var(--color-surface);
+	background-color: var(--color-surface) !important;
+	background-image: none !important;
 	padding: 1rem 1.25rem;
 	box-shadow: none;
+}
+
+.panel.panel-dashed {
+	-webkit-backdrop-filter: none;
+	backdrop-filter: none;
 }
 
 /* Clipped well sized by the grid/flex column. contain, no scale:

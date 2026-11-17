@@ -368,9 +368,14 @@
 		overflow: visible;
 	}
 
-	/* Beat .shell-main--subroute .screen-header chrome bg on desktop. */
-	.shell-main--subroute .screen-header {
+	/* Beat .shell-main--subroute .screen-header:not(.embedded) chrome frost.
+	   Desktop headers are static - opaque white plates over the page wash look broken. */
+	.shell-main--subroute .screen-header,
+	.shell-main--subroute .screen-header:not(.screen-header--embedded),
+	.shell-main--subroute .screen-header.screen-header--fixed:not(.screen-header--embedded) {
 		background: transparent;
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
 	}
 
 	.screen-header-title {
@@ -484,6 +489,15 @@
 		font-weight: 600;
 		line-height: 1.2;
 		letter-spacing: -0.02em;
+	}
+
+	/*
+	 * Beat `.screen-header:not(.back-label) { display: grid }` so Tailwind
+	 * `lg:hidden` (History mobile chrome, spacers) actually hides on desktop.
+	 */
+	.screen-header.lg\:hidden,
+	.screen-header-spacer.lg\:hidden {
+		display: none;
 	}
 }
 
@@ -1882,6 +1896,11 @@ button.live-local-save-cue {
 	max-width: 100%;
 }
 
+/* Settings subroutes (/auth/training, /interface, …): form column, not catalog rail. */
+.profile-settings-stack--subpage {
+	max-width: min(var(--page-content-narrow), 100%);
+}
+
 .profile-settings-hub {
 	display: flex;
 	flex-direction: column;
@@ -2011,6 +2030,11 @@ button.live-local-save-cue {
 	flex-direction: column;
 	gap: 0.35rem;
 	padding: 0.75rem 1rem 0.85rem;
+}
+
+/* Under the hero: same glass family as hub cards, quieter elevation. */
+.profile-greeting-edit.panel {
+	box-shadow: var(--glass-inset);
 }
 
 .profile-greeting-edit__head {
@@ -2929,6 +2953,21 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 		padding-inline: var(--auth-account-gutter, 1.25rem);
 	}
 
+	/*
+	 * Settings subpages: ProfileSettingsPage has no .auth-account wrapper, so the
+	 * catalog max-width above never applied and the stack went full main width.
+	 * Use the narrow form column; shell already supplies --page-pad-x (no extra gutter).
+	 */
+	.auth-page--account .profile-settings-stack--subpage {
+		max-width: min(var(--page-content-narrow), 100%);
+		padding-inline: 0;
+	}
+
+	.shell-main--subroute:has(.profile-settings-stack--subpage) .screen-header,
+	.shell-main--subroute:has(.profile-settings-stack--subpage) .screen-header.screen-header--fixed {
+		max-width: min(var(--page-content-narrow), 100%);
+	}
+
 	.auth-account__desktop-head {
 		padding-top: max(1.25rem, var(--page-pad-y));
 	}
@@ -3305,7 +3344,7 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 
 .auth-legal-consent {
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	gap: 0.65rem;
 	margin: 0.15rem 0 0.1rem;
 	padding: 0.35rem 0;
@@ -3321,7 +3360,7 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	height: 1.25rem;
 	min-width: 1.25rem;
 	min-height: 1.25rem;
-	margin: 0.2rem 0 0;
+	margin: 0;
 	padding: 0;
 	box-sizing: border-box;
 	accent-color: var(--color-accent);
@@ -3838,12 +3877,14 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 @media (min-width: 1024px) {
 	.exercise-detail-page__hero {
 		flex-direction: row;
-		align-items: flex-start;
+		/* Pin CTA / bookmark column to the media baseline, not the top. */
+		align-items: flex-end;
 		gap: 1.25rem 1.5rem;
 	}
 
 	.exercise-detail-page__intro {
 		flex: 1 1 auto;
+		align-content: end;
 	}
 
 	.exercise-media-frame {

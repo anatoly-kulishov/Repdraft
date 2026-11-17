@@ -981,11 +981,18 @@ a.home-header__row--link:active .home-header__cta {
 		width: auto;
 	}
 
-	/* Guest create: CTAs live in the hero (header is omitted). */
+	/* Guest create: CTAs live in the hero (header is omitted). Keep full-width stack. */
+	.home-page--guest.home-page--create .home-hero-actions {
+		flex-direction: column;
+		align-items: stretch;
+		flex-wrap: nowrap;
+	}
+
 	.home-page--guest.home-page--create .home-hero-cta,
 	.home-page--guest.home-page--create .home-hero-secondary,
 	.home-page--guest.home-page--create .home-hero-skip {
 		display: inline-flex;
+		width: 100%;
 	}
 
 	.home-page--create .home-dashboard-top {

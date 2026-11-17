@@ -3678,10 +3678,28 @@ body:has(.sticky-actions) .draft-dock {
 	/*
 	 * Empty cards sit under the sticky title chrome.
 	 * Same gap as ScreenHeader → content on other subroutes.
+	 * EmptyState wraps the panel in .empty-state-beam (BorderBeam).
 	 */
 	.content-page--catalog.catalog-page--list > .empty-state,
-	.content-page--catalog.records-page > .empty-state {
+	.content-page--catalog.catalog-page--list > .empty-state-beam,
+	.content-page--catalog.records-page > .empty-state,
+	.content-page--catalog.records-page > .empty-state-beam {
 		margin-top: var(--list-empty-gap);
+	}
+
+	/*
+	 * Header-only sticky chrome (empty «Сохранённые»): --screen-header-content-gap
+	 * is zeroed above for search+title strips, so restore gap under title-only.
+	 */
+	.content-page--catalog .catalog-list-layout__filters--monolith:has(> .screen-header:only-child) {
+		margin-bottom: var(--list-empty-gap);
+	}
+
+	.content-page--catalog .catalog-list-layout__filters--monolith:has(> .screen-header:only-child)
+		+ .empty-state,
+	.content-page--catalog .catalog-list-layout__filters--monolith:has(> .screen-header:only-child)
+		+ .empty-state-beam {
+		margin-top: 0;
 	}
 
 	.content-page--catalog .catalog-list-layout__filters--monolith,
@@ -3762,6 +3780,21 @@ body:has(.sticky-actions) .draft-dock {
 		display: flex;
 		flex-direction: column;
 		gap: 0.65rem;
+	}
+
+	/*
+	 * Header-only sticky chrome (e.g. empty «Сохранённые»): embedded ScreenHeader
+	 * has margin: 0, so the title sat flush on the card. Match other subroute gaps.
+	 */
+	.content-page--catalog .catalog-list-layout__filters--monolith:has(> .screen-header:only-child) {
+		margin-bottom: var(--screen-header-content-gap);
+	}
+
+	.content-page--catalog.catalog-page--list > .empty-state,
+	.content-page--catalog.catalog-page--list > .empty-state-beam,
+	.content-page--catalog.records-page > .empty-state,
+	.content-page--catalog.records-page > .empty-state-beam {
+		margin-top: 0;
 	}
 }
 

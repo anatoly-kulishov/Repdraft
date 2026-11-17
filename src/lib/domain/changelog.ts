@@ -14,6 +14,31 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.19',
+		highlights: {
+			ru: [
+				'Курсор-рука на ссылках-кнопках: восстановление из файла, вход по почте',
+				'Экран входа: заголовок «Войти», без лишнего слогана над формой',
+				'Меньше анимации на кнопках: без вечного блеска и «магнита»',
+				'Карточки на десктопе ближе к фону страницы, без чужого серого',
+				'Десктоп: шапка экрана без белой подложки поверх фона',
+				'Кнопки без тёмной обводки, особенно при нажатии',
+				'Настройка «Упростить анимации»: без декоративных эффектов',
+				'Подстраницы настроек на десктопе уже не на всю ширину'
+			],
+			en: [
+				'Hand cursor on link buttons: restore from file, email sign-in link',
+				'Sign-in screen: clearer title, no extra tagline above the form',
+				'Quieter button motion: no looping sheen or magnetic pull',
+				'Desktop cards sit closer to the page wash, less cold grey',
+				'Desktop: screen header no longer paints a white plate over the wash',
+				'Buttons without a dark fringe, especially on press',
+				'Reduce motion setting: turn off decorative effects',
+				'Desktop settings subpages use a narrower column'
+			]
+		}
+	},
+	{
 		version: '0.25.18',
 		highlights: {
 			ru: [

@@ -177,6 +177,20 @@
 					} else {
 						document.documentElement.classList.remove('dark');
 					}
+					/* Decorative motion: user pref OR OS reduce-motion. */
+					var reduceMotionUser = localStorage.getItem('repdraft:reduce-motion');
+					var reduceMotionOs = false;
+					try {
+						reduceMotionOs =
+							window.matchMedia &&
+							window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+					} catch (reduceOsErr) {}
+					document.documentElement.setAttribute(
+						'data-reduce-motion',
+						reduceMotionUser === '1' || reduceMotionUser === 'true' || reduceMotionOs
+							? 'true'
+							: 'false'
+					);
 					document.documentElement.style.setProperty('--boot-bg', bg);
 					document.documentElement.style.colorScheme = theme;
 					document.documentElement.style.backgroundColor = bg;

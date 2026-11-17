@@ -13,6 +13,10 @@ import {
 	serializeHomeKitStorage,
 	type HomeKitOptionalId
 } from '@repdraft/domain/homeKit';
+import {
+	parseReduceMotionEnabled,
+	REDUCE_MOTION_STORAGE_KEY
+} from '@repdraft/domain/prefs';
 
 const REST_SOUND_KEY = 'repdraft:rest-sound-enabled';
 const HAPTIC_KEY = 'repdraft:haptic-rest-done';
@@ -36,6 +40,14 @@ export async function isHapticRestEnabled(): Promise<boolean> {
 
 export async function setHapticRestEnabled(on: boolean): Promise<void> {
 	await AsyncStorage.setItem(HAPTIC_KEY, on ? '1' : '0');
+}
+
+export async function isReduceMotionEnabled(): Promise<boolean> {
+	return parseReduceMotionEnabled(await AsyncStorage.getItem(REDUCE_MOTION_STORAGE_KEY));
+}
+
+export async function setReduceMotionEnabled(on: boolean): Promise<void> {
+	await AsyncStorage.setItem(REDUCE_MOTION_STORAGE_KEY, on ? '1' : '0');
 }
 
 export async function getGreetingName(): Promise<string> {
