@@ -3763,6 +3763,19 @@ body:has(.sticky-actions) .draft-dock {
 		flex-direction: column;
 		gap: 0.65rem;
 	}
+
+	/*
+	 * Header-only sticky chrome (e.g. empty «Сохранённые»): embedded ScreenHeader
+	 * has margin: 0, so the title sat flush on the card. Match other subroute gaps.
+	 */
+	.content-page--catalog .catalog-list-layout__filters--monolith:has(> .screen-header:only-child) {
+		margin-bottom: var(--screen-header-content-gap);
+	}
+
+	.content-page--catalog.catalog-page--list > .empty-state,
+	.content-page--catalog.records-page > .empty-state {
+		margin-top: 0;
+	}
 }
 
 .catalog-list-layout__main {
