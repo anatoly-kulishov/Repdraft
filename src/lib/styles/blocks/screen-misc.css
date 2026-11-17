@@ -490,6 +490,15 @@
 		line-height: 1.2;
 		letter-spacing: -0.02em;
 	}
+
+	/*
+	 * Beat `.screen-header:not(.back-label) { display: grid }` so Tailwind
+	 * `lg:hidden` (History mobile chrome, spacers) actually hides on desktop.
+	 */
+	.screen-header.lg\:hidden,
+	.screen-header-spacer.lg\:hidden {
+		display: none;
+	}
 }
 
 .screen-header-timer {
@@ -3868,14 +3877,12 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 @media (min-width: 1024px) {
 	.exercise-detail-page__hero {
 		flex-direction: row;
-		/* Pin CTA / bookmark column to the media baseline, not the top. */
-		align-items: flex-end;
+		align-items: flex-start;
 		gap: 1.25rem 1.5rem;
 	}
 
 	.exercise-detail-page__intro {
 		flex: 1 1 auto;
-		align-content: end;
 	}
 
 	.exercise-media-frame {
