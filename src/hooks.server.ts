@@ -4,12 +4,8 @@ import { CANONICAL_SITE_ORIGIN } from '$lib/seo/site';
 /** Apex of the public site. Vercel “Redirect to www” must be OFF for this to run. */
 const CANONICAL_APEX = 'repdraft.ru';
 
-/**
- * Previous zone. Its apex still lands on www of the same zone so shipped
- * app builds and old links keep working until that host is retired.
- */
-const LEGACY_APEX = 'repdraft.xyz';
-const LEGACY_ORIGIN = 'https://www.repdraft.xyz';
+/** Previous zone: every host redirects to www.repdraft.ru. */
+const LEGACY_HOSTS = new Set(['repdraft.xyz', 'www.repdraft.xyz']);
 
 /**
  * Paths that must return 200 on apex without a 308 (Yandex favicon probe).
@@ -19,17 +15,21 @@ const APEX_PASSTHROUGH =
 	/^\/(favicon\.ico|favicon-\d+x\d+\.png|apple-touch-icon(?:-precomposed)?-v3\.png|robots\.txt|sitemap\.xml)$/i;
 
 /**
- * App-level apex → www redirect with favicon/SEO passthrough.
+ * Apex → www for the public domain, plus full cutover of the legacy zone.
  * If Domains → “Redirect to www” is still enabled in Vercel, the edge redirect
  * wins and this hook never sees apex traffic. Turn that toggle off after deploy.
  */
 export const handle: Handle = async ({ event, resolve }) => {
 	const host = event.url.hostname.toLowerCase();
-	const apexOrigin =
-		host === CANONICAL_APEX ? CANONICAL_SITE_ORIGIN : host === LEGACY_APEX ? LEGACY_ORIGIN : '';
-	if (apexOrigin && !APEX_PASSTHROUGH.test(event.url.pathname)) {
-		const dest = new URL(`${event.url.pathname}${event.url.search}`, apexOrigin);
-		return Response.redirect(dest, 308);
+	const pathAndQuery = `${event.url.pathname}${event.url.search}`;
+
+	if (LEGACY_HOSTS.has(host)) {
+		return Response.redirect(new URL(pathAndQuery, CANONICAL_SITE_ORIGIN), 308);
 	}
+
+	if (host === CANONICAL_APEX && !APEX_PASSTHROUGH.test(event.url.pathname)) {
+		return Response.redirect(new URL(pathAndQuery, CANONICAL_SITE_ORIGIN), 308);
+	}
+
 	return resolve(event);
 };
