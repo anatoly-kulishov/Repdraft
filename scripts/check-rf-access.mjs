@@ -18,7 +18,7 @@
  * Код возврата 1, если главная страница, JS-бандл или 32 КБ не пришли
  * ни разу либо пришли нестабильно.
  */
-const DEFAULT_TARGET = 'https://www.repdraft.xyz';
+const DEFAULT_TARGET = 'https://www.repdraft.ru';
 const CONTROL_TARGET = 'https://github.com/';
 const TIMEOUT_MS = 12_000;
 const ATTEMPTS = 3;

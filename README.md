@@ -94,7 +94,7 @@ npm run check:mobile   # RN (tsc)
 | Web | SvelteKit 5 + TypeScript + Tailwind 4 |
 | Domain | Pure TS `src/lib/domain` (shared) |
 | Backend | Supabase (optional auth & sync) |
-| Web host | Vercel - [www.repdraft.ru](https://www.repdraft.ru) |
+| Web host | RF VPS (Node) - [www.repdraft.ru](https://www.repdraft.ru) |
 
 Agent context: [`.cursor/INDEX.md`](./.cursor/INDEX.md) (entry: [`AGENTS.md`](./AGENTS.md)).
 

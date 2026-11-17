@@ -14,6 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.8',
+		highlights: {
+			ru: [
+				'Сайт на сервере в РФ: стабильнее открывается без VPN',
+				'Адрес тот же: www.repdraft.ru'
+			],
+			en: [
+				'Site hosted in Russia: more reliable without a VPN',
+				'Same address: www.repdraft.ru'
+			]
+		}
+	},
+	{
 		version: '0.25.7',
 		highlights: {
 			ru: [
