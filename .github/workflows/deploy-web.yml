@@ -88,7 +88,8 @@ jobs:
              cd '${VPS_PATH}'
              docker compose up -d --build
              docker compose ps
-             curl -4 -fsS --max-time 20 -o /dev/null -w '%{http_code}\n' https://www.repdraft.ru/"
+             # In-VPS hairpin to public HTTPS is unreliable; probe the app container.
+             docker compose exec -T app node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(e=>{console.error(e);process.exit(1)})\""
 
       - name: Smoke check from runner
         run: |
