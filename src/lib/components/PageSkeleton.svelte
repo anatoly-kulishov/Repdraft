@@ -285,14 +285,6 @@
 				<AppSkeleton class="page-skeleton-auth-guest__title" />
 			</div>
 
-			<header class="page-skeleton-auth-guest__header">
-				<div class="page-skeleton-auth-guest__desktop-head">
-					<AppSkeleton class="page-skeleton-auth-back" />
-				</div>
-				<AppSkeleton class="page-skeleton-auth-guest__page-title" />
-				<AppSkeleton class="page-skeleton-auth-guest__tagline" />
-			</header>
-
 			<div class="page-skeleton-auth-guest__stack">
 				<div class="page-skeleton-card page-skeleton-card--auth page-skeleton-card--auth-signin">
 					<AppSkeleton class="page-skeleton-auth-guest__segments" />

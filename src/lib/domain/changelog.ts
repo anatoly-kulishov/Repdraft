@@ -17,10 +17,12 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.25.19',
 		highlights: {
 			ru: [
-				'Ссылка «Восстановить из файла» снова с курсором-рукой'
+				'Ссылка «Восстановить из файла» снова с курсором-рукой',
+				'Экран входа: заголовок «Войти», без лишнего слогана над формой'
 			],
 			en: [
-				'Restore-from-file link shows the hand cursor again'
+				'Restore-from-file link shows the hand cursor again',
+				'Sign-in screen: clearer title, no extra tagline above the form'
 			]
 		}
 	},

@@ -41,7 +41,6 @@
 	import { getSupabase, isSupabaseConfigured } from '$lib/supabase/client';
 	import { coachRepository } from '$lib/storage/coachRepository';
 	import AuthLegalConsent from '$lib/components/AuthLegalConsent.svelte';
-	import BrandTagline from '$lib/components/BrandTagline.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import PasswordField from '$lib/components/PasswordField.svelte';
 	import PasswordPolicyHints from '$lib/components/PasswordPolicyHints.svelte';
@@ -642,10 +641,6 @@
 	let showCloudOff = $derived(
 		browser && $auth.ready && $auth.sessionKnown && !$auth.configured && !showBootSkeleton
 	);
-	let guestExtrasMode = $derived(
-		$auth.ready && $auth.sessionKnown && !accountMode && !recoveryMode && !showBootSkeleton
-	);
-
 	$effect(() => {
 		if (!accountMode) return;
 		greetingNameInput = $greetingName;
@@ -741,7 +736,7 @@
 
 </script>
 
-<SeoHead title={translate(lang, accountMode ? 'nav.profile' : 'nav.user')} noindex />
+<SeoHead title={translate(lang, accountMode ? 'nav.profile' : 'nav.signIn')} noindex />
 
 <section
 	class="auth-page content-page"
@@ -762,15 +757,8 @@
 				backLabelVisible
 			/>
 		{:else if !recoveryMode}
-			<ScreenHeader title={translate(lang, 'nav.user')} backHref={nextPath} />
+			<ScreenHeader title={translate(lang, 'nav.signIn')} backHref={nextPath} />
 		{/if}
-	{/if}
-	{#if $auth.ready && $auth.sessionKnown && !accountMode && !showBootSkeleton}
-		<header class="page-header page-header--compact auth-page__header">
-			{#if guestExtrasMode}
-				<BrandTagline class="brand-tagline--auth" />
-			{/if}
-		</header>
 	{/if}
 
 	{#if showBootSkeleton}
