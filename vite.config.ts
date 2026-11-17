@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
 	// set the var on the project and redeploy for full SEO.
 	if (process.env.VERCEL_ENV === 'production' && !pub('PUBLIC_SITE_URL').trim()) {
 		console.warn(
-			'[seo] PUBLIC_SITE_URL is unset on this Production build. Set https://www.repdraft.xyz on the Vercel project (not only Shared) and redeploy for canonical/og URLs.'
+			'[seo] PUBLIC_SITE_URL is unset on this Production build. Set https://www.repdraft.ru on the Vercel project (not only Shared) and redeploy for canonical/og URLs.'
 		);
 	}
 

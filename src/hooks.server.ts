@@ -1,8 +1,11 @@
 import type { Handle } from '@sveltejs/kit';
 import { CANONICAL_SITE_ORIGIN } from '$lib/seo/site';
 
-/** Apex host Yandex indexes; Vercel “Redirect to www” must be OFF for this to run. */
-const APEX_HOST = 'repdraft.xyz';
+/** Apex of the public site. Vercel “Redirect to www” must be OFF for this to run. */
+const CANONICAL_APEX = 'repdraft.ru';
+
+/** Previous zone: every host redirects to www.repdraft.ru. */
+const LEGACY_HOSTS = new Set(['repdraft.xyz', 'www.repdraft.xyz']);
 
 /**
  * Paths that must return 200 on apex without a 308 (Yandex favicon probe).
@@ -12,15 +15,21 @@ const APEX_PASSTHROUGH =
 	/^\/(favicon\.ico|favicon-\d+x\d+\.png|apple-touch-icon(?:-precomposed)?-v3\.png|robots\.txt|sitemap\.xml)$/i;
 
 /**
- * App-level apex → www redirect with favicon/SEO passthrough.
+ * Apex → www for the public domain, plus full cutover of the legacy zone.
  * If Domains → “Redirect to www” is still enabled in Vercel, the edge redirect
- * wins and this hook never sees apex traffic — turn that toggle off after deploy.
+ * wins and this hook never sees apex traffic. Turn that toggle off after deploy.
  */
 export const handle: Handle = async ({ event, resolve }) => {
 	const host = event.url.hostname.toLowerCase();
-	if (host === APEX_HOST && !APEX_PASSTHROUGH.test(event.url.pathname)) {
-		const dest = new URL(`${event.url.pathname}${event.url.search}`, CANONICAL_SITE_ORIGIN);
-		return Response.redirect(dest, 308);
+	const pathAndQuery = `${event.url.pathname}${event.url.search}`;
+
+	if (LEGACY_HOSTS.has(host)) {
+		return Response.redirect(new URL(pathAndQuery, CANONICAL_SITE_ORIGIN), 308);
 	}
+
+	if (host === CANONICAL_APEX && !APEX_PASSTHROUGH.test(event.url.pathname)) {
+		return Response.redirect(new URL(pathAndQuery, CANONICAL_SITE_ORIGIN), 308);
+	}
+
 	return resolve(event);
 };

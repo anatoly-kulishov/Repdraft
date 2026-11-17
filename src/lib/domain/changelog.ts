@@ -14,6 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.7',
+		highlights: {
+			ru: [
+				'Сайт открывается на www.repdraft.ru',
+				'Старые ссылки на .xyz переходят на новый адрес'
+			],
+			en: [
+				'Site opens at www.repdraft.ru',
+				'Old .xyz links move to the new address'
+			]
+		}
+	},
+	{
 		version: '0.25.6',
 		highlights: {
 			ru: [

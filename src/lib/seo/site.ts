@@ -1,7 +1,7 @@
 export const SITE_NAME = 'Repdraft';
 
 /** Public production host (apex redirects here). Used when env/request origin is unusable. */
-export const CANONICAL_SITE_ORIGIN = 'https://www.repdraft.xyz';
+export const CANONICAL_SITE_ORIGIN = 'https://www.repdraft.ru';
 
 const DEFAULT_OG_IMAGE = '/og-image.jpg';
 
