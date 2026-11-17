@@ -14,6 +14,17 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.13',
+		highlights: {
+			ru: [
+				'Яндекс: файл подтверждения сайта для www.repdraft.ru'
+			],
+			en: [
+				'Yandex: site verification file for www.repdraft.ru'
+			]
+		}
+	},
+	{
 		version: '0.25.12',
 		highlights: {
 			ru: [
