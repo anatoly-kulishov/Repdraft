@@ -24,23 +24,23 @@ curl -s https://www.repdraft.ru/yandex_a7a3007bd3b3955c.html
 
 ## Google Search Console
 
-1. [search.google.com/search-console](https://search.google.com/search-console) → **Add property** → URL prefix `https://www.repdraft.ru`
-2. Подтверждение (любой способ):
-   - **DNS TXT** в зоне Рег.ру (ispmanager):  
-     Тип `TXT`, имя `@`, значение вида `google-site-verification=…` (токен из GSC; старый с `.xyz` может не подойти - возьми новый из мастера)
-   - или meta: `PUBLIC_GOOGLE_SITE_VERIFICATION=…` → пересборка/деплой VPS
-3. **Sitemaps** → `https://www.repdraft.ru/sitemap.xml`
-4. На **старом** свойстве `https://www.repdraft.xyz` (если ещё есть): **Settings → Change of address** → новый `https://www.repdraft.ru` (нужны оба свойства подтверждены; редиректы со старого домена помогают)
+### Domain property `repdraft.ru` (DNS TXT)
 
-## DNS (Рег.ру / ispmanager)
-
-Для Google DNS-метода:
+В GSC выбран **Verify domain ownership via DNS**. В зоне Рег.ру (ispmanager → DNS для `repdraft.ru`) добавь **новую** TXT (SPF не трогай):
 
 | Тип | Имя | Значение |
 |---|---|---|
-| TXT | `@` / `repdraft.ru.` | `google-site-verification=ТОКЕН_ИЗ_GSC` |
+| TXT | `@` (или пусто / `repdraft.ru.`) | `google-site-verification=Y8MEIF_Vbn_b3ImSzPY6Xaf3N6gXR0rcRvcPGDu_pUg` |
 
-Не трогай A `@` / A `www` на VPS (`89.108.81.141`).
+Проверка снаружи: `dig +short TXT repdraft.ru @8.8.8.8` - должна появиться строка с `google-site-verification=Y8MEIF_…`. Потом в GSC → **Verify**. DNS может дойти за минуты, иногда до суток. **Не трогай** A `@` / A `www` → `89.108.81.141`.
+
+### URL prefix `https://www.repdraft.ru` (meta, запасной)
+
+В коде уже есть meta через `PUBLIC_GOOGLE_SITE_VERIFICATION=Y8MEIF_Vbn_b3ImSzPY6Xaf3N6gXR0rcRvcPGDu_pUg` (токен без префикса `google-site-verification=`).
+
+1. После деплоя: view-source главной → `google-site-verification`
+2. **Sitemaps** → `https://www.repdraft.ru/sitemap.xml`
+3. На старом `https://www.repdraft.xyz` (если есть): **Change of address** → `https://www.repdraft.ru`
 
 ## После подтверждения
 
@@ -53,7 +53,7 @@ curl -s https://www.repdraft.ru/yandex_a7a3007bd3b3955c.html
 В `/opt/repdraft/.env`:
 
 ```env
-PUBLIC_GOOGLE_SITE_VERIFICATION=
+PUBLIC_GOOGLE_SITE_VERIFICATION=Y8MEIF_Vbn_b3ImSzPY6Xaf3N6gXR0rcRvcPGDu_pUg
 PUBLIC_YANDEX_VERIFICATION=a7a3007bd3b3955c
 ```
 

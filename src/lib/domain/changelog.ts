@@ -14,6 +14,17 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.15',
+		highlights: {
+			ru: [
+				'SEO: meta подтверждения Google для www.repdraft.ru'
+			],
+			en: [
+				'SEO: Google site verification meta for www.repdraft.ru'
+			]
+		}
+	},
+	{
 		version: '0.25.14',
 		highlights: {
 			ru: [
