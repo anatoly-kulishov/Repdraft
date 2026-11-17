@@ -670,6 +670,7 @@
 						<AppButton
 							variant="secondary"
 							href={authHref}
+							block
 							class="home-hero-secondary items-center justify-center gap-2"
 						>
 							<LucideIcon icon={LogIn} size={ICON_PRIMARY} />
