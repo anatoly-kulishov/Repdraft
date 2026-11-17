@@ -296,14 +296,24 @@
 		linear-gradient(#000 0 0);
 	-webkit-mask-composite: xor;
 	mask-composite: exclude;
-	animation: fx-metal-turn 5.5s linear infinite;
+	/* Quiet by default: spinning rim felt busy on CTAs. */
+	opacity: 0.5;
+	animation: fx-metal-turn 8s linear infinite;
+	animation-play-state: paused;
 	transition: opacity 200ms ease;
 }
 
 .fx-metal:has(:disabled) .fx-metal__ring,
 .fx-metal:has([aria-disabled='true']) .fx-metal__ring {
-	opacity: 0.3;
+	opacity: 0.28;
 	animation-play-state: paused;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.fx-metal:hover:not(:has(:disabled)):not(:has([aria-disabled='true'])) .fx-metal__ring {
+		opacity: 0.85;
+		animation-play-state: running;
+	}
 }
 
 .fx-metal-text {
@@ -395,11 +405,12 @@
 	background: linear-gradient(
 		105deg,
 		transparent 36%,
-		color-mix(in srgb, white 22%, transparent) 50%,
+		color-mix(in srgb, white 18%, transparent) 50%,
 		transparent 64%
 	);
 	transform: translateX(-130%);
-	animation: fx-cta-sheen 3.6s ease-in-out 0.4s infinite;
+	/* No infinite loop - one pass on hover only (fine pointer). */
+	animation: none;
 }
 
 .fx-cta-sheen > * {
@@ -412,9 +423,14 @@
 	display: none;
 }
 
+@media (hover: hover) and (pointer: fine) {
+	.fx-cta-sheen:hover:not(:disabled):not([aria-disabled='true'])::after {
+		animation: fx-cta-sheen 0.75s ease-out 1;
+	}
+}
+
 @keyframes fx-cta-sheen {
-	0%,
-	55% {
+	0% {
 		transform: translateX(-130%);
 	}
 	100% {

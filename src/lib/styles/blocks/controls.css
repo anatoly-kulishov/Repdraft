@@ -428,12 +428,12 @@ button:focus-visible {
 
 .btn-primary:active:not(:disabled),
 .btn-action:active:not(:disabled) {
-	transform: scale(0.98);
+	transform: scale(0.99);
 }
 
 .btn-secondary:active:not(:disabled),
 .btn-danger:active:not(:disabled) {
-	transform: scale(0.97);
+	transform: scale(0.99);
 }
 
 .btn-secondary,
@@ -524,11 +524,11 @@ button:focus-visible {
 }
 
 :is([data-slot='button'].btn-primary, [data-slot='button'].btn-action):active:not(:disabled) {
-	transform: scale(0.98);
+	transform: scale(0.99);
 }
 
 :is([data-slot='button'].btn-secondary, [data-slot='button'].btn-danger):active:not(:disabled) {
-	transform: scale(0.97);
+	transform: scale(0.99);
 }
 
 .btn-danger {

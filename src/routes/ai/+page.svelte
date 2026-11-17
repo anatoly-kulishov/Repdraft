@@ -18,7 +18,6 @@
 		MetalFx,
 		ThinkingOrbs,
 		WaveSwap,
-		magnetic,
 		type BotMood,
 		type ThinkingOrbState
 	} from '$lib/components/fx';
@@ -711,24 +710,22 @@
 					{busy ? translate(lang, 'aiDraft.generating') : translate(lang, 'aiDraft.regenerate')}
 				</AppButton>
 			{:else}
-				<div class="w-full" {@attach magnetic({ strength: 0.22, radius: 56 })}>
-					<MetalFx class="w-full">
-						<AppButton
-							type="submit"
-							variant="primary"
-							block
-							disabled={busy || !brief.trim()}
-							class="fx-cta-sheen"
-						>
-							{#if !busy}
-								<LucideIcon icon={Sparkles} size={ICON_BUTTON} />
-							{:else}
-								<ThinkingOrbs mode={busyOrb} size={20} label={translate(lang, 'aiDraft.generating')} />
-							{/if}
-							{busy ? translate(lang, 'aiDraft.generating') : translate(lang, 'aiDraft.generate')}
-						</AppButton>
-					</MetalFx>
-				</div>
+				<MetalFx class="w-full">
+					<AppButton
+						type="submit"
+						variant="primary"
+						block
+						disabled={busy || !brief.trim()}
+						class="fx-cta-sheen"
+					>
+						{#if !busy}
+							<LucideIcon icon={Sparkles} size={ICON_BUTTON} />
+						{:else}
+							<ThinkingOrbs mode={busyOrb} size={20} label={translate(lang, 'aiDraft.generating')} />
+						{/if}
+						{busy ? translate(lang, 'aiDraft.generating') : translate(lang, 'aiDraft.generate')}
+					</AppButton>
+				</MetalFx>
 			{/if}
 		</form>
 
@@ -813,19 +810,17 @@
 								{/each}
 							</ol>
 							<div class="ai-draft-page__plan-actions">
-								<div class="w-full" {@attach magnetic({ strength: 0.2, radius: 48 })}>
-									<MetalFx class="w-full">
-										<AppButton
-											type="button"
-											variant="primary"
-											block
-											class="fx-cta-sheen"
-											onclick={applyToDraft}
-										>
-											{translate(lang, 'aiDraft.addToBuilder')}
-										</AppButton>
-									</MetalFx>
-								</div>
+								<MetalFx class="w-full">
+									<AppButton
+										type="button"
+										variant="primary"
+										block
+										class="fx-cta-sheen"
+										onclick={applyToDraft}
+									>
+										{translate(lang, 'aiDraft.addToBuilder')}
+									</AppButton>
+								</MetalFx>
 							</div>
 						</section>
 					</BorderBeam>
