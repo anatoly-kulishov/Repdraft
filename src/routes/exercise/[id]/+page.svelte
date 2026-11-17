@@ -271,9 +271,9 @@ import { truncateMeta } from '$lib/seo/site';
 		<div class="exercise-detail-page__layout">
 			<div class="exercise-detail-page__primary">
 				<div class="exercise-detail-page__hero">
-					<BorderBeam size="sm" class="exercise-detail-media-beam">
-						<div class="exercise-detail-page__media" style:view-transition-name={mediaVtName}>
-							{#if mediaSrc}
+					<div class="exercise-detail-page__media" style:view-transition-name={mediaVtName}>
+						{#if mediaSrc}
+							<BorderBeam size="pulse-outside" duration={3.2} class="exercise-detail-media-beam">
 								<div class="exercise-media-frame">
 									<img
 										src={mediaSrc}
@@ -287,9 +287,9 @@ import { truncateMeta } from '$lib/seo/site';
 										onerror={onMediaError}
 									/>
 								</div>
-							{/if}
-						</div>
-					</BorderBeam>
+							</BorderBeam>
+						{/if}
+					</div>
 
 					<div class="exercise-detail-page__intro">
 						<div class="exercise-detail-page__toolbar">
