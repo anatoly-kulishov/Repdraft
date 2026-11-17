@@ -39,7 +39,7 @@ routes / components
 
 - Планы/рекорды: интерфейсы в `domain/repository.ts`, реализации `local*` / `supabase*`, выбор через `storage/dataAccess.ts`.
 - Клипы техники: `techniqueClipsRepository.ts`; SQL-миграции **только локально** (не в публичном git).
-- Секреты и ключи - только `.env` / Vercel env. Никаких URL/JWT в исходниках.
+- Секреты и ключи - только `.env` / env на RF VPS. Никаких URL/JWT в исходниках.
 
 ## UI
 

@@ -3,7 +3,7 @@ name: repdraft
 description: >-
   Gym workout log: React Native (Expo in mobile/) + SvelteKit web/PWA, shared
   domain. Use when working in Repdraft: sacred loop UX, domain→storage→UI,
-  catalog/workout flows, Supabase auth, Vercel web deploy.
+  catalog/workout flows, Supabase auth, RF VPS web deploy.
 ---
 
 # Repdraft

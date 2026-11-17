@@ -32,8 +32,7 @@ Open → Pick workout → Preview → Start → Set → Weight × reps → Next 
 - Visual: dark minimal premium, Phosphor icons only, one primary CTA per screen
 - No blocking full-screen loaders - skeletons / optimistic UI
 - Performance budget for low-end
-- Web analytics (Vercel) is opt-in
-- Delivery: RN (`mobile/`) + web/PWA; see `delivery.md`. No Capacitor/Cordova.
+- Delivery: RN (`mobile/`) + web/PWA on RF VPS; see `delivery.md`. No Capacitor/Cordova.
 
 ## Do not build without explicit user request
 

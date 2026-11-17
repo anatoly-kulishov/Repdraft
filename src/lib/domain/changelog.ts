@@ -14,6 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.10',
+		highlights: {
+			ru: [
+				'Сайт больше не на Vercel: только сервер в РФ',
+				'Убрана опциональная веб-аналитика Vercel из настроек и политики'
+			],
+			en: [
+				'Web no longer on Vercel: Russia VPS only',
+				'Removed optional Vercel web analytics from settings and privacy'
+			]
+		}
+	},
+	{
 		version: '0.25.9',
 		highlights: {
 			ru: [

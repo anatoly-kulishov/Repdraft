@@ -28,8 +28,3 @@ export function isAuthDeepLinkUrl(raw: string): boolean {
 		parsed.pathname.startsWith('/auth');
 	return isAuthHttps;
 }
-
-/** Opt-in web analytics may inject only in the browser. */
-export function webAnalyticsAvailable(opts: { browser: boolean }): boolean {
-	return opts.browser;
-}

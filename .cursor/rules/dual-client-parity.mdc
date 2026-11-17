@@ -42,7 +42,6 @@ Web может быть проще по layout (нет safe-area tab bar), но 
 ## Web-only (не тащить в RN без запроса)
 
 - Cloudflare Turnstile на auth (RN dev build может обходить иначе - см. `AGENTS.md`).
-- Vercel Analytics / Speed Insights (opt-in на сайте).
 
 ## Антипаттерны
 

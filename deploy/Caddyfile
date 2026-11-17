@@ -1,6 +1,19 @@
 # TLS + reverse proxy in front of the Node app (docker-compose service `app`).
 www.repdraft.ru {
 	encode gzip
+
+	@data path /data/*
+	header @data Cache-Control "public, max-age=86400, stale-while-revalidate=604800"
+
+	@media path /images/* /videos/*
+	header @media Cache-Control "public, max-age=31536000, immutable"
+
+	@icons path /icon-192-v3.png /icon-512-v3.png /icon-maskable-512-v3.png /apple-touch-icon-v3.png /apple-touch-icon-precomposed-v3.png /favicon.ico /favicon-16x16.png /favicon-32x32.png /favicon-48x48.png /favicon-120x120.png
+	header @icons Cache-Control "public, max-age=86400"
+
+	@seo path /sitemap.xml /robots.txt
+	header @seo Cache-Control "public, max-age=3600"
+
 	reverse_proxy app:3000
 }
 

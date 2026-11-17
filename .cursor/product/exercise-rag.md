@@ -8,7 +8,7 @@ Local copy of the same SQL (gitignored): `supabase/exercise-chunks-rag.sql`.
 
 1. Supabase → Database → Extensions → enable **vector** (or run SQL below).
 2. Paste and run the SQL in this file (or the local `supabase/*.sql` copy).
-3. Set in `.env` / Vercel:
+3. Set in `.env` / RF VPS:
    - `PUBLIC_SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY` (server only; upsert + RPC)
    - `EMBEDDINGS_PROVIDER=ollama` (default)

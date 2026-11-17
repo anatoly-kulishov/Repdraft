@@ -13,19 +13,15 @@ export default defineConfig(({ mode }) => {
 	/**
 	 * `define` below resolves PUBLIC_* from process.env, which never sees .env on its own.
 	 * Without loadEnv every PUBLIC_* in .env was invisible to the build: sitemap/robots
-	 * prerendered 503 (no origin) and `npm run build` aborted. process.env wins so CI and
-	 * Vercel keep precedence; .env is the local fallback.
+	 * prerendered 503 (no origin) and `npm run build` aborted. process.env wins so CI
+	 * keeps precedence; .env is the local fallback.
 	 */
 	const fileEnv = loadEnv(mode, root, '');
 	const pub = (key: string): string => process.env[key] ?? fileEnv[key] ?? '';
 
 	// Production prerender bakes canonical/og into HTML. Without PUBLIC_SITE_URL those
 	// tags are omitted (sveltekit-prerender is rejected) and /sitemap.xml prerenders 503.
-	// Warn instead of failing so a missing shared-env link cannot block Production;
-	// set the var on the project and redeploy for full SEO.
-	const isProdBuild =
-		process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
-	if (isProdBuild && !pub('PUBLIC_SITE_URL').trim()) {
+	if (process.env.NODE_ENV === 'production' && !pub('PUBLIC_SITE_URL').trim()) {
 		console.warn(
 			'[seo] PUBLIC_SITE_URL is unset on this Production build. Set https://www.repdraft.ru and rebuild for canonical/og URLs.'
 		);
@@ -33,13 +29,6 @@ export default defineConfig(({ mode }) => {
 
 	return {
 		plugins: [tailwindcss(), sveltekit()],
-		resolve: {
-			// Vercel sveltekit entrypoints only advertise the `svelte` export condition.
-			alias: {
-				'@vercel/analytics/sveltekit': `${root}node_modules/@vercel/analytics/dist/sveltekit/index.mjs`,
-				'@vercel/speed-insights/sveltekit': `${root}node_modules/@vercel/speed-insights/dist/sveltekit/index.mjs`
-			}
-		},
 		build: {
 			target: 'es2020',
 			cssMinify: 'lightningcss'

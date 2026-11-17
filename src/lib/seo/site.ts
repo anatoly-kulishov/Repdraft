@@ -40,11 +40,9 @@ export function isUsableSiteOrigin(origin: string): boolean {
 	return true;
 }
 
-/** True for production image/CI builds (Vercel or Node host). */
+/** True for production image/CI builds. */
 function isProductionBuild(): boolean {
-	if (process.env.VERCEL_ENV === 'production') return true;
-	if (process.env.NODE_ENV === 'production') return true;
-	return false;
+	return process.env.NODE_ENV === 'production';
 }
 
 /** Configured canonical origin, or empty when unset / unusable. */
@@ -60,7 +58,7 @@ export function configuredSiteOrigin(): string {
 
 /**
  * Absolute origin: env override, else usable request origin.
- * On Vercel Production prerender (placeholder / empty), falls back to CANONICAL_SITE_ORIGIN.
+ * On production prerender (placeholder / empty), falls back to CANONICAL_SITE_ORIGIN.
  */
 export function resolveSiteOrigin(requestOrigin = ''): string {
 	const configured = configuredSiteOrigin();

@@ -4,7 +4,7 @@ import { resolveSiteOrigin } from '$lib/seo/site';
 import type { RequestHandler } from './$types';
 
 /**
- * Prerender at build time: sitemap reads `static/` via fs (unavailable in Vercel serverless SSR).
+ * Prerender at build time: sitemap reads `static/` via fs.
  * Origin comes from PUBLIC_SITE_URL or production fallback (never sveltekit-prerender).
  */
 export const prerender = PRERENDER_PUBLIC;
