@@ -14,6 +14,17 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.17',
+		highlights: {
+			ru: [
+				'Главная для гостя: лёгкое свечение рамки и блик на кнопке'
+			],
+			en: [
+				'Guest home: soft border glow and CTA sheen'
+			]
+		}
+	},
+	{
 		version: '0.25.16',
 		highlights: {
 			ru: [
