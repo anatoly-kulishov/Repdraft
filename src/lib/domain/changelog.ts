@@ -14,6 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.18',
+		highlights: {
+			ru: [
+				'Главная и AI: свечение рамки и металлический контур кнопки стали ровнее',
+				'Анимации на фоне останавливаются, когда их не видно: меньше нагрузка на слабых телефонах'
+			],
+			en: [
+				'Home and AI: smoother border glow and metal button outline',
+				'Background animations pause when offscreen: lighter on older phones'
+			]
+		}
+	},
+	{
 		version: '0.25.17',
 		highlights: {
 			ru: [

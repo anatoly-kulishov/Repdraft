@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Attachment } from 'svelte/attachments';
 	import { cn } from '$lib/utils.js';
 
 	type Props = {
@@ -10,20 +11,27 @@
 	};
 
 	let { src, alt = '', width, height, class: className = '' }: Props = $props();
-	let ready = $state(false);
 
-	$effect(() => {
-		src;
-		ready = false;
-	});
+	/** Src that finished loading; compared to `src` so a swap restarts the reveal. */
+	let loadedSrc = $state<string | null>(null);
+	const ready = $derived(loadedSrc === src);
+
+	const cssSize = (v: number | string | undefined) =>
+		v == null ? 'auto' : typeof v === 'number' ? `${v}px` : v;
+
+	const style = $derived(
+		width != null || height != null
+			? `width:${cssSize(width)};height:${cssSize(height)}`
+			: undefined
+	);
+
+	/** Cached images can finish before hydration attaches onload. */
+	const catchCached: Attachment<HTMLImageElement> = (img) => {
+		if (img.complete && img.naturalWidth > 0) loadedSrc = src;
+	};
 </script>
 
-<div
-	class={cn('fx-image', ready && 'is-ready', className)}
-	style={width != null || height != null
-		? `width:${typeof width === 'number' ? `${width}px` : (width ?? 'auto')};height:${typeof height === 'number' ? `${height}px` : (height ?? 'auto')}`
-		: undefined}
->
+<div class={cn('fx-image', ready && 'is-ready', className)} {style}>
 	<span class="fx-image__loader" aria-hidden="true"></span>
 	<img
 		class="fx-image__media"
@@ -31,11 +39,8 @@
 		{alt}
 		loading="lazy"
 		decoding="async"
-		onload={() => {
-			ready = true;
-		}}
-		onerror={() => {
-			ready = true;
-		}}
+		{@attach catchCached}
+		onload={() => (loadedSrc = src)}
+		onerror={() => (loadedSrc = src)}
 	/>
 </div>

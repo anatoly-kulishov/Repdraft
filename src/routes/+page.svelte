@@ -656,7 +656,7 @@
 								{translate(lang, 'home.guestCreateLocal')}
 							</AppButton>
 						{:else}
-							<MetalFx class="w-full rounded-[var(--radius-button)]">
+							<MetalFx class="w-full">
 								<AppButton
 									href={BUILDER_NEW_HREF}
 									class="home-hero-cta fx-cta-sheen items-center justify-center gap-2"

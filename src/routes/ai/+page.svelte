@@ -635,7 +635,7 @@
 					{busy ? translate(lang, 'aiDraft.generating') : translate(lang, 'aiDraft.regenerate')}
 				</AppButton>
 			{:else}
-				<MetalFx class="w-full rounded-[var(--radius-button)]">
+				<MetalFx class="w-full">
 					<AppButton
 						type="submit"
 						variant="primary"

@@ -1,6 +1,15 @@
 export { default as BorderBeam } from './BorderBeam.svelte';
 export { default as ThinkingOrbs } from './ThinkingOrbs.svelte';
 export { default as LiquidGooey } from './LiquidGooey.svelte';
+export { default as GooeyMorph } from './GooeyMorph.svelte';
 export { default as MetalFx } from './MetalFx.svelte';
+export { default as MetalText } from './MetalText.svelte';
+export { default as MetalBadge } from './MetalBadge.svelte';
 export { default as ImageFx } from './ImageFx.svelte';
-export type { ThinkingOrbState } from './thinkingOrbState';
+export { default as WaveSwap } from './WaveSwap.svelte';
+export { default as VoicePosition } from './VoicePosition.svelte';
+export { default as BotAvatar } from './BotAvatar.svelte';
+export { magnetic, fxPauseOffscreen } from './motion';
+export { waveReveal, holdUnder } from './transitions';
+export { THINKING_ORB_STATES, type ThinkingOrbState } from './thinkingOrbState';
+export { BOT_MOODS, type BotMood } from './botMood';

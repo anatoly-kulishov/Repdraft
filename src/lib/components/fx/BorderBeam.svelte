@@ -1,38 +1,27 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { cn } from '$lib/utils.js';
+	import { fxPauseOffscreen } from './motion';
 
-	type Mode = 'spin' | 'pulse';
+	/** Rotate family travels along the edge; pulse family breathes in place. */
+	type BeamSize = 'md' | 'sm' | 'line' | 'pulse-inner' | 'pulse-outside';
 
 	type Props = {
-		mode?: Mode;
+		size?: BeamSize;
+		/** Seconds per lap (rotate) or per breath (pulse). */
+		duration?: number;
 		class?: string;
-		contentClass?: string;
-		/** Solid plate under the beam ring (matches panel / CTA). */
-		fill?: string;
 		children?: Snippet;
 	};
 
-	let {
-		mode = 'spin',
-		class: className = '',
-		contentClass = '',
-		fill,
-		children
-	}: Props = $props();
+	let { size = 'md', duration, class: className = '', children }: Props = $props();
 </script>
 
 <div
-	class={cn('fx-beam', mode === 'pulse' && 'fx-beam--pulse', className)}
-	style={fill ? `--fx-beam-fill: ${fill}` : undefined}
+	class={cn('fx-beam', `fx-beam--${size}`, className)}
+	style={duration ? `--fx-beam-duration:${duration}s` : undefined}
+	{@attach fxPauseOffscreen}
 >
-	{#if mode === 'spin'}
-		<span class="fx-beam__ring" aria-hidden="true"></span>
-		<span class="fx-beam__fill" aria-hidden="true"></span>
-	{:else}
-		<span class="fx-beam__ring" aria-hidden="true"></span>
-	{/if}
-	<div class={cn('fx-beam__content', contentClass)}>
-		{@render children?.()}
-	</div>
+	{@render children?.()}
+	<span class="fx-beam__ring" aria-hidden="true"></span>
 </div>
