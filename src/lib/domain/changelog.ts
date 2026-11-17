@@ -14,6 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.9',
+		highlights: {
+			ru: [
+				'SEO: готовы проверки Google и Яндекса для www.repdraft.ru',
+				'Каноникал и sitemap уже на новом домене'
+			],
+			en: [
+				'SEO: Google and Yandex verification hooks for www.repdraft.ru',
+				'Canonical URLs and sitemap already on the new domain'
+			]
+		}
+	},
+	{
 		version: '0.25.8',
 		highlights: {
 			ru: [
