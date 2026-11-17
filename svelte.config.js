@@ -1,11 +1,14 @@
-import adapterVercel from '@sveltejs/adapter-vercel';
+import adapterNode from '@sveltejs/adapter-node';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	preprocess: vitePreprocess(),
 	kit: {
-		adapter: adapterVercel(),
+		adapter: adapterNode({
+			out: 'build',
+			precompress: true
+		}),
 		// ponytail: prerender only explicit public routes — do not crawl into /exercise/*
 		prerender: {
 			crawl: false,

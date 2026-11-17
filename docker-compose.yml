@@ -1,0 +1,38 @@
+# RF production stack: Caddy (HTTPS) → Node (adapter-node).
+# 1. Copy .env.example → .env on the VPS and fill secrets.
+# 2. docker compose up -d --build
+# 3. Point DNS A @ and www to this VPS IP (remove Vercel CNAME/A).
+
+services:
+  app:
+    build:
+      context: .
+      args:
+        PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://www.repdraft.ru}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      ORIGIN: ${PUBLIC_SITE_URL:-https://www.repdraft.ru}
+      BODY_SIZE_LIMIT: 10M
+    expose:
+      - '3000'
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
+  caddy_config:

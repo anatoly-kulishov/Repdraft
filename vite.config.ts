@@ -23,9 +23,11 @@ export default defineConfig(({ mode }) => {
 	// tags are omitted (sveltekit-prerender is rejected) and /sitemap.xml prerenders 503.
 	// Warn instead of failing so a missing shared-env link cannot block Production;
 	// set the var on the project and redeploy for full SEO.
-	if (process.env.VERCEL_ENV === 'production' && !pub('PUBLIC_SITE_URL').trim()) {
+	const isProdBuild =
+		process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
+	if (isProdBuild && !pub('PUBLIC_SITE_URL').trim()) {
 		console.warn(
-			'[seo] PUBLIC_SITE_URL is unset on this Production build. Set https://www.repdraft.ru on the Vercel project (not only Shared) and redeploy for canonical/og URLs.'
+			'[seo] PUBLIC_SITE_URL is unset on this Production build. Set https://www.repdraft.ru and rebuild for canonical/og URLs.'
 		);
 	}
 

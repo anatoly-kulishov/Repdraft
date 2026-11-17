@@ -40,8 +40,11 @@ export function isUsableSiteOrigin(origin: string): boolean {
 	return true;
 }
 
-function isVercelProductionBuild(): boolean {
-	return process.env.VERCEL_ENV === 'production';
+/** True for production image/CI builds (Vercel or Node host). */
+function isProductionBuild(): boolean {
+	if (process.env.VERCEL_ENV === 'production') return true;
+	if (process.env.NODE_ENV === 'production') return true;
+	return false;
 }
 
 /** Configured canonical origin, or empty when unset / unusable. */
@@ -64,7 +67,7 @@ export function resolveSiteOrigin(requestOrigin = ''): string {
 	if (configured) return configured;
 	const cleaned = requestOrigin.trim().replace(/\/$/, '');
 	if (isUsableSiteOrigin(cleaned)) return cleaned;
-	if (isVercelProductionBuild()) return CANONICAL_SITE_ORIGIN;
+	if (isProductionBuild()) return CANONICAL_SITE_ORIGIN;
 	return '';
 }
 

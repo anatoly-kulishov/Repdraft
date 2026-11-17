@@ -1,126 +1,48 @@
-# Доступ из РФ: сайт недоступен без VPN
+# Доступ из РФ: переезд на Node VPS
 
-**Статус:** зона Cloudflare `active`, но доступ из РФ **не восстановлен**: обрыв ответа ~16 КБ сохраняется и через Cloudflare.
-**Дата:** 2026-10-26.
+**Статус:** домен `www.repdraft.ru` на Vercel (Valid), из РФ без VPN по-прежнему ненадёжно. Цель - **VPS в РФ** + `@sveltejs/adapter-node` + Caddy.
+**Дата:** 2026-11-17.
 
-Что проверено после делегирования NS (2026-10-26):
+## Почему не Vercel / Cloudflare
 
-| Проверка | Результат |
+Обрыв крупных ответов (~16 КБ) из РФ воспроизводился и на Vercel, и через Cloudflare (см. историю ниже). Смена домена на `.ru` бренд и ЮKassa не лечит. Нужен хостинг с IP в РФ.
+
+## Целевой стек
+
+| Слой | Выбор |
 |---|---|
-| NS в реестре / `1.1.1.1` | `celine` / `elijah.ns.cloudflare.com`, зона `active` |
-| `A www.repdraft.xyz` | IP Cloudflare (`172.67.142.172`, `104.21.63.31`) |
-| `HEAD /` | 200, `server: cloudflare` |
-| `GET /robots.txt` (190 Б) | 200 |
-| `GET /` (~60 КБ) | 0 байт, таймаут |
-| `GET /og-image.jpg` (29 КБ) | 15 360 байт и обрыв |
-| `GET /og-image.jpg` через второй IP Cloudflare | 16 384 байта и обрыв |
-| `GET https://www.cloudflare.com/` (1.3 МБ) | 200, полностью |
+| App | SvelteKit + `@sveltejs/adapter-node` → `npm run build` / `npm start` |
+| Контейнер | `Dockerfile` + `docker-compose.yml` |
+| TLS / proxy | Caddy (`deploy/Caddyfile`) |
+| DNS | Рег.ру зона: A `@` и A `www` → **IP VPS** (не Vercel) |
 
-**Вывод:** обрыв привязан к домену (SNI), а не к хостингу: с Vercel и с Cloudflare картина одинаковая, а `cloudflare.com` с тех же IP отдаёт мегабайты. Прокси перед Vercel сам по себе проблему не решает — нужен переезд на российский хостинг/CDN либо обход DPI.
+Shared hosting Рег.ру (заглушка «Почти готово») **не подходит**: нет Node для API (`/ai`, billing, account).
 
-## Симптом
+## Cutover
 
-`https://www.repdraft.xyz` не открывается из российских сетей: браузер показывает **белый экран без ошибки** — и на мобильном интернете (LTE), и в офисной сети. С VPN всё работает.
+1. Арендовать VPS в РФ (Timeweb Cloud / Selectel / VPS Рег.ру), Ubuntu 22.04+, открыть 80/443.
+2. На сервере: Docker + Compose, клон репо, `.env` с теми же секретами, что на Vercel.
+3. `docker compose up -d --build`
+4. В ispmanager DNS:
+   - удалить A/CNAME на Vercel (`216.198.79.1`, `*.vercel-dns-017.com`)
+   - A `@` → IP VPS
+   - A `www` → IP VPS (оба A, без CNAME на Vercel)
+5. Дождаться TLS у Caddy, проверить:
+   - `curl -sI https://www.repdraft.ru` → не `server: Vercel`
+   - `npm run check:rf`
+6. Vercel Domains: снять `repdraft.ru` / `www` после стабильной недели (или сразу).
+7. Supabase / ЮKassa уже на `.ru` - URL не менять.
 
-## Диагноз
-
-Сайт жив. Проблема на пути «российская сеть → edge-сеть Vercel».
-
-Проверено с трёх сторон:
-
-| Что проверяли | Результат |
-|---|---|
-| Независимый сервис вне РФ (`api.microlink.io`) | открыл сайт, вернул реальные title/description/логотип |
-| HEAD-запрос к сайту | 200 стабильно, ~0.15 с |
-| `GET /robots.txt` (190 Б) | 200 стабильно |
-| `GET /` (60 КБ) | приходит через раз или не приходит |
-| `GET /og-image.jpg` | 0/3 — обрыв |
-| `GET` с `Range: 0-32767` | 0/3 — обрыв |
-| `github.com` (580 КБ) | 200 стабильно |
-| `www.cloudflare.com` (1.3 МБ) | 200 стабильно |
-| `vercel.com`, `nextjs.org` | **0 байт** — тот же обрыв |
-
-Ключевое: обрыв воспроизводится на **любом сайте, размещённом на Vercel**, а не только на нашем. Маленькие ответы (до ~8–10 КБ) проходят, крупные — обрываются. Порог нестабилен и плавает около 16 КБ (размер TLS-записи), то есть это **дроп пакетов по объёму**, а не блокировка по имени домена.
-
-ICMP при этом чистый (0% потерь), TLS-хендшейк проходит с настоящим сертификатом Let's Encrypt — режется именно тело ответа.
-
-**Уточнение после переезда на Cloudflare (2026-10-26):** гипотеза «режут IP-сети Vercel» не подтвердилась. Через Cloudflare (те же 16 КБ, другой IP) картина та же, при этом `cloudflare.com` с тех же адресов отдаёт 1.3 МБ. Значит, ограничение привязано к **домену/SNI**, а не к хостингу. Смена домена на новый тоже, скорее всего, не поможет — режется любой «незнакомый» домен.
-
-## Почему смена домена не поможет
-
-`repdraft.ru` (или любой другой домен) на Vercel приземлится на те же IP-сети и будет обрезаться так же. Домен имеет смысл покупать для бренда и российских платежей, но не как лекарство от недоступности.
-
-## Фикс: Cloudflare перед Vercel (не помогло — см. статус)
-
-Клиент из РФ будет соединяться с Cloudflare (он из РФ доступен: 1.3 МБ отдаёт стабильно), а Cloudflare — с Vercel. Кода не трогаем, домен не меняем.
-
-### 1. Добавить домен в Cloudflare
-
-1. Регистрация на [cloudflare.com](https://dash.cloudflare.com) → **Add a site** → `repdraft.xyz` → план **Free**.
-2. Cloudflare выдаст две пары nameserver, например `ada.ns.cloudflare.com` и `bob.ns.cloudflare.com`.
-
-### 2. Сменить NS у регистратора
-
-Домен сейчас на NS Vercel (`ns1/ns2.vercel-dns.com`). Зайти туда, где куплен `repdraft.xyz`, и заменить nameserver на выданные Cloudflare. Распространение — от 15 минут до суток.
-
-### 3. Записи DNS в Cloudflare
-
-| Тип | Имя | Значение | Прокси |
-|---|---|---|---|
-| A | `@` | `216.198.79.1` | **Proxied** (оранжевое облако) |
-| A | `@` | `64.29.17.65` | **Proxied** |
-| CNAME | `www` | `cname.vercel-dns.com` | **Proxied** |
-| TXT | `@` | `google-site-verification=5bXGtK0AixSZr1PLvIAYQuZdZpBb4FD-v2aJi6V-byc` | DNS only |
-| TXT | `_vercel` | значение из Vercel → Settings → Domains (если Vercel его требует) | DNS only |
-| CAA | `@` | `0 issue "letsencrypt.org"` | DNS only |
-| CAA | `@` | `0 issue "pki.goog"` | DNS only |
-| CAA | `@` | `0 issue "sectigo.com"` | DNS only |
-
-CAA важен: без него Cloudflare не выпустит Universal SSL.
-
-### 4. Настройки Cloudflare
-
-| Настройка | Значение | Почему |
-|---|---|---|
-| SSL/TLS → Overview | **Full (strict)** | Cloudflare → Vercel по HTTPS с валидным сертификатом |
-| SSL/TLS → Edge Certificates → Always Use HTTPS | On | http → https на краю |
-| Speed → Optimization → **Rocket Loader** | **Off** | ломает SvelteKit |
-| Speed → Optimization → Auto Minify | **Off** | не нужен, ломает разметку |
-| Security → Bots → **Bot Fight Mode** | **Off** | иначе режет людей с VPN/мобильных |
-| Security → Settings → Under Attack Mode | Off | по умолчанию выключен |
-| Caching → Cache Rules | Bypass для `/_app/env.js` и `text/html` | env.js и HTML должны быть свежими |
-
-Cloudflare по умолчанию не кэширует HTML, а `_app/immutable/*` кэширует — это правильно, файлы там хэшированные.
-
-### 5. Vercel
-
-Домен оставить как есть. Убедиться, что **Domains → Redirect to www выключен** — редирект apex → www делает `src/hooks.server.ts`.
-
-### 6. Проверка
+Проверка из РФ без VPN:
 
 ```bash
 npm run check:rf
+# или
+npm run check:rf -- https://www.repdraft.ru
 ```
 
-Скрипт показывает то же, что видит браузер: HTML с gzip, реальные JS-чанки из разметки и контрольный сайт (`github.com`).
+Ожидание: HTML, JS-чанк, 32 КБ и картинка - стабильно `✓`.
 
-Ожидаемый результат после решения проблемы: все строки `✓ 3/3`, включая JS-чанк, 32 КБ и картинку. Дополнительно проверить с телефона на мобильном интернете.
+## История (2026-10-26, .xyz + Cloudflare)
 
-Провал `GET JS chunk` при зелёном HTML означает, что страница откроется каркасом без интерактива — именно это и происходит сейчас через Cloudflare.
-
-## Если Cloudflare не помог
-
-Cloudflare в РФ тоже периодически замедляют. Тогда по возрастанию трудозатрат:
-
-1. **Cloudflare Pages** — разместить сам сайт на Cloudflare (`@sveltejs/adapter-cloudflare`), убрав Vercel из цепочки полностью. Нужно проверить серверные ручки: `/ai`, удаление аккаунта, загрузка аватара (`SUPABASE_SERVICE_ROLE_KEY` на CF через переменные окружения).
-2. **Российский хостинг** (Timeweb Cloud, Selectel) + `@sveltejs/adapter-node`. Гарантированно доступно из РФ, полный Node. Минус — сервер и его обслуживание.
-
-## Откат
-
-Вернуть NS регистратора на `ns1.vercel-dns.com` / `ns2.vercel-dns.com`. Распространение — до суток.
-
-## Что учесть
-
-- Vercel за прокси видит IP Cloudflare, поэтому гео-аналитика и rate limit по IP будут врать. Для нашего приложения это не критично.
-- `EXPO_PUBLIC_WEB_ORIGIN` в мобилке менять не нужно — домен тот же.
-- Мобилка тянет каталог и технику с `www.repdraft.xyz`; после фикса крупные картинки (сейчас обрываются на ~3 КБ) начнут доезжать.
+Зона Cloudflare `active`, обрыв ~16 КБ сохранялся. Вывод: ограничение по SNI/домену на пути из РФ, прокси перед Vercel не лечит. Детали симптома и старые шаги Cloudflare сохранены в git history этого файла до 2026-11-17.

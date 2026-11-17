@@ -21,7 +21,7 @@ description: >-
 | Domain | Shared pure TS `src/lib/domain` |
 | Backend | Supabase (optional auth & sync) |
 | Verify | `npm run check` + `npm run check:mobile` |
-| Deploy web | Vercel |
+| Deploy web | RF VPS + Docker (`adapter-node`) |
 
 ```bash
 npm install

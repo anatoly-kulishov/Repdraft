@@ -1,0 +1,9 @@
+# TLS + reverse proxy in front of the Node app (docker-compose service `app`).
+www.repdraft.ru {
+	encode gzip
+	reverse_proxy app:3000
+}
+
+repdraft.ru {
+	redir https://www.repdraft.ru{uri} permanent
+}

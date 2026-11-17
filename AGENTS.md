@@ -31,7 +31,7 @@ npm run build
 
 Shared copy: `src/lib/i18n/messages.ts` (both clients). Shared colors/spacing: `src/lib/design/tokens.ts`.
 
-Legal before public: real `PUBLIC_PRIVACY_*` in Vercel; lawyer review `/privacy` + `/terms`. Web analytics off by default.
+Legal before public: real `PUBLIC_PRIVACY_*` on the web host; lawyer review `/privacy` + `/terms`. Web analytics off by default.
 
 ## Mobile notes
 
@@ -40,7 +40,7 @@ Legal before public: real `PUBLIC_PRIVACY_*` in Vercel; lawyer review `/privacy`
 - **Health read:** Apple Health / Health Connect needs a **development build** + config plugins (not Expo Go). Toggle lives in Profile; adapter is stub until native modules are wired. See `mobile/src/health/`.
 - **Watches:** separate native UI; ownership spike in [`.cursor/product/watch-session-ownership.md`](.cursor/product/watch-session-ownership.md).
 - **Coach mode:** web `/clients` + RN `/clients` (not `/coach` - that screen is self-hints). Invite accept and disconnect live in Profile. Cloud RPCs need SQL from `~/.repdraft-sql/` (`coach-mode.sql`, then `coach-session-detail-and-client-revoke.sql`). Product loop: [native-rewrite-plan.md phase F](.cursor/product/native-rewrite-plan.md).
-- **Pro billing:** web checkout (YooKassa / Stripe); RN opens the site. Pro unlocks photo/Excel program recognition only. Free text `/ai` + tune share a daily quota. Ops: [billing-pro.md](.cursor/product/billing-pro.md); SQL `~/.repdraft-sql/billing-entitlements.sql`. Local probe (no secret dump): `npm run check:billing`. Prod needs the same `YOOKASSA_*` / `STRIPE_*` in Vercel plus the YooKassa webhook URL.
+- **Pro billing:** web checkout (YooKassa / Stripe); RN opens the site. Pro unlocks photo/Excel program recognition only. Free text `/ai` + tune share a daily quota. Ops: [billing-pro.md](.cursor/product/billing-pro.md); SQL `~/.repdraft-sql/billing-entitlements.sql`. Local probe (no secret dump): `npm run check:billing`. Prod needs the same `YOOKASSA_*` / `STRIPE_*` on the RF VPS `.env` plus the YooKassa webhook URL.
 
 ## Secrets
 
