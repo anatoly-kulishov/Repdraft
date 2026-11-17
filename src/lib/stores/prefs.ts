@@ -10,10 +10,12 @@ import {
 import { HOME_KIT_STORAGE_KEY, type HomeKitOptionalId } from '$lib/domain/homeKit';
 import {
 	parseHomeKitPref,
+	parseReduceMotionEnabled,
 	parseRestHapticEnabled,
 	parseRestSoundEnabled,
 	parseTesterModeEnabled,
 	playRestDoneChime,
+	REDUCE_MOTION_STORAGE_KEY,
 	REST_HAPTIC_STORAGE_KEY,
 	REST_SOUND_STORAGE_KEY,
 	serializeHomeKitPref,
@@ -99,6 +101,48 @@ export const testerModeEnabled = createLocalBoolPref({
 	parse: parseTesterModeEnabled,
 	fallback: false
 });
+
+function osPrefersReducedMotion(): boolean {
+	if (!browser || typeof matchMedia !== 'function') return false;
+	try {
+		return matchMedia('(prefers-reduced-motion: reduce)').matches;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Sync `<html data-reduce-motion>` from user pref OR OS.
+ * CSS and FX JS both key off this attribute (OS alone still covered by media queries).
+ */
+export function applyReduceMotionPref(userEnabled: boolean) {
+	if (!browser) return;
+	const on = userEnabled || osPrefersReducedMotion();
+	document.documentElement.dataset.reduceMotion = on ? 'true' : 'false';
+}
+
+/** Opt-in: simplify decorative FX / kinetics. Default off. */
+export const reduceMotionEnabled = createLocalBoolPref({
+	key: REDUCE_MOTION_STORAGE_KEY,
+	parse: parseReduceMotionEnabled,
+	fallback: false
+});
+
+if (browser) {
+	let userReduce = false;
+	reduceMotionEnabled.subscribe((enabled) => {
+		userReduce = enabled;
+		applyReduceMotionPref(enabled);
+	});
+	try {
+		const mq = matchMedia('(prefers-reduced-motion: reduce)');
+		const onOsChange = () => applyReduceMotionPref(userReduce);
+		if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onOsChange);
+		else mq.addListener(onOsChange);
+	} catch {
+		/* ignore */
+	}
+}
 
 function readHomeKit(): HomeKitOptionalId[] {
 	if (!browser) return [];

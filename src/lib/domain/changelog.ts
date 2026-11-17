@@ -22,7 +22,8 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 				'Меньше анимации на кнопках: без вечного блеска и «магнита»',
 				'Карточки на десктопе ближе к фону страницы, без чужого серого',
 				'Десктоп: шапка экрана без белой подложки поверх фона',
-				'Кнопки без тёмной обводки, особенно при нажатии'
+				'Кнопки без тёмной обводки, особенно при нажатии',
+				'Настройка «Упростить анимации»: без декоративных эффектов'
 			],
 			en: [
 				'Hand cursor on link buttons: restore from file, email sign-in link',
@@ -30,7 +31,8 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 				'Quieter button motion: no looping sheen or magnetic pull',
 				'Desktop cards sit closer to the page wash, less cold grey',
 				'Desktop: screen header no longer paints a white plate over the wash',
-				'Buttons without a dark fringe, especially on press'
+				'Buttons without a dark fringe, especially on press',
+				'Reduce motion setting: turn off decorative effects'
 			]
 		}
 	},

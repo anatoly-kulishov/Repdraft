@@ -4,7 +4,8 @@
 	import { translate } from '$lib/i18n/messages';
 	import { appTheme } from '$lib/stores/theme';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { Globe, MoonStars, SunDim } from 'phosphor-svelte';
+	import { reduceMotionEnabled } from '$lib/stores/prefs';
+	import { Globe, MoonStars, Sparkle, SunDim } from 'phosphor-svelte';
 
 	let {
 		surface = 'section'
@@ -21,7 +22,7 @@
 </script>
 
 {#if surface === 'panel'}
-	<ProfileSettingsSection>
+	<ProfileSettingsSection hint={translate(lang, 'settings.reduceMotionHint')}>
 		<ProfileSettingsRow
 			icon={Globe}
 			label={translate(lang, 'lang.label')}
@@ -44,6 +45,21 @@
 			})}
 			onclick={() => appTheme.set(nextTheme)}
 		/>
+		<ProfileSettingsRow
+			icon={Sparkle}
+			label={translate(lang, 'settings.reduceMotion')}
+			chevron={false}
+		>
+			<input
+				type="checkbox"
+				class="auth-pref-toggle__input profile-settings-row__toggle"
+				checked={$reduceMotionEnabled}
+				aria-label={translate(lang, 'settings.reduceMotion')}
+				onchange={(e) => {
+					reduceMotionEnabled.set((e.currentTarget as HTMLInputElement).checked);
+				}}
+			/>
+		</ProfileSettingsRow>
 	</ProfileSettingsSection>
 {:else}
 	<div class="auth-account__section">
@@ -77,6 +93,22 @@
 				})}
 				onclick={() => appTheme.set(nextTheme)}
 			/>
+			<ProfileSettingsRow
+				icon={Sparkle}
+				label={translate(lang, 'settings.reduceMotion')}
+				chevron={false}
+			>
+				<input
+					type="checkbox"
+					class="auth-pref-toggle__input profile-settings-row__toggle"
+					checked={$reduceMotionEnabled}
+					aria-label={translate(lang, 'settings.reduceMotion')}
+					onchange={(e) => {
+						reduceMotionEnabled.set((e.currentTarget as HTMLInputElement).checked);
+					}}
+				/>
+			</ProfileSettingsRow>
 		</div>
+		<p class="auth-prefs__hint">{translate(lang, 'settings.reduceMotionHint')}</p>
 	</div>
 {/if}

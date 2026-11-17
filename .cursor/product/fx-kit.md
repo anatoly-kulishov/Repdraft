@@ -17,6 +17,6 @@ Own Svelte 5 / CSS takes on all nine [libraries.dev](https://libraries.dev/) eff
 
 - Code: `src/lib/components/fx/`, styles `src/lib/styles/blocks/fx.css`.
 - Perf: pause offscreen / hidden tab. `magnetic()` fine-pointer only.
-- Honors `prefers-reduced-motion`.
+- Honors `prefers-reduced-motion` and the in-app **Reduce motion** toggle (`data-reduce-motion`, Interface settings).
 - Sandbox: `/lab/fx` (dev only, 404 in prod).
 - Skip live set logging UI: sacred loop stays quiet and fast.

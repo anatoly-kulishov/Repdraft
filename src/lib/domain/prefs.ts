@@ -12,6 +12,8 @@ export { HOME_KIT_STORAGE_KEY };
 export const REST_SOUND_STORAGE_KEY = 'repdraft:rest-sound';
 export const REST_HAPTIC_STORAGE_KEY = 'repdraft:haptic-rest-done';
 export const TESTER_MODE_STORAGE_KEY = 'repdraft:tester-mode';
+/** User opt-in: simplify decorative motion (FX sheens, beams, kinetics). */
+export const REDUCE_MOTION_STORAGE_KEY = 'repdraft:reduce-motion';
 /** Tap app version this many times to unlock wipe / stress backup tools. */
 export const TESTER_MODE_UNLOCK_TAPS = 7;
 export const INSTALL_HINT_DISMISSED_KEY = 'repdraft:install-hint-dismissed';
@@ -38,6 +40,11 @@ export function parseRestHapticEnabled(raw: string | null | undefined): boolean 
 
 /** Opt-in tester tools (wipe, stress backup). Off by default. */
 export function parseTesterModeEnabled(raw: string | null | undefined): boolean {
+	return raw === '1' || raw === 'true';
+}
+
+/** Opt-in: reduce decorative animations. Off by default (full motion). */
+export function parseReduceMotionEnabled(raw: string | null | undefined): boolean {
 	return raw === '1' || raw === 'true';
 }
 

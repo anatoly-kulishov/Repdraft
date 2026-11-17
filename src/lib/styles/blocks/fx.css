@@ -872,7 +872,7 @@
 	animation-play-state: paused;
 }
 
-/* ---------- Reduced motion ---------- */
+/* ---------- Reduced motion (OS media + user pref via data-reduce-motion) ---------- */
 
 @media (prefers-reduced-motion: reduce) {
 	.fx-beam__ring,
@@ -931,4 +931,75 @@
 	.fx-bot__eyes {
 		transition: none !important;
 	}
+}
+
+html[data-reduce-motion='true'] .fx-beam__ring,
+html[data-reduce-motion='true'] .fx-metal__ring,
+html[data-reduce-motion='true'] .fx-metal-text,
+html[data-reduce-motion='true'] .fx-metal-badge,
+html[data-reduce-motion='true'] .fx-image__loader,
+html[data-reduce-motion='true'] .fx-cta-sheen::after,
+html[data-reduce-motion='true'] .fx-voice.is-playing .fx-voice__wave,
+html[data-reduce-motion='true'] .fx-voice-ring.is-active::after,
+html[data-reduce-motion='true'] .fx-voice-ring[aria-pressed='true']::after,
+html[data-reduce-motion='true'] .fx-bot__eye,
+html[data-reduce-motion='true'] .fx-bot__head,
+html[data-reduce-motion='true'] .fx-bot__mouth,
+html[data-reduce-motion='true'] .fx-bot__antenna-tip {
+	animation: none !important;
+}
+
+html[data-reduce-motion='true'] .fx-voice-ring.is-active::after,
+html[data-reduce-motion='true'] .fx-voice-ring[aria-pressed='true']::after {
+	opacity: 0.45;
+	transform: scale(1.12);
+}
+
+html[data-reduce-motion='true'] .fx-beam--md .fx-beam__ring,
+html[data-reduce-motion='true'] .fx-beam--sm .fx-beam__ring {
+	--fx-beam-angle: 300deg;
+	opacity: 0.6;
+}
+
+html[data-reduce-motion='true'] .fx-beam--line .fx-beam__ring {
+	background-position: 50% 0;
+}
+
+html[data-reduce-motion='true'] .fx-beam--pulse-inner .fx-beam__ring,
+html[data-reduce-motion='true'] .fx-beam--pulse-outside .fx-beam__ring {
+	opacity: 0.7;
+}
+
+html[data-reduce-motion='true'] .fx-image__media,
+html[data-reduce-motion='true'] .fx-image.is-ready .fx-image__media {
+	animation: none;
+	filter: none;
+	transform: none;
+	-webkit-mask-image: none;
+	mask-image: none;
+}
+
+html[data-reduce-motion='true'] .fx-image.is-ready .fx-image__media {
+	opacity: 1;
+}
+
+html[data-reduce-motion='true'] .fx-morph__blob,
+html[data-reduce-motion='true'] .fx-morph__item,
+html[data-reduce-motion='true'] .fx-morph__trigger,
+html[data-reduce-motion='true'] .fx-bot__eyes {
+	transition: none !important;
+}
+
+/* Quieter press / toast kinetics when the user asks for less motion. */
+html[data-reduce-motion='true'] .btn-primary:active:not(:disabled),
+html[data-reduce-motion='true'] .btn-action:active:not(:disabled),
+html[data-reduce-motion='true'] .btn-secondary:active:not(:disabled),
+html[data-reduce-motion='true'] .btn-danger:active:not(:disabled),
+html[data-reduce-motion='true'] :is([data-slot='button'].btn-primary, [data-slot='button'].btn-action):active:not(:disabled),
+html[data-reduce-motion='true'] :is([data-slot='button'].btn-secondary, [data-slot='button'].btn-danger):active:not(:disabled) {
+	transform: none;
+}
+
+html[data-reduce-motion='true'] .fx-cta-sheen::after {
+	display: none;
 }
