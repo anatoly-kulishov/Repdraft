@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { APP_VERSION_LABEL } from '$lib/appVersion';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
+	import { MetalBadge } from '$lib/components/fx';
 	import { localizedChangelog } from '$lib/domain/changelog';
 	import { TESTER_MODE_UNLOCK_TAPS } from '$lib/domain/prefs';
 	import { translate } from '$lib/i18n/messages';
@@ -88,6 +89,7 @@
 						onclick={onUnlockVersionTap}
 					>
 						{release.label}
+						<MetalBadge>{lang === 'en' ? 'New' : 'Новое'}</MetalBadge>
 					</button>
 				{:else}
 					<p class="whats-new-release__version">{release.label}</p>

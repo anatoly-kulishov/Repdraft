@@ -4,6 +4,7 @@
 	import HelpButton from '$lib/components/HelpButton.svelte';
 	import HelpPanel from '$lib/components/HelpPanel.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
+	import { BorderBeam, LiquidGooey, MetalFx } from '$lib/components/fx';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelBodyPart } from '$lib/domain/labels.ru';
 	import {
@@ -25,6 +26,7 @@
 	let indexById = $state(new Map<string, ExerciseIndexItem>());
 	let period: ProgressPeriod = $derived($progressPeriod);
 	let helpOpen = $state(false);
+	let periodActive = $derived(PROGRESS_PERIODS.indexOf(period));
 
 	let overview = $derived(
 		computeProgressOverview($live.history, new Date(), (id) => indexById.get(id)?.body_part ?? null, {
@@ -127,37 +129,46 @@
 	/>
 
 	<!-- Block 1: period segmented control -->
-	<div class="progress-tabs" role="tablist" aria-label={translate(lang, 'progress.sectionTitle')}>
-		{#each PROGRESS_PERIODS as p (p)}
-			<button
-				type="button"
-				role="tab"
-				aria-selected={period === p}
-				class="progress-tab"
-				class:progress-tab--active={period === p}
-				onclick={() => progressPeriod.set(p)}
-			>
-				{periodLabel(p)}
-			</button>
-		{/each}
-	</div>
+	<LiquidGooey
+		activeIndex={periodActive}
+		itemsClass="progress-tabs"
+		class="progress-tabs-gooey"
+	>
+		<div role="tablist" aria-label={translate(lang, 'progress.sectionTitle')} class="contents">
+			{#each PROGRESS_PERIODS as p (p)}
+				<button
+					type="button"
+					data-fx-gooey-item
+					role="tab"
+					aria-selected={period === p}
+					class="progress-tab"
+					class:progress-tab--active={period === p}
+					onclick={() => progressPeriod.set(p)}
+				>
+					{periodLabel(p)}
+				</button>
+			{/each}
+		</div>
+	</LiquidGooey>
 
 	<div class="progress-blocks">
 		<!-- Block 2: metric cards -->
 		<div class="progress-stats">
-			<div class="progress-stat panel">
-				<p class="progress-stat__label">{translate(lang, 'progress.cardWorkouts')}</p>
-				<p class="progress-stat__value tabular-nums">{overview.cards.workouts}</p>
-				{#if workoutsDeltaText() != null}
-					<p
-						class="progress-stat__delta"
-						class:progress-stat__delta--up={(overview.cards.workoutsDelta ?? 0) > 0}
-						class:progress-stat__delta--down={(overview.cards.workoutsDelta ?? 0) < 0}
-					>
-						{workoutsDeltaText()}
-					</p>
-				{/if}
-			</div>
+			<BorderBeam size="sm" class="progress-stat-beam">
+				<div class="progress-stat panel">
+					<p class="progress-stat__label">{translate(lang, 'progress.cardWorkouts')}</p>
+					<p class="progress-stat__value tabular-nums">{overview.cards.workouts}</p>
+					{#if workoutsDeltaText() != null}
+						<p
+							class="progress-stat__delta"
+							class:progress-stat__delta--up={(overview.cards.workoutsDelta ?? 0) > 0}
+							class:progress-stat__delta--down={(overview.cards.workoutsDelta ?? 0) < 0}
+						>
+							{workoutsDeltaText()}
+						</p>
+					{/if}
+				</div>
+			</BorderBeam>
 			<div class="progress-stat panel">
 				<p class="progress-stat__label">{translate(lang, 'progress.cardVolume')}</p>
 				<p class="progress-stat__value tabular-nums">{formatKgInt(overview.cards.volumeKg)}<span class="progress-stat__unit">{translate(lang, 'pr.kg')}</span></p>
@@ -178,7 +189,11 @@
 			<p class="progress-section-title">{translate(lang, 'progress.barTitle')}</p>
 			{#if !hasData}
 				<p class="progress-muted">{translate(lang, 'progress.empty')}</p>
-				<a href="/" class="btn-primary progress-empty-cta">{translate(lang, 'progress.emptyCta')}</a>
+				<MetalFx class="progress-empty-cta-wrap">
+					<a href="/" class="btn-primary progress-empty-cta fx-cta-sheen"
+						>{translate(lang, 'progress.emptyCta')}</a
+					>
+				</MetalFx>
 			{:else}
 				{#each overview.weeks as w (w.weekKey)}
 					{@const isNow = w.weekKey === overview.streak.thisWeekKey}

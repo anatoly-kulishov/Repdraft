@@ -17,14 +17,14 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.25.18',
 		highlights: {
 			ru: [
-				'AI: живые подсказки при генерации, диктовке и распознавании программы',
-				'Подбор подходов в builder и чипы фильтров стали заметнее без лишнего шума',
-				'Анимации на фоне останавливаются, когда их не видно'
+				'AI и coach: мягкое свечение на чате, подсказках и итоговой тренировке',
+				'Пустые экраны и кнопки старта выглядят яснее, без лишнего шума',
+				'Диктовка: кольцо вокруг микрофона, анимации паузятся вне экрана'
 			],
 			en: [
-				'AI: clearer motion while generating, dictating, and recognizing a program',
-				'Builder tune and catalog filter chips feel more responsive',
-				'Background animations pause when offscreen'
+				'AI and coach: soft glow on chat, hints, and the workout summary',
+				'Empty states and start CTAs read clearer without clutter',
+				'Dictation mic ring; animations pause when offscreen'
 			]
 		}
 	},

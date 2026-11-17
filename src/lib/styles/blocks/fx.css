@@ -622,6 +622,40 @@
 	}
 }
 
+/* Voice ring: pulse around a mic / record control while active. */
+.fx-voice-ring {
+	position: relative;
+	isolation: isolate;
+}
+
+.fx-voice-ring::after {
+	content: '';
+	position: absolute;
+	inset: 2px;
+	z-index: 0;
+	border-radius: 50%;
+	border: 2px solid color-mix(in srgb, var(--color-accent) 75%, transparent);
+	opacity: 0;
+	pointer-events: none;
+	transform: scale(0.92);
+}
+
+.fx-voice-ring.is-active::after,
+.fx-voice-ring[aria-pressed='true']::after {
+	animation: fx-voice-ring-pulse 1.25s ease-out infinite;
+}
+
+@keyframes fx-voice-ring-pulse {
+	0% {
+		opacity: 0.85;
+		transform: scale(0.92);
+	}
+	100% {
+		opacity: 0;
+		transform: scale(1.55);
+	}
+}
+
 /* ---------- Bot avatars ---------- */
 
 .fx-bot {
@@ -867,11 +901,19 @@
 	.fx-image__loader,
 	.fx-cta-sheen::after,
 	.fx-voice.is-playing .fx-voice__wave,
+	.fx-voice-ring.is-active::after,
+	.fx-voice-ring[aria-pressed='true']::after,
 	.fx-bot__eye,
 	.fx-bot__head,
 	.fx-bot__mouth,
 	.fx-bot__antenna-tip {
 		animation: none !important;
+	}
+
+	.fx-voice-ring.is-active::after,
+	.fx-voice-ring[aria-pressed='true']::after {
+		opacity: 0.45;
+		transform: scale(1.12);
 	}
 
 	.fx-beam--md .fx-beam__ring,

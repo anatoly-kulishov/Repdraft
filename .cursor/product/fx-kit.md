@@ -4,19 +4,19 @@ Own Svelte 5 / CSS takes on all nine [libraries.dev](https://libraries.dev/) eff
 
 | Effect | Export | Product surfaces |
 |---|---|---|
-| Border beam | `BorderBeam` | Guest home hero; AI plan card |
+| Border beam | `BorderBeam` | Guest home; `/ai` composer/plan/skeleton; empty states; onboarding; coach cards; clients invite; progress workouts card; summary hero; exercise media |
 | Thinking orbs | `ThinkingOrbs` | `/ai` generate/listen; builder AI tune; recognize program |
-| Liquid gooey | `LiquidGooey`, `GooeyMorph` | `/ai` example chips; builder AI goals; catalog target chips; morph lab-only |
-| Liquid metal | `MetalFx`, `MetalText`, `MetalBadge`, `.fx-cta-sheen` | Guest CTA; `/ai` generate / add to builder; AI tune; recognize CTAs |
-| Image generation | `ImageFx` | lab only (avoid long lists) |
-| Distortion waves | `WaveSwap` / `waveReveal` | `/ai` busy→plan; builder AI tune form→result |
-| Magnetic UI | `magnetic()` | Desktop: guest CTA, `/ai` primary CTAs |
+| Liquid gooey | `LiquidGooey`, `GooeyMorph` | `/ai` examples; builder AI goals; catalog targets; progress period tabs; morph lab-only |
+| Liquid metal | `MetalFx` / Text / Badge, `.fx-cta-sheen` | Empty CTAs; plans empty; onboarding demo; AI/tune/recognize; coach; clients invite; summary done; guest home |
+| Image generation | `ImageFx` | lab only (lists keep native fade) |
+| Distortion waves | `WaveSwap` | `/ai` busy→plan; builder AI tune |
+| Magnetic UI | `magnetic()` | Desktop guest CTA + `/ai` primary CTAs |
 | Voice position | `VoicePosition` | lab only |
-| Bot avatars | `BotAvatar` | `/ai` status badge (idle / thinking / talking / happy) |
+| Voice ring | `.fx-voice-ring` | `/ai` mic while dictating |
+| Bot avatars | `BotAvatar` | `/ai` status badge; summary hero (happy) |
 
-- Code: `src/lib/components/fx/` (barrel `index.ts`), styles `src/lib/styles/blocks/fx.css`.
-- Hosts keep their own radius; rings inherit. `MetalFx` takes `radius` (default `--radius-button`).
-- Perf: CSS/canvas pause offscreen and on hidden tabs. `magnetic()` only on fine pointers.
+- Code: `src/lib/components/fx/`, styles `src/lib/styles/blocks/fx.css`.
+- Perf: pause offscreen / hidden tab. `magnetic()` fine-pointer only.
 - Honors `prefers-reduced-motion`.
-- Sandbox: `http://localhost:5173/lab/fx`, **dev only** (404 in prod builds).
-- Do not sprinkle across every sacred-loop screen; prefer AI and one primary CTA per view.
+- Sandbox: `/lab/fx` (dev only, 404 in prod).
+- Skip live set logging UI: sacred loop stays quiet and fast.

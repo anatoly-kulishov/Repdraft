@@ -674,8 +674,9 @@
 						{/if}
 						<button
 							type="button"
-							class="ai-draft-page__mic"
+							class="ai-draft-page__mic fx-voice-ring"
 							class:ai-draft-page__mic--active={listening}
+							class:is-active={listening}
 							disabled={busy}
 							aria-pressed={listening}
 							aria-label={listening
