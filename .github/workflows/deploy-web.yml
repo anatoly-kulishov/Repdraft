@@ -91,8 +91,21 @@ jobs:
              # In-VPS hairpin to public HTTPS is unreliable; probe the app container.
              docker compose exec -T app node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(e=>{console.error(e);process.exit(1)})\""
 
+      # Public HTTPS from GitHub runners outside RF can time out (DPI / routing).
+      # In-VPS app probe in "Restart stack" is the hard gate; this is best-effort.
       - name: Smoke check from runner
+        continue-on-error: true
         run: |
-          code=$(curl -4 -fsS --max-time 20 -o /tmp/rd-home.html -w '%{http_code}' https://www.repdraft.ru/)
-          test "$code" = "200"
+          ok=0
+          for i in 1 2 3 4 5; do
+            if curl -4 -fsS --max-time 25 -o /tmp/rd-home.html https://www.repdraft.ru/; then
+              ok=1
+              break
+            fi
+            sleep 4
+          done
+          if [ "$ok" != 1 ]; then
+            echo "Public smoke timed out from runner (common outside RF). VPS-local check already passed."
+            exit 1
+          fi
           grep -qi 'repdraft' /tmp/rd-home.html
