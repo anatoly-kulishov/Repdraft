@@ -2,7 +2,8 @@
 	import { goto } from '$app/navigation';
 	import AppButton from '$lib/components/AppButton.svelte';
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
-	import Spinner from '$lib/components/Spinner.svelte';
+	import { MetalFx, ThinkingOrbs } from '$lib/components/fx';
+
 	import { loadExerciseIndex } from '$lib/data/loadExercises';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import {
@@ -313,15 +314,21 @@
 	{:else}
 		<p class="bottom-sheet__hint">{translate(lang, 'recognize.lead')}</p>
 		{#if busy}
-			<div class="mt-3 flex items-center gap-2" aria-live="polite">
-				<Spinner size="sm" block={false} />
+			<div class="recognize-working" aria-live="polite" aria-busy="true">
+				<ThinkingOrbs
+					mode="searching"
+					size={64}
+					label={translate(lang, 'recognize.working')}
+				/>
 				<span class="text-sm">{translate(lang, 'recognize.working')}</span>
 			</div>
 		{:else}
 			<div class="recognize-pick-actions">
-				<AppButton disabled={busy} aria-busy={busy} onclick={openPhotoPicker}>
-					{translate(lang, 'recognize.pickPhoto')}
-				</AppButton>
+				<MetalFx class="w-full">
+					<AppButton disabled={busy} aria-busy={busy} class="fx-cta-sheen" onclick={openPhotoPicker}>
+						{translate(lang, 'recognize.pickPhoto')}
+					</AppButton>
+				</MetalFx>
 				<AppButton
 					variant="secondary"
 					disabled={busy}
@@ -349,12 +356,15 @@
 				{translate(lang, 'billing.subscribe')}
 			</AppButton>
 		{:else if phase === 'review'}
-			<AppButton
-				disabled={busy || !matched || matched.exercises.length === 0}
-				onclick={applyToBuilder}
-			>
-				{translate(lang, 'recognize.openBuilder')}
-			</AppButton>
+			<MetalFx>
+				<AppButton
+					disabled={busy || !matched || matched.exercises.length === 0}
+					class="fx-cta-sheen"
+					onclick={applyToBuilder}
+				>
+					{translate(lang, 'recognize.openBuilder')}
+				</AppButton>
+			</MetalFx>
 		{/if}
 	{/snippet}
 </BottomSheet>
@@ -365,5 +375,15 @@
 		flex-direction: column;
 		gap: 0.5rem;
 		margin-top: 0.85rem;
+	}
+
+	.recognize-working {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.65rem;
+		margin-top: 0.85rem;
+		padding: 0.75rem 0;
+		color: var(--color-muted);
 	}
 </style>

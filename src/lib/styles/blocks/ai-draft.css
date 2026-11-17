@@ -149,45 +149,59 @@
 	flex: 0 0 auto;
 }
 
-.ai-draft-page__composer {
-	position: relative;
+.ai-draft-page__composer-beam {
+	display: block;
 	border-radius: var(--radius-control);
+	--fx-beam-width: 1.5px;
+	--fx-beam-color: var(--color-accent);
+	--fx-beam-highlight: color-mix(in srgb, var(--color-accent-text) 75%, white);
 }
 
-/* Glow on shell — survives controls.css textarea focus box-shadow reset */
+.ai-draft-page__composer-beam--live {
+	--fx-beam-color: var(--color-accent-text);
+	--fx-beam-highlight: color-mix(in srgb, var(--color-accent-text) 55%, white);
+}
+
+.ai-draft-page__composer {
+	position: relative;
+	border-radius: inherit;
+}
+
+/* Soft ambient under the traveling BorderBeam; survives textarea focus reset. */
 .ai-draft-page__composer::before {
 	content: '';
 	position: absolute;
 	inset: -1px;
 	z-index: 0;
-	border-radius: calc(var(--radius-control) + 1px);
+	border-radius: inherit;
 	pointer-events: none;
 	box-shadow:
-		0 0 0 1.5px color-mix(in srgb, var(--color-accent) 42%, transparent),
-		0 0 14px color-mix(in srgb, var(--color-accent) 32%, transparent),
-		0 0 32px color-mix(in srgb, var(--color-accent) 18%, transparent);
+		0 0 0 1px color-mix(in srgb, var(--color-accent) 28%, transparent),
+		0 0 12px color-mix(in srgb, var(--color-accent) 18%, transparent);
 	transition: box-shadow 150ms ease;
 }
 
 html[data-theme='light'] .ai-draft-page__composer::before {
 	box-shadow:
-		0 0 0 1.5px color-mix(in srgb, var(--color-accent) 34%, transparent),
-		0 0 12px color-mix(in srgb, var(--color-accent) 18%, transparent);
+		0 0 0 1px color-mix(in srgb, var(--color-accent) 22%, transparent),
+		0 0 10px color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
 .ai-draft-page__composer:focus-within::before,
-.ai-draft-page__composer--listening::before {
+.ai-draft-page__composer--listening::before,
+.ai-draft-page__composer--busy::before {
 	box-shadow:
-		0 0 0 2px color-mix(in srgb, var(--color-accent) 58%, transparent),
-		0 0 18px color-mix(in srgb, var(--color-accent) 42%, transparent),
-		0 0 44px color-mix(in srgb, var(--color-accent) 26%, transparent);
+		0 0 0 1.5px color-mix(in srgb, var(--color-accent) 48%, transparent),
+		0 0 16px color-mix(in srgb, var(--color-accent) 28%, transparent),
+		0 0 36px color-mix(in srgb, var(--color-accent) 16%, transparent);
 }
 
 html[data-theme='light'] .ai-draft-page__composer:focus-within::before,
-html[data-theme='light'] .ai-draft-page__composer--listening::before {
+html[data-theme='light'] .ai-draft-page__composer--listening::before,
+html[data-theme='light'] .ai-draft-page__composer--busy::before {
 	box-shadow:
-		0 0 0 2px color-mix(in srgb, var(--color-accent) 45%, transparent),
-		0 0 16px color-mix(in srgb, var(--color-accent) 24%, transparent);
+		0 0 0 1.5px color-mix(in srgb, var(--color-accent) 38%, transparent),
+		0 0 14px color-mix(in srgb, var(--color-accent) 18%, transparent);
 }
 
 /* Same grow/center recipe as PR notes; mic inset like pr-note-field--has-clear */
@@ -209,7 +223,8 @@ textarea.pr-note-field.ai-draft-page__brief {
 
 textarea.pr-note-field.ai-draft-page__brief:focus,
 textarea.pr-note-field.ai-draft-page__brief:focus-visible,
-.ai-draft-page__composer--listening textarea.pr-note-field.ai-draft-page__brief {
+.ai-draft-page__composer--listening textarea.pr-note-field.ai-draft-page__brief,
+.ai-draft-page__composer--busy textarea.pr-note-field.ai-draft-page__brief {
 	border-color: transparent;
 	box-shadow: none;
 }
@@ -282,18 +297,39 @@ textarea.pr-note-field.ai-draft-page__brief:focus-visible,
 
 .ai-draft-page__hint,
 .ai-draft-page__listening {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
 	margin: 0;
 	font-size: 0.75rem;
 	line-height: 1.35;
+	color: var(--color-accent-text);
+	font-weight: 500;
 }
 
 .ai-draft-page__hint {
 	color: var(--color-muted);
 }
 
-.ai-draft-page__listening {
-	color: var(--color-accent-text);
-	font-weight: 500;
+.ai-draft-page__bot {
+	flex-shrink: 0;
+}
+
+.ai-draft-page__wave {
+	min-width: 0;
+}
+
+.ai-draft-page__plan-beam,
+.ai-draft-page__skeleton-beam {
+	border-radius: var(--radius-panel);
+}
+
+.ai-draft-page__plan-beam .ai-draft-page__plan {
+	margin: 0;
+}
+
+.ai-draft-page__skeleton-beam .ai-draft-page__skeleton {
+	margin: 0;
 }
 
 .ai-draft-page__error {
@@ -312,6 +348,12 @@ textarea.pr-note-field.ai-draft-page__brief:focus-visible,
 	padding: 0.5rem 0;
 	color: var(--color-muted);
 	font-size: 0.8125rem;
+}
+
+.ai-draft-page__orbs {
+	display: flex;
+	justify-content: center;
+	margin: 0.25rem 0 0.85rem;
 }
 
 .ai-draft-page__skeleton {
@@ -522,6 +564,11 @@ a.ai-draft-page__exercise-title:focus-visible {
 	.ai-draft-page__mic,
 	.catalog-filter-chip.ai-draft-page__chip {
 		transition: none;
+	}
+
+	.ai-draft-page__composer-beam .fx-beam__ring {
+		animation: none;
+		opacity: 0.55;
 	}
 
 	.catalog-filter-chip.ai-draft-page__chip:active:not(:disabled) {

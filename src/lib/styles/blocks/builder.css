@@ -1488,6 +1488,20 @@ button.workout-ex-chip--ladder {
 	gap: 0.4rem;
 }
 
+.builder-ai-tune__gooey {
+	min-width: 0;
+}
+
+.builder-ai-tune__wave {
+	min-width: 0;
+}
+
+.builder-ai-tune__pane {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
 .builder-ai-tune__field {
 	margin-bottom: -0.25rem;
 }

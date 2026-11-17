@@ -5,6 +5,13 @@
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
+	import {
+		LiquidGooey,
+		MetalFx,
+		ThinkingOrbs,
+		WaveSwap,
+		type ThinkingOrbState
+	} from '$lib/components/fx';
 	import { AI_TUNE_NOTE_MAX, sanitizeAiBrief } from '$lib/domain/inputLimits';
 	import { nextGoalNote } from '$lib/domain/aiTuneGoalNote';
 	import type { AppLocale } from '$lib/i18n/locale';
@@ -46,6 +53,7 @@
 
 	const GOALS: TuneGoal[] = ['strength', 'hypertrophy', 'endurance', 'general'];
 	const DEFAULT_GOAL: TuneGoal = 'hypertrophy';
+	const BUSY_ORB_CYCLE = ['solving', 'composing', 'weaving'] as const;
 
 	function goalTemplate(g: TuneGoal): string {
 		switch (g) {
@@ -70,6 +78,10 @@
 	let busy = $state(false);
 	let result = $state<Prescription | null>(null);
 	let gen = 0;
+	let busyOrb = $state<ThinkingOrbState>('solving');
+
+	let goalActive = $derived(GOALS.indexOf(goal));
+	let resultKey = $derived(result ? `ok:${result.sets}x${result.reps}:${result.restSec}` : busy ? 'busy' : 'form');
 
 	function goalLabel(g: TuneGoal): string {
 		switch (g) {
@@ -97,6 +109,20 @@
 		);
 		goal = g;
 	}
+
+	$effect(() => {
+		if (!browser || !busy) {
+			busyOrb = 'solving';
+			return;
+		}
+		let i = 0;
+		busyOrb = BUSY_ORB_CYCLE[0];
+		const id = window.setInterval(() => {
+			i = (i + 1) % BUSY_ORB_CYCLE.length;
+			busyOrb = BUSY_ORB_CYCLE[i];
+		}, 1200);
+		return () => window.clearInterval(id);
+	});
 
 	async function requestTune(opts: { noteText: string; prior: Prescription | null }) {
 		if (busy) return;
@@ -196,14 +222,15 @@
 	<p class="bottom-sheet__hint">{translate(lang, 'builder.aiTuneHint')}</p>
 
 	<div class="builder-ai-tune">
-		<div
-			class="catalog-filter-chips builder-ai-tune__goals"
-			role="group"
-			aria-label={translate(lang, 'builder.aiTuneGoalAria')}
+		<LiquidGooey
+			activeIndex={goalActive}
+			itemsClass="catalog-filter-chips builder-ai-tune__goals"
+			class="builder-ai-tune__gooey"
 		>
 			{#each GOALS as g (g)}
 				<button
 					type="button"
+					data-fx-gooey-item
 					class="catalog-filter-chip"
 					class:is-active={goal === g}
 					disabled={busy}
@@ -212,62 +239,91 @@
 					{goalLabel(g)}
 				</button>
 			{/each}
-		</div>
+		</LiquidGooey>
 
-		{#if !result}
-			<AppLabel class="builder-ai-tune__field" for={`builder-ai-tune-note-${exerciseId}`}>
-				{translate(lang, 'builder.aiTuneNote')}
-			</AppLabel>
-			<AppTextarea
-				id={`builder-ai-tune-note-${exerciseId}`}
-				class="builder-ai-tune__note"
-				rows={2}
-				maxlength={AI_TUNE_NOTE_MAX}
-				disabled={busy}
-				placeholder={translate(lang, 'builder.aiTuneNotePlaceholder')}
-				bind:value={note}
-			/>
-			<AppButton variant="primary" block disabled={busy} onclick={suggest}>
-				<span class="builder-ai-tune__cta">
-					<LucideIcon icon={Sparkles} size={ICON_SMALL} />
-					{busy
-						? translate(lang, 'builder.aiTuneBusy')
-						: translate(lang, 'builder.aiTuneSuggest')}
-				</span>
-			</AppButton>
-		{:else}
-			<div class="builder-ai-tune__result" aria-live="polite">
-				<p class="builder-ai-tune__numbers tabular-nums">
-					{result.sets} × {result.reps}
-					<span class="builder-ai-tune__rest">· {result.restSec}s</span>
-				</p>
-				{#if result.why}
-					<p class="builder-ai-tune__why">{result.why}</p>
-				{/if}
-			</div>
-			<AppButton variant="primary" block disabled={busy} onclick={apply}>
-				{translate(lang, 'builder.aiTuneApply')}
-			</AppButton>
-			<AppLabel class="builder-ai-tune__field" for={`builder-ai-tune-refine-${exerciseId}`}>
-				{translate(lang, 'builder.aiTuneRefine')}
-			</AppLabel>
-			<AppTextarea
-				id={`builder-ai-tune-refine-${exerciseId}`}
-				class="builder-ai-tune__note"
-				rows={2}
-				maxlength={AI_TUNE_NOTE_MAX}
-				disabled={busy}
-				placeholder={translate(lang, 'builder.aiTuneRefinePlaceholder')}
-				bind:value={refineNote}
-			/>
-			<AppButton
-				variant="secondary"
-				block
-				disabled={busy || !sanitizeAiBrief(refineNote, AI_TUNE_NOTE_MAX)}
-				onclick={refine}
-			>
-				{busy ? translate(lang, 'builder.aiTuneBusy') : translate(lang, 'builder.aiTuneAgain')}
-			</AppButton>
-		{/if}
+		<WaveSwap key={resultKey} class="builder-ai-tune__wave">
+			{#if !result}
+				<div class="builder-ai-tune__pane">
+					<AppLabel class="builder-ai-tune__field" for={`builder-ai-tune-note-${exerciseId}`}>
+						{translate(lang, 'builder.aiTuneNote')}
+					</AppLabel>
+					<AppTextarea
+						id={`builder-ai-tune-note-${exerciseId}`}
+						class="builder-ai-tune__note"
+						rows={2}
+						maxlength={AI_TUNE_NOTE_MAX}
+						disabled={busy}
+						placeholder={translate(lang, 'builder.aiTuneNotePlaceholder')}
+						bind:value={note}
+					/>
+					<MetalFx class="w-full">
+						<AppButton variant="primary" block disabled={busy} class="fx-cta-sheen" onclick={suggest}>
+							<span class="builder-ai-tune__cta">
+								{#if busy}
+									<ThinkingOrbs
+										mode={busyOrb}
+										size={20}
+										label={translate(lang, 'builder.aiTuneBusy')}
+									/>
+								{:else}
+									<LucideIcon icon={Sparkles} size={ICON_SMALL} />
+								{/if}
+								{busy
+									? translate(lang, 'builder.aiTuneBusy')
+									: translate(lang, 'builder.aiTuneSuggest')}
+							</span>
+						</AppButton>
+					</MetalFx>
+				</div>
+			{:else}
+				<div class="builder-ai-tune__pane">
+					<div class="builder-ai-tune__result" aria-live="polite">
+						<p class="builder-ai-tune__numbers tabular-nums">
+							{result.sets} × {result.reps}
+							<span class="builder-ai-tune__rest">· {result.restSec}s</span>
+						</p>
+						{#if result.why}
+							<p class="builder-ai-tune__why">{result.why}</p>
+						{/if}
+					</div>
+					<MetalFx class="w-full">
+						<AppButton variant="primary" block disabled={busy} class="fx-cta-sheen" onclick={apply}>
+							{translate(lang, 'builder.aiTuneApply')}
+						</AppButton>
+					</MetalFx>
+					<AppLabel class="builder-ai-tune__field" for={`builder-ai-tune-refine-${exerciseId}`}>
+						{translate(lang, 'builder.aiTuneRefine')}
+					</AppLabel>
+					<AppTextarea
+						id={`builder-ai-tune-refine-${exerciseId}`}
+						class="builder-ai-tune__note"
+						rows={2}
+						maxlength={AI_TUNE_NOTE_MAX}
+						disabled={busy}
+						placeholder={translate(lang, 'builder.aiTuneRefinePlaceholder')}
+						bind:value={refineNote}
+					/>
+					<AppButton
+						variant="secondary"
+						block
+						disabled={busy || !sanitizeAiBrief(refineNote, AI_TUNE_NOTE_MAX)}
+						onclick={refine}
+					>
+						{#if busy}
+							<span class="builder-ai-tune__cta">
+								<ThinkingOrbs
+									mode={busyOrb}
+									size={20}
+									label={translate(lang, 'builder.aiTuneBusy')}
+								/>
+								{translate(lang, 'builder.aiTuneBusy')}
+							</span>
+						{:else}
+							{translate(lang, 'builder.aiTuneAgain')}
+						{/if}
+					</AppButton>
+				</div>
+			{/if}
+		</WaveSwap>
 	</div>
 </BottomSheet>

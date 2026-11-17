@@ -4,14 +4,34 @@
 		gap: 16px;
 	}
 	/* Block 1: segmented control on the 16px inset, violet active plate. */
+	.progress-tabs-gooey {
+		margin: 0 0 16px;
+	}
+	/* Beat .fx-gooey__items { display:flex } from fx.css */
+	.progress-tabs-gooey .fx-gooey__items.progress-tabs,
 	.progress-tabs {
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
 		gap: 4px;
 		padding: 4px;
-		margin: 0 0 16px;
+		margin: 0;
 		border-radius: var(--radius-control, 16px);
 		background: var(--color-surface-muted, #2c2c2e);
+	}
+	.progress-stat-beam {
+		display: block;
+		min-width: 0;
+		border-radius: var(--radius-panel);
+	}
+	.progress-stat-beam .progress-stat {
+		height: 100%;
+	}
+	.progress-empty-cta-wrap {
+		display: inline-flex;
+		margin-top: 12px;
+	}
+	.progress-empty-cta-wrap .progress-empty-cta {
+		margin-top: 0;
 	}
 	.progress-tab {
 		min-height: 40px;

@@ -9,6 +9,7 @@
 	import HelpButton from '$lib/components/HelpButton.svelte';
 	import HelpPanel from '$lib/components/HelpPanel.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
+	import { BorderBeam, MetalFx } from '$lib/components/fx';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import {
@@ -498,47 +499,51 @@
 	<div class="coach-column">
 	<div class="coach-block">
 		<h2 class="coach-block-title">{translate(lang, 'coach.inviteTitle')}</h2>
-		<div class="panel coach-card">
-			<p class="coach-hint">{translate(lang, 'coach.inviteHint')}</p>
+		<BorderBeam size="sm" class="clients-invite-beam">
+			<div class="panel coach-card">
+				<p class="coach-hint">{translate(lang, 'coach.inviteHint')}</p>
 
-			{#if inviteCode}
-				<button
-					type="button"
-					class="coach-code-plate"
-					aria-label={translate(lang, 'coach.inviteCopy')}
-					onclick={() => void copyInvite()}
-				>
-					<span class="coach-code">{formatInviteCode(inviteCode)}</span>
-					<span class="coach-copy" aria-hidden="true">
-						{#if inviteCopied}
-							<Check size={20} />
-						{:else}
-							<Copy size={20} />
-						{/if}
-					</span>
-				</button>
-				<p class="sr-only" aria-live="polite">
-					{inviteCopied ? translate(lang, 'coach.inviteCopied') : ''}
-				</p>
-				<p class="coach-hint">{translate(lang, 'coach.inviteHelp')}</p>
-				<AppButton
-					variant="secondary"
-					block
-					class="min-h-[48px]"
-					disabled={cloudBusy}
-					onclick={requestRefresh}
-				>
-					<span class="inline-flex items-center justify-center gap-2">
-						<ArrowsClockwise size={18} weight="bold" aria-hidden="true" />
-						{translate(lang, 'coach.inviteRefresh')}
-					</span>
-				</AppButton>
-			{:else}
-				<AppButton block disabled={cloudBusy} onclick={() => void createInvite()}>
-					{translate(lang, 'coach.inviteCreateShort')}
-				</AppButton>
-			{/if}
-		</div>
+				{#if inviteCode}
+					<button
+						type="button"
+						class="coach-code-plate"
+						aria-label={translate(lang, 'coach.inviteCopy')}
+						onclick={() => void copyInvite()}
+					>
+						<span class="coach-code">{formatInviteCode(inviteCode)}</span>
+						<span class="coach-copy" aria-hidden="true">
+							{#if inviteCopied}
+								<Check size={20} />
+							{:else}
+								<Copy size={20} />
+							{/if}
+						</span>
+					</button>
+					<p class="sr-only" aria-live="polite">
+						{inviteCopied ? translate(lang, 'coach.inviteCopied') : ''}
+					</p>
+					<p class="coach-hint">{translate(lang, 'coach.inviteHelp')}</p>
+					<AppButton
+						variant="secondary"
+						block
+						class="min-h-[48px]"
+						disabled={cloudBusy}
+						onclick={requestRefresh}
+					>
+						<span class="inline-flex items-center justify-center gap-2">
+							<ArrowsClockwise size={18} weight="bold" aria-hidden="true" />
+							{translate(lang, 'coach.inviteRefresh')}
+						</span>
+					</AppButton>
+				{:else}
+					<MetalFx class="w-full">
+						<AppButton block disabled={cloudBusy} class="fx-cta-sheen" onclick={() => void createInvite()}>
+							{translate(lang, 'coach.inviteCreateShort')}
+						</AppButton>
+					</MetalFx>
+				{/if}
+			</div>
+		</BorderBeam>
 	</div>
 
 	</div>

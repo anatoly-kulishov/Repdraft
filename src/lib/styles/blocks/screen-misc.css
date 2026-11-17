@@ -1260,6 +1260,7 @@ button.live-local-save-cue {
 .whats-new-release__version--unlock {
 	display: inline-flex;
 	align-items: center;
+	gap: 0.45rem;
 	min-height: 48px;
 	min-width: 48px;
 	padding: 0.35rem 0.15rem;

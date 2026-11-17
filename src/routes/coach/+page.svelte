@@ -5,6 +5,7 @@
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
+	import { BorderBeam, MetalFx } from '$lib/components/fx';
 	import {
 		buildCoachHints,
 		coachUndertrainedParts,
@@ -216,71 +217,107 @@
 		<PageSkeleton variant="coach" showBalance={overview.workouts30d > 0} />
 	{:else}
 		{#if balanceRows.length > 0}
-			<AppPanel class="coach-balance text-left">
-				<div class="coach-balance__head">
-					<p class="coach-balance__title">{translate(lang, 'coach.balanceTitle')}</p>
-					<a href="/progress" class="coach-balance__link">
-						{translate(lang, 'home.progressOpen')}
-					</a>
-				</div>
-				<p class="coach-balance__hint">{translate(lang, 'coach.balanceHint')}</p>
-				<ul class="coach-balance__list">
-					{#each balanceRows as row (row.bodyPart)}
-						<li
-							class="coach-balance__row"
-							class:is-lagging={laggingParts.has(row.bodyPart)}
-						>
-							<span class="coach-balance__part">{labelBodyPart(row.bodyPart, lang)}</span>
-							<span class="coach-balance__track" aria-hidden="true">
-								<span
-									class="coach-balance__fill"
-									style={`width:${Math.max(row.sharePct, 2)}%`}
-								></span>
-							</span>
-							<span class="coach-balance__pct">{row.sharePct}%</span>
-						</li>
-					{/each}
-				</ul>
-			</AppPanel>
+			<BorderBeam size="sm" class="coach-fx-beam">
+				<AppPanel class="coach-balance text-left">
+					<div class="coach-balance__head">
+						<p class="coach-balance__title">{translate(lang, 'coach.balanceTitle')}</p>
+						<a href="/progress" class="coach-balance__link">
+							{translate(lang, 'home.progressOpen')}
+						</a>
+					</div>
+					<p class="coach-balance__hint">{translate(lang, 'coach.balanceHint')}</p>
+					<ul class="coach-balance__list">
+						{#each balanceRows as row (row.bodyPart)}
+							<li
+								class="coach-balance__row"
+								class:is-lagging={laggingParts.has(row.bodyPart)}
+							>
+								<span class="coach-balance__part">{labelBodyPart(row.bodyPart, lang)}</span>
+								<span class="coach-balance__track" aria-hidden="true">
+									<span
+										class="coach-balance__fill"
+										style={`width:${Math.max(row.sharePct, 2)}%`}
+									></span>
+								</span>
+								<span class="coach-balance__pct">{row.sharePct}%</span>
+							</li>
+						{/each}
+					</ul>
+				</AppPanel>
+			</BorderBeam>
 		{/if}
 
 		{#if visibleHints.length === 0 && !replace}
-			<AppPanel class="text-left">
-				<p class="coach-muted">
-					{translate(lang, finishedCount === 0 ? 'coach.empty' : 'coach.nothingYet')}
-				</p>
-				{#if finishedCount === 0}
-					<a href="/" class="btn-primary coach-empty-cta">
-						{translate(lang, 'coach.emptyCta')}
-					</a>
-				{/if}
-			</AppPanel>
-		{:else}
-			{#each shownHints as hint (hint.id)}
-				{@const meta = indexById.get(hint.exerciseId)}
-				<AppPanel class="coach-card text-left">
-					<p class="coach-card__title">
-						{meta ? exerciseName(meta, lang) : hint.exerciseId}
+			<BorderBeam size="sm" class="coach-fx-beam">
+				<AppPanel class="text-left">
+					<p class="coach-muted">
+						{translate(lang, finishedCount === 0 ? 'coach.empty' : 'coach.nothingYet')}
 					</p>
-					<p class="coach-card__meta">
-						{labelBodyPart(hint.bodyPart, lang)} · {translate(lang, 'coach.hintShare', {
-							pct: hint.sharePct
-						})}
-					</p>
-					<p class="coach-why">{translate(lang, hint.reasonKey)}</p>
-					<div class="coach-card__actions">
-						<AppButton onclick={() => openPlanSheet(hint.exerciseId)}>
-							{translate(lang, 'coach.addToPlan')}
-						</AppButton>
-						<button
-							type="button"
-							class="coach-card__hide"
-							onclick={() => hideRow(hint.bodyPart)}
-						>
-							{translate(lang, 'coach.hideHint')}
-						</button>
-					</div>
+					{#if finishedCount === 0}
+						<MetalFx class="coach-empty-cta-wrap">
+							<a href="/" class="btn-primary coach-empty-cta fx-cta-sheen">
+								{translate(lang, 'coach.emptyCta')}
+							</a>
+						</MetalFx>
+					{/if}
 				</AppPanel>
+			</BorderBeam>
+		{:else}
+			{#each shownHints as hint, hintIndex (hint.id)}
+				{@const meta = indexById.get(hint.exerciseId)}
+				{#if hintIndex === 0}
+					<BorderBeam size="sm" class="coach-fx-beam">
+						<AppPanel class="coach-card text-left">
+							<p class="coach-card__title">
+								{meta ? exerciseName(meta, lang) : hint.exerciseId}
+							</p>
+							<p class="coach-card__meta">
+								{labelBodyPart(hint.bodyPart, lang)} · {translate(lang, 'coach.hintShare', {
+									pct: hint.sharePct
+								})}
+							</p>
+							<p class="coach-why">{translate(lang, hint.reasonKey)}</p>
+							<div class="coach-card__actions">
+								<MetalFx>
+									<AppButton class="fx-cta-sheen" onclick={() => openPlanSheet(hint.exerciseId)}>
+										{translate(lang, 'coach.addToPlan')}
+									</AppButton>
+								</MetalFx>
+								<button
+									type="button"
+									class="coach-card__hide"
+									onclick={() => hideRow(hint.bodyPart)}
+								>
+									{translate(lang, 'coach.hideHint')}
+								</button>
+							</div>
+						</AppPanel>
+					</BorderBeam>
+				{:else}
+					<AppPanel class="coach-card text-left">
+						<p class="coach-card__title">
+							{meta ? exerciseName(meta, lang) : hint.exerciseId}
+						</p>
+						<p class="coach-card__meta">
+							{labelBodyPart(hint.bodyPart, lang)} · {translate(lang, 'coach.hintShare', {
+								pct: hint.sharePct
+							})}
+						</p>
+						<p class="coach-why">{translate(lang, hint.reasonKey)}</p>
+						<div class="coach-card__actions">
+							<AppButton onclick={() => openPlanSheet(hint.exerciseId)}>
+								{translate(lang, 'coach.addToPlan')}
+							</AppButton>
+							<button
+								type="button"
+								class="coach-card__hide"
+								onclick={() => hideRow(hint.bodyPart)}
+							>
+								{translate(lang, 'coach.hideHint')}
+							</button>
+						</div>
+					</AppPanel>
+				{/if}
 			{/each}
 
 			{#if visibleHints.length > 1}
@@ -298,27 +335,31 @@
 			{#if replace}
 				{@const fromMeta = indexById.get(replace.fromExerciseId)}
 				{@const toMeta = indexById.get(replace.toExerciseId)}
-				<AppPanel class="coach-card text-left">
-					<p class="coach-card__title">
-						{fromMeta ? exerciseName(fromMeta, lang) : replace.fromExerciseId}
-					</p>
-					<p class="coach-card__meta">
-						→ {toMeta ? exerciseName(toMeta, lang) : replace.toExerciseId}
-					</p>
-					<p class="coach-card__meta">{labelBodyPart(replace.bodyPart, lang)}</p>
-					<p class="coach-why">
-						{replaceSharePct != null
-							? translate(lang, 'coach.replaceWhy', {
-									part: labelBodyPart(replace.bodyPart, lang),
-									pct: replaceSharePct
-								})
-							: translate(lang, 'coach.replaceWhyGeneric')}
-					</p>
-					<p class="coach-why">{translate(lang, 'coach.replaceWhat')}</p>
-					<AppButton onclick={() => void replaceHint()}>
-						{translate(lang, 'coach.replace')}
-					</AppButton>
-				</AppPanel>
+				<BorderBeam size="sm" class="coach-fx-beam">
+					<AppPanel class="coach-card text-left">
+						<p class="coach-card__title">
+							{fromMeta ? exerciseName(fromMeta, lang) : replace.fromExerciseId}
+						</p>
+						<p class="coach-card__meta">
+							→ {toMeta ? exerciseName(toMeta, lang) : replace.toExerciseId}
+						</p>
+						<p class="coach-card__meta">{labelBodyPart(replace.bodyPart, lang)}</p>
+						<p class="coach-why">
+							{replaceSharePct != null
+								? translate(lang, 'coach.replaceWhy', {
+										part: labelBodyPart(replace.bodyPart, lang),
+										pct: replaceSharePct
+									})
+								: translate(lang, 'coach.replaceWhyGeneric')}
+						</p>
+						<p class="coach-why">{translate(lang, 'coach.replaceWhat')}</p>
+						<MetalFx>
+							<AppButton class="fx-cta-sheen" onclick={() => void replaceHint()}>
+								{translate(lang, 'coach.replace')}
+							</AppButton>
+						</MetalFx>
+					</AppPanel>
+				</BorderBeam>
 			{/if}
 		{/if}
 	{/if}
@@ -387,6 +428,22 @@
 		margin-top: 0.75rem;
 		min-height: 3rem;
 		align-items: center;
+	}
+	:global(.coach-empty-cta-wrap) {
+		display: inline-flex;
+		margin-top: 0.75rem;
+	}
+	:global(.coach-empty-cta-wrap .coach-empty-cta) {
+		margin-top: 0;
+	}
+	:global(.coach-fx-beam) {
+		display: block;
+		margin-bottom: 0.75rem;
+		border-radius: var(--radius-panel);
+	}
+	:global(.coach-fx-beam .coach-card),
+	:global(.coach-fx-beam .coach-balance) {
+		margin-bottom: 0;
 	}
 	:global(.coach-card) {
 		margin-bottom: 0.75rem;

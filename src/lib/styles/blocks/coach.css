@@ -17,6 +17,14 @@
 	.coach-block {
 		margin-top: 16px;
 	}
+	.clients-invite-beam {
+		display: block;
+		margin-top: 8px;
+		border-radius: var(--radius-panel);
+	}
+	.clients-invite-beam .coach-card {
+		margin-top: 0;
+	}
 	.coach-block-title {
 		margin: 0;
 		font-size: 1.125rem;

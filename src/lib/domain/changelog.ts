@@ -14,6 +14,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.18',
+		highlights: {
+			ru: [
+				'AI и coach: мягкое свечение на чате, подсказках и итоговой тренировке',
+				'Пустые экраны и кнопки старта выглядят яснее, без лишнего шума',
+				'Диктовка: кольцо вокруг микрофона, анимации паузятся вне экрана'
+			],
+			en: [
+				'AI and coach: soft glow on chat, hints, and the workout summary',
+				'Empty states and start CTAs read clearer without clutter',
+				'Dictation mic ring; animations pause when offscreen'
+			]
+		}
+	},
+	{
 		version: '0.25.17',
 		highlights: {
 			ru: [

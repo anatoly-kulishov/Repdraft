@@ -58,6 +58,7 @@
 	import { onboarding, onboardingHydrated } from '$lib/stores/onboarding';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
+	import { BorderBeam, MetalFx, magnetic } from '$lib/components/fx';
 	import { toasts } from '$lib/stores/toasts';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
@@ -627,7 +628,7 @@
 		{/if}
 		{#if showGuestCreateHero}
 			<div class="home-dashboard-top">
-				<div class="home-hero home-hero--guest">
+				<BorderBeam class="home-hero home-hero--guest">
 					<p class="home-hero-kicker">{translate(lang, 'home.guestTrainKicker')}</p>
 					<h2 class="home-hero-title">{createHeroTitle}</h2>
 					<p class="home-hero-meta">{createHeroLead}</p>
@@ -645,14 +646,29 @@
 						<BrandTagline class="brand-tagline--hero" />
 					{/if}
 					<div class="home-hero-actions">
-						<AppButton
-							href={BUILDER_NEW_HREF}
-							variant={showOnboardingChecklist ? 'secondary' : undefined}
-							class="home-hero-cta items-center justify-center gap-2"
-						>
-							<LucideIcon icon={Plus} size={ICON_PRIMARY} />
-							{translate(lang, 'home.guestCreateLocal')}
-						</AppButton>
+						{#if showOnboardingChecklist}
+							<AppButton
+								href={BUILDER_NEW_HREF}
+								variant="secondary"
+								class="home-hero-cta items-center justify-center gap-2"
+							>
+								<LucideIcon icon={Plus} size={ICON_PRIMARY} />
+								{translate(lang, 'home.guestCreateLocal')}
+							</AppButton>
+						{:else}
+							<div class="w-full" {@attach magnetic({ strength: 0.24, radius: 64 })}>
+								<MetalFx class="w-full">
+									<AppButton
+										href={BUILDER_NEW_HREF}
+										class="home-hero-cta fx-cta-sheen items-center justify-center gap-2"
+										block
+									>
+										<LucideIcon icon={Plus} size={ICON_PRIMARY} />
+										{translate(lang, 'home.guestCreateLocal')}
+									</AppButton>
+								</MetalFx>
+							</div>
+						{/if}
 						<AppButton
 							variant="secondary"
 							href={authHref}
@@ -662,7 +678,7 @@
 							{translate(lang, 'nav.signIn')}
 						</AppButton>
 					</div>
-				</div>
+				</BorderBeam>
 			</div>
 		{/if}
 

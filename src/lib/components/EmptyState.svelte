@@ -2,6 +2,7 @@
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { BorderBeam, MetalFx } from '$lib/components/fx';
 	import type { IconComponentProps } from 'phosphor-svelte';
 	import type { Component, Snippet } from 'svelte';
 
@@ -28,37 +29,57 @@
 		class?: string;
 		actions?: Snippet;
 	} = $props();
+
+	const hasPrimary = $derived(Boolean((actionHref && actionLabel) || (actionLabel && actionOnclick)));
 </script>
 
-<AppPanel
-	dashed
-	class="empty-state flex flex-col {centered
-		? 'empty-state--centered items-center text-center'
-		: 'items-start text-left'} {className}"
->
-	{#if icon}
-		<div class="empty-state__icon" aria-hidden="true">
-			<LucideIcon {icon} size={28} />
-		</div>
-	{/if}
-	<div class="empty-state__copy">
-		<h2 class="section-title empty-state__title">{title}</h2>
-		{#if description}
-			<p class="empty-state__desc max-w-md leading-relaxed text-[var(--color-muted)]">
-				{description}
-			</p>
+<BorderBeam size="sm" class="empty-state-beam">
+	<AppPanel
+		dashed
+		class="empty-state flex flex-col {centered
+			? 'empty-state--centered items-center text-center'
+			: 'items-start text-left'} {className}"
+	>
+		{#if icon}
+			<div class="empty-state__icon" aria-hidden="true">
+				<LucideIcon {icon} size={28} />
+			</div>
 		{/if}
-	</div>
-	{#if (actionHref && actionLabel) || (actionLabel && actionOnclick) || actions}
-		<div class="empty-state__actions flex w-full flex-col items-stretch">
-			{#if actionHref && actionLabel}
-				<AppButton block href={actionHref} class="empty-state__action">{actionLabel}</AppButton>
-			{:else if actionLabel && actionOnclick}
-				<AppButton block class="empty-state__action" onclick={actionOnclick}>{actionLabel}</AppButton>
-			{/if}
-			{#if actions}
-				{@render actions()}
+		<div class="empty-state__copy">
+			<h2 class="section-title empty-state__title">{title}</h2>
+			{#if description}
+				<p class="empty-state__desc max-w-md leading-relaxed text-[var(--color-muted)]">
+					{description}
+				</p>
 			{/if}
 		</div>
-	{/if}
-</AppPanel>
+		{#if hasPrimary || actions}
+			<div class="empty-state__actions flex w-full flex-col items-stretch">
+				{#if actionHref && actionLabel}
+					<MetalFx class="w-full">
+						<AppButton block href={actionHref} class="empty-state__action fx-cta-sheen"
+							>{actionLabel}</AppButton
+						>
+					</MetalFx>
+				{:else if actionLabel && actionOnclick}
+					<MetalFx class="w-full">
+						<AppButton block class="empty-state__action fx-cta-sheen" onclick={actionOnclick}
+							>{actionLabel}</AppButton
+						>
+					</MetalFx>
+				{/if}
+				{#if actions}
+					{@render actions()}
+				{/if}
+			</div>
+		{/if}
+	</AppPanel>
+</BorderBeam>
+
+<style>
+	:global(.empty-state-beam) {
+		display: block;
+		width: 100%;
+		border-radius: var(--radius-panel);
+	}
+</style>

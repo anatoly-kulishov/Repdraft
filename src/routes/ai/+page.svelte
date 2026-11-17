@@ -11,6 +11,18 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import {
+		BorderBeam,
+		BotAvatar,
+		LiquidGooey,
+		MetalBadge,
+		MetalFx,
+		ThinkingOrbs,
+		WaveSwap,
+		magnetic,
+		type BotMood,
+		type ThinkingOrbState
+	} from '$lib/components/fx';
+	import {
 		speechDictationBlockReason,
 		speechDictationSupported,
 		speechLangFromLocale,
@@ -198,6 +210,42 @@
 	let dictationSession: DictationSession | null = null;
 	let dictationGen = 0;
 	let sessionReady = $state(false);
+	let busyOrb = $state<ThinkingOrbState>('composing');
+
+	const BUSY_ORB_CYCLE = ['composing', 'weaving', 'searching'] as const;
+
+	let exampleActive = $derived(
+		EXAMPLES.findIndex((ex) => brief.trim() === exampleBrief(ex, lang))
+	);
+
+	let botMood = $derived.by((): BotMood => {
+		if (busy) return 'thinking';
+		if (listening) return 'talking';
+		if (plan) return 'happy';
+		return 'idle';
+	});
+
+	let planWaveKey = $derived(plan ? `plan:${plan.name}:${plan.exercises.length}` : busy ? 'busy' : 'idle');
+
+	/** Traveling beam on the chat shell; pulse while listening or generating. */
+	let composerBeam = $derived.by((): 'sm' | 'pulse-outside' => {
+		if (listening || busy) return 'pulse-outside';
+		return 'sm';
+	});
+
+	$effect(() => {
+		if (!browser || !busy) {
+			busyOrb = 'composing';
+			return;
+		}
+		let i = 0;
+		busyOrb = BUSY_ORB_CYCLE[0];
+		const id = window.setInterval(() => {
+			i = (i + 1) % BUSY_ORB_CYCLE.length;
+			busyOrb = BUSY_ORB_CYCLE[i];
+		}, 1400);
+		return () => window.clearInterval(id);
+	});
 
 	$effect(() => {
 		if (!sessionReady) return;
@@ -527,21 +575,32 @@
 	{:else}
 		<div class="ai-draft-page__ai-bar" class:ai-draft-page__ai-bar--compact={Boolean(plan)} aria-live="polite">
 			<span class="ai-draft-page__ai-badge">
-				<LucideIcon icon={Sparkles} size={ICON_SMALL} />
+				<BotAvatar
+					class="ai-draft-page__bot"
+					mood={botMood}
+					size={plan ? 28 : 36}
+					label={translate(lang, 'aiDraft.cueShort')}
+				/>
 				{plan ? translate(lang, 'aiDraft.cueShort') : translate(lang, 'aiDraft.cue')}
 			</span>
 			{#if available && providerName}
 				<span class="ai-draft-page__provider" translate="no">
 					{providerName === 'gigachat' ? 'GigaChat' : providerName}
 				</span>
+			{:else}
+				<MetalBadge>AI</MetalBadge>
 			{/if}
 		</div>
 
 		<section class="ai-draft-page__examples" aria-label={translate(lang, 'aiDraft.examplesTitle')}>
-			<div class="catalog-filter-chips ai-draft-page__chips">
+			<LiquidGooey
+				activeIndex={exampleActive}
+				itemsClass="catalog-filter-chips ai-draft-page__chips"
+			>
 				{#each EXAMPLES as ex (ex.key)}
 					<button
 						type="button"
+						data-fx-gooey-item
 						class="catalog-filter-chip ai-draft-page__chip"
 						class:is-active={brief.trim() === exampleBrief(ex, lang)}
 						onclick={() => applyExample(exampleBrief(ex, lang))}
@@ -549,7 +608,7 @@
 						{exampleLabel(ex, lang)}
 					</button>
 				{/each}
-			</div>
+			</LiquidGooey>
 		</section>
 
 		<form
@@ -566,58 +625,74 @@
 						>{translate(lang, 'aiDraft.chars', { n: String(charCount) })}</span
 					>
 				</div>
-				<div
-					class="ai-draft-page__composer"
-					class:ai-draft-page__composer--listening={listening}
-					class:ai-draft-page__composer--has-clear={brief.length > 0}
+				<BorderBeam
+					size={composerBeam}
+					duration={listening || busy ? 2.2 : 6}
+					class={[
+						'ai-draft-page__composer-beam',
+						(listening || busy) && 'ai-draft-page__composer-beam--live'
+					]
+						.filter(Boolean)
+						.join(' ')}
 				>
-					<AppTextarea
-						id="ai-draft-brief"
-						class="pr-note-field ai-draft-page__brief"
-						name="brief"
-						autocomplete="off"
-						bind:value={brief}
-						rows={1}
-						maxlength={AI_BRIEF_MAX}
-						disabled={busy}
-						placeholder={translate(lang, 'aiDraft.briefPlaceholder')}
-						aria-invalid={fieldError ? 'true' : undefined}
-						aria-describedby={fieldError
-							? 'ai-draft-error'
-							: plan || listening
-								? undefined
-								: 'ai-draft-hint'}
-						onkeydown={onKeydown}
-						onfocus={onBriefFocus}
-					/>
-					{#if brief.length > 0}
+					<div
+						class="ai-draft-page__composer"
+						class:ai-draft-page__composer--listening={listening}
+						class:ai-draft-page__composer--busy={busy}
+						class:ai-draft-page__composer--has-clear={brief.length > 0}
+					>
+						<AppTextarea
+							id="ai-draft-brief"
+							class="pr-note-field ai-draft-page__brief"
+							name="brief"
+							autocomplete="off"
+							bind:value={brief}
+							rows={1}
+							maxlength={AI_BRIEF_MAX}
+							disabled={busy}
+							placeholder={translate(lang, 'aiDraft.briefPlaceholder')}
+							aria-invalid={fieldError ? 'true' : undefined}
+							aria-describedby={fieldError
+								? 'ai-draft-error'
+								: plan || listening
+									? undefined
+									: 'ai-draft-hint'}
+							onkeydown={onKeydown}
+							onfocus={onBriefFocus}
+						/>
+						{#if brief.length > 0}
+							<button
+								type="button"
+								class="ai-draft-page__clear"
+								disabled={busy}
+								aria-label={translate(lang, 'a11y.clearField')}
+								title={translate(lang, 'a11y.clearField')}
+								onclick={clearBrief}
+							>
+								<LucideIcon icon={X} size={ICON_SMALL} />
+							</button>
+						{/if}
 						<button
 							type="button"
-							class="ai-draft-page__clear"
+							class="ai-draft-page__mic fx-voice-ring"
+							class:ai-draft-page__mic--active={listening}
+							class:is-active={listening}
 							disabled={busy}
-							aria-label={translate(lang, 'a11y.clearField')}
-							title={translate(lang, 'a11y.clearField')}
-							onclick={clearBrief}
+							aria-pressed={listening}
+							aria-label={listening
+								? translate(lang, 'aiDraft.dictateStop')
+								: translate(lang, 'aiDraft.dictate')}
+							onclick={() => void toggleDictation()}
 						>
-							<LucideIcon icon={X} size={ICON_SMALL} />
+							<LucideIcon icon={listening ? MicOff : Mic} size={ICON_BUTTON} />
 						</button>
-					{/if}
-					<button
-						type="button"
-						class="ai-draft-page__mic"
-						class:ai-draft-page__mic--active={listening}
-						disabled={busy}
-						aria-pressed={listening}
-						aria-label={listening
-							? translate(lang, 'aiDraft.dictateStop')
-							: translate(lang, 'aiDraft.dictate')}
-						onclick={() => void toggleDictation()}
-					>
-						<LucideIcon icon={listening ? MicOff : Mic} size={ICON_BUTTON} />
-					</button>
-				</div>
+					</div>
+				</BorderBeam>
 				{#if listening}
-					<p class="ai-draft-page__listening" aria-live="polite">{translate(lang, 'aiDraft.listening')}</p>
+					<p class="ai-draft-page__listening" aria-live="polite">
+						<ThinkingOrbs mode="listening" size={20} label={translate(lang, 'aiDraft.listening')} />
+						{translate(lang, 'aiDraft.listening')}
+					</p>
 				{:else if !plan}
 					<p id="ai-draft-hint" class="ai-draft-page__hint">{translate(lang, 'aiDraft.briefHint')}</p>
 				{/if}
@@ -630,16 +705,30 @@
 				<AppButton type="submit" variant="secondary" block disabled={busy || !brief.trim()}>
 					{#if !busy}
 						<LucideIcon icon={RefreshCw} size={ICON_BUTTON} />
+					{:else}
+						<ThinkingOrbs mode={busyOrb} size={20} label={translate(lang, 'aiDraft.generating')} />
 					{/if}
 					{busy ? translate(lang, 'aiDraft.generating') : translate(lang, 'aiDraft.regenerate')}
 				</AppButton>
 			{:else}
-				<AppButton type="submit" variant="primary" block disabled={busy || !brief.trim()}>
-					{#if !busy}
-						<LucideIcon icon={Sparkles} size={ICON_BUTTON} />
-					{/if}
-					{busy ? translate(lang, 'aiDraft.generating') : translate(lang, 'aiDraft.generate')}
-				</AppButton>
+				<div class="w-full" {@attach magnetic({ strength: 0.22, radius: 56 })}>
+					<MetalFx class="w-full">
+						<AppButton
+							type="submit"
+							variant="primary"
+							block
+							disabled={busy || !brief.trim()}
+							class="fx-cta-sheen"
+						>
+							{#if !busy}
+								<LucideIcon icon={Sparkles} size={ICON_BUTTON} />
+							{:else}
+								<ThinkingOrbs mode={busyOrb} size={20} label={translate(lang, 'aiDraft.generating')} />
+							{/if}
+							{busy ? translate(lang, 'aiDraft.generating') : translate(lang, 'aiDraft.generate')}
+						</AppButton>
+					</MetalFx>
+				</div>
 			{/if}
 		</form>
 
@@ -647,72 +736,101 @@
 			<RecognizeProgramAction variant="ghost" block class="ai-draft-page__recognize" />
 		{/if}
 
-		{#if busy}
-			<div
-				class="ai-draft-page__skeleton"
-				aria-busy="true"
-				aria-live="polite"
-				aria-label={translate(lang, 'aiDraft.generating')}
-			>
-				<div class="ai-draft-page__skeleton-line ai-draft-page__skeleton-line--title"></div>
-				<div class="ai-draft-page__skeleton-line ai-draft-page__skeleton-line--meta"></div>
-				{#each [0, 1, 2, 3, 4] as row (row)}
-					<div class="ai-draft-page__skeleton-line ai-draft-page__skeleton-line--row"></div>
-				{/each}
-			</div>
-		{:else if plan}
-			<section id="ai-draft-plan" class="ai-draft-page__plan panel" aria-live="polite">
-				<div class="ai-draft-page__plan-head">
-					<h2 class="ai-draft-page__plan-title">{plan.name}</h2>
-					<p class="ai-draft-page__plan-meta">
-						{translate(lang, 'aiDraft.planSummary', {
-							min: String(planMinutes),
-							n: String(plan.exercises.length)
-						})}
-					</p>
-					{#if planMeta && planMeta.dropped > 0}
-						<p class="ai-draft-page__plan-meta-sub">
-							{translate(lang, 'aiDraft.dropped', { n: String(planMeta.dropped) })}
-						</p>
-					{/if}
-				</div>
-				<ol class="ai-draft-page__list">
-					{#each plan.exercises as ex, i (ex.exerciseId + i)}
-						{@const meta = exerciseMeta(ex.exerciseId)}
-						<li class="ai-draft-page__exercise">
-							<span class="ai-draft-page__exercise-num" aria-hidden="true">{i + 1}</span>
-							<div class="ai-draft-page__exercise-body">
-								<a
-									class="ai-draft-page__exercise-title"
-									href={withFromParam(`/exercise/${ex.exerciseId}`, '/ai')}
-									aria-label={translate(lang, 'aiDraft.openExercise', {
-										name: meta?.title ?? ex.exerciseId
+		{#if busy || plan}
+			<WaveSwap key={planWaveKey} class="ai-draft-page__wave">
+				{#if busy}
+					<BorderBeam
+						size="pulse-outside"
+						duration={2.2}
+						class="ai-draft-page__skeleton-beam ai-draft-page__composer-beam--live"
+					>
+						<div
+							class="ai-draft-page__skeleton"
+							aria-busy="true"
+							aria-live="polite"
+							aria-label={translate(lang, 'aiDraft.generating')}
+						>
+							<div class="ai-draft-page__orbs">
+								<ThinkingOrbs
+									mode={busyOrb}
+									size={64}
+									label={translate(lang, 'aiDraft.generating')}
+								/>
+							</div>
+							<div class="ai-draft-page__skeleton-line ai-draft-page__skeleton-line--title"></div>
+							<div class="ai-draft-page__skeleton-line ai-draft-page__skeleton-line--meta"></div>
+							{#each [0, 1, 2, 3, 4] as row (row)}
+								<div class="ai-draft-page__skeleton-line ai-draft-page__skeleton-line--row"></div>
+							{/each}
+						</div>
+					</BorderBeam>
+				{:else if plan}
+					<BorderBeam size="sm" class="ai-draft-page__plan-beam">
+						<section id="ai-draft-plan" class="ai-draft-page__plan panel" aria-live="polite">
+							<div class="ai-draft-page__plan-head">
+								<h2 class="ai-draft-page__plan-title">{plan.name}</h2>
+								<p class="ai-draft-page__plan-meta">
+									{translate(lang, 'aiDraft.planSummary', {
+										min: String(planMinutes),
+										n: String(plan.exercises.length)
 									})}
-								>
-									{meta?.title ?? ex.exerciseId}
-								</a>
-								<div class="ai-draft-page__exercise-meta">
-									{#if meta?.targetLabel}
-										<span class="ai-draft-page__exercise-badge">{meta.targetLabel}</span>
-									{/if}
-									<span class="ai-draft-page__exercise-spec"
-										>{translate(lang, 'aiDraft.exerciseSpec', {
-											sets: String(ex.sets),
-											reps: String(ex.reps),
-											rest: String(ex.restSec)
-										})}</span
-									>
+								</p>
+								{#if planMeta && planMeta.dropped > 0}
+									<p class="ai-draft-page__plan-meta-sub">
+										{translate(lang, 'aiDraft.dropped', { n: String(planMeta.dropped) })}
+									</p>
+								{/if}
+							</div>
+							<ol class="ai-draft-page__list">
+								{#each plan.exercises as ex, i (ex.exerciseId + i)}
+									{@const meta = exerciseMeta(ex.exerciseId)}
+									<li class="ai-draft-page__exercise">
+										<span class="ai-draft-page__exercise-num" aria-hidden="true">{i + 1}</span>
+										<div class="ai-draft-page__exercise-body">
+											<a
+												class="ai-draft-page__exercise-title"
+												href={withFromParam(`/exercise/${ex.exerciseId}`, '/ai')}
+												aria-label={translate(lang, 'aiDraft.openExercise', {
+													name: meta?.title ?? ex.exerciseId
+												})}
+											>
+												{meta?.title ?? ex.exerciseId}
+											</a>
+											<div class="ai-draft-page__exercise-meta">
+												{#if meta?.targetLabel}
+													<span class="ai-draft-page__exercise-badge">{meta.targetLabel}</span>
+												{/if}
+												<span class="ai-draft-page__exercise-spec"
+													>{translate(lang, 'aiDraft.exerciseSpec', {
+														sets: String(ex.sets),
+														reps: String(ex.reps),
+														rest: String(ex.restSec)
+													})}</span
+												>
+											</div>
+										</div>
+									</li>
+								{/each}
+							</ol>
+							<div class="ai-draft-page__plan-actions">
+								<div class="w-full" {@attach magnetic({ strength: 0.2, radius: 48 })}>
+									<MetalFx class="w-full">
+										<AppButton
+											type="button"
+											variant="primary"
+											block
+											class="fx-cta-sheen"
+											onclick={applyToDraft}
+										>
+											{translate(lang, 'aiDraft.addToBuilder')}
+										</AppButton>
+									</MetalFx>
 								</div>
 							</div>
-						</li>
-					{/each}
-				</ol>
-				<div class="ai-draft-page__plan-actions">
-					<AppButton type="button" variant="primary" block onclick={applyToDraft}>
-						{translate(lang, 'aiDraft.addToBuilder')}
-					</AppButton>
-				</div>
-			</section>
+						</section>
+					</BorderBeam>
+				{/if}
+			</WaveSwap>
 		{/if}
 	{/if}
 </div>
