@@ -14,6 +14,17 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.19',
+		highlights: {
+			ru: [
+				'Ссылка «Восстановить из файла» снова с курсором-рукой'
+			],
+			en: [
+				'Restore-from-file link shows the hand cursor again'
+			]
+		}
+	},
+	{
 		version: '0.25.18',
 		highlights: {
 			ru: [

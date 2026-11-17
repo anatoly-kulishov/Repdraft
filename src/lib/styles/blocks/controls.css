@@ -627,6 +627,7 @@ button:focus-visible {
 	color: var(--color-accent-text);
 	text-decoration: underline;
 	text-underline-offset: 2px;
+	cursor: pointer;
 }
 
 .btn-link:disabled {
