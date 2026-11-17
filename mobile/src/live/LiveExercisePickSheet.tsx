@@ -127,6 +127,7 @@ export function LiveExercisePickSheet({
 			dismissible={!busy}
 			label={title}
 			maxHeight="82%"
+			fillMaxHeight
 		>
 			<Text style={styles.title}>{title}</Text>
 			{mode === 'replace' ? (
@@ -138,9 +139,9 @@ export function LiveExercisePickSheet({
 				onChangeText={setQuery}
 				placeholder={tt('live.pickExerciseSearch')}
 				placeholderTextColor={colors.muted}
-				autoFocus={open}
 				editable={!busy}
 				returnKeyType="search"
+				clearButtonMode="while-editing"
 			/>
 			<ScrollView
 				horizontal
@@ -212,6 +213,8 @@ export function LiveExercisePickSheet({
 					data={results}
 					keyExtractor={(item) => item.id}
 					keyboardShouldPersistTaps="handled"
+					keyboardDismissMode="on-drag"
+					nestedScrollEnabled
 					initialNumToRender={12}
 					windowSize={6}
 					renderItem={({ item }) => (
@@ -301,7 +304,7 @@ function makeStyles(colors: ColorPalette) {
 			fontFamily: fontFamily.semibold
 		},
 		chipTextOn: { color: colors.accentText, fontWeight: '700', fontFamily: fontFamily.bold },
-		list: { marginTop: space.sm, flexGrow: 0 },
+		list: { marginTop: space.sm, flex: 1, minHeight: 0 },
 		row: {
 			minHeight: touchMin,
 			paddingVertical: space.sm,

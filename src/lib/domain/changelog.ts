@@ -14,6 +14,17 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.12',
+		highlights: {
+			ru: [
+				'Замена упражнения: список снова скроллится без фокуса в поиске'
+			],
+			en: [
+				'Replace exercise: list scrolls again without focusing search'
+			]
+		}
+	},
+	{
 		version: '0.25.11',
 		highlights: {
 			ru: [
