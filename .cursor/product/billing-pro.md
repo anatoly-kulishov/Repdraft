@@ -28,7 +28,7 @@ Domain: [`src/lib/domain/entitlement.ts`](../../src/lib/domain/entitlement.ts), 
 ## Ops checklist
 
 1. Apply SQL: `~/.repdraft-sql/billing-entitlements.sql` (not in public git).
-2. Env **local** `.env` and **Vercel** Production/Preview (same names, see `.env.example`):
+2. Env **local** `.env` and RF VPS `/opt/repdraft/.env` (same names, see `.env.example`):
    - `YOOKASSA_SHOP_ID`, `YOOKASSA_SECRET_KEY` (+ amounts/currency)
    - and/or `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`
    - `BILLING_DEFAULT_PROVIDER=yookassa|stripe`

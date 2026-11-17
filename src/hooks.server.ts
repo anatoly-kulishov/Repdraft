@@ -1,7 +1,7 @@
 import type { Handle } from '@sveltejs/kit';
 import { CANONICAL_SITE_ORIGIN } from '$lib/seo/site';
 
-/** Apex of the public site. Vercel “Redirect to www” must be OFF for this to run. */
+/** Apex of the public site (Caddy may also redirect apex → www). */
 const CANONICAL_APEX = 'repdraft.ru';
 
 /** Previous zone: every host redirects to www.repdraft.ru. */
@@ -27,8 +27,6 @@ function redirectTarget(url: URL, origin: string): URL {
 
 /**
  * Apex → www for the public domain, plus full cutover of the legacy zone.
- * If Domains → “Redirect to www” is still enabled in Vercel, the edge redirect
- * wins and this hook never sees apex traffic. Turn that toggle off after deploy.
  */
 export const handle: Handle = async ({ event, resolve }) => {
 	const host = event.url.hostname.toLowerCase();

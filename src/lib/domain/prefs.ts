@@ -11,7 +11,6 @@ export { HOME_KIT_STORAGE_KEY };
 
 export const REST_SOUND_STORAGE_KEY = 'repdraft:rest-sound';
 export const REST_HAPTIC_STORAGE_KEY = 'repdraft:haptic-rest-done';
-export const WEB_ANALYTICS_STORAGE_KEY = 'repdraft:web-analytics';
 export const TESTER_MODE_STORAGE_KEY = 'repdraft:tester-mode';
 /** Tap app version this many times to unlock wipe / stress backup tools. */
 export const TESTER_MODE_UNLOCK_TAPS = 7;
@@ -35,11 +34,6 @@ export function parseRestSoundEnabled(raw: string | null | undefined): boolean {
 export function parseRestHapticEnabled(raw: string | null | undefined): boolean {
 	if (raw === '0' || raw === 'false') return false;
 	return true;
-}
-
-/** Opt-in: only explicit '1' / 'true' enables Vercel Analytics on web. */
-export function parseWebAnalyticsEnabled(raw: string | null | undefined): boolean {
-	return raw === '1' || raw === 'true';
 }
 
 /** Opt-in tester tools (wipe, stress backup). Off by default. */

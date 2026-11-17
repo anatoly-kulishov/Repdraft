@@ -13,13 +13,11 @@ import {
 	parseRestHapticEnabled,
 	parseRestSoundEnabled,
 	parseTesterModeEnabled,
-	parseWebAnalyticsEnabled,
 	playRestDoneChime,
 	REST_HAPTIC_STORAGE_KEY,
 	REST_SOUND_STORAGE_KEY,
 	serializeHomeKitPref,
 	TESTER_MODE_STORAGE_KEY,
-	WEB_ANALYTICS_STORAGE_KEY,
 	unlockAudioFromGesture
 } from '$lib/domain/prefs';
 import { hapticRestDone } from '$lib/media/haptics';
@@ -93,13 +91,6 @@ export const restHapticEnabled = createLocalBoolPref({
 		unlockAudioFromGesture();
 		void hapticRestDone();
 	}
-});
-
-/** Opt-in web-only Vercel Analytics / Speed Insights. Default off. */
-export const webAnalyticsEnabled = createLocalBoolPref({
-	key: WEB_ANALYTICS_STORAGE_KEY,
-	parse: parseWebAnalyticsEnabled,
-	fallback: false
 });
 
 /** Opt-in local tester tools (wipe / stress backup). Default off. */

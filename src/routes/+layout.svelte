@@ -34,7 +34,6 @@
 	import { flushSyncOutbox, purgeUnsyncableOutboxEntries } from '$lib/storage/flushSyncOutbox';
 	import { whenIdle } from '$lib/browser/idle';
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
-	import { isWebAnalyticsAvailable } from '$lib/app/native';
 	import { page } from '$app/stores';
 	import { onNavigate } from '$app/navigation';
 	import { clearArmedExerciseMediaViewTransition } from '$lib/dom/exerciseMediaViewTransition';
@@ -42,21 +41,10 @@
 	import { shouldUseSharedViewTransition } from '$lib/dom/listDetailViewTransition';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { browser, dev } from '$app/environment';
-	import { injectAnalytics } from '@vercel/analytics/sveltekit';
-	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
-	import { athleteProfile, webAnalyticsEnabled } from '$lib/stores/prefs';
+	import { browser } from '$app/environment';
+	import { athleteProfile } from '$lib/stores/prefs';
 	import { needsIntakeStepper } from '$lib/domain/athleteProfile';
 	import IntakeStepper from '$lib/components/onboarding/IntakeStepper.svelte';
-
-	let webAnalyticsInjected = false;
-	function ensureWebAnalyticsInjected() {
-		if (webAnalyticsInjected || !isWebAnalyticsAvailable()) return;
-		if (!get(webAnalyticsEnabled)) return;
-		injectAnalytics({ mode: dev ? 'development' : 'production' });
-		injectSpeedInsights();
-		webAnalyticsInjected = true;
-	}
 
 	if (browser) {
 		onboarding.init(new URLSearchParams(window.location.search));
@@ -138,11 +126,6 @@
 	});
 
 	onMount(() => {
-		ensureWebAnalyticsInjected();
-		const unsubAnalytics = webAnalyticsEnabled.subscribe((on) => {
-			if (on) ensureWebAnalyticsInjected();
-		});
-
 		purgeUnsyncableOutboxEntries();
 		onboarding.init(get(page).url.searchParams);
 		draft.hydrate();
@@ -208,7 +191,6 @@
 		window.addEventListener('pageshow', onPageshow);
 
 		return () => {
-			unsubAnalytics();
 			window.removeEventListener('online', onOnline);
 			window.removeEventListener('repdraft:outbox', onOutbox);
 			window.removeEventListener('repdraft:cloud-mode', onCloudMode);

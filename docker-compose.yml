@@ -1,7 +1,7 @@
 # RF production stack: Caddy (HTTPS) → Node (adapter-node).
 # 1. Copy .env.example → .env on the VPS and fill secrets.
 # 2. docker compose up -d --build
-# 3. Point DNS A @ and www to this VPS IP (remove Vercel CNAME/A).
+# 3. Point DNS A @ and www to this VPS IP.
 
 services:
   app:

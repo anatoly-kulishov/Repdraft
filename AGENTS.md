@@ -31,7 +31,7 @@ npm run build
 
 Shared copy: `src/lib/i18n/messages.ts` (both clients). Shared colors/spacing: `src/lib/design/tokens.ts`.
 
-Legal before public: real `PUBLIC_PRIVACY_*` on the web host; lawyer review `/privacy` + `/terms`. Web analytics off by default.
+Legal before public: real `PUBLIC_PRIVACY_*` on the web host; lawyer review `/privacy` + `/terms`.
 
 ## Mobile notes
 

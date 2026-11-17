@@ -1281,24 +1281,24 @@ const ru: Dict = {
 	'privacy.s4Title': '5. Хранение данных',
 	'privacy.s4Body':
 		'Данные аккаунта размещаются у инфраструктурного провайдера Supabase. Копия данных также хранится на вашем устройстве (браузер или нативное приложение) для быстрого доступа и работы без сети. Незавершённая активная тренировка хранится только на устройстве и не синхронизируется между устройствами.',
-	'privacy.s5Title': '6. Cookie, локальное хранилище и веб-аналитика',
+	'privacy.s5Title': '6. Cookie и локальное хранилище',
 	'privacy.s5Body':
-		'Для входа и сохранения тренировок, настроек и черновика используются cookie и localStorage (или аналог в нативном приложении). Это технически необходимо для работы сервиса. На сайте и в PWA (не в нативном приложении) мы можем использовать Vercel Analytics и Vercel Speed Insights: обезличенные сведения о посещениях и производительности страниц, без рекламных профилей. Эта аналитика включается только если вы разрешите её в настройках аккаунта. Рекламные cookie третьих лиц не используются. Отключение хранилища в браузере может ограничить функции приложения.',
+		'Для входа и сохранения тренировок, настроек и черновика используются cookie и localStorage (или аналог в нативном приложении). Это технически необходимо для работы сервиса. Рекламные cookie третьих лиц не используются. Отключение хранилища в браузере может ограничить функции приложения.',
 	'privacy.s6Title': '7. Публичные клипы техники',
 	'privacy.s6Body':
 		'Если вы публикуете клип, GIF и указанная вами подпись становятся доступны другим пользователям сервиса. Пользователи могут пожаловаться на клип; при подтверждении нарушения клип скрывается из общей ленты. Не размещайте персональные данные других людей без их согласия и законного основания.',
 	'privacy.s7Title': '8. Передача третьим лицам',
 	'privacy.s7Body':
-		'Для облачного хранения и входа мы привлекаем Supabase (supabase.com). Вход выполняется по email (пароль или ссылка на почту). Для защиты форм входа может использоваться Cloudflare Turnstile. При регистрации и смене пароля мы проверяем хэш пароля через Have I Been Pwned (k-anonymity: полный пароль на их сервер не отправляется). Хостинг сайта и опциональная веб-аналитика: Vercel. Мы не продаём персональные данные и не передаём их рекламным сетям. Передача возможна по требованию закона или для защиты прав пользователей и сервиса.',
+		'Для облачного хранения и входа мы привлекаем Supabase (supabase.com). Вход выполняется по email (пароль или ссылка на почту). Для защиты форм входа может использоваться Cloudflare Turnstile. При регистрации и смене пароля мы проверяем хэш пароля через Have I Been Pwned (k-anonymity: полный пароль на их сервер не отправляется). Сайт размещается на сервере в Российской Федерации. Мы не продаём персональные данные и не передаём их рекламным сетям. Передача возможна по требованию закона или для защиты прав пользователей и сервиса.',
 	'privacy.s8Title': '9. Ваши права',
 	'privacy.s8Body':
-		'Вы вправе получить сведения об обработке, потребовать уточнения, блокирования или удаления данных, отозвать согласие, если обработка основана на согласии. В приложении доступны: изменение имени для приветствия, выход из аккаунта, удаление аккаунта (раздел «Опасная зона»), экспорт и восстановление резервной копии тренировок, истории и рекордов, отключение веб-аналитики. Запросы также можно направить на {email}. Мы ответим в сроки, установленные законом.',
+		'Вы вправе получить сведения об обработке, потребовать уточнения, блокирования или удаления данных, отозвать согласие, если обработка основана на согласии. В приложении доступны: изменение имени для приветствия, выход из аккаунта, удаление аккаунта (раздел «Опасная зона»), экспорт и восстановление резервной копии тренировок, истории и рекордов. Запросы также можно направить на {email}. Мы ответим в сроки, установленные законом.',
 	'privacy.s9Title': '10. Сроки хранения и удаление',
 	'privacy.s9Body':
 		'Пока аккаунт активен, данные хранятся для синхронизации и отображения истории. При удалении аккаунта приложение удаляет связанные записи в облаке, размещённые вами клипы и учётную запись входа, а также очищает локальные данные на устройстве. Отдельные резервные копии у провайдера могут сохраняться ограниченное время по правилам инфраструктуры и законодательства.',
 	'privacy.s10Title': '11. Трансграничная передача',
 	'privacy.s10Body':
-		'Supabase, Cloudflare (Turnstile) и Vercel могут обрабатывать данные на серверах за пределами Российской Федерации. Have I Been Pwned получает только префикс хэша пароля. Трансграничная передача выполняется для целей, указанных в политике, с соблюдением требований 152-ФЗ.',
+		'Supabase и Cloudflare (Turnstile) могут обрабатывать данные на серверах за пределами Российской Федерации. Have I Been Pwned получает только префикс хэша пароля. Трансграничная передача выполняется для целей, указанных в политике, с соблюдением требований 152-ФЗ.',
 	'privacy.s11Title': '12. Изменения политики',
 	'privacy.s11Body':
 		'Мы можем обновлять политику при изменении функций сервиса или требований закона. Актуальная версия всегда доступна на этой странице; дата публикации указана выше. Продолжение использования сервиса после обновления означает согласие с новой редакцией, если иное не требуется законом.',
@@ -1344,8 +1344,6 @@ const ru: Dict = {
 	'auth.legalConsentNeed': 'Отметьте согласие с условиями и политикой конфиденциальности',
 	'auth.legalTerms': 'условия использования',
 	'auth.legalPrivacy': 'политику конфиденциальности',
-	'settings.webAnalytics': 'Статистика посещений',
-	'settings.webAnalyticsHint': 'Помогает улучшать сайт. Без личных данных.',
 	'settings.questHint':
 		'Недельная цель и опыт за выполнение плана. Не влияет на рекорды и историю.',
 	'settings.questWeeklyGoal': 'Тренировок в неделю',
@@ -2927,24 +2925,24 @@ const en: Dict = {
 	'privacy.s4Title': '5. Storage',
 	'privacy.s4Body':
 		'Account data is hosted by Supabase. A copy is also stored on your device (browser or native app) for fast access and offline use. An unfinished active session stays on the device only and is not synced across devices.',
-	'privacy.s5Title': '6. Cookies, local storage, and web analytics',
+	'privacy.s5Title': '6. Cookies and local storage',
 	'privacy.s5Body':
-		'Sign-in and saving workouts, settings, and drafts rely on cookies and localStorage (or the native equivalent). This is technically required for the service. On the website and PWA (not in the native app) we may use Vercel Analytics and Vercel Speed Insights: anonymized visit and page-performance data, without ad profiles. This analytics runs only if you enable it in account settings. We do not use third-party advertising cookies. Disabling browser storage may limit app features.',
+		'Sign-in and saving workouts, settings, and drafts rely on cookies and localStorage (or the native equivalent). This is technically required for the service. We do not use third-party advertising cookies. Disabling browser storage may limit app features.',
 	'privacy.s6Title': '7. Public technique clips',
 	'privacy.s6Body':
 		'If you publish a clip, the GIF and label you provide are visible to other users. Users may report a clip; if a violation is confirmed, the clip is hidden from the shared feed. Do not post other people\'s personal data without their consent and a lawful basis.',
 	'privacy.s7Title': '8. Third parties',
 	'privacy.s7Body':
-		'We use Supabase (supabase.com) for cloud storage and authentication. Sign-in is email-based (password or magic link). Cloudflare Turnstile may protect auth forms. On sign-up and password change we check a password hash prefix via Have I Been Pwned (k-anonymity: the full password is never sent). Website hosting and optional web analytics: Vercel. We do not sell personal data or share it with ad networks. Disclosure may occur when required by law or to protect users and the service.',
+		'We use Supabase (supabase.com) for cloud storage and authentication. Sign-in is email-based (password or magic link). Cloudflare Turnstile may protect auth forms. On sign-up and password change we check a password hash prefix via Have I Been Pwned (k-anonymity: the full password is never sent). The website is hosted on a server in Russia. We do not sell personal data or share it with ad networks. Disclosure may occur when required by law or to protect users and the service.',
 	'privacy.s8Title': '9. Your rights',
 	'privacy.s8Body':
-		'You may request access, rectification, erasure, restriction, or portability where applicable, and withdraw consent where processing is consent-based. In the app you can update your greeting name, sign out, delete your account (Danger zone), export or restore a backup of workouts, history, and records, and disable web analytics. You may also email {email}. We respond within applicable legal time limits.',
+		'You may request access, rectification, erasure, restriction, or portability where applicable, and withdraw consent where processing is consent-based. In the app you can update your greeting name, sign out, delete your account (Danger zone), and export or restore a backup of workouts, history, and records. You may also email {email}. We respond within applicable legal time limits.',
 	'privacy.s9Title': '10. Retention and deletion',
 	'privacy.s9Body':
 		'While your account is active, data is kept for sync and history. When you delete your account, the app removes related cloud records, clips you uploaded, and the sign-in account, and clears local data on the device. Provider backups may be retained for a limited time under infrastructure and legal rules.',
 	'privacy.s10Title': '11. International transfers',
 	'privacy.s10Body':
-		'Supabase, Cloudflare (Turnstile), and Vercel may process data on servers outside your country. Have I Been Pwned receives only a password hash prefix. Transfers are made for the purposes in this policy with safeguards required by law.',
+		'Supabase and Cloudflare (Turnstile) may process data on servers outside your country. Have I Been Pwned receives only a password hash prefix. Transfers are made for the purposes in this policy with safeguards required by law.',
 	'privacy.s11Title': '12. Policy updates',
 	'privacy.s11Body':
 		'We may update this policy when the service or legal requirements change. The current version is always on this page; the publication date is shown above. Continued use after an update means you accept the new version where the law allows.',
@@ -2990,8 +2988,6 @@ const en: Dict = {
 	'auth.legalConsentNeed': 'Please accept the terms and privacy policy',
 	'auth.legalTerms': 'terms of use',
 	'auth.legalPrivacy': 'privacy policy',
-	'settings.webAnalytics': 'Visit statistics',
-	'settings.webAnalyticsHint': 'Helps improve the site. No personal data.',
 	'settings.questHint':
 		'Weekly goal and XP for sticking to your plan. Does not change records or history.',
 	'settings.questWeeklyGoal': 'Workouts per week',

@@ -1,10 +1,5 @@
 import { browser } from '$app/environment';
-import { resolveWebApiOrigin, webAnalyticsAvailable } from '$lib/app/nativeUrls';
-
-/** Vercel Analytics / Speed Insights — browser only. */
-export function isWebAnalyticsAvailable(): boolean {
-	return webAnalyticsAvailable({ browser });
-}
+import { resolveWebApiOrigin } from '$lib/app/nativeUrls';
 
 /** Absolute origin for account APIs (delete/avatar). Prefers PUBLIC_WEB_ORIGIN / PUBLIC_SITE_URL. */
 export function webApiOrigin(): string {

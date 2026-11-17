@@ -2,11 +2,9 @@
 	import ProfileSettingsRow from '$lib/components/ProfileSettingsRow.svelte';
 	import ProfileSettingsSection from '$lib/components/profile/ProfileSettingsSection.svelte';
 	import { translate } from '$lib/i18n/messages';
-	import { isWebAnalyticsAvailable } from '$lib/app/native';
 	import { appTheme } from '$lib/stores/theme';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { webAnalyticsEnabled } from '$lib/stores/prefs';
-	import { ChartBar, Globe, MoonStars, SunDim } from 'phosphor-svelte';
+	import { Globe, MoonStars, SunDim } from 'phosphor-svelte';
 
 	let {
 		surface = 'section'
@@ -20,13 +18,10 @@
 	let theme = $derived($appTheme);
 	let nextTheme = $derived(theme === 'dark' ? ('light' as const) : ('dark' as const));
 	let themeIcon = $derived(theme === 'light' ? SunDim : MoonStars);
-	let showWebAnalytics = $derived(isWebAnalyticsAvailable());
 </script>
 
 {#if surface === 'panel'}
-	<ProfileSettingsSection
-		hint={showWebAnalytics ? translate(lang, 'settings.webAnalyticsHint') : undefined}
-	>
+	<ProfileSettingsSection>
 		<ProfileSettingsRow
 			icon={Globe}
 			label={translate(lang, 'lang.label')}
@@ -49,23 +44,6 @@
 			})}
 			onclick={() => appTheme.set(nextTheme)}
 		/>
-		{#if showWebAnalytics}
-			<ProfileSettingsRow
-				icon={ChartBar}
-				label={translate(lang, 'settings.webAnalytics')}
-				chevron={false}
-			>
-				<input
-					type="checkbox"
-					class="auth-pref-toggle__input profile-settings-row__toggle"
-					checked={$webAnalyticsEnabled}
-					aria-label={translate(lang, 'settings.webAnalytics')}
-					onchange={(e) => {
-						webAnalyticsEnabled.set((e.currentTarget as HTMLInputElement).checked);
-					}}
-				/>
-			</ProfileSettingsRow>
-		{/if}
 	</ProfileSettingsSection>
 {:else}
 	<div class="auth-account__section">
@@ -99,26 +77,6 @@
 				})}
 				onclick={() => appTheme.set(nextTheme)}
 			/>
-			{#if showWebAnalytics}
-				<ProfileSettingsRow
-					icon={ChartBar}
-					label={translate(lang, 'settings.webAnalytics')}
-					chevron={false}
-				>
-					<input
-						type="checkbox"
-						class="auth-pref-toggle__input profile-settings-row__toggle"
-						checked={$webAnalyticsEnabled}
-						aria-label={translate(lang, 'settings.webAnalytics')}
-						onchange={(e) => {
-							webAnalyticsEnabled.set((e.currentTarget as HTMLInputElement).checked);
-						}}
-					/>
-				</ProfileSettingsRow>
-			{/if}
 		</div>
-		{#if showWebAnalytics}
-			<p class="auth-prefs__hint">{translate(lang, 'settings.webAnalyticsHint')}</p>
-		{/if}
 	</div>
 {/if}

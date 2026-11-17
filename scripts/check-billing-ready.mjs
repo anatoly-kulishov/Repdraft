@@ -66,7 +66,7 @@ console.log('\n  yookassa checkout:', yookassa ? 'ready' : 'not configured');
 console.log('  stripe checkout:', stripe ? 'ready' : 'not configured');
 console.log('  default provider:', def);
 console.log('  overall:', ready ? 'OK' : 'BLOCKED - set YOOKASSA_* or STRIPE_*');
-console.log('\nProduction also needs the same keys in Vercel env + webhook URL:');
+console.log('\nProduction also needs the same keys in the RF VPS `.env` + webhook URL:');
 console.log('  https://www.repdraft.xyz/api/billing/webhook/yookassa');
 console.log('SQL (already local): ~/.repdraft-sql/billing-entitlements.sql');
 
