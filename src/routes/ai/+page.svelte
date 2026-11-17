@@ -10,6 +10,7 @@
 	import RecognizeProgramAction from '$lib/components/program/RecognizeProgramAction.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import { MetalFx, ThinkingOrbs } from '$lib/components/fx';
 	import {
 		speechDictationBlockReason,
 		speechDictationSupported,
@@ -634,12 +635,20 @@
 					{busy ? translate(lang, 'aiDraft.generating') : translate(lang, 'aiDraft.regenerate')}
 				</AppButton>
 			{:else}
-				<AppButton type="submit" variant="primary" block disabled={busy || !brief.trim()}>
-					{#if !busy}
-						<LucideIcon icon={Sparkles} size={ICON_BUTTON} />
-					{/if}
-					{busy ? translate(lang, 'aiDraft.generating') : translate(lang, 'aiDraft.generate')}
-				</AppButton>
+				<MetalFx class="w-full rounded-[var(--radius-button)]">
+					<AppButton
+						type="submit"
+						variant="primary"
+						block
+						disabled={busy || !brief.trim()}
+						class="fx-cta-sheen"
+					>
+						{#if !busy}
+							<LucideIcon icon={Sparkles} size={ICON_BUTTON} />
+						{/if}
+						{busy ? translate(lang, 'aiDraft.generating') : translate(lang, 'aiDraft.generate')}
+					</AppButton>
+				</MetalFx>
 			{/if}
 		</form>
 
@@ -654,6 +663,13 @@
 				aria-live="polite"
 				aria-label={translate(lang, 'aiDraft.generating')}
 			>
+				<div class="ai-draft-page__orbs">
+					<ThinkingOrbs
+						mode="composing"
+						size={64}
+						label={translate(lang, 'aiDraft.generating')}
+					/>
+				</div>
 				<div class="ai-draft-page__skeleton-line ai-draft-page__skeleton-line--title"></div>
 				<div class="ai-draft-page__skeleton-line ai-draft-page__skeleton-line--meta"></div>
 				{#each [0, 1, 2, 3, 4] as row (row)}

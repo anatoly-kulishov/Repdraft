@@ -34,6 +34,7 @@
 | `exercise-rag.md` | `/ai` catalog RAG: pgvector SQL + `npm run build:embeddings` |
 | `watch-session-ownership.md` | Watch companion spike: session lease / finish race |
 | `rn-visual-backlog.md` | Mobile theme + visual QA findings |
+| `fx-kit.md` | Web CSS/Svelte cousins of libraries.dev (Beam/Orbs/Gooey/Metal/Image) |
 
 ### rules/
 

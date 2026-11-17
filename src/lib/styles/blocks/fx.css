@@ -1,0 +1,339 @@
+/* CSS-only cousins of libraries.dev effects (Beam / Orbs / Gooey / Metal / Image).
+   Keep motion quiet; always honor prefers-reduced-motion. */
+
+.fx-beam {
+	position: relative;
+	isolation: isolate;
+	overflow: hidden;
+	border-radius: inherit;
+}
+
+.fx-beam__ring {
+	position: absolute;
+	inset: -55%;
+	z-index: 0;
+	pointer-events: none;
+	background: conic-gradient(
+		from 0deg,
+		transparent 0deg 255deg,
+		color-mix(in srgb, var(--color-accent) 55%, transparent) 280deg,
+		color-mix(in srgb, var(--color-accent-text) 90%, white) 300deg,
+		color-mix(in srgb, var(--color-accent) 55%, transparent) 320deg,
+		transparent 345deg 360deg
+	);
+	opacity: 0.9;
+	animation: fx-beam-spin 8s linear infinite;
+}
+
+.fx-beam__fill {
+	position: absolute;
+	inset: 1px;
+	z-index: 0;
+	pointer-events: none;
+	border-radius: inherit;
+	background: inherit;
+	background-color: var(--fx-beam-fill, var(--color-surface));
+	background-image: var(--fx-beam-fill-image, var(--surface-sheen));
+}
+
+.fx-beam__content {
+	position: relative;
+	z-index: 1;
+}
+
+.fx-beam--pulse .fx-beam__ring {
+	inset: 0;
+	background: none;
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 45%, transparent);
+	animation: fx-beam-pulse 2.4s ease-in-out infinite;
+	border-radius: inherit;
+}
+
+.fx-beam--pulse .fx-beam__fill {
+	display: none;
+}
+
+@keyframes fx-beam-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes fx-beam-pulse {
+	0%,
+	100% {
+		opacity: 0.35;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.9;
+		transform: scale(1.01);
+	}
+}
+
+.fx-orbs {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	vertical-align: middle;
+}
+
+.fx-orbs canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.fx-gooey {
+	position: relative;
+	isolation: isolate;
+}
+
+.fx-gooey__svg {
+	position: absolute;
+	width: 0;
+	height: 0;
+	overflow: hidden;
+}
+
+.fx-gooey__pill {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 0;
+	pointer-events: none;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface-muted));
+	border: 1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border));
+	transition:
+		transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
+		width 280ms cubic-bezier(0.22, 1, 0.36, 1),
+		height 280ms cubic-bezier(0.22, 1, 0.36, 1);
+	will-change: transform, width, height;
+}
+
+.fx-gooey__items {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.fx-metal {
+	position: relative;
+	display: inline-flex;
+	isolation: isolate;
+	border-radius: inherit;
+}
+
+.fx-metal__ring {
+	position: absolute;
+	inset: -1px;
+	z-index: 0;
+	pointer-events: none;
+	border-radius: inherit;
+	padding: 1.5px;
+	background: linear-gradient(
+		125deg,
+		color-mix(in srgb, white 55%, var(--color-accent)) 0%,
+		color-mix(in srgb, var(--color-accent) 40%, #2a2a2e) 28%,
+		color-mix(in srgb, white 70%, var(--color-accent-text)) 52%,
+		color-mix(in srgb, var(--color-accent-fill) 70%, #111) 78%,
+		color-mix(in srgb, white 40%, var(--color-accent)) 100%
+	);
+	background-size: 220% 220%;
+	animation: fx-metal-flow 4.8s ease-in-out infinite;
+	-webkit-mask:
+		linear-gradient(#000 0 0) content-box,
+		linear-gradient(#000 0 0);
+	-webkit-mask-composite: xor;
+	mask-composite: exclude;
+	opacity: 0.95;
+}
+
+.fx-metal__content {
+	position: relative;
+	z-index: 1;
+	width: 100%;
+}
+
+@keyframes fx-metal-flow {
+	0%,
+	100% {
+		background-position: 0% 40%;
+	}
+	50% {
+		background-position: 100% 60%;
+	}
+}
+
+.fx-image {
+	position: relative;
+	overflow: hidden;
+	border-radius: inherit;
+	background: var(--color-surface-muted);
+}
+
+.fx-image__media {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	opacity: 0;
+	filter: blur(12px) saturate(0.7);
+	transform: scale(1.06);
+	transition:
+		opacity 420ms ease,
+		filter 520ms ease,
+		transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fx-image.is-ready .fx-image__media {
+	opacity: 1;
+	filter: none;
+	transform: none;
+}
+
+.fx-image__loader {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	background: linear-gradient(
+		110deg,
+		transparent 30%,
+		color-mix(in srgb, var(--color-accent) 18%, transparent) 48%,
+		transparent 66%
+	);
+	background-size: 200% 100%;
+	animation: fx-image-shimmer 1.4s ease-in-out infinite;
+	opacity: 1;
+	transition: opacity 280ms ease;
+}
+
+.fx-image.is-ready .fx-image__loader {
+	opacity: 0;
+}
+
+@keyframes fx-image-shimmer {
+	0% {
+		background-position: 120% 0;
+	}
+	100% {
+		background-position: -40% 0;
+	}
+}
+
+.fx-cta-sheen {
+	position: relative;
+	overflow: hidden;
+	isolation: isolate;
+}
+
+.fx-cta-sheen::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	background: linear-gradient(
+		105deg,
+		transparent 36%,
+		color-mix(in srgb, white 22%, transparent) 50%,
+		transparent 64%
+	);
+	transform: translateX(-130%);
+	animation: fx-cta-sheen 3.6s ease-in-out 0.4s infinite;
+}
+
+.fx-cta-sheen > * {
+	position: relative;
+	z-index: 2;
+}
+
+@keyframes fx-cta-sheen {
+	0%,
+	55% {
+		transform: translateX(-130%);
+	}
+	100% {
+		transform: translateX(130%);
+	}
+}
+
+.fx-lab {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+	padding-bottom: 2rem;
+}
+
+.fx-lab__card {
+	padding: 1.1rem 1rem;
+	border-radius: var(--radius-panel);
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+	background-image: var(--surface-sheen);
+}
+
+.fx-lab__title {
+	margin: 0 0 0.35rem;
+	font-size: 1rem;
+	font-weight: 700;
+}
+
+.fx-lab__hint {
+	margin: 0 0 0.85rem;
+	font-size: 0.8125rem;
+	line-height: 1.4;
+	color: var(--color-muted);
+}
+
+.fx-lab__row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.fx-lab__thumb {
+	width: 96px;
+	height: 96px;
+	border-radius: 12px;
+	border: 1px solid var(--color-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.fx-beam__ring,
+	.fx-metal__ring,
+	.fx-image__loader,
+	.fx-cta-sheen::after {
+		animation: none;
+	}
+
+	.fx-beam__ring {
+		opacity: 0.35;
+		transform: none;
+	}
+
+	.fx-beam--pulse .fx-beam__ring {
+		opacity: 0.55;
+		transform: none;
+	}
+
+	.fx-image__media {
+		filter: none;
+		transform: none;
+		opacity: 1;
+		transition: none;
+	}
+
+	.fx-image__loader {
+		opacity: 0;
+	}
+
+	.fx-gooey__pill {
+		transition: none;
+	}
+}

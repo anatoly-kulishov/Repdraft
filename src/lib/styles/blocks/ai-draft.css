@@ -314,6 +314,12 @@ textarea.pr-note-field.ai-draft-page__brief:focus-visible,
 	font-size: 0.8125rem;
 }
 
+.ai-draft-page__orbs {
+	display: flex;
+	justify-content: center;
+	margin: 0.25rem 0 0.85rem;
+}
+
 .ai-draft-page__skeleton {
 	display: flex;
 	flex-direction: column;
