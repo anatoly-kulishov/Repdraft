@@ -23,7 +23,8 @@
 <Card.Root
 	bind:ref
 	class={cn(
-		'panel gap-0 border-border/80 bg-card shadow-sm ring-0',
+		/* bg-transparent: glass comes from .panel, not solid shadcn bg-card. */
+		'panel gap-0 bg-transparent shadow-none ring-0',
 		inset && 'bg-muted/30',
 		dashed && 'panel-dashed border-dashed bg-transparent shadow-none',
 		className

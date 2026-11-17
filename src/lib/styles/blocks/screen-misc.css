@@ -2013,6 +2013,11 @@ button.live-local-save-cue {
 	padding: 0.75rem 1rem 0.85rem;
 }
 
+/* Under the hero: same glass family as hub cards, quieter elevation. */
+.profile-greeting-edit.panel {
+	box-shadow: var(--glass-inset);
+}
+
 .profile-greeting-edit__head {
 	display: flex;
 	align-items: center;

@@ -19,12 +19,14 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 			ru: [
 				'Курсор-рука на ссылках-кнопках: восстановление из файла, вход по почте',
 				'Экран входа: заголовок «Войти», без лишнего слогана над формой',
-				'Меньше анимации на кнопках: без вечного блеска и «магнита»'
+				'Меньше анимации на кнопках: без вечного блеска и «магнита»',
+				'Карточки на десктопе ближе к фону страницы, без чужого серого'
 			],
 			en: [
 				'Hand cursor on link buttons: restore from file, email sign-in link',
 				'Sign-in screen: clearer title, no extra tagline above the form',
-				'Quieter button motion: no looping sheen or magnetic pull'
+				'Quieter button motion: no looping sheen or magnetic pull',
+				'Desktop cards sit closer to the page wash, less cold grey'
 			]
 		}
 	},
