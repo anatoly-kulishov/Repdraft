@@ -3868,12 +3868,14 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 @media (min-width: 1024px) {
 	.exercise-detail-page__hero {
 		flex-direction: row;
-		align-items: flex-start;
+		/* Pin CTA / bookmark column to the media baseline, not the top. */
+		align-items: flex-end;
 		gap: 1.25rem 1.5rem;
 	}
 
 	.exercise-detail-page__intro {
 		flex: 1 1 auto;
+		align-content: end;
 	}
 
 	.exercise-media-frame {
