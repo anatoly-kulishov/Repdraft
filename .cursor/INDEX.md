@@ -27,7 +27,9 @@
 | File | When |
 |------|------|
 | `native-rewrite-plan.md` | Native-first rewrite, phases, north star (фаза F: тренер ↔ клиент) |
-| `delivery.md` | RN + web roles |
+| `delivery.md` | RN + web roles, prod URL, deploy pointer |
+| `rf-access.md` | RF VPS stack, GitHub Actions autodeploy, manual `deploy:vps` |
+| `seo-cutover-ru.md` | Canonical `.ru`, Yandex/Google Webmaster, sitemap |
 | `billing-pro.md` | Pro: YooKassa/Stripe, entitlements, recognize photo/Excel, AI daily quota |
 | `exercise-rag.md` | `/ai` catalog RAG: pgvector SQL + `npm run build:embeddings` |
 | `watch-session-ownership.md` | Watch companion spike: session lease / finish race |

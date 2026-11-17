@@ -47,6 +47,13 @@ Legal before public: real `PUBLIC_PRIVACY_*` on the web host; lawyer review `/pr
 
 Keys in `.env` / hosting only. SQL ops out of public git. Billing keys: `YOOKASSA_*` / `STRIPE_*` / `AI_VISION_MODEL` (see `.env.example`). Until shop keys are set, Profile shows «Оплата временно недоступна» and `GET /api/billing/checkout` returns `"available":false`.
 
+## Web hosting
+
+- Canonical: `https://www.repdraft.ru` (RF VPS, not Vercel).
+- Autodeploy: push/merge to `main` → workflow `Deploy web (RF VPS)`.
+- Manual: `PUBLIC_SITE_URL=https://www.repdraft.ru npm run build && npm run deploy:vps`.
+- Ops notes: [`.cursor/product/rf-access.md`](.cursor/product/rf-access.md), SEO: [`.cursor/product/seo-cutover-ru.md`](.cursor/product/seo-cutover-ru.md).
+
 ## Releases
 
-Branch `feat/vX.Y.Z-slug` (or repo convention), GitHub Release with same tag, bump `package.json` `version` in the same PR.
+Branch `feat/vX.Y.Z-slug` (or repo convention), GitHub Release with same tag, bump `package.json` `version` in the same PR. Update agent docs under `.cursor/product/` when hosting/SEO/deploy changes.
