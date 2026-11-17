@@ -31,6 +31,11 @@ type Props = {
 	contentStyle?: StyleProp<ViewStyle>;
 	/** Max height of the card (default 78%). */
 	maxHeight?: `${number}%` | number;
+	/**
+	 * Pin card height to `maxHeight` so nested FlatList/ScrollView can scroll
+	 * without waiting for keyboard focus / KeyboardAvoidingView shrink.
+	 */
+	fillMaxHeight?: boolean;
 };
 
 /**
@@ -46,7 +51,8 @@ export function BottomSheet({
 	children,
 	actions,
 	contentStyle,
-	maxHeight = '78%'
+	maxHeight = '78%',
+	fillMaxHeight = false
 }: Props) {
 	const { tt } = useLocale();
 	const colors = useAppColors();
@@ -80,6 +86,7 @@ export function BottomSheet({
 						styles.card,
 						raised && styles.cardRaised,
 						{ paddingBottom: bottomPad, maxHeight },
+						fillMaxHeight ? { height: maxHeight } : null,
 						contentStyle
 					]}
 				>
@@ -112,6 +119,8 @@ function makeStyles(colors: ColorPalette) {
 			paddingTop: space.md,
 			gap: space.md,
 			marginBottom: space.sm,
+			overflow: 'hidden',
+			flexDirection: 'column',
 			...Platform.select({
 				ios: {
 					shadowColor: '#000',
