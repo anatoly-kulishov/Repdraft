@@ -26,21 +26,24 @@ curl -s https://www.repdraft.ru/yandex_a7a3007bd3b3955c.html
 
 ### Domain property `repdraft.ru` (DNS TXT)
 
-В GSC выбран **Verify domain ownership via DNS**. В зоне Рег.ру (ispmanager → DNS для `repdraft.ru`) добавь **новую** TXT (SPF не трогай):
+GSC ругается `We couldn't find your verification token`, если в DNS только SPF. Сейчас на ns1/ns2 Рег.ру **нет** `google-site-verification=…` - запись ещё не создана (или создана не в той зоне / не сохранилась).
+
+В ispmanager → DNS зона **`repdraft.ru`** → **Create** (не Edit на SPF):
 
 | Тип | Имя | Значение |
 |---|---|---|
-| TXT | `@` (или пусто / `repdraft.ru.`) | `google-site-verification=Y8MEIF_Vbn_b3ImSzPY6Xaf3N6gXR0rcRvcPGDu_pUg` |
+| TXT | `@` (пусто / корень зоны) | `google-site-verification=Y8MEIF_Vbn_b3ImSzPY6Xaf3N6gXR0rcRvcPGDu_pUg` |
 
-Проверка снаружи: `dig +short TXT repdraft.ru @8.8.8.8` - должна появиться строка с `google-site-verification=Y8MEIF_…`. Потом в GSC → **Verify**. DNS может дойти за минуты, иногда до суток. **Не трогай** A `@` / A `www` → `89.108.81.141`.
+Частые ошибки: править SPF вместо новой TXT; имя `www`; зона другого домена; не нажать Save.  
+Проверка: `dig +short TXT repdraft.ru @ns1.hosting.reg.ru` - должны быть **две** строки (SPF и google). Потом GSC → **Verify**. A `@` / `www` не трогай.
 
-### URL prefix `https://www.repdraft.ru` (meta, запасной)
+### URL prefix `https://www.repdraft.ru` (meta, проще)
 
-В коде уже есть meta через `PUBLIC_GOOGLE_SITE_VERIFICATION=Y8MEIF_Vbn_b3ImSzPY6Xaf3N6gXR0rcRvcPGDu_pUg` (токен без префикса `google-site-verification=`).
-
-1. После деплоя: view-source главной → `google-site-verification`
-2. **Sitemaps** → `https://www.repdraft.ru/sitemap.xml`
-3. На старом `https://www.repdraft.xyz` (если есть): **Change of address** → `https://www.repdraft.ru`
+1. В GSC: **Back** / новое свойство типа **URL prefix** → `https://www.repdraft.ru`
+2. Способ HTML-тег: meta уже на сайте (`PUBLIC_GOOGLE_SITE_VERIFICATION=Y8MEIF_Vbn_b3ImSzPY6Xaf3N6gXR0rcRvcPGDu_pUg`)
+3. Проверка: view-source → `google-site-verification`
+4. **Sitemaps** → `https://www.repdraft.ru/sitemap.xml`
+5. Старое `.xyz` (если есть): **Change of address** → `https://www.repdraft.ru`
 
 ## После подтверждения
 
