@@ -60,7 +60,13 @@ export default defineConfig(({ mode }) => {
 				pub('PUBLIC_PRIVACY_OPERATOR_ADDRESS')
 			),
 			'import.meta.env.PUBLIC_SITE_URL': JSON.stringify(pub('PUBLIC_SITE_URL')),
-			'import.meta.env.PUBLIC_WEB_ORIGIN': JSON.stringify(pub('PUBLIC_WEB_ORIGIN'))
+			'import.meta.env.PUBLIC_WEB_ORIGIN': JSON.stringify(pub('PUBLIC_WEB_ORIGIN')),
+			'import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION': JSON.stringify(
+				pub('PUBLIC_GOOGLE_SITE_VERIFICATION')
+			),
+			'import.meta.env.PUBLIC_YANDEX_VERIFICATION': JSON.stringify(
+				pub('PUBLIC_YANDEX_VERIFICATION')
+			)
 		},
 		server: {
 			host: true, // LAN: phone can open http://<your-ip>:5173

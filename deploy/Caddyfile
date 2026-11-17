@@ -5,5 +5,10 @@ www.repdraft.ru {
 }
 
 repdraft.ru {
+	# Keep verification / SEO probes on apex without a 301 (Yandex/Google HTML + ACME).
+	@passthrough path /yandex_*.html /.well-known/* /robots.txt /sitemap.xml /favicon.ico
+	handle @passthrough {
+		reverse_proxy app:3000
+	}
 	redir https://www.repdraft.ru{uri} permanent
 }

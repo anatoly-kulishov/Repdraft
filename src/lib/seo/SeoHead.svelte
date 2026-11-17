@@ -62,12 +62,22 @@
 	let resolvedImageAlt = $derived(imageAlt?.trim() || resolvedTitle);
 	let ogLocale = $derived(seoLang === 'ru' ? 'ru_RU' : 'en_US');
 	let ogLocaleAlt = $derived(seoLang === 'ru' ? 'en_US' : 'ru_RU');
+	let googleSiteVerification = $derived(
+		(import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION ?? '').trim()
+	);
+	let yandexVerification = $derived((import.meta.env.PUBLIC_YANDEX_VERIFICATION ?? '').trim());
 </script>
 
 <svelte:head>
 	<title>{fullTitle}</title>
 	{#if resolvedDescription}
 		<meta name="description" content={resolvedDescription} />
+	{/if}
+	{#if googleSiteVerification}
+		<meta name="google-site-verification" content={googleSiteVerification} />
+	{/if}
+	{#if yandexVerification}
+		<meta name="yandex-verification" content={yandexVerification} />
 	{/if}
 	{#if noindex}
 		<meta name="robots" content="noindex, nofollow" />

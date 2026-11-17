@@ -12,7 +12,7 @@ const LEGACY_HOSTS = new Set(['repdraft.xyz', 'www.repdraft.xyz']);
  * Keep in sync with static search icons / SEO files.
  */
 const APEX_PASSTHROUGH =
-	/^\/(favicon\.ico|favicon-\d+x\d+\.png|apple-touch-icon(?:-precomposed)?-v3\.png|robots\.txt|sitemap\.xml)$/i;
+	/^\/(favicon\.ico|favicon-\d+x\d+\.png|apple-touch-icon(?:-precomposed)?-v3\.png|robots\.txt|sitemap\.xml|yandex_[a-f0-9]+\.html)$/i;
 
 /** Path + query for redirects. `url.search` throws during prerender. */
 function redirectTarget(url: URL, origin: string): URL {
