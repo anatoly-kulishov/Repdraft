@@ -54,7 +54,7 @@ curl -s https://www.repdraft.ru/yandex_a7a3007bd3b3955c.html
 
 ```env
 PUBLIC_GOOGLE_SITE_VERIFICATION=
-PUBLIC_YANDEX_VERIFICATION=
+PUBLIC_YANDEX_VERIFICATION=a7a3007bd3b3955c
 ```
 
-После правки: локально `npm run build`, rsync `build/` + `.env`, `docker compose up -d --build`.
+Meta-токены пекутся на **build** (GitHub Actions secrets + локальный `.env`). HTML-файл Яндекса лежит в `static/` и попадает в образ при деплое. После правки env: merge в `main` (автодеплой) или `npm run build && npm run deploy:vps`.

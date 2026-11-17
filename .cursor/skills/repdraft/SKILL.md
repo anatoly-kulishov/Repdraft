@@ -21,7 +21,8 @@ description: >-
 | Domain | Shared pure TS `src/lib/domain` |
 | Backend | Supabase (optional auth & sync) |
 | Verify | `npm run check` + `npm run check:mobile` |
-| Deploy web | RF VPS + Docker (`adapter-node`) |
+| Deploy web | RF VPS `https://www.repdraft.ru` (Docker + Caddy, `adapter-node`) |
+| Autodeploy | GitHub Actions on `main` → see `rf-access.md` |
 
 ```bash
 npm install
@@ -30,6 +31,7 @@ npm run dev              # web / PWA
 npm run check            # svelte-check - before finishing web work
 npm run check:mobile     # tsc in mobile/
 npm run build
+npm run deploy:vps       # manual prod (or wait for Actions on main)
 
 cd mobile && npm install && npm start
 ```
@@ -60,8 +62,8 @@ cd mobile && npm install && npm start
 - Одна primary CTA на экран. **Active Workout** - главный экран.
 - **FAST ON WEAK DEVICES**
 - Signup / magic link: consent Terms + Privacy
-- Web analytics: opt-in
 - Детали: [`native-rewrite-plan.md`](../../product/native-rewrite-plan.md), [`.cursorrules`](../../../.cursorrules)
+- Hosting: [`rf-access.md`](../../product/rf-access.md), [`seo-cutover-ru.md`](../../product/seo-cutover-ru.md)
 
 ## Что не делать
 

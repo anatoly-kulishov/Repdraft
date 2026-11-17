@@ -14,8 +14,8 @@ alwaysApply: false
 1. Providers: **Email** ON. Phone можно оставить выключенным (в приложении входа по SMS нет).
 2. Password policy: min length **10** (совпадает с `PASSWORD_MIN_LENGTH` в коде).
 3. URL Configuration:
-   - Site URL = production origin
-   - Redirect allow-list includes `/auth` for prod + local (`localhost:5173`, `127.0.0.1:5173`)
+   - Site URL = `https://www.repdraft.ru` (RF VPS; not Vercel / not `.xyz`)
+   - Redirect allow-list includes `https://www.repdraft.ru/auth` + local (`localhost:5173`, `127.0.0.1:5173`)
    - Phone app (dev/production build) also sends magic link, signup confirm, and password recovery to `repdraft://auth`. Add that scheme to the allow-list. Password sign-in does not need a redirect. Expo Go uses an `exp://` URL that changes with the LAN address, so email links are reliable in a dev build, not in Expo Go.
    - Confirm / magic / recovery должны открывать **тот же origin** `/auth`. Не жди открытия standalone PWA с Home Screen из письма: Mail → Safari/WebView; на iOS это ограничение ОС.
 4. Email templates must honor redirect / Site URL (confirm, magic link, recovery). Keep `{{ .ConfirmationURL }}` (or equivalent) so `emailRedirectTo` from the app is used.

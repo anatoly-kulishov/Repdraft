@@ -3,7 +3,9 @@
 | Клиент | Стек | Роль |
 |---|---|---|
 | **Mobile** | React Native (Expo SDK 58, RN 0.88) в [`mobile/`](../../mobile/) | Основной gym-клиент |
-| **Web / PWA** | SvelteKit в корне | Браузер, SEO, техника, миграция / backup |
+| **Web / PWA** | SvelteKit + `@sveltejs/adapter-node` | Браузер, SEO, техника, миграция / backup |
+
+**Прод web:** [https://www.repdraft.ru](https://www.repdraft.ru) на VPS в РФ (Docker + Caddy). Vercel не используется. Автодеплой: GitHub Actions `Deploy web (RF VPS)` на push в `main`. Вручную: `npm run deploy:vps`. Детали: [rf-access.md](rf-access.md). SEO / Вебмастер: [seo-cutover-ru.md](seo-cutover-ru.md).
 
 Общее поведение: [`src/lib/domain`](../../src/lib/domain). UI и storage у каждого клиента свои.
 
