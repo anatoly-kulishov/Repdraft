@@ -7,7 +7,7 @@ Own Svelte 5 / CSS takes on all nine [libraries.dev](https://libraries.dev/) eff
 | Border beam | `BorderBeam` | Guest home; `/ai` composer/plan/skeleton; empty states; onboarding; coach cards; clients invite; progress workouts card; summary hero |
 | Thinking orbs | `ThinkingOrbs` | `/ai` generate/listen; builder AI tune; recognize program |
 | Liquid gooey | `LiquidGooey`, `GooeyMorph` | `/ai` examples; builder AI goals; catalog targets; progress period tabs; morph lab-only |
-| Liquid metal | `MetalFx` / Text / Badge, `.fx-cta-sheen` | Empty CTAs; plans empty; onboarding demo; AI/tune/recognize; coach; clients invite; summary done; guest home. Ring/sheen quiet by default; hover (fine pointer) only |
+| Liquid metal | `MetalFx` / Text / Badge, `.fx-cta-sheen` | Text/badge + optional sheen on hover. CTA metal ring off (looked like a harsh border on press). Empty/plans CTAs are plain buttons |
 | Image generation | `ImageFx` | lab only (lists keep native fade) |
 | Distortion waves | `WaveSwap` | `/ai` busy→plan; builder AI tune |
 | Magnetic UI | `magnetic()` | Lab only (`/lab/fx`) |

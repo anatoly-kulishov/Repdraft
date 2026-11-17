@@ -21,14 +21,16 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 				'Экран входа: заголовок «Войти», без лишнего слогана над формой',
 				'Меньше анимации на кнопках: без вечного блеска и «магнита»',
 				'Карточки на десктопе ближе к фону страницы, без чужого серого',
-				'Десктоп: шапка экрана без белой подложки поверх фона'
+				'Десктоп: шапка экрана без белой подложки поверх фона',
+				'Кнопки без тёмной обводки, особенно при нажатии'
 			],
 			en: [
 				'Hand cursor on link buttons: restore from file, email sign-in link',
 				'Sign-in screen: clearer title, no extra tagline above the form',
 				'Quieter button motion: no looping sheen or magnetic pull',
 				'Desktop cards sit closer to the page wash, less cold grey',
-				'Desktop: screen header no longer paints a white plate over the wash'
+				'Desktop: screen header no longer paints a white plate over the wash',
+				'Buttons without a dark fringe, especially on press'
 			]
 		}
 	},
