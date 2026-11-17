@@ -1,0 +1,97 @@
+# Deploy SvelteKit web/PWA to the RF VPS after merge to main.
+# Secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_PATH,
+#   PUBLIC_SITE_URL, PUBLIC_SUPABASE_*, PUBLIC_PRIVACY_*
+# Runtime secrets (Supabase service role, YooKassa, GigaChat) stay in /opt/repdraft/.env on the VPS.
+
+name: Deploy web (RF VPS)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        env:
+          PUBLIC_SITE_URL: ${{ secrets.PUBLIC_SITE_URL }}
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+          PUBLIC_PRIVACY_CONTACT_EMAIL: ${{ secrets.PUBLIC_PRIVACY_CONTACT_EMAIL }}
+          PUBLIC_PRIVACY_OPERATOR_NAME: ${{ secrets.PUBLIC_PRIVACY_OPERATOR_NAME }}
+          NODE_ENV: production
+        run: |
+          test -n "$PUBLIC_SITE_URL"
+          npm run build
+
+      - name: Prepare SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          test -n "$VPS_SSH_KEY"
+          test -n "$VPS_HOST"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -T 10 -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Sync artifact to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PATH: ${{ secrets.VPS_PATH }}
+        run: |
+          REMOTE="${VPS_USER}@${VPS_HOST}"
+          SSH=(ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o PreferredAuthentications=publickey)
+          RSYNC_SSH="ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o PreferredAuthentications=publickey"
+          "${SSH[@]}" "$REMOTE" "mkdir -p '${VPS_PATH}/build' '${VPS_PATH}/deploy'"
+          rsync -az --delete -e "$RSYNC_SSH" ./build/ "${REMOTE}:${VPS_PATH}/build/"
+          rsync -az -e "$RSYNC_SSH" \
+            ./Dockerfile ./docker-compose.yml ./package.json ./package-lock.json \
+            "${REMOTE}:${VPS_PATH}/"
+          rsync -az -e "$RSYNC_SSH" ./deploy/Caddyfile "${REMOTE}:${VPS_PATH}/deploy/Caddyfile"
+
+      - name: Restart stack
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PATH: ${{ secrets.VPS_PATH }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o PreferredAuthentications=publickey \
+            "${VPS_USER}@${VPS_HOST}" \
+            "set -e
+             test -f '${VPS_PATH}/.env'
+             cd '${VPS_PATH}'
+             docker compose up -d --build
+             docker compose ps
+             curl -4 -fsS --max-time 20 -o /dev/null -w '%{http_code}\n' https://www.repdraft.ru/"
+
+      - name: Smoke check from runner
+        run: |
+          code=$(curl -4 -fsS --max-time 20 -o /tmp/rd-home.html -w '%{http_code}' https://www.repdraft.ru/)
+          test "$code" = "200"
+          grep -qi 'repdraft' /tmp/rd-home.html

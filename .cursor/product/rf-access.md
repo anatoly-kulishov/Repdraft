@@ -15,10 +15,14 @@ Vercel больше не используется для продакшена.
 
 ## Деплой
 
+**Авто:** GitHub Actions `Deploy web (RF VPS)` на каждый push в `main` (и `workflow_dispatch`). Секреты репозитория: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_PATH`, плюс `PUBLIC_*` для сборки. Runtime-секреты (YooKassa, GigaChat, service role) только в `/opt/repdraft/.env` на VPS - CI их не трогает.
+
+**Вручную:**
+
 ```bash
 PUBLIC_SITE_URL=https://www.repdraft.ru npm run build
-# rsync build/ + .env на /opt/repdraft
-ssh root@VPS 'cd /opt/repdraft && docker compose up -d --build'
+npm run deploy:vps
+# или: VPS_SSH_KEY=~/.ssh/repdraft_deploy npm run deploy:vps
 ```
 
 Проверка из РФ:

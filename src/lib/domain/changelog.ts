@@ -14,6 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.11',
+		highlights: {
+			ru: [
+				'Сайт: автодеплой на сервер в РФ после обновления main',
+				'Адрес продакшена: www.repdraft.ru'
+			],
+			en: [
+				'Web: auto-deploy to the Russia VPS after main updates',
+				'Production address: www.repdraft.ru'
+			]
+		}
+	},
+	{
 		version: '0.25.10',
 		highlights: {
 			ru: [

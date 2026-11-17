@@ -27,9 +27,10 @@ npm run check:all # web + mobile typecheck
 npm run check:parity # tokens + versions + check:all
 npm run build:tokens # after editing src/lib/design/tokens.ts
 npm run build
+# Web prod: RF VPS https://www.repdraft.ru (GitHub Actions on main, or npm run deploy:vps)
 ```
 
-Shared copy: `src/lib/i18n/messages.ts` (both clients). Shared colors/spacing: `src/lib/design/tokens.ts`.
+Shared copy: `src/lib/i18n/messages.ts` (both clients). Shared colors/spacing: `src/lib/design/tokens.ts`. Canonical site: `https://www.repdraft.ru`.
 
 Legal before public: real `PUBLIC_PRIVACY_*` on the web host; lawyer review `/privacy` + `/terms`.
 
