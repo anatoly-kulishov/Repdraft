@@ -23,7 +23,8 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 				'Карточки на десктопе ближе к фону страницы, без чужого серого',
 				'Десктоп: шапка экрана без белой подложки поверх фона',
 				'Кнопки без тёмной обводки, особенно при нажатии',
-				'Настройка «Упростить анимации»: без декоративных эффектов'
+				'Настройка «Упростить анимации»: без декоративных эффектов',
+				'Подстраницы настроек на десктопе уже не на всю ширину'
 			],
 			en: [
 				'Hand cursor on link buttons: restore from file, email sign-in link',
@@ -32,7 +33,8 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 				'Desktop cards sit closer to the page wash, less cold grey',
 				'Desktop: screen header no longer paints a white plate over the wash',
 				'Buttons without a dark fringe, especially on press',
-				'Reduce motion setting: turn off decorative effects'
+				'Reduce motion setting: turn off decorative effects',
+				'Desktop settings subpages use a narrower column'
 			]
 		}
 	},

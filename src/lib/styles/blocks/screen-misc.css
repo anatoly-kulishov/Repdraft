@@ -1887,6 +1887,11 @@ button.live-local-save-cue {
 	max-width: 100%;
 }
 
+/* Settings subroutes (/auth/training, /interface, …): form column, not catalog rail. */
+.profile-settings-stack--subpage {
+	max-width: min(var(--page-content-narrow), 100%);
+}
+
 .profile-settings-hub {
 	display: flex;
 	flex-direction: column;
@@ -2937,6 +2942,21 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 		width: 100%;
 		max-width: min(var(--page-content-catalog), 100%);
 		padding-inline: var(--auth-account-gutter, 1.25rem);
+	}
+
+	/*
+	 * Settings subpages: ProfileSettingsPage has no .auth-account wrapper, so the
+	 * catalog max-width above never applied and the stack went full main width.
+	 * Use the narrow form column; shell already supplies --page-pad-x (no extra gutter).
+	 */
+	.auth-page--account .profile-settings-stack--subpage {
+		max-width: min(var(--page-content-narrow), 100%);
+		padding-inline: 0;
+	}
+
+	.shell-main--subroute:has(.profile-settings-stack--subpage) .screen-header,
+	.shell-main--subroute:has(.profile-settings-stack--subpage) .screen-header.screen-header--fixed {
+		max-width: min(var(--page-content-narrow), 100%);
 	}
 
 	.auth-account__desktop-head {
