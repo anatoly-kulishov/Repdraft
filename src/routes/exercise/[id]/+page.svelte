@@ -3,7 +3,6 @@
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import SegmentControl from '$lib/components/SegmentControl.svelte';
-	import { BorderBeam } from '$lib/components/fx';
 	import { catalogEquipmentPath, catalogTargetPath, catalogZonePath, withFromParam } from '$lib/domain/catalogLinks';
 	import { currentReturnPath, linkWithFrom, resolveBackFrom } from '$lib/domain/navigation';
 	import {
@@ -273,21 +272,19 @@ import { truncateMeta } from '$lib/seo/site';
 				<div class="exercise-detail-page__hero">
 					<div class="exercise-detail-page__media" style:view-transition-name={mediaVtName}>
 						{#if mediaSrc}
-							<BorderBeam size="pulse-outside" duration={3.2} class="exercise-detail-media-beam">
-								<div class="exercise-media-frame">
-									<img
-										src={mediaSrc}
-										alt={title}
-										width="180"
-										height="180"
-										loading="eager"
-										fetchpriority="high"
-										decoding="async"
-										class="exercise-media-native block"
-										onerror={onMediaError}
-									/>
-								</div>
-							</BorderBeam>
+							<div class="exercise-media-frame">
+								<img
+									src={mediaSrc}
+									alt={title}
+									width="180"
+									height="180"
+									loading="eager"
+									fetchpriority="high"
+									decoding="async"
+									class="exercise-media-native block"
+									onerror={onMediaError}
+								/>
+							</div>
 						{/if}
 					</div>
 

@@ -3761,29 +3761,6 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	min-width: 0;
 }
 
-/* Beam hugs the media plate (fit-content), not the full hero column. */
-.exercise-detail-media-beam {
-	display: block;
-	width: fit-content;
-	max-width: 100%;
-	margin-inline: auto;
-	border-radius: var(--radius-panel);
-	/* Soft even pulse: traveling sm looked crooked on the square plate. */
-	--fx-beam-color: color-mix(in srgb, var(--color-accent) 70%, var(--color-border));
-}
-
-.exercise-detail-media-beam .exercise-media-frame {
-	margin-inline: 0;
-	/* One outline from the beam; avoid double border. */
-	border-color: transparent;
-}
-
-@media (min-width: 1024px) {
-	.exercise-detail-media-beam {
-		margin-inline: 0;
-	}
-}
-
 .exercise-detail-page__media {
 	flex-shrink: 0;
 	/* Shared VT morph target (name set inline as rd-ex-{id}). */

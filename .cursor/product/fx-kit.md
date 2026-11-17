@@ -4,7 +4,7 @@ Own Svelte 5 / CSS takes on all nine [libraries.dev](https://libraries.dev/) eff
 
 | Effect | Export | Product surfaces |
 |---|---|---|
-| Border beam | `BorderBeam` | Guest home; `/ai` composer/plan/skeleton; empty states; onboarding; coach cards; clients invite; progress workouts card; summary hero; exercise media |
+| Border beam | `BorderBeam` | Guest home; `/ai` composer/plan/skeleton; empty states; onboarding; coach cards; clients invite; progress workouts card; summary hero |
 | Thinking orbs | `ThinkingOrbs` | `/ai` generate/listen; builder AI tune; recognize program |
 | Liquid gooey | `LiquidGooey`, `GooeyMorph` | `/ai` examples; builder AI goals; catalog targets; progress period tabs; morph lab-only |
 | Liquid metal | `MetalFx` / Text / Badge, `.fx-cta-sheen` | Empty CTAs; plans empty; onboarding demo; AI/tune/recognize; coach; clients invite; summary done; guest home |
