@@ -3335,7 +3335,7 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 
 .auth-legal-consent {
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	gap: 0.65rem;
 	margin: 0.15rem 0 0.1rem;
 	padding: 0.35rem 0;
@@ -3351,7 +3351,7 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 	height: 1.25rem;
 	min-width: 1.25rem;
 	min-height: 1.25rem;
-	margin: 0.2rem 0 0;
+	margin: 0;
 	padding: 0;
 	box-sizing: border-box;
 	accent-color: var(--color-accent);
