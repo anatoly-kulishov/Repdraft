@@ -14,6 +14,17 @@ const LEGACY_HOSTS = new Set(['repdraft.xyz', 'www.repdraft.xyz']);
 const APEX_PASSTHROUGH =
 	/^\/(favicon\.ico|favicon-\d+x\d+\.png|apple-touch-icon(?:-precomposed)?-v3\.png|robots\.txt|sitemap\.xml)$/i;
 
+/** Path + query for redirects. `url.search` throws during prerender. */
+function redirectTarget(url: URL, origin: string): URL {
+	let search = '';
+	try {
+		search = url.search;
+	} catch {
+		search = '';
+	}
+	return new URL(`${url.pathname}${search}`, origin);
+}
+
 /**
  * Apex → www for the public domain, plus full cutover of the legacy zone.
  * If Domains → “Redirect to www” is still enabled in Vercel, the edge redirect
@@ -21,14 +32,12 @@ const APEX_PASSTHROUGH =
  */
 export const handle: Handle = async ({ event, resolve }) => {
 	const host = event.url.hostname.toLowerCase();
-	const pathAndQuery = `${event.url.pathname}${event.url.search}`;
+	const redirectLegacy = LEGACY_HOSTS.has(host);
+	const redirectApex =
+		host === CANONICAL_APEX && !APEX_PASSTHROUGH.test(event.url.pathname);
 
-	if (LEGACY_HOSTS.has(host)) {
-		return Response.redirect(new URL(pathAndQuery, CANONICAL_SITE_ORIGIN), 308);
-	}
-
-	if (host === CANONICAL_APEX && !APEX_PASSTHROUGH.test(event.url.pathname)) {
-		return Response.redirect(new URL(pathAndQuery, CANONICAL_SITE_ORIGIN), 308);
+	if (redirectLegacy || redirectApex) {
+		return Response.redirect(redirectTarget(event.url, CANONICAL_SITE_ORIGIN), 308);
 	}
 
 	return resolve(event);
