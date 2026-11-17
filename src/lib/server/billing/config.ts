@@ -11,7 +11,7 @@ export function siteUrl(): string {
 	return (
 		trim(publicEnv.PUBLIC_SITE_URL) ||
 		trim(publicEnv.PUBLIC_WEB_ORIGIN) ||
-		'https://www.repdraft.xyz'
+		'https://www.repdraft.ru'
 	).replace(/\/$/, '');
 }
 

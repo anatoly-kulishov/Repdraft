@@ -36,7 +36,7 @@ Domain: [`src/lib/domain/entitlement.ts`](../../src/lib/domain/entitlement.ts), 
    - `AI_VISION_MODEL=GigaChat-2-Max` (GigaChat-2 has no vision)
    - optional `AI_PLAN_DAILY_LIMIT=10`
 3. Probe without dumping secrets: `npm run check:billing`
-4. YooKassa cabinet → HTTP notifications → `https://www.repdraft.xyz/api/billing/webhook/yookassa` (events: `payment.succeeded`)
+4. YooKassa cabinet → HTTP notifications → `https://www.repdraft.ru/api/billing/webhook/yookassa` (events: `payment.succeeded`)
 5. Stripe → webhook → `/api/billing/webhook/stripe` (`checkout.session.completed`, subscription + invoice events)
 6. Smoke: `GET /api/billing/checkout` must return `"available":true` on prod; Profile → Pro shows month/year CTAs (not «Оплата временно недоступна»).
 7. Manual ops grant: Auth `app_metadata` (`pro`, `pro_until`, `pro_status`, `pro_plan`) and/or entitlements row; user must refresh session. Metadata-only grants are **not** cancelable in UI.

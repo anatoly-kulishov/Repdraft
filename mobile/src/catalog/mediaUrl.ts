@@ -1,5 +1,5 @@
 /** Resolve catalog image paths against the public web origin (GIFs/JPGs stay on web CDN). */
-const DEFAULT_ORIGIN = 'https://www.repdraft.xyz';
+const DEFAULT_ORIGIN = 'https://www.repdraft.ru';
 
 function isDevHost(): boolean {
 	if (typeof process === 'undefined') return false;
