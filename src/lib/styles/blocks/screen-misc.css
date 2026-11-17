@@ -368,9 +368,14 @@
 		overflow: visible;
 	}
 
-	/* Beat .shell-main--subroute .screen-header chrome bg on desktop. */
-	.shell-main--subroute .screen-header {
+	/* Beat .shell-main--subroute .screen-header:not(.embedded) chrome frost.
+	   Desktop headers are static - opaque white plates over the page wash look broken. */
+	.shell-main--subroute .screen-header,
+	.shell-main--subroute .screen-header:not(.screen-header--embedded),
+	.shell-main--subroute .screen-header.screen-header--fixed:not(.screen-header--embedded) {
 		background: transparent;
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
 	}
 
 	.screen-header-title {
