@@ -1,6 +1,6 @@
 # SEO cutover: repdraft.xyz → www.repdraft.ru
 
-**Статус кода (2026-11-17):** canonical, `robots.txt` и `sitemap.xml` на проде уже отдают `https://www.repdraft.ru`. Файл Яндекса: `https://www.repdraft.ru/yandex_f8fbc3ad7a8a9ac4.html`.
+**Статус кода (2026-11-17):** canonical, `robots.txt` и `sitemap.xml` на проде уже отдают `https://www.repdraft.ru`. Файл Яндекса: `https://www.repdraft.ru/yandex_a7a3007bd3b3955c.html` (старый `yandex_f8fbc3ad7a8a9ac4.html` тоже лежит в `static/`).
 
 Дальше - кабинеты Google и Яндекса (аккаунт владельца сайта).
 
@@ -9,15 +9,15 @@
 ```bash
 curl -sI https://www.repdraft.ru/robots.txt
 curl -s https://www.repdraft.ru/sitemap.xml | head
-curl -s https://www.repdraft.ru/yandex_f8fbc3ad7a8a9ac4.html
+curl -s https://www.repdraft.ru/yandex_a7a3007bd3b3955c.html
 ```
 
-Ожидание: `Sitemap: https://www.repdraft.ru/sitemap.xml`, в sitemap только `.ru` loc.
+Ожидание: `Sitemap: https://www.repdraft.ru/sitemap.xml`, в sitemap только `.ru` loc. В verification-файле: `Verification: a7a3007bd3b3955c`.
 
 ## Яндекс.Вебмастер
 
 1. [webmaster.yandex.ru](https://webmaster.yandex.ru) → **Добавить сайт** → `https://www.repdraft.ru`
-2. Подтверждение: HTML-файл уже на сайте (`yandex_f8fbc3ad7a8a9ac4.html`) или meta `yandex-verification` через `PUBLIC_YANDEX_VERIFICATION`
+2. Подтверждение: HTML-файл `yandex_a7a3007bd3b3955c.html` или meta `yandex-verification` через `PUBLIC_YANDEX_VERIFICATION=a7a3007bd3b3955c`
 3. **Индексирование → Файлы Sitemap** → добавить `https://www.repdraft.ru/sitemap.xml`
 4. Если старый сайт был `www.repdraft.xyz`: **Инструменты → Переезд сайта** (или «Главное зеркало») → указать новый адрес `https://www.repdraft.ru`
 5. Главное зеркало: `https://www.repdraft.ru` (не apex без www, если так каноникал в приложении)
