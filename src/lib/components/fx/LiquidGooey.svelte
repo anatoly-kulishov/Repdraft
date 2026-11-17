@@ -5,13 +5,20 @@
 	import { tweenBox, type FxBox } from './motion';
 
 	type Props = {
-		/** Index of the active `[data-fx-gooey-item]` inside children. */
+		/** Index of the active `[data-fx-gooey-item]`. Use `-1` to hide the blob. */
 		activeIndex?: number;
 		class?: string;
+		/** Class on the items row (e.g. existing chip strip). */
+		itemsClass?: string;
 		children?: Snippet;
 	};
 
-	let { activeIndex = 0, class: className = '', children }: Props = $props();
+	let {
+		activeIndex = 0,
+		class: className = '',
+		itemsClass = '',
+		children
+	}: Props = $props();
 	const uid = $props.id();
 	const filterId = `${uid}-goo`;
 
@@ -22,9 +29,9 @@
 	let cancelTrail = () => {};
 
 	function targetBox(): FxBox | null {
-		if (!rootEl) return null;
+		if (!rootEl || activeIndex < 0) return null;
 		const items = rootEl.querySelectorAll<HTMLElement>('[data-fx-gooey-item]');
-		const el = items[activeIndex] ?? items[0];
+		const el = items[activeIndex];
 		if (!el) return null;
 		const parent = rootEl.getBoundingClientRect();
 		const box = el.getBoundingClientRect();
@@ -34,9 +41,13 @@
 	async function moveTo(animate: boolean) {
 		await tick();
 		const to = targetBox();
-		if (!to) return;
 		cancelLead();
 		cancelTrail();
+		if (!to) {
+			lead = null;
+			trail = null;
+			return;
+		}
 		if (!animate || !lead || !trail) {
 			lead = to;
 			trail = to;
@@ -87,7 +98,7 @@
 			</g>
 		{/if}
 	</svg>
-	<div class="fx-gooey__items">
+	<div class={cn('fx-gooey__items', itemsClass)}>
 		{@render children?.()}
 	</div>
 </div>

@@ -282,18 +282,34 @@ textarea.pr-note-field.ai-draft-page__brief:focus-visible,
 
 .ai-draft-page__hint,
 .ai-draft-page__listening {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
 	margin: 0;
 	font-size: 0.75rem;
 	line-height: 1.35;
+	color: var(--color-accent-text);
+	font-weight: 500;
 }
 
 .ai-draft-page__hint {
 	color: var(--color-muted);
 }
 
-.ai-draft-page__listening {
-	color: var(--color-accent-text);
-	font-weight: 500;
+.ai-draft-page__bot {
+	flex-shrink: 0;
+}
+
+.ai-draft-page__wave {
+	min-width: 0;
+}
+
+.ai-draft-page__plan-beam {
+	border-radius: var(--radius-panel);
+}
+
+.ai-draft-page__plan-beam .ai-draft-page__plan {
+	margin: 0;
 }
 
 .ai-draft-page__error {

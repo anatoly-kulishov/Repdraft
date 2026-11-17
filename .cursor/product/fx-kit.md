@@ -2,23 +2,21 @@
 
 Own Svelte 5 / CSS takes on all nine [libraries.dev](https://libraries.dev/) effects, **without** their React/npm packages or `three`. Web only; RN does not use them.
 
-| Effect | Export | Where in product |
+| Effect | Export | Product surfaces |
 |---|---|---|
-| Border beam | `BorderBeam` (`size`: md, sm, line, pulse-inner, pulse-outside) | Guest home hero |
-| Thinking orbs | `ThinkingOrbs` (`mode`: 9 states, `size` 20/48/64) | `/ai` while generating |
-| Liquid gooey | `LiquidGooey` (move), `GooeyMorph` (FAB buds into actions) | lab only |
-| Liquid metal | `MetalFx` (ring), `MetalText`, `MetalBadge`, `.fx-cta-sheen` | Guest CTA, `/ai` generate |
-| Image generation | `ImageFx` (shimmer + radial blur reveal) | lab only |
-| Distortion waves | `WaveSwap` / `waveReveal` + `holdUnder` transitions | lab only |
-| Magnetic UI | `magnetic()` attachment | lab only |
-| Voice position | `VoicePosition` (WebAudio pan, distance, muffle behind) | lab only |
-| Bot avatars | `BotAvatar` (`mood`: idle, thinking, talking, happy, sad) | lab only |
+| Border beam | `BorderBeam` | Guest home hero; AI plan card |
+| Thinking orbs | `ThinkingOrbs` | `/ai` generate/listen; builder AI tune; recognize program |
+| Liquid gooey | `LiquidGooey`, `GooeyMorph` | `/ai` example chips; builder AI goals; catalog target chips; morph lab-only |
+| Liquid metal | `MetalFx`, `MetalText`, `MetalBadge`, `.fx-cta-sheen` | Guest CTA; `/ai` generate / add to builder; AI tune; recognize CTAs |
+| Image generation | `ImageFx` | lab only (avoid long lists) |
+| Distortion waves | `WaveSwap` / `waveReveal` | `/ai` busy→plan; builder AI tune form→result |
+| Magnetic UI | `magnetic()` | Desktop: guest CTA, `/ai` primary CTAs |
+| Voice position | `VoicePosition` | lab only |
+| Bot avatars | `BotAvatar` | `/ai` status badge (idle / thinking / talking / happy) |
 
 - Code: `src/lib/components/fx/` (barrel `index.ts`), styles `src/lib/styles/blocks/fx.css`.
-- Hosts keep their own radius: fx roots never set `border-radius`; rings inherit it. `MetalFx` takes `radius` (default `--radius-button`).
-- Rings sit above content with `pointer-events: none`. `MetalFx` dims when the wrapped control is disabled.
-- Perf: CSS animations pause offscreen and on hidden tabs (`fxPauseOffscreen`, `[data-fx-paused]`). Orbs canvas stops rAF offscreen and caches theme colors (re-read on `data-theme` change).
-- `magnetic()` runs only on fine pointers (mouse/trackpad) and never with reduced motion.
-- Everything honors `prefers-reduced-motion` (static frame, no loops).
-- Sandbox: `http://localhost:5173/lab/fx`, **dev only** (`+page.ts` returns 404 in prod builds).
-- Do not sprinkle across live sacred-loop screens without a product reason.
+- Hosts keep their own radius; rings inherit. `MetalFx` takes `radius` (default `--radius-button`).
+- Perf: CSS/canvas pause offscreen and on hidden tabs. `magnetic()` only on fine pointers.
+- Honors `prefers-reduced-motion`.
+- Sandbox: `http://localhost:5173/lab/fx`, **dev only** (404 in prod builds).
+- Do not sprinkle across every sacred-loop screen; prefer AI and one primary CTA per view.

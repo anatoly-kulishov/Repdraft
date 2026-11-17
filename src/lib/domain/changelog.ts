@@ -17,12 +17,14 @@ export const CHANGELOG: readonly ChangelogRelease[] = [
 		version: '0.25.18',
 		highlights: {
 			ru: [
-				'Главная и AI: свечение рамки и металлический контур кнопки стали ровнее',
-				'Анимации на фоне останавливаются, когда их не видно: меньше нагрузка на слабых телефонах'
+				'AI: живые подсказки при генерации, диктовке и распознавании программы',
+				'Подбор подходов в builder и чипы фильтров стали заметнее без лишнего шума',
+				'Анимации на фоне останавливаются, когда их не видно'
 			],
 			en: [
-				'Home and AI: smoother border glow and metal button outline',
-				'Background animations pause when offscreen: lighter on older phones'
+				'AI: clearer motion while generating, dictating, and recognizing a program',
+				'Builder tune and catalog filter chips feel more responsive',
+				'Background animations pause when offscreen'
 			]
 		}
 	},

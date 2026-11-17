@@ -5,6 +5,7 @@
 	import ListSearchBar from '$lib/components/ListSearchBar.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
+	import { LiquidGooey } from '$lib/components/fx';
 	import { isHomeEquipmentFilter } from '$lib/domain/homeKit';
 	import { labelEquipment, labelTarget } from '$lib/domain/labels.ru';
 	import type { ExerciseFilters } from '$lib/domain/types';
@@ -37,6 +38,7 @@
 	let placeHome = $derived(isHomeEquipmentFilter(filters.equipment));
 
 	let showTargetFilters = $derived(lockBodyPart && !hideTargetChips && targets.length > 1);
+	let targetActive = $derived(targets.findIndex((item) => filters.target === item));
 
 	/** Gym only: home place uses kit filter, not a single ExerciseDB key. */
 	let showEquipmentFilter = $derived(!placeHome && equipment.length > 0);
@@ -108,21 +110,24 @@
 				: undefined}
 		>
 			{#if showTargetFilters}
-				<div
-					class="catalog-filter-chips"
-					role="group"
-					aria-label={translate(lang, 'catalog.filterChipsAria')}
+				<LiquidGooey
+					activeIndex={targetActive}
+					itemsClass="catalog-filter-chips"
+					class="catalog-filters__gooey"
 				>
-					{#each targets as item (item)}
-						<AppChip
-							class="catalog-filter-chip w-auto min-w-0 rounded-full px-3"
-							active={filters.target === item}
-							onclick={() => toggleTarget(item)}
-						>
-							{labelTarget(item, lang)}
-						</AppChip>
-					{/each}
-				</div>
+					<div role="group" aria-label={translate(lang, 'catalog.filterChipsAria')} class="contents">
+						{#each targets as item (item)}
+							<AppChip
+								data-fx-gooey-item
+								class="catalog-filter-chip w-auto min-w-0 rounded-full px-3"
+								active={filters.target === item}
+								onclick={() => toggleTarget(item)}
+							>
+								{labelTarget(item, lang)}
+							</AppChip>
+						{/each}
+					</div>
+				</LiquidGooey>
 			{/if}
 		</ListSearchBar>
 	</div>
