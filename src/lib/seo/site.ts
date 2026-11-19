@@ -4,6 +4,8 @@ export const SITE_NAME = 'Repdraft';
 export const CANONICAL_SITE_ORIGIN = 'https://www.repdraft.ru';
 
 const DEFAULT_OG_IMAGE = '/og-image.jpg';
+/** Square mark. Second og:image so Google can use it instead of cropping the wide card. */
+export const OG_SQUARE_IMAGE_PATH = '/og-square.jpg';
 
 /** SvelteKit placeholder host baked into prerender HTML when PUBLIC_SITE_URL is unset. */
 const PRERENDER_PLACEHOLDER_HOST = 'sveltekit-prerender';
@@ -78,4 +80,8 @@ export function absoluteUrl(path: string, requestOrigin = ''): string {
 
 export function defaultOgImage(requestOrigin = ''): string {
 	return absoluteUrl(DEFAULT_OG_IMAGE, requestOrigin);
+}
+
+export function squareOgImage(requestOrigin = ''): string {
+	return absoluteUrl(OG_SQUARE_IMAGE_PATH, requestOrigin);
 }

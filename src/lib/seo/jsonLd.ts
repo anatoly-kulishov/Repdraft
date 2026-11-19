@@ -2,7 +2,7 @@ import type { AppLocale } from '$lib/i18n/locale';
 import type { Article } from '$lib/domain/articles';
 import type { Exercise } from '$lib/domain/types';
 import { exerciseName } from '$lib/domain/exerciseName';
-import { SITE_NAME, absoluteUrl } from '$lib/seo/site';
+import { OG_SQUARE_IMAGE_PATH, SITE_NAME, absoluteUrl } from '$lib/seo/site';
 import { articleOgPath } from '$lib/seo/articleOg';
 
 type JsonLd = Record<string, unknown>;
@@ -53,7 +53,7 @@ export function buildWebApplicationJsonLd(origin: string, description: string): 
 		browserRequirements: 'Requires JavaScript',
 		isAccessibleForFree: true,
 		inLanguage: ['ru', 'en'],
-		image: absoluteUrl('/og-image.jpg', origin),
+		image: absoluteUrl(OG_SQUARE_IMAGE_PATH, origin),
 		icon: absoluteUrl('/icon-512-v3.png', origin),
 		offers: {
 			'@type': 'Offer',
