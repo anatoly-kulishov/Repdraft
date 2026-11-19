@@ -15,6 +15,7 @@
 		completedSetCount,
 		sessionDurationMs,
 		sessionVolumeKg,
+		planVsActualParts,
 		previousPlanSession
 	} from '$lib/domain/session';
 	import { exerciseName } from '$lib/domain/exerciseName';
@@ -278,6 +279,7 @@
 					{#each previewExercises as item, i (item.ex.exerciseId + '-' + i)}
 						{@const meta = indexById.get(item.ex.exerciseId) ?? null}
 						{@const ex = item.ex}
+						{@const fact = planVsActualParts(ex)}
 						<div class="summary-exercises-preview__item">
 							{#if meta}
 								<div class="summary-exercises-preview__thumb media-well" aria-hidden="true">
@@ -298,6 +300,17 @@
 							{/if}
 							<p class="summary-exercises-preview__name">
 								{meta ? exerciseName(meta, lang) : ex.exerciseId}
+								{#if fact}
+									<span
+										class="summary-exercises-preview__plan"
+										class:is-under={fact.under}
+									>
+										{translate(lang, 'summary.planVsActual', {
+											plan: fact.plan,
+											actual: fact.actual
+										})}
+									</span>
+								{/if}
 							</p>
 							<ul class="summary-exercises-preview__sets">
 								{#each item.completed as set, si (si)}

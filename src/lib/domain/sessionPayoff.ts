@@ -3,6 +3,7 @@
  */
 import { weekKeyFromDate } from './quest';
 import { exerciseBestWeightKg, sessionVolumeKg } from './sessionStats';
+import { isProgressSet } from './sessionSetKind';
 import type { WorkoutSession } from './types';
 
 export type FigureZone = 'chest' | 'shoulders' | 'arms' | 'back' | 'legs' | 'core';
@@ -41,23 +42,6 @@ export function figureZones(bodyParts: readonly string[]): FigureZone[] {
 		if (zone) zones.add(zone);
 	}
 	return [...zones];
-}
-
-function completedWorkSets(session: WorkoutSession) {
-	const rows: { exerciseId: string; weightKg: number; reps: number }[] = [];
-	for (const ex of session.exercises) {
-		if (ex.skipped) continue;
-		for (const set of ex.sets) {
-			if (!set.completed || set.kind === 'warmup') continue;
-			if (set.weightKg == null || set.weightKg <= 0) continue;
-			rows.push({
-				exerciseId: ex.exerciseId,
-				weightKg: set.weightKg,
-				reps: set.reps ?? 0
-			});
-		}
-	}
-	return rows;
 }
 
 export function sessionPayoff(
@@ -138,24 +122,117 @@ export function suggestRaiseExerciseId(sessions: readonly WorkoutSession[]): str
 	return null;
 }
 
-/** Next time: last working weight plus 2.5 kg, same reps. */
+export type NextWeightKind = 'raise' | 'repeat' | 'wave';
+
+export type NextWeightHint = {
+	weightKg: number;
+	reps: number;
+	/** raise: hit the target, add a plate. repeat: missed, same weight. wave: every 4th time, about 90%. */
+	kind: NextWeightKind;
+};
+
+const PLATE_KG = 2.5;
+
+function roundTenth(kg: number): number {
+	return Math.round(kg * 10) / 10;
+}
+
+function roundPlate(kg: number): number {
+	return roundTenth(Math.round(kg / PLATE_KG) * PLATE_KG);
+}
+
+type TopWork = {
+	weightKg: number;
+	reps: number;
+	setsAtWeight: number;
+	targetSets: number;
+	targetReps: number;
+};
+
+/** Heaviest working sets of one exercise. Reps are the lowest at that weight. */
+function topWork(session: WorkoutSession, exerciseId: string): TopWork | null {
+	const ex = session.exercises.find((item) => item.exerciseId === exerciseId);
+	if (!ex || ex.skipped) return null;
+	const progress = ex.sets.filter(
+		(set) =>
+			set.completed &&
+			isProgressSet(set) &&
+			set.weightKg != null &&
+			set.weightKg > 0
+	);
+	if (progress.length === 0) return null;
+	let weightKg = 0;
+	for (const set of progress) {
+		if (set.weightKg != null && set.weightKg > weightKg) weightKg = set.weightKg;
+	}
+	const atTop = progress.filter((set) => set.weightKg != null && Math.abs(set.weightKg - weightKg) < 0.05);
+	let reps = Number.POSITIVE_INFINITY;
+	for (const set of atTop) {
+		const value = set.reps ?? 0;
+		if (value < reps) reps = value;
+	}
+	return {
+		weightKg,
+		reps: Number.isFinite(reps) ? reps : 0,
+		setsAtWeight: atTop.length,
+		targetSets: ex.targetSets,
+		targetReps: ex.targetReps
+	};
+}
+
+function lighterWave(weightKg: number): number {
+	const eased = roundPlate(weightKg * 0.9);
+	if (eased > 0 && eased < weightKg) return eased;
+	const stepped = roundTenth(weightKg - PLATE_KG);
+	return stepped > 0 ? stepped : weightKg;
+}
+
+/**
+ * Next exposure for one exercise.
+ * Hit the planned sets and reps: +2.5 kg, reps back to the target.
+ * Missed: same weight, still aim at the target.
+ * Every 4th exposure: a lighter wave, about 90% of the last top weight.
+ * No 1RM and no multi-week percent program.
+ */
 export function nextWeightHint(
 	sessions: readonly WorkoutSession[],
 	exerciseId: string
-): { weightKg: number; reps: number } | null {
-	const previous = latestFinished(sessions, (session) => exerciseBestWeightKg(session, exerciseId) != null);
+): NextWeightHint | null {
+	const exposures = sessions
+		.filter((session) => session.finishedAt != null && topWork(session, exerciseId) != null)
+		.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''));
+	const previous = exposures[0];
 	if (!previous) return null;
-	let reps = 0;
-	let weight = 0;
-	for (const row of completedWorkSets(previous)) {
-		if (row.exerciseId !== exerciseId) continue;
-		if (row.weightKg >= weight) {
-			weight = row.weightKg;
-			reps = row.reps > 0 ? row.reps : reps;
+	const top = topWork(previous, exerciseId);
+	if (!top || top.weightKg <= 0) return null;
+
+	const aimReps = top.targetReps > 0 ? top.targetReps : top.reps > 0 ? top.reps : 8;
+	const hitSets = top.targetSets <= 0 || top.setsAtWeight >= top.targetSets;
+	const hitReps = top.targetReps <= 0 || top.reps >= top.targetReps;
+	const waveDue = exposures.length % 4 === 3;
+
+	if (waveDue) {
+		return { weightKg: lighterWave(top.weightKg), reps: aimReps, kind: 'wave' };
+	}
+	if (!hitSets || !hitReps) {
+		return { weightKg: roundTenth(top.weightKg), reps: aimReps, kind: 'repeat' };
+	}
+	return { weightKg: roundTenth(top.weightKg + PLATE_KG), reps: aimReps, kind: 'raise' };
+}
+
+export function nextHintMessageKey(kind: NextWeightKind): string {
+	switch (kind) {
+		case 'raise':
+			return 'quest.nextHint';
+		case 'repeat':
+			return 'quest.nextHintRepeat';
+		case 'wave':
+			return 'quest.nextHintWave';
+		default: {
+			const exhaustive: never = kind;
+			return exhaustive;
 		}
 	}
-	if (weight <= 0) return null;
-	return { weightKg: Math.round((weight + 2.5) * 10) / 10, reps: reps > 0 ? reps : 8 };
 }
 
 export function weightAboveLast(
@@ -172,4 +249,112 @@ export function weightAboveLast(
 	if (!previous) return false;
 	const prev = exerciseBestWeightKg(previous, exerciseId);
 	return prev != null && currentKg > prev;
+}
+
+function hintSession(
+	id: string,
+	at: string,
+	sets: { weightKg: number; reps: number }[],
+	targetSets = 3,
+	targetReps = 8
+): WorkoutSession {
+	return {
+		id,
+		planId: 'p',
+		planName: 'P',
+		startedAt: at,
+		finishedAt: at,
+		exercises: [
+			{
+				exerciseId: 'squat',
+				targetSets,
+				targetReps,
+				restSec: 90,
+				sets: sets.map((set) => ({
+					weightKg: set.weightKg,
+					reps: set.reps,
+					completed: true,
+					kind: 'work' as const
+				}))
+			}
+		]
+	};
+}
+
+export function runSessionPayoffSelfCheck(): void {
+	const hit = hintSession('a', '2026-01-01T10:00:00.000Z', [
+		{ weightKg: 60, reps: 8 },
+		{ weightKg: 60, reps: 8 },
+		{ weightKg: 60, reps: 8 }
+	]);
+	const raised = nextWeightHint([hit], 'squat');
+	if (!raised || raised.kind !== 'raise' || raised.weightKg !== 62.5 || raised.reps !== 8) {
+		throw new Error('hit target must add 2.5 kg and keep target reps');
+	}
+
+	const extra = hintSession('b', '2026-01-02T10:00:00.000Z', [
+		{ weightKg: 60, reps: 10 },
+		{ weightKg: 60, reps: 10 },
+		{ weightKg: 60, reps: 10 }
+	]);
+	const afterExtra = nextWeightHint([extra], 'squat');
+	if (!afterExtra || afterExtra.kind !== 'raise' || afterExtra.reps !== 8) {
+		throw new Error('extra reps still aim at the planned reps');
+	}
+
+	const miss = hintSession('c', '2026-01-03T10:00:00.000Z', [
+		{ weightKg: 60, reps: 8 },
+		{ weightKg: 60, reps: 8 },
+		{ weightKg: 60, reps: 6 }
+	]);
+	const repeated = nextWeightHint([miss], 'squat');
+	if (!repeated || repeated.kind !== 'repeat' || repeated.weightKg !== 60 || repeated.reps !== 8) {
+		throw new Error('missed reps must repeat the weight');
+	}
+
+	const short = hintSession('d', '2026-01-04T10:00:00.000Z', [
+		{ weightKg: 60, reps: 8 },
+		{ weightKg: 60, reps: 8 }
+	]);
+	const shortHint = nextWeightHint([short], 'squat');
+	if (!shortHint || shortHint.kind !== 'repeat') {
+		throw new Error('fewer sets than planned must repeat the weight');
+	}
+
+	const wave = nextWeightHint(
+		[
+			hintSession('w1', '2026-01-01T10:00:00.000Z', [
+				{ weightKg: 80, reps: 8 },
+				{ weightKg: 80, reps: 8 },
+				{ weightKg: 80, reps: 8 }
+			]),
+			hintSession('w2', '2026-01-08T10:00:00.000Z', [
+				{ weightKg: 80, reps: 8 },
+				{ weightKg: 80, reps: 8 },
+				{ weightKg: 80, reps: 8 }
+			]),
+			hintSession('w3', '2026-01-15T10:00:00.000Z', [
+				{ weightKg: 80, reps: 8 },
+				{ weightKg: 80, reps: 8 },
+				{ weightKg: 80, reps: 8 }
+			])
+		],
+		'squat'
+	);
+	if (!wave || wave.kind !== 'wave' || wave.weightKg !== 72.5 || wave.reps !== 8) {
+		throw new Error(`4th exposure must be a lighter wave, got ${wave?.kind} ${wave?.weightKg}`);
+	}
+
+	if (nextWeightHint([], 'squat') != null) {
+		throw new Error('no history must not invent a weight');
+	}
+	if (nextHintMessageKey('raise') !== 'quest.nextHint') {
+		throw new Error('raise hint key drifted');
+	}
+	if (nextHintMessageKey('repeat') !== 'quest.nextHintRepeat') {
+		throw new Error('repeat hint key drifted');
+	}
+	if (nextHintMessageKey('wave') !== 'quest.nextHintWave') {
+		throw new Error('wave hint key drifted');
+	}
 }

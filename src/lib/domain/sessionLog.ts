@@ -15,6 +15,7 @@ import type {
 	WorkoutSession
 } from './types';
 import { loggedSetKind } from './sessionSetKind';
+import { planVsActualParts } from './sessionStats';
 import { DEFAULT_REPS, DEFAULT_REST_SEC, DEFAULT_SETS } from './workoutDefaults';
 
 export type NewSessionExerciseOpts = {
@@ -231,29 +232,63 @@ export function addLoggedSet(
 	return { ...session, exercises };
 }
 
+type SetPerformanceHint = Pick<LastPerformance, 'weightKg' | 'reps'>;
+
 /**
  * Prefill incomplete sets from last finished performance (gym: no need to retype).
+ * Prefer matching set index when `getPreviousAtIndex` is provided; else last working set.
  * Leaves sets untouched when no history exists for that exercise.
  */
 export function seedOpenSetsFromLastPerformance(
 	session: WorkoutSession,
-	getLast: (exerciseId: string) => LastPerformance | null
+	getLast: (exerciseId: string) => LastPerformance | null,
+	getPreviousAtIndex?: (exerciseId: string, setIndex: number) => SetPerformanceHint | null
 ): WorkoutSession {
 	let changed = false;
 	const exercises = session.exercises.map((ex) => {
 		const last = getLast(ex.exerciseId);
-		if (!last || (last.weightKg == null && last.reps == null)) return ex;
 		const openReps = new Set(ex.sets.filter((s) => !s.completed).map((s) => s.reps));
 		const mixedOpenReps = openReps.size > 1;
 		let setChanged = false;
-		const sets = ex.sets.map((s) => {
+		const sets = ex.sets.map((s, si) => {
 			if (s.completed) return s;
-			const weightKg = s.weightKg ?? last.weightKg ?? null;
-			const reps =
-				mixedOpenReps || last.reps == null ? s.reps : last.reps;
+			const hint = getPreviousAtIndex?.(ex.exerciseId, si) ?? null;
+			if (
+				!hint &&
+				(!last || (last.weightKg == null && last.reps == null))
+			) {
+				return s;
+			}
+			const weightKg = s.weightKg ?? hint?.weightKg ?? last?.weightKg ?? null;
+			const repsHint = hint?.reps ?? last?.reps ?? null;
+			const reps = mixedOpenReps || repsHint == null ? s.reps : repsHint;
 			if (weightKg === s.weightKg && reps === s.reps) return s;
 			setChanged = true;
 			return { ...s, weightKg, reps };
+		});
+		if (!setChanged) return ex;
+		changed = true;
+		return { ...ex, sets };
+	});
+	return changed ? { ...session, exercises } : session;
+}
+
+/**
+ * After history hydrates mid-session: fill only empty weights, never rewrite reps or logged sets.
+ */
+export function fillOpenWeightsFromHistory(
+	session: WorkoutSession,
+	suggestWeightKg: (exerciseId: string, setIndex: number) => number | null
+): WorkoutSession {
+	let changed = false;
+	const exercises = session.exercises.map((ex) => {
+		let setChanged = false;
+		const sets = ex.sets.map((s, si) => {
+			if (s.completed || s.weightKg != null) return s;
+			const weightKg = suggestWeightKg(ex.exerciseId, si);
+			if (weightKg == null) return s;
+			setChanged = true;
+			return { ...s, weightKg };
 		});
 		if (!setChanged) return ex;
 		changed = true;
@@ -416,5 +451,30 @@ export function runSessionLogSelfCheck(): void {
 	const solo = { ...base, exercises: [base.exercises[0]!] };
 	if (canRemoveSessionExercise(solo, 0)) {
 		throw new Error('canRemoveSessionExercise must block last visible exercise');
+	}
+
+	const seeded = seedOpenSetsFromLastPerformance(
+		base,
+		() => ({ weightKg: 60, reps: 8, sets: 3, finishedAt: '2026-01-01T09:00:00.000Z' }),
+		(_id, si) => (si === 1 ? { weightKg: 55, reps: 8 } : null)
+	);
+	if (seeded.exercises[0]?.sets[1]?.weightKg !== 55) {
+		throw new Error('seedOpenSetsFromLastPerformance must prefer set-index hint');
+	}
+	if (seeded.exercises[0]?.sets[2]?.weightKg !== 60) {
+		throw new Error('seedOpenSetsFromLastPerformance must fall back to last weight');
+	}
+
+	const filled = fillOpenWeightsFromHistory(base, (_id, si) => (si === 2 ? 50 : null));
+	if (filled.exercises[0]?.sets[2]?.weightKg !== 50) {
+		throw new Error('fillOpenWeightsFromHistory must fill empty open weights');
+	}
+	if (filled.exercises[0]?.sets[0]?.weightKg !== 40) {
+		throw new Error('fillOpenWeightsFromHistory must not rewrite logged weights');
+	}
+
+	const compared = planVsActualParts(base.exercises[0]!);
+	if (!compared || compared.plan !== '3×8' || !compared.under) {
+		throw new Error('planVsActualParts must flag fewer logged sets than the plan');
 	}
 }

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
 	lastPerformance,
+	previousSetAtIndex,
 	seedOpenSetsFromLastPerformance,
 	startSessionFromPlan
 } from '@repdraft/domain/session';
@@ -91,9 +92,10 @@ export default function PlanPreviewScreen() {
 			return;
 		}
 		const history = await sessionsRepo.list();
-		let session = startSessionFromPlan(plan);
-		session = seedOpenSetsFromLastPerformance(session, (exerciseId) =>
-			lastPerformance(history, exerciseId)
+		const session = seedOpenSetsFromLastPerformance(
+			startSessionFromPlan(plan),
+			(exerciseId) => lastPerformance(history, exerciseId),
+			(exerciseId, setIndex) => previousSetAtIndex(history, exerciseId, setIndex)
 		);
 		await writeActiveSession(session);
 		setBusy(false);

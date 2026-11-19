@@ -62,7 +62,18 @@ def polish_step(text: str) -> str:
 	s = re.sub(r"\bBarbell\b", "Штанга", s)
 	s = re.sub(r"\bbarbell\b", "штанга", s)
 	# UI copy: no em/en dash as punctuation.
+	s = s.replace("¬", "")
 	s = s.replace("—", " - ").replace("–", " - ")
+	s = s.replace("лицом к блочном тренажёре", "лицом к блочному тренажёру")
+	s = s.replace("к блочном тренажёре", "к блочному тренажёру")
+	s = re.sub(r"\bкабельную рукоятку\b", "рукоять блока", s, flags=re.I)
+	s = re.sub(r"\bКабельную рукоятку\b", "Рукоять блока", s)
+	s = re.sub(r"\bкабеля\b", "блока", s)
+	s = re.sub(r"\bкабелем\b", "блоком", s)
+	s = re.sub(r"\bк машине\b", "к тренажёру", s)
+	s = re.sub(r"\bна машине\b", "в тренажёре", s)
+	s = re.sub(r"\bот машины\b", "от тренажёра", s)
+	s = re.sub(r"\bмашины\b", "тренажёра", s)
 	s = re.sub(r"\s+-\s+", " - ", s)
 	s = re.sub(r"\bкнизу\b", "к низу", s, flags=re.I)
 	s = s.replace("Смитта", "Смита")
@@ -96,6 +107,33 @@ _KB_TO_DB: list[tuple[str, str]] = [
 	(r"\bГиря\b", "Гантель"),
 	(r"\bгиря\b", "гантель"),
 ]
+
+
+def align_to_title(name: str, steps: list[str]) -> list[str]:
+	"""Add the fact the title promises when the steps never say it."""
+	n = name.lower()
+	blob = " ".join(steps).lower()
+	out = list(steps)
+	if "smith" in n and "смит" not in blob:
+		out.insert(0, "Работайте в тренажёре Смита: поверните замки и снимите гриф с упоров.")
+	if n.startswith("weighted ") and not any(
+		w in blob for w in ("отягощ", "пояс", "блин", "диск", "жилет", "дополнительн")
+	):
+		held = (
+			"curl",
+			"raise",
+			"squeeze",
+			"squat",
+			"lunge",
+			"twist",
+			"swing",
+			"cossack",
+		)
+		if any(w in n for w in held):
+			out.insert(0, "Возьмите дополнительный вес.")
+		else:
+			out.insert(0, "Добавьте вес на пояс или положите блин на корпус.")
+	return out
 
 
 def polish_step_for_name(name: str, text: str) -> str:
@@ -174,6 +212,7 @@ def main() -> None:
 				ex["instruction_steps"] = {}
 			if not isinstance(ex.get("instructions"), dict):
 				ex["instructions"] = {}
+			steps = align_to_title(str(ex.get("name") or ""), steps)
 			ex["instruction_steps"]["ru"] = steps
 			ex["instructions"]["ru"] = " ".join(steps)
 			updated += 1

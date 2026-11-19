@@ -21,6 +21,7 @@ export {
 	applyRepsToOpenSets,
 	addLoggedSet,
 	seedOpenSetsFromLastPerformance,
+	fillOpenWeightsFromHistory,
 	addCompletedLoggedSet,
 	removeLoggedSet,
 	removeLoggedExercise,
@@ -47,6 +48,7 @@ export {
 
 export {
 	previousSetAtIndex,
+	suggestedSetPerformance,
 	lastPerformance,
 	recentExerciseLogs,
 	completedSetCount,
@@ -57,7 +59,10 @@ export {
 	exerciseLogTopWeight,
 	exerciseLogWeightDelta,
 	previousPlanSession,
+	exercisePlanVsActual,
+	planVsActualParts,
 	isSessionFullyLogged,
 	finishedSessionLogEqual,
-	type ExerciseSessionLog
+	type ExerciseSessionLog,
+	type ExercisePlanVsActual
 } from './sessionStats';

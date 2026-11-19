@@ -9,8 +9,10 @@ import {
 	finishSession,
 	finishedSessionLogEqual,
 	insertSessionExercise,
+	fillOpenWeightsFromHistory,
 	lastPerformance,
 	mergeWorkoutSessions,
+	previousSetAtIndex,
 	removeLoggedSet,
 	replaceSessionExercise,
 	replaceSessionPlan,
@@ -18,6 +20,7 @@ import {
 	seedOpenSetsFromLastPerformance,
 	skipSessionExercise,
 	startSessionFromPlan,
+	suggestedSetPerformance,
 	syncSessionPrescriptionFromPlan,
 	updateExerciseNote,
 	updateLoggedSet
@@ -120,6 +123,36 @@ function createLiveStore() {
 		}
 	}
 
+	function seedFromHistory(session: WorkoutSession, history: WorkoutSession[]): WorkoutSession {
+		return seedOpenSetsFromLastPerformance(
+			session,
+			(id) => lastPerformance(history, id),
+			(id, si) => previousSetAtIndex(history, id, si)
+		);
+	}
+
+	/** When history arrives after start: fill empty weights only. */
+	function fillWeightsFromHistory(
+		session: WorkoutSession,
+		history: WorkoutSession[]
+	): WorkoutSession {
+		return fillOpenWeightsFromHistory(session, (id, si) => {
+			const hint = suggestedSetPerformance(history, id, si);
+			return hint?.weightKg ?? null;
+		});
+	}
+
+	function applyHistoryToActive(history: WorkoutSession[]) {
+		store.update((s) => {
+			if (!s.session || s.session.finishedAt) {
+				return { ...s, history, historyHydrated: true };
+			}
+			const session = fillWeightsFromHistory(s.session, history);
+			if (session !== s.session) persistActive(session, s.restUntil);
+			return { ...s, session, history, historyHydrated: true };
+		});
+	}
+
 	let historyInflight: Promise<void> | null = null;
 
 	async function refreshHistory(opts?: { cloud?: boolean }) {
@@ -157,7 +190,7 @@ function createLiveStore() {
 					onUpdate: (partial) => {
 						/* Unlock home as soon as local list is ready — don't wait on cloud. */
 						const finished = partial.items.filter((x) => x.finishedAt && !deleted.has(x.id));
-						store.update((s) => ({ ...s, history: finished, historyHydrated: true }));
+						applyHistoryToActive(finished);
 					}
 				});
 				const unnamedIds = result.items
@@ -176,7 +209,7 @@ function createLiveStore() {
 				}
 				// Always gate UI by tombstones (local-only / cloud-error paths skip merge).
 				const finished = result.items.filter((x) => x.finishedAt && !deleted.has(x.id));
-				store.update((s) => ({ ...s, history: finished, historyHydrated: true }));
+				applyHistoryToActive(finished);
 
 				// Persist cloud-only finished rows so offline “last time” keeps working.
 				if (wantCloud) {
@@ -269,9 +302,7 @@ function createLiveStore() {
 		refreshHistory,
 		async startFromPlan(plan: WorkoutPlan): Promise<WorkoutSession> {
 			const history = get(store).history;
-			const session = seedOpenSetsFromLastPerformance(startSessionFromPlan(plan), (id) =>
-				lastPerformance(history, id)
-			);
+			const session = seedFromHistory(startSessionFromPlan(plan), history);
 			persistActive(session, null);
 			store.update((s) => ({ ...s, session, restUntil: null }));
 			void refreshHistory();
@@ -285,9 +316,7 @@ function createLiveStore() {
 			const current = get(store).session;
 			if (!current || current.finishedAt) return null;
 			const history = get(store).history;
-			const session = seedOpenSetsFromLastPerformance(replaceSessionPlan(current, plan), (id) =>
-				lastPerformance(history, id)
-			);
+			const session = seedFromHistory(replaceSessionPlan(current, plan), history);
 			persistActive(session, null);
 			store.update((s) => ({ ...s, session, restUntil: null }));
 			return session;
@@ -420,9 +449,7 @@ function createLiveStore() {
 			const prev = get(store);
 			if (!prev.session || prev.session.finishedAt) return null;
 			let session = insertSessionExercise(prev.session, atIndex, exerciseId);
-			session = seedOpenSetsFromLastPerformance(session, (id) =>
-				lastPerformance(prev.history, id)
-			);
+			session = seedFromHistory(session, prev.history);
 			persistActive(session, prev.restUntil);
 			store.set({ ...prev, session });
 			return session;
@@ -433,9 +460,7 @@ function createLiveStore() {
 			if (!prev.session || prev.session.finishedAt) return null;
 			let session = replaceSessionExercise(prev.session, exerciseIndex, exerciseId);
 			if (session === prev.session) return prev.session;
-			session = seedOpenSetsFromLastPerformance(session, (id) =>
-				lastPerformance(prev.history, id)
-			);
+			session = seedFromHistory(session, prev.history);
 			persistActive(session, null);
 			store.set({ ...prev, session, restUntil: null });
 			return session;

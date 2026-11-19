@@ -820,12 +820,26 @@ html.is-plan-reorder-active .reorder-handle {
 .summary-exercises-preview__name {
 	grid-column: 2;
 	grid-row: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
 	margin: 0;
 	min-width: 0;
 	font-weight: 650;
 	color: var(--color-ink);
 	overflow-wrap: anywhere;
 	line-height: 1.3;
+}
+
+.summary-exercises-preview__plan {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	line-height: 1.3;
+	color: var(--color-muted);
+}
+
+.summary-exercises-preview__plan.is-under {
+	color: var(--color-danger);
 }
 
 .summary-exercises-preview__sets {
