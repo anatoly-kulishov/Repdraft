@@ -14,6 +14,25 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.21',
+		highlights: {
+			ru: [
+				'«Как в прошлый раз»: вес и повторы из того же подхода прошлой тренировки',
+				'После финиша под упражнением видно план и факт, с весом',
+				'Подсказка на следующий раз: прибавить, повторить или лёгкая волна',
+				'Фильтр по мышцам в каталоге снова одна лента, а не два ряда',
+				'Шапка итоговой тренировки без рамки: значок и название плана'
+			],
+			en: [
+				'"Same as last": weight and reps from the matching set of the last session',
+				'After finishing, each exercise shows plan vs actual, with top weight',
+				'Next-time hint: add weight, repeat, or take a lighter wave',
+				'Catalog muscle filters scroll as one strip again, not two rows',
+				'Summary header without the frame: just the mark and the plan name'
+			]
+		}
+	},
+	{
 		version: '0.25.20',
 		highlights: {
 			ru: [

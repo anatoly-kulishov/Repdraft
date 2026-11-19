@@ -4,7 +4,7 @@ Own Svelte 5 / CSS takes on all nine [libraries.dev](https://libraries.dev/) eff
 
 | Effect | Export | Product surfaces |
 |---|---|---|
-| Border beam | `BorderBeam` | Guest home; `/ai` composer/plan/skeleton; empty states; onboarding; coach cards; clients invite; progress workouts card; summary hero |
+| Border beam | `BorderBeam` | Guest home; `/ai` composer/plan/skeleton; empty states; onboarding; coach cards; clients invite; progress workouts card |
 | Thinking orbs | `ThinkingOrbs` | `/ai` generate/listen; builder AI tune; recognize program |
 | Liquid gooey | `LiquidGooey`, `GooeyMorph` | `/ai` examples; builder AI goals; catalog targets; progress period tabs; morph lab-only |
 | Liquid metal | `MetalFx` / Text / Badge, `.fx-cta-sheen` | Text/badge + optional sheen on hover. CTA metal ring off (looked like a harsh border on press). Empty/plans CTAs are plain buttons |
@@ -16,6 +16,8 @@ Own Svelte 5 / CSS takes on all nine [libraries.dev](https://libraries.dev/) eff
 | Bot avatars | `BotAvatar` | `/ai` status badge; summary hero (happy) |
 
 - Code: `src/lib/components/fx/`, styles `src/lib/styles/blocks/fx.css`.
+- `.fx-gooey__items` is only `display: flex` + gap: the caller's items class owns layout. Chip strips (`catalog-filter-chips` on catalog zones and `/ai` examples) keep `flex-wrap: nowrap` + `overflow-x: auto`; wrapping rows say so themselves (`.builder-ai-tune__goals`), progress period tabs switch to grid. Don't put `flex-wrap: wrap` back on the wrapper: `fx.css` loads last and would stack every chip strip into rows.
+- Summary hero and exercise media keep no beam: the ring had no padding to breathe and read as a stray border.
 - Perf: pause offscreen / hidden tab. `magnetic()` fine-pointer only.
 - Honors `prefers-reduced-motion` and the in-app **Reduce motion** toggle (`data-reduce-motion`, Interface settings).
 - Sandbox: `/lab/fx` (dev only, 404 in prod).
