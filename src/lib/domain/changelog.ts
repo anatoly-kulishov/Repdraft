@@ -14,6 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.20',
+		highlights: {
+			ru: [
+				'Иконка в поиске Google: целый знак, без обрезанной буквы',
+				'Ссылка в мессенджере как была: знак и название рядом'
+			],
+			en: [
+				'Google search icon: the mark stays whole, no cropped letter',
+				'Messenger link preview stays: mark and name side by side'
+			]
+		}
+	},
+	{
 		version: '0.25.19',
 		highlights: {
 			ru: [

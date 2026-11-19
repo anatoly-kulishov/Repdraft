@@ -3,7 +3,7 @@
  *
  * Source: src/lib/assets/brand/app-icon-master-pulse.png (full-bleed 1600)
  * Output: static/*-v3.png, favicon.ico, brand-mark-pulse.png, mark-pulse.png,
- *         icon.svg, mark.svg, app-icon-master.svg, og-image.jpg
+ *         icon.svg, mark.svg, app-icon-master.svg, og-image.jpg, og-square.jpg
  *
  * Usage: npm run icons:pwa
  *
@@ -207,8 +207,10 @@ writeFileSync(join(root, 'static/brand-mark-pulse.png'), mark512);
 
 const markB64 = mark512.toString('base64');
 
-/* Social share card (og:image / twitter:image): 1200×630, JPEG — gradients
- * compress far better than PNG. Plate matches the app icon (deep purple). */
+/* Social share card (og:image / twitter:image): 1200×630, JPEG. Gradients
+ * compress far better than PNG. Plate matches the app icon (deep purple).
+ * Messengers show this full frame. Do not pull the word away from the mark:
+ * that card is the link preview. */
 {
 	const ogSvg = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
@@ -231,6 +233,20 @@ const markB64 = mark512.toString('base64');
   <text x="530" y="355" font-family="Helvetica, Arial, sans-serif" font-size="150" font-weight="700" fill="#4c1d95" letter-spacing="-3">Repdraft</text>
 </svg>`);
 	await sharp(ogSvg).jpeg({ quality: 85 }).toFile(join(root, 'static/og-image.jpg'));
+}
+
+/* Square mark for Google's result thumbnail. The wide card crops through the
+ * word; this file is only the icon, so a square slot stays whole. */
+{
+	const size = 1200;
+	const zoomed = await zoomedSquare(fullBleed, size, ANY_ZOOM);
+	const shift = Math.round(size * 0.004);
+	await sharp({
+		create: { width: size, height: size, channels: 3, background: PURPLE }
+	})
+		.composite([{ input: zoomed, top: shift, left: 0 }])
+		.jpeg({ quality: 85 })
+		.toFile(join(root, 'static/og-square.jpg'));
 }
 
 writeFileSync(join(root, 'static/icon.svg'), svgPlate(markB64, { embedBase64: true }));

@@ -8,7 +8,8 @@
 		defaultOgImage,
 		formatSeoTitle,
 		resolveSiteOrigin,
-		SITE_NAME
+		SITE_NAME,
+		squareOgImage
 	} from '$lib/seo/site';
 
 	interface Props {
@@ -58,6 +59,8 @@
 		if (!image) return defaultOgImage(origin);
 		return image.startsWith('http') ? image : absoluteUrl(image, origin);
 	});
+	/** Default pages only. A custom share image (articles) stays the only og:image. */
+	let searchThumb = $derived(image ? '' : squareOgImage(origin));
 	let twitterCard = $derived(imageWidth >= 600 && ogImage ? 'summary_large_image' : 'summary');
 	let resolvedImageAlt = $derived(imageAlt?.trim() || resolvedTitle);
 	let ogLocale = $derived(seoLang === 'ru' ? 'ru_RU' : 'en_US');
@@ -97,6 +100,12 @@
 		<meta property="og:image:width" content={String(imageWidth)} />
 		<meta property="og:image:height" content={String(imageHeight)} />
 		<meta property="og:image:alt" content={resolvedImageAlt} />
+		{#if searchThumb}
+			<meta property="og:image" content={searchThumb} />
+			<meta property="og:image:width" content="1200" />
+			<meta property="og:image:height" content="1200" />
+			<meta property="og:image:alt" content={SITE_NAME} />
+		{/if}
 		<meta name="twitter:card" content={twitterCard} />
 		<meta name="twitter:title" content={fullTitle} />
 		{#if resolvedDescription}
