@@ -5,7 +5,7 @@
 	import HelpButton from '$lib/components/HelpButton.svelte';
 	import HelpPanel from '$lib/components/HelpPanel.svelte';
 	import SummaryLoadPanel from '$lib/components/SummaryLoadPanel.svelte';
-	import { BorderBeam, BotAvatar, MetalFx } from '$lib/components/fx';
+	import { BotAvatar, MetalFx } from '$lib/components/fx';
 	import { pickCatalogExerciseForBodyPart } from '$lib/domain/trainingLoad';
 	import SummaryPageSkeleton from '$lib/components/summary/SummaryPageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
@@ -200,16 +200,14 @@
 			body={translate(lang, 'summary.helpBody')}
 		/>
 
-		<BorderBeam size="pulse-outside" duration={2.8} class="summary-hero-beam">
-			<div class="summary-hero">
-				<div class="summary-check" aria-hidden="true">
-					<BotAvatar mood="happy" size={52} label={translate(lang, 'summary.done')} />
-				</div>
-				<h1 class="summary-hero__title">
-					{session.planName?.trim() || translate(lang, 'summary.title')}
-				</h1>
+		<div class="summary-hero">
+			<div class="summary-check" aria-hidden="true">
+				<BotAvatar mood="happy" size={52} label={translate(lang, 'summary.done')} />
 			</div>
-		</BorderBeam>
+			<h1 class="summary-hero__title">
+				{session.planName?.trim() || translate(lang, 'summary.title')}
+			</h1>
+		</div>
 
 		{#if showFirstFinish}
 			<AppPanel class="onboarding-first-finish text-left" role="status">

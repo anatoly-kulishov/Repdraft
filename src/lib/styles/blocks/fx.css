@@ -162,11 +162,12 @@
 	fill: color-mix(in srgb, var(--color-accent) 26%, var(--color-surface-muted));
 }
 
+/* Wrapper owns only position/paint. Layout lives on the caller's items class:
+   chip strips stay nowrap + overflow-x, grids and wrapping rows set their own. */
 .fx-gooey__items {
 	position: relative;
 	z-index: 1;
 	display: flex;
-	flex-wrap: wrap;
 	gap: 0.4rem;
 }
 

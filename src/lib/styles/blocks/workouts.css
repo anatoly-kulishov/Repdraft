@@ -652,18 +652,12 @@ html.is-plan-reorder-active .reorder-handle {
 	animation: kineticsRingPop 0.55s var(--ease-spring) both;
 }
 
-.summary-hero-beam {
-	display: block;
-	width: 100%;
-	border-radius: var(--radius-panel);
-	margin-top: 0.35rem;
-}
-
 .summary-hero {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	gap: 0.55rem;
+	margin-top: 0.35rem;
 }
 
 .summary-hero__title {
