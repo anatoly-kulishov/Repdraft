@@ -1492,6 +1492,23 @@ input[data-slot='input'].live-ex-note__field.live-ex-note__field--has-clear:not(
 	min-width: 0;
 }
 
+.live-quick-actions--set {
+	margin: 0.15rem 0 0.35rem;
+}
+
+.live-quick-actions--set .live-last-chip,
+.live-quick-actions--set [data-slot='button'].live-last-chip {
+	justify-content: center;
+	white-space: normal;
+	text-align: center;
+}
+
+.live-quick-actions--set .live-last-chip__value {
+	flex: 1 1 auto;
+	white-space: normal;
+	text-align: center;
+}
+
 .live-quick-actions .live-last-chip,
 .live-quick-actions [data-slot='button'].live-last-chip {
 	flex: 1 1 0;
@@ -1600,15 +1617,18 @@ button.live-last-chip,
 
 .live-last-chip__action {
 	display: inline-flex;
-	flex: 0 0 auto;
+	flex: 1 1 auto;
 	align-items: center;
+	justify-content: flex-end;
 	gap: 0.35rem;
 	min-width: 0;
+	max-width: 58%;
 	font-size: 0.8125rem;
 	font-weight: 650;
-	line-height: 1;
+	line-height: 1.15;
 	color: var(--color-accent-text);
-	white-space: nowrap;
+	white-space: normal;
+	text-align: right;
 }
 
 .live-last-chip__action svg {

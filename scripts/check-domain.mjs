@@ -27,6 +27,7 @@ function compileDomain() {
 			'src/lib/domain/articles.ts',
 			'src/lib/domain/sessionLifecycle.ts',
 			'src/lib/domain/sessionLog.ts',
+			'src/lib/domain/sessionPayoff.ts',
 			'src/lib/domain/networkError.ts',
 			'src/lib/domain/entitlement.ts',
 			'src/lib/domain/recognizeProgram.ts',
@@ -67,6 +68,7 @@ function run() {
 	const articlesDomain = require(join(outDir, 'domain', 'articles.js'));
 	const sessionLifecycle = require(join(outDir, 'domain', 'sessionLifecycle.js'));
 	const sessionLog = require(join(outDir, 'domain', 'sessionLog.js'));
+	const sessionPayoff = require(join(outDir, 'domain', 'sessionPayoff.js'));
 	const networkError = require(join(outDir, 'domain', 'networkError.js'));
 	const entitlement = require(join(outDir, 'domain', 'entitlement.js'));
 	const recognizeProgram = require(join(outDir, 'domain', 'recognizeProgram.js'));
@@ -88,6 +90,8 @@ function run() {
 	console.log('✓ session lifecycle self-check');
 	sessionLog.runSessionLogSelfCheck();
 	console.log('✓ session log self-check');
+	sessionPayoff.runSessionPayoffSelfCheck();
+	console.log('✓ session payoff self-check');
 	networkError.runNetworkErrorSelfCheck();
 	console.log('✓ network error self-check');
 	entitlement.runEntitlementSelfCheck();

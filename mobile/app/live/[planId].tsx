@@ -34,6 +34,7 @@ import {
 	finishSession,
 	insertSessionExercise,
 	isSessionFullyLogged,
+	fillOpenWeightsFromHistory,
 	lastPerformance,
 	loggedSetKind,
 	nextFocusAfterSetComplete,
@@ -48,13 +49,19 @@ import {
 	setKindMessageKey,
 	skipSessionExercise,
 	startSessionFromPlan,
+	suggestedSetPerformance,
 	syncSessionPrescriptionFromPlan,
 	totalSetCount,
 	updateExerciseNote,
 	updateLoggedSet,
 	visibleSessionExerciseIndices
 } from '@repdraft/domain/session';
-import { exerciseWeightByWeek, nextWeightHint, weightAboveLast } from '@repdraft/domain/sessionPayoff';
+import {
+	exerciseWeightByWeek,
+	nextHintMessageKey,
+	nextWeightHint,
+	weightAboveLast
+} from '@repdraft/domain/sessionPayoff';
 import { isCardioBodyPart, usesExtraKgField } from '@repdraft/domain/workout';
 import type { ExerciseIndexItem, LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { unlockRestAudioFromGesture } from '../../src/audio/restChime';
@@ -159,12 +166,17 @@ export default function LiveScreen() {
 		setRestUntil(nextRest);
 	}, [restUntil]);
 
+	const seedFromHistory = useCallback((next: WorkoutSession, hist: WorkoutSession[]) => {
+		return seedOpenSetsFromLastPerformance(
+			next,
+			(exerciseId) => lastPerformance(hist, exerciseId),
+			(exerciseId, setIndex) => previousSetAtIndex(hist, exerciseId, setIndex)
+		);
+	}, []);
+
 	const beginSession = useCallback(
 		async (plan: WorkoutPlan, hist: WorkoutSession[]) => {
-			let started = startSessionFromPlan(plan);
-			started = seedOpenSetsFromLastPerformance(started, (exerciseId) =>
-				lastPerformance(hist, exerciseId)
-			);
+			const started = seedFromHistory(startSessionFromPlan(plan), hist);
 			await writeActiveSession(started);
 			await writeRestUntil(null);
 			setRestUntil(null);
@@ -172,15 +184,12 @@ export default function LiveScreen() {
 			setSelectedEi(pickDefaultExerciseIndex(started));
 			finishOfferedRef.current = false;
 		},
-		[]
+		[seedFromHistory]
 	);
 
 	const applyPlanReplace = useCallback(
 		async (plan: WorkoutPlan, current: WorkoutSession, hist: WorkoutSession[]) => {
-			let next = replaceSessionPlan(current, plan);
-			next = seedOpenSetsFromLastPerformance(next, (exerciseId) =>
-				lastPerformance(hist, exerciseId)
-			);
+			const next = seedFromHistory(replaceSessionPlan(current, plan), hist);
 			await writeActiveSession(next);
 			await writeRestUntil(null);
 			setRestUntil(null);
@@ -191,7 +200,7 @@ export default function LiveScreen() {
 				router.replace(`/live/${plan.id}`);
 			}
 		},
-		[planId, router]
+		[planId, router, seedFromHistory]
 	);
 
 	useEffect(() => {
@@ -322,7 +331,7 @@ export default function LiveScreen() {
 		setNoteText(ex.note ?? '');
 		setDrafts(
 			ex.sets.map((set, si) => {
-				const prev = previousSetAtIndex(history, ex.exerciseId, si);
+				const prev = suggestedSetPerformance(history, ex.exerciseId, si);
 				return {
 					weight:
 						set.weightKg != null
@@ -340,6 +349,18 @@ export default function LiveScreen() {
 			})
 		);
 	}, [session, selectedEi, history, needsAlt, ex?.exerciseId, ex?.sets.length]);
+
+	useEffect(() => {
+		if (!session || session.finishedAt || history.length === 0) return;
+		const next = fillOpenWeightsFromHistory(session, (id, si) => {
+			const hint = suggestedSetPerformance(history, id, si);
+			return hint?.weightKg ?? null;
+		});
+		if (next === session) return;
+		void persist(next, restUntil);
+		// Only when history or session identity changes; persist is stable enough here.
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- avoid refill loops on every rest tick
+	}, [history, session?.id]);
 
 	function offerFinish(current: WorkoutSession) {
 		if (finishOfferedRef.current || finishing) return;
@@ -653,15 +674,19 @@ export default function LiveScreen() {
 		if (!session || !mode) return;
 		void (async () => {
 			if (mode === 'replace') {
-				let next = replaceSessionExercise(session, selectedEi, exerciseId);
-				next = seedOpenSetsFromLastPerformance(next, (id) => lastPerformance(history, id));
+				const next = seedFromHistory(
+					replaceSessionExercise(session, selectedEi, exerciseId),
+					history
+				);
 				await persist(next, null);
 				setForceAltPick(false);
 				return;
 			}
 			const insertAt = selectedEi + 1;
-			let next = insertSessionExercise(session, insertAt, exerciseId);
-			next = seedOpenSetsFromLastPerformance(next, (id) => lastPerformance(history, id));
+			const next = seedFromHistory(
+				insertSessionExercise(session, insertAt, exerciseId),
+				history
+			);
 			await persist(next, restUntil);
 			setSelectedEi(insertAt);
 			setForceAltPick(false);
@@ -759,18 +784,6 @@ export default function LiveScreen() {
 					total: ex.sets.length
 				})
 			: null;
-	const firstPrev =
-		ex != null ? previousSetAtIndex(history, ex.exerciseId, Math.max(0, currentSetIndex)) : null;
-	const firstPrevLabel =
-		firstPrev && (firstPrev.weightKg != null || firstPrev.reps != null)
-			? firstPrev.weightKg != null && firstPrev.reps != null
-				? `${firstPrev.weightKg} × ${firstPrev.reps}`
-				: firstPrev.reps != null
-					? String(firstPrev.reps)
-					: String(firstPrev.weightKg)
-			: null;
-	const applySi = currentSetIndex >= 0 ? currentSetIndex : 0;
-
 	return (
 		<KeyboardAvoidingView
 			style={styles.root}
@@ -913,24 +926,8 @@ export default function LiveScreen() {
 							) : null}
 						</View>
 
-						{firstPrevLabel && !currentComplete ? (
-							<View style={styles.applyRow}>
-								<Text style={styles.applyHint} numberOfLines={1}>
-									{tt('live.last')} {firstPrevLabel}
-								</Text>
-								<PrimaryButton
-									label={tt('live.applyLast')}
-									variant="ghost"
-									compact
-									onPress={() => {
-										if (firstPrev) applyLastDraft(applySi, firstPrev);
-									}}
-								/>
-							</View>
-						) : null}
-
 						{ex.sets.map((set, si) => {
-							const prev = previousSetAtIndex(history, ex.exerciseId, si);
+							const prev = suggestedSetPerformance(history, ex.exerciseId, si);
 							const draft = drafts[si] ?? { weight: '', reps: '' };
 							return (
 								<LiveSetRow
@@ -1158,7 +1155,7 @@ function WeightCue({
 			) : null}
 			{hint ? (
 				<Text style={{ color: colors.muted, fontFamily: fontFamily.regular }}>
-					{tt('quest.nextHint', { weight: String(hint.weightKg), reps: String(hint.reps) })}
+					{tt(nextHintMessageKey(hint.kind), { weight: String(hint.weightKg), reps: String(hint.reps) })}
 				</Text>
 			) : null}
 			<Pressable onPress={onOpenExercise} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
@@ -1269,20 +1266,6 @@ function makeStyles(colors: ColorPalette) {
 			color: colors.accentText,
 			fontWeight: '700',
 			fontFamily: fontFamily.bold
-		},
-		applyRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'space-between',
-			gap: space.sm,
-			minHeight: touchMin
-		},
-		applyHint: {
-			flex: 1,
-			color: colors.muted,
-			fontSize: 14,
-			fontWeight: '600',
-			fontFamily: fontFamily.semibold
 		},
 		restBox: {
 			backgroundColor: colors.panelRaised,

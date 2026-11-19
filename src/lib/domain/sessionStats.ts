@@ -1,4 +1,4 @@
-import type { LastPerformance, SetKind, WorkoutSession } from './types';
+import type { LastPerformance, SessionExercise, SetKind, WorkoutSession } from './types';
 import { isProgressSet, loggedSetKind } from './sessionSetKind';
 import { visibleSessionExerciseIndices } from './sessionAlts';
 
@@ -24,6 +24,90 @@ export function previousSetAtIndex(
 		return { weightKg: set.weightKg, reps: set.reps };
 	}
 	return null;
+}
+
+/**
+ * Live draft hint for one open set: matching set index from last session,
+ * else the last working set of that exercise.
+ */
+export function suggestedSetPerformance(
+	sessions: WorkoutSession[],
+	exerciseId: string,
+	setIndex: number
+): Pick<LastPerformance, 'weightKg' | 'reps'> | null {
+	const atIndex = previousSetAtIndex(sessions, exerciseId, setIndex);
+	if (atIndex) return atIndex;
+	const last = lastPerformance(sessions, exerciseId);
+	if (!last || (last.weightKg == null && last.reps == null)) return null;
+	return { weightKg: last.weightKg, reps: last.reps };
+}
+
+export type ExercisePlanVsActual = {
+	plannedSets: number;
+	plannedReps: number;
+	actualSets: number;
+	actualReps: number | null;
+	topWeightKg: number | null;
+	outcome: 'match' | 'under' | 'over' | 'skipped' | 'empty';
+};
+
+/** Planned targets vs logged progress sets after finish (no charts). */
+export function exercisePlanVsActual(ex: SessionExercise): ExercisePlanVsActual {
+	const plannedSets = Math.max(0, ex.targetSets);
+	const plannedReps = Math.max(0, ex.targetReps);
+	if (ex.skipped) {
+		return {
+			plannedSets,
+			plannedReps,
+			actualSets: 0,
+			actualReps: null,
+			topWeightKg: null,
+			outcome: 'skipped'
+		};
+	}
+	const progress = ex.sets.filter((s) => s.completed && isProgressSet(s));
+	if (progress.length === 0) {
+		return {
+			plannedSets,
+			plannedReps,
+			actualSets: 0,
+			actualReps: null,
+			topWeightKg: null,
+			outcome: 'empty'
+		};
+	}
+	const actualSets = progress.length;
+	const repsList = progress
+		.map((s) => s.reps)
+		.filter((r): r is number => r != null && Number.isFinite(r));
+	const actualReps = repsList.length > 0 ? repsList[repsList.length - 1]! : null;
+	let topWeightKg: number | null = null;
+	for (const set of progress) {
+		if (set.weightKg == null || set.weightKg <= 0) continue;
+		if (topWeightKg == null || set.weightKg > topWeightKg) topWeightKg = set.weightKg;
+	}
+	let outcome: ExercisePlanVsActual['outcome'] = 'match';
+	if (actualSets < plannedSets || (actualReps != null && actualReps < plannedReps)) {
+		outcome = 'under';
+	} else if (actualSets > plannedSets || (actualReps != null && actualReps > plannedReps)) {
+		outcome = 'over';
+	}
+	return { plannedSets, plannedReps, actualSets, actualReps, topWeightKg, outcome };
+}
+
+/** Compact plan/fact strings for the summary line. Null when nothing was logged. */
+export function planVsActualParts(
+	ex: SessionExercise
+): { plan: string; actual: string; under: boolean } | null {
+	const cmp = exercisePlanVsActual(ex);
+	if (cmp.outcome === 'empty' || cmp.outcome === 'skipped') return null;
+	const plan = `${cmp.plannedSets}×${cmp.plannedReps}`;
+	const reps = cmp.actualReps != null ? String(cmp.actualReps) : '-';
+	const actual =
+		cmp.topWeightKg != null
+			? `${cmp.actualSets}×${reps} · ${cmp.topWeightKg}`
+			: `${cmp.actualSets}×${reps}`;
+	return { plan, actual, under: cmp.outcome === 'under' };
 }
 
 export function lastPerformance(

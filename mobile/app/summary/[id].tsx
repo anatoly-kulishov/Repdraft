@@ -14,6 +14,7 @@ import {
 	completedExerciseCount,
 	completedSetCount,
 	loggedSetKind,
+	planVsActualParts,
 	previousPlanSession,
 	sessionDurationMs,
 	sessionVolumeKg,
@@ -167,15 +168,26 @@ export default function SummaryScreen() {
 					const key = `${ei}:${ex.exerciseId}`;
 					const open = expanded[key] ?? true;
 					const done = ex.sets.filter((s) => s.completed);
+					const fact = planVsActualParts(ex);
 					return (
 						<Panel key={key} style={styles.card}>
 							<Pressable
 								style={styles.cardHead}
 								onPress={() => setExpanded((m) => ({ ...m, [key]: !open }))}
 							>
-								<Text style={styles.cardTitle} numberOfLines={2}>
-									{exerciseDisplayName(ex.exerciseId, locale)}
-								</Text>
+								<View style={styles.cardTitleWrap}>
+									<Text style={styles.cardTitle} numberOfLines={2}>
+										{exerciseDisplayName(ex.exerciseId, locale)}
+									</Text>
+									{fact ? (
+										<Text style={[styles.planFact, fact.under && styles.planFactUnder]}>
+											{tt('summary.planVsActual', {
+												plan: fact.plan,
+												actual: fact.actual
+											})}
+										</Text>
+									) : null}
+								</View>
 								<Text style={styles.cardMeta}>
 									{done.length}/{ex.sets.length}
 								</Text>
@@ -259,7 +271,10 @@ function makeStyles(colors: ColorPalette) {
 			justifyContent: 'space-between',
 			gap: space.sm
 		},
-		cardTitle: { color: colors.text, fontWeight: '800', flex: 1, fontSize: 16, fontFamily: fontFamily.extrabold },
+		cardTitleWrap: { flex: 1, gap: 2 },
+		cardTitle: { color: colors.text, fontWeight: '800', fontSize: 16, fontFamily: fontFamily.extrabold },
+		planFact: { color: colors.muted, fontSize: 13, fontWeight: '600', fontFamily: fontFamily.semibold },
+		planFactUnder: { color: colors.danger },
 		cardMeta: { color: colors.muted, fontWeight: '600', fontFamily: fontFamily.semibold },
 		setLine: { color: colors.muted, fontSize: 14, fontFamily: fontFamily.regular },
 		footer: {

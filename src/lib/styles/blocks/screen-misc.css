@@ -4219,9 +4219,11 @@ button.clip-composer__pick:hover:not(:disabled),
 	min-height: 100%;
 	padding: 1rem;
 	padding-bottom: calc(var(--mobile-chrome-bottom, 0px) + 1rem);
-	/* Keep sheet gestures from chaining into the page behind (iOS especially). */
+	/* Keep sheet gestures from chaining into the page behind (iOS especially).
+	   Not `none`: Safari resolves touch-action across the whole ancestor chain,
+	   so `none` here also froze chip strips / lists inside the card until focus. */
 	overscroll-behavior: none;
-	touch-action: none;
+	touch-action: manipulation;
 }
 
 .bottom-sheet__backdrop {

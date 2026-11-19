@@ -16,14 +16,23 @@
 	import type { ExerciseIndexItem, SessionExercise, SetKind, WorkoutSession } from '$lib/domain/types';
 	import { NOTE_MAX, REPS_INPUT_MAX_LEN, WEIGHT_INPUT_MAX_LEN, clampNote } from '$lib/domain/inputLimits';
 	import { isCardioBodyPart, usesExtraKgField } from '$lib/domain/workout';
-	import { exerciseWeightByWeek, nextWeightHint, weightAboveLast } from '$lib/domain/sessionPayoff';
-	import { exerciseBestWeightKg, loggedSetKind, setKindMessageKey } from '$lib/domain/session';
+	import {
+		exerciseWeightByWeek,
+		nextHintMessageKey,
+		nextWeightHint,
+		weightAboveLast
+	} from '$lib/domain/sessionPayoff';
+	import {
+		exerciseBestWeightKg,
+		loggedSetKind,
+		setKindMessageKey,
+		suggestedSetPerformance
+	} from '$lib/domain/session';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
 	import {
 		Check,
-		Clipboard as ClipboardPaste,
 		DotsThreeVertical as EllipsisVertical,
 		ClockCounterClockwise as History,
 		Plus,
@@ -145,11 +154,6 @@
 		return exerciseMetaHint(item, lang) || null;
 	}
 
-	function formatLast(exerciseId: string): string | null {
-		const last = live.lastFor(exerciseId);
-		return formatPerformanceHint(last?.weightKg ?? null, last?.reps ?? null);
-	}
-
 	function formatPerformanceHint(weightKg: number | null, reps: number | null): string | null {
 		const r = reps != null ? `${reps}` : null;
 		if (weightKg != null && r != null) return `${weightKg} × ${r}`;
@@ -158,23 +162,14 @@
 		return null;
 	}
 
-	function lastVars(exerciseId: string): { w: string; r: string } | null {
-		const last = live.lastFor(exerciseId);
-		if (!last || (last.weightKg == null && last.reps == null)) return null;
-		return {
-			w: last.weightKg != null ? `${last.weightKg}` : '',
-			r: last.reps != null ? `${last.reps}` : ''
-		};
-	}
-
 	function applyLastPerformance() {
-		const last = live.lastFor(exercise.exerciseId);
-		if (!last) return;
 		const openIdx = exercise.sets.findIndex((s) => !s.completed);
 		if (openIdx < 0) return;
+		const hint = suggestedSetPerformance($live.history, exercise.exerciseId, openIdx);
+		if (!hint) return;
 		live.patchSet(exerciseIndex, openIdx, {
-			weightKg: last.weightKg,
-			reps: last.reps
+			weightKg: hint.weightKg,
+			reps: hint.reps
 		});
 	}
 
@@ -216,15 +211,20 @@
 		exercise.sets.length > 0 && exercise.sets.every((s) => s.completed)
 	);
 	let currentSetIndex = $derived(exercise.sets.findIndex((s) => !s.completed));
-	let lastCopy = $derived(lastVars(exercise.exerciseId));
+	let openSetHint = $derived.by(() => {
+		if (currentSetIndex < 0) return null;
+		return suggestedSetPerformance($live.history, exercise.exerciseId, currentSetIndex);
+	});
+	let lastFormatted = $derived(
+		openSetHint
+			? formatPerformanceHint(openSetHint.weightKg, openSetHint.reps)
+			: null
+	);
 	let canApplyLast = $derived.by(() => {
-		const last = live.lastFor(exercise.exerciseId);
-		if (!lastCopy || !last) return false;
-		return exercise.sets.some(
-			(s) =>
-				!s.completed &&
-				(s.weightKg !== last.weightKg || s.reps !== last.reps)
-		);
+		if (currentSetIndex < 0 || !openSetHint) return false;
+		const set = exercise.sets[currentSetIndex];
+		if (!set) return false;
+		return set.weightKg !== openSetHint.weightKg || set.reps !== openSetHint.reps;
 	});
 	let bodyweight = $derived.by(() => {
 		const meta = names.get(exercise.exerciseId);
@@ -287,9 +287,8 @@
 	/** Local exercise: no technique sheet content — hero stays static. */
 	let isCustom = $derived(isCustomExerciseId(exercise.exerciseId));
 	let title = $derived(titleFor(exercise.exerciseId));
-	let lastFormatted = $derived(formatLast(exercise.exerciseId));
 	let showLastChip = $derived(
-		!cardio && lastCopy != null && lastFormatted != null && canApplyLast
+		!cardio && openSetHint != null && lastFormatted != null && canApplyLast
 	);
 
 	function scrollCurrentSetIntoView(node: HTMLElement) {
@@ -355,7 +354,7 @@
 	{/if}
 	{#if nextHint}
 		<p class="live-weight-cue__hint">
-			{translate(lang, 'quest.nextHint', {
+			{translate(lang, nextHintMessageKey(nextHint.kind), {
 				weight: String(nextHint.weightKg),
 				reps: String(nextHint.reps)
 			})}
@@ -451,26 +450,6 @@
 	</header>
 
 	<section class="live-panel__log" aria-label={translate(lang, 'live.setLogAria')}>
-		{#if showLastChip && lastFormatted}
-			<div class="live-quick-actions">
-				<AppButton
-					variant="ghost"
-					class="live-last-chip live-last-chip--tap"
-					aria-label={translate(lang, 'live.lastApplyAria', { value: lastFormatted })}
-					onclick={applyLastPerformance}
-				>
-					<span class="live-last-chip__main">
-						<span class="live-last-chip__label">{translate(lang, 'live.last')}</span>
-						<span class="live-last-chip__value tabular-nums">{lastFormatted}</span>
-					</span>
-					<span class="live-last-chip__action">
-						{translate(lang, 'live.applyLast')}
-						<LucideIcon icon={ClipboardPaste} size={ICON_SMALL} />
-					</span>
-				</AppButton>
-			</div>
-		{/if}
-
 		<div class="live-set-head" class:live-set-head--cardio={cardio}>
 			<span class="live-set-head__idx">#</span>
 			{#if !cardio}
@@ -654,6 +633,20 @@
 					{/if}
 						</div>
 					</SwipeToDelete>
+					{#if currentSetIndex === si && showLastChip && lastFormatted}
+						<div class="live-quick-actions live-quick-actions--set">
+							<AppButton
+								variant="ghost"
+								class="live-last-chip live-last-chip--tap"
+								aria-label={translate(lang, 'live.lastApplyAria', { value: lastFormatted })}
+								onclick={applyLastPerformance}
+							>
+								<span class="live-last-chip__value tabular-nums">
+									{translate(lang, 'live.applyLast')} · {lastFormatted}
+								</span>
+							</AppButton>
+						</div>
+					{/if}
 				</li>
 			{/each}
 		</ul>

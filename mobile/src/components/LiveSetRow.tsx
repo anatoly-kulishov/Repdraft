@@ -63,6 +63,7 @@ function LiveSetRowInner({
 	const prevWeight = prev?.weightKg != null ? String(prev.weightKg) : '';
 	const prevReps = prev?.reps != null ? String(prev.reps) : '';
 	const canApply =
+		current &&
 		!completed &&
 		!skipLift &&
 		prevLabel != null &&
@@ -144,8 +145,8 @@ function LiveSetRowInner({
 					onPress={onApplyLast}
 					style={styles.last}
 				>
-					<Text style={styles.lastText} numberOfLines={1}>
-						{tt('live.last')} {prevLabel}
+					<Text style={styles.lastText} numberOfLines={2}>
+						{tt('live.applyLast')} · {prevLabel}
 					</Text>
 				</Pressable>
 			) : null}
