@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.25.22',
+		highlights: {
+			ru: [
+				'«Как в прошлый раз» больше не дублируется кнопкой: подсказка под подходом осталась одна',
+				'История: тип подхода стоит рядом с номером, значения во всех плитках на одной линии',
+				'Четвёртый подход в истории больше не растягивается на всю строку',
+				'Лента примеров на экране ИИ-тренера не уезжает вбок при прокрутке'
+			],
+			en: [
+				'"Same as last" is no longer duplicated by a button: one hint under the set remains',
+				'History: the set type sits next to the number, values line up across tiles',
+				'A fourth set in history no longer stretches across the whole row',
+				'Example chips on the AI screen no longer slide sideways while scrolling'
+			]
+		}
+	},
+	{
 		version: '0.25.21',
 		highlights: {
 			ru: [
