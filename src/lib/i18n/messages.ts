@@ -204,6 +204,8 @@ const ru: Dict = {
 	'recognize.unavailable': 'Распознавание фото временно недоступно',
 	'recognize.invalidFile': 'Этот файл не подходит. Нужны фото, Excel (.xlsx) или CSV',
 	'recognize.tooLarge': 'Файл слишком большой',
+	'recognize.quota':
+		'Лимит распознаваний по фото на сегодня исчерпан. Excel или CSV можно загрузить без ограничений, фото — завтра',
 	'planTune.cta': 'Подстроить под сегодня',
 	'planTune.title': 'Подстроить тренировку',
 	'planTune.lead': 'Что болит или на чём сделать акцент?',
@@ -1890,6 +1892,8 @@ const en: Dict = {
 	'recognize.unavailable': 'Photo recognition is temporarily unavailable',
 	'recognize.invalidFile': 'Unsupported file. Use a photo, Excel (.xlsx), or CSV',
 	'recognize.tooLarge': 'File is too large',
+	'recognize.quota':
+		'Today’s photo recognition limit is used up. Excel and CSV still work without limits, photos reset tomorrow',
 	'recognize.noProgram': 'No program found in this file',
 	'planTune.cta': 'Tune for today',
 	'planTune.title': 'Tune this workout',

@@ -170,17 +170,19 @@
 			if (!res.ok || !body?.ok || !body.program) {
 				const code = body?.code;
 				errorKey =
-					code === 'too_large'
-						? 'recognize.tooLarge'
-						: code === 'no_program'
-							? 'recognize.noProgram'
-							: code === 'needAuth'
-								? 'recognize.needAuth'
-								: code === 'unavailable'
-									? 'recognize.unavailable'
-									: code === 'invalid_file'
-										? 'recognize.invalidFile'
-										: 'recognize.fail';
+					code === 'rate_limit'
+						? 'recognize.quota'
+						: code === 'too_large'
+							? 'recognize.tooLarge'
+							: code === 'no_program'
+								? 'recognize.noProgram'
+								: code === 'needAuth'
+									? 'recognize.needAuth'
+									: code === 'unavailable'
+										? 'recognize.unavailable'
+										: code === 'invalid_file'
+											? 'recognize.invalidFile'
+											: 'recognize.fail';
 				return;
 			}
 
