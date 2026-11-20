@@ -63,10 +63,42 @@
 	});
 
 	onMount(() => {
-		const ro = new ResizeObserver(() => void moveTo(false));
-		if (rootEl) ro.observe(rootEl);
+		if (!rootEl) return;
+		const root = rootEl;
+
+		/* Blob coordinates are relative to `root`, so anything that moves an item
+		   inside it invalidates them: chip strip scroll, new/changed chips,
+		   viewport rotation. Without this the highlight stayed behind while the
+		   strip scrolled under it. Deliberately no per-item ResizeObserver: a chip
+		   grows when it turns active (`font-weight`), and re-measuring there would
+		   snap the blob instead of letting `moveTo(true)` animate it. */
+		let frame = 0;
+		const sync = () => {
+			if (frame) return;
+			frame = requestAnimationFrame(() => {
+				frame = 0;
+				void moveTo(false);
+			});
+		};
+
+		const ro = new ResizeObserver(sync);
+		ro.observe(root);
+
+		const itemsEl = root.querySelector('.fx-gooey__items');
+		const mo = itemsEl ? new MutationObserver(sync) : null;
+		mo?.observe(itemsEl as Element, { childList: true, subtree: true, characterData: true });
+
+		/* `scroll` doesn't bubble, but a capture listener on the root sees the
+		   horizontal chip strip scroll. */
+		root.addEventListener('scroll', sync, true);
+		window.addEventListener('resize', sync);
+
 		return () => {
+			if (frame) cancelAnimationFrame(frame);
 			ro.disconnect();
+			mo?.disconnect();
+			root.removeEventListener('scroll', sync, true);
+			window.removeEventListener('resize', sync);
 			cancelLead();
 			cancelTrail();
 		};

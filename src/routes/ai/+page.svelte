@@ -226,12 +226,6 @@
 
 	let planWaveKey = $derived(plan ? `plan:${plan.name}:${plan.exercises.length}` : busy ? 'busy' : 'idle');
 
-	/** Traveling beam on the chat shell; pulse while listening or generating. */
-	let composerBeam = $derived.by((): 'sm' | 'pulse-outside' => {
-		if (listening || busy) return 'pulse-outside';
-		return 'sm';
-	});
-
 	$effect(() => {
 		if (!browser || !busy) {
 			busyOrb = 'composing';
@@ -624,69 +618,58 @@
 						>{translate(lang, 'aiDraft.chars', { n: String(charCount) })}</span
 					>
 				</div>
-				<BorderBeam
-					size={composerBeam}
-					duration={listening || busy ? 2.2 : 6}
-					class={[
-						'ai-draft-page__composer-beam',
-						(listening || busy) && 'ai-draft-page__composer-beam--live'
-					]
-						.filter(Boolean)
-						.join(' ')}
+				<div
+					class="ai-draft-page__composer"
+					class:ai-draft-page__composer--listening={listening}
+					class:ai-draft-page__composer--busy={busy}
+					class:ai-draft-page__composer--has-clear={brief.length > 0}
 				>
-					<div
-						class="ai-draft-page__composer"
-						class:ai-draft-page__composer--listening={listening}
-						class:ai-draft-page__composer--busy={busy}
-						class:ai-draft-page__composer--has-clear={brief.length > 0}
-					>
-						<AppTextarea
-							id="ai-draft-brief"
-							class="pr-note-field ai-draft-page__brief"
-							name="brief"
-							autocomplete="off"
-							bind:value={brief}
-							rows={1}
-							maxlength={AI_BRIEF_MAX}
-							disabled={busy}
-							placeholder={translate(lang, 'aiDraft.briefPlaceholder')}
-							aria-invalid={fieldError ? 'true' : undefined}
-							aria-describedby={fieldError
-								? 'ai-draft-error'
-								: plan || listening
-									? undefined
-									: 'ai-draft-hint'}
-							onkeydown={onKeydown}
-							onfocus={onBriefFocus}
-						/>
-						{#if brief.length > 0}
-							<button
-								type="button"
-								class="ai-draft-page__clear"
-								disabled={busy}
-								aria-label={translate(lang, 'a11y.clearField')}
-								title={translate(lang, 'a11y.clearField')}
-								onclick={clearBrief}
-							>
-								<LucideIcon icon={X} size={ICON_SMALL} />
-							</button>
-						{/if}
+					<AppTextarea
+						id="ai-draft-brief"
+						class="pr-note-field ai-draft-page__brief"
+						name="brief"
+						autocomplete="off"
+						bind:value={brief}
+						rows={1}
+						maxlength={AI_BRIEF_MAX}
+						disabled={busy}
+						placeholder={translate(lang, 'aiDraft.briefPlaceholder')}
+						aria-invalid={fieldError ? 'true' : undefined}
+						aria-describedby={fieldError
+							? 'ai-draft-error'
+							: plan || listening
+								? undefined
+								: 'ai-draft-hint'}
+						onkeydown={onKeydown}
+						onfocus={onBriefFocus}
+					/>
+					{#if brief.length > 0}
 						<button
 							type="button"
-							class="ai-draft-page__mic fx-voice-ring"
-							class:ai-draft-page__mic--active={listening}
-							class:is-active={listening}
+							class="ai-draft-page__clear"
 							disabled={busy}
-							aria-pressed={listening}
-							aria-label={listening
-								? translate(lang, 'aiDraft.dictateStop')
-								: translate(lang, 'aiDraft.dictate')}
-							onclick={() => void toggleDictation()}
+							aria-label={translate(lang, 'a11y.clearField')}
+							title={translate(lang, 'a11y.clearField')}
+							onclick={clearBrief}
 						>
-							<LucideIcon icon={listening ? MicOff : Mic} size={ICON_BUTTON} />
+							<LucideIcon icon={X} size={ICON_SMALL} />
 						</button>
-					</div>
-				</BorderBeam>
+					{/if}
+					<button
+						type="button"
+						class="ai-draft-page__mic fx-voice-ring"
+						class:ai-draft-page__mic--active={listening}
+						class:is-active={listening}
+						disabled={busy}
+						aria-pressed={listening}
+						aria-label={listening
+							? translate(lang, 'aiDraft.dictateStop')
+							: translate(lang, 'aiDraft.dictate')}
+						onclick={() => void toggleDictation()}
+					>
+						<LucideIcon icon={listening ? MicOff : Mic} size={ICON_BUTTON} />
+					</button>
+				</div>
 				{#if listening}
 					<p class="ai-draft-page__listening" aria-live="polite">
 						<ThinkingOrbs mode="listening" size={20} label={translate(lang, 'aiDraft.listening')} />
@@ -737,9 +720,9 @@
 			<WaveSwap key={planWaveKey} class="ai-draft-page__wave">
 				{#if busy}
 					<BorderBeam
-						size="pulse-outside"
+						size="pulse-inner"
 						duration={2.2}
-						class="ai-draft-page__skeleton-beam ai-draft-page__composer-beam--live"
+						class="ai-draft-page__skeleton-beam ai-draft-page__skeleton-beam--live"
 					>
 						<div
 							class="ai-draft-page__skeleton"

@@ -3644,10 +3644,12 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 }
 
 .exercise-history__set-line {
+	/* Number left, kind chip pushed to the right edge on the same line: the card
+	   keeps one scan column of weight×reps instead of a second line per chip. */
 	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: 0.08rem;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.08rem 0.5rem;
 	min-height: 1.5rem;
 	font-size: 0.875rem;
 	line-height: 1.35;
@@ -3671,8 +3673,8 @@ a.profile-settings-row--cycle[aria-disabled='true'] {
 }
 
 .exercise-history__set-kind {
-	margin-inline-start: calc(1.35rem + 0.4rem);
-	margin-block-start: 0.04rem;
+	margin-inline-start: auto;
+	margin-block-start: 0;
 	padding: 0.08rem 0.4rem;
 	border-radius: 999px;
 	border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
@@ -4263,6 +4265,29 @@ button.clip-composer__pick:hover:not(:disabled),
 	align-items: center;
 	padding-top: max(1rem, var(--safe-top));
 	padding-bottom: calc(var(--mobile-chrome-bottom, 0px) + 1rem);
+}
+
+/* Opt-in flush sheet: the card itself is the bottom edge (no floating gap),
+   so the home-indicator inset moves inside the card. */
+[data-slot='sheet-content'][data-side='bottom'].bottom-sheet.bottom-sheet--flush .bottom-sheet__host {
+	align-items: flex-end;
+	padding: 0;
+	/* Lifts the card above the on-screen keyboard (iOS keeps the layout viewport). */
+	padding-bottom: var(--vv-keyboard-inset, 0px);
+}
+
+[data-slot='sheet-content'][data-side='bottom'].bottom-sheet.bottom-sheet--flush .bottom-sheet__card {
+	width: 100%;
+	max-width: 100%;
+	/* --app-vh is the stable layout height from app.html; 100% here is content-sized. */
+	max-height: calc(var(--app-vh, 100dvh) - var(--vv-keyboard-inset, 0px) - 1.5rem);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	padding-bottom: calc(var(--safe-bottom, 0px) + 1.5rem);
+	border-right: none;
+	border-bottom: none;
+	border-left: none;
+	border-radius: var(--radius-panel) var(--radius-panel) 0 0;
 }
 
 /* Solid sheet plate for reduced transparency / higher contrast. */

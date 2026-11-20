@@ -153,25 +153,17 @@
 	flex: 0 0 auto;
 }
 
-.ai-draft-page__composer-beam {
-	display: block;
-	border-radius: var(--radius-control);
-	--fx-beam-width: 1.5px;
-	--fx-beam-color: var(--color-accent);
-	--fx-beam-highlight: color-mix(in srgb, var(--color-accent-text) 75%, white);
-}
-
-.ai-draft-page__composer-beam--live {
+.ai-draft-page__skeleton-beam--live {
 	--fx-beam-color: var(--color-accent-text);
 	--fx-beam-highlight: color-mix(in srgb, var(--color-accent-text) 55%, white);
 }
 
 .ai-draft-page__composer {
 	position: relative;
-	border-radius: inherit;
+	border-radius: var(--radius-control);
 }
 
-/* Soft ambient under the traveling BorderBeam; survives textarea focus reset. */
+/* Soft ambient around the field; survives textarea focus reset. */
 .ai-draft-page__composer::before {
 	content: '';
 	position: absolute;
@@ -321,6 +313,10 @@ textarea.pr-note-field.ai-draft-page__brief:focus-visible,
 
 .ai-draft-page__wave {
 	min-width: 0;
+	/* `.fx-wave` clips square, so the BorderBeam glow around the skeleton/plan
+	   card was cut into a flat square that filled the card's rounded corners
+	   (the corner read as square). Clip with the same radius as the card. */
+	border-radius: var(--radius-panel);
 }
 
 .ai-draft-page__plan-beam,
@@ -568,11 +564,6 @@ a.ai-draft-page__exercise-title:focus-visible {
 	.ai-draft-page__mic,
 	.catalog-filter-chip.ai-draft-page__chip {
 		transition: none;
-	}
-
-	.ai-draft-page__composer-beam .fx-beam__ring {
-		animation: none;
-		opacity: 0.55;
 	}
 
 	.catalog-filter-chip.ai-draft-page__chip:active:not(:disabled) {
