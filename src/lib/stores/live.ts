@@ -300,9 +300,12 @@ function createLiveStore() {
 		hydrate,
 		resyncActiveFromStorage,
 		refreshHistory,
-		async startFromPlan(plan: WorkoutPlan): Promise<WorkoutSession> {
+		async startFromPlan(
+			plan: WorkoutPlan,
+			options?: { lockPrescription?: boolean }
+		): Promise<WorkoutSession> {
 			const history = get(store).history;
-			const session = seedFromHistory(startSessionFromPlan(plan), history);
+			const session = seedFromHistory(startSessionFromPlan(plan, options), history);
 			persistActive(session, null);
 			store.update((s) => ({ ...s, session, restUntil: null }));
 			void refreshHistory();

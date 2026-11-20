@@ -312,6 +312,19 @@ input[data-slot='input'][aria-invalid='true']:focus-visible {
 	--tw-ring-offset-shadow: 0 0 #0000;
 }
 
+/* Same danger language for shadcn textareas (AI briefs, plan tune). */
+textarea[data-slot='textarea'][aria-invalid='true'] {
+	border-color: var(--color-danger);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 22%, transparent);
+}
+
+textarea[data-slot='textarea'][aria-invalid='true']:focus,
+textarea[data-slot='textarea'][aria-invalid='true']:focus-visible {
+	outline: none;
+	border-color: var(--color-danger);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 28%, transparent);
+}
+
 .password-field__toggle {
 	position: absolute;
 	inset-block: 0;

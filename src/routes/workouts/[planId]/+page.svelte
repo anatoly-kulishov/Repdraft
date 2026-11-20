@@ -4,25 +4,34 @@
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { ICON_BUTTON, ICON_PRIMARY } from '$lib/components/icons/sizes';
+	import { ICON_BUTTON, ICON_PRIMARY, ICON_SMALL } from '$lib/components/icons/sizes';
 	import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { isCustomExerciseId } from '$lib/domain/customExercises';
 	import { exerciseMetaHint } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
 	import { altGroupMemberRole, formatExercisePrescription, formatLadderLabel, groupMemberRole, hasLadderScheme, planExerciseSlotCount, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
-	import { translate } from '$lib/i18n/messages';
+	import { translate, translatePlural } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { peekLocalPlan, syncPreviewExerciseRowsPeek, peekPreviewExerciseRows } from '$lib/storage/localWorkoutRepository';
+	import { readActiveSession } from '$lib/storage/localSessionRepository';
+	import { live } from '$lib/stores/live';
 	import { plans } from '$lib/stores/plans';
+	import { toasts } from '$lib/stores/toasts';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { forceNormalShell, syncForceNormalShell } from '$lib/stores/shellChrome';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { CaretRight as ChevronRight, PencilSimple as Pencil, Play } from 'phosphor-svelte';
+	import {
+		CaretRight as ChevronRight,
+		PencilSimple as Pencil,
+		Play,
+		Sparkle as Sparkles
+	} from 'phosphor-svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import PlanTuneSheet from '$lib/components/plan/PlanTuneSheet.svelte';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import { onboarding } from '$lib/stores/onboarding';
 	import { shouldShowCoachmark } from '$lib/domain/onboarding';
@@ -46,6 +55,9 @@
 		hint: string;
 		image: string;
 	} | null>(null);
+	let tuneOpen = $state(false);
+	// An unfinished session owns /live: a tuned start would silently drop logged sets.
+	let hasActiveSession = $state(false);
 
 	function resolveBootPlan(id: string): WorkoutPlan | null {
 		if (!id) return null;
@@ -66,6 +78,11 @@
 
 	let muscles = $derived(plan ? planTargetSummary(plan, indexById, lang) : '');
 	let totalSets = $derived(plan ? planPrescribedSetCount(plan) : 0);
+	let statsText = $derived(
+		plan
+			? `${translatePlural(lang, 'home.pillExercises', planExerciseSlotCount(plan))} · ${translatePlural(lang, 'home.recentSets', totalSets)}`
+			: ''
+	);
 	let skeletonExerciseRows = $derived.by(() => {
 		const boot = plan ?? resolveBootPlan(params.planId);
 		const n = boot?.exercises.length ?? peekPreviewExerciseRows(params.planId);
@@ -84,6 +101,8 @@
 			}
 			try {
 				const [found, index] = await Promise.all([plans.getPlan(id), loadExerciseIndexWithCustoms()]);
+				const active = readActiveSession();
+				hasActiveSession = Boolean(active && !active.finishedAt && active.exercises.length > 0);
 				indexById = new Map(index.map((item) => [item.id, item]));
 				if (!found || found.exercises.length === 0) {
 					missing = true;
@@ -102,6 +121,24 @@
 	function onStart() {
 		if (!plan) return;
 		void goto(`/live/${plan.id}`);
+	}
+
+	/** «Сегодня» variant: start straight from the tuned snapshot, plan untouched. */
+	async function onTuneStart(tuned: WorkoutPlan) {
+		if (!plan || hasActiveSession) return;
+		tuneOpen = false;
+		await live.startFromPlan(tuned, { lockPrescription: true });
+		toasts.show(translate(lang, 'planTune.startToast'), 'success');
+		await goto(`/live/${plan.id}`);
+	}
+
+	async function onTuneSave(tuned: WorkoutPlan) {
+		if (!plan) return;
+		const saved = await plans.savePlan(tuned);
+		plan = saved;
+		syncPreviewExerciseRowsPeek(saved.id, saved.exercises.length);
+		tuneOpen = false;
+		toasts.show(translate(lang, 'planTune.savedToast'), 'success');
 	}
 </script>
 
@@ -162,13 +199,23 @@
 			{#if muscles}
 				<p class="workout-preview-summary-muscles">{muscles}</p>
 			{/if}
-			<p class="workout-preview-summary-stats">
-				{translate(lang, 'preview.stats', {
-					exercises: planExerciseSlotCount(plan),
-					sets: totalSets
-				})}
-			</p>
+			<p class="workout-preview-summary-stats">{statsText}</p>
+			<button type="button" class="workout-preview-tune" onclick={() => (tuneOpen = true)}>
+				<LucideIcon icon={Sparkles} size={ICON_SMALL} />
+				{translate(lang, 'planTune.cta')}
+			</button>
 		</AppPanel>
+
+		<PlanTuneSheet
+			bind:open={tuneOpen}
+			{plan}
+			{indexById}
+			{lang}
+			startBlocked={hasActiveSession}
+			onDismiss={() => (tuneOpen = false)}
+			onStart={onTuneStart}
+			onSave={onTuneSave}
+		/>
 
 		<ul class="workout-preview-list">
 			{#each plan.exercises as item, index (item.exerciseId + '-' + index)}

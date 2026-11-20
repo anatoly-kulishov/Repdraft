@@ -44,9 +44,31 @@ export async function aiQuotaKey(request: Request): Promise<string> {
 	return `ip:${clientIp(request)}`;
 }
 
+export type AiQuotaStatus = { limit: number; remaining: number; used: number };
+
 export type AiQuotaResult =
 	| { ok: true; limit: number; remaining: number; used: number }
 	| { ok: false; limit: number; remaining: 0; used: number };
+
+/** Read-only view, for serving a cached reply without spending a call. */
+export function peekAiDailyQuota(key: string, now = new Date()): AiQuotaStatus {
+	const limit = aiDailyLimit();
+	const day = utcDay(now);
+	const prev = buckets.get(key);
+	const used = prev && prev.day === day ? prev.count : 0;
+	return { limit, used, remaining: Math.max(0, limit - used) };
+}
+
+/**
+ * Give a call back when the model was never asked (no provider configured).
+ * Never refund `upstream`/`invalid_plan`: those happened after the provider call.
+ */
+export function refundAiDailyQuota(key: string, now = new Date()): void {
+	const prev = buckets.get(key);
+	if (!prev || prev.day !== utcDay(now) || prev.count <= 0) return;
+	if (prev.count === 1) buckets.delete(key);
+	else buckets.set(key, { day: prev.day, count: prev.count - 1 });
+}
 
 /**
  * Atomically check+consume one AI call for the day.
@@ -88,5 +110,14 @@ export function runAiDailyQuotaSelfCheck(): void {
 	if (blocked.ok) throw new Error('aiDailyQuota: should block over limit');
 	const nextDay = consumeAiDailyQuota(key, new Date('2026-06-02T01:00:00.000Z'));
 	if (!nextDay.ok) throw new Error('aiDailyQuota: should reset next UTC day');
+
+	resetAiDailyQuotaForTests();
+	const day = new Date('2026-06-03T12:00:00.000Z');
+	consumeAiDailyQuota(key, day);
+	if (peekAiDailyQuota(key, day).used !== 1) throw new Error('aiDailyQuota: peek should not spend');
+	refundAiDailyQuota(key, day);
+	if (peekAiDailyQuota(key, day).used !== 0) throw new Error('aiDailyQuota: refund should return the call');
+	refundAiDailyQuota(key, day);
+	if (peekAiDailyQuota(key, day).used !== 0) throw new Error('aiDailyQuota: refund must not go negative');
 	resetAiDailyQuotaForTests();
 }

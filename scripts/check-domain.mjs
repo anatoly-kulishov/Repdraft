@@ -31,8 +31,10 @@ function compileDomain() {
 			'src/lib/domain/networkError.ts',
 			'src/lib/domain/entitlement.ts',
 			'src/lib/domain/recognizeProgram.ts',
+			'src/lib/domain/planTune.ts',
 			'src/lib/domain/homeKit.ts',
 			'src/lib/domain/athleteProfile.ts',
+			'src/lib/domain/replacementCandidates.ts',
 			'--ignoreConfig',
 			'--ignoreDeprecations',
 			'6.0',
@@ -72,8 +74,10 @@ function run() {
 	const networkError = require(join(outDir, 'domain', 'networkError.js'));
 	const entitlement = require(join(outDir, 'domain', 'entitlement.js'));
 	const recognizeProgram = require(join(outDir, 'domain', 'recognizeProgram.js'));
+	const planTune = require(join(outDir, 'domain', 'planTune.js'));
 	const homeKit = require(join(outDir, 'domain', 'homeKit.js'));
 	const athleteProfile = require(join(outDir, 'domain', 'athleteProfile.js'));
+	const replacementCandidates = require(join(outDir, 'domain', 'replacementCandidates.js'));
 	const catalog = JSON.parse(
 		readFileSync(join(root, 'static', 'data', 'exercises.index.json'), 'utf8')
 	);
@@ -98,10 +102,28 @@ function run() {
 	console.log('✓ entitlement self-check');
 	recognizeProgram.runRecognizeProgramSelfCheck();
 	console.log('✓ recognize program self-check');
+	planTune.runPlanTuneSelfCheck();
+	console.log('✓ plan tune self-check');
 	homeKit.runHomeKitSelfCheck();
 	console.log('✓ home kit self-check');
 	athleteProfile.runAthleteProfileSelfCheck();
 	console.log('✓ athlete profile self-check');
+	replacementCandidates.runReplacementCandidatesSelfCheck();
+	console.log('✓ replacement candidates self-check');
+
+	// Real catalog: the swap list for a bench press must lead with the same target
+	// muscle and never offer the exercise being replaced.
+	const seedPress = catalog.find((item) => item.id === '0025');
+	const swapTop = seedPress
+		? replacementCandidates.rankReplacementCandidates(catalog, seedPress, { limit: 10 })
+		: [];
+	if (
+		swapTop.length !== 10 ||
+		swapTop[0].item.target !== seedPress?.target ||
+		swapTop.some((row) => row.item.id === seedPress?.id)
+	) {
+		throw new Error('replacementCandidates: real catalog lead/target drift');
+	}
 
 	const failures = [];
 	for (const testCase of cases) {

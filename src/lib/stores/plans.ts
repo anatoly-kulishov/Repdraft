@@ -137,6 +137,23 @@ import { resolvedLocale } from './locale';
 			await refresh({ cloud: cloudOk && isCloudMode() });
 			return current;
 		},
+		/** Overwrite a saved plan in place (smart tune → «Сохранить в план»). */
+		async savePlan(next: WorkoutPlan): Promise<WorkoutPlan> {
+			const plan = { ...next, updatedAt: new Date().toISOString() };
+			const cloudOk = await mirrorCloudWrite({
+				localWrite: () => localWorkoutRepository.save(plan),
+				cloudWrite: isCloudPersistableId(plan.id)
+					? () => supabaseWorkoutRepository.save(plan)
+					: undefined,
+				cloudId: plan.id,
+				label: 'plans.savePlan',
+				outboxOnFail: isCloudPersistableId(plan.id)
+					? { kind: 'plan.save', id: plan.id }
+					: undefined
+			});
+			await refresh({ cloud: cloudOk && isCloudMode() });
+			return plan;
+		},
 		async removePlan(id: string) {
 			const cloudOk = await mirrorCloudWrite({
 				localWrite: () => localWorkoutRepository.remove(id),
