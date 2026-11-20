@@ -14,6 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.26.1',
+		highlights: {
+			ru: [
+				'Распознавание по фото: 4 попытки в день, Excel и CSV без ограничений',
+				'Если сервис распознавания недоступен, попытка не сгорает'
+			],
+			en: [
+				'Photo recognition: 4 tries a day, Excel and CSV stay unlimited',
+				'If the recognition service is unavailable, the try is not spent'
+			]
+		}
+	},
+	{
 		version: '0.26.0',
 		highlights: {
 			ru: [
