@@ -1485,157 +1485,6 @@ input[data-slot='input'].live-ex-note__field.live-ex-note__field--has-clear:not(
 	font-weight: 550;
 }
 
-.live-quick-actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.35rem;
-	min-width: 0;
-}
-
-.live-quick-actions--set {
-	margin: 0.15rem 0 0.35rem;
-}
-
-.live-quick-actions--set .live-last-chip,
-.live-quick-actions--set [data-slot='button'].live-last-chip {
-	justify-content: center;
-	white-space: normal;
-	text-align: center;
-}
-
-.live-quick-actions--set .live-last-chip__value {
-	flex: 1 1 auto;
-	white-space: normal;
-	text-align: center;
-}
-
-.live-quick-actions .live-last-chip,
-.live-quick-actions [data-slot='button'].live-last-chip {
-	flex: 1 1 0;
-	width: auto;
-	min-width: min(100%, 9.5rem);
-	max-width: 100%;
-}
-
-.live-last-chip {
-	box-sizing: border-box;
-	display: flex;
-	flex-wrap: nowrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.75rem;
-	width: 100%;
-	max-width: 100%;
-	min-width: 0;
-	min-height: 48px;
-	padding: 0.4rem 0.7rem;
-	border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
-	border-radius: var(--radius-control);
-	background: color-mix(in srgb, var(--color-surface) 88%, var(--color-bg));
-	overflow: hidden;
-	transition:
-		border-color 0.15s ease,
-		background 0.15s ease,
-		transform 0.12s ease;
-}
-
-/* AppButton/shadcn: kill nowrap + shrink-0 + centered justify that blow the chip out of the log. */
-.live-last-chip.btn-ghost,
-button.live-last-chip,
-[data-slot='button'].live-last-chip {
-	display: flex;
-	flex-shrink: 1;
-	flex-wrap: nowrap;
-	justify-content: space-between;
-	align-items: center;
-	width: 100%;
-	max-width: 100%;
-	min-width: 0;
-	height: auto;
-	min-height: 48px;
-	padding: 0.4rem 0.7rem;
-	white-space: nowrap;
-	text-align: left;
-	overflow: hidden;
-}
-
-.live-last-chip--tap {
-	margin: 0;
-	font: inherit;
-	cursor: pointer;
-	-webkit-tap-highlight-color: transparent;
-}
-
-.live-last-chip--tap:hover {
-	border-color: color-mix(in srgb, var(--color-accent) 32%, var(--color-border));
-	background: color-mix(in srgb, var(--color-accent-muted) 28%, var(--color-surface));
-}
-
-.live-last-chip--tap:active {
-	transform: scale(0.985);
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.live-last-chip {
-		transition: none;
-	}
-
-	.live-last-chip--tap:active {
-		transform: none;
-	}
-}
-
-.live-last-chip__main {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	justify-content: center;
-	gap: 0.05rem;
-	min-width: 0;
-	flex: 1 1 auto;
-}
-
-.live-last-chip__label {
-	font-size: 0.6875rem;
-	font-weight: 500;
-	line-height: 1.15;
-	color: var(--color-muted);
-}
-
-.live-last-chip__value {
-	min-width: 0;
-	max-width: 100%;
-	font-size: 0.9375rem;
-	font-weight: 700;
-	line-height: 1.2;
-	letter-spacing: -0.02em;
-	color: var(--color-ink);
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.live-last-chip__action {
-	display: inline-flex;
-	flex: 1 1 auto;
-	align-items: center;
-	justify-content: flex-end;
-	gap: 0.35rem;
-	min-width: 0;
-	max-width: 58%;
-	font-size: 0.8125rem;
-	font-weight: 650;
-	line-height: 1.15;
-	color: var(--color-accent-text);
-	white-space: normal;
-	text-align: right;
-}
-
-.live-last-chip__action svg {
-	flex-shrink: 0;
-	opacity: 0.9;
-}
-
 .live-panel--superset {
 	border-color: color-mix(in srgb, var(--color-accent) 32%, var(--color-border));
 	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 12%, transparent);
@@ -1970,11 +1819,13 @@ button.live-panel-thumb {
 	border-top: 1px solid color-mix(in srgb, var(--color-border) 75%, transparent);
 }
 
-/* Non-edit: wrap grid of compact weight × reps cells (matches mobile history mock). */
+/* Non-edit: three equal tiles per row; a 4th set stays a tile instead of
+   stretching across the whole row. */
 .history-exercise__sets--grid {
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
+	align-items: stretch;
 	gap: 0.5rem;
 	width: 100%;
 	max-width: 100%;
@@ -1993,10 +1844,22 @@ button.live-panel-thumb {
 }
 
 .history-exercise__set--cell {
-	flex: 1 1 30%;
-	min-width: 5.5rem;
+	/* A third of the row by default, wider when the value needs it: no clipping,
+	   and a 4th set stays a tile instead of stretching across the whole row. */
+	flex: 0 1 auto;
+	min-width: calc((100% - 2 * 0.5rem) / 3);
 	max-width: 100%;
-	gap: 0.12rem;
+	width: auto;
+	/* Number + kind on the meta line, value below: weight×reps keeps one baseline
+	   across tiles even when a single set carries a kind chip. */
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	grid-template-areas:
+		'i kind'
+		'value value';
+	align-items: center;
+	column-gap: 0.3rem;
+	row-gap: 0.12rem;
 	padding: 0.45rem 0.55rem;
 	border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
 	border-radius: var(--radius-control, 0.65rem);
@@ -2006,8 +1869,13 @@ button.live-panel-thumb {
 }
 
 .history-exercise__set--cell .history-exercise__set-i {
+	grid-area: i;
 	min-width: 0;
 	font-size: 0.6875rem;
+}
+
+.history-exercise__set--cell .history-exercise__set-value {
+	grid-area: value;
 }
 
 .history-exercise__set-value {
@@ -2017,9 +1885,12 @@ button.live-panel-thumb {
 	line-height: 1.25;
 }
 
+/* Quiet chip on the number line; the value row stays the scan line. */
 .history-exercise__set--cell .history-exercise__set-kind {
-	margin-inline-start: 0;
-	margin-block-start: 0.1rem;
+	grid-area: kind;
+	align-self: center;
+	justify-self: end;
+	margin: 0;
 }
 
 .history-exercise__set-main {

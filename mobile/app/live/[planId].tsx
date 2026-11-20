@@ -726,21 +726,6 @@ export default function LiveScreen() {
 		}
 	}
 
-	function applyLastDraft(si: number, prev: { weightKg: number | null; reps: number | null }) {
-		if (!session) return;
-		const weight = prev.weightKg != null ? String(prev.weightKg) : '';
-		const reps = prev.reps != null ? String(prev.reps) : '';
-		setDrafts((rows) => rows.map((r, i) => (i === si ? { weight, reps } : r)));
-		void persist(
-			updateLoggedSet(session, selectedEi, si, {
-				weightKg: prev.weightKg,
-				reps: prev.reps
-			}),
-			restUntil
-		);
-		tapLight();
-	}
-
 	if (!bootReady || !session) {
 		return (
 			<View style={styles.root}>
@@ -927,7 +912,6 @@ export default function LiveScreen() {
 						</View>
 
 						{ex.sets.map((set, si) => {
-							const prev = suggestedSetPerformance(history, ex.exerciseId, si);
 							const draft = drafts[si] ?? { weight: '', reps: '' };
 							return (
 								<LiveSetRow
@@ -941,7 +925,6 @@ export default function LiveScreen() {
 									showKindBadge={loggedSetKind(set) !== 'work'}
 									kindLabel={tt(setKindMessageKey(loggedSetKind(set)))}
 									draft={draft}
-									prev={prev}
 									onChangeWeight={(value) => {
 										const filtered = filterWeightInput(value, draft.weight);
 										setDrafts((rows) =>
@@ -955,9 +938,6 @@ export default function LiveScreen() {
 										);
 									}}
 									onBlur={() => void syncDraftToSession(selectedEi, si)}
-									onApplyLast={() => {
-										if (prev) applyLastDraft(si, prev);
-									}}
 									onToggleKind={() =>
 										void patchSet(selectedEi, si, {
 											kind: nextSetKind(loggedSetKind(set))

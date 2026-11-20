@@ -22,12 +22,7 @@
 		nextWeightHint,
 		weightAboveLast
 	} from '$lib/domain/sessionPayoff';
-	import {
-		exerciseBestWeightKg,
-		loggedSetKind,
-		setKindMessageKey,
-		suggestedSetPerformance
-	} from '$lib/domain/session';
+	import { exerciseBestWeightKg, loggedSetKind, setKindMessageKey } from '$lib/domain/session';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { live } from '$lib/stores/live';
@@ -154,25 +149,6 @@
 		return exerciseMetaHint(item, lang) || null;
 	}
 
-	function formatPerformanceHint(weightKg: number | null, reps: number | null): string | null {
-		const r = reps != null ? `${reps}` : null;
-		if (weightKg != null && r != null) return `${weightKg} × ${r}`;
-		if (r != null) return translate(lang, 'live.lastReps', { n: r });
-		if (weightKg != null) return `${weightKg}`;
-		return null;
-	}
-
-	function applyLastPerformance() {
-		const openIdx = exercise.sets.findIndex((s) => !s.completed);
-		if (openIdx < 0) return;
-		const hint = suggestedSetPerformance($live.history, exercise.exerciseId, openIdx);
-		if (!hint) return;
-		live.patchSet(exerciseIndex, openIdx, {
-			weightKg: hint.weightKg,
-			reps: hint.reps
-		});
-	}
-
 	function openOverlay(next: Exclude<LiveOverlay, { kind: 'none' }>) {
 		if (next.kind === 'technique' && !names.get(exercise.exerciseId)) return;
 		if (next.kind !== 'technique') blurActiveElement();
@@ -211,21 +187,6 @@
 		exercise.sets.length > 0 && exercise.sets.every((s) => s.completed)
 	);
 	let currentSetIndex = $derived(exercise.sets.findIndex((s) => !s.completed));
-	let openSetHint = $derived.by(() => {
-		if (currentSetIndex < 0) return null;
-		return suggestedSetPerformance($live.history, exercise.exerciseId, currentSetIndex);
-	});
-	let lastFormatted = $derived(
-		openSetHint
-			? formatPerformanceHint(openSetHint.weightKg, openSetHint.reps)
-			: null
-	);
-	let canApplyLast = $derived.by(() => {
-		if (currentSetIndex < 0 || !openSetHint) return false;
-		const set = exercise.sets[currentSetIndex];
-		if (!set) return false;
-		return set.weightKg !== openSetHint.weightKg || set.reps !== openSetHint.reps;
-	});
 	let bodyweight = $derived.by(() => {
 		const meta = names.get(exercise.exerciseId);
 		return usesExtraKgField({
@@ -287,9 +248,6 @@
 	/** Local exercise: no technique sheet content — hero stays static. */
 	let isCustom = $derived(isCustomExerciseId(exercise.exerciseId));
 	let title = $derived(titleFor(exercise.exerciseId));
-	let showLastChip = $derived(
-		!cardio && openSetHint != null && lastFormatted != null && canApplyLast
-	);
 
 	function scrollCurrentSetIntoView(node: HTMLElement) {
 		scrollFieldIntoView(node);
@@ -633,20 +591,6 @@
 					{/if}
 						</div>
 					</SwipeToDelete>
-					{#if currentSetIndex === si && showLastChip && lastFormatted}
-						<div class="live-quick-actions live-quick-actions--set">
-							<AppButton
-								variant="ghost"
-								class="live-last-chip live-last-chip--tap"
-								aria-label={translate(lang, 'live.lastApplyAria', { value: lastFormatted })}
-								onclick={applyLastPerformance}
-							>
-								<span class="live-last-chip__value tabular-nums">
-									{translate(lang, 'live.applyLast')} · {lastFormatted}
-								</span>
-							</AppButton>
-						</div>
-					{/if}
 				</li>
 			{/each}
 		</ul>

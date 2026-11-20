@@ -7,8 +7,6 @@ import { fontFamily, radius, space, touchMin, type ColorPalette } from '../theme
 
 export type SetDraft = { weight: string; reps: string };
 
-export type SetPrev = { weightKg: number | null; reps: number | null } | null;
-
 type Props = {
 	setIndex: number;
 	completed: boolean;
@@ -19,22 +17,13 @@ type Props = {
 	showKindBadge: boolean;
 	kindLabel: string;
 	draft: SetDraft;
-	prev: SetPrev;
 	onChangeWeight: (value: string) => void;
 	onChangeReps: (value: string) => void;
 	onBlur: () => void;
-	onApplyLast: () => void;
 	onToggleKind: () => void;
 	onToggleComplete: () => void;
 	onRemove: () => void;
 };
-
-function formatPrev(prev: SetPrev): string | null {
-	if (!prev || (prev.weightKg == null && prev.reps == null)) return null;
-	if (prev.weightKg != null && prev.reps != null) return `${prev.weightKg} × ${prev.reps}`;
-	if (prev.reps != null) return String(prev.reps);
-	return String(prev.weightKg);
-}
 
 function LiveSetRowInner({
 	setIndex,
@@ -46,11 +35,9 @@ function LiveSetRowInner({
 	showKindBadge,
 	kindLabel,
 	draft,
-	prev,
 	onChangeWeight,
 	onChangeReps,
 	onBlur,
-	onApplyLast,
 	onToggleKind,
 	onToggleComplete,
 	onRemove
@@ -59,15 +46,6 @@ function LiveSetRowInner({
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const n = setIndex + 1;
-	const prevLabel = formatPrev(prev);
-	const prevWeight = prev?.weightKg != null ? String(prev.weightKg) : '';
-	const prevReps = prev?.reps != null ? String(prev.reps) : '';
-	const canApply =
-		current &&
-		!completed &&
-		!skipLift &&
-		prevLabel != null &&
-		(draft.weight !== prevWeight || draft.reps !== prevReps);
 
 	return (
 		<View style={[styles.block, current && styles.blockCurrent, completed && styles.blockDone]}>
@@ -138,18 +116,6 @@ function LiveSetRowInner({
 					</Pressable>
 				) : null}
 			</View>
-			{canApply ? (
-				<Pressable
-					accessibilityRole="button"
-					accessibilityLabel={tt('live.lastApplyAria', { value: prevLabel ?? '' })}
-					onPress={onApplyLast}
-					style={styles.last}
-				>
-					<Text style={styles.lastText} numberOfLines={2}>
-						{tt('live.applyLast')} · {prevLabel}
-					</Text>
-				</Pressable>
-			) : null}
 		</View>
 	);
 }
@@ -218,12 +184,6 @@ function makeStyles(colors: ColorPalette) {
 			height: touchMin,
 			alignItems: 'center',
 			justifyContent: 'center'
-		},
-		last: {
-			minHeight: touchMin,
-			justifyContent: 'center',
-			paddingHorizontal: space.sm
-		},
-		lastText: { color: colors.accent, fontWeight: '700', fontSize: 15, fontFamily: fontFamily.bold }
+		}
 	});
 }
