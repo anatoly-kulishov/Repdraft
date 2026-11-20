@@ -1,5 +1,11 @@
 import type { RecognizedProgram } from '$lib/domain/recognizeProgram';
 import { accountCorsHeaders, requireUser } from '$lib/server/auth/requireUser';
+import {
+	consumeAiRecognizeQuota,
+	peekAiRecognizeQuota,
+	refundAiRecognizeQuota,
+	type AiQuotaStatus
+} from '$lib/server/ai/aiDailyQuota';
 import { aiVisionAvailability } from '$lib/server/ai/config';
 import { recognizeProgramFromImage } from '$lib/server/ai/visionProgram';
 import { userHasPro } from '$lib/server/billing/requirePro';
@@ -37,6 +43,11 @@ function jsonWithCors(request: Request, body: unknown, init?: ResponseInit) {
 export const OPTIONS: RequestHandler = async ({ request }) =>
 	new Response(null, { status: 204, headers: corsHeaders(request) });
 
+/** Recognize quota is per account: the route already required a bearer token. */
+function recognizeKey(userId: string): string {
+	return `u:${userId}`;
+}
+
 function extOf(name: string): string {
 	const i = name.lastIndexOf('.');
 	return i >= 0 ? name.slice(i + 1).toLowerCase() : '';
@@ -64,15 +75,12 @@ function isTableFile(file: File): boolean {
 	return ['xlsx', 'xls', 'csv'].includes(ext);
 }
 
-async function optionalPro(request: Request): Promise<boolean> {
-	const gate = await requireUser(request);
-	if (!gate.ok) return false;
-	return userHasPro(gate.admin, gate.user);
-}
-
 export const GET: RequestHandler = async ({ request }) => {
 	const vision = aiVisionAvailability();
-	const pro = await optionalPro(request);
+	const gate = await requireUser(request);
+	const pro = gate.ok ? await userHasPro(gate.admin, gate.user) : false;
+	/* Photo recognition is capped per user; Excel/CSV stays unlimited. */
+	const quota = gate.ok ? peekAiRecognizeQuota(recognizeKey(gate.user.id)) : null;
 	return jsonWithCors(
 		request,
 		{
@@ -80,7 +88,8 @@ export const GET: RequestHandler = async ({ request }) => {
 			provider: vision.provider,
 			reason: vision.reason,
 			pro,
-			tableParse: true
+			tableParse: true,
+			...(quota ? { recognizeLimit: quota.limit, recognizeRemaining: quota.remaining } : {})
 		},
 		{ status: 200 }
 	);
@@ -148,6 +157,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	const bytes = Buffer.from(await entry.arrayBuffer());
 	const filename = entry.name || (image ? 'program.jpg' : 'program.xlsx');
 	let program: RecognizedProgram | null = null;
+	let recognizeQuota: AiQuotaStatus | null = null;
 
 	if (image) {
 		const vision = aiVisionAvailability();
@@ -158,9 +168,32 @@ export const POST: RequestHandler = async ({ request }) => {
 				{ status: 503 }
 			);
 		}
+		/* The vision model is the expensive path: a photo costs a call, a
+		   spreadsheet is parsed locally for free. */
+		const quotaKey = recognizeKey(gate.user.id);
+		const quota = consumeAiRecognizeQuota(quotaKey);
+		if (!quota.ok) {
+			return jsonWithCors(
+				request,
+				{
+					ok: false,
+					code: 'rate_limit',
+					error: 'recognize.quota',
+					limit: quota.limit,
+					remaining: 0
+				},
+				{ status: 429 }
+			);
+		}
+		recognizeQuota = quota;
 		const contentType = entry.type || 'image/jpeg';
 		const result = await recognizeProgramFromImage(bytes, filename, contentType);
 		if (!result.ok) {
+			/* Never asked the model: give the call back, like the text routes. */
+			if (result.code === 'unavailable') {
+				refundAiRecognizeQuota(quotaKey);
+				recognizeQuota = null;
+			}
 			const status =
 				result.code === 'unavailable' ? 503 : result.code === 'no_program' ? 422 : 502;
 			return jsonWithCors(
@@ -206,5 +239,11 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 	}
 
-	return jsonWithCors(request, { ok: true, program });
+	return jsonWithCors(request, {
+		ok: true,
+		program,
+		...(recognizeQuota
+			? { recognizeLimit: recognizeQuota.limit, recognizeRemaining: recognizeQuota.remaining }
+			: {})
+	});
 };

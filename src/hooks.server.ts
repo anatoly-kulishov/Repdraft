@@ -1,5 +1,10 @@
+import { dev } from '$app/environment';
 import type { Handle } from '@sveltejs/kit';
+import { runAiDailyQuotaSelfCheck } from '$lib/server/ai/aiDailyQuota';
 import { CANONICAL_SITE_ORIGIN } from '$lib/seo/site';
+
+/* Quota math breaks silently (off-by-one, refund drift), so fail loud at dev boot. */
+if (dev) runAiDailyQuotaSelfCheck();
 
 /** Apex of the public site (Caddy may also redirect apex → www). */
 const CANONICAL_APEX = 'repdraft.ru';
