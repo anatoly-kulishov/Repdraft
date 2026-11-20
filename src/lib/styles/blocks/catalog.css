@@ -3887,7 +3887,11 @@ body:has(.sticky-actions) .draft-dock {
 	align-items: center;
 	gap: 0.4rem;
 	min-width: 0;
+	/* Horizontal strip only. `overflow-x: auto` alone computes overflow-y: auto
+	   too, so the row became a vertical scroller: iOS rubber-band dragged the
+	   chips up/down (half-clipped) while the gooey blob stayed in place. */
 	overflow-x: auto;
+	overflow-y: hidden;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: none;
 	overscroll-behavior-x: contain;

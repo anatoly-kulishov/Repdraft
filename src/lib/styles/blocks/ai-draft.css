@@ -80,6 +80,10 @@
 	margin: 0;
 	min-height: 0;
 	gap: 0.375rem;
+	/* Chip hit-area (::after) reaches 0.375rem past the row; park that inside the
+	   strip's padding box so the tape keeps zero vertical scrollable overflow. */
+	padding-block: 0.375rem;
+	margin-block: -0.375rem;
 	/* Soft edge without a solid overlay (overlay color fought the page surface) */
 	-webkit-mask-image: linear-gradient(
 		to right,

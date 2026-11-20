@@ -17,6 +17,7 @@ Own Svelte 5 / CSS takes on all nine [libraries.dev](https://libraries.dev/) eff
 
 - Code: `src/lib/components/fx/`, styles `src/lib/styles/blocks/fx.css`.
 - `.fx-gooey__items` is only `display: flex` + gap: the caller's items class owns layout. Chip strips (`catalog-filter-chips` on catalog zones and `/ai` examples) keep `flex-wrap: nowrap` + `overflow-x: auto`; wrapping rows say so themselves (`.builder-ai-tune__goals`), progress period tabs switch to grid. Don't put `flex-wrap: wrap` back on the wrapper: `fx.css` loads last and would stack every chip strip into rows.
+- Chip strips also set `overflow-y: hidden`. `overflow-x: auto` alone computes `overflow-y: auto`, so the row becomes a vertical scroller: a vertical swipe on iOS rubber-banded the chips out of their box while the gooey blob (a sibling of the strip) stayed put. Never let chip hit-areas (`::after`) poke past the strip box either - keep that padding inside the strip (`/ai` chips do `padding-block` + negative `margin-block`), otherwise the extra pixels become vertical scroll range.
 - Summary hero and exercise media keep no beam: the ring had no padding to breathe and read as a stray border.
 - Perf: pause offscreen / hidden tab. `magnetic()` fine-pointer only.
 - Honors `prefers-reduced-motion` and the in-app **Reduce motion** toggle (`data-reduce-motion`, Interface settings).
