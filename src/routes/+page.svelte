@@ -592,33 +592,40 @@
 	{/if}
 
 	{#if !isBootLoading && !showBootSkeleton}
-	{#if showHomeAssignment && assignment}
-		<CoachAssignedCard
-			assignment={assignment}
-			{lang}
-			busy={assignmentBusy}
-			secondary="hide"
-			panel
-			onPrimary={() => void importAssignment()}
-			onSecondary={hideHomeAssignment}
-		/>
-	{/if}
-	{#if hasActive && active}
-		<a
-			class="home-continue-card panel"
-			href={liveContinueHref(active)}
-			aria-label={translate(lang, 'home.continueWorkout')}
-		>
-			<div class="home-continue-card__copy">
-				<p class="home-continue-card__eyebrow">{translate(lang, 'home.workoutInProgress')}</p>
-				<p class="home-continue-card__title">{active.planName}</p>
-				<p class="home-continue-card__meta">{continueRemaining}</p>
-			</div>
-			<span class="btn-primary home-continue-card__cta home-continue-card__cta--compact" aria-hidden="true">
-				<LucideIcon icon={Play} weight="bold" size={ICON_PRIMARY} class="home-continue-card__cta-icon" />
-				<span class="home-continue-card__cta-text">{translate(lang, 'home.continue')}</span>
-			</span>
-		</a>
+	{#if (showHomeAssignment && assignment) || (hasActive && active)}
+		<!-- Cards above the dashboard need their own bottom gap: the dashboard's
+		     internal flex gap does not apply to them, so the next section title
+		     used to sit flush against the assigned-plan card. -->
+		<div class="home-above-dashboard">
+			{#if showHomeAssignment && assignment}
+				<CoachAssignedCard
+					assignment={assignment}
+					{lang}
+					busy={assignmentBusy}
+					secondary="hide"
+					panel
+					onPrimary={() => void importAssignment()}
+					onSecondary={hideHomeAssignment}
+				/>
+			{/if}
+			{#if hasActive && active}
+				<a
+					class="home-continue-card panel"
+					href={liveContinueHref(active)}
+					aria-label={translate(lang, 'home.continueWorkout')}
+				>
+					<div class="home-continue-card__copy">
+						<p class="home-continue-card__eyebrow">{translate(lang, 'home.workoutInProgress')}</p>
+						<p class="home-continue-card__title">{active.planName}</p>
+						<p class="home-continue-card__meta">{continueRemaining}</p>
+					</div>
+					<span class="btn-primary home-continue-card__cta home-continue-card__cta--compact" aria-hidden="true">
+						<LucideIcon icon={Play} weight="bold" size={ICON_PRIMARY} class="home-continue-card__cta-icon" />
+						<span class="home-continue-card__cta-text">{translate(lang, 'home.continue')}</span>
+					</span>
+				</a>
+			{/if}
+		</div>
 	{/if}
 	<div class="home-dashboard">
 		{#if showOnboardingChecklist}

@@ -987,6 +987,7 @@
 			history={$live.history}
 			seedBodyPart={names.get(session.exercises[selectedExerciseIndex]?.exerciseId ?? '')
 				?.body_part ?? null}
+			seedExerciseId={session.exercises[selectedExerciseIndex]?.exerciseId ?? null}
 			{lang}
 			busy={finishing || switching}
 			onPick={onPickLiveExercise}

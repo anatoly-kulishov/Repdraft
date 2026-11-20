@@ -18,6 +18,9 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
 	import { getSupabase } from '$lib/supabase/client';
+	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
+	import { ICON_SMALL } from '$lib/components/icons/sizes';
+	import { Camera, FileXls } from 'phosphor-svelte';
 
 	let {
 		open = $bindable(false),
@@ -246,6 +249,7 @@
 
 <BottomSheet
 	bind:open
+	flush
 	titleId="recognize-program-title"
 	dismissible={!busy}
 	onDismiss={dismiss}
@@ -325,16 +329,27 @@
 		{:else}
 			<div class="recognize-pick-actions">
 				<MetalFx class="w-full">
-					<AppButton disabled={busy} aria-busy={busy} class="fx-cta-sheen" onclick={openPhotoPicker}>
+					<AppButton
+						variant="primary"
+						block
+						disabled={busy}
+						aria-busy={busy}
+						class="fx-cta-sheen"
+						onclick={openPhotoPicker}
+					>
+						<LucideIcon icon={Camera} size={ICON_SMALL} />
 						{translate(lang, 'recognize.pickPhoto')}
 					</AppButton>
 				</MetalFx>
 				<AppButton
-					variant="secondary"
+					variant="ghost"
+					block
+					class="recognize-pick-outline"
 					disabled={busy}
 					aria-busy={busy}
 					onclick={openTablePicker}
 				>
+					<LucideIcon icon={FileXls} size={ICON_SMALL} />
 					{translate(lang, 'recognize.pickSpreadsheet')}
 				</AppButton>
 			</div>
@@ -347,10 +362,21 @@
 		</p>
 	{/if}
 
+	{#if phase === 'pick' && !busy}
+		<div class="recognize-cancel">
+			<span class="recognize-cancel__rule" aria-hidden="true"></span>
+			<button type="button" class="recognize-cancel__button" onclick={dismiss}>
+				{translate(lang, 'common.cancel')}
+			</button>
+		</div>
+	{/if}
+
 	{#snippet actions()}
-		<AppButton variant="secondary" disabled={busy} onclick={dismiss}>
-			{translate(lang, 'common.cancel')}
-		</AppButton>
+		{#if phase !== 'pick'}
+			<AppButton variant="secondary" disabled={busy} onclick={dismiss}>
+				{translate(lang, 'common.cancel')}
+			</AppButton>
+		{/if}
 		{#if phase === 'paywall'}
 			<AppButton href="/auth/pro" disabled={busy}>
 				{translate(lang, 'billing.subscribe')}
@@ -375,6 +401,50 @@
 		flex-direction: column;
 		gap: 0.5rem;
 		margin-top: 0.85rem;
+	}
+
+	/* Outlined, not filled: one loud CTA per sheet (photo), Excel stays quiet.
+	   `ghost` is the only variant without a !important plate from controls.css. */
+	.recognize-pick-actions :global(.recognize-pick-outline) {
+		padding: var(--control-padding-y) var(--control-padding-x);
+		border: 1px solid color-mix(in srgb, var(--color-border) 85%, var(--color-ink));
+		border-radius: var(--radius-button);
+		background: transparent;
+		color: var(--color-ink);
+		font-weight: 600;
+	}
+
+	.recognize-pick-actions :global(.recognize-pick-outline:hover) {
+		border-color: color-mix(in srgb, var(--color-border) 55%, var(--color-ink));
+		background: color-mix(in srgb, var(--color-surface-muted) 55%, transparent);
+		color: var(--color-ink);
+	}
+
+	.recognize-cancel {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		margin-top: 0.9rem;
+	}
+
+	.recognize-cancel__rule {
+		height: 1px;
+		background: var(--color-border);
+		opacity: 0.7;
+	}
+
+	.recognize-cancel__button {
+		min-height: 2.75rem;
+		border: none;
+		background: none;
+		color: var(--color-muted);
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+	}
+
+	.recognize-cancel__button:hover {
+		color: var(--color-ink);
 	}
 
 	.recognize-working {

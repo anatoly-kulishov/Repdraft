@@ -2,7 +2,8 @@
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import ListSearchBar from '$lib/components/ListSearchBar.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
-	import { MagnifyingGlass as Search } from 'phosphor-svelte';
+	import { MagnifyingGlass as Search, Sparkle } from 'phosphor-svelte';
+	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import {
 		POPULAR_EXERCISE_IDS,
@@ -11,6 +12,7 @@
 	import { filterExercises, isBodyPart, uniqueSorted } from '$lib/domain/filters';
 	import { HOME_EQUIPMENT_FILTER } from '$lib/domain/homeKit';
 	import { exerciseMetaHint, labelBodyPart } from '$lib/domain/labels.ru';
+	import { replacementCandidateItems } from '$lib/domain/replacementCandidates';
 	import type { BodyPart, ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
@@ -29,6 +31,8 @@
 		history?: WorkoutSession[];
 		/** Replace: open on this zone (current exercise body_part). */
 		seedBodyPart?: string | null;
+		/** Replace: the exercise being swapped — drives the smart substitute order. */
+		seedExerciseId?: string | null;
 		lang: AppLocale;
 		busy?: boolean;
 		onPick: (exerciseId: string) => void;
@@ -41,27 +45,36 @@
 		catalog,
 		history = [],
 		seedBodyPart = null,
+		seedExerciseId = null,
 		lang,
 		busy = false,
 		onPick,
 		onDismiss
 	}: Props = $props();
 
+	/** One select instead of a chip wall: `all` | `home` | `part:<body_part>`. */
+	const PART_PREFIX = 'part:';
+
 	let query = $state('');
-	let bodyPart = $state<ZoneFilter>('all');
-	let equipment = $state<'all' | typeof HOME_EQUIPMENT_FILTER>('all');
+	let zone = $state('all');
+	let bodyPart = $derived<ZoneFilter>(
+		zone.startsWith(PART_PREFIX) ? (zone.slice(PART_PREFIX.length) as BodyPart) : 'all'
+	);
+	let equipment = $derived<'all' | typeof HOME_EQUIPMENT_FILTER>(
+		zone === 'home' ? HOME_EQUIPMENT_FILTER : 'all'
+	);
 
 	$effect(() => {
 		if (!open) {
 			query = '';
-			bodyPart = 'all';
-			equipment = 'all';
+			zone = 'all';
 			return;
 		}
 		query = '';
-		equipment = 'all';
-		if (mode === 'replace' && seedBodyPart && isBodyPart(seedBodyPart)) bodyPart = seedBodyPart;
-		else bodyPart = 'all';
+		zone =
+			mode === 'replace' && seedBodyPart && isBodyPart(seedBodyPart)
+				? `${PART_PREFIX}${seedBodyPart}`
+				: 'all';
 	});
 
 	let byId = $derived.by(() => {
@@ -70,7 +83,14 @@
 		return map;
 	});
 
-	let zoneParts = $derived(uniqueSorted(catalog, 'body_part'));
+	// Localized order: in a select the list is scanned alphabetically, not by the
+	// English `body_part` key.
+	let zoneParts = $derived.by(() => {
+		const parts = uniqueSorted(catalog, 'body_part').filter(isBodyPart);
+		return parts.sort((a, b) =>
+			labelBodyPart(a, lang).localeCompare(labelBodyPart(b, lang), lang === 'en' ? 'en' : 'ru')
+		);
+	});
 
 	let suggestItems = $derived.by(() => {
 		const freq = frequentExercises(history, { limit: SUGGEST_CAP });
@@ -89,17 +109,45 @@
 		return out;
 	});
 
+	/** The exercise being replaced, when the caller knows it. */
+	let seed = $derived.by(() => (seedExerciseId ? (byId.get(seedExerciseId) ?? null) : null));
+	let seedZone = $derived(
+		mode === 'replace' && seed && isBodyPart(seed.body_part) ? `${PART_PREFIX}${seed.body_part}` : null
+	);
+
+	/**
+	 * Smart substitutes: replacing, nothing typed, and the athlete hasn't walked
+	 * away from the seeded zone. Any search or zone change falls back to the plain
+	 * catalog filter, so the ordering never fights what the athlete asked for.
+	 */
+	let smartList = $derived.by(() => {
+		if (!seedZone || zone !== seedZone || !seed || query.trim()) return null;
+		return replacementCandidateItems(catalog, seed, { limit: SEARCH_CAP });
+	});
+
+	/**
+	 * Typing means "search everything": the zone starts seeded to the exercise
+	 * being replaced, so keeping it would turn «присед» into an empty list. A zone
+	 * the athlete picked themselves still narrows the search.
+	 */
+	let queryIgnoresSeedZone = $derived(!!query.trim() && seedZone !== null && zone === seedZone);
+	let searchBodyPart = $derived(queryIgnoresSeedZone ? 'all' : bodyPart);
+	let searchEquipment = $derived<'all' | typeof HOME_EQUIPMENT_FILTER>(
+		queryIgnoresSeedZone ? 'all' : equipment
+	);
+
 	let results = $derived.by(() => {
+		if (smartList) return smartList;
 		const q = query.trim();
-		if (!q && bodyPart === 'all' && equipment === 'all') return suggestItems;
+		if (!q && searchBodyPart === 'all' && searchEquipment === 'all') return suggestItems;
 		return filterExercises(
 			catalog,
 			{
 				query: q,
-				bodyPart,
-				equipment,
+				bodyPart: searchBodyPart,
+				equipment: searchEquipment,
 				target: 'all',
-				...(equipment === HOME_EQUIPMENT_FILTER ? { homeKit: $homeKitSelection } : {})
+				...(searchEquipment === HOME_EQUIPMENT_FILTER ? { homeKit: $homeKitSelection } : {})
 			},
 			lang
 		).slice(0, SEARCH_CAP);
@@ -109,7 +157,7 @@
 		mode === 'replace' ? 'live.replaceExerciseTitle' : 'live.addExerciseTitle'
 	);
 	let emptyHintKey = $derived(
-		query.trim() || bodyPart !== 'all' || equipment !== 'all'
+		query.trim() || searchBodyPart !== 'all' || searchEquipment !== 'all'
 			? 'live.pickExerciseEmptyHint'
 			: 'live.pickExerciseSuggest'
 	);
@@ -134,48 +182,28 @@
 			/>
 		</div>
 
-		<div class="live-exercise-pick__chips" role="toolbar" aria-label={translate(lang, 'catalog.bodyPart')}>
-			<button
-				type="button"
-				class="live-exercise-pick__chip"
-				class:is-on={bodyPart === 'all' && equipment === 'all'}
+		<div class="live-exercise-pick__filters">
+			<select
+				class="field live-exercise-pick__zone"
+				value={zone}
 				disabled={busy}
-				onclick={() => {
-					bodyPart = 'all';
-					equipment = 'all';
-				}}
+				aria-label={translate(lang, 'catalog.bodyPart')}
+				onchange={(e) => (zone = e.currentTarget.value)}
 			>
-				{translate(lang, 'exercises.all')}
-			</button>
-			<button
-				type="button"
-				class="live-exercise-pick__chip"
-				class:is-on={equipment === HOME_EQUIPMENT_FILTER}
-				disabled={busy}
-				onclick={() => {
-					equipment = HOME_EQUIPMENT_FILTER;
-					bodyPart = 'all';
-				}}
-			>
-				{translate(lang, 'place.home')}
-			</button>
-			{#each zoneParts as part (part)}
-				{#if isBodyPart(part)}
-					<button
-						type="button"
-						class="live-exercise-pick__chip"
-						class:is-on={bodyPart === part && equipment === 'all'}
-						disabled={busy}
-						onclick={() => {
-							bodyPart = part;
-							equipment = 'all';
-						}}
-					>
-						{labelBodyPart(part, lang)}
-					</button>
-				{/if}
-			{/each}
+				<option value="all">{translate(lang, 'exercises.all')}</option>
+				<option value="home">{translate(lang, 'place.home')}</option>
+				{#each zoneParts as part (part)}
+					<option value={`${PART_PREFIX}${part}`}>{labelBodyPart(part, lang)}</option>
+				{/each}
+			</select>
 		</div>
+
+		{#if smartList}
+			<p class="live-exercise-pick__suggest">
+				<LucideIcon icon={Sparkle} size={ICON_SMALL} />
+				{translate(lang, 'live.replaceSuggest')}
+			</p>
+		{/if}
 
 		{#if results.length === 0}
 			<div class="live-exercise-pick__empty" role="status">

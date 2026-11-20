@@ -13,6 +13,8 @@
 		label = null,
 		dismissible = true,
 		raised = false,
+		/** Sit on the viewport edge instead of floating above it (iOS-style). */
+		flush = false,
 		onDismiss,
 		children,
 		actions = null
@@ -23,6 +25,7 @@
 		label?: string | null;
 		dismissible?: boolean;
 		raised?: boolean;
+		flush?: boolean;
 		onDismiss?: () => void;
 		children: Snippet;
 		actions?: Snippet | null;
@@ -53,7 +56,8 @@
 		showCloseButton={false}
 		class={cn(
 			'bottom-sheet gap-0 border-0 bg-transparent p-0 shadow-none',
-			raised && 'bottom-sheet--raised'
+			raised && 'bottom-sheet--raised',
+			flush && 'bottom-sheet--flush'
 		)}
 		onInteractOutside={(e) => {
 			if (!dismissible) e.preventDefault();

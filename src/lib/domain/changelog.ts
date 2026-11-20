@@ -14,6 +14,25 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.26.0',
+		highlights: {
+			ru: [
+				'«Подстроить под сегодня»: напиши, что болит или на чём сделать акцент, и получи вариант плана с изменениями',
+				'Тот же вопрос не тратит второй запрос: повторный ответ приходит сразу',
+				'Замена упражнения: выбор зоны и подсказки из похожих движений',
+				'Распознавание программы: одна большая кнопка камеры, файл рядом',
+				'Карточки тренера и «продолжить» на главной с ровными отступами'
+			],
+			en: [
+				'"Tune today": write what hurts or what to focus on and get a plan variant with the changes',
+				'The same request no longer costs a second call: a repeat answer arrives right away',
+				'Exercise swap: pick a zone once, suggestions come from similar movements',
+				'Program recognition: one big camera button, the file sits next to it',
+				'Coach and "continue" cards on home have even spacing'
+			]
+		}
+	},
+	{
 		version: '0.25.22',
 		highlights: {
 			ru: [

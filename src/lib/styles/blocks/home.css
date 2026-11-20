@@ -500,6 +500,15 @@ a.home-header__row--link:active .home-header__cta {
 	overflow: hidden;
 }
 
+/* Assigned-plan / resume cards above the dashboard: the dashboard's own flex gap
+   starts inside it, so these blocks carry the section rhythm themselves. */
+.home-above-dashboard {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	margin-bottom: var(--page-section-gap);
+}
+
 .home-dashboard {
 	display: flex;
 	flex-direction: column;

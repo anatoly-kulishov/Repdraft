@@ -117,6 +117,11 @@ export type WorkoutSession = {
 	exercises: SessionExercise[];
 	/** Live: chosen exerciseId per altGroupId (interchangeable slots). */
 	altChoices?: Record<string, string>;
+	/**
+	 * Session was started from a «today» plan variant (smart tune): the saved
+	 * plan's prescription must not be re-applied over it on resume.
+	 */
+	prescriptionLocked?: boolean;
 };
 
 /** Compact “last time” hint for the live logger. */

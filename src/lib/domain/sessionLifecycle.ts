@@ -28,8 +28,15 @@ function emptySets(count: number, targetReps: number, scheme?: number[]): Logged
 	}));
 }
 
-/** Snapshot a saved plan into a runnable session (prescription → log slots). */
-export function startSessionFromPlan(plan: WorkoutPlan): WorkoutSession {
+/**
+ * Snapshot a saved plan into a runnable session (prescription → log slots).
+ * `lockPrescription` marks a «today» variant: resume must not pull the saved
+ * plan's sets/reps/rest back over the tuned snapshot.
+ */
+export function startSessionFromPlan(
+	plan: WorkoutPlan,
+	options?: { lockPrescription?: boolean }
+): WorkoutSession {
 	const startedAt = new Date().toISOString();
 	return {
 		id: newId(),
@@ -38,6 +45,7 @@ export function startSessionFromPlan(plan: WorkoutPlan): WorkoutSession {
 		startedAt,
 		finishedAt: null,
 		altChoices: {},
+		...(options?.lockPrescription ? { prescriptionLocked: true } : {}),
 		exercises: plan.exercises.map(
 			(ex): SessionExercise => ({
 				exerciseId: ex.exerciseId,
@@ -60,6 +68,8 @@ export function syncSessionPrescriptionFromPlan(
 	session: WorkoutSession,
 	plan: WorkoutPlan
 ): WorkoutSession {
+	// A tuned «today» variant is its own prescription; the saved plan is stale here.
+	if (session.prescriptionLocked) return session;
 	const byId = new Map(plan.exercises.map((ex) => [ex.exerciseId, ex]));
 	let changed = false;
 	const exercises = session.exercises.map((ex) => {

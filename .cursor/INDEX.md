@@ -32,6 +32,8 @@
 | `seo-cutover-ru.md` | Canonical `.ru`, Yandex/Google Webmaster, sitemap |
 | `billing-pro.md` | Pro: YooKassa/Stripe, entitlements, recognize photo/Excel, AI daily quota |
 | `exercise-rag.md` | `/ai` catalog RAG: pgvector SQL + `npm run build:embeddings` |
+| `plan-tune.md` | «Подстроить под сегодня»: `/api/ai/tune-plan`, diff, prescription lock |
+| `live-picker.md` | Замена упражнения в live: select зоны, `replacementCandidates` (умный подбор), высота шита |
 | `watch-session-ownership.md` | Watch companion spike: session lease / finish race |
 | `rn-visual-backlog.md` | Mobile theme + visual QA findings |
 | `fx-kit.md` | Web CSS/Svelte cousins of libraries.dev (Beam/Orbs/Gooey/Metal/Image) |
