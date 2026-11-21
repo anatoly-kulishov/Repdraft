@@ -1,7 +1,7 @@
 {
   "name": "repdraft",
   "private": true,
-  "version": "0.29.0",
+  "version": "0.29.1",
   "description": "Gym workout log - React Native (mobile/) + SvelteKit web/PWA, shared domain",
   "type": "module",
   "scripts": {
@@ -33,6 +33,7 @@
     "check:rf": "node scripts/check-rf-access.mjs",
     "deploy:vps": "node scripts/deploy-vps.mjs",
     "check:billing": "node scripts/check-billing-ready.mjs",
+    "check:feedback": "node scripts/check-feedback-smtp.mjs",
     "check:parity": "npm run check:tokens && npm run check:versions && npm run check:domain && npm run check:i18n && npm run check:all",
     "bump:version": "node scripts/bump-version.mjs",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -53,6 +54,7 @@
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "@tailwindcss/vite": "^4.3.0",
     "@types/node": "^26.2.0",
+    "@types/nodemailer": "^8.0.2",
     "sharp": "^0.34.2",
     "svelte": "^5.56.1",
     "svelte-check": "^4.6.0",
@@ -67,6 +69,7 @@
     "clsx": "^2.1.1",
     "exceljs": "^4.4.0",
     "gifenc": "^1.0.3",
+    "nodemailer": "^10.6.1",
     "phosphor-svelte": "^3.1.1",
     "stripe": "^17.7.0",
     "tailwind-merge": "^3.6.0",
