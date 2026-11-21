@@ -1729,6 +1729,25 @@ button.live-panel-thumb {
 	color: var(--color-muted);
 }
 
+/* Active wave cycle: the plan is one of the rotation plans this mesocycle. */
+.workout-preview-cycle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	margin-top: 0.55rem;
+	padding: 0.25rem 0.65rem;
+	border-radius: 999px;
+	background: var(--color-accent-muted);
+	color: var(--color-accent-text);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.workout-preview-cycle:hover {
+	text-decoration: underline;
+}
+
 /* Quiet entry to the smart «today» tune: dashed accent row inside the summary. */
 .workout-preview-tune {
 	display: inline-flex;

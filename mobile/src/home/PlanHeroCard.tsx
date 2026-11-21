@@ -18,6 +18,8 @@ type Props = {
 	continueMeta: string | null;
 	next: WorkoutPlan | null;
 	heroMeta: HeroMeta | null;
+	/** «Неделя 3 из 10» when today's plan is part of the active wave cycle. */
+	cycleBadge: string | null;
 	onContinue: (planId: string) => void;
 	onOpenPlan: (planId: string) => void;
 };
@@ -28,6 +30,7 @@ export function PlanHeroCard({
 	continueMeta,
 	next,
 	heroMeta,
+	cycleBadge,
 	onContinue,
 	onOpenPlan
 }: Props) {
@@ -79,6 +82,7 @@ export function PlanHeroCard({
 					<Text style={styles.title} numberOfLines={2}>
 						{next.name || '-'}
 					</Text>
+					{cycleBadge ? <Text style={styles.cycle}>{cycleBadge}</Text> : null}
 					<View style={styles.pills}>
 						<Pill
 							label={translatePlural(locale, 'home.pillExercises', heroMeta.exercises)}
@@ -160,6 +164,13 @@ function makeStyles(colors: ColorPalette) {
 			lineHeight: 28,
 			fontWeight: '700',
 			fontFamily: fontFamily.bold
+		},
+		cycle: {
+			color: colors.accentText,
+			fontSize: 13,
+			lineHeight: 18,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
 		},
 		pills: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
 		pressed: { opacity: 0.85 }

@@ -46,6 +46,8 @@ export type CoreColorPalette = {
 	xp: string;
 	/** Muscles worked today on the hero figure. */
 	muscle: string;
+	/** Volume line on the periodization wave chart (red in the classic chart). */
+	chartVolume: string;
 };
 
 export const darkColors: CoreColorPalette = {
@@ -72,7 +74,8 @@ export const darkColors: CoreColorPalette = {
 	successBg: 'rgba(52, 211, 153, 0.16)',
 	overlayScrim: 'rgba(0, 0, 0, 0.55)',
 	xp: '#f5a524',
-	muscle: '#3ee0c5'
+	muscle: '#3ee0c5',
+	chartVolume: '#ff5c5c'
 };
 
 export const lightColors: CoreColorPalette = {
@@ -99,7 +102,8 @@ export const lightColors: CoreColorPalette = {
 	successBg: '#e6f6ec',
 	overlayScrim: 'rgba(0, 0, 0, 0.35)',
 	xp: '#d97706',
-	muscle: '#0f766e'
+	muscle: '#0f766e',
+	chartVolume: '#dc2626'
 };
 
 export const touchMin = 48;

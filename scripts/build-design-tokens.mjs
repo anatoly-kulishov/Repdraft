@@ -77,7 +77,8 @@ function colorBlock(c, mode) {
 		`\t--color-success-bg: ${c.successBg};`,
 		`\t--color-border: ${c.border};`,
 		`\t--color-xp: ${c.xp};`,
-		`\t--color-muscle: ${c.muscle};`
+		`\t--color-muscle: ${c.muscle};`,
+		`\t--color-chart-volume: ${c.chartVolume};`
 	].join('\n');
 }
 

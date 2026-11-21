@@ -240,6 +240,19 @@
 	line-clamp: 2;
 }
 
+.home-header__cycle {
+	align-self: flex-start;
+	margin: 0.15rem 0 0;
+	padding: 0.1rem 0.5rem;
+	border-radius: 999px;
+	background: var(--color-accent-muted);
+	color: var(--color-accent-text);
+	font-size: 0.75rem;
+	font-weight: 600;
+	line-height: 1.5;
+	white-space: nowrap;
+}
+
 .home-header__meta {
 	margin: 0;
 	min-width: 0;

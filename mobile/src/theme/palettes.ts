@@ -45,6 +45,8 @@ export type ColorPalette = {
 	overlayScrim: string;
 	xp: string;
 	muscle: string;
+	/** Volume line on the wave-cycle chart. */
+	chartVolume: string;
 	/** Hairline list dividers inside panels. */
 	divider: string;
 };
@@ -77,6 +79,7 @@ function toRnPalette(c: CoreColorPalette, dark: boolean): ColorPalette {
 		overlayScrim: c.overlayScrim,
 		xp: c.xp,
 		muscle: c.muscle,
+		chartVolume: c.chartVolume,
 		divider: dark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.08)'
 	};
 }

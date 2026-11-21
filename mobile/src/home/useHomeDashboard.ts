@@ -27,11 +27,13 @@ import {
 	sortPlansByUserOrder
 } from '@repdraft/domain/workout';
 import { progress30d } from '@repdraft/domain/progressOverview';
+import { cycleProgressNow, type Mesocycle } from '@repdraft/domain/cycle';
 import type { WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { resolveUserAvatarUrl } from '../auth/avatarUrl';
 import { getSupabase, isSupabaseConfigured } from '../auth/supabase';
 import { loadExerciseIndex } from '../catalog/loadIndex';
 import { readHomeNextPlanId } from '../live/homeNext';
+import { readCycle } from '../state/cycle';
 import { readPlanOrder, writePlanOrder } from '../live/planOrder';
 import { loadGreetingName } from '../state/greetingName';
 import { useLocale } from '../state/locale';
@@ -69,16 +71,18 @@ export function useHomeDashboard() {
 	const [pendingSync, setPendingSync] = useState(0);
 	const [assignment, setAssignment] = useState<CoachAssignment | null>(null);
 	const [assignmentBusy, setAssignmentBusy] = useState(false);
+	const [cycle, setCycleState] = useState<Mesocycle | null>(null);
 
 	const reload = useCallback(async () => {
 		setLoading(true);
-		const [list, activeSession, sessions, order, pinned, outbox] = await Promise.all([
+		const [list, activeSession, sessions, order, pinned, outbox, storedCycle] = await Promise.all([
 			plansRepo.list(),
 			readActiveSession(),
 			sessionsRepo.list(),
 			readPlanOrder(),
 			readHomeNextPlanId(),
-			outboxCount()
+			outboxCount(),
+			readCycle()
 		]);
 		const nextOnboarding = await noteChecklist('homeSeen');
 		const ordered = sortPlansByUserOrder(list, order);
@@ -96,6 +100,7 @@ export function useHomeDashboard() {
 		);
 		setMonthly(progress30d(sessions, new Date()));
 		setPinnedNextId(pinned);
+		setCycleState(storedCycle);
 		setOnboarding(nextOnboarding);
 		const supabase = getSupabase();
 		const user = supabase ? (await supabase.auth.getSession()).data.session?.user ?? null : null;
@@ -209,6 +214,12 @@ export function useHomeDashboard() {
 		};
 	}, [next, indexById, locale]);
 
+	const cycleBadge = useMemo(() => {
+		if (!cycle || !next || !cycle.planIds.includes(next.id)) return null;
+		const current = cycleProgressNow(cycle);
+		return tt('cycle.cardWeek', { week: current.week, total: cycle.weeks });
+	}, [cycle, next, tt]);
+
 	const greetingName = greetingFirstName(greetingCustom, authUser);
 	const greeting = tt(
 		homeGreetingMessageKey(dayGreetingPeriod(), Boolean(greetingName)),
@@ -238,6 +249,7 @@ export function useHomeDashboard() {
 		pendingSync,
 		next,
 		heroMeta,
+		cycleBadge,
 		greeting,
 		avatarUrl: authUser ? resolveUserAvatarUrl(authUser) : null,
 		hasPlans,

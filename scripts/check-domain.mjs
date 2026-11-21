@@ -35,6 +35,7 @@ function compileDomain() {
 			'src/lib/domain/homeKit.ts',
 			'src/lib/domain/athleteProfile.ts',
 			'src/lib/domain/replacementCandidates.ts',
+			'src/lib/domain/cycle.ts',
 			'--ignoreConfig',
 			'--ignoreDeprecations',
 			'6.0',
@@ -78,6 +79,7 @@ function run() {
 	const homeKit = require(join(outDir, 'domain', 'homeKit.js'));
 	const athleteProfile = require(join(outDir, 'domain', 'athleteProfile.js'));
 	const replacementCandidates = require(join(outDir, 'domain', 'replacementCandidates.js'));
+	const cycleDomain = require(join(outDir, 'domain', 'cycle.js'));
 	const catalog = JSON.parse(
 		readFileSync(join(root, 'static', 'data', 'exercises.index.json'), 'utf8')
 	);
@@ -110,6 +112,8 @@ function run() {
 	console.log('✓ athlete profile self-check');
 	replacementCandidates.runReplacementCandidatesSelfCheck();
 	console.log('✓ replacement candidates self-check');
+	cycleDomain.runCycleSelfCheck();
+	console.log('✓ cycle self-check');
 
 	// Real catalog: the swap list for a bench press must lead with the same target
 	// muscle and never offer the exercise being replaced.

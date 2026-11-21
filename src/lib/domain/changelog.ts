@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.26.2',
+		highlights: {
+			ru: [
+				'Волновой цикл: 8–12 недель, где объём и интенсивность идут волнами',
+				'Каждая неделя сама подстраивает подходы, повторы и отдых под цель',
+				'График волн и отметки сделанных тренировок на экране цикла',
+				'Цикл хранится на устройстве: планы и тренировки не меняются'
+			],
+			en: [
+				'Wave cycle: 8–12 weeks with volume and intensity moving in waves',
+				'Each week tunes sets, reps and rest for your goal',
+				'Wave chart and completed-workout marks on the cycle screen',
+				'The cycle stays on your device: plans and workouts are untouched'
+			]
+		}
+	},
+	{
 		version: '0.26.1',
 		highlights: {
 			ru: [

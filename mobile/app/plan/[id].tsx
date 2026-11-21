@@ -18,6 +18,7 @@ import {
 } from '@repdraft/domain/workout';
 import { exerciseMetaHint } from '@repdraft/domain/labels.ru';
 import { shouldShowCoachmark } from '@repdraft/domain/onboarding';
+import { cycleProgressNow } from '@repdraft/domain/cycle';
 import {
 	exerciseDisplayName,
 	getIndexItem,
@@ -36,6 +37,7 @@ import { dismissCoachmark, loadOnboarding, noteChecklist } from '../../src/state
 import { useAppColors } from '../../src/state/theme';
 import { plansRepo } from '../../src/storage/plansRepo';
 import { readActiveSession, sessionsRepo, writeActiveSession } from '../../src/storage/sessionsRepo';
+import { readCycle } from '../../src/state/cycle';
 import { fontFamily, radius, space, touchMin, type ColorPalette } from '../../src/theme';
 
 export default function PlanPreviewScreen() {
@@ -51,6 +53,7 @@ export default function PlanPreviewScreen() {
 	const [missing, setMissing] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const [hasActive, setHasActive] = useState(false);
+	const [cycleWeek, setCycleWeek] = useState<number | null>(null);
 	const [showCoachmark, setShowCoachmark] = useState(false);
 	useEffect(() => {
 		let cancelled = false;
@@ -68,14 +71,20 @@ export default function PlanPreviewScreen() {
 				}
 				return;
 			}
-			const [found, active] = await Promise.all([
+			const [found, active, cycle] = await Promise.all([
 				plansRepo.get(id),
-				readActiveSession()
+				readActiveSession(),
+				readCycle()
 			]);
 			if (!cancelled) {
 				setPlan(found);
 				setMissing(!found);
 				setHasActive(Boolean(active && !active.finishedAt && active.planId === id));
+				setCycleWeek(
+					cycle && found && cycle.planIds.includes(found.id)
+						? cycleProgressNow(cycle).week
+						: null
+				);
 			}
 		})();
 		return () => {
@@ -140,6 +149,18 @@ export default function PlanPreviewScreen() {
 					{tt('preview.stats', { exercises: slots, sets })}
 					{muscles ? ` · ${muscles}` : ''}
 				</Text>
+				{cycleWeek != null ? (
+					<Pressable
+						accessibilityRole="link"
+						accessibilityLabel={tt('cycle.previewChip', { week: cycleWeek })}
+						onPress={() => router.push('/cycle')}
+						style={({ pressed }) => [styles.cycleChip, pressed && styles.pressed]}
+					>
+						<Text style={styles.cycleChipText}>
+							{tt('cycle.previewChip', { week: cycleWeek })}
+						</Text>
+					</Pressable>
+				) : null}
 				{plan.exercises.length === 0 ? (
 					<Text style={styles.empty}>{tt('builder.empty')}</Text>
 				) : null}
@@ -226,6 +247,23 @@ function makeStyles(colors: ColorPalette) {
 		title: { color: colors.text, fontSize: 24, fontWeight: '800', fontFamily: fontFamily.extrabold },
 		lead: { color: colors.muted, marginBottom: 4, fontFamily: fontFamily.regular },
 		metaLine: { color: colors.muted, fontSize: 14, marginBottom: 4, fontFamily: fontFamily.regular },
+		cycleChip: {
+			alignSelf: 'flex-start',
+			marginTop: 2,
+			marginBottom: space.sm,
+			paddingHorizontal: space.md,
+			paddingVertical: 6,
+			borderRadius: radius.pill,
+			borderWidth: 1,
+			borderColor: colors.accent,
+			backgroundColor: colors.accentDim
+		},
+		cycleChipText: {
+			color: colors.accentText,
+			fontSize: 13,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
+		},
 		card: { minHeight: touchMin, gap: space.xs },
 		cardRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
 		cardBody: { flex: 1, gap: space.xs },

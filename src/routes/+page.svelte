@@ -28,6 +28,8 @@
 	import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { dayGreetingPeriod, homeGreetingMessageKey } from '$lib/domain/greeting';
+	import { cycleProgressNow } from '$lib/domain/cycle';
+	import { cycle } from '$lib/stores/cycle';
 	import { greetingFirstName } from '$lib/domain/greetingName';
 	import { shouldShowChecklist, peekShouldShowChecklist } from '$lib/domain/onboarding';
 	import { formatKgInt } from '$lib/domain/format';
@@ -374,6 +376,12 @@
 	let nextPlanMuscles = $derived.by(() =>
 		nextPlan && indexReady ? planTargetSummary(nextPlan, indexById, lang, 3) : ''
 	);
+	let cycleBadge = $derived.by(() => {
+		const active = $cycle;
+		if (!active || !nextPlan || !active.planIds.includes(nextPlan.id)) return '';
+		const current = cycleProgressNow(active);
+		return translate(lang, 'cycle.cardWeek', { week: current.week, total: active.weeks });
+	});
 	/** Same pills as the phone hero: ~45 мин · 7 упражнений · Грудь • Трицепс. */
 	let nextPlanMeta = $derived.by(() => {
 		if (!nextPlan || !indexReady) return '';
@@ -554,6 +562,9 @@
 						<p class="home-header__subtitle">{mockupSubtitle}</p>
 						{#if hasPlans}
 							<p class="home-header__plan">{nextPlan?.name ?? '\u00a0'}</p>
+							{#if cycleBadge}
+								<p class="home-header__cycle">{cycleBadge}</p>
+							{/if}
 							<p class="home-header__meta" aria-busy={!nextPlan || !indexReady}>
 								{nextPlan && indexReady ? nextPlanMeta : '\u00a0'}
 							</p>
@@ -564,6 +575,9 @@
 						<p class="home-header__subtitle">{translate(lang, 'home.planToday')}</p>
 						{#if hasPlans}
 							<p class="home-header__plan">{nextPlan?.name ?? '\u00a0'}</p>
+							{#if cycleBadge}
+								<p class="home-header__cycle">{cycleBadge}</p>
+							{/if}
 							<p class="home-header__meta" aria-busy={!nextPlan || !indexReady}>
 								{nextPlan && indexReady ? nextPlanMeta : '\u00a0'}
 							</p>
