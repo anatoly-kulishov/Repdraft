@@ -6,11 +6,15 @@
 	import { athleteProfile } from '$lib/stores/prefs';
 	import { appTheme } from '$lib/stores/theme';
 	import {
+		Barbell,
 		BookOpen,
+		Buildings,
+		Calculator,
 		ChartBar,
 		CloudArrowDown,
 		CrownSimple,
 		DeviceMobile,
+		FileText,
 		GearSix,
 		House,
 		ShieldCheck,
@@ -101,17 +105,22 @@
 			label={translate(lang, 'settings.exportTitle')}
 			href="/auth/data"
 		/>
-		{#if !signedIn}
-			<ProfileSettingsRow
-				icon={BookOpen}
-				label={translate(lang, 'settings.section.help')}
-				href="/articles"
-			/>
-			<ProfileSettingsRow
-				icon={ShieldCheck}
-				label={translate(lang, 'privacy.link')}
-				href="/privacy"
-			/>
-		{/if}
+		<ProfileSettingsRow icon={Calculator} label={translate(lang, 'tools.title')} href="/tools" />
+		<ProfileSettingsRow icon={Barbell} label={translate(lang, 'programs.title')} href="/programs" />
+		<ProfileSettingsRow
+			icon={BookOpen}
+			label={translate(lang, 'articles.title')}
+			href="/articles"
+		/>
+	</ProfileSettingsSection>
+
+	<ProfileSettingsSection label={translate(lang, 'settings.group.legal')}>
+		<ProfileSettingsRow icon={FileText} label={translate(lang, 'terms.link')} href="/terms" />
+		<ProfileSettingsRow icon={ShieldCheck} label={translate(lang, 'privacy.link')} href="/privacy" />
+		<ProfileSettingsRow
+			icon={Buildings}
+			label={translate(lang, 'legal.requisitesTitle')}
+			href="/legal/requisites"
+		/>
 	</ProfileSettingsSection>
 </div>

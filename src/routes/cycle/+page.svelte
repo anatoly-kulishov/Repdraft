@@ -132,7 +132,7 @@
 
 <SeoHead title={translate(lang, 'cycle.title')} noindex />
 
-<section class="content-page content-page--narrow pb-mobile-actions cycle-page">
+<section class="content-page content-page--narrow cycle-page">
 	<ScreenHeader
 		title={translate(lang, 'cycle.title')}
 		backHref="/workouts"

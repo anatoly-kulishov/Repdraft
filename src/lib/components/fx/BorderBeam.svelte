@@ -10,16 +10,27 @@
 		size?: BeamSize;
 		/** Seconds per lap (rotate) or per breath (pulse). */
 		duration?: number;
+		/** 0..1 alpha of the effect layers only; the host and its children stay opaque. */
+		strength?: number;
 		class?: string;
 		children?: Snippet;
 	};
 
-	let { size = 'md', duration, class: className = '', children }: Props = $props();
+	let { size = 'md', duration, strength, class: className = '', children }: Props = $props();
+
+	const styleVars = $derived(
+		[
+			duration !== undefined ? `--fx-beam-duration:${duration}s` : '',
+			strength !== undefined ? `--fx-beam-strength:${strength}` : ''
+		]
+			.filter(Boolean)
+			.join(';') || undefined
+	);
 </script>
 
 <div
 	class={cn('fx-beam', `fx-beam--${size}`, className)}
-	style={duration ? `--fx-beam-duration:${duration}s` : undefined}
+	style={styleVars}
 	{@attach fxPauseOffscreen}
 >
 	{@render children?.()}

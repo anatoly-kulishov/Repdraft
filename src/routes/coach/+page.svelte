@@ -202,7 +202,7 @@
 
 <SeoHead title={translate(lang, 'nav.coach')} noindex />
 
-<section class="content-page content-page--narrow pb-mobile-actions">
+<section class="content-page content-page--narrow">
 	<ScreenHeader
 		title={translate(lang, 'nav.coach')}
 		backHref="/auth"

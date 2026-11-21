@@ -84,14 +84,13 @@
 	   strip's padding box so the tape keeps zero vertical scrollable overflow. */
 	padding-block: 0.375rem;
 	margin-block: -0.375rem;
-	/* Soft edge without a solid overlay (overlay color fought the page surface) */
-	-webkit-mask-image: linear-gradient(
-		to right,
-		#000 0%,
-		#000 calc(100% - 1.25rem),
-		transparent 100%
-	);
-	mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 1.25rem), transparent 100%);
+	/*
+	 * Short edge fade: enough to soften a clipped chip at the right, small enough
+	 * that a selected pill sitting flush at the edge is not wiped out. The old
+	 * 1.25rem fade dissolved the whole tail of the active chip.
+	 */
+	-webkit-mask-image: linear-gradient(to right, #000 calc(100% - 0.5rem), transparent);
+	mask-image: linear-gradient(to right, #000 calc(100% - 0.5rem), transparent);
 }
 
 .catalog-filter-chip.ai-draft-page__chip {
@@ -117,6 +116,35 @@
 .catalog-filter-chip.ai-draft-page__chip:active:not(:disabled) {
 	transform: scale(0.98);
 	transition-duration: 0s;
+}
+
+/*
+ * Selected example: an opaque brand pill instead of a translucent accent tint.
+ * The chip sits on the gooey blob, so a see-through background mixed purple with
+ * lavender and the label lost contrast. An opaque fill keeps the label at a
+ * fixed ratio in both themes; the blob stays underneath as the sliding motion.
+ */
+.ai-draft-page .catalog-filter-chip.ai-draft-page__chip.is-active,
+.ai-draft-page [data-slot='button'].catalog-filter-chip.ai-draft-page__chip.is-active {
+	border-color: transparent;
+	background: var(--color-accent-fill);
+	color: var(--color-accent-ink);
+	-webkit-text-fill-color: var(--color-accent-ink);
+	font-weight: 600;
+}
+
+.ai-draft-page .catalog-filter-chip.ai-draft-page__chip.is-active:hover,
+.ai-draft-page
+	[data-slot='button'].catalog-filter-chip.ai-draft-page__chip.is-active:hover:not(:disabled) {
+	border-color: transparent;
+	background: var(--color-accent-hover);
+	color: var(--color-accent-ink);
+	-webkit-text-fill-color: var(--color-accent-ink);
+}
+
+/* The shared `.is-active` rule silences the ring; keep it for the filled pill. */
+.ai-draft-page .catalog-filter-chip.ai-draft-page__chip:focus-visible {
+	box-shadow: var(--focus-ring);
 }
 
 .ai-draft-page__form {

@@ -3,6 +3,10 @@
    whatever radius the caller set. Motion pauses offscreen via [data-fx-paused] and
    always honors prefers-reduced-motion. */
 
+/* Registration only buys the smooth turn. The ring must not depend on it: without
+   @property (Firefox < 128) an undeclared var leaves `from var(...)` invalid and
+   the whole gradient drops out, so `.fx-beam` also declares the angle in the
+   cascade. There the turn animation degrades to a static arc. */
 @property --fx-beam-angle {
 	syntax: '<angle>';
 	inherits: false;
@@ -28,6 +32,10 @@
 	--fx-beam-highlight: color-mix(in srgb, var(--color-accent-text) 70%, white);
 	--fx-beam-width: 1.5px;
 	--fx-beam-duration: 7s;
+	/* Alpha of the effect layers only, never the host or its children. 0 hides the
+	   ring without unmounting the card it marks. */
+	--fx-beam-strength: 1;
+	--fx-beam-angle: 0deg;
 	position: relative;
 	isolation: isolate;
 }
@@ -43,6 +51,7 @@
 .fx-beam--md .fx-beam__ring,
 .fx-beam--sm .fx-beam__ring {
 	padding: var(--fx-beam-width);
+	opacity: var(--fx-beam-strength);
 	background: conic-gradient(
 		from var(--fx-beam-angle),
 		transparent 0deg 250deg,
@@ -68,6 +77,7 @@
 	inset: auto 0 0;
 	height: 1px;
 	border-radius: 0;
+	opacity: var(--fx-beam-strength);
 	background: linear-gradient(
 		90deg,
 		transparent 0%,
@@ -118,13 +128,16 @@
 	}
 }
 
+/* Breath peaks at the element's own strength, so the knob works in both families.
+   Keyframes resolve the var per element; the fallback keeps them valid even if the
+   inherited value is stripped. */
 @keyframes fx-beam-breathe {
 	0%,
 	100% {
-		opacity: 0.35;
+		opacity: calc(0.35 * var(--fx-beam-strength, 1));
 	}
 	50% {
-		opacity: 1;
+		opacity: var(--fx-beam-strength, 1);
 	}
 }
 
@@ -901,7 +914,7 @@
 	.fx-beam--md .fx-beam__ring,
 	.fx-beam--sm .fx-beam__ring {
 		--fx-beam-angle: 300deg;
-		opacity: 0.6;
+		opacity: calc(0.6 * var(--fx-beam-strength, 1));
 	}
 
 	.fx-beam--line .fx-beam__ring {
@@ -910,7 +923,7 @@
 
 	.fx-beam--pulse-inner .fx-beam__ring,
 	.fx-beam--pulse-outside .fx-beam__ring {
-		opacity: 0.7;
+		opacity: calc(0.7 * var(--fx-beam-strength, 1));
 	}
 
 	.fx-image__media,
@@ -959,7 +972,7 @@ html[data-reduce-motion='true'] .fx-voice-ring[aria-pressed='true']::after {
 html[data-reduce-motion='true'] .fx-beam--md .fx-beam__ring,
 html[data-reduce-motion='true'] .fx-beam--sm .fx-beam__ring {
 	--fx-beam-angle: 300deg;
-	opacity: 0.6;
+	opacity: calc(0.6 * var(--fx-beam-strength, 1));
 }
 
 html[data-reduce-motion='true'] .fx-beam--line .fx-beam__ring {
@@ -968,7 +981,7 @@ html[data-reduce-motion='true'] .fx-beam--line .fx-beam__ring {
 
 html[data-reduce-motion='true'] .fx-beam--pulse-inner .fx-beam__ring,
 html[data-reduce-motion='true'] .fx-beam--pulse-outside .fx-beam__ring {
-	opacity: 0.7;
+	opacity: calc(0.7 * var(--fx-beam-strength, 1));
 }
 
 html[data-reduce-motion='true'] .fx-image__media,

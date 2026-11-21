@@ -12,7 +12,7 @@
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
-	import { Buildings, Devices, FileText, ShieldCheck } from 'phosphor-svelte';
+	import { Devices } from 'phosphor-svelte';
 
 	let lang = $derived($resolvedLocale);
 	let accountBusy = $state<'logout' | 'logoutEverywhere' | 'delete' | null>(null);
@@ -84,27 +84,6 @@
 </script>
 
 <div class="profile-settings-hub" class:profile-settings-group--busy={accountLocked} aria-busy={accountLocked || undefined}>
-	<ProfileSettingsSection label={translate(lang, 'settings.group.support')}>
-		<ProfileSettingsRow
-			icon={FileText}
-			label={translate(lang, 'terms.link')}
-			href="/terms"
-			disabled={accountLocked}
-		/>
-		<ProfileSettingsRow
-			icon={ShieldCheck}
-			label={translate(lang, 'privacy.link')}
-			href="/privacy"
-			disabled={accountLocked}
-		/>
-		<ProfileSettingsRow
-			icon={Buildings}
-			label={translate(lang, 'legal.requisitesTitle')}
-			href="/legal/requisites"
-			disabled={accountLocked}
-		/>
-	</ProfileSettingsSection>
-
 	<ProfileSettingsSection
 		label={translate(lang, 'settings.group.account')}
 		hint={translate(lang, 'auth.logoutEverywhereHint')}

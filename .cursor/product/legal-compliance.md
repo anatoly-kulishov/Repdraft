@@ -13,7 +13,8 @@
 | Реквизиты + лицензии | `/legal/requisites` → `src/routes/legal/requisites/+page.svelte` |
 | Оператор из env | `src/lib/legal/privacyOperator.ts` (`PUBLIC_PRIVACY_*`) |
 | Cookie-баннер | `src/lib/components/CookieNotice.svelte` (localStorage `repdraft:cookie-notice:v1`) |
-| Ссылки в футере | `src/lib/components/LegalFooter.svelte` (рендерится в `+layout.svelte` на всех страницах) |
+| Ссылки в футере | `src/lib/components/LegalFooter.svelte` (рендерится в `+layout.svelte` только на публичных страницах: `/tools*`, `/programs*`, `/articles*`, `/exercise/:id`, `/legal/*`, `/terms`, `/privacy`) |
+| Ссылки в приложении | Профиль `/auth`: группы «Поддержка» (инструменты, программы, справочник) и «Документы» (условия, конфиденциальность, реквизиты). Экранные табы футер не показывают |
 | Оплата Pro | `src/lib/components/billing/ProBillingPanel.svelte` + `src/routes/api/billing/*` |
 | Удаление аккаунта | `ProfileAccountSettings` → `auth.deleteAccount()` → `POST /api/account/delete` (чистит таблицы + Storage `technique-gifs` / аватары) |
 | Медиа-лицензия | Gym Visual: `src/lib/data/attribution.ts`, раздел 14 политики, `/legal/requisites` |

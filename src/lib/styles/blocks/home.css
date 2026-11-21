@@ -2066,3 +2066,37 @@ a.home-header__row--link:active .home-header__cta {
 		align-items: center;
 	}
 }
+
+/* Public content links. The site footer used to carry these; home stays the
+   in-app entry to /tools, /programs and /articles, so the indexed page keeps
+   linking to them in one quiet line instead of a legal footer. */
+.home-public-links {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 0.15rem 0.45rem;
+	margin-top: var(--page-section-gap);
+	font-size: 0.75rem;
+	line-height: 1.35;
+	color: var(--color-muted-soft);
+}
+
+.home-public-links a {
+	color: inherit;
+	text-decoration: none;
+	border-radius: 4px;
+}
+
+.home-public-links a:hover {
+	color: var(--color-ink);
+}
+
+.home-public-links a:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 2px;
+}
+
+.home-public-links__sep {
+	opacity: 0.5;
+}
