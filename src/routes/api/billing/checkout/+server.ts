@@ -1,6 +1,7 @@
 import { accountCorsHeaders, requireUser } from '$lib/server/auth/requireUser';
 import {
 	billingAvailability,
+	billingPrices,
 	parseCheckoutPlan,
 	resolveCheckoutProvider
 } from '$lib/server/billing/config';
@@ -29,7 +30,8 @@ export const GET: RequestHandler = async ({ request }) => {
 	const avail = billingAvailability();
 	return jsonWithCors(request, {
 		available: avail.yookassa || avail.stripe,
-		...avail
+		...avail,
+		prices: billingPrices()
 	});
 };
 

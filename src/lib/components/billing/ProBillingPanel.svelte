@@ -35,6 +35,7 @@
 		stripe: false,
 		defaultProvider: 'yookassa'
 	});
+	let prices = $state<{ monthly: string; yearly: string; currency: string } | null>(null);
 	let statusPeriodEnd = $state<string | null>(null);
 	/** null until /api/billing/status returns; prefer over stale app_metadata. */
 	let remotePro = $state<boolean | null>(null);
@@ -44,6 +45,24 @@
 	let manageable = $state(false);
 
 	let effectivePro = $derived(remotePro ?? snap.pro);
+	function formatPrice(value: string, currency: string): string {
+		const amount = value.replace(/[.,]00$/, '');
+		return currency === 'RUB' ? `${amount}\u00A0₽` : `${amount} ${currency}`;
+	}
+	let monthlyLabel = $derived(
+		prices
+			? translate(lang, 'billing.planMonthlyWithPrice', {
+					amount: formatPrice(prices.monthly, prices.currency)
+				})
+			: translate(lang, 'billing.planMonthly')
+	);
+	let yearlyLabel = $derived(
+		prices
+			? translate(lang, 'billing.planYearlyWithPrice', {
+					amount: formatPrice(prices.yearly, prices.currency)
+				})
+			: translate(lang, 'billing.planYearly')
+	);
 	let periodLabel = $derived.by(() => {
 		const until = statusPeriodEnd || snap.proUntil;
 		if (!until) return translate(lang, 'billing.active');
@@ -132,12 +151,21 @@
 				yookassa?: boolean;
 				stripe?: boolean;
 				defaultProvider?: BillingProvider;
+				prices?: { monthly?: string; yearly?: string; currency?: string } | null;
 			};
 			providers = {
 				yookassa: Boolean(body.yookassa),
 				stripe: Boolean(body.stripe),
 				defaultProvider: body.defaultProvider === 'stripe' ? 'stripe' : 'yookassa'
 			};
+			prices =
+				body.prices?.monthly && body.prices?.yearly
+					? {
+							monthly: body.prices.monthly,
+							yearly: body.prices.yearly,
+							currency: body.prices.currency || 'RUB'
+						}
+					: null;
 			billingReady = Boolean(body.available);
 		} catch {
 			billingReady = false;
@@ -316,7 +344,7 @@
 					disabled={busyPlan !== null}
 					onclick={() => void startCheckout('monthly')}
 				>
-					{busyPlan === 'monthly' ? '…' : translate(lang, 'billing.planMonthly')}
+					{busyPlan === 'monthly' ? '…' : monthlyLabel}
 				</AppButton>
 				<AppButton
 					variant="secondary"
@@ -325,9 +353,22 @@
 					disabled={busyPlan !== null}
 					onclick={() => void startCheckout('yearly')}
 				>
-					{busyPlan === 'yearly' ? '…' : translate(lang, 'billing.planYearly')}
+					{busyPlan === 'yearly' ? '…' : yearlyLabel}
 				</AppButton>
 			</div>
+			<p class="billing-card__legal">
+				{translate(lang, 'billing.renewNote')}
+			</p>
+			<p class="billing-card__legal">
+				{translate(lang, 'billing.legalNotePre')}
+				<a class="billing-card__legal-link" href="/terms">
+					{translate(lang, 'billing.legalTerms')}
+				</a>
+				{translate(lang, 'billing.legalNoteJoin')}
+				<a class="billing-card__legal-link" href="/privacy">
+					{translate(lang, 'billing.legalPrivacy')}
+				</a>.
+			</p>
 		{/if}
 	</section>
 {/if}
@@ -444,6 +485,24 @@
 		font-size: 0.8125rem;
 		line-height: 1.35;
 		color: var(--color-muted);
+	}
+
+	.billing-card__legal {
+		margin: 0;
+		font-size: 0.75rem;
+		line-height: 1.4;
+		color: var(--color-muted);
+	}
+
+	.billing-card__legal-link {
+		color: inherit;
+		text-decoration: underline;
+		text-decoration-color: color-mix(in srgb, var(--color-accent) 60%, transparent);
+		text-underline-offset: 2px;
+	}
+
+	.billing-card__legal-link:hover {
+		color: var(--color-text);
 	}
 
 	.billing-card__note {

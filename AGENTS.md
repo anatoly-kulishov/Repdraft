@@ -32,7 +32,7 @@ npm run build
 
 Shared copy: `src/lib/i18n/messages.ts` (both clients). Shared colors/spacing: `src/lib/design/tokens.ts`. Canonical site: `https://www.repdraft.ru`.
 
-Legal before public: real `PUBLIC_PRIVACY_*` on the web host; lawyer review `/privacy` + `/terms`.
+Legal before public: real `PUBLIC_PRIVACY_*` on the web host (fills `/legal/requisites` too); lawyer review `/privacy`, `/terms` (offer) + refund rules. RKN notification and RF data localization (Supabase cloud is abroad) are open ops items - see [`.cursor/product/legal-compliance.md`](.cursor/product/legal-compliance.md).
 
 ## Mobile notes
 

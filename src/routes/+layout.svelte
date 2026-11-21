@@ -3,6 +3,8 @@
 	import { appTheme } from '$lib/stores/theme';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import AttributionFooter from '$lib/components/AttributionFooter.svelte';
+	import CookieNotice from '$lib/components/CookieNotice.svelte';
+	import LegalFooter from '$lib/components/LegalFooter.svelte';
 	import DraftDock from '$lib/components/DraftDock.svelte';
 	import Logo from '$lib/components/Logo.svelte';
 	import SyncSnackbar from '$lib/components/SyncSnackbar.svelte';
@@ -68,6 +70,7 @@
 		if (pathname.startsWith('/articles')) return true;
 		if (pathname.startsWith('/auth')) return true;
 		if (pathname === '/privacy' || pathname === '/terms') return true;
+		if (pathname.startsWith('/legal')) return true;
 		if (pathname.startsWith('/exercises/')) return true;
 		/* Builder → pick exercise: ScreenHeader only (no logo chrome + phantom spacer). */
 		if (pathname === '/exercises' && isBuilderReturnPath(from)) return true;
@@ -320,11 +323,12 @@
 			{@render children()}
 		</main>
 
-		{#if showMediaAttribution}
-			<div class="shell-footer-pad">
+		<div class="shell-footer-pad">
+			<LegalFooter />
+			{#if showMediaAttribution}
 				<AttributionFooter />
-			</div>
-		{/if}
+			{/if}
+		</div>
 	</div>
 </div>
 
@@ -412,6 +416,9 @@
 	</div>
 </nav>
 
+{#if browser}
+	<CookieNotice />
+{/if}
 <ToastStack items={$toasts} />
 <LocalMergeConflictSheet />
 <DraftDock />
