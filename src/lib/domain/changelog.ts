@@ -14,6 +14,25 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.29.0',
+		highlights: {
+			ru: [
+				'Подбор в билдере: карточки упражнений как в каталоге, фильтры чипами, добавленное подсвечено',
+				'Активный пример на экране «Черновик с ИИ» читается сразу: белый текст на брендовой заливке',
+				'Анкета: поле роста и веса в фокусе по общему правилу, лист не уезжает под клавиатуру',
+				'Футер сайта больше не висит внутри приложения: ссылки переехали в профиль и на главную',
+				'Профиль: отдельная группа «Документы», публичные разделы в «Поддержке»'
+			],
+			en: [
+				'Builder quick pick: catalog-style exercise cards, filter chips, a highlighted add state',
+				'The active example on the AI draft screen reads at a glance: white label on the brand fill',
+				'Intake: height and weight focus follows the shared field rule, the sheet stays above the keyboard',
+				'The site footer no longer follows you inside the app: those links moved to Profile and Home',
+				'Profile: a separate Documents group and public sections under Support'
+			]
+		}
+	},
+	{
 		version: '0.28.0',
 		highlights: {
 			ru: [
