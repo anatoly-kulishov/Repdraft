@@ -27,6 +27,7 @@ import {
 } from '../../src/catalog/loadIndex';
 import { CatalogThumb } from '../../src/components/CatalogThumb';
 import { Coachmark } from '../../src/components/Coachmark';
+import { EmptyState } from '../../src/components/EmptyState';
 import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
@@ -119,8 +120,12 @@ export default function PlanPreviewScreen() {
 	if (missing) {
 		return (
 			<View style={styles.center}>
-				<Text style={styles.missing}>{tt('builder.loadFail')}</Text>
-				<PrimaryButton label={tt('summary.back')} onPress={() => router.replace('/')} />
+				<EmptyState
+					title={tt('live.noPlan')}
+					description={tt('workouts.emptyDesc')}
+					actionLabel={tt('live.backPlans')}
+					onAction={() => router.replace('/workouts')}
+				/>
 			</View>
 		);
 	}

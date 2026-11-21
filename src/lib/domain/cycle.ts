@@ -2,10 +2,11 @@
  * Wave periodization cycle («волновая периодизация»): one 8–12 week mesocycle
  * that modulates volume and intensity of the athlete's saved plans.
  *
- * The wave is fixed at three weeks per block — intensity → volume → volume peak —
- * mirroring the classic chart: when volume dips, intensity peaks, and vice versa.
- * A cycle is local-only state (like the athlete profile) and never rewrites the
- * saved plans: each week is a derived «today» variant.
+ * The wave follows the classic chart: an intensity week, then a volume week,
+ * then an unload. Volume peaks on week 2 while intensity sits under its own
+ * peak, and week 3 drops both axes before the block restarts. A cycle is
+ * local-only state (like the athlete profile) and never rewrites the saved
+ * plans: each week is a derived «today» variant.
  */
 import type { AthleteGoalId } from './athleteProfile';
 import { isAthleteGoalId } from './athleteProfile';
@@ -19,13 +20,13 @@ export const CYCLE_STORAGE_KEY = 'repdraft:cycle';
 export const CYCLE_LENGTHS = [8, 10, 12] as const;
 export type CycleLength = (typeof CYCLE_LENGTHS)[number];
 
-/** Weeks per wave block: intensity week, volume week, volume peak week. */
+/** Weeks per wave block: intensity week, volume week, unload week. */
 export const CYCLE_WAVE_WEEKS = 3;
 
 /** Rotation cap: one plan per training day at most. */
 export const CYCLE_MAX_PLANS = 7;
 
-export type CycleWeekKind = 'intensity' | 'volume' | 'volumePeak';
+export type CycleWeekKind = 'intensity' | 'volume' | 'unload';
 
 export type Mesocycle = {
 	id: string;
@@ -48,14 +49,19 @@ export type CycleWave = {
 	intensityPct: number;
 };
 
+/**
+ * Schematic wave shape for the chart: volume peaks on the second week, then the
+ * block unloads. Percent of the plan baseline; the real prescription shift
+ * lives in `GOAL_DELTAS` below and stays monotonic with this order.
+ */
 const WAVE: Record<CycleWeekKind, { volumePct: number; intensityPct: number }> = {
-	intensity: { volumePct: 80, intensityPct: 110 },
-	volume: { volumePct: 105, intensityPct: 95 },
-	volumePeak: { volumePct: 118, intensityPct: 85 }
+	intensity: { volumePct: 80, intensityPct: 112 },
+	volume: { volumePct: 118, intensityPct: 92 },
+	unload: { volumePct: 66, intensityPct: 80 }
 };
 
 type GoalDeltas = {
-	/** Sets added on volume weeks (peak shares the same delta). */
+	/** Sets added on volume weeks. */
 	setsVolume: number;
 	/** Sets added on the intensity week (usually negative). */
 	setsIntensity: number;
@@ -68,7 +74,8 @@ type GoalDeltas = {
 
 /**
  * How strongly the wave bites, per goal. Volume weeks add work; the intensity
- * week trades sets/reps for heavier weight and longer rest.
+ * week trades sets/reps for heavier weight and longer rest; the unload week
+ * drops at least one set and keeps the plan's reps and rest.
  */
 const GOAL_DELTAS: Record<AthleteGoalId, GoalDeltas> = {
 	strength: { setsVolume: 0, setsIntensity: -1, repsVolume: 0, repsIntensity: -3, restVolume: 0, restIntensity: 45 },
@@ -88,7 +95,7 @@ export function cycleWeekKind(week: number): CycleWeekKind {
 	const index = Math.max(1, clampInt(week, 1, Number.MAX_SAFE_INTEGER)) - 1;
 	const phase = index % CYCLE_WAVE_WEEKS;
 	if (phase === 0) return 'intensity';
-	return phase === 1 ? 'volume' : 'volumePeak';
+	return phase === 1 ? 'volume' : 'unload';
 }
 
 export function cycleWave(week: number): CycleWave {
@@ -110,15 +117,18 @@ export function cycleWeekVariant(
 ): WorkoutPlan {
 	const kind = cycleWeekKind(week);
 	const d = GOAL_DELTAS[cycle.goal];
-	const isIntensity = kind === 'intensity';
-	const setsDelta = isIntensity ? d.setsIntensity : d.setsVolume;
-	const repsDelta = isIntensity ? d.repsIntensity : d.repsVolume;
-	const restDelta = isIntensity ? d.restIntensity : d.restVolume;
+	/* The unload drops at least one set and leaves reps and rest as planned. */
+	const delta =
+		kind === 'intensity'
+			? { sets: d.setsIntensity, reps: d.repsIntensity, rest: d.restIntensity }
+			: kind === 'volume'
+				? { sets: d.setsVolume, reps: d.repsVolume, rest: d.restVolume }
+				: { sets: Math.min(d.setsIntensity, -1), reps: 0, rest: 0 };
 
 	const exercises: WorkoutExercise[] = plan.exercises.map((ex) => {
-		const sets = clampInt(ex.sets + setsDelta, SETS.min, SETS.max);
-		const reps = clampInt(ex.reps + repsDelta, REPS.min, REPS.max);
-		const restSec = clampInt(ex.restSec + restDelta, REST_SEC.min, REST_SEC.max);
+		const sets = clampInt(ex.sets + delta.sets, SETS.min, SETS.max);
+		const reps = clampInt(ex.reps + delta.reps, REPS.min, REPS.max);
+		const restSec = clampInt(ex.restSec + delta.rest, REST_SEC.min, REST_SEC.max);
 		const keepScheme = ex.repsScheme && ex.repsScheme.length === sets;
 		return {
 			exerciseId: ex.exerciseId,
@@ -365,14 +375,17 @@ export function serializeCycleStorage(cycle: Mesocycle): string {
 /** Throws if the wave/kinds/clamping contract regresses. */
 export function runCycleSelfCheck(): void {
 	const kinds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(cycleWeekKind).join(',');
-	if (kinds !== 'intensity,volume,volumePeak,intensity,volume,volumePeak,intensity,volume,volumePeak,intensity') {
+	if (kinds !== 'intensity,volume,unload,intensity,volume,unload,intensity,volume,unload,intensity') {
 		throw new Error(`cycle: wave kinds ${kinds}`);
 	}
-	if (cycleWave(1).volumePct !== 80 || cycleWave(1).intensityPct !== 110) {
+	if (cycleWave(1).volumePct !== 80 || cycleWave(1).intensityPct !== 112) {
 		throw new Error('cycle: intensity week percents');
 	}
-	if (cycleWave(3).volumePct !== 118 || cycleWave(3).intensityPct !== 85) {
-		throw new Error('cycle: peak week percents');
+	if (cycleWave(2).volumePct !== 118 || cycleWave(2).intensityPct !== 92) {
+		throw new Error('cycle: volume week must own the volume peak');
+	}
+	if (cycleWave(3).volumePct !== 66 || cycleWave(3).intensityPct !== 80) {
+		throw new Error('cycle: unload week must drop both axes');
 	}
 
 	const plan: WorkoutPlan = {
@@ -418,6 +431,11 @@ export function runCycleSelfCheck(): void {
 	if (habit.exercises[1]?.sets !== 3 || habit.exercises[1]?.reps !== 9) {
 		throw new Error('cycle: habit intensity reps −1 only');
 	}
+
+	const unload = cycleWeekVariant(plan, 3, { goal: 'strength' });
+	if (unload.exercises[0]?.sets !== 3) throw new Error('cycle: unload drops at least one set');
+	if (unload.exercises[0]?.reps !== 8) throw new Error('cycle: unload keeps plan reps');
+	if (unload.exercises[0]?.restSec !== 150) throw new Error('cycle: unload keeps plan rest');
 
 	const floor = cycleWeekVariant(
 		{ ...plan, exercises: [{ exerciseId: 'z', sets: 1, reps: 1, restSec: 0 }] },

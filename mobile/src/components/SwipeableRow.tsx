@@ -13,6 +13,8 @@ type Props = {
 	style?: StyleProp<ViewStyle>;
 	onDelete: () => void;
 	deleteLabel: string;
+	/** Read-only rows: render plain content, no destructive swipe. */
+	disabled?: boolean;
 };
 
 const DELETE_WIDTH = 88;
@@ -20,7 +22,7 @@ const DELETE_WIDTH = 88;
 /** Only one row open at a time (iOS lists otherwise keep stale open rows). */
 let openSwipeable: SwipeableMethods | null = null;
 
-export function SwipeableRow({ children, style, onDelete, deleteLabel }: Props) {
+export function SwipeableRow({ children, style, onDelete, deleteLabel, disabled }: Props) {
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const swipeableRef = useRef<SwipeableMethods>(null);
@@ -50,6 +52,10 @@ export function SwipeableRow({ children, style, onDelete, deleteLabel }: Props) 
 		),
 		[deleteLabel, onDelete, styles.deleteBtn, styles.deleteLabel, styles.deleteWrap]
 	);
+
+	if (disabled) {
+		return <View style={style}>{children}</View>;
+	}
 
 	return (
 		<ReanimatedSwipeable

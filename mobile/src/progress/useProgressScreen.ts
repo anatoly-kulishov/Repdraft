@@ -8,6 +8,7 @@ import { formatKgInt } from '@repdraft/domain/format';
 import type { WorkoutSession } from '@repdraft/domain/types';
 import { getIndexItem, refreshCustomsCache } from '../catalog/loadIndex';
 import { useLocale } from '../state/locale';
+import { readProgressPeriod, writeProgressPeriod } from '../state/progressPeriod';
 import { sessionsRepo } from '../storage/sessionsRepo';
 
 /**
@@ -24,9 +25,16 @@ export function useProgressScreen() {
 			void (async () => {
 				await refreshCustomsCache();
 				setSessions(await sessionsRepo.list());
+				setPeriod(await readProgressPeriod());
 			})();
 		}, [])
 	);
+
+	/* Same persisted window as web, also used by the Home cards. */
+	function choosePeriod(next: ProgressPeriod) {
+		setPeriod(next);
+		void writeProgressPeriod(next);
+	}
 
 	const overview = useMemo(
 		() =>
@@ -97,7 +105,7 @@ export function useProgressScreen() {
 
 	return {
 		period,
-		setPeriod,
+		choosePeriod,
 		overview,
 		maxWeekVol,
 		laggingPart,

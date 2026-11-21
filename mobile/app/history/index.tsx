@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
 	Alert,
@@ -9,6 +9,7 @@ import {
 	TextInput,
 	View
 } from 'react-native';
+import { Trash2 } from 'lucide-react-native';
 import { HISTORY_PAGE_SIZE } from '@repdraft/domain/home';
 import { completedSetCount, sessionDurationMs } from '@repdraft/domain/session';
 import { groupSessionsByLocalDay } from '@repdraft/domain/sessionHistory';
@@ -106,6 +107,31 @@ export default function HistoryListScreen() {
 		]);
 	}
 
+	function confirmClear() {
+		Alert.alert(tt('workouts.clearHistory'), tt('workouts.confirmClearHistory'), [
+			{ text: tt('common.cancel'), style: 'cancel' },
+			{
+				text: tt('workouts.clearHistory'),
+				style: 'destructive',
+				onPress: () => {
+					void (async () => {
+						/* Same contract as web: finished entries go, an unfinished session stays. */
+						const finished = sessions.filter((s) => s.finishedAt);
+						for (const item of finished) {
+							await sessionsRepo.remove(item.id);
+							try {
+								await deleteSessionRemote(item.id);
+							} catch {
+								/* offline: local delete is enough */
+							}
+						}
+						reload();
+					})();
+				}
+			}
+		]);
+	}
+
 	const presets: { id: Preset; label: string }[] = [
 		{ id: 'today', label: tt('history.filterToday') },
 		{ id: 'all', label: tt('history.filterAll') },
@@ -116,8 +142,26 @@ export default function HistoryListScreen() {
 
 	const emptyAll = sessions.filter((s) => s.finishedAt).length === 0;
 
+	const finishedCount = sessions.filter((s) => s.finishedAt).length;
+
 	return (
 		<View style={styles.root}>
+			<Stack.Screen
+				options={{
+					headerRight: () =>
+						finishedCount > 0 ? (
+							<Pressable
+								accessibilityRole="button"
+								accessibilityLabel={tt('workouts.clearHistory')}
+								hitSlop={8}
+								onPress={confirmClear}
+								style={styles.headerBtn}
+							>
+								<Trash2 color={colors.muted} size={20} strokeWidth={2.2} />
+							</Pressable>
+						) : null
+				}}
+			/>
 			<TextInput
 				value={query}
 				onChangeText={(v) => {
@@ -211,6 +255,13 @@ function makeStyles(colors: ColorPalette) {
 			fontFamily: fontFamily.regular
 		},
 		chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+		headerBtn: {
+			minWidth: 44,
+			minHeight: 44,
+			alignItems: 'center',
+			justifyContent: 'center',
+			paddingHorizontal: space.md
+		},
 		emptyWrap: { alignItems: 'center', gap: space.md, marginTop: 48, paddingHorizontal: space.lg },
 		empty: {
 			color: colors.text,

@@ -53,7 +53,11 @@ function RootStack() {
 			<Stack.Screen name="records" options={{ title: tt('nav.records') }} />
 			<Stack.Screen name="progress" options={{ title: tt('nav.progress') }} />
 			<Stack.Screen name="cycle" options={{ title: tt('cycle.title') }} />
+			<Stack.Screen name="programs/index" options={{ title: tt('programs.title') }} />
+			<Stack.Screen name="programs/[slug]" options={{ title: tt('programs.title') }} />
 			<Stack.Screen name="exercise/[id]" options={{ title: tt('nav.exercise') }} />
+			<Stack.Screen name="articles" options={{ title: tt('articles.title') }} />
+			<Stack.Screen name="articles/[slug]" options={{ title: tt('articles.title') }} />
 			<Stack.Screen name="ai" options={{ title: tt('nav.ai') }} />
 			<Stack.Screen name="coach" options={{ title: tt('nav.coach') }} />
 			<Stack.Screen

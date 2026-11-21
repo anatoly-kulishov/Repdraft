@@ -43,6 +43,7 @@
 		TreeStructure as ListTree,
 		ListNumbers,
 		Minus,
+		FunnelSimple,
 		Sparkle as Sparkles,
 	} from 'phosphor-svelte';
 
@@ -470,6 +471,10 @@
 					actionLabel={translate(lang, 'builder.addExerciseShort')}
 				>
 					{#snippet actions()}
+						<AppButton href="/builder/equipment" variant="secondary" block>
+							<LucideIcon icon={FunnelSimple} size={ICON_SMALL} />
+							{translate(lang, 'builder.pickByEquipment')}
+						</AppButton>
 						<AppButton href={AI_DRAFT_HREF} variant="secondary" block>
 							<LucideIcon icon={Sparkles} size={ICON_SMALL} />
 							{translate(lang, 'builder.createWithAi')}

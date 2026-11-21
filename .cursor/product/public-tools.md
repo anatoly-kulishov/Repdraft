@@ -44,4 +44,6 @@
 
 ## Рейтинг сессии и программы
 
-Живут в sacred loop, не в публичном контенте: локальные ключи `repdraft:session-ratings` и `repdraft:program-runs`, домен `sessionRating.ts` / `programs.ts`. Контракты и почему без БД: [`native-rewrite-plan.md`](native-rewrite-plan.md#публичные-программы-и-рейтинг-сессии).
+Живут в sacred loop, не в публичном контенте: локальные ключи `repdraft:session-ratings`, `repdraft:program-runs` и `repdraft:saved-programs`, домен `sessionRating.ts` / `programs.ts`.
+
+Карточка программы показывает частоту, примерное время сессии (`sessionMinutes`: разминка + подходы с отдыхом, округление до 5 минут) и инвентарь блока. Инвентарь это контент `ProgramTemplate.equipment`, и `buildSessionExercises` получает его же как фильтр, поэтому чипы не расходятся с тем, что реально попадёт в план. Закладка «на потом» сортирует сохранённые блоки наверх и живёт только на устройстве. Контракты и почему без БД: [`native-rewrite-plan.md`](native-rewrite-plan.md#публичные-программы-и-рейтинг-сессии).

@@ -7,7 +7,8 @@ import { fontFamily, space, type ColorPalette } from '../theme';
 
 type Props = {
 	avatarUrl: string | null;
-	greeting: string;
+	/** Null for guests: web shows the plan subtitle instead of a greeting. */
+	greeting: string | null;
 };
 
 /** Greeting row: avatar, greeting and the light/dark theme toggle. */
@@ -26,9 +27,13 @@ export function HomeHeader({ avatarUrl, greeting }: Props) {
 					<UserRound size={16} color={colors.text} strokeWidth={2} />
 				</View>
 			)}
-			<Text style={styles.greeting} numberOfLines={1}>
-				{greeting}
-			</Text>
+			{greeting ? (
+				<Text style={styles.greeting} numberOfLines={1}>
+					{greeting}
+				</Text>
+			) : (
+				<View style={styles.greeting} />
+			)}
 			<Pressable
 				accessibilityRole="button"
 				accessibilityLabel={tt('settings.theme')}

@@ -9,7 +9,7 @@ import {
 	TextInput,
 	View
 } from 'react-native';
-import { labelBodyPart } from '@repdraft/domain/labels.ru';
+import { labelBodyPart, labelEquipment } from '@repdraft/domain/labels.ru';
 import type { ExerciseIndexItem } from '@repdraft/domain/types';
 import type { FrequentExercise } from '@repdraft/domain/exerciseFrequency';
 import { CatalogThumb } from '../components/CatalogThumb';
@@ -25,6 +25,9 @@ type Props = {
 	bodyPart: string | 'all';
 	onBodyPartChange: (value: string | 'all') => void;
 	parts: string[];
+	equipment: string | 'all';
+	onEquipmentChange: (value: string | 'all') => void;
+	equipmentOptions: { equipment: string; count: number }[];
 	pickList: ExerciseIndexItem[];
 	frequentItems: ExerciseIndexItem[];
 	frequentCount: number;
@@ -45,6 +48,9 @@ export function BuilderPicker({
 	bodyPart,
 	onBodyPartChange,
 	parts,
+	equipment,
+	onEquipmentChange,
+	equipmentOptions,
 	pickList,
 	frequentItems,
 	frequentCount,
@@ -95,6 +101,36 @@ export function BuilderPicker({
 					);
 				}}
 			/>
+			{equipmentOptions.length > 1 ? (
+				<FlatList
+					horizontal
+					style={styles.chipStrip}
+					data={['all', ...equipmentOptions.map((option) => option.equipment)] as const}
+					keyExtractor={(kit) => kit}
+					showsHorizontalScrollIndicator={false}
+					contentContainerStyle={styles.chips}
+					accessibilityLabel={tt('builder.kitTitle')}
+					renderItem={({ item: kit }) => {
+						const on = equipment === kit;
+						const facet = equipmentOptions.find((option) => option.equipment === kit);
+						const label =
+							kit === 'all'
+								? tt('exercises.all')
+								: `${labelEquipment(kit, locale)}${facet ? ` ${facet.count}` : ''}`;
+						return (
+							<Pressable
+								style={[styles.chip, styles.chipSoft, on && styles.chipOn]}
+								onPress={() => onEquipmentChange(kit)}
+								accessibilityState={{ selected: on }}
+							>
+								<Text style={[styles.chipText, on && styles.chipTextOn]} numberOfLines={1}>
+									{label}
+								</Text>
+							</Pressable>
+						);
+					}}
+				/>
+			) : null}
 			<FrequentExercisesRail
 				title={
 					frequentCount > 0
@@ -129,8 +165,8 @@ export function BuilderPicker({
 									{item.name_ru?.trim() || item.name}
 								</Text>
 								<Text style={styles.meta} numberOfLines={1}>
-									{item.body_part}
-									{item.equipment ? ` · ${item.equipment}` : ''}
+									{labelBodyPart(item.body_part, locale)}
+									{item.equipment ? ` · ${labelEquipment(item.equipment, locale)}` : ''}
 								</Text>
 							</View>
 							<Text style={[styles.pickMark, inPlan && styles.pickMarkOn]}>
@@ -182,6 +218,8 @@ function makeStyles(colors: ColorPalette) {
 			backgroundColor: colors.panel
 		},
 		chipOn: { borderColor: colors.accent, backgroundColor: colors.accentDim },
+		/** Filters under the search: same shape, lighter weight, so the two rows read as one block. */
+		chipSoft: { backgroundColor: colors.panel, borderColor: colors.border, minHeight: touchMin - 8 },
 		chipText: {
 			color: colors.text,
 			fontSize: 14,

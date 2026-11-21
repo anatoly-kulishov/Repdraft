@@ -10,6 +10,7 @@
  * so a program session behaves exactly like a hand-built plan.
  */
 
+import { exerciseMatchesEquipment } from './exercisePick';
 import type { BodyPart, ExerciseIndexItem, WorkoutExercise } from './types';
 
 export type ProgramLevel = 'novice' | 'intermediate';
@@ -42,6 +43,8 @@ export type ProgramTemplate = {
 	leadEn: string;
 	level: ProgramLevel;
 	weeks: number;
+	/** Kit the block is written for; generation sticks to it, cards show chips. */
+	equipment: readonly string[];
 	/** One week of sessions; later weeks repeat it with progression. */
 	sessions: ProgramSessionTemplate[];
 };
@@ -57,6 +60,21 @@ export const PROGRAMS_HUB_PATH = '/programs';
 
 /** Local-only progress: which saved plan belongs to which week/session slot. */
 export const PROGRAM_RUNS_STORAGE_KEY = 'repdraft:program-runs';
+
+/** Local-only «save for later» marks on the public library. */
+export const SAVED_PROGRAMS_STORAGE_KEY = 'repdraft:saved-programs';
+
+/** Tolerant read: drop junk, duplicates and slugs that left the library. */
+export function parseSavedPrograms(value: unknown): string[] {
+	if (!Array.isArray(value)) return [];
+	const known = new Set(PROGRAMS.map((program) => program.slug));
+	const out: string[] = [];
+	for (const item of value) {
+		if (typeof item !== 'string' || !known.has(item) || out.includes(item)) continue;
+		out.push(item);
+	}
+	return out;
+}
 
 export function programPath(slug: string): string {
 	return `${PROGRAMS_HUB_PATH}/${slug}`;
@@ -78,6 +96,23 @@ export function sessionTitle(session: ProgramSessionTemplate, locale: 'ru' | 'en
 	return locale === 'ru' ? session.titleRu : session.titleEn;
 }
 
+/**
+ * Rough session length for the card: 8 minutes of warm-up, every work set with
+ * its rest, plus a minute to change exercise. Rounded to 5 minutes, because the
+ * number is a planning hint, not a stopwatch.
+ */
+export function sessionMinutes(session: ProgramSessionTemplate): number {
+	const slots = session.focus.reduce((sum, slot) => sum + slot.slots, 0);
+	const workSec = slots * (session.sets * (session.reps * 4 + session.restSec) + 60);
+	return Math.max(15, Math.round((workSec + 8 * 60) / 300) * 5);
+}
+
+/** Shortest and longest session of the block. */
+export function programSessionMinutes(program: ProgramTemplate): { min: number; max: number } {
+	const minutes = program.sessions.map(sessionMinutes);
+	return { min: Math.min(...minutes), max: Math.max(...minutes) };
+}
+
 /* --- Content (copy lives here: two short programs, four weeks each) --- */
 
 export const PROGRAMS: readonly ProgramTemplate[] = [
@@ -93,6 +128,8 @@ export const PROGRAMS: readonly ProgramTemplate[] = [
 			'Four weeks, three sessions: legs, a push and a pull every time. The base for your first month in the gym.',
 		level: 'novice',
 		weeks: 4,
+		/* Matches the picks `buildSessionExercises` makes from the real catalog. */
+		equipment: ['barbell', 'dumbbell', 'body weight'],
 		sessions: [
 			{
 				id: 'a',
@@ -147,6 +184,7 @@ export const PROGRAMS: readonly ProgramTemplate[] = [
 			'Alternating upper and lower days, four sessions a week. More volume per muscle for people who already train consistently.',
 		level: 'intermediate',
 		weeks: 4,
+		equipment: ['barbell', 'dumbbell', 'body weight'],
 		sessions: [
 			{
 				id: 'upper-1',
@@ -233,13 +271,6 @@ export function sessionPrescription(
 
 /* --- Plan generation --- */
 
-function matchesEquipment(exercise: ExerciseIndexItem, equipment: readonly string[] | null): boolean {
-	if (!equipment || equipment.length === 0) return true;
-	const value = exercise.equipment.trim().toLowerCase();
-	if (value === 'body weight' || value === 'bodyweight') return true;
-	return equipment.some((item) => item.trim().toLowerCase() === value);
-}
-
 /** Popularity first, then id: stable order means the same session twice in a row. */
 function byPopularity(a: ExerciseIndexItem, b: ExerciseIndexItem): number {
 	const diff = (b.globalPopularity ?? 0) - (a.globalPopularity ?? 0);
@@ -266,7 +297,7 @@ export function buildSessionExercises(args: {
 				(exercise) =>
 					exercise.body_part === slot.bodyPart &&
 					!used.has(exercise.id) &&
-					matchesEquipment(exercise, equipment)
+					exerciseMatchesEquipment(exercise, equipment)
 			)
 			.sort(byPopularity);
 		const exact = slot.target
@@ -434,6 +465,16 @@ export function runProgramsSelfCheck(): void {
 	assert(programShortName(PROGRAMS[0], 'ru').length < 20, 'short name fits a plan row');
 
 	const program = PROGRAMS[0];
+	assert(program.equipment.includes('body weight'), 'bodyweight fallback is advertised');
+	const minutes = programSessionMinutes(program);
+	assert(minutes.min >= 15 && minutes.max <= 90, `session minutes sane, got ${minutes.min}-${minutes.max}`);
+	assert(minutes.min <= minutes.max, 'session minutes range');
+	const longer = sessionMinutes({
+		...program.sessions[0],
+		sets: program.sessions[0].sets + 2
+	});
+	assert(longer > sessionMinutes(program.sessions[0]), 'more sets must read longer');
+
 	assert(programWeeks(program).length === program.weeks, 'weeks expansion');
 	assert(programWeeks(program)[3].sessions.length === program.sessions.length, 'sessions per week');
 
@@ -446,6 +487,10 @@ export function runProgramsSelfCheck(): void {
 	assert(peak.restSec === base.restSec - 15, 'week3 shorter rest');
 	assert(deload.reps === Math.max(base.reps - 2, 4), 'week4 fewer reps');
 	assert(sessionPrescription(program.sessions[0], 0).sets === base.sets, 'week clamp low');
+	assert(
+		parseSavedPrograms(['full-body-3x', 'full-body-3x', 'gone', 7]).join(',') === 'full-body-3x',
+		'parseSavedPrograms drops junk, dupes and stale slugs'
+	);
 
 	// Generation: 4 slots, unique ids, prescription applied.
 	const session = program.sessions[0];

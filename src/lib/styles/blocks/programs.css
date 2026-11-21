@@ -30,6 +30,7 @@
 }
 
 .program-card {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
@@ -40,8 +41,69 @@
 }
 
 .program-card:hover,
-.program-card:focus-visible {
+.program-card:focus-within {
 	border-color: var(--color-accent-text);
+}
+
+/* Card-level link: the whole card is clickable, the save button sits above it. */
+.program-card__link {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	color: inherit;
+	text-decoration: none;
+}
+
+.program-card__link::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+}
+
+.program-card__link:focus-visible {
+	outline: none;
+}
+
+.program-card__link:focus-visible::after {
+	outline: 2px solid var(--color-accent-text);
+	outline-offset: 2px;
+}
+
+.program-card__top {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.program-card__save {
+	position: relative;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 44px;
+	height: 44px;
+	margin: -10px -10px -6px 0;
+	padding: 0;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--color-muted);
+	cursor: pointer;
+	transition: color 0.15s ease, background 0.15s ease;
+}
+
+.program-card__save:hover,
+.program-card__save:focus-visible {
+	background: var(--color-surface-muted);
+	color: var(--color-ink);
+}
+
+.program-card__save.is-saved {
+	color: var(--color-accent-text);
 }
 
 .program-card__title {
@@ -62,6 +124,25 @@
 	margin: 0;
 	font-size: 0.75rem;
 	color: var(--color-muted-soft);
+}
+
+/* Kit the block is written for: facts, one line of quiet chips. */
+.program-kit {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.program-kit__item {
+	padding: 2px 8px;
+	border: 1px solid var(--color-border);
+	border-radius: 999px;
+	font-size: 0.6875rem;
+	font-weight: 500;
+	color: var(--color-muted);
 }
 
 /* Level + weeks are facts about the block, not a badge collection. */

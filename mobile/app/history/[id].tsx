@@ -13,8 +13,10 @@ import {
 	updateLoggedSet
 } from '@repdraft/domain/session';
 import type { WorkoutSession } from '@repdraft/domain/types';
+import { setKindMessageKey } from '@repdraft/domain/sessionSetKind';
 import { exerciseDisplayName, getIndexItem, refreshCustomsCache } from '../../src/catalog/loadIndex';
 import { CatalogThumb } from '../../src/components/CatalogThumb';
+import { EmptyState } from '../../src/components/EmptyState';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { TechniqueSheet } from '../../src/components/TechniqueSheet';
@@ -97,6 +99,13 @@ export default function HistoryDetailScreen() {
 		setUndo(null);
 	}
 
+	async function cancelEdits() {
+		if (!session) return;
+		const fresh = await sessionsRepo.get(session.id);
+		setSession(fresh);
+		setEditing(false);
+	}
+
 	async function saveEdits() {
 		if (!session) return;
 		await sessionsRepo.save(session);
@@ -134,7 +143,12 @@ export default function HistoryDetailScreen() {
 	if (!session) {
 		return (
 			<View style={styles.center}>
-				<Text style={styles.muted}>…</Text>
+				<EmptyState
+					title={tt('live.noPlan')}
+					description={tt('workouts.emptyDesc')}
+					actionLabel={tt('nav.workouts')}
+					onAction={() => router.replace('/history')}
+				/>
 			</View>
 		);
 	}
@@ -173,6 +187,7 @@ export default function HistoryDetailScreen() {
 						<SwipeableRow
 							key={`${ex.exerciseId}-${ei}`}
 							style={styles.card}
+							disabled={!editing}
 							deleteLabel={tt('history.delete')}
 							onDelete={() => {
 								if (!session) return;
@@ -240,16 +255,26 @@ export default function HistoryDetailScreen() {
 										))
 									: (
 											<View style={styles.setGrid}>
-												{done.map((s, si) => (
-													<View key={si} style={styles.setCell}>
-														<Text style={styles.setIndex}>{si + 1}</Text>
-														<Text style={styles.setCellValue}>
-															{s.weightKg != null ? `${s.weightKg}` : '-'}
-															{' × '}
-															{s.reps ?? '-'}
-														</Text>
-													</View>
-												))}
+												{done.map((s, si) => {
+													const kind = s.kind ?? 'work';
+													return (
+														<View key={si} style={styles.setCell}>
+															<View style={styles.setCellHead}>
+																<Text style={styles.setIndex}>{si + 1}</Text>
+																{kind !== 'work' ? (
+																	<Text style={styles.setKind}>
+																		{tt(setKindMessageKey(kind))}
+																	</Text>
+																) : null}
+															</View>
+															<Text style={styles.setCellValue}>
+																{s.weightKg != null ? `${s.weightKg}` : '-'}
+																{' × '}
+																{s.reps ?? '-'}
+															</Text>
+														</View>
+													);
+												})}
 											</View>
 										)}
 								{!editing && note ? <Text style={styles.note}>{note}</Text> : null}
@@ -272,7 +297,14 @@ export default function HistoryDetailScreen() {
 					);
 			})}
 			{editing ? (
-				<PrimaryButton label={tt('history.save')} onPress={() => void saveEdits()} />
+				<>
+					<PrimaryButton label={tt('history.save')} onPress={() => void saveEdits()} />
+					<PrimaryButton
+						label={tt('common.cancel')}
+						variant="ghost"
+						onPress={() => void cancelEdits()}
+					/>
+				</>
 			) : (
 				<PrimaryButton label={tt('history.edit')} variant="ghost" onPress={() => setEditing(true)} />
 			)}
@@ -339,6 +371,18 @@ function makeStyles(colors: ColorPalette) {
 	setIndex: {
 		color: colors.muted,
 		fontSize: 11,
+		fontWeight: '600',
+		fontFamily: fontFamily.semibold
+	},
+	setCellHead: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		gap: 4
+	},
+	setKind: {
+		color: colors.muted,
+		fontSize: 10,
 		fontWeight: '600',
 		fontFamily: fontFamily.semibold
 	},

@@ -25,6 +25,7 @@ import {
 	formOrGroup,
 	formSuperset,
 	formatExercisePrescription,
+	groupBounds,
 	groupMemberRole,
 	hasLadderScheme,
 	moveByArrow,
@@ -34,6 +35,7 @@ import {
 	updateGroupSets
 } from '@repdraft/domain/workout';
 import { exerciseMetaHint } from '@repdraft/domain/labels.ru';
+import { equipmentFacets } from '@repdraft/domain/exercisePick';
 import { shouldShowCoachmark } from '@repdraft/domain/onboarding';
 import {
 	POPULAR_EXERCISE_IDS,
@@ -78,6 +80,7 @@ export default function BuilderScreen() {
 	const [picking, setPicking] = useState(false);
 	const [query, setQuery] = useState('');
 	const [bodyPart, setBodyPart] = useState<string | 'all'>('all');
+	const [equipment, setEquipment] = useState<string | 'all'>('all');
 	const [selected, setSelected] = useState<Set<string>>(new Set());
 	const listPad = space.lg;
 	const [catalogTick, setCatalogTick] = useState(0);
@@ -95,9 +98,10 @@ export default function BuilderScreen() {
 		return loadExerciseIndex();
 	}, [catalogTick]);
 	const parts = useMemo(() => uniqueBodyParts(catalog), [catalog]);
+	const equipmentOptions = useMemo(() => equipmentFacets(catalog, 10), [catalog]);
 	const pickList = useMemo(
-		() => filterExercises(catalog, { query, bodyPart, locale }),
-		[catalog, query, bodyPart, locale]
+		() => filterExercises(catalog, { query, bodyPart, equipment, locale }),
+		[catalog, query, bodyPart, equipment, locale]
 	);
 	const inPlanIds = useMemo(
 		() => new Set(plan?.exercises.map((e) => e.exerciseId) ?? []),
@@ -340,6 +344,9 @@ export default function BuilderScreen() {
 				bodyPart={bodyPart}
 				onBodyPartChange={setBodyPart}
 				parts={parts}
+				equipment={equipment}
+				onEquipmentChange={setEquipment}
+				equipmentOptions={equipmentOptions}
 				pickList={pickList}
 				frequentItems={frequentItems}
 				frequentCount={frequent.length}
@@ -472,6 +479,13 @@ export default function BuilderScreen() {
 						(item.groupId && gRole === 'first') || (item.altGroupId && aRole === 'first')
 					);
 					const metaHint = meta ? exerciseMetaHint(meta, locale) : '';
+					/* Superset rest is stored on the last member; the lead shows that value. */
+					const roleBounds = item.groupId ? groupBounds(plan.exercises, index) : null;
+					const groupRest =
+						item.groupId && gRole === 'first' && roleBounds
+							? plan.exercises[roleBounds.end]?.restSec ?? 0
+							: null;
+					const restValue = groupRest ?? item.restSec;
 					return (
 						<View
 							style={[
@@ -609,25 +623,25 @@ export default function BuilderScreen() {
 								<Stepper
 									styles={styles}
 									label={tt('builder.rest')}
-									value={item.restSec}
+									value={restValue}
 									onDec={() => {
 										if (item.groupId && gRole !== 'solo') {
-											void persist(updateGroupRest(plan, item.groupId, item.restSec - 15));
+											void persist(updateGroupRest(plan, item.groupId, restValue - 15));
 										} else {
 											void persist(
 												updateExercise(plan, item.exerciseId, {
-													restSec: item.restSec - 15
+													restSec: restValue - 15
 												})
 											);
 										}
 									}}
 									onInc={() => {
 										if (item.groupId && gRole !== 'solo') {
-											void persist(updateGroupRest(plan, item.groupId, item.restSec + 15));
+											void persist(updateGroupRest(plan, item.groupId, restValue + 15));
 										} else {
 											void persist(
 												updateExercise(plan, item.exerciseId, {
-													restSec: item.restSec + 15
+													restSec: restValue + 15
 												})
 											);
 										}

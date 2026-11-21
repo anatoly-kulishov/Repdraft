@@ -39,6 +39,7 @@ function compileDomain() {
 			'src/lib/domain/tools.ts',
 			'src/lib/domain/sessionRating.ts',
 			'src/lib/domain/programs.ts',
+			'src/lib/domain/exercisePick.ts',
 			'src/lib/seo/alternates.ts',
 			'--ignoreConfig',
 			'--ignoreDeprecations',
@@ -87,6 +88,7 @@ function run() {
 	const toolsDomain = require(join(outDir, 'domain', 'tools.js'));
 	const sessionRatingDomain = require(join(outDir, 'domain', 'sessionRating.js'));
 	const programsDomain = require(join(outDir, 'domain', 'programs.js'));
+	const exercisePickDomain = require(join(outDir, 'domain', 'exercisePick.js'));
 	const alternates = require(join(outDir, 'seo', 'alternates.js'));
 	const catalog = JSON.parse(
 		readFileSync(join(root, 'static', 'data', 'exercises.index.json'), 'utf8')
@@ -128,6 +130,8 @@ function run() {
 	console.log('✓ session rating self-check');
 	programsDomain.runProgramsSelfCheck();
 	console.log('✓ programs self-check');
+	exercisePickDomain.runExercisePickSelfCheck();
+	console.log('✓ exercise pick self-check');
 	alternates.runAlternatesSelfCheck();
 	console.log('✓ URL alternates self-check');
 
@@ -144,7 +148,8 @@ function run() {
 				const rows = programsDomain.buildSessionExercises({
 					session,
 					prescription,
-					catalog: realCatalog
+					catalog: realCatalog,
+					equipment: program.equipment
 				});
 				programSessions += 1;
 				const ids = new Set(rows.map((row) => row.exerciseId));
@@ -154,6 +159,23 @@ function run() {
 				if (rows.some((row) => row.sets !== prescription.sets || row.reps !== prescription.reps)) {
 					catalogProblems.push(`${label}: prescription drift`);
 				}
+				for (const row of rows) {
+					const picked = realCatalog.find((item) => item.id === row.exerciseId);
+					if (!picked || !exercisePickDomain.exerciseMatchesEquipment(picked, program.equipment)) {
+						catalogProblems.push(`${label}: ${row.exerciseId} outside the advertised kit`);
+					}
+				}
+			}
+		}
+	}
+	for (const program of programsDomain.PROGRAMS) {
+		const minutes = programsDomain.programSessionMinutes(program);
+		if (minutes.min < 15 || minutes.max > 120) {
+			catalogProblems.push(`${program.slug}: session minutes ${minutes.min}-${minutes.max}`);
+		}
+		for (const kit of program.equipment) {
+			if (kit !== 'body weight' && !realCatalog.some((item) => item.equipment === kit)) {
+				catalogProblems.push(`${program.slug}: kit value «${kit}» is missing from the catalog`);
 			}
 		}
 	}

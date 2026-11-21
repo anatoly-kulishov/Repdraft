@@ -7,6 +7,7 @@ import { Panel } from '../../src/components/Panel';
 import { HomeGuestPanel } from '../../src/home/HomeGuestPanel';
 import { HomeHeader } from '../../src/home/HomeHeader';
 import { HomeAssignmentCard } from '../../src/home/HomeAssignmentCard';
+import { HomeCreateCard } from '../../src/home/HomeCreateCard';
 import { HomeProgressCards } from '../../src/home/HomeProgressCards';
 import { PlanHeroCard } from '../../src/home/PlanHeroCard';
 import { RecentSessionsCard } from '../../src/home/RecentSessionsCard';
@@ -34,7 +35,10 @@ export default function WorkoutsScreen() {
 			contentContainerStyle={[styles.list, { paddingBottom: tabPad }]}
 		>
 			<View style={styles.wrap}>
-				<HomeHeader avatarUrl={home.avatarUrl} greeting={home.greeting} />
+				<HomeHeader
+					avatarUrl={home.avatarUrl}
+					greeting={home.isGuest ? null : home.greeting}
+				/>
 
 				{home.assignment ? (
 					<HomeAssignmentCard
@@ -51,6 +55,13 @@ export default function WorkoutsScreen() {
 							{tt('profile.outbox', { n: home.pendingSync })}
 						</Text>
 					</Panel>
+				) : null}
+
+				{!home.hasPlans && !home.active && !home.showGuestHero ? (
+					<HomeCreateCard
+						firstTime={home.plans.length === 0 && home.recent.length === 0}
+						onCreate={() => void home.createBlank()}
+					/>
 				) : null}
 
 				<PlanHeroCard
@@ -78,9 +89,10 @@ export default function WorkoutsScreen() {
 					/>
 				) : null}
 
-				{home.monthly && home.monthly.workouts > 0 ? (
+				{home.monthly && home.monthly.cards.workouts > 0 ? (
 					<HomeProgressCards
-						monthly={home.monthly}
+						overview={home.monthly}
+						period={home.period}
 						onOpen={() => router.push('/progress')}
 					/>
 				) : null}

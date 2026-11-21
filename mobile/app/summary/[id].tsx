@@ -29,6 +29,7 @@ import {
 	loadExerciseIndex,
 	refreshCustomsCache
 } from '../../src/catalog/loadIndex';
+import { EmptyState } from '../../src/components/EmptyState';
 import { SessionRatingPanel } from '../../src/components/SessionRatingPanel';
 import { SummaryLoadPanel } from '../../src/components/SummaryLoadPanel';
 import { PageSkeleton } from '../../src/components/PageSkeleton';
@@ -61,6 +62,7 @@ export default function SummaryScreen() {
 	const [healthSnap, setHealthSnap] = useState<HealthWorkoutSnapshot | null>(null);
 	const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 	const [allSessions, setAllSessions] = useState<WorkoutSession[]>([]);
+	const [loaded, setLoaded] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -78,6 +80,7 @@ export default function SummaryScreen() {
 				const snap = await loadLastHealthSnapshot(id);
 				if (!cancelled) setHealthSnap(snap);
 			}
+			if (!cancelled) setLoaded(true);
 		})();
 		return () => {
 			cancelled = true;
@@ -85,12 +88,26 @@ export default function SummaryScreen() {
 	}, [id]);
 
 	if (!session) {
-		return <PageSkeleton variant="summary" />;
+		if (!loaded) return <PageSkeleton variant="summary" />;
+		/* Unknown/deleted id: web shows an empty state, the phone used to spin forever. */
+		return (
+			<View style={styles.root}>
+				<EmptyState
+					title={tt('live.noPlan')}
+					description={tt('workouts.emptyDesc')}
+					actionLabel={tt('nav.workouts')}
+					onAction={() => router.replace('/history')}
+				/>
+			</View>
+		);
 	}
 
 	const volume = Math.round(sessionVolumeKg(session));
 	const delta = prevVolume != null ? volume - Math.round(prevVolume) : null;
-	const visible = visibleSessionExerciseIndices(session);
+	/* Web lists logged work only: skipped / untouched slots are not a result. */
+	const visible = visibleSessionExerciseIndices(session).filter((ei) =>
+		session.exercises[ei]?.sets.some((set) => set.completed)
+	);
 
 	async function addLaggingToPlan(bodyPart: string) {
 		const exerciseId = pickCatalogExerciseForBodyPart(loadExerciseIndex(), bodyPart);
@@ -198,12 +215,15 @@ export default function SummaryScreen() {
 								</Text>
 							</Pressable>
 							{open
-								? done.map((set, si) => (
-										<Text key={si} style={styles.setLine}>
-											{si + 1}. {set.weightKg ?? '-'} × {set.reps ?? '-'} ·{' '}
-											{tt(setKindMessageKey(loggedSetKind(set)))}
-										</Text>
-									))
+								? done.map((set, si) => {
+										const kind = loggedSetKind(set);
+										return (
+											<Text key={si} style={styles.setLine}>
+												{si + 1}. {set.weightKg ?? '-'} × {set.reps ?? '-'}
+												{kind !== 'work' ? ` · ${tt(setKindMessageKey(kind))}` : ''}
+											</Text>
+										);
+									})
 								: null}
 						</Panel>
 					);

@@ -3,6 +3,11 @@
 Браузерные тесты покрывают web/PWA. React Native проверяется только типами
 (`npm run check:mobile`), в браузере его не запустить.
 
+Литеральные i18n-ключи обоих клиентов сверяет `npm run check:i18n`
+(`scripts/check-i18n-usage.mjs`): `tt('...')` / `translate(lang, '...')`, которых
+нет в `messages.ts`, роняют проверку, иначе ключ виден на экране. Обе проверки
+входят в `npm run check:parity`.
+
 ## Запуск
 
 ```bash
@@ -43,11 +48,13 @@ Vite dev: так ловятся prerender/SSR/hydration-проблемы. Сер
 |------|---------------|
 | `public-content.spec.ts` | 42 публичных роута (RU + EN): 200, `<html lang>`, нет утечек i18n-ключей/`{n}`/`NaN` |
 | `tools.spec.ts` | 1ПМ, калории/БЖУ, ИМТ, пульсовые зоны: математика сверена с ручным расчётом; EN-зеркало; калькуляторы ничего не пишут в localStorage |
-| `programs.spec.ts` | хаб, 12/4 недели, старт слота, live, finish, прогресс `1 из 12` (и `Done 1 of 12`), SSR=0 vs hydration=1 |
+| `programs.spec.ts` | хаб, метаданные карточек (частота, время, инвентарь), «сохранить на потом» переживает reload, 12/4 недели, старт слота, live, finish, прогресс `1 из 12` (и `Done 1 of 12`), SSR=0 vs hydration=1 |
 | `sacred-loop.spec.ts` | builder draft, план, live, finish, summary, рейтинг (переживает reload), history; пустой builder ведёт в каталог |
+| `builder-pick.spec.ts` | визард `/builder/equipment`: оборудование -> мышцы -> упражнения, добавление в черновик, бодивейт как запасной вариант |
 | `seo.spec.ts` | self-canonical, `hreflang` ru/en/x-default, `og:locale`, 404 у плохих slug/id, robots, sitemap без дублей + выборка URL |
 | `i18n-mirrors.spec.ts` | EN-хаб без ссылок на RU-контент, EN-упражнение и тост, переключение языка в профиле |
 | `mobile.spec.ts` | 390×844: нет горизонтального скролла на 11 ключевых экранах |
+| `cycle.spec.ts` | волна `/cycle`: интенсивность -> объём -> разгрузка, пик объёма на 2-й неделе, проценты в списке недель, состояние переживает reload |
 | `shell.spec.ts` | юрфутер: ссылки на `/tools`, `/programs`, `/articles` с главной, EN-пути на `/en/*`, отсутствие в `/auth` и `/builder` |
 | `theme.spec.ts` | тёмная тема: `data-theme=dark`, текст не чёрный, выбор переживает reload |
 | `errors.spec.ts` | 404-страницы, публичный catalog API, AI/billing fail-closed, dev-only `/lab/fx` не в проде |

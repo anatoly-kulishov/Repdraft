@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
+	Alert,
 	Pressable,
 	ScrollView,
 	StyleSheet,
@@ -27,9 +28,12 @@ import { PageSkeleton } from '../src/components/PageSkeleton';
 import { Panel } from '../src/components/Panel';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { CycleWaveChart } from '../src/cycle/CycleWaveChart';
+import { createEmptyDraft } from '@repdraft/domain/workout';
 import { useCycleScreen } from '../src/cycle/useCycleScreen';
 import { useBottomChromePad } from '../src/layout/safe';
 import { useLocale } from '../src/state/locale';
+import { getAthleteProfile } from '../src/state/prefs';
+import { plansRepo } from '../src/storage/plansRepo';
 import { useAppColors } from '../src/state/theme';
 import { fontFamily, radius, space, touchMin, type ColorPalette } from '../src/theme';
 
@@ -49,6 +53,28 @@ export default function CycleScreen() {
 	const [resetOpen, setResetOpen] = useState(false);
 
 	const cycle = screen.cycle;
+
+	/* Web seeds the draft goal from the athlete profile; a hard-coded 'muscle' ignored intake. */
+	useEffect(() => {
+		let cancelled = false;
+		void getAthleteProfile().then((profile) => {
+			const goal = profile.goals[0];
+			if (!cancelled && goal) setDraftGoal(goal);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	async function createPlanForCycle() {
+		try {
+			const plan = createEmptyDraft(tt('workouts.newName'));
+			await plansRepo.save(plan);
+			router.push(`/builder/${plan.id}`);
+		} catch {
+			Alert.alert(tt('common.error'), tt('builder.saveFail'));
+		}
+	}
 	const currentWeek = screen.progress?.week ?? 1;
 	const openWeek = expandedWeek;
 
@@ -108,7 +134,7 @@ export default function CycleScreen() {
 						title={tt('cycle.plansEmpty')}
 						description={tt('cycle.createHint')}
 						actionLabel={tt('cycle.plansEmptyCta')}
-						onAction={() => router.push('/workouts')}
+						onAction={() => void createPlanForCycle()}
 					/>
 				) : (
 					<Panel style={styles.setup}>
