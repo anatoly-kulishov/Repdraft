@@ -14,6 +14,25 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.28.0',
+		highlights: {
+			ru: [
+				'Подбор в билдере: что есть под рукой, потом мышцы, потом упражнения. Названия помнить не нужно',
+				'Программы: закладки на будущее, время сессии и нужный инвентарь на карточке',
+				'Телефон догнал сайт: программы, «Мой тренер», чистая история, «Далее» в тренировке не ждёт всех подходов',
+				'Период прогресса (7, 30, 90, всё) теперь общий для главной и телефона',
+				'Волновой цикл: объём на второй неделе, разгрузка на третьей'
+			],
+			en: [
+				'Builder quick pick: your kit, then muscles, then exercises. No names to remember',
+				'Programs: save for later, session time and required kit on every card',
+				'The phone caught up: programs, My coach, cleaner history, Next no longer waits for every set',
+				'One progress period (7, 30, 90, all) shared by home and the phone',
+				'Wave cycle: volume peaks on week two, unloads on week three'
+			]
+		}
+	},
+	{
 		version: '0.27.1',
 		highlights: {
 			ru: [
