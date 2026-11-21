@@ -2,8 +2,8 @@
  * Public program library: 4-week blocks built *from the catalog by rules*, not
  * from a hand-written list of exercise ids. Two reasons:
  *
- * 1. No drift — if the catalog is rebuilt (ids change), programs still work.
- * 2. Low-end friendly — a session is 4–5 exercises, nothing to download.
+ * 1. No drift: if the catalog is rebuilt (ids change), programs still work.
+ * 2. Low-end friendly: a session is 4–5 exercises, nothing to download.
  *
  * Programs are content (weeks × sessions), the plan itself is generated on the
  * client from the local catalog index, then saved through `plans.importPlan`,
@@ -78,7 +78,7 @@ export function sessionTitle(session: ProgramSessionTemplate, locale: 'ru' | 'en
 	return locale === 'ru' ? session.titleRu : session.titleEn;
 }
 
-/* ——— Content (copy lives here: two short programs, four weeks each) ——— */
+/* --- Content (copy lives here: two short programs, four weeks each) --- */
 
 export const PROGRAMS: readonly ProgramTemplate[] = [
 	{
@@ -142,7 +142,7 @@ export const PROGRAMS: readonly ProgramTemplate[] = [
 		shortRu: 'Верх/низ 4×',
 		shortEn: 'Upper/Lower 4×',
 		leadRu:
-			'Верх и низ по очереди, четыре сессии в неделю. Больше объёма на группу — для тех, кто уже ходит стабильно.',
+			'Верх и низ по очереди, четыре сессии в неделю. Больше объёма на группу для тех, кто уже ходит стабильно.',
 		leadEn:
 			'Alternating upper and lower days, four sessions a week. More volume per muscle for people who already train consistently.',
 		level: 'intermediate',
@@ -231,7 +231,7 @@ export function sessionPrescription(
 	};
 }
 
-/* ——— Plan generation ——— */
+/* --- Plan generation --- */
 
 function matchesEquipment(exercise: ExerciseIndexItem, equipment: readonly string[] | null): boolean {
 	if (!equipment || equipment.length === 0) return true;
@@ -248,7 +248,7 @@ function byPopularity(a: ExerciseIndexItem, b: ExerciseIndexItem): number {
 
 /**
  * Deterministic pick: no `Math.random`, so a program session is reproducible
- * (and testable) — the user can re-open the plan and see the same exercises.
+ * (and testable): the user can re-open the plan and see the same exercises.
  */
 export function buildSessionExercises(args: {
 	session: ProgramSessionTemplate;
@@ -290,7 +290,7 @@ export function buildSessionExercises(args: {
 	return rows;
 }
 
-/* ——— Progress (local, derived from plans the user actually saved) ——— */
+/* --- Progress (local, derived from plans the user actually saved) --- */
 
 export type ProgramSlotState = {
 	planId: string;
@@ -302,7 +302,7 @@ export type ProgramSlotState = {
 export type ProgramRun = {
 	slug: string;
 	startedAt: string;
-	/** Key: `${week}:${sessionId}` — one plan per session slot. */
+	/** Key: `${week}:${sessionId}`, one plan per session slot. */
 	slots: Record<string, ProgramSlotState>;
 };
 
@@ -402,7 +402,7 @@ export function reconcileWithFinishedPlans(
 	return { run: changed ? { ...run, slots } : run, changed };
 }
 
-/* ——— Self-check (run by scripts/check-domain.mjs) ——— */
+/* --- Self-check (run by scripts/check-domain.mjs) --- */
 
 function assert(condition: boolean, message: string): void {
 	if (!condition) throw new Error(`programs: ${message}`);

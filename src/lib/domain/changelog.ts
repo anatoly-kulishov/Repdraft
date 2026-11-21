@@ -14,6 +14,21 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.27.1',
+		highlights: {
+			ru: [
+				'Правовые ссылки убраны с экрана тренировки, билдера и входа, чтобы не закрывать кнопки',
+				'Ссылки на инструменты, программы и справочник остались на главной и в табах',
+				'Подсказки и заметки на экранах читаются ровнее'
+			],
+			en: [
+				'Legal links no longer sit on the workout, builder and sign-in screens',
+				'Tools, programs and guide links stay on home and tabs',
+				'Hints and notes across the app read smoother'
+			]
+		}
+	},
+	{
 		version: '0.27.0',
 		highlights: {
 			ru: [

@@ -6,7 +6,7 @@ import { build, files, version } from '$service-worker';
  * Exercise JPG thumbs (~11 MB) precached on install; GIFs cache on view (~125 MB total).
  * Catalog JSON + icons precached with shell.
  *
- * Offline QA: use production build (`npm run preview`), not `npm run dev` —
+ * Offline QA: use production build (`npm run preview`), not `npm run dev`;
  * Vite dev serves uncacheable module URLs under /.svelte-kit and /@id.
  */
 const SW_NAVIGATION_MS = 5000;
@@ -15,16 +15,25 @@ const MEDIA_CACHE = `repdraft-media-${version}`;
 const APP_SHELL = '/';
 const DEV = import.meta.env.DEV;
 
+/**
+ * Directory markers such as `.gitkeep` are listed by `$service-worker` but the
+ * static handler rejects dotfiles, so precaching them only logs 404s.
+ */
+function isHiddenFile(path: string): boolean {
+	return (path.split('/').pop() ?? '').startsWith('.');
+}
+
 const BUILD_ASSETS = build.filter(
-	(path) => !path.includes('/videos/') && !path.includes('/images/')
+	(path) => !isHiddenFile(path) && !path.includes('/videos/') && !path.includes('/images/')
 );
 const BUILD_PATHS = new Set(BUILD_ASSETS);
 
 const STATIC_ESSENTIALS = files.filter(
 	(path) =>
-		path === '/manifest.webmanifest' ||
-		((path.startsWith('/data/') || path.startsWith('/content/')) && path.endsWith('.json')) ||
-		/^\/icon/.test(path)
+		!isHiddenFile(path) &&
+		(path === '/manifest.webmanifest' ||
+			((path.startsWith('/data/') || path.startsWith('/content/')) && path.endsWith('.json')) ||
+			/^\/icon/.test(path))
 );
 
 /**
@@ -39,10 +48,14 @@ const OFFLINE_PAGE = '/offline.html';
 const OFFLINE_ESSENTIALS = [OFFLINE_PAGE];
 
 /** Small static shell brand assets (splash/logo) the app requests before paint. */
-const BRAND_ESSENTIALS = files.filter((path) => /^\/(brand-|favicon|apple-touch)/.test(path));
+const BRAND_ESSENTIALS = files.filter(
+	(path) => !isHiddenFile(path) && /^\/(brand-|favicon|apple-touch)/.test(path)
+);
 
-/** All catalog list thumbs — small enough to precache for offline browse. */
-const IMAGE_PRECACHE = files.filter((path) => path.startsWith('/images/'));
+/** All catalog list thumbs, small enough to precache for offline browse. */
+const IMAGE_PRECACHE = files.filter(
+	(path) => !isHiddenFile(path) && path.startsWith('/images/')
+);
 
 const PRECACHE = [
 	...BUILD_ASSETS,
@@ -96,7 +109,7 @@ async function precacheAll(cache: Cache, urls: readonly string[]): Promise<void>
 	);
 }
 
-/** ponytail: 1300+ thumbs — batch so install does not open 1300 parallel fetches. */
+/** ponytail: 1300+ thumbs, batched so install does not open 1300 parallel fetches. */
 async function precacheInBatches(
 	cache: Cache,
 	urls: readonly string[],
@@ -139,7 +152,7 @@ self.addEventListener('activate', (event) => {
 				if (key !== CACHE && key !== MEDIA_CACHE) await caches.delete(key);
 			}
 			await self.clients.claim();
-			// ponytail: ~1300 thumbs after shell — faster SW install / first paint
+			// ponytail: ~1300 thumbs after shell, faster SW install / first paint
 			const mediaCache = await caches.open(MEDIA_CACHE);
 			void precacheInBatches(mediaCache, IMAGE_PRECACHE);
 		})()
@@ -225,7 +238,7 @@ async function offlineNavigationFallback(request: Request, cache: Cache): Promis
 	} else if (shell) {
 		/* iOS standalone restores the last URL, not start_url. A never-cached deep
 		 * link would dead-end on /offline.html even though the home works offline.
-		 * Boot the offline-capable home instead via a real navigation (302 → `/`). */
+		 * Boot the offline-capable home instead via a real navigation (302 -> `/`). */
 		try {
 			return Response.redirect(new URL('/', self.location.origin).href, 302);
 		} catch {
@@ -238,7 +251,7 @@ async function offlineNavigationFallback(request: Request, cache: Cache): Promis
 	return offlineResponse();
 }
 
-/** JS/CSS from precache or /_app/immutable — cache-first (SvelteKit offline pattern). */
+/** JS/CSS from precache or /_app/immutable: cache-first (SvelteKit offline pattern). */
 async function cacheFirstShell(request: Request): Promise<Response> {
 	const cache = await caches.open(CACHE);
 	const cached = await cache.match(request);

@@ -31,9 +31,9 @@
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: center;
-		gap: 0.35rem;
-		padding: 0.65rem 0.75rem;
-		font-size: 11px;
+		gap: 0.2rem 0.5rem;
+		padding: 0.45rem 0.75rem;
+		font-size: 0.6875rem;
 		line-height: 1.35;
 		color: var(--color-muted);
 	}
@@ -44,18 +44,23 @@
 		}
 	}
 
+	/* Muted one-liner: links stay readable but stop looking like a site footer. */
 	.legal-footer__link {
 		color: inherit;
-		text-decoration: underline;
-		text-decoration-color: color-mix(in srgb, var(--color-border) 90%, transparent);
-		text-underline-offset: 2px;
+		text-decoration: none;
+		border-radius: 4px;
 	}
 
 	.legal-footer__link:hover {
 		color: var(--color-ink);
 	}
 
+	.legal-footer__link:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
+	}
+
 	.legal-footer__sep {
-		opacity: 0.6;
+		opacity: 0.5;
 	}
 </style>

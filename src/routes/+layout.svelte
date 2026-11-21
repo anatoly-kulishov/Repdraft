@@ -94,6 +94,23 @@
 	let showHomeShellHeader = $derived(path === '/' && !hideMobileHeader);
 	let showMediaAttribution = $derived(showsExerciseMediaAttribution(path));
 
+	/**
+	 * In-app flows where the footer would fight the sticky CTA or the back-only
+	 * chrome. Public content (`/tools`, `/programs`, `/exercise/:id`, legal pages)
+	 * keeps it: there it is the only entry to `/articles` and the legal documents.
+	 */
+	function hidesLegalFooter(pathname: string): boolean {
+		if (pathname === '/workouts/summary') return true;
+		return (
+			pathname.startsWith('/live/') ||
+			pathname.startsWith('/builder') ||
+			pathname === '/ai' ||
+			pathname.startsWith('/ai/') ||
+			pathname.startsWith('/auth')
+		);
+	}
+	let showLegalFooter = $derived(!hidesLegalFooter(path));
+
 	onNavigate((navigation) => {
 		if (typeof document === 'undefined') return;
 		/* Native swipe-back / history already animates; VT double-paints and flickers chrome. */
@@ -329,8 +346,10 @@
 			{@render children()}
 		</main>
 
-		<div class="shell-footer-pad">
-			<LegalFooter />
+		<div class="shell-footer-pad" class:shell-footer-pad--bare={!showLegalFooter}>
+			{#if showLegalFooter}
+				<LegalFooter />
+			{/if}
 			{#if showMediaAttribution}
 				<AttributionFooter />
 			{/if}

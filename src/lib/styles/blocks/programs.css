@@ -1,7 +1,7 @@
-/* ——— Public program library (/programs, /programs/[slug]) ———
+/* --- Public program library (/programs, /programs/[slug]) ---
  * Content pages first: the prerendered HTML carries every week and session, so
  * the block reads like an article before any JS runs. The only interactive bit
- * is «Начать» — it builds a normal plan and drops the user into the sacred loop. */
+ * is «Начать»: it builds a normal plan and drops the user into the sacred loop. */
 
 .programs-page {
 	display: flex;
@@ -116,7 +116,7 @@
 	color: var(--color-accent-text);
 }
 
-/* ——— Detail ——— */
+/* --- Detail --- */
 
 .program-head {
 	display: flex;

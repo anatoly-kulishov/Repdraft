@@ -123,7 +123,7 @@ import { truncateMeta } from '$lib/seo/site';
 		if (!exercise || steps.length === 0) return null;
 		return buildExerciseHowToJsonLd(siteOrigin, exercise, seoLang, steps.slice(0, 8), seoPath);
 	});
-	/** SERP trail: home → exercise catalog → this exercise. */
+	/** SERP trail: home -> exercise catalog -> this exercise. */
 	let breadcrumbJsonLd = $derived(
 		exercise
 			? buildBreadcrumbJsonLd(siteOrigin, [

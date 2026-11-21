@@ -31,7 +31,7 @@ function writeRuns(runs: Record<string, ProgramRun>): void {
 /**
  * Local-only, like the athlete profile: a program run follows the device.
  * The only cloud signal we use is a finished session whose planId matches the
- * slot's saved plan — that is what marks a session as done.
+ * slot's saved plan, and that is what marks a session as done.
  */
 function createProgramsStore() {
 	/** Empty on purpose: SSR/prerender has no localStorage; `hydrate()` fills it after mount. */

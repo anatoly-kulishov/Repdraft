@@ -25,10 +25,13 @@ npm run check # web
 npm run check:mobile # tsc in mobile/
 npm run check:all # web + mobile typecheck
 npm run check:parity # tokens + versions + check:all
+npm run test:e2e # Playwright on the production build (:4199)
 npm run build:tokens # after editing src/lib/design/tokens.ts
 npm run build
 # Web prod: RF VPS https://www.repdraft.ru (GitHub Actions on main, or npm run deploy:vps)
 ```
+
+**E2E:** Playwright covers the web/PWA only (RN is `check:mobile`). Tests run against `npm run build` + `node build`, hermetic (Supabase/AI/billing blanked), on a `ru-RU` context. First run needs `npm run test:e2e:install`; see [`.cursor/product/testing.md`](.cursor/product/testing.md). `.github/workflows/e2e.yml` runs them on every PR to `main`.
 
 Shared copy: `src/lib/i18n/messages.ts` (both clients). Shared colors/spacing: `src/lib/design/tokens.ts`. Canonical site: `https://www.repdraft.ru`.
 
