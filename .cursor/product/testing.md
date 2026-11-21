@@ -48,6 +48,7 @@ Vite dev: так ловятся prerender/SSR/hydration-проблемы. Сер
 | `seo.spec.ts` | self-canonical, `hreflang` ru/en/x-default, `og:locale`, 404 у плохих slug/id, robots, sitemap без дублей + выборка URL |
 | `i18n-mirrors.spec.ts` | EN-хаб без ссылок на RU-контент, EN-упражнение и тост, переключение языка в профиле |
 | `mobile.spec.ts` | 390×844: нет горизонтального скролла на 11 ключевых экранах |
+| `cycle.spec.ts` | волна `/cycle`: интенсивность -> объём -> разгрузка, пик объёма на 2-й неделе, проценты в списке недель, состояние переживает reload |
 | `shell.spec.ts` | юрфутер: ссылки на `/tools`, `/programs`, `/articles` с главной, EN-пути на `/en/*`, отсутствие в `/auth` и `/builder` |
 | `theme.spec.ts` | тёмная тема: `data-theme=dark`, текст не чёрный, выбор переживает reload |
 | `errors.spec.ts` | 404-страницы, публичный catalog API, AI/billing fail-closed, dev-only `/lab/fx` не в проде |

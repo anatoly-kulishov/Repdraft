@@ -14,7 +14,7 @@
 	const PAD_X = 10;
 	const PAD_TOP = 8;
 	const TICKS_H = 18;
-	const MIN_PCT = 72;
+	const MIN_PCT = 60;
 	const MAX_PCT = 124;
 
 	let height = $derived(compact ? 72 : 132);
