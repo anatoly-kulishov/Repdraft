@@ -75,6 +75,7 @@ import {
 import { CatalogThumb } from '../../src/components/CatalogThumb';
 import { ConfirmSheet, type ConfirmAction } from '../../src/components/ConfirmSheet';
 import { ElapsedClock } from '../../src/components/ElapsedClock';
+import { EmptyState } from '../../src/components/EmptyState';
 import { LiveSetRow, type SetDraft } from '../../src/components/LiveSetRow';
 import { Panel } from '../../src/components/Panel';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
@@ -147,6 +148,8 @@ export default function LiveScreen() {
 	const [restUntil, setRestUntil] = useState<number | null>(null);
 	const [finishing, setFinishing] = useState(false);
 	const [bootReady, setBootReady] = useState(false);
+	/** Plan gone (deleted) or empty: web shows an empty state, not a silent trip home. */
+	const [bootError, setBootError] = useState<'missing' | 'empty' | null>(null);
 	const [forceAltPick, setForceAltPick] = useState(false);
 	const [techniqueId, setTechniqueId] = useState<string | null>(null);
 	const [confirm, setConfirm] = useState<{
@@ -275,16 +278,23 @@ export default function LiveScreen() {
 
 			if (!planId) {
 				if (!cancelled) {
+					setBootError('missing');
 					setBootReady(true);
-					router.replace('/');
 				}
 				return;
 			}
 			const plan = await plansRepo.get(planId);
-			if (!plan || plan.exercises.length === 0) {
+			if (!plan) {
 				if (!cancelled) {
+					setBootError('missing');
 					setBootReady(true);
-					router.replace('/');
+				}
+				return;
+			}
+			if (plan.exercises.length === 0) {
+				if (!cancelled) {
+					setBootError('empty');
+					setBootReady(true);
 				}
 				return;
 			}
@@ -672,16 +682,38 @@ export default function LiveScreen() {
 		const mode = exercisePickMode;
 		setExercisePickMode(null);
 		if (!session || !mode) return;
-		void (async () => {
-			if (mode === 'replace') {
-				const next = seedFromHistory(
-					replaceSessionExercise(session, selectedEi, exerciseId),
-					history
-				);
-				await persist(next, null);
-				setForceAltPick(false);
+		if (mode === 'replace') {
+			const current = session;
+			const target = current.exercises[selectedEi];
+			const apply = () => {
+				void (async () => {
+					const next = seedFromHistory(
+						replaceSessionExercise(current, selectedEi, exerciseId),
+						history
+					);
+					await persist(next, null);
+					setForceAltPick(false);
+				})();
+			};
+			if (!target?.sets.some((set) => set.completed)) {
+				apply();
 				return;
 			}
+			/* Web asks first; replacing wipes the logged sets of the current exercise. */
+			setConfirm({
+				title: tt('live.replaceExerciseTitle'),
+				message: tt('live.replaceExerciseConfirm'),
+				actions: [
+					{
+						label: tt('live.replaceExercise'),
+						variant: 'danger',
+						onPress: apply
+					}
+				]
+			});
+			return;
+		}
+		void (async () => {
 			const insertAt = selectedEi + 1;
 			const next = seedFromHistory(
 				insertSessionExercise(session, insertAt, exerciseId),
@@ -726,6 +758,18 @@ export default function LiveScreen() {
 		}
 	}
 
+	if (bootReady && bootError) {
+		return (
+			<View style={styles.root}>
+				<EmptyState
+					title={tt(bootError === 'empty' ? 'live.emptyPlan' : 'live.noPlan')}
+					actionLabel={tt('live.backPlans')}
+					onAction={() => router.replace('/workouts')}
+				/>
+			</View>
+		);
+	}
+
 	if (!bootReady || !session) {
 		return (
 			<View style={styles.root}>
@@ -756,6 +800,16 @@ export default function LiveScreen() {
 			? session.exercises.filter((e) => e.altGroupId === ex.altGroupId)
 			: [];
 	const currentComplete = ex ? exerciseAllSetsDone(session.exercises, selectedEi) : false;
+	/* Web hides "swap" when the domain would refuse it (chosen alt already has sets). */
+	const canSwapAlternative = (() => {
+		if (!ex?.altGroupId || forceAltPick || needsAlt) return false;
+		const chosenId = (session.altChoices ?? {})[ex.altGroupId];
+		if (!chosenId) return false;
+		const chosen = session.exercises.find(
+			(row) => row.altGroupId === ex.altGroupId && row.exerciseId === chosenId
+		);
+		return Boolean(chosen && !chosen.sets.some((set) => set.completed));
+	})();
 	const hasNextExercise = nextManualExerciseFocus(session, selectedEi) !== selectedEi;
 	const restTotalSec = ex ? Math.max(1, restSecAfterSet(session, selectedEi)) : 1;
 	const currentSetIndex = ex?.sets.findIndex((set) => !set.completed) ?? -1;
@@ -902,7 +956,7 @@ export default function LiveScreen() {
 									onPress={offerRemoveExercise}
 								/>
 							) : null}
-							{ex.altGroupId ? (
+							{canSwapAlternative ? (
 								<PrimaryButton
 									label={tt('live.swapAlternative')}
 									variant="ghost"
@@ -1031,8 +1085,9 @@ export default function LiveScreen() {
 						{hasNextExercise ? (
 							<PrimaryButton
 								label={tt('live.nextShort')}
+								variant={currentComplete ? 'primary' : 'secondary'}
 								onPress={() => setSelectedEi(nextManualExerciseFocus(session, selectedEi))}
-								disabled={finishing || !currentComplete}
+								disabled={finishing}
 							/>
 						) : (
 							<PrimaryButton

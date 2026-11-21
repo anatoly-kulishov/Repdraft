@@ -27,7 +27,7 @@ export default function ProgressScreen() {
 			contentContainerStyle={[styles.root, { paddingBottom: bottomPad }]}
 		>
 			<Text style={styles.lead}>{tt('progress.lead')}</Text>
-			<PeriodTabs period={progress.period} onChange={progress.setPeriod} />
+			<PeriodTabs period={progress.period} onChange={progress.choosePeriod} />
 			<ProgressMetricCards
 				cards={progress.overview.cards}
 				workoutsDeltaText={progress.workoutsDeltaText()}

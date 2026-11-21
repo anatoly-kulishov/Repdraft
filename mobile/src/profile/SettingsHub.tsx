@@ -9,6 +9,7 @@ import {
 	Languages,
 	Shield,
 	Smartphone,
+	UserRound,
 	Users
 } from 'lucide-react-native';
 import type { AthleteProfile } from '@repdraft/domain/athleteProfile';
@@ -24,13 +25,18 @@ type Props = {
 	showPro?: boolean;
 	showCoach?: boolean;
 	showWorkout?: boolean;
+	/** "Мой тренер": coach name/count + invite/disconnect sheet owned by the profile screen. */
+	coachValue?: string;
+	onCoach?: () => void;
 };
 
 export function SettingsHub({
 	signedIn,
 	showPro = true,
 	showCoach = false,
-	showWorkout = true
+	showWorkout = true,
+	coachValue,
+	onCoach
 }: Props) {
 	const router = useRouter();
 	const { locale, tt } = useLocale();
@@ -77,6 +83,14 @@ export function SettingsHub({
 						icon={Users}
 						label={tt('profile.clients')}
 						onPress={() => router.push('/settings/coach')}
+					/>
+				) : null}
+				{showCoach && signedIn && onCoach ? (
+					<SettingsRow
+						icon={UserRound}
+						label={tt('profile.myCoach')}
+						value={coachValue}
+						onPress={onCoach}
 					/>
 				) : null}
 				{signedIn ? (

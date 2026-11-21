@@ -253,7 +253,20 @@ export default function AiDraftScreen() {
 				<View style={styles.field}>
 					<View style={styles.labelRow}>
 						<Text style={styles.label}>{tt('aiDraft.briefLabel')}</Text>
-						<Text style={styles.counter}>{tt('aiDraft.chars', { n: String(brief.length) })}</Text>
+						<View style={styles.labelEnd}>
+							<Text style={styles.counter}>{tt('aiDraft.chars', { n: String(brief.length) })}</Text>
+							{brief.trim() ? (
+								<Pressable
+									accessibilityRole="button"
+									accessibilityLabel={tt('a11y.clearField')}
+									hitSlop={8}
+									onPress={() => setBrief('')}
+									style={styles.clearBtn}
+								>
+									<Text style={styles.clearText}>×</Text>
+								</Pressable>
+							) : null}
+						</View>
 					</View>
 					<TextInput
 						style={styles.input}
@@ -266,6 +279,9 @@ export default function AiDraftScreen() {
 						maxLength={AI_BRIEF_MAX}
 						editable={!busy}
 					/>
+					{!plan && !busy ? (
+						<Text style={styles.hint}>{tt('aiDraft.briefHint')}</Text>
+					) : null}
 					{error ? <Text style={styles.error}>{error}</Text> : null}
 				</View>
 
@@ -296,7 +312,15 @@ export default function AiDraftScreen() {
 						{plan.exercises.map((ex, i) => {
 							const meta = exerciseMeta(ex.exerciseId);
 							return (
-								<View key={`${ex.exerciseId}-${i}`} style={styles.exerciseRow}>
+								<Pressable
+									key={`${ex.exerciseId}-${i}`}
+									accessibilityRole="link"
+									accessibilityLabel={tt('aiDraft.openExercise', {
+										name: meta?.title ?? ex.exerciseId
+									})}
+									onPress={() => router.push(`/exercise/${ex.exerciseId}`)}
+									style={({ pressed }) => [styles.exerciseRow, pressed && styles.pressed]}
+								>
 									<Text style={styles.exerciseNum}>{i + 1}</Text>
 									<View style={styles.exerciseBody}>
 										<Text style={styles.exerciseTitle} numberOfLines={2}>
@@ -315,7 +339,7 @@ export default function AiDraftScreen() {
 											</Text>
 										</View>
 									</View>
-								</View>
+								</Pressable>
 							);
 						})}
 						<View style={styles.planAction}>
@@ -387,6 +411,25 @@ function makeStyles(colors: ColorPalette) {
 		chipTextActive: { color: colors.accentText, fontFamily: fontFamily.semibold },
 		pressed: { opacity: 0.85 },
 		field: { gap: space.xs },
+		labelEnd: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+		clearBtn: {
+			minWidth: 24,
+			minHeight: 24,
+			alignItems: 'center',
+			justifyContent: 'center'
+		},
+		clearText: {
+			color: colors.muted,
+			fontSize: 18,
+			lineHeight: 20,
+			fontFamily: fontFamily.regular
+		},
+		hint: {
+			color: colors.muted,
+			fontSize: 12,
+			lineHeight: 16,
+			fontFamily: fontFamily.regular
+		},
 		labelRow: {
 			flexDirection: 'row',
 			alignItems: 'center',

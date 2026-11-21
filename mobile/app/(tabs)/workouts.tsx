@@ -2,7 +2,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
-import { ChevronRight, Plus, SlidersHorizontal, Sparkles } from 'lucide-react-native';
+import { ChevronRight, Clock, Plus, SlidersHorizontal, Sparkles } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { proFromAppMetadata } from '@repdraft/domain/entitlement';
 import { buildDemoPlan } from '@repdraft/domain/onboarding';
@@ -275,6 +275,34 @@ export default function WorkoutsTab() {
 								<Text style={styles.cycleCardMeta}>{tt('cycle.cardEmptyHint')}</Text>
 							</Pressable>
 						)}
+						<Pressable
+							accessibilityRole="button"
+							accessibilityLabel={tt('programs.title')}
+							onPress={() => router.push('/programs')}
+							style={({ pressed }) => [
+								styles.programsCard,
+								pressed && styles.pressed
+							]}
+						>
+							<View style={styles.cycleCardHead}>
+								<Text style={styles.cycleCardKicker}>
+									{tt('programs.hubEntryKicker')}
+								</Text>
+								<ChevronRight color={colors.muted} size={18} strokeWidth={2} />
+							</View>
+							<Text style={styles.cycleCardName}>{tt('programs.title')}</Text>
+							<Text style={styles.cycleCardMeta}>{tt('programs.hubEntryHint')}</Text>
+						</Pressable>
+						<Pressable
+							accessibilityRole="button"
+							accessibilityLabel={tt('workouts.openHistory')}
+							onPress={() => router.push('/history')}
+							style={({ pressed }) => [styles.historyLink, pressed && styles.pressed]}
+						>
+							<Clock color={colors.muted} size={18} strokeWidth={2.2} />
+							<Text style={styles.historyLinkText}>{tt('workouts.openHistory')}</Text>
+							<ChevronRight color={colors.mutedSoft} size={18} strokeWidth={2.2} />
+						</Pressable>
 						{hasPlans ? (
 							<View style={styles.filterRow}>
 								<TextInput
@@ -372,8 +400,8 @@ export default function WorkoutsTab() {
 										}
 									},
 									{ text: tt('workouts.duplicate'), onPress: () => void duplicate(item) },
-									{ text: tt('workouts.moveUp'), onPress: () => void movePlan(item, -1) },
-									{ text: tt('workouts.moveDown'), onPress: () => void movePlan(item, 1) }
+									{ text: tt('builder.moveUp'), onPress: () => void movePlan(item, -1) },
+									{ text: tt('builder.moveDown'), onPress: () => void movePlan(item, 1) }
 								]);
 							}}
 						>
@@ -487,6 +515,32 @@ function makeStyles(colors: ColorPalette) {
 			fontFamily: fontFamily.semibold
 		},
 		cycleCardMeta: { ...type.meta, color: colors.muted },
+		programsCard: {
+			gap: space.xs,
+			padding: space.lg,
+			borderRadius: radius.md,
+			borderWidth: 1,
+			borderColor: colors.border,
+			backgroundColor: colors.panel
+		},
+		historyLink: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: space.sm,
+			minHeight: touchMin,
+			paddingHorizontal: space.lg,
+			borderRadius: radius.md,
+			borderWidth: 1,
+			borderColor: colors.border,
+			backgroundColor: colors.panel
+		},
+		historyLinkText: {
+			flex: 1,
+			color: colors.text,
+			fontSize: 15,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
+		},
 		pressed: { opacity: 0.85 },
 		search: {
 			flex: 1,

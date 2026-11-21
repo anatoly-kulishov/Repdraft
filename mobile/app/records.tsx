@@ -1,6 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
+	ActivityIndicator,
 	Alert,
 	FlatList,
 	Pressable,
@@ -20,7 +21,7 @@ import {
 	sanitizeNote
 } from '@repdraft/domain/inputLimits';
 import { labelBodyPart } from '@repdraft/domain/labels.ru';
-import { personalRecordChips } from '@repdraft/domain/records';
+import { hasLiftData, personalRecordChips } from '@repdraft/domain/records';
 import { shouldShowCoachmark } from '@repdraft/domain/onboarding';
 import type { PersonalRecord } from '@repdraft/domain/types';
 import { formatShortDate } from '@repdraft/i18n/format';
@@ -55,13 +56,17 @@ export default function RecordsScreen() {
 	const [noteText, setNoteText] = useState('');
 	const [visibleLimit, setVisibleLimit] = useState(CATALOG_PAGE_SIZE);
 	const [showCoachmark, setShowCoachmark] = useState(false);
+	const [loading, setLoading] = useState(true);
 
 	const reload = useCallback(() => {
 		void (async () => {
 			await refreshCustomsCache();
-			setRecords(await recordsRepo.list());
+			/* Same rule as web: a note-only record is not a PR row. */
+			const rows = (await recordsRepo.list()).filter(hasLiftData);
+			setRecords(rows);
 			const ob = await loadOnboarding();
-			setShowCoachmark(records.length === 0 && shouldShowCoachmark(ob, 'records.empty'));
+			setShowCoachmark(rows.length === 0 && shouldShowCoachmark(ob, 'records.empty'));
+			setLoading(false);
 		})();
 	}, []);
 
@@ -101,6 +106,14 @@ export default function RecordsScreen() {
 		[filtered, visibleLimit]
 	);
 	const hasMore = filtered.length > visibleLimit;
+	const trulyEmpty = records.length === 0;
+	const filtersActive = Boolean(query.trim() || bodyPartFilter);
+
+	function resetFilters() {
+		setQuery('');
+		setBodyPartFilter(null);
+		setVisibleLimit(CATALOG_PAGE_SIZE);
+	}
 
 	function loadMore() {
 		if (visibleLimit >= filtered.length) return;
@@ -257,16 +270,40 @@ export default function RecordsScreen() {
 				keyExtractor={(item) => item.exerciseId}
 				ListEmptyComponent={
 					<View style={styles.emptyWrap}>
-						<Text style={styles.empty}>{tt('records.emptyTitle')}</Text>
-						{showCoachmark ? (
-							<Coachmark
-								message={tt('onboarding.coachRecordsEmpty')}
-								onDismiss={() => {
-									setShowCoachmark(false);
-									void dismissCoachmark('records.empty');
-								}}
+						{loading ? (
+							<ActivityIndicator
+								color={colors.muted}
+								accessibilityLabel={tt('common.loading')}
 							/>
-						) : null}
+						) : trulyEmpty ? (
+							<>
+								<Text style={styles.empty}>{tt('records.emptyTitle')}</Text>
+								<Text style={styles.emptyLead}>{tt('records.emptyDesc')}</Text>
+								<PrimaryButton
+									label={tt('bookmarks.browse')}
+									onPress={() => router.push('/(tabs)/exercises')}
+								/>
+								{showCoachmark ? (
+									<Coachmark
+										message={tt('onboarding.coachRecordsEmpty')}
+										onDismiss={() => {
+											setShowCoachmark(false);
+											void dismissCoachmark('records.empty');
+										}}
+									/>
+								) : null}
+							</>
+						) : (
+							<>
+								<Text style={styles.empty}>{tt('catalog.emptyTitle')}</Text>
+								<Text style={styles.emptyLead}>{tt('catalog.emptyDesc')}</Text>
+								<PrimaryButton
+									label={tt('catalog.reset')}
+									variant="secondary"
+									onPress={resetFilters}
+								/>
+							</>
+						)}
 					</View>
 				}
 				contentContainerStyle={{ gap: space.sm, flexGrow: 1, paddingBottom: listPad }}
@@ -401,8 +438,20 @@ function makeStyles(colors: ColorPalette) {
 			textAlignVertical: 'top',
 			fontFamily: fontFamily.regular
 		},
-		emptyWrap: { padding: space.md, gap: space.md },
-		empty: { color: colors.muted, textAlign: 'center', marginTop: 48 },
+		emptyWrap: { padding: space.md, gap: space.md, alignItems: 'center', marginTop: 48 },
+		empty: {
+			color: colors.text,
+			textAlign: 'center',
+			fontSize: 16,
+			fontWeight: '700',
+			fontFamily: fontFamily.bold
+		},
+		emptyLead: {
+			color: colors.muted,
+			textAlign: 'center',
+			fontFamily: fontFamily.regular,
+			lineHeight: 20
+		},
 		row: {
 			minHeight: touchMin,
 			backgroundColor: colors.panel,

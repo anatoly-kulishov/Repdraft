@@ -987,6 +987,8 @@ export default function ProfileScreen() {
 				showPro={Boolean(session?.user && cloud)}
 				showCoach={Boolean(session?.user && cloud)}
 				showWorkout
+				coachValue={coachRowValue}
+				onCoach={() => setCoachSheetOpen(true)}
 			/>
 
 			<Panel>

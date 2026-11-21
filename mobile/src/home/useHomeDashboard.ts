@@ -26,7 +26,11 @@ import {
 	resolveHomeNextPlan,
 	sortPlansByUserOrder
 } from '@repdraft/domain/workout';
-import { progress30d } from '@repdraft/domain/progressOverview';
+import {
+	computeProgressOverview,
+	type ProgressOverview,
+	type ProgressPeriod
+} from '@repdraft/domain/progressOverview';
 import { cycleProgressNow, type Mesocycle } from '@repdraft/domain/cycle';
 import type { WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { resolveUserAvatarUrl } from '../auth/avatarUrl';
@@ -34,6 +38,7 @@ import { getSupabase, isSupabaseConfigured } from '../auth/supabase';
 import { loadExerciseIndex } from '../catalog/loadIndex';
 import { readHomeNextPlanId } from '../live/homeNext';
 import { readCycle } from '../state/cycle';
+import { readProgressPeriod } from '../state/progressPeriod';
 import { readPlanOrder, writePlanOrder } from '../live/planOrder';
 import { loadGreetingName } from '../state/greetingName';
 import { useLocale } from '../state/locale';
@@ -62,7 +67,8 @@ export function useHomeDashboard() {
 	const [plans, setPlans] = useState<WorkoutPlan[]>([]);
 	const [active, setActive] = useState<WorkoutSession | null>(null);
 	const [recent, setRecent] = useState<WorkoutSession[]>([]);
-	const [monthly, setMonthly] = useState<ReturnType<typeof progress30d> | null>(null);
+	const [monthly, setMonthly] = useState<ProgressOverview | null>(null);
+	const [period, setPeriod] = useState<ProgressPeriod>(30);
 	const [pinnedNextId, setPinnedNextId] = useState<string | null>(null);
 	const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
 	const [greetingCustom, setGreetingCustom] = useState('');
@@ -75,15 +81,17 @@ export function useHomeDashboard() {
 
 	const reload = useCallback(async () => {
 		setLoading(true);
-		const [list, activeSession, sessions, order, pinned, outbox, storedCycle] = await Promise.all([
-			plansRepo.list(),
-			readActiveSession(),
-			sessionsRepo.list(),
-			readPlanOrder(),
-			readHomeNextPlanId(),
-			outboxCount(),
-			readCycle()
-		]);
+		const [list, activeSession, sessions, order, pinned, outbox, storedCycle, storedPeriod] =
+			await Promise.all([
+				plansRepo.list(),
+				readActiveSession(),
+				sessionsRepo.list(),
+				readPlanOrder(),
+				readHomeNextPlanId(),
+				outboxCount(),
+				readCycle(),
+				readProgressPeriod()
+			]);
 		const nextOnboarding = await noteChecklist('homeSeen');
 		const ordered = sortPlansByUserOrder(list, order);
 		const nextOrder = order.length > 0 ? order : ordered.map((plan) => plan.id);
@@ -98,7 +106,8 @@ export function useHomeDashboard() {
 				.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''))
 				.slice(0, RECENT_LIMIT)
 		);
-		setMonthly(progress30d(sessions, new Date()));
+		setPeriod(storedPeriod);
+		setMonthly(computeProgressOverview(sessions, new Date(), undefined, { period: storedPeriod }));
 		setPinnedNextId(pinned);
 		setCycleState(storedCycle);
 		setOnboarding(nextOnboarding);
@@ -245,6 +254,7 @@ export function useHomeDashboard() {
 		active,
 		recent,
 		monthly,
+		period,
 		onboarding,
 		pendingSync,
 		next,
@@ -255,7 +265,8 @@ export function useHomeDashboard() {
 		hasPlans,
 		isGuest,
 		showGuestHero: isGuest && !hasPlans && !hasRecent && !active,
-		showChecklist: onboarding ? shouldShowChecklist(onboarding) : false,
+		/* Same gate as web: the checklist is for the cold start, not a permanent banner. */
+		showChecklist: onboarding ? shouldShowChecklist(onboarding) && plans.length === 0 : false,
 		continueMeta,
 		createBlank,
 		dismissOnboarding,

@@ -2,42 +2,60 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { formatKgInt } from '@repdraft/domain/format';
-import type { Progress30d } from '@repdraft/domain/progressOverview';
+import type { ProgressOverview, ProgressPeriod } from '@repdraft/domain/progressOverview';
 import { useLocale } from '../state/locale';
 import { useAppColors } from '../state/theme';
 import { fontFamily, radius, space, touchMin, type ColorPalette } from '../theme';
 
 type Props = {
-	monthly: Progress30d;
+	overview: ProgressOverview;
+	period: ProgressPeriod;
 	onOpen: () => void;
 };
 
-/** 30-day summary cards (workouts + volume) with week-over-week deltas. */
-export function HomeProgressCards({ monthly, onOpen }: Props) {
+/** Period summary cards (workouts + volume) with period-over-period deltas, shared with /progress. */
+export function HomeProgressCards({ overview, period, onOpen }: Props) {
 	const { tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
+	const cards = overview.cards;
+
+	const periodNoun =
+		period === 7
+			? tt('progress.periodPastWeek')
+			: period === 30 || period === 90
+				? tt('progress.periodPastDays', { n: period })
+				: '';
+
+	const title =
+		period === 'all'
+			? tt('home.progressTitleAll')
+			: tt('home.progressTitleDays', { n: period });
 
 	const workoutsDelta =
-		monthly.workoutsDeltaWeek === 0
-			? tt('progress.deltaNone')
-			: tt('progress.deltaWorkouts', {
-					sign: monthly.workoutsDeltaWeek > 0 ? '+' : '',
-					n: monthly.workoutsDeltaWeek,
-					p: tt('progress.periodPastWeek')
-				});
+		cards.workoutsDelta == null
+			? ''
+			: cards.workoutsDelta === 0
+				? tt('progress.deltaNone')
+				: tt('progress.deltaWorkouts', {
+						sign: cards.workoutsDelta > 0 ? '+' : '',
+						n: cards.workoutsDelta,
+						p: periodNoun
+					});
 	const volumeDelta =
-		monthly.volumeDeltaWeek === 0
-			? tt('progress.deltaNone')
-			: tt('progress.deltaVolume', {
-					sign: monthly.volumeDeltaWeek > 0 ? '+' : '',
-					n: formatKgInt(monthly.volumeDeltaWeek)
-				});
+		cards.volumeKgDelta == null
+			? ''
+			: cards.volumeKgDelta === 0
+				? tt('progress.deltaNone')
+				: tt('progress.deltaVolume', {
+						sign: cards.volumeKgDelta > 0 ? '+' : '',
+						n: formatKgInt(cards.volumeKgDelta)
+					});
 
 	return (
 		<View style={styles.section}>
 			<View style={styles.sectionHead}>
-				<Text style={styles.sectionTitle}>{tt('home.progress30Title')}</Text>
+				<Text style={styles.sectionTitle}>{title}</Text>
 				<Pressable
 					accessibilityRole="button"
 					style={styles.sectionLink}
@@ -55,11 +73,11 @@ export function HomeProgressCards({ monthly, onOpen }: Props) {
 					onPress={onOpen}
 				>
 					<Text style={styles.label}>{tt('progress.cardWorkouts')}</Text>
-					<Text style={styles.value}>{monthly.workouts}</Text>
+					<Text style={styles.value}>{cards.workouts}</Text>
 					<Text
 						style={[
 							styles.delta,
-							monthly.workoutsDeltaWeek <= 0 && styles.deltaFlat
+							(cards.workoutsDelta ?? 0) <= 0 && styles.deltaFlat
 						]}
 					>
 						{workoutsDelta}
@@ -72,9 +90,11 @@ export function HomeProgressCards({ monthly, onOpen }: Props) {
 					onPress={onOpen}
 				>
 					<Text style={styles.label}>{tt('progress.cardVolume')}</Text>
-					<Text style={styles.valueSm}>{formatKgInt(monthly.volumeKg)} кг</Text>
+					<Text style={styles.valueSm}>
+						{formatKgInt(cards.volumeKg)} {tt('common.kg')}
+					</Text>
 					<Text
-						style={[styles.delta, monthly.volumeDeltaWeek <= 0 && styles.deltaFlat]}
+						style={[styles.delta, (cards.volumeKgDelta ?? 0) <= 0 && styles.deltaFlat]}
 					>
 						{volumeDelta}
 					</Text>

@@ -27,7 +27,13 @@ import {
 	catalogEquipmentForPlace,
 	type AthleteProfile
 } from '@repdraft/domain/athleteProfile';
-import { HOME_EQUIPMENT_FILTER, type HomeKitOptionalId } from '@repdraft/domain/homeKit';
+import {
+	HOME_EQUIPMENT_FILTER,
+	exerciseMatchesHomeKit,
+	isHomeEquipmentFilter,
+	resolveHomeKitGroups,
+	type HomeKitOptionalId
+} from '@repdraft/domain/homeKit';
 import { labelBodyPart, labelCustomEquipment } from '@repdraft/domain/labels.ru';
 import { hasLiftData } from '@repdraft/domain/records';
 import {
@@ -128,13 +134,16 @@ export default function ExercisesScreen() {
 			.map((id) => byId.get(id))
 			.filter((item): item is NonNullable<typeof item> => Boolean(item));
 	}, [all, frequent]);
+	/* Home place shows counts for the athlete's kit, same rule as the web hub. */
 	const counts = useMemo(() => {
+		const homeGroups = isHomeEquipmentFilter(equipment) ? resolveHomeKitGroups(homeKit) : null;
 		const map = new Map<string, number>();
 		for (const ex of all) {
+			if (homeGroups && !exerciseMatchesHomeKit(ex, homeGroups)) continue;
 			map.set(ex.body_part, (map.get(ex.body_part) ?? 0) + 1);
 		}
 		return map;
-	}, [all]);
+	}, [all, equipment, homeKit]);
 
 	const filtered = useMemo(() => {
 		let list = filterExercises(all, {
