@@ -14,19 +14,19 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
-		version: '0.26.2',
+		version: '0.27.0',
 		highlights: {
 			ru: [
-				'Волновой цикл: 8–12 недель, где объём и интенсивность идут волнами',
-				'Каждая неделя сама подстраивает подходы, повторы и отдых под цель',
-				'График волн и отметки сделанных тренировок на экране цикла',
-				'Цикл хранится на устройстве: планы и тренировки не меняются'
+				'Калькуляторы 1ПМ, калорий, ИМТ и пульса: считаются на телефоне',
+				'Программы на 4 недели: план собирается в один тап и дальше живёт как обычный',
+				'Английские версии калькуляторов, программ и упражнений',
+				'Волновой цикл и оценка тренировки: обе фичи остаются на устройстве'
 			],
 			en: [
-				'Wave cycle: 8–12 weeks with volume and intensity moving in waves',
-				'Each week tunes sets, reps and rest for your goal',
-				'Wave chart and completed-workout marks on the cycle screen',
-				'The cycle stays on your device: plans and workouts are untouched'
+				'1RM, calorie, BMI and heart-rate calculators, computed on your phone',
+				'Four-week programs: one tap builds a normal plan you can edit',
+				'English versions of tools, programs and exercises under /en',
+				'Wave cycle and post-workout rating stay on your device'
 			]
 		}
 	},
