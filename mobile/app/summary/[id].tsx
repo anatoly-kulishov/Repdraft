@@ -109,7 +109,7 @@ export default function SummaryScreen() {
 		session.exercises[ei]?.sets.some((set) => set.completed)
 	);
 
-	async function addLaggingToPlan(bodyPart: string) {
+	async function addToPlan(bodyPart: string) {
 		const exerciseId = pickCatalogExerciseForBodyPart(loadExerciseIndex(), bodyPart);
 		if (!exerciseId) {
 			Alert.alert(tt('common.error'), tt('summary.addFail'));
@@ -181,7 +181,7 @@ export default function SummaryScreen() {
 					session={session}
 					allSessions={allSessions}
 					bodyPartFor={(id) => getIndexItem(id)?.body_part ?? null}
-					onAddLagging={(part) => void addLaggingToPlan(part)}
+					onAddToPlan={(part) => void addToPlan(part)}
 				/>
 
 				{visible.map((ei) => {

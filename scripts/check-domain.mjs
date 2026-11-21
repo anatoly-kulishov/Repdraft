@@ -24,6 +24,10 @@ function compileDomain() {
 			'src/lib/domain/importCsv.ts',
 			'src/lib/domain/coach.ts',
 			'src/lib/domain/coachHints.ts',
+			'src/lib/domain/trainingLoad.ts',
+			'src/lib/domain/progressOverview.ts',
+			'src/lib/domain/feedback.ts',
+			'src/lib/domain/rateLimitWindow.ts',
 			'src/lib/domain/articles.ts',
 			'src/lib/domain/sessionLifecycle.ts',
 			'src/lib/domain/sessionLog.ts',
@@ -73,6 +77,10 @@ function run() {
 	const domain = require(join(outDir, 'domain', 'importCsv.js'));
 	const coach = require(join(outDir, 'domain', 'coach.js'));
 	const coachHints = require(join(outDir, 'domain', 'coachHints.js'));
+	const trainingLoad = require(join(outDir, 'domain', 'trainingLoad.js'));
+	const progressOverview = require(join(outDir, 'domain', 'progressOverview.js'));
+	const feedback = require(join(outDir, 'domain', 'feedback.js'));
+	const rateLimitWindow = require(join(outDir, 'domain', 'rateLimitWindow.js'));
 	const articlesDomain = require(join(outDir, 'domain', 'articles.js'));
 	const sessionLifecycle = require(join(outDir, 'domain', 'sessionLifecycle.js'));
 	const sessionLog = require(join(outDir, 'domain', 'sessionLog.js'));
@@ -100,6 +108,14 @@ function run() {
 	console.log('✓ coach self-check');
 	coachHints.runCoachHintsSelfCheck();
 	console.log('✓ coach hints self-check');
+	trainingLoad.runTrainingLoadSelfCheck();
+	console.log('✓ training load self-check');
+	progressOverview.runProgressOverviewSelfCheck();
+	console.log('✓ progress overview self-check');
+	feedback.runFeedbackSelfCheck();
+	console.log('✓ feedback self-check');
+	rateLimitWindow.runRateLimitWindowSelfCheck();
+	console.log('✓ rate limit window self-check');
 	articlesDomain.runArticlesSelfCheck();
 	console.log('✓ articles self-check');
 	sessionLifecycle.runSessionLifecycleSelfCheck();

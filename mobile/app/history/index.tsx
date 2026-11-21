@@ -9,16 +9,18 @@ import {
 	TextInput,
 	View
 } from 'react-native';
-import { Trash2 } from 'lucide-react-native';
+import { Star, Trash2 } from 'lucide-react-native';
 import { HISTORY_PAGE_SIZE } from '@repdraft/domain/home';
 import { completedSetCount, sessionDurationMs } from '@repdraft/domain/session';
 import { groupSessionsByLocalDay } from '@repdraft/domain/sessionHistory';
 import type { WorkoutSession } from '@repdraft/domain/types';
 import { formatDurationMinutes, formatRelativeDay } from '@repdraft/i18n/format';
+import { translatePlural } from '@repdraft/i18n/messages';
 import { Chip } from '../../src/components/Chip';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { useLocale } from '../../src/state/locale';
 import { sessionsRepo } from '../../src/storage/sessionsRepo';
+import { sessionRatingsRepo } from '../../src/storage/sessionRatingsRepo';
 import { deleteSessionRemote } from '../../src/sync/cloudSync';
 import { useBottomChromePad } from '../../src/layout/safe';
 import { useAppColors } from '../../src/state/theme';
@@ -47,12 +49,18 @@ export default function HistoryListScreen() {
 	const styles = useMemo(() => makeStyles(colors), [colors]);
 	const listPad = useBottomChromePad(space.lg);
 	const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+	const [ratings, setRatings] = useState<Record<string, number>>({});
 	const [query, setQuery] = useState('');
 	const [preset, setPreset] = useState<Preset>('all');
 	const [visibleLimit, setVisibleLimit] = useState(HISTORY_PAGE_SIZE);
 
 	const reload = useCallback(() => {
 		void sessionsRepo.list().then(setSessions);
+		void sessionRatingsRepo.all().then((all) => {
+			const next: Record<string, number> = {};
+			for (const [id, entry] of Object.entries(all)) next[id] = entry.stars;
+			setRatings(next);
+		});
 	}, []);
 
 	useFocusEffect(
@@ -218,6 +226,8 @@ export default function HistoryListScreen() {
 				)}
 				renderItem={({ item }) => {
 					const mins = formatDurationMinutes(sessionDurationMs(item));
+					const sets = completedSetCount(item);
+					const stars = ratings[item.id] ?? null;
 					return (
 						<Pressable
 							style={styles.row}
@@ -227,12 +237,23 @@ export default function HistoryListScreen() {
 							<Text style={styles.title} numberOfLines={2}>
 								{item.planName}
 							</Text>
-							<Text style={styles.meta} numberOfLines={1}>
-								{tt('workouts.historyMeta', {
-									min: mins ?? '-',
-									sets: completedSetCount(item)
-								})}
-							</Text>
+							<View style={styles.metaRow}>
+								<Text style={styles.meta} numberOfLines={1}>
+									{translatePlural(locale, 'workouts.historyMeta', sets, {
+										min: mins ?? '-',
+										sets
+									})}
+								</Text>
+								{stars ? (
+									<View
+										style={styles.rating}
+										accessibilityLabel={tt('rating.rowLabel', { n: stars })}
+									>
+										<Star size={11} color={colors.accentText} fill={colors.accentText} />
+										<Text style={styles.ratingText}>{stars}</Text>
+									</View>
+								) : null}
+							</View>
 						</Pressable>
 					);
 				}}
@@ -288,6 +309,22 @@ function makeStyles(colors: ColorPalette) {
 			padding: space.md
 		},
 		title: { color: colors.text, fontWeight: '700', fontSize: 16, fontFamily: fontFamily.bold },
-		meta: { color: colors.muted, marginTop: 4, fontFamily: fontFamily.regular }
+		meta: { color: colors.muted, marginTop: 4, fontFamily: fontFamily.regular },
+		metaRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: 4 },
+		rating: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 2,
+			paddingHorizontal: 5,
+			paddingVertical: 1,
+			borderRadius: 999,
+			backgroundColor: colors.accentDim
+		},
+		ratingText: {
+			color: colors.accentText,
+			fontSize: 11,
+			fontWeight: '600',
+			fontFamily: fontFamily.regular
+		}
 	});
 }

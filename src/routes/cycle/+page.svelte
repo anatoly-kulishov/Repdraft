@@ -45,6 +45,12 @@
 
 	let progress = $derived(active ? cycleProgressNow(active) : null);
 	let summary = $derived(active ? cycleWeeksSummary(active, $live.history) : []);
+	/** Default name equals the page title, so the summary only repeats a renamed cycle. */
+	let nameAddsInfo = $derived(
+		Boolean(active) &&
+			(active?.name ?? '').trim().toLowerCase() !==
+				translate(lang, 'cycle.title').trim().toLowerCase()
+	);
 	let plansById = $derived(new Map($plans.map((plan) => [plan.id, plan])));
 	let totalPlanned = $derived(active ? active.weeks * active.planIds.length : 0);
 	let totalDone = $derived(summary.reduce((sum, week) => sum + week.done, 0));
@@ -246,7 +252,9 @@
 			<p class="cycle-summary__eyebrow">
 				{goalLabel(active.goal)} · {translate(lang, 'cycle.weeksShort', { n: active.weeks })}
 			</p>
-			<p class="cycle-summary__title">{active.name}</p>
+			{#if nameAddsInfo}
+				<p class="cycle-summary__title">{active.name}</p>
+			{/if}
 			{#if progress}
 				<p class="cycle-summary__week">
 					{translate(lang, 'cycle.cardWeek', { week: currentWeek, total: active.weeks })}

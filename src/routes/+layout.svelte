@@ -28,6 +28,7 @@
 	import { auth } from '$lib/stores/auth';
 	import { draft } from '$lib/stores/draft';
 	import { live } from '$lib/stores/live';
+	import { sessionRatings } from '$lib/stores/sessionRatings';
 	import { techniqueClipHints } from '$lib/stores/techniqueClipHints';
 	import { applyDocumentLang, resolvedLocale } from '$lib/stores/locale';
 	import { forceNormalShell } from '$lib/stores/shellChrome';
@@ -75,7 +76,7 @@
 		if (pathname.startsWith('/catalog')) return true;
 		if (pathname.startsWith('/articles')) return true;
 		if (pathname.startsWith('/auth')) return true;
-		if (pathname === '/privacy' || pathname === '/terms') return true;
+		if (pathname === '/privacy' || pathname === '/terms' || pathname === '/feedback') return true;
 		if (pathname.startsWith('/legal')) return true;
 		if (pathname.startsWith('/exercises/')) return true;
 		/* Builder → pick exercise: ScreenHeader only (no logo chrome + phantom spacer). */
@@ -101,7 +102,7 @@
 	 */
 	function showsLegalFooter(pathname: string): boolean {
 		const plain = pathname.replace(/^\/en(?=\/|$)/, '') || '/';
-		if (plain === '/terms' || plain === '/privacy') return true;
+		if (plain === '/terms' || plain === '/privacy' || plain === '/feedback') return true;
 		return (
 			plain === '/tools' ||
 			plain.startsWith('/tools/') ||
@@ -162,6 +163,7 @@
 		onboarding.init(get(page).url.searchParams);
 		draft.hydrate();
 		live.hydrate();
+		sessionRatings.hydrate();
 		techniqueClipHints.hydrate();
 		whenIdle(() => void techniqueClipHints.refresh());
 		void auth.init();

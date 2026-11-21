@@ -17,7 +17,7 @@ import {
 	type CoachHiddenMap
 } from '@repdraft/domain/coachHints';
 import { computeProgressOverview } from '@repdraft/domain/progressOverview';
-import { labelBodyPart } from '@repdraft/domain/labels.ru';
+import { labelCatalogZone } from '@repdraft/domain/catalogLinks';
 import type { WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { pluralRu } from '@repdraft/i18n/plural';
 import {
@@ -290,7 +290,7 @@ export default function CoachScreen() {
 											style={[styles.balancePart, lagging && styles.balancePartActive]}
 											numberOfLines={1}
 										>
-											{labelBodyPart(row.bodyPart, locale)}
+											{labelCatalogZone(row.bodyPart, locale)}
 										</Text>
 										<View style={styles.balanceTrack}>
 											<View
@@ -329,7 +329,7 @@ export default function CoachScreen() {
 									{exerciseDisplayName(hint.exerciseId, locale)}
 								</Text>
 								<Text style={styles.meta}>
-									{labelBodyPart(hint.bodyPart, locale)} ·{' '}
+									{labelCatalogZone(hint.bodyPart, locale)} ·{' '}
 									{tt('coach.hintShare', { pct: hint.sharePct })}
 								</Text>
 								<Text style={styles.why}>{tt(hint.reasonKey)}</Text>
@@ -368,12 +368,12 @@ export default function CoachScreen() {
 									→ {exerciseDisplayName(replace.toExerciseId, locale)}
 								</Text>
 								<Text style={styles.meta}>
-									{labelBodyPart(replace.bodyPart, locale)}
+									{labelCatalogZone(replace.bodyPart, locale)}
 								</Text>
 								<Text style={styles.why}>
 									{replaceSharePct != null
 										? tt('coach.replaceWhy', {
-												part: labelBodyPart(replace.bodyPart, locale),
+												part: labelCatalogZone(replace.bodyPart, locale),
 												pct: replaceSharePct
 											})
 										: tt('coach.replaceWhyGeneric')}

@@ -154,7 +154,7 @@
 		})();
 	});
 
-	async function addLaggingToPlan(bodyPart: string) {
+	async function addToPlan(bodyPart: string) {
 		const exerciseId = pickCatalogExerciseForBodyPart([...indexById.values()], bodyPart);
 		if (!exerciseId) {
 			toasts.show(translate(lang, 'summary.addFail'), 'error');
@@ -270,7 +270,7 @@
 			{session}
 			allSessions={allSessions.length > 0 ? allSessions : $live.history}
 			bodyPartFor={(id) => indexById.get(id)?.body_part ?? null}
-			onAddLagging={(part) => void addLaggingToPlan(part)}
+			onAddToPlan={(part) => void addToPlan(part)}
 		/>
 
 		{#if previewExercises.length > 0}

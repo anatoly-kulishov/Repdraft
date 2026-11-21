@@ -48,6 +48,20 @@
 	border-radius: inherit;
 }
 
+/*
+ * Light theme: a travelling accent line on a white card reads as a stray purple
+ * border, not as an effect (progress stats, coach cards, guest hero). The ring
+ * stays a dark-surface thing; light keeps the card's own border and shadow.
+ */
+html[data-theme='light'] .fx-beam__ring {
+	display: none;
+}
+
+/* Dev sandbox still previews both themes; never hide the effect there. */
+html[data-theme='light'] .fx-lab .fx-beam__ring {
+	display: block;
+}
+
 .fx-beam--md .fx-beam__ring,
 .fx-beam--sm .fx-beam__ring {
 	padding: var(--fx-beam-width);

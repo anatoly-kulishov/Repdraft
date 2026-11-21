@@ -13,6 +13,10 @@
  *   the list across distinct movements (bench → dips → push-ups) instead of ten
  *   near-identical barbell-press variants.
  *
+ * A zone is often wider than one muscle: «Руки» carries biceps, triceps and
+ * forearms. Ranked purely by `target`, the head of the list is one muscle only and
+ * the rest of the picked zone looks missing (`capPerTargetInZone` below fixes it).
+ *
  * `equipment` is deliberately NOT scored: the catalog carries dozens of variants
  * per implement, so "same barbell" alone would flood the first screen with the
  * same lift again — the one thing an athlete replacing an exercise doesn't want.
@@ -84,16 +88,28 @@ export function replacementCandidateScore(
 /**
  * Best substitutes first. The seed itself is never returned; ties go to the more
  * popular lift, then to the stable id so the order never flickers between renders.
+ *
+ * `capPerTargetInZone` keeps one muscle from eating its whole zone: after that many
+ * substitutes with the seed's zone *and* target, the list moves on to the next
+ * muscle of the same zone (biceps → triceps in «Руки»). Zones with a single target
+ * (chest = pectorals) are untouched, so a chest swap never leaks into shoulders.
  */
 export function rankReplacementCandidates(
 	items: readonly ExerciseIndexItem[],
 	seed: ReplacementSeed,
-	opts: { limit?: number } = {}
+	opts: { limit?: number; capPerTargetInZone?: number } = {}
 ): ReplacementCandidate[] {
 	const seedMuscles = muscleSet(seed);
-	const limit = opts.limit ?? Number.POSITIVE_INFINITY;
+	const limit = Math.max(0, opts.limit ?? Number.POSITIVE_INFINITY);
+	const cap = Math.max(1, opts.capPerTargetInZone ?? 3);
 
-	return items
+	const zoneTargets = new Set(
+		items.filter((item) => item.body_part === seed.body_part).map((item) => item.target)
+	);
+	/** One muscle, one zone: nothing to spread, keep pure relevance order. */
+	const spread = zoneTargets.size > 1;
+
+	const sorted = items
 		.filter((item) => item.id !== seed.id)
 		.map((item) => replacementCandidateScore(item, seed, seedMuscles))
 		.sort(
@@ -101,15 +117,32 @@ export function rankReplacementCandidates(
 				b.score - a.score ||
 				(b.item.globalPopularity ?? 0) - (a.item.globalPopularity ?? 0) ||
 				a.item.id.localeCompare(b.item.id)
-		)
-		.slice(0, Math.max(0, limit));
+		);
+
+	if (!spread) return sorted.slice(0, limit);
+
+	const head: ReplacementCandidate[] = [];
+	const overflow: ReplacementCandidate[] = [];
+	const perTarget = new Map<string, number>();
+	for (const row of sorted) {
+		const sameZone = row.item.body_part === seed.body_part;
+		const used = perTarget.get(row.item.target) ?? 0;
+		if (sameZone && used >= cap) {
+			overflow.push(row);
+			continue;
+		}
+		if (sameZone) perTarget.set(row.item.target, used + 1);
+		head.push(row);
+		if (head.length >= limit) break;
+	}
+	return head.length >= limit ? head.slice(0, limit) : [...head, ...overflow];
 }
 
 /** Same order, items only — the shape the picker list wants. */
 export function replacementCandidateItems(
 	items: readonly ExerciseIndexItem[],
 	seed: ReplacementSeed,
-	opts: { limit?: number } = {}
+	opts: { limit?: number; capPerTargetInZone?: number } = {}
 ): ExerciseIndexItem[] {
 	return rankReplacementCandidates(items, seed, opts).map((row) => row.item);
 }
@@ -201,6 +234,52 @@ export function runReplacementCandidatesSelfCheck(): void {
 	}
 	if (replacementCandidateItems(catalog, seed, { limit: 2 }).length !== 2) {
 		throw new Error('replacementCandidates: limit');
+	}
+
+	// A zone wider than one muscle («Руки» = biceps + triceps) must not turn into a
+	// biceps-only list: after the cap, the list moves on to the next muscle of the zone.
+	const armSeed: ReplacementSeed = {
+		id: 'curl-bb',
+		body_part: 'upper arms',
+		target: 'biceps brachii',
+		secondary_muscles: ['forearms']
+	};
+	const arms = [
+		item(armSeed.id, 'upper arms', 'biceps brachii', 'barbell', ['forearms'], 60),
+		item('curl-db', 'upper arms', 'biceps brachii', 'dumbbell', ['forearms'], 55),
+		item('curl-machine', 'upper arms', 'biceps brachii', 'machine', [], 40),
+		item('curl-cable', 'upper arms', 'biceps brachii', 'cable', [], 30),
+		item('curl-hammer', 'upper arms', 'biceps brachii', 'dumbbell', [], 20),
+		item('triceps-pushdown', 'upper arms', 'triceps brachii', 'cable', [], 70),
+		item('triceps-dip', 'upper arms', 'triceps brachii', 'body weight', [], 50),
+		item('wrist-curl', 'upper arms', 'forearms', 'dumbbell', [], 10),
+		item('bench', 'chest', 'pectorals', 'barbell', [], 90)
+	];
+	const armRanked = replacementCandidateItems(arms, armSeed);
+	const armIndex = (id: string) => armRanked.findIndex((row) => row.id === id);
+	const bicepsBeforeTriceps = armRanked
+		.slice(0, Math.max(0, armIndex('triceps-pushdown')))
+		.filter((row) => row.target === 'biceps brachii').length;
+	if (bicepsBeforeTriceps > 3) {
+		throw new Error('replacementCandidates: one muscle must not eat its zone');
+	}
+	if (!(armIndex('triceps-pushdown') > armIndex('curl-db'))) {
+		throw new Error('replacementCandidates: closest substitute still leads');
+	}
+	if (armIndex('triceps-pushdown') > 3) {
+		throw new Error('replacementCandidates: the rest of the zone must show up early');
+	}
+	if (!(armIndex('bench') > armIndex('wrist-curl'))) {
+		throw new Error('replacementCandidates: same zone outranks another zone');
+	}
+	// Completeness survives the spread: every other item is still somewhere in the list.
+	if (armRanked.length !== arms.length - 1) {
+		throw new Error('replacementCandidates: spread keeps every candidate');
+	}
+	// A single-target zone keeps the plain relevance order.
+	const chestRanked = replacementCandidateItems(catalog, seed);
+	if (chestRanked.length !== catalog.length - 1) {
+		throw new Error('replacementCandidates: single-target zone keeps order');
 	}
 	// Missing secondary muscles must not throw.
 	rankReplacementCandidates(

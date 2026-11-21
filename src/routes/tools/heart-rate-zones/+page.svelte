@@ -44,7 +44,8 @@
 	let seoLang = $derived<AppLocale>(localeOverride ?? resolveSeoLang($page.data.seoLocale, lang));
 	let origin = $derived(resolveSiteOrigin($page.url.origin));
 
-	let ageRaw = $state('30');
+	/** Same as resting pulse: an empty field with a hint, not a number we invented. */
+	let ageRaw = $state('');
 	let restingRaw = $state('');
 
 	let age = $derived(parseToolNumber(ageRaw, 30, TOOL_LIMITS.ageMin, TOOL_LIMITS.ageMax));
@@ -95,6 +96,7 @@
 					min={TOOL_LIMITS.ageMin}
 					max={TOOL_LIMITS.ageMax}
 					step="1"
+					placeholder="30"
 					value={ageRaw}
 					oninput={(event) => (ageRaw = event.currentTarget.value)}
 				/>

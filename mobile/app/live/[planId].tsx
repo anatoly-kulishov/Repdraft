@@ -60,7 +60,8 @@ import {
 	exerciseWeightByWeek,
 	nextHintMessageKey,
 	nextWeightHint,
-	weightAboveLast
+	weightAboveLast,
+	weightStepForEquipment
 } from '@repdraft/domain/sessionPayoff';
 import { isCardioBodyPart, usesExtraKgField } from '@repdraft/domain/workout';
 import type { ExerciseIndexItem, LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
@@ -930,6 +931,7 @@ export default function LiveScreen() {
 							history={history}
 							exerciseName={exerciseDisplayName(ex.exerciseId, locale)}
 							imagePath={getIndexItem(ex.exerciseId)?.image}
+							equipment={getIndexItem(ex.exerciseId)?.equipment ?? null}
 							setProgressLabel={setProgressLabel}
 							onOpenExercise={() => router.push(`/exercise/${ex.exerciseId}`)}
 						/>
@@ -1136,6 +1138,7 @@ function WeightCue({
 	history,
 	exerciseName,
 	imagePath,
+	equipment,
 	setProgressLabel,
 	onOpenExercise
 }: {
@@ -1144,6 +1147,7 @@ function WeightCue({
 	history: readonly WorkoutSession[];
 	exerciseName: string;
 	imagePath: string | null | undefined;
+	equipment: string | null;
 	setProgressLabel: string | null;
 	onOpenExercise: () => void;
 }) {
@@ -1153,21 +1157,33 @@ function WeightCue({
 	const max = Math.max(1, ...weeks.map((week) => week.weightKg ?? 0));
 	const current = exerciseBestWeightKg(session, exerciseId);
 	const raised = weightAboveLast(current, history, exerciseId, session.id);
-	const hint = nextWeightHint(history, exerciseId);
+	const hint = nextWeightHint(history, exerciseId, {
+		stepKg: weightStepForEquipment(equipment),
+		targetReps: session.exercises.find((item) => item.exerciseId === exerciseId)?.targetReps
+	});
 	return (
 		<View style={{ gap: space.sm }}>
-			<Text
-				style={{
-					color: colors.muted,
-					fontSize: 11,
-					fontWeight: '700',
-					textTransform: 'uppercase',
-					letterSpacing: 0.4,
-					fontFamily: fontFamily.bold
-				}}
+			<View
+				style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: space.sm }}
 			>
-				{tt('quest.weightByWeek')}
-			</Text>
+				<Text
+					style={{
+						color: colors.muted,
+						fontSize: 11,
+						fontWeight: '700',
+						textTransform: 'uppercase',
+						letterSpacing: 0.4,
+						fontFamily: fontFamily.bold
+					}}
+				>
+					{tt('quest.weightByWeek')}
+				</Text>
+				{hint?.oneRepMaxKg != null ? (
+					<Text style={{ color: colors.muted, fontSize: 11, fontWeight: '600', fontFamily: fontFamily.semibold }}>
+						{tt('quest.estimatedMax', { weight: String(hint.oneRepMaxKg) })}
+					</Text>
+				) : null}
+			</View>
 			<View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 40, gap: 4 }}>
 				{weeks.map((week) => (
 					<View key={week.weekKey} style={{ flex: 1, height: '100%', justifyContent: 'flex-end' }}>
@@ -1191,6 +1207,9 @@ function WeightCue({
 			{hint ? (
 				<Text style={{ color: colors.muted, fontFamily: fontFamily.regular }}>
 					{tt(nextHintMessageKey(hint.kind), { weight: String(hint.weightKg), reps: String(hint.reps) })}
+					{hint.percentOfMax != null
+						? ` · ${tt('quest.ofMax', { percent: String(hint.percentOfMax) })}`
+						: ''}
 				</Text>
 			) : null}
 			<Pressable onPress={onOpenExercise} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>

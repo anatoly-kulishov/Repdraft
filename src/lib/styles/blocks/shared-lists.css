@@ -333,6 +333,23 @@ a.entity-row--link:hover,
 	white-space: nowrap;
 }
 
+/* Session rating in a history row: quiet accent chip, one star + the number. */
+.entity-row__rating {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	gap: 0.1rem;
+	padding: 0.05rem 0.35rem 0.05rem 0.3rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
+	color: var(--color-accent-text);
+	font-size: 0.6875rem;
+	font-weight: 600;
+	line-height: 1.4;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
 .entity-row__title--create {
 	display: inline-flex;
 	align-items: center;

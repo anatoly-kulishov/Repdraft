@@ -63,6 +63,7 @@ export async function collectSitemapEntries(): Promise<SitemapEntry[]> {
 		'/privacy',
 		'/terms',
 		'/legal/requisites',
+		'/feedback',
 		...catalogHubSitemapPaths()
 	]) {
 		add(path, siteLastmod);

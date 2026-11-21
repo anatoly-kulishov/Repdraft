@@ -14,6 +14,33 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.29.1',
+		highlights: {
+			ru: [
+				'Светлая тема: фиолетовая анимация больше не бегает по краям карточек',
+				'«Волновой цикл» в тренировках стал короткой строкой: неделя и прогресс, а график и имя цикла живут на своей странице',
+				'Название завершённой тренировки стало компактнее и больше не занимает пол-экрана',
+				'Калькуляторы калорий и пульса больше не вписывают возраст 30 за вас: поле пустое, 30 стоит подсказкой',
+				'Голени больше не отдельная группа в прогрессе: они входят в «Ноги», а бейдж «Меньше всего» просто называет самую маленькую долю',
+				'Итоги тренировки показывают подходы за неделю к цели 10+ на группу вместо «отстаёт за 30 дней» по доле объёма',
+				'Оценка тренировки видна в истории и в деталях, а страница обратной связи отправляет отзыв на почту без входа',
+				'Подсказка веса в тренировке считается от 1ПМ: вес растёт настолько, насколько позволяет запас повторов, а не всегда на 2.5 кг',
+				'В подборе упражнений плюс стоит по центру, а выбранные фильтры подсвечены'
+			],
+			en: [
+				'Light theme: the purple animation no longer runs around card edges',
+				'The wave cycle in Workouts is a short row now: week and progress, with the chart and cycle name on their own screen',
+				'A finished workout title is compact now instead of eating half the screen',
+				'The calorie and heart-rate calculators no longer fill in age 30 for you: the field is empty, 30 is a hint',
+				'Calves are no longer a separate group in progress: they count as legs, and “Smallest share” is a neutral label, not a verdict',
+				'The workout summary shows weekly sets per group against an aim of 10+ instead of a “lagging in 30 days” volume share',
+				'Your session rating shows up in history and in details, and the feedback page mails a review without signing in',
+				'The in-workout weight hint is built from your 1RM, so it adds as much load as your rep reserve allows',
+				'In the exercise picker the plus is centred and picked filters are highlighted'
+			]
+		}
+	},
+	{
 		version: '0.29.0',
 		highlights: {
 			ru: [

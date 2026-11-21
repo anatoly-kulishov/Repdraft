@@ -1,14 +1,11 @@
 import { isBodyPart } from './filters';
 import { labelBodyPart } from './labels.ru';
+import { VIRTUAL_CATALOG_ZONES } from './bodyZones';
 import type { AppLocale } from '../i18n/locale';
 import type { BodyPart } from './types';
 
 export { isSafeFromPath, withFromParam } from './navigation';
-
-/** Hub + catalog slug that spans multiple dataset body_part values. */
-export const VIRTUAL_CATALOG_ZONES: Record<string, readonly BodyPart[]> = {
-	legs: ['upper legs', 'lower legs']
-};
+export { VIRTUAL_CATALOG_ZONES } from './bodyZones';
 
 export type CatalogZoneSlug = BodyPart | keyof typeof VIRTUAL_CATALOG_ZONES;
 

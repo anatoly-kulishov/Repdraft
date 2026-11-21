@@ -174,9 +174,6 @@
 		height: 100%;
 		background: var(--color-accent, #a259ff);
 	}
-	.progress-week__fill--lag {
-		background: var(--color-danger, #f87171);
-	}
 	.progress-week__meta {
 		font-size: 0.75rem;
 		line-height: 1rem;
@@ -204,13 +201,13 @@
 		flex-wrap: wrap;
 		min-width: 0;
 	}
-	.progress-part__lag {
+	.progress-part__smallest {
 		display: inline-flex;
 		align-items: center;
 		padding: 2px 8px;
 		border-radius: var(--radius-pill, 999px);
-		background: color-mix(in srgb, var(--color-danger) 14%, transparent);
-		color: var(--color-danger, #f87171);
+		background: var(--color-border);
+		color: var(--color-text-secondary, #8e8e93);
 		font-size: 0.6875rem;
 		font-weight: 700;
 		line-height: 1.2;

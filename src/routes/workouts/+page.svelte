@@ -24,10 +24,12 @@
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
 	import {
 		ArrowLeft,
+		CaretRight as ChevronRight,
 		ClipboardText as ClipboardList,
 		Clock,
 		Flag,
 		Plus,
+		Star,
 		Trash as Trash2,
 	} from 'phosphor-svelte';
 	import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
@@ -52,7 +54,6 @@
 	} from '$lib/domain/home';
 	import { dayKeyInInclusiveRange } from '$lib/domain/calendar';
 	import { cycleProgressNow, cycleWeeksSummary } from '$lib/domain/cycle';
-	import CycleWaveChart from '$lib/components/cycle/CycleWaveChart.svelte';
 	import { cycle } from '$lib/stores/cycle';
 	import { groupSessionsByLocalDay } from '$lib/domain/sessionHistory';
 	import {
@@ -61,13 +62,15 @@
 		formatRelativeDay,
 		toLocalDayKey
 	} from '$lib/i18n/format';
-	import { translate, translateError } from '$lib/i18n/messages';
+	import { translate, translateError, translatePlural } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { navigateBack } from '$lib/navigation/back';
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { auth } from '$lib/stores/auth';
 	import { homeNextPlan } from '$lib/stores/homeNextPlan';
 	import { live } from '$lib/stores/live';
+	import { ratingFor } from '$lib/domain/sessionRating';
+	import { sessionRatings } from '$lib/stores/sessionRatings';
 	import { plans, plansReady, plansSync } from '$lib/stores/plans';
 	import { planOrder } from '$lib/stores/planOrder';
 	import { isCloudListUncertain } from '$lib/domain/cloudSync';
@@ -186,6 +189,15 @@
 	let cycleDoneCount = $derived(cycleWeeks.reduce((sum, week) => sum + week.done, 0));
 	let cyclePlannedCount = $derived(
 		activeCycle ? activeCycle.weeks * activeCycle.planIds.length : 0
+	);
+	/**
+	 * The default cycle name repeats the card kicker ("Волновой цикл"), so the name
+	 * gets its own line only when the user renamed the cycle.
+	 */
+	let cycleNameDiffers = $derived(
+		Boolean(activeCycle) &&
+			(activeCycle?.name ?? '').trim().toLowerCase() !==
+				translate(lang, 'cycle.cardTitle').trim().toLowerCase()
 	);
 	let nextPlan = $derived.by(() =>
 		resolveHomeNextPlan($plans, history[0]?.planId, $homeNextPlan)
@@ -819,37 +831,38 @@
 						href="/cycle"
 						aria-label={translate(lang, 'cycle.open')}
 					>
-						<div class="cycle-card__head">
-							<p class="cycle-card__title">{translate(lang, 'cycle.cardTitle')}</p>
-							<span class="cycle-card__week">
-								{translate(lang, 'cycle.cardWeek', {
-									week: cycleNow.week,
-									total: activeCycle.weeks
+						<span class="cycle-card__main">
+							<span class="cycle-card__head">
+								<span class="cycle-card__title">{translate(lang, 'cycle.cardTitle')}</span>
+								<span class="cycle-card__week">
+									{translate(lang, 'cycle.cardWeek', {
+										week: cycleNow.week,
+										total: activeCycle.weeks
+									})}
+								</span>
+							</span>
+							{#if cycleNameDiffers}
+								<span class="cycle-card__name">{activeCycle.name}</span>
+							{/if}
+							<span class="cycle-card__meta">
+								{translate(lang, 'cycle.cardMeta', {
+									done: cycleDoneCount,
+									planned: cyclePlannedCount
 								})}
 							</span>
-						</div>
-						<p class="cycle-card__name">{activeCycle.name}</p>
-						<p class="cycle-card__meta">
-							{translate(lang, 'cycle.cardMeta', {
-								done: cycleDoneCount,
-								planned: cyclePlannedCount
-							})}
-						</p>
-						<span class="cycle-card__chart">
-							<CycleWaveChart
-								weeks={cycleWeeks}
-								compact
-								label={translate(lang, 'cycle.chartLabel', { n: activeCycle.weeks })}
-							/>
 						</span>
+						<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="cycle-card__chevron" />
 					</a>
 				{:else}
 					<a class="cycle-card" href="/cycle" aria-label={translate(lang, 'cycle.open')}>
-						<div class="cycle-card__head">
-							<p class="cycle-card__title">{translate(lang, 'cycle.cardTitle')}</p>
-						</div>
-						<p class="cycle-card__name">{translate(lang, 'cycle.cardEmptyTitle')}</p>
-						<p class="cycle-card__meta">{translate(lang, 'cycle.cardEmptyHint')}</p>
+						<span class="cycle-card__main">
+							<span class="cycle-card__head">
+								<span class="cycle-card__title">{translate(lang, 'cycle.cardTitle')}</span>
+							</span>
+							<span class="cycle-card__name">{translate(lang, 'cycle.cardEmptyTitle')}</span>
+							<span class="cycle-card__meta">{translate(lang, 'cycle.cardEmptyHint')}</span>
+						</span>
+						<LucideIcon icon={ChevronRight} size={ICON_SMALL} class="cycle-card__chevron" />
 					</a>
 				{/if}
 				<ListSearchBar
@@ -997,6 +1010,8 @@
 							</h2>
 							<ul class="entity-list entity-list--cards">
 								{#each group.sessions as session (session.id)}
+									{@const stars = ratingFor($sessionRatings, session.id)}
+									{@const setCount = completedSetCount(session)}
 									<li>
 										<SwipeToDelete
 											label={translate(lang, 'workouts.deleteSession')}
@@ -1012,11 +1027,22 @@
 													href={`/workouts/history/${session.id}`}
 												>
 													<span class="entity-row__title">{session.planName}</span>
-													<span class="entity-row__meta">
-														{translate(lang, 'workouts.historyMeta', {
-															min: formatDurationMinutes(sessionDurationMs(session)) ?? '-',
-															sets: completedSetCount(session)
-														})}
+													<span class="entity-row__meta-row">
+														<span class="entity-row__meta">
+															{translatePlural(lang, 'workouts.historyMeta', setCount, {
+																min: formatDurationMinutes(sessionDurationMs(session)) ?? '-',
+																sets: setCount
+															})}
+														</span>
+														{#if stars}
+															<span
+																class="entity-row__rating"
+																aria-label={translate(lang, 'rating.rowLabel', { n: stars })}
+															>
+																<LucideIcon icon={Star} size={11} weight="fill" />
+																{stars}
+															</span>
+														{/if}
 													</span>
 												</a>
 												<div class="entity-row__actions">

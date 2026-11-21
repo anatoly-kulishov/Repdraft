@@ -460,13 +460,16 @@
 	margin-top: 4px;
 }
 
-/* ——— Workouts list card ——— */
+/* ——— Workouts list card ———
+ * A teaser row, not a preview screen: the wave chart and the week list live on
+ * /cycle. Earlier this card repeated the default cycle name under its own kicker
+ * ("Волновой цикл" twice) and spent ~250px above the plan list. */
 
 .cycle-card {
 	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	padding: 14px 16px;
+	align-items: center;
+	gap: 10px;
+	padding: 11px 14px;
 	/* The card is a promo above the list, so it owns the air under itself: the
 	   search strip that follows has no top margin and used to butt right against it. */
 	margin-bottom: var(--list-search-content-gap);
@@ -478,7 +481,15 @@
 }
 
 .cycle-card--accent {
-	border-color: var(--color-accent);
+	border-color: var(--border-accent);
+}
+
+.cycle-card__main {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 0;
 }
 
 .cycle-card__head {
@@ -486,11 +497,11 @@
 	align-items: baseline;
 	justify-content: space-between;
 	gap: 12px;
+	min-width: 0;
 }
 
 .cycle-card__title {
-	margin: 0;
-	font-size: 0.8125rem;
+	font-size: 0.75rem;
 	font-weight: 600;
 	letter-spacing: 0.02em;
 	text-transform: uppercase;
@@ -498,14 +509,14 @@
 }
 
 .cycle-card__week {
+	flex: 0 0 auto;
 	font-size: 0.8125rem;
 	font-weight: 600;
 	color: var(--color-accent-text);
 }
 
 .cycle-card__name {
-	margin: 0;
-	font-size: 1.0625rem;
+	font-size: 0.9375rem;
 	font-weight: 600;
 	color: var(--color-ink);
 	overflow: hidden;
@@ -514,15 +525,20 @@
 }
 
 .cycle-card__meta {
-	margin: 0;
 	font-size: 0.8125rem;
+	line-height: 1.35;
 	color: var(--color-muted);
 }
 
-.cycle-card__chart {
-	margin-top: 2px;
+.cycle-card__chevron {
+	flex: 0 0 auto;
+	color: var(--color-muted-soft);
 }
 
 .cycle-card:hover {
 	border-color: var(--color-accent);
+}
+
+.cycle-card:hover .cycle-card__chevron {
+	color: var(--color-accent-text);
 }

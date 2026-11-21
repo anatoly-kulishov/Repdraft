@@ -96,7 +96,8 @@ export type ProgressOverview = {
 	bodyParts: BodyPartShare[];
 	/** Set-count share for the redesigned "Доля по группам" block. */
 	setShares: BodyPartSetShare[];
-	laggingBodyPart: string | null;
+	/** Zone with the smallest set share in the period (null for <2 groups). */
+	smallestShareBodyPart: string | null;
 	trends: ExerciseTrend[];
 	streak: ProgressStreak;
 	bestLifts: ProgressBestLift[];
@@ -289,8 +290,13 @@ export function computeProgressOverview(
 		? window.map((session) => sessionSetsByBodyPart(session, bodyPartFor))
 		: [];
 	const setShares = setToShares(mergeSetMaps(setMaps));
-	const laggingBodyPart =
-		setShares.length >= 2 ? (setShares[setShares.length - 1]?.bodyPart ?? null) : null;
+	// Point at the thinnest slice only when it is below an even split, so a
+	// balanced plan does not get a badge just for rounding order. It is not a
+	// verdict: a relative share says nothing about weekly volume per group.
+	const fairSharePct = setShares.length >= 2 ? 100 / setShares.length : 0;
+	const smallestShare = setShares[setShares.length - 1];
+	const smallestShareBodyPart =
+		smallestShare && smallestShare.sharePct < fairSharePct - 0.5 ? smallestShare.bodyPart : null;
 
 	const exerciseIds = new Set<string>();
 	for (const session of window) {
@@ -316,7 +322,7 @@ export function computeProgressOverview(
 		weeks,
 		bodyParts,
 		setShares,
-		laggingBodyPart,
+		smallestShareBodyPart,
 		trends,
 		streak: weeklyStreak(finished, now),
 		bestLifts: bestLiftsWithin(window)
@@ -334,4 +340,70 @@ function setToShares(map: Map<string, number>): BodyPartSetShare[] {
 	}
 	rows.sort((a, b) => b.sets - a.sets);
 	return rows;
+}
+
+/**
+ * Guards the smallest-share badge: it names a slice only when the split is not
+ * even, so a balanced plan stays unflagged. Also proves calves and legs never
+ * appear as two separate rows.
+ */
+export function runProgressOverviewSelfCheck(): void {
+	const now = new Date('2026-02-10T12:00:00.000Z');
+	const makeSession = (id: string, exerciseId: string, sets: number): WorkoutSession => ({
+		id,
+		planId: null,
+		planName: 'Plan',
+		startedAt: '2026-02-09T09:00:00.000Z',
+		finishedAt: '2026-02-09T10:00:00.000Z',
+		exercises: [
+			{
+				exerciseId,
+				targetSets: sets,
+				targetReps: 8,
+				restSec: 60,
+				sets: Array.from({ length: sets }, () => ({
+					weightKg: 50,
+					reps: 8,
+					completed: true,
+					kind: 'work' as const
+				}))
+			}
+		]
+	});
+	const partFor = (id: string): string | null => {
+		if (id === 'calves') return 'lower legs';
+		if (id === 'quads') return 'upper legs';
+		if (id === 'chest') return 'chest';
+		return 'back';
+	};
+
+	const even = computeProgressOverview(
+		[
+			makeSession('a', 'quads', 3),
+			makeSession('d', 'calves', 3),
+			makeSession('b', 'chest', 6),
+			makeSession('c', 'back', 6)
+		],
+		now,
+		partFor,
+		{ period: 30 }
+	);
+	if (even.setShares.length !== 3) {
+		throw new Error(`progress: legs must be one row, got ${even.setShares.map((r) => r.bodyPart)}`);
+	}
+	if (even.smallestShareBodyPart !== null) {
+		throw new Error('progress: a balanced split must not tag a smallest share');
+	}
+
+	const skewed = computeProgressOverview(
+		[makeSession('a', 'quads', 3), makeSession('b', 'calves', 3), makeSession('c', 'chest', 1)],
+		now,
+		partFor,
+		{ period: 30 }
+	);
+	const legs = skewed.setShares.find((row) => row.bodyPart === 'legs');
+	if (legs?.sets !== 6) throw new Error(`progress: legs sets ${legs?.sets}`);
+	if (skewed.smallestShareBodyPart !== 'chest') {
+		throw new Error(`progress: smallest share should be chest, got ${skewed.smallestShareBodyPart}`);
+	}
 }

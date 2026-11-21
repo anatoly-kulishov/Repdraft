@@ -18,6 +18,7 @@ import { exerciseDisplayName, getIndexItem, refreshCustomsCache } from '../../sr
 import { CatalogThumb } from '../../src/components/CatalogThumb';
 import { EmptyState } from '../../src/components/EmptyState';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
+import { SessionRatingPanel } from '../../src/components/SessionRatingPanel';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { TechniqueSheet } from '../../src/components/TechniqueSheet';
 import { useBottomChromePad } from '../../src/layout/safe';
@@ -171,6 +172,7 @@ export default function HistoryDetailScreen() {
 				{tt('history.setsCount')}
 				{volume > 0 ? ` · ${Math.round(volume)} ${tt('common.kg')}` : ''}
 			</Text>
+			<SessionRatingPanel sessionId={session.id} variant="detail" />
 				{session.exercises.map((ex, ei) => {
 					const done = ex.sets.filter((s) => s.completed);
 					if (!editing && done.length === 0) {

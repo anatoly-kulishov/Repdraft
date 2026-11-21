@@ -2,7 +2,7 @@
 	import { peekLocalSession } from '$lib/storage/localSessionRepository';
 	import { completedSetCount, sessionDurationMs } from '$lib/domain/session';
 	import { formatDurationMs, formatLongDate } from '$lib/i18n/format';
-	import { translate } from '$lib/i18n/messages';
+	import { translate, translatePlural } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { browser } from '$app/environment';
 
@@ -20,7 +20,7 @@
 		if (!peek) return null;
 		const when = peek.finishedAt ?? peek.startedAt;
 		if (!when) return null;
-		return `${formatLongDate(when, lang)} · ${formatDurationMs(sessionDurationMs(peek))} · ${translate(lang, 'workouts.historySets', { n: completedSetCount(peek) })}`;
+		return `${formatLongDate(when, lang)} · ${formatDurationMs(sessionDurationMs(peek))} · ${translatePlural(lang, 'workouts.historySets', completedSetCount(peek))}`;
 	});
 
 	let previewExercises = $derived.by((): PreviewExercise[] => {

@@ -11,6 +11,7 @@
 		Buildings,
 		Calculator,
 		ChartBar,
+		ChatCircleDots,
 		CloudArrowDown,
 		CrownSimple,
 		DeviceMobile,
@@ -100,6 +101,11 @@
 	</ProfileSettingsSection>
 
 	<ProfileSettingsSection label={translate(lang, 'settings.group.support')}>
+		<ProfileSettingsRow
+			icon={ChatCircleDots}
+			label={translate(lang, 'feedback.title')}
+			href="/feedback"
+		/>
 		<ProfileSettingsRow
 			icon={CloudArrowDown}
 			label={translate(lang, 'settings.exportTitle')}

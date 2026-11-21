@@ -2364,6 +2364,15 @@ button.live-panel-thumb {
 
 	.history-detail__screen-header .screen-header-title {
 		min-width: 0;
+		/* The name carries a wave prefix ("нед. 1 · Грудь + трицепс") and shares the
+		   row with three 48px actions, so a page-title scale wraps it into a wall of
+		   text. Same compact scale as the live session header: a label, not a hero. */
+		font-size: 1.0625rem;
+		font-weight: 600;
+		line-height: 1.25;
+		letter-spacing: -0.01em;
+		/* Two narrow lines still happen; balance them so no one-word widow is left. */
+		text-wrap: balance;
 	}
 
 	.history-detail__screen-header .screen-header-actions {

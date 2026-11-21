@@ -21,7 +21,7 @@
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
-	import { ArrowLeft, ArrowRight, Check, SlidersHorizontal } from 'phosphor-svelte';
+	import { ArrowLeft, ArrowRight, Check, PencilSimple, SlidersHorizontal } from 'phosphor-svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 
@@ -96,10 +96,10 @@
 		zones = zones.includes(zone) ? zones.filter((item) => item !== zone) : [...zones, zone];
 	}
 
-	function resetFilters() {
+	/** Keep the user on step 3: clearing filters should widen the list, not restart. */
+	function clearFilters() {
 		equipment = [];
 		zones = [];
-		step = 1;
 	}
 
 	function next() {
@@ -139,7 +139,9 @@
 		backLabelVisible
 	/>
 
-	<p class="builder-pick__lead">{translate(lang, 'builder.kitLead')}</p>
+	{#if step === 1}
+		<p class="builder-pick__lead">{translate(lang, 'builder.kitLead')}</p>
+	{/if}
 
 	<div
 		class="builder-pick__progress"
@@ -241,10 +243,26 @@
 			<h2 id="builder-pick-exercises" class="builder-pick__title">
 				{translate(lang, 'builder.pickExercisesTitle')}
 			</h2>
-			<p class="builder-pick__summary">
-				<span class="builder-pick__pill">{equipmentSummary()}</span>
-				<span class="builder-pick__pill">{musclesSummary()}</span>
-			</p>
+			<div class="builder-pick__summary">
+				<button
+					type="button"
+					class="builder-pick__pill"
+					aria-label={`${equipmentSummary()}. ${translate(lang, 'builder.pickEditEquipment')}`}
+					onclick={() => (step = 1)}
+				>
+					{equipmentSummary()}
+					<LucideIcon icon={PencilSimple} size={12} class="builder-pick__pill-icon" />
+				</button>
+				<button
+					type="button"
+					class="builder-pick__pill"
+					aria-label={`${musclesSummary()}. ${translate(lang, 'builder.pickEditMuscles')}`}
+					onclick={() => (step = 2)}
+				>
+					{musclesSummary()}
+					<LucideIcon icon={PencilSimple} size={12} class="builder-pick__pill-icon" />
+				</button>
+			</div>
 			{#if shown.length === 0}
 				<EmptyState
 					centered
@@ -252,15 +270,22 @@
 					title={translate(lang, 'builder.pickEmpty')}
 					description={translate(lang, 'builder.pickEmptyDesc')}
 					actionLabel={translate(lang, 'builder.pickReset')}
-					actionOnclick={resetFilters}
+					actionOnclick={clearFilters}
 				/>
 			{:else}
-				<p class="builder-pick__hint">
-					{translate(lang, 'builder.pickExercisesHint', {
-						shown: shown.length,
-						total: matches.length
-					})}
-				</p>
+				<div class="builder-pick__meta">
+					<p class="builder-pick__hint">
+						{translate(lang, 'builder.pickExercisesHint', {
+							shown: shown.length,
+							total: matches.length
+						})}
+					</p>
+					{#if equipment.length > 0 || zones.length > 0}
+						<button type="button" class="builder-pick__reset" onclick={clearFilters}>
+							{translate(lang, 'builder.pickReset')}
+						</button>
+					{/if}
+				</div>
 				<ul class="builder-pick__list exercise-list--cards">
 					{#each shown as exercise (exercise.id)}
 						<li>

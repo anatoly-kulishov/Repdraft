@@ -1,7 +1,8 @@
 import {
 	SESSION_RATINGS_STORAGE_KEY,
 	parseSessionRatings,
-	type SessionRating
+	type SessionRating,
+	type SessionRatings
 } from '@repdraft/domain/sessionRating';
 import { kvGetJson, kvSetJson } from './kv';
 
@@ -14,6 +15,9 @@ export const sessionRatingsRepo = {
 	async get(sessionId: string): Promise<SessionRating | null> {
 		if (!sessionId) return null;
 		return (await readAll())[sessionId]?.stars ?? null;
+	},
+	async all(): Promise<SessionRatings> {
+		return readAll();
 	},
 	async set(sessionId: string, stars: SessionRating): Promise<void> {
 		if (!sessionId) return;

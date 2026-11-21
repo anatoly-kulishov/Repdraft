@@ -30,7 +30,6 @@ export function makeProgressPanelStyles(colors: ColorPalette) {
 			overflow: 'hidden'
 		},
 		barFill: { height: '100%', borderRadius: radius.tag / 2, backgroundColor: colors.accent },
-		barLag: { backgroundColor: colors.danger },
 		row: {
 			flexDirection: 'row',
 			justifyContent: 'space-between',

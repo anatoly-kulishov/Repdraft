@@ -93,13 +93,7 @@
 }
 
 .builder-pick__hint,
-.builder-pick__summary {
-	margin: 0;
-	font-size: 0.8125rem;
-	line-height: 1.45;
-	color: var(--color-muted);
-}
-
+/* Filter recap: a row of tappable chips that jump back to the matching step. */
 .builder-pick__summary {
 	display: flex;
 	flex-wrap: wrap;
@@ -111,15 +105,40 @@
 .builder-pick__pill {
 	display: inline-flex;
 	align-items: center;
+	gap: 0.3rem;
 	max-width: 100%;
 	padding: 0.15rem 0.55rem;
 	border: 1px solid var(--color-border);
 	border-radius: 999px;
 	background: var(--color-surface);
+	font-family: inherit;
 	font-size: 0.75rem;
 	line-height: 1.4;
 	color: var(--color-muted);
+	text-align: left;
 	overflow-wrap: anywhere;
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+	transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.builder-pick__pill:hover {
+		border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-border));
+		background: color-mix(in srgb, var(--color-accent) 5%, var(--color-surface));
+		color: var(--color-ink);
+	}
+}
+
+.builder-pick__pill:focus-visible {
+	border-color: var(--color-accent-text);
+	color: var(--color-ink);
+}
+
+.builder-pick__pill-icon {
+	flex-shrink: 0;
+	color: var(--color-muted-soft);
 }
 
 .builder-pick__chips {
@@ -132,6 +151,12 @@
 	margin-left: 4px;
 	font-size: 0.6875rem;
 	color: var(--color-muted-soft);
+}
+
+/* The shared .is-active hook paints the chip; the picker only quiets its count. */
+.builder-pick__chips button.is-active .builder-pick__chip-count {
+	color: inherit;
+	opacity: 0.72;
 }
 
 .builder-pick__more {
@@ -209,20 +234,21 @@
 }
 
 .builder-pick__list li:has(.exercise-card-add.is-in-draft) .exercise-card--list {
-	border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-border));
-	background: color-mix(in srgb, var(--color-accent) 4%, var(--color-surface));
+	border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+	background: color-mix(in srgb, var(--color-accent) 5%, var(--color-surface));
 }
 
 .builder-pick__list .exercise-card--list .exercise-card-list-title {
 	font-size: 0.9375rem;
 }
 
-/* Add: accent ring while idle, filled accent once the exercise is in the draft. */
+/* Add: a real control, not a ghost ring. Idle = soft accent, in draft = fill. */
 .builder-pick__list.exercise-list--cards
 	.exercise-card--list
 	.exercise-card-add--inline:not(.is-in-draft)::before {
-	border-color: color-mix(in srgb, var(--color-accent) 30%, var(--color-border));
-	background: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface));
+	border-color: color-mix(in srgb, var(--color-accent) 46%, var(--color-border));
+	background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
+	box-shadow: 0 1px 2px color-mix(in srgb, var(--color-accent) 14%, transparent);
 }
 
 .builder-pick__list.exercise-list--cards
@@ -231,12 +257,48 @@
 	color: var(--color-accent-text) !important;
 }
 
+@media (hover: hover) and (pointer: fine) {
+	.builder-pick__list.exercise-list--cards
+		.exercise-card--list
+		.exercise-card-add--inline:not(.is-in-draft):hover::before {
+		border-color: var(--color-accent-text);
+		background: color-mix(in srgb, var(--color-accent) 17%, var(--color-surface));
+	}
+}
+
 .builder-pick__list.exercise-list--cards
 	.exercise-card--list
 	.exercise-card-add--inline
 	.exercise-card-add-icon {
 	width: 1.125rem;
 	height: 1.125rem;
+}
+
+/* Count + reset share one quiet line under the recap chips. */
+.builder-pick__meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 4px 10px;
+}
+
+.builder-pick__reset {
+	flex-shrink: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	font: inherit;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--color-accent-text);
+	cursor: pointer;
+}
+
+.builder-pick__reset:hover,
+.builder-pick__reset:focus-visible {
+	text-decoration: underline;
+	text-underline-offset: 2px;
 }
 
 .builder-pick__nav {
@@ -274,10 +336,23 @@
 		align-items: stretch;
 	}
 
+	/* Wide screens: the reset link belongs next to the count, not at the far edge. */
+	.builder-pick__meta {
+		justify-content: flex-start;
+		gap: 14px;
+	}
+
 	.builder-pick__nav {
 		position: static;
+		justify-content: flex-end;
 		padding: 0;
 		border-top: 0;
 		background: none;
+	}
+
+	/* Desktop: two full-width buttons would shout; keep them thumb-sized. */
+	.builder-pick__nav button {
+		flex: 0 0 auto;
+		min-width: 11rem;
 	}
 }
