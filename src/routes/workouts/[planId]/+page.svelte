@@ -12,6 +12,8 @@
 	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
 	import { altGroupMemberRole, formatExercisePrescription, formatLadderLabel, groupMemberRole, hasLadderScheme, planExerciseSlotCount, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
 	import { translate, translatePlural } from '$lib/i18n/messages';
+	import { cycleProgressNow } from '$lib/domain/cycle';
+	import { cycle } from '$lib/stores/cycle';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { peekLocalPlan, syncPreviewExerciseRowsPeek, peekPreviewExerciseRows } from '$lib/storage/localWorkoutRepository';
 	import { readActiveSession } from '$lib/storage/localSessionRepository';
@@ -77,6 +79,11 @@
 	});
 
 	let muscles = $derived(plan ? planTargetSummary(plan, indexById, lang) : '');
+	let activeCycle = $derived($cycle);
+	let cycleWeek = $derived(activeCycle ? cycleProgressNow(activeCycle).week : 0);
+	let planInCycle = $derived(
+		Boolean(activeCycle && plan && activeCycle.planIds.includes(plan.id))
+	);
 	let totalSets = $derived(plan ? planPrescribedSetCount(plan) : 0);
 	let statsText = $derived(
 		plan
@@ -200,6 +207,11 @@
 				<p class="workout-preview-summary-muscles">{muscles}</p>
 			{/if}
 			<p class="workout-preview-summary-stats">{statsText}</p>
+			{#if planInCycle}
+				<a class="workout-preview-cycle" href="/cycle">
+					{translate(lang, 'cycle.previewChip', { week: cycleWeek })}
+				</a>
+			{/if}
 			<button type="button" class="workout-preview-tune" onclick={() => (tuneOpen = true)}>
 				<LucideIcon icon={Sparkles} size={ICON_SMALL} />
 				{translate(lang, 'planTune.cta')}

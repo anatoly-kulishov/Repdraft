@@ -1,4 +1,7 @@
 import { catalogHubSitemapPaths } from '$lib/domain/catalogLinks';
+import { TOOL_IDS, TOOLS_HUB_PATH, toolPath } from '$lib/domain/tools';
+import { PROGRAMS, PROGRAMS_HUB_PATH, programPath } from '$lib/domain/programs';
+import { enPath } from '$lib/seo/alternates';
 import { readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -44,12 +47,33 @@ export async function collectSitemapEntries(): Promise<SitemapEntry[]> {
 		}
 	};
 
-	for (const path of ['/', '/exercises', '/articles', '/privacy', '/terms', ...catalogHubSitemapPaths()]) {
+	for (const path of [
+		'/',
+		'/exercises',
+		'/articles',
+		TOOLS_HUB_PATH,
+		enPath(TOOLS_HUB_PATH),
+		...TOOL_IDS.flatMap((id) => [toolPath(id), enPath(toolPath(id))]),
+		PROGRAMS_HUB_PATH,
+		enPath(PROGRAMS_HUB_PATH),
+		...PROGRAMS.flatMap((program) => [
+			programPath(program.slug),
+			enPath(programPath(program.slug))
+		]),
+		'/privacy',
+		'/terms',
+		'/legal/requisites',
+		...catalogHubSitemapPaths()
+	]) {
 		add(path, siteLastmod);
 	}
 
 	for (const row of exercises) {
-		if (row.id) add(`/exercise/${encodeURIComponent(row.id)}`, exercisesLastmod);
+		if (!row.id) continue;
+		const path = `/exercise/${encodeURIComponent(row.id)}`;
+		add(path, exercisesLastmod);
+		// `/en/exercise/:id` is a real SSR mirror (English instructions exist).
+		add(enPath(path), exercisesLastmod);
 	}
 
 	const articleSlugs = new Set<string>();

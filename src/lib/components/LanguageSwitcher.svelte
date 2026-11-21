@@ -3,13 +3,13 @@
 	import AppSelect from '$lib/components/AppSelect.svelte';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
-	import { resolvedLocale } from '$lib/stores/locale';
+	import { resolvedLocale, setPreferredLocale } from '$lib/stores/locale';
 
 	let lang = $derived($resolvedLocale);
 
 	function onChange(event: Event) {
 		const value = (event.currentTarget as HTMLSelectElement).value as AppLocale;
-		resolvedLocale.set(value);
+		setPreferredLocale(value);
 	}
 </script>
 

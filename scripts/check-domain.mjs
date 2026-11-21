@@ -35,6 +35,11 @@ function compileDomain() {
 			'src/lib/domain/homeKit.ts',
 			'src/lib/domain/athleteProfile.ts',
 			'src/lib/domain/replacementCandidates.ts',
+			'src/lib/domain/cycle.ts',
+			'src/lib/domain/tools.ts',
+			'src/lib/domain/sessionRating.ts',
+			'src/lib/domain/programs.ts',
+			'src/lib/seo/alternates.ts',
 			'--ignoreConfig',
 			'--ignoreDeprecations',
 			'6.0',
@@ -78,6 +83,11 @@ function run() {
 	const homeKit = require(join(outDir, 'domain', 'homeKit.js'));
 	const athleteProfile = require(join(outDir, 'domain', 'athleteProfile.js'));
 	const replacementCandidates = require(join(outDir, 'domain', 'replacementCandidates.js'));
+	const cycleDomain = require(join(outDir, 'domain', 'cycle.js'));
+	const toolsDomain = require(join(outDir, 'domain', 'tools.js'));
+	const sessionRatingDomain = require(join(outDir, 'domain', 'sessionRating.js'));
+	const programsDomain = require(join(outDir, 'domain', 'programs.js'));
+	const alternates = require(join(outDir, 'seo', 'alternates.js'));
 	const catalog = JSON.parse(
 		readFileSync(join(root, 'static', 'data', 'exercises.index.json'), 'utf8')
 	);
@@ -110,6 +120,47 @@ function run() {
 	console.log('✓ athlete profile self-check');
 	replacementCandidates.runReplacementCandidatesSelfCheck();
 	console.log('✓ replacement candidates self-check');
+	cycleDomain.runCycleSelfCheck();
+	console.log('✓ cycle self-check');
+	toolsDomain.runToolsSelfCheck();
+	console.log('✓ tools self-check');
+	sessionRatingDomain.runSessionRatingSelfCheck();
+	console.log('✓ session rating self-check');
+	programsDomain.runProgramsSelfCheck();
+	console.log('✓ programs self-check');
+	alternates.runAlternatesSelfCheck();
+	console.log('✓ URL alternates self-check');
+
+	// Real catalog: every program session must still build after a catalog rebuild.
+	const realCatalog = JSON.parse(
+		readFileSync(join(root, 'static/data/exercises.index.json'), 'utf8')
+	);
+	const catalogProblems = [];
+	let programSessions = 0;
+	for (const program of programsDomain.PROGRAMS) {
+		for (const session of program.sessions) {
+			for (let week = 1; week <= program.weeks; week++) {
+				const prescription = programsDomain.sessionPrescription(session, week);
+				const rows = programsDomain.buildSessionExercises({
+					session,
+					prescription,
+					catalog: realCatalog
+				});
+				programSessions += 1;
+				const ids = new Set(rows.map((row) => row.exerciseId));
+				const label = `${program.slug}/${session.id}/w${week}`;
+				if (rows.length < 3) catalogProblems.push(`${label}: ${rows.length} exercises`);
+				if (ids.size !== rows.length) catalogProblems.push(`${label}: duplicate ids`);
+				if (rows.some((row) => row.sets !== prescription.sets || row.reps !== prescription.reps)) {
+					catalogProblems.push(`${label}: prescription drift`);
+				}
+			}
+		}
+	}
+	if (catalogProblems.length > 0) {
+		throw new Error(`programs: real catalog\n${catalogProblems.join('\n')}`);
+	}
+	console.log(`✓ programs against real catalog (${programSessions} sessions)`);
 
 	// Real catalog: the swap list for a bench press must lead with the same target
 	// muscle and never offer the exercise being replaced.

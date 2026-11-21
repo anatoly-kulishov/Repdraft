@@ -1,4 +1,5 @@
 <script lang="ts">
+	import '$lib/styles/blocks/cycle.css';
 	import AppButton from '$lib/components/AppButton.svelte';
 	import AppPanel from '$lib/components/AppPanel.svelte';
 	import CloudSyncBanner from '$lib/components/CloudSyncBanner.svelte';
@@ -50,6 +51,9 @@
 		WORKOUTS_PLANS_SKELETON_ROW_LIMIT
 	} from '$lib/domain/home';
 	import { dayKeyInInclusiveRange } from '$lib/domain/calendar';
+	import { cycleProgressNow, cycleWeeksSummary } from '$lib/domain/cycle';
+	import CycleWaveChart from '$lib/components/cycle/CycleWaveChart.svelte';
+	import { cycle } from '$lib/stores/cycle';
 	import { groupSessionsByLocalDay } from '$lib/domain/sessionHistory';
 	import {
 		formatDurationMinutes,
@@ -175,6 +179,14 @@
 	});
 
 	let history = $derived($live.history);
+
+	let activeCycle = $derived($cycle);
+	let cycleWeeks = $derived(activeCycle ? cycleWeeksSummary(activeCycle, history) : []);
+	let cycleNow = $derived(activeCycle ? cycleProgressNow(activeCycle) : null);
+	let cycleDoneCount = $derived(cycleWeeks.reduce((sum, week) => sum + week.done, 0));
+	let cyclePlannedCount = $derived(
+		activeCycle ? activeCycle.weeks * activeCycle.planIds.length : 0
+	);
 	let nextPlan = $derived.by(() =>
 		resolveHomeNextPlan($plans, history[0]?.planId, $homeNextPlan)
 	);
@@ -801,6 +813,45 @@
 					{/snippet}
 				</EmptyState>
 			{:else}
+				{#if activeCycle && cycleNow}
+					<a
+						class="cycle-card cycle-card--accent"
+						href="/cycle"
+						aria-label={translate(lang, 'cycle.open')}
+					>
+						<div class="cycle-card__head">
+							<p class="cycle-card__title">{translate(lang, 'cycle.cardTitle')}</p>
+							<span class="cycle-card__week">
+								{translate(lang, 'cycle.cardWeek', {
+									week: cycleNow.week,
+									total: activeCycle.weeks
+								})}
+							</span>
+						</div>
+						<p class="cycle-card__name">{activeCycle.name}</p>
+						<p class="cycle-card__meta">
+							{translate(lang, 'cycle.cardMeta', {
+								done: cycleDoneCount,
+								planned: cyclePlannedCount
+							})}
+						</p>
+						<span class="cycle-card__chart">
+							<CycleWaveChart
+								weeks={cycleWeeks}
+								compact
+								label={translate(lang, 'cycle.chartLabel', { n: activeCycle.weeks })}
+							/>
+						</span>
+					</a>
+				{:else}
+					<a class="cycle-card" href="/cycle" aria-label={translate(lang, 'cycle.open')}>
+						<div class="cycle-card__head">
+							<p class="cycle-card__title">{translate(lang, 'cycle.cardTitle')}</p>
+						</div>
+						<p class="cycle-card__name">{translate(lang, 'cycle.cardEmptyTitle')}</p>
+						<p class="cycle-card__meta">{translate(lang, 'cycle.cardEmptyHint')}</p>
+					</a>
+				{/if}
 				<ListSearchBar
 					bind:value={searchQuery}
 					placeholder={translate(lang, 'workouts.searchPh')}

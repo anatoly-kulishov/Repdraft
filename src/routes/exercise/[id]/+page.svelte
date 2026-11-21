@@ -14,7 +14,9 @@
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import JsonLd from '$lib/seo/JsonLd.svelte';
-import { buildExerciseHowToJsonLd } from '$lib/seo/jsonLd';
+import { buildBreadcrumbJsonLd, buildExerciseHowToJsonLd } from '$lib/seo/jsonLd';
+	import { ruEnAlternates } from '$lib/seo/alternates';
+	import type { AppLocale } from '$lib/i18n/locale';
 import { exerciseOgImagePath } from '$lib/seo/prerenderPublic';
 import { truncateMeta } from '$lib/seo/site';
 	import { resolveSeoLang } from '$lib/seo/seoLang';
@@ -46,16 +48,28 @@ import { truncateMeta } from '$lib/seo/site';
 	import { Heart, ClipboardText as ClipboardList, Plus } from 'phosphor-svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import type { PageData } from './$types';
 
 	type ExerciseDetailTab = 'description' | 'history' | 'record' | 'muscles';
 
 	const DETAIL_TAB_ORDER: ExerciseDetailTab[] = ['description', 'history', 'record', 'muscles'];
 
-	let { data } = $props();
+	/** `/en/exercise/:id` mirror passes an explicit locale + canonical path. */
+	let {
+		data,
+		localeOverride = null,
+		pathOverride = null
+	}: {
+		data: PageData;
+		localeOverride?: AppLocale | null;
+		pathOverride?: string | null;
+	} = $props();
 
 	let exercise = $derived(data.exercise);
-	let lang = $derived($resolvedLocale);
-	let seoLang = $derived(resolveSeoLang($page.data.seoLocale, lang));
+	let lang = $derived<AppLocale>(localeOverride ?? $resolvedLocale);
+	let seoLang = $derived<AppLocale>(
+		localeOverride ?? resolveSeoLang($page.data.seoLocale, lang)
+	);
 	let showExerciseTabsCoachmark = $derived(shouldShowCoachmark($onboarding, 'exercise.tabs'));
 	let relatedArticles = $derived.by(() => {
 		const forLocale = data.relatedArticles.filter((a) => a.locale === lang);
@@ -99,12 +113,26 @@ import { truncateMeta } from '$lib/seo/site';
 		if (mediaPhase === 'gif') mediaPhase = 'jpg';
 		else if (mediaPhase === 'jpg') mediaPhase = 'none';
 	}
-	let seoPath = $derived(exercise ? `/exercise/${encodeURIComponent(exercise.id)}` : undefined);
+	let ruExercisePath = $derived(
+		exercise ? `/exercise/${encodeURIComponent(exercise.id)}` : ''
+	);
+	let seoPath = $derived(pathOverride ?? (exercise ? ruExercisePath : undefined));
+	let alternates = $derived(exercise ? ruEnAlternates(ruExercisePath) : []);
 	let siteOrigin = $derived(resolveSiteOrigin($page.url.origin));
 	let exerciseJsonLd = $derived.by(() => {
 		if (!exercise || steps.length === 0) return null;
-		return buildExerciseHowToJsonLd(siteOrigin, exercise, seoLang, steps.slice(0, 8));
+		return buildExerciseHowToJsonLd(siteOrigin, exercise, seoLang, steps.slice(0, 8), seoPath);
 	});
+	/** SERP trail: home → exercise catalog → this exercise. */
+	let breadcrumbJsonLd = $derived(
+		exercise
+			? buildBreadcrumbJsonLd(siteOrigin, [
+					{ name: translate(seoLang, 'nav.tabHome'), path: '/' },
+					{ name: translate(seoLang, 'catalog.hubTitle'), path: '/exercises' },
+					{ name: title, path: seoPath ?? ruExercisePath }
+				])
+			: null
+	);
 	let bookmarkBusy = $state(false);
 	let inDraft = $derived(
 		Boolean(exercise && $draft.exercises.some((ex) => ex.exerciseId === exercise.id))
@@ -242,10 +270,15 @@ import { truncateMeta } from '$lib/seo/site';
 	path={seoPath}
 	image={seoImage}
 	noindex={!exercise}
+	locale={seoLang}
+	alternates={alternates}
 />
 
 {#if exerciseJsonLd}
 	<JsonLd data={exerciseJsonLd} />
+{/if}
+{#if breadcrumbJsonLd}
+	<JsonLd data={breadcrumbJsonLd} />
 {/if}
 
 <svelte:head>

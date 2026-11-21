@@ -31,7 +31,7 @@
 <SeoHead titleKey="privacy.title" descriptionKey="seo.privacyDescription" path="/privacy" />
 
 <div class="content-page content-page--narrow privacy-page">
-	<ScreenHeader {title} backHref="/auth" />
+	<ScreenHeader {title} backHref="/" />
 
 	<p class="privacy-page__lead">{translate(lang, 'privacy.lead')}</p>
 	<p class="privacy-page__updated">{translate(lang, 'privacy.updated')}</p>

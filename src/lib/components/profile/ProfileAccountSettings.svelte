@@ -12,7 +12,7 @@
 	import { auth } from '$lib/stores/auth';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { toasts } from '$lib/stores/toasts';
-	import { Devices, FileText, ShieldCheck } from 'phosphor-svelte';
+	import { Buildings, Devices, FileText, ShieldCheck } from 'phosphor-svelte';
 
 	let lang = $derived($resolvedLocale);
 	let accountBusy = $state<'logout' | 'logoutEverywhere' | 'delete' | null>(null);
@@ -95,6 +95,12 @@
 			icon={ShieldCheck}
 			label={translate(lang, 'privacy.link')}
 			href="/privacy"
+			disabled={accountLocked}
+		/>
+		<ProfileSettingsRow
+			icon={Buildings}
+			label={translate(lang, 'legal.requisitesTitle')}
+			href="/legal/requisites"
 			disabled={accountLocked}
 		/>
 	</ProfileSettingsSection>

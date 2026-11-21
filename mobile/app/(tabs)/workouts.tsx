@@ -16,7 +16,8 @@ import {
 	sortPlansByUserOrder
 } from '@repdraft/domain/workout';
 import { PLANS_PAGE_SIZE } from '@repdraft/domain/home';
-import type { WorkoutPlan } from '@repdraft/domain/types';
+import { cycleProgressNow, cycleWeeksSummary, type Mesocycle } from '@repdraft/domain/cycle';
+import type { WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { fetchBillingStatus } from '../../src/auth/accountApi';
 import { getSupabase } from '../../src/auth/supabase';
 import { loadExerciseIndex } from '../../src/catalog/loadIndex';
@@ -26,7 +27,9 @@ import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { RecognizeProgramSheet } from '../../src/program/RecognizeProgramSheet';
+import { CycleWaveChart } from '../../src/cycle/CycleWaveChart';
 import { useLocale } from '../../src/state/locale';
+import { readCycle } from '../../src/state/cycle';
 import { useTabScreenPad } from '../../src/layout/safe';
 import { useAppColors } from '../../src/state/theme';
 import { readHomeNextPlanId, writeHomeNextPlanId } from '../../src/live/homeNext';
@@ -53,13 +56,16 @@ export default function WorkoutsTab() {
 	const [muscleSheetOpen, setMuscleSheetOpen] = useState(false);
 	const [isPro, setIsPro] = useState(false);
 	const [recognizeOpen, setRecognizeOpen] = useState(false);
+	const [cycle, setCycle] = useState<Mesocycle | null>(null);
+	const [cycleSessions, setCycleSessions] = useState<WorkoutSession[]>([]);
 
 	const reload = useCallback(async () => {
-		const [list, sessions, order, pinned] = await Promise.all([
+		const [list, sessions, order, pinned, storedCycle] = await Promise.all([
 			plansRepo.list(),
 			sessionsRepo.list(),
 			readPlanOrder(),
-			readHomeNextPlanId()
+			readHomeNextPlanId(),
+			readCycle()
 		]);
 		const ordered = sortPlansByUserOrder(list, order);
 		const nextOrder = order.length > 0 ? order : ordered.map((p) => p.id);
@@ -71,6 +77,8 @@ export default function WorkoutsTab() {
 		setPlans(ordered);
 		setRecentPlanId(lastFinished?.planId ?? null);
 		setPinnedNextId(pinned);
+		setCycle(storedCycle);
+		setCycleSessions(sessions.filter((session) => session.finishedAt));
 		const sb = getSupabase();
 		if (sb) {
 			const { data } = await sb.auth.getSession();
@@ -186,6 +194,17 @@ export default function WorkoutsTab() {
 	const searchActive = searchQuery.trim().length > 0;
 	const hasPlans = plans.length > 0;
 
+	const cycleWeeks = useMemo(
+		() => (cycle ? cycleWeeksSummary(cycle, cycleSessions) : []),
+		[cycle, cycleSessions]
+	);
+	const cycleNow = useMemo(() => (cycle ? cycleProgressNow(cycle) : null), [cycle]);
+	const cycleDone = useMemo(
+		() => cycleWeeks.reduce((sum, week) => sum + week.done, 0),
+		[cycleWeeks]
+	);
+	const cyclePlanned = cycle ? cycle.weeks * cycle.planIds.length : 0;
+
 	function loadMorePlans() {
 		if (plansVisibleLimit >= filteredPlans.length) return;
 		setPlansVisibleLimit(Math.min(filteredPlans.length, plansVisibleLimit + PLANS_PAGE_SIZE));
@@ -210,6 +229,52 @@ export default function WorkoutsTab() {
 				ListHeaderComponent={
 					<View style={styles.headerWrap}>
 						<Text style={styles.leadHint}>{tt('workouts.lead')}</Text>
+						{cycle && cycleNow ? (
+							<Pressable
+								accessibilityRole="button"
+								accessibilityLabel={tt('cycle.open')}
+								onPress={() => router.push('/cycle')}
+								style={({ pressed }) => [
+									styles.cycleCard,
+									pressed && styles.pressed
+								]}
+							>
+								<View style={styles.cycleCardHead}>
+									<Text style={styles.cycleCardKicker}>{tt('cycle.cardTitle')}</Text>
+									<Text style={styles.cycleCardWeek}>
+										{tt('cycle.cardWeek', {
+											week: cycleNow.week,
+											total: cycle.weeks
+										})}
+									</Text>
+								</View>
+								<Text style={styles.cycleCardName} numberOfLines={1}>
+									{cycle.name}
+								</Text>
+								<Text style={styles.cycleCardMeta}>
+									{tt('cycle.cardMeta', { done: cycleDone, planned: cyclePlanned })}
+								</Text>
+								<CycleWaveChart
+									weeks={cycleWeeks}
+									compact
+									label={tt('cycle.chartLabel', { n: cycle.weeks })}
+								/>
+							</Pressable>
+						) : (
+							<Pressable
+								accessibilityRole="button"
+								accessibilityLabel={tt('cycle.cardEmptyTitle')}
+								onPress={() => router.push('/cycle')}
+								style={({ pressed }) => [
+									styles.cycleCard,
+									pressed && styles.pressed
+								]}
+							>
+								<Text style={styles.cycleCardKicker}>{tt('cycle.cardTitle')}</Text>
+								<Text style={styles.cycleCardName}>{tt('cycle.cardEmptyTitle')}</Text>
+								<Text style={styles.cycleCardMeta}>{tt('cycle.cardEmptyHint')}</Text>
+							</Pressable>
+						)}
 						{hasPlans ? (
 							<View style={styles.filterRow}>
 								<TextInput
@@ -390,6 +455,38 @@ function makeStyles(colors: ColorPalette) {
 		list: { flexGrow: 1, padding: space.lg, gap: space.sm },
 		headerWrap: { gap: space.md, paddingBottom: space.sm },
 		leadHint: { ...type.meta, color: colors.muted },
+		cycleCard: {
+			gap: space.xs,
+			padding: space.lg,
+			borderRadius: radius.md,
+			borderWidth: 1,
+			borderColor: colors.accent,
+			backgroundColor: colors.panel
+		},
+		cycleCardHead: {
+			flexDirection: 'row',
+			alignItems: 'baseline',
+			justifyContent: 'space-between',
+			gap: space.md
+		},
+		cycleCardKicker: {
+			...type.kicker,
+			color: colors.muted,
+			textTransform: 'uppercase'
+		},
+		cycleCardWeek: {
+			color: colors.accentText,
+			fontSize: 13,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
+		},
+		cycleCardName: {
+			color: colors.text,
+			fontSize: 17,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
+		},
+		cycleCardMeta: { ...type.meta, color: colors.muted },
 		pressed: { opacity: 0.85 },
 		search: {
 			flex: 1,

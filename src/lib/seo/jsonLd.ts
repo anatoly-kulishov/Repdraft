@@ -88,10 +88,15 @@ export function buildExerciseHowToJsonLd(
 	origin: string,
 	exercise: Exercise,
 	locale: AppLocale,
-	steps: string[]
+	steps: string[],
+	/** Canonical path of this page (`/en/exercise/:id` on a mirror). */
+	path?: string
 ): JsonLd {
 	const name = exerciseName(exercise, locale);
-	const pageUrl = absoluteUrl(`/exercise/${encodeURIComponent(exercise.id)}`, origin);
+	const pageUrl = absoluteUrl(
+		path ?? `/exercise/${encodeURIComponent(exercise.id)}`,
+		origin
+	);
 	const image = exercise.image
 		? absoluteUrl(`/${exercise.image}`, origin)
 		: exercise.gif_url
@@ -109,5 +114,87 @@ export function buildExerciseHowToJsonLd(
 			position: index + 1,
 			text
 		}))
+	};
+}
+
+/**
+ * Program identity: a free structured course built from the exercise catalog.
+ * `Course` is the schema Google/Yandex understand for "4-week plan" content.
+ */
+export function buildProgramJsonLd(
+	origin: string,
+	program: { path: string; title: string; description: string; locale: AppLocale; weeks: number }
+): JsonLd {
+	const pageUrl = absoluteUrl(program.path, origin);
+	return {
+		'@context': 'https://schema.org',
+		'@type': 'Course',
+		name: program.title,
+		description: program.description,
+		url: pageUrl,
+		inLanguage: program.locale,
+		isAccessibleForFree: true,
+		provider: orgPublisher(origin),
+		offers: {
+			'@type': 'Offer',
+			price: '0',
+			priceCurrency: 'RUB'
+		},
+		hasCourseInstance: {
+			'@type': 'CourseInstance',
+			courseMode: 'online',
+			courseWorkload: `PT${program.weeks}W`
+		}
+	};
+}
+
+/**
+ * Breadcrumbs for content pages (catalog, tools, exercises). Search engines use
+ * them instead of guessing hierarchy from URLs; they also feed the SERP trail.
+ */
+export function buildBreadcrumbJsonLd(
+	origin: string,
+	items: { name: string; path: string }[]
+): JsonLd {
+	const base = origin.replace(/\/$/, '');
+	return {
+		'@context': 'https://schema.org',
+		'@type': 'BreadcrumbList',
+		itemListElement: items.map((item, index) => ({
+			'@type': 'ListItem',
+			position: index + 1,
+			name: item.name,
+			item: `${base}${item.path}`
+		}))
+	};
+}
+
+/**
+ * Calculator identity: a free browser app, not a service with a price. Same
+ * shape as `buildWebApplicationJsonLd` but scoped to one tool page.
+ */
+export function buildToolJsonLd(
+	origin: string,
+	tool: { path: string; title: string; description: string; locale: AppLocale }
+): JsonLd {
+	const pageUrl = absoluteUrl(tool.path, origin);
+	return {
+		'@context': 'https://schema.org',
+		'@type': 'WebApplication',
+		name: tool.title,
+		url: pageUrl,
+		description: tool.description,
+		applicationCategory: 'HealthApplication',
+		operatingSystem: 'Any (web browser)',
+		browserRequirements: 'Requires JavaScript',
+		isAccessibleForFree: true,
+		inLanguage: tool.locale,
+		mainEntityOfPage: pageUrl,
+		offers: {
+			'@type': 'Offer',
+			price: '0',
+			priceCurrency: 'RUB'
+		},
+		publisher: orgPublisher(origin)
 	};
 }

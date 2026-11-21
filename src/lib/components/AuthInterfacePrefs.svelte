@@ -3,7 +3,7 @@
 	import ProfileSettingsSection from '$lib/components/profile/ProfileSettingsSection.svelte';
 	import { translate } from '$lib/i18n/messages';
 	import { appTheme } from '$lib/stores/theme';
-	import { resolvedLocale } from '$lib/stores/locale';
+	import { resolvedLocale, setPreferredLocale } from '$lib/stores/locale';
 	import { reduceMotionEnabled } from '$lib/stores/prefs';
 	import { Globe, MoonStars, Sparkle, SunDim } from 'phosphor-svelte';
 
@@ -32,7 +32,7 @@
 				current: translate(lang, lang === 'ru' ? 'lang.ru' : 'lang.en'),
 				next: translate(lang, nextLang === 'ru' ? 'lang.ru' : 'lang.en')
 			})}
-			onclick={() => resolvedLocale.set(nextLang)}
+			onclick={() => setPreferredLocale(nextLang)}
 		/>
 		<ProfileSettingsRow
 			icon={themeIcon}
@@ -74,7 +74,7 @@
 					current: translate(lang, lang === 'ru' ? 'lang.ru' : 'lang.en'),
 					next: translate(lang, nextLang === 'ru' ? 'lang.ru' : 'lang.en')
 				})}
-				onclick={() => resolvedLocale.set(nextLang)}
+				onclick={() => setPreferredLocale(nextLang)}
 			/>
 			<ProfileSettingsRow
 				icon={themeIcon}

@@ -69,6 +69,21 @@ export function yooKassaAmount(cfg: YooKassaConfig, plan: ProPlan): string {
 	return plan === 'monthly' ? cfg.amountMonthly : cfg.amountYearly;
 }
 
+/** Display prices before checkout; Stripe amounts live in Stripe, so only YooKassa is known. */
+export function billingPrices(): {
+	monthly: string;
+	yearly: string;
+	currency: string;
+} | null {
+	const cfg = resolveYooKassaConfig();
+	if (!cfg) return null;
+	return {
+		monthly: cfg.amountMonthly,
+		yearly: cfg.amountYearly,
+		currency: cfg.currency
+	};
+}
+
 export function billingAvailability(): {
 	yookassa: boolean;
 	stripe: boolean;

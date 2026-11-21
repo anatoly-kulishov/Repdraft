@@ -18,14 +18,17 @@
 		['terms.s4Title', 'terms.s4Body'],
 		['terms.s5Title', 'terms.s5Body'],
 		['terms.s6Title', 'terms.s6Body'],
-		['terms.s7Title', 'terms.s7Body']
+		['terms.s7Title', 'terms.s7Body'],
+		['terms.s8Title', 'terms.s8Body'],
+		['terms.s9Title', 'terms.s9Body'],
+		['terms.s10Title', 'terms.s10Body']
 	] as const;
 </script>
 
 <SeoHead titleKey="terms.title" descriptionKey="seo.termsDescription" path="/terms" />
 
 <div class="content-page content-page--narrow privacy-page">
-	<ScreenHeader {title} backHref="/auth" />
+	<ScreenHeader {title} backHref="/" />
 
 	<p class="privacy-page__lead">{translate(lang, 'terms.lead')}</p>
 	<p class="privacy-page__updated">{translate(lang, 'terms.updated')}</p>
@@ -39,12 +42,18 @@
 		{/each}
 
 		<section class="privacy-page__section">
-			<h2 class="section-title">{translate(lang, 'terms.s8Title')}</h2>
+			<h2 class="section-title">{translate(lang, 'terms.privacyTitle')}</h2>
 			<p>
-				{translate(lang, 'terms.s8Body')}
+				{translate(lang, 'terms.privacyBody')}
 				<a class="privacy-page__media-link" href="/privacy">{translate(lang, 'privacy.link')}</a>.
 			</p>
 		</section>
+
+		<p class="privacy-page__media-links">
+			<a class="privacy-page__media-link" href="/legal/requisites">
+				{translate(lang, 'legal.requisitesTitle')}
+			</a>
+		</p>
 	</div>
 
 	<WhatsNewSheet class="privacy-page__version" />

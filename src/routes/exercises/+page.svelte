@@ -30,7 +30,10 @@
 	import { toasts } from '$lib/stores/toasts';
 	import { blurActiveElement } from '$lib/dom/blurActiveElement';
 	import { translate } from '$lib/i18n/messages';
+	import JsonLd from '$lib/seo/JsonLd.svelte';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
+	import { buildBreadcrumbJsonLd } from '$lib/seo/jsonLd';
+	import { resolveSiteOrigin } from '$lib/seo/site';
 	import { resolveSeoLang } from '$lib/seo/seoLang';
 	import { catalogUi } from '$lib/stores/catalogUi';
 	import { onboarding } from '$lib/stores/onboarding';
@@ -157,9 +160,18 @@
 		}
 		return counts;
 	});
+
+	let siteOrigin = $derived(resolveSiteOrigin($page.url.origin));
+	let breadcrumbJsonLd = $derived(
+		buildBreadcrumbJsonLd(siteOrigin, [
+			{ name: translate(seoLang, 'nav.tabHome'), path: '/' },
+			{ name: translate(seoLang, 'catalog.hubTitle'), path: '/exercises' }
+		])
+	);
 </script>
 
 <SeoHead title={seoHeaderTitle} descriptionKey="seo.exercisesDescription" path="/exercises" />
+<JsonLd data={breadcrumbJsonLd} />
 
 <section
 	class="catalog-hub content-page content-page--catalog"

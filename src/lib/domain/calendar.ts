@@ -6,7 +6,7 @@ export type CalendarCell = {
 
 export type DayRangeRole = 'none' | 'start' | 'end' | 'single' | 'in-range';
 
-function localDayKey(date: Date): string {
+export function localDayKey(date: Date): string {
 	const y = date.getFullYear();
 	const m = String(date.getMonth() + 1).padStart(2, '0');
 	const day = String(date.getDate()).padStart(2, '0');

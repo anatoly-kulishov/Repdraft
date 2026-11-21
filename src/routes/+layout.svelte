@@ -3,6 +3,8 @@
 	import { appTheme } from '$lib/stores/theme';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import AttributionFooter from '$lib/components/AttributionFooter.svelte';
+	import CookieNotice from '$lib/components/CookieNotice.svelte';
+	import LegalFooter from '$lib/components/LegalFooter.svelte';
 	import DraftDock from '$lib/components/DraftDock.svelte';
 	import Logo from '$lib/components/Logo.svelte';
 	import SyncSnackbar from '$lib/components/SyncSnackbar.svelte';
@@ -27,7 +29,7 @@
 	import { draft } from '$lib/stores/draft';
 	import { live } from '$lib/stores/live';
 	import { techniqueClipHints } from '$lib/stores/techniqueClipHints';
-	import { resolvedLocale } from '$lib/stores/locale';
+	import { applyDocumentLang, resolvedLocale } from '$lib/stores/locale';
 	import { forceNormalShell } from '$lib/stores/shellChrome';
 	import { toasts } from '$lib/stores/toasts';
 	import { onboarding } from '$lib/stores/onboarding';
@@ -55,6 +57,12 @@
 	let path = $derived($page.url.pathname);
 	let fromParam = $derived(readSearchParam($page.url, 'from'));
 	let lang = $derived($resolvedLocale);
+
+	// `/en/*` mirrors switch the UI to English without touching the stored
+	// preference; keep the document language in sync on client navigation.
+	$effect(() => {
+		applyDocumentLang($resolvedLocale);
+	});
 	let isLight = $derived($appTheme === 'light');
 	let hasActiveSession = $derived(Boolean($live.ready && $live.session && !$live.session.finishedAt));
 
@@ -68,6 +76,7 @@
 		if (pathname.startsWith('/articles')) return true;
 		if (pathname.startsWith('/auth')) return true;
 		if (pathname === '/privacy' || pathname === '/terms') return true;
+		if (pathname.startsWith('/legal')) return true;
 		if (pathname.startsWith('/exercises/')) return true;
 		/* Builder → pick exercise: ScreenHeader only (no logo chrome + phantom spacer). */
 		if (pathname === '/exercises' && isBuilderReturnPath(from)) return true;
@@ -320,11 +329,12 @@
 			{@render children()}
 		</main>
 
-		{#if showMediaAttribution}
-			<div class="shell-footer-pad">
+		<div class="shell-footer-pad">
+			<LegalFooter />
+			{#if showMediaAttribution}
 				<AttributionFooter />
-			</div>
-		{/if}
+			{/if}
+		</div>
 	</div>
 </div>
 
@@ -412,6 +422,9 @@
 	</div>
 </nav>
 
+{#if browser}
+	<CookieNotice />
+{/if}
 <ToastStack items={$toasts} />
 <LocalMergeConflictSheet />
 <DraftDock />

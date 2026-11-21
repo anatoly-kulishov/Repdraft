@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.27.0',
+		highlights: {
+			ru: [
+				'Калькуляторы 1ПМ, калорий, ИМТ и пульса: считаются на телефоне',
+				'Программы на 4 недели: план собирается в один тап и дальше живёт как обычный',
+				'Английские версии калькуляторов, программ и упражнений',
+				'Волновой цикл и оценка тренировки: обе фичи остаются на устройстве'
+			],
+			en: [
+				'1RM, calorie, BMI and heart-rate calculators, computed on your phone',
+				'Four-week programs: one tap builds a normal plan you can edit',
+				'English versions of tools, programs and exercises under /en',
+				'Wave cycle and post-workout rating stay on your device'
+			]
+		}
+	},
+	{
 		version: '0.26.1',
 		highlights: {
 			ru: [

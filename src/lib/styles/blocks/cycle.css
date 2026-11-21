@@ -1,0 +1,525 @@
+/* ——— Wave cycle (/cycle + workouts card) ——— */
+
+.cycle-page {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.cycle-lead {
+	margin: 0;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	color: var(--color-muted);
+}
+
+.cycle-hint {
+	margin: 0;
+	font-size: 0.75rem;
+	line-height: 1.4;
+	color: var(--color-muted-soft);
+	text-align: center;
+}
+
+/* ——— Setup ——— */
+
+.cycle-setup {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+.cycle-setup__lead {
+	margin: 0;
+	font-size: 0.875rem;
+	line-height: 1.45;
+	color: var(--color-muted);
+}
+
+.cycle-field {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0;
+}
+
+.cycle-field__label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	color: var(--color-muted);
+}
+
+.cycle-field__hint {
+	margin: 0;
+	font-size: 0.8125rem;
+	line-height: 1.4;
+	color: var(--color-muted-soft);
+}
+
+.cycle-field__hint--start {
+	color: var(--color-muted);
+}
+
+.cycle-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.cycle-plans {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.cycle-plan-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	min-height: 56px;
+	padding: 10px 12px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface-muted);
+	color: var(--color-ink);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	transition: border-color 120ms ease, background 120ms ease;
+}
+
+.cycle-plan-row:hover {
+	border-color: var(--color-border-strong, var(--color-border));
+}
+
+.cycle-plan-row--active {
+	border-color: var(--color-accent);
+	background: var(--color-accent-muted);
+}
+
+.cycle-plan-row__order {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 24px;
+	height: 24px;
+	border-radius: var(--radius-pill, 999px);
+	background: var(--color-accent);
+	color: var(--color-accent-ink);
+	font-size: 0.75rem;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.cycle-plan-row__order:empty {
+	background: transparent;
+	border: 1px dashed var(--color-border);
+}
+
+.cycle-plan-row__main {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.cycle-plan-row__name {
+	font-size: 0.9375rem;
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.cycle-plan-row__meta {
+	font-size: 0.75rem;
+	color: var(--color-muted);
+}
+
+.cycle-plan-row__check {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 20px;
+	color: var(--color-accent);
+}
+
+/* ——— Summary ——— */
+
+.cycle-summary {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.cycle-summary__eyebrow {
+	margin: 0;
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	color: var(--color-muted);
+}
+
+.cycle-summary__title {
+	margin: 0;
+	font-size: 1.375rem;
+	line-height: 1.2;
+	font-weight: 700;
+	color: var(--color-ink);
+}
+
+.cycle-summary__week {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	font-size: 0.9375rem;
+	color: var(--color-ink);
+}
+
+.cycle-summary__kind {
+	padding: 2px 8px;
+	border-radius: var(--radius-pill, 999px);
+	background: var(--color-accent-muted);
+	color: var(--color-accent-text);
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.cycle-bar {
+	position: relative;
+	height: 8px;
+	margin-top: 4px;
+	border-radius: var(--radius-pill, 999px);
+	background: var(--color-surface-muted);
+	overflow: hidden;
+}
+
+.cycle-bar__fill {
+	display: block;
+	height: 100%;
+	border-radius: inherit;
+	background: var(--color-accent);
+	transition: width 200ms ease;
+}
+
+.cycle-summary__meta {
+	margin: 0;
+	font-size: 0.8125rem;
+	color: var(--color-muted);
+}
+
+.cycle-finished {
+	margin-top: 6px;
+	padding: 10px 12px;
+	border-radius: var(--radius-control);
+	background: var(--color-surface-muted);
+}
+
+.cycle-finished__title {
+	margin: 0;
+	font-size: 0.9375rem;
+	font-weight: 600;
+	color: var(--color-ink);
+}
+
+.cycle-finished__hint {
+	margin: 2px 0 0;
+	font-size: 0.8125rem;
+	line-height: 1.4;
+	color: var(--color-muted);
+}
+
+/* ——— Chart ——— */
+
+.cycle-chart-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.cycle-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	font-size: 0.75rem;
+	color: var(--color-muted);
+}
+
+.cycle-legend__item {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.cycle-legend__swatch {
+	display: inline-block;
+	width: 14px;
+	height: 4px;
+	border-radius: var(--radius-pill, 999px);
+}
+
+.cycle-legend__swatch--volume {
+	background: var(--color-chart-volume);
+}
+
+.cycle-legend__swatch--intensity {
+	background: var(--color-accent);
+}
+
+.cycle-chart {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+
+.cycle-chart__baseline {
+	stroke: var(--color-border);
+	stroke-width: 1;
+	stroke-dasharray: 3 4;
+}
+
+.cycle-chart__now {
+	fill: var(--color-accent);
+	opacity: 0.1;
+}
+
+.cycle-chart__line {
+	fill: none;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.cycle-chart__line--volume {
+	stroke: var(--color-chart-volume);
+}
+
+.cycle-chart__line--intensity {
+	stroke: var(--color-accent);
+}
+
+.cycle-chart__dot--volume {
+	fill: var(--color-chart-volume);
+}
+
+.cycle-chart__dot--intensity {
+	fill: var(--color-accent);
+}
+
+.cycle-chart__tick {
+	fill: var(--color-muted);
+	font-size: 9px;
+	font-weight: 500;
+}
+
+.cycle-chart__tick--now {
+	fill: var(--color-ink);
+	font-weight: 700;
+}
+
+/* ——— Weeks ——— */
+
+.cycle-weeks {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.cycle-week {
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+	overflow: hidden;
+}
+
+.cycle-week--now {
+	border-color: var(--color-accent);
+}
+
+.cycle-week__head {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	min-height: 56px;
+	padding: 10px 12px;
+	border: 0;
+	background: transparent;
+	color: var(--color-ink);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.cycle-week__main {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.cycle-week__title {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.9375rem;
+	font-weight: 600;
+}
+
+.cycle-week__kind {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	color: var(--color-muted);
+}
+
+.cycle-week__meta {
+	font-size: 0.75rem;
+	color: var(--color-muted);
+}
+
+.cycle-week__done {
+	flex: 0 0 auto;
+	font-size: 0.8125rem;
+	font-variant-numeric: tabular-nums;
+	color: var(--color-muted);
+}
+
+.cycle-week--now .cycle-week__done {
+	color: var(--color-accent-text);
+	font-weight: 600;
+}
+
+.cycle-week__plans {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0;
+	padding: 0 12px 12px;
+	list-style: none;
+}
+
+.cycle-week__plan {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 10px;
+	border-radius: var(--radius-control);
+	background: var(--color-surface-muted);
+}
+
+.cycle-week__plan-name {
+	min-width: 0;
+	flex: 1 1 auto;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var(--color-ink);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.cycle-week__plan-done {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	flex: 0 0 auto;
+	font-size: 0.8125rem;
+	color: var(--color-success);
+}
+
+.cycle-week__plan-cta {
+	flex: 0 0 auto;
+	min-height: 36px;
+	padding: 0 12px;
+	font-size: 0.8125rem;
+}
+
+.cycle-footer {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-top: 4px;
+}
+
+/* ——— Workouts list card ——— */
+
+.cycle-card {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 14px 16px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-panel);
+	background: var(--color-surface);
+	color: var(--color-ink);
+	text-decoration: none;
+}
+
+.cycle-card--accent {
+	border-color: var(--color-accent);
+}
+
+.cycle-card__head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.cycle-card__title {
+	margin: 0;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	color: var(--color-muted);
+}
+
+.cycle-card__week {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--color-accent-text);
+}
+
+.cycle-card__name {
+	margin: 0;
+	font-size: 1.0625rem;
+	font-weight: 600;
+	color: var(--color-ink);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.cycle-card__meta {
+	margin: 0;
+	font-size: 0.8125rem;
+	color: var(--color-muted);
+}
+
+.cycle-card__chart {
+	margin-top: 2px;
+}
+
+.cycle-card:hover {
+	border-color: var(--color-accent);
+}

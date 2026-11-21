@@ -58,6 +58,7 @@ export default function WorkoutsScreen() {
 					continueMeta={home.continueMeta}
 					next={home.next}
 					heroMeta={home.heroMeta}
+					cycleBadge={home.cycleBadge}
 					onContinue={(planId) => router.push(`/live/${planId}`)}
 					onOpenPlan={(planId) => router.push(`/plan/${planId}`)}
 				/>

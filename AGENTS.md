@@ -32,7 +32,9 @@ npm run build
 
 Shared copy: `src/lib/i18n/messages.ts` (both clients). Shared colors/spacing: `src/lib/design/tokens.ts`. Canonical site: `https://www.repdraft.ru`.
 
-Legal before public: real `PUBLIC_PRIVACY_*` on the web host; lawyer review `/privacy` + `/terms`.
+**Public content:** `/tools/*` (4 calculators), `/programs/*` (4-week templates) and `/exercise/:id` mirrors under `/en/...` with self-canonical + `hreflang` (`ru` / `en` / `x-default` = RU). Calculators, plan generation and session ratings all run locally - nothing is sent to the server. Overview: [`.cursor/product/public-tools.md`](.cursor/product/public-tools.md); URL rules: [`.cursor/product/seo-cutover-ru.md`](.cursor/product/seo-cutover-ru.md).
+
+Legal before public: real `PUBLIC_PRIVACY_*` on the web host (fills `/legal/requisites` too); lawyer review `/privacy`, `/terms` (offer) + refund rules. RKN notification and RF data localization (Supabase cloud is abroad) are open ops items - see [`.cursor/product/legal-compliance.md`](.cursor/product/legal-compliance.md).
 
 ## Mobile notes
 
@@ -56,4 +58,4 @@ Keys in `.env` / hosting only. SQL ops out of public git. Billing keys: `YOOKASS
 
 ## Releases
 
-Branch `feat/vX.Y.Z-slug` (or repo convention), GitHub Release with same tag, bump `package.json` `version` in the same PR. Update agent docs under `.cursor/product/` when hosting/SEO/deploy changes.
+Branch `feat/vX.Y.Z-slug` (or repo convention), GitHub Release with same tag. In the same PR: bump `package.json`, `mobile/package.json` and `mobile/app.json`, add a `CHANGELOG.md` section and a `src/lib/domain/changelog.ts` entry (the in-app "What's new"). Update agent docs under `.cursor/product/` when hosting/SEO/deploy changes.

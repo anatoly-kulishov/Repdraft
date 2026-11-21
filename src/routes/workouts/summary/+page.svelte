@@ -8,6 +8,7 @@
 	import { BotAvatar, MetalFx } from '$lib/components/fx';
 	import { pickCatalogExerciseForBodyPart } from '$lib/domain/trainingLoad';
 	import SummaryPageSkeleton from '$lib/components/summary/SummaryPageSkeleton.svelte';
+	import SessionRatingPanel from '$lib/components/summary/SessionRatingPanel.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import { WORKOUTS_HISTORY_HREF } from '$lib/domain/catalogLinks';
 	import {
@@ -208,6 +209,10 @@
 				{session.planName?.trim() || translate(lang, 'summary.title')}
 			</h1>
 		</div>
+
+		{#if session.id && completedSetCount(session) > 0}
+			<SessionRatingPanel sessionId={session.id} />
+		{/if}
 
 		{#if showFirstFinish}
 			<AppPanel class="onboarding-first-finish text-left" role="status">

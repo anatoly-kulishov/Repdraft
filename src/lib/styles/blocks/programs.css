@@ -1,0 +1,228 @@
+/* ——— Public program library (/programs, /programs/[slug]) ———
+ * Content pages first: the prerendered HTML carries every week and session, so
+ * the block reads like an article before any JS runs. The only interactive bit
+ * is «Начать» — it builds a normal plan and drops the user into the sacred loop. */
+
+.programs-page {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.programs-lead {
+	margin: 0;
+	max-width: 62ch;
+	font-size: 0.9375rem;
+	line-height: 1.5;
+	color: var(--color-muted);
+}
+
+.programs-grid {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 720px) {
+	.programs-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.program-card {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 16px;
+	color: inherit;
+	text-decoration: none;
+	transition: border-color 0.15s ease;
+}
+
+.program-card:hover,
+.program-card:focus-visible {
+	border-color: var(--color-accent-text);
+}
+
+.program-card__title {
+	margin: 0;
+	font-size: 1.0625rem;
+	font-weight: 650;
+	line-height: 1.3;
+}
+
+.program-card__body {
+	margin: 0;
+	font-size: 0.8125rem;
+	line-height: 1.45;
+	color: var(--color-muted);
+}
+
+.program-card__meta {
+	margin: 0;
+	font-size: 0.75rem;
+	color: var(--color-muted-soft);
+}
+
+/* Level + weeks are facts about the block, not a badge collection. */
+.program-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.program-tag {
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: var(--color-surface-muted);
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	color: var(--color-muted);
+}
+
+.program-progress {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-top: auto;
+	padding-top: 4px;
+}
+
+.program-progress__row {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+	font-size: 0.75rem;
+	color: var(--color-muted);
+}
+
+.program-progress__bar {
+	overflow: hidden;
+	height: 6px;
+	border-radius: 999px;
+	background: var(--color-surface-muted);
+}
+
+.program-progress__fill {
+	height: 100%;
+	border-radius: inherit;
+	background: var(--color-accent-text);
+}
+
+.program-card__arrow {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--color-accent-text);
+}
+
+/* ——— Detail ——— */
+
+.program-head {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.program-head__lead {
+	margin: 0;
+	font-size: 0.9375rem;
+	line-height: 1.5;
+	color: var(--color-muted);
+}
+
+.program-weeks {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.program-week__title {
+	margin: 0 0 8px;
+	font-size: 0.875rem;
+	font-weight: 650;
+	color: var(--color-ink);
+}
+
+.program-week__rows {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.program-session {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 12px;
+	border-radius: var(--radius-control, 12px);
+	background: var(--color-surface-muted);
+}
+
+.program-session.is-done {
+	opacity: 0.72;
+}
+
+.program-session__main {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.program-session__title {
+	margin: 0;
+	font-size: 0.875rem;
+	font-weight: 600;
+	line-height: 1.3;
+}
+
+.program-session__meta {
+	margin: 0;
+	font-size: 0.75rem;
+	color: var(--color-muted);
+}
+
+.program-session__actions {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	gap: 6px;
+}
+
+.program-session__done {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--color-accent-text);
+	white-space: nowrap;
+}
+
+.program-session__link {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--color-muted);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+	white-space: nowrap;
+}
+
+.program-note {
+	margin: 0;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	color: var(--color-muted-soft);
+}
+
+.program-section-title {
+	margin: 8px 0 0;
+	font-size: 1rem;
+	font-weight: 650;
+}
+
+.program-hint {
+	margin: 0;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	color: var(--color-muted-soft);
+}
