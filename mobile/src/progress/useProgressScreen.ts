@@ -48,10 +48,10 @@ export function useProgressScreen() {
 	);
 
 	const maxWeekVol = Math.max(1, ...overview.weeks.map((w) => w.volumeKg));
-	// Small samples make a "lagging" flag noisy: require enough groups and workouts.
-	const laggingPart =
+	// Small samples make the smallest-share tag noisy: require enough groups and workouts.
+	const smallestPart =
 		overview.setShares.length >= 3 && overview.cards.workouts >= 4
-			? overview.laggingBodyPart
+			? overview.smallestShareBodyPart
 			: null;
 
 	const formatWeight = useCallback((kg: number) => {
@@ -108,7 +108,7 @@ export function useProgressScreen() {
 		choosePeriod,
 		overview,
 		maxWeekVol,
-		laggingPart,
+		smallestPart,
 		formatWeight,
 		workoutsDeltaText,
 		volumeDeltaText,

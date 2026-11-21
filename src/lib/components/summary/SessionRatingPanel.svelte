@@ -12,7 +12,8 @@
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { sessionRatings } from '$lib/stores/sessionRatings';
 
-	let { sessionId }: { sessionId: string } = $props();
+	let { sessionId, variant = 'summary' }: { sessionId: string; variant?: 'summary' | 'detail' } =
+		$props();
 
 	let lang = $derived($resolvedLocale);
 	let mine = $derived<SessionRating | null>(ratingFor($sessionRatings, sessionId));
@@ -27,7 +28,10 @@
 <AppPanel>
 	<div class="session-rating">
 		<p class="session-rating__title">
-			{mine ? translate(lang, 'rating.thanks') : translate(lang, 'rating.title')}
+			{translate(
+				lang,
+				mine ? (variant === 'detail' ? 'rating.yours' : 'rating.thanks') : 'rating.title'
+			)}
 		</p>
 
 		<div class="session-rating__stars" role="group" aria-label={translate(lang, 'rating.aria')}>
@@ -57,9 +61,11 @@
 	.session-rating {
 		display: flex;
 		flex-direction: column;
-		align-items: flex-start;
+		align-items: center;
 		gap: 8px;
-		/* `.panel` already supplies the 1rem inset. */
+		/* The card sits under the centred bot avatar and plan name; a left-hugging
+		   row of five 44px stars read as a broken layout, not as a prompt. */
+		text-align: center;
 	}
 
 	.session-rating__title {
@@ -71,6 +77,7 @@
 
 	.session-rating__stars {
 		display: flex;
+		justify-content: center;
 		gap: 2px;
 	}
 

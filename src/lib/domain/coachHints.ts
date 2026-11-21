@@ -8,6 +8,7 @@ import {
 	setShares,
 	undertrainedBodyParts
 } from './trainingLoad';
+import { catalogZoneForBodyPart } from './bodyZones';
 
 export type CoachHint = {
 	id: string;
@@ -121,7 +122,11 @@ export function suggestPlanReplace(
 	bodyPartFor: (exerciseId: string) => string | null
 ): CoachReplace | null {
 	for (const part of lagging) {
-		const fromExerciseId = planExerciseIds.find((id) => bodyPartFor(id) === part);
+		// Shares speak zones («Ноги»), catalog rows keep raw parts («upper legs»).
+		const fromExerciseId = planExerciseIds.find((id) => {
+			const rawPart = bodyPartFor(id);
+			return rawPart != null && catalogZoneForBodyPart(rawPart) === part;
+		});
 		if (!fromExerciseId) continue;
 		const toExerciseId = pickCatalogExerciseForBodyPart(
 			catalog,

@@ -4,6 +4,7 @@
 	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import HistoryDetailPageSkeleton from '$lib/components/history/HistoryDetailPageSkeleton.svelte';
+	import SessionRatingPanel from '$lib/components/summary/SessionRatingPanel.svelte';
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import Coachmark from '$lib/components/onboarding/Coachmark.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
@@ -26,7 +27,7 @@
 	} from '$lib/domain/session';
 	import type { ExerciseIndexItem, LoggedSet, WorkoutSession } from '$lib/domain/types';
 	import { formatDurationMs, formatLongDate } from '$lib/i18n/format';
-	import { translate, translateError } from '$lib/i18n/messages';
+	import { translate, translateError, translatePlural } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { peekLocalSession } from '$lib/storage/localSessionRepository';
 	import { resolvedLocale } from '$lib/stores/locale';
@@ -405,11 +406,13 @@
 		<p class="page-lead mt-1 lg:mt-0">
 			{formatLongDate(session.finishedAt ?? session.startedAt, lang)} · {formatDurationMs(
 				sessionDurationMs(session)
-			)} · {translate(lang, 'workouts.historySets', {
-				n: completedSetCount(viewSession ?? session)
-			})}{#if historyVolumeKg > 0}
+			)} · {translatePlural(lang, 'workouts.historySets', completedSetCount(viewSession ?? session))}{#if historyVolumeKg > 0}
 				{' '}· {Math.round(historyVolumeKg)} kg{/if}
 		</p>
+
+		<div class="mt-3">
+			<SessionRatingPanel sessionId={session.id} variant="detail" />
+		</div>
 
 		{#if showHistoryDetailCoachmark}
 			<Coachmark

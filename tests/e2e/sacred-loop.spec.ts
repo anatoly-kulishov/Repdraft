@@ -51,9 +51,14 @@ test.describe('sacred loop', () => {
 		await gotoApp(page, '/workouts?tab=history');
 		const historyLink = page.locator('a[href^="/workouts/history/"]').first();
 		await expect(historyLink).toBeVisible();
+		// The rating is not write-only: the row carries it back.
+		const ratingChip = page.locator('.entity-row__rating').first();
+		await expect(ratingChip).toHaveText('4');
+		await expect(ratingChip).toHaveAttribute('aria-label', 'Оценка 4 из 5');
 		await historyLink.click();
 		await expect(page).toHaveURL(/\/workouts\/history\//);
 		await expect(page.locator('body')).toContainText('E2E полноценная тренировка');
+		await expect(page.locator('.session-rating [aria-pressed="true"]')).toHaveCount(1);
 	});
 
 	test('empty builder points at the catalog instead of pretending to be a plan', async ({

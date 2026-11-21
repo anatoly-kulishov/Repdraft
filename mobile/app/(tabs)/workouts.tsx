@@ -27,7 +27,6 @@ import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { RecognizeProgramSheet } from '../../src/program/RecognizeProgramSheet';
-import { CycleWaveChart } from '../../src/cycle/CycleWaveChart';
 import { useLocale } from '../../src/state/locale';
 import { readCycle } from '../../src/state/cycle';
 import { useTabScreenPad } from '../../src/layout/safe';
@@ -239,26 +238,27 @@ export default function WorkoutsTab() {
 									pressed && styles.pressed
 								]}
 							>
-								<View style={styles.cycleCardHead}>
-									<Text style={styles.cycleCardKicker}>{tt('cycle.cardTitle')}</Text>
-									<Text style={styles.cycleCardWeek}>
-										{tt('cycle.cardWeek', {
-											week: cycleNow.week,
-											total: cycle.weeks
-										})}
+								<View style={styles.cycleCardMain}>
+									<View style={styles.cycleCardHead}>
+										<Text style={styles.cycleCardKicker}>{tt('cycle.cardTitle')}</Text>
+										<Text style={styles.cycleCardWeek}>
+											{tt('cycle.cardWeek', {
+												week: cycleNow.week,
+												total: cycle.weeks
+											})}
+										</Text>
+									</View>
+									{cycle.name.trim().toLowerCase() !==
+									tt('cycle.cardTitle').trim().toLowerCase() ? (
+										<Text style={styles.cycleCardName} numberOfLines={1}>
+											{cycle.name}
+										</Text>
+									) : null}
+									<Text style={styles.cycleCardMeta}>
+										{tt('cycle.cardMeta', { done: cycleDone, planned: cyclePlanned })}
 									</Text>
 								</View>
-								<Text style={styles.cycleCardName} numberOfLines={1}>
-									{cycle.name}
-								</Text>
-								<Text style={styles.cycleCardMeta}>
-									{tt('cycle.cardMeta', { done: cycleDone, planned: cyclePlanned })}
-								</Text>
-								<CycleWaveChart
-									weeks={cycleWeeks}
-									compact
-									label={tt('cycle.chartLabel', { n: cycle.weeks })}
-								/>
+								<ChevronRight color={colors.mutedSoft} size={18} strokeWidth={2.2} />
 							</Pressable>
 						) : (
 							<Pressable
@@ -270,9 +270,12 @@ export default function WorkoutsTab() {
 									pressed && styles.pressed
 								]}
 							>
-								<Text style={styles.cycleCardKicker}>{tt('cycle.cardTitle')}</Text>
-								<Text style={styles.cycleCardName}>{tt('cycle.cardEmptyTitle')}</Text>
-								<Text style={styles.cycleCardMeta}>{tt('cycle.cardEmptyHint')}</Text>
+								<View style={styles.cycleCardMain}>
+									<Text style={styles.cycleCardKicker}>{tt('cycle.cardTitle')}</Text>
+									<Text style={styles.cycleCardName}>{tt('cycle.cardEmptyTitle')}</Text>
+									<Text style={styles.cycleCardMeta}>{tt('cycle.cardEmptyHint')}</Text>
+								</View>
+								<ChevronRight color={colors.mutedSoft} size={18} strokeWidth={2.2} />
 							</Pressable>
 						)}
 						<Pressable
@@ -484,12 +487,20 @@ function makeStyles(colors: ColorPalette) {
 		headerWrap: { gap: space.md, paddingBottom: space.sm },
 		leadHint: { ...type.meta, color: colors.muted },
 		cycleCard: {
-			gap: space.xs,
-			padding: space.lg,
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: space.md,
+			paddingVertical: 11,
+			paddingHorizontal: 14,
 			borderRadius: radius.md,
 			borderWidth: 1,
 			borderColor: colors.accent,
 			backgroundColor: colors.panel
+		},
+		cycleCardMain: {
+			flex: 1,
+			minWidth: 0,
+			gap: 2
 		},
 		cycleCardHead: {
 			flexDirection: 'row',

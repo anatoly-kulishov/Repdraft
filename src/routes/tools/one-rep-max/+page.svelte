@@ -147,7 +147,7 @@
 			<div>
 				{#each loads as row (row.percent)}
 					<div class="tool-row">
-						<span>{row.percent}% {translate(lang, 'tools.orm.percentOfMax')}</span>
+						<span>{translate(lang, 'tools.orm.percentOfMax', { percent: row.percent })}</span>
 						<span class="tool-row__value">
 							{kg(row.loadKg)} {translate(lang, 'tools.unitKg')} · {translate(lang, 'tools.orm.approxReps')} {row.approxReps}
 						</span>

@@ -13,6 +13,15 @@ const CYCLE = {
 	planIds: ['plan-e2e']
 };
 
+/** The workouts promo only renders above a non-empty plan list. */
+const PLAN = {
+	id: 'plan-e2e',
+	name: 'День ног',
+	createdAt: '2026-11-16T00:00:00.000Z',
+	updatedAt: '2026-11-16T00:00:00.000Z',
+	exercises: [{ exerciseId: '0001', sets: 3, reps: 10, restSec: 90 }]
+};
+
 test('cycle wave runs intensity, volume, unload with the volume peak on week 2', async ({ page }) => {
 	await seedLocalStorage(page, { 'repdraft:cycle': CYCLE });
 	await gotoApp(page, '/cycle');
@@ -54,4 +63,29 @@ test('the cycle page survives a reload with the wave intact', async ({ page }) =
 	await expect(page.locator('.cycle-weeks > li').nth(1).locator('.cycle-week__kind')).toHaveText(
 		'Объём'
 	);
+});
+
+test('the workouts promotion is a teaser row, not a chart preview', async ({ page }) => {
+	await seedLocalStorage(page, {
+		'repdraft:plans': [PLAN],
+		// Default name equals the kicker, so the card must not print it twice.
+		'repdraft:cycle': { ...CYCLE, name: 'Волновой цикл' }
+	});
+	await gotoApp(page, '/workouts');
+
+	const card = page.locator('.cycle-card');
+	await expect(card).toBeVisible();
+	await expect(card).toContainText('Неделя 1 из 8');
+	await expect(card.locator('.cycle-card__name')).toHaveCount(0);
+	// The wave lives on /cycle; the promo is a row, not a preview screen. (The chevron
+	// is an <svg> too, so assert on the chart itself, not on any svg.)
+	await expect(card.locator('svg.cycle-chart')).toHaveCount(0);
+	await expect(card.locator('.cycle-card__chevron')).toBeVisible();
+});
+
+test('a renamed cycle gets its own line in the workouts teaser', async ({ page }) => {
+	await seedLocalStorage(page, { 'repdraft:plans': [PLAN], 'repdraft:cycle': CYCLE });
+	await gotoApp(page, '/workouts');
+
+	await expect(page.locator('.cycle-card .cycle-card__name')).toHaveText('E2E волна');
 });

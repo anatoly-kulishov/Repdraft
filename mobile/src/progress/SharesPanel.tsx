@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { labelBodyPart } from '@repdraft/domain/labels.ru';
+import { labelCatalogZone } from '@repdraft/domain/catalogLinks';
 import type { BodyPartSetShare } from '@repdraft/domain/progressOverview';
 import { Panel } from '../components/Panel';
 import { useLocale } from '../state/locale';
@@ -10,10 +10,10 @@ import { makeProgressPanelStyles } from './panelStyles';
 
 type Props = {
 	shares: BodyPartSetShare[];
-	laggingPart: string | null;
+	smallestPart: string | null;
 };
 
-export function SharesPanel({ shares, laggingPart }: Props) {
+export function SharesPanel({ shares, smallestPart }: Props) {
 	const { locale, tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -23,17 +23,17 @@ export function SharesPanel({ shares, laggingPart }: Props) {
 		<Panel>
 			<Text style={styles.sectionTitle}>{tt('progress.sharesTitle')}</Text>
 			{shares.map((part) => {
-				const lagging = part.bodyPart === laggingPart;
+				const smallest = part.bodyPart === smallestPart;
 				return (
 					<View key={part.bodyPart} style={styles.part}>
 						<View style={styles.partTop}>
 							<View style={styles.partLabelRow}>
 								<Text style={styles.partLabel} numberOfLines={1}>
-									{labelBodyPart(part.bodyPart, locale)}
+									{labelCatalogZone(part.bodyPart, locale)}
 								</Text>
-								{lagging ? (
-									<View style={styles.lagTag}>
-										<Text style={styles.lagTagText}>{tt('progress.lagging')}</Text>
+								{smallest ? (
+									<View style={styles.smallestTag}>
+										<Text style={styles.smallestTagText}>{tt('progress.smallestShare')}</Text>
 									</View>
 								) : null}
 							</View>
@@ -43,7 +43,6 @@ export function SharesPanel({ shares, laggingPart }: Props) {
 							<View
 								style={[
 									styles.barFill,
-									lagging && styles.barLag,
 									{ width: `${part.sharePct}%` }
 								]}
 							/>
@@ -79,14 +78,14 @@ function makeStyles(colors: ColorPalette) {
 			fontWeight: '600',
 			fontFamily: fontFamily.semibold
 		},
-		lagTag: {
+		smallestTag: {
 			paddingHorizontal: 8,
 			paddingVertical: 3,
 			borderRadius: radius.tag,
-			backgroundColor: colors.dangerBg
+			backgroundColor: colors.border
 		},
-		lagTagText: {
-			color: colors.danger,
+		smallestTagText: {
+			color: colors.muted,
 			fontSize: 11,
 			fontWeight: '700',
 			fontFamily: fontFamily.bold

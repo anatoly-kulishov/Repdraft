@@ -20,6 +20,8 @@
 	<span class="legal-footer__sep" aria-hidden="true">·</span>
 	<a class="legal-footer__link" href="/privacy">{translate(lang, 'legal.footerPrivacy')}</a>
 	<span class="legal-footer__sep" aria-hidden="true">·</span>
+	<a class="legal-footer__link" href="/feedback">{translate(lang, 'legal.footerFeedback')}</a>
+	<span class="legal-footer__sep" aria-hidden="true">·</span>
 	<a class="legal-footer__link" href="/legal/requisites">
 		{translate(lang, 'legal.footerRequisites')}
 	</a>

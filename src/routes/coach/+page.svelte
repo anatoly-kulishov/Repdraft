@@ -13,7 +13,7 @@
 	} from '$lib/domain/coachHints';
 	import { computeProgressOverview } from '$lib/domain/progressOverview';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { labelBodyPart } from '$lib/domain/labels.ru';
+	import { labelCatalogZone } from '$lib/domain/catalogLinks';
 	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
 	import { translate, translateError } from '$lib/i18n/messages';
@@ -232,7 +232,7 @@
 								class="coach-balance__row"
 								class:is-lagging={laggingParts.has(row.bodyPart)}
 							>
-								<span class="coach-balance__part">{labelBodyPart(row.bodyPart, lang)}</span>
+								<span class="coach-balance__part">{labelCatalogZone(row.bodyPart, lang)}</span>
 								<span class="coach-balance__track" aria-hidden="true">
 									<span
 										class="coach-balance__fill"
@@ -272,7 +272,7 @@
 								{meta ? exerciseName(meta, lang) : hint.exerciseId}
 							</p>
 							<p class="coach-card__meta">
-								{labelBodyPart(hint.bodyPart, lang)} · {translate(lang, 'coach.hintShare', {
+								{labelCatalogZone(hint.bodyPart, lang)} · {translate(lang, 'coach.hintShare', {
 									pct: hint.sharePct
 								})}
 							</p>
@@ -299,7 +299,7 @@
 							{meta ? exerciseName(meta, lang) : hint.exerciseId}
 						</p>
 						<p class="coach-card__meta">
-							{labelBodyPart(hint.bodyPart, lang)} · {translate(lang, 'coach.hintShare', {
+							{labelCatalogZone(hint.bodyPart, lang)} · {translate(lang, 'coach.hintShare', {
 								pct: hint.sharePct
 							})}
 						</p>
@@ -343,11 +343,11 @@
 						<p class="coach-card__meta">
 							→ {toMeta ? exerciseName(toMeta, lang) : replace.toExerciseId}
 						</p>
-						<p class="coach-card__meta">{labelBodyPart(replace.bodyPart, lang)}</p>
+						<p class="coach-card__meta">{labelCatalogZone(replace.bodyPart, lang)}</p>
 						<p class="coach-why">
 							{replaceSharePct != null
 								? translate(lang, 'coach.replaceWhy', {
-										part: labelBodyPart(replace.bodyPart, lang),
+										part: labelCatalogZone(replace.bodyPart, lang),
 										pct: replaceSharePct
 									})
 								: translate(lang, 'coach.replaceWhyGeneric')}

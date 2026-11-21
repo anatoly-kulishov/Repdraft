@@ -12,7 +12,13 @@ import { Panel } from './Panel';
  * One question after real work. Ratings stay on the device for now, the same
  * local-only contract as the web panel and the program runs.
  */
-export function SessionRatingPanel({ sessionId }: { sessionId: string }) {
+export function SessionRatingPanel({
+	sessionId,
+	variant = 'summary'
+}: {
+	sessionId: string;
+	variant?: 'summary' | 'detail';
+}) {
 	const { tt } = useLocale();
 	const colors = useAppColors();
 	const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -35,7 +41,9 @@ export function SessionRatingPanel({ sessionId }: { sessionId: string }) {
 
 	return (
 		<Panel>
-			<Text style={styles.title}>{tt(mine ? 'rating.thanks' : 'rating.title')}</Text>
+			<Text style={styles.title}>
+				{tt(mine ? (variant === 'detail' ? 'rating.yours' : 'rating.thanks') : 'rating.title')}
+			</Text>
 			<View
 				style={styles.stars}
 				accessibilityRole="radiogroup"
@@ -71,10 +79,14 @@ function makeStyles(colors: ColorPalette) {
 		title: {
 			color: colors.text,
 			fontSize: 15,
-			fontWeight: '600'
+			fontWeight: '600',
+			textAlign: 'center'
 		},
+		/* Centred like the web card: the avatar and plan name above are centred too. */
 		stars: {
+			alignSelf: 'stretch',
 			flexDirection: 'row',
+			justifyContent: 'center',
 			gap: space.xs,
 			marginTop: space.xs
 		},
@@ -87,7 +99,8 @@ function makeStyles(colors: ColorPalette) {
 		hint: {
 			color: colors.muted,
 			fontSize: 12,
-			lineHeight: 17
+			lineHeight: 17,
+			textAlign: 'center'
 		}
 	});
 }

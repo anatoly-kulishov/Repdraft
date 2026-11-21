@@ -6,7 +6,7 @@
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import { BorderBeam, LiquidGooey, MetalFx } from '$lib/components/fx';
 	import { exerciseName } from '$lib/domain/exerciseName';
-	import { labelBodyPart } from '$lib/domain/labels.ru';
+	import { labelCatalogZone } from '$lib/domain/catalogLinks';
 	import {
 		computeProgressOverview,
 		PROGRESS_PERIODS,
@@ -35,10 +35,10 @@
 	);
 	let maxWeekVol = $derived(Math.max(1, ...overview.weeks.map((w) => w.volumeKg)));
 	let hasData = $derived(overview.weeks.length > 0);
-	// Small samples make a "lagging" flag noisy: require enough groups and workouts.
-	let laggingPart = $derived(
+	// Small samples make the smallest-share tag noisy: require enough groups and workouts.
+	let smallestPart = $derived(
 		overview.setShares.length >= 3 && overview.cards.workouts >= 4
-			? overview.laggingBodyPart
+			? overview.smallestShareBodyPart
 			: null
 	);
 
@@ -224,9 +224,9 @@
 					<div class="progress-part">
 						<div class="progress-part__top">
 							<span class="progress-part__label">
-								{labelBodyPart(part.bodyPart, lang)}
-								{#if part.bodyPart === laggingPart}
-									<span class="progress-part__lag">{translate(lang, 'progress.lagging')}</span>
+								{labelCatalogZone(part.bodyPart, lang)}
+								{#if part.bodyPart === smallestPart}
+									<span class="progress-part__smallest">{translate(lang, 'progress.smallestShare')}</span>
 								{/if}
 							</span>
 							<span class="progress-part__pct tabular-nums">{part.sharePct}%</span>
@@ -234,7 +234,6 @@
 						<div class="progress-week__track">
 							<div
 								class="progress-week__fill"
-								class:progress-week__fill--lag={part.bodyPart === laggingPart}
 								style:width="{part.sharePct}%"
 							></div>
 						</div>

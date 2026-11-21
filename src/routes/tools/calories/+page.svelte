@@ -50,7 +50,8 @@
 	let origin = $derived(resolveSiteOrigin($page.url.origin));
 
 	let sex = $state<Sex>('male');
-	let ageRaw = $state('30');
+	/** Age starts empty with "30" as the hint: a prefilled 30 read as the user's own data. */
+	let ageRaw = $state('');
 	let heightRaw = $state('180');
 	let weightRaw = $state('80');
 	let activity = $state<ActivityFactorId>('moderate');
@@ -153,6 +154,7 @@
 					min={TOOL_LIMITS.ageMin}
 					max={TOOL_LIMITS.ageMax}
 					step="1"
+					placeholder="30"
 					value={ageRaw}
 					oninput={(event) => (ageRaw = event.currentTarget.value)}
 				/>

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { useFocusEffect, useRouter } from 'expo-router';
 import {
 	BarChart3,
@@ -7,12 +8,14 @@ import {
 	Crown,
 	Home,
 	Languages,
+	MessageCircle,
 	Shield,
 	Smartphone,
 	UserRound,
 	Users
 } from 'lucide-react-native';
 import type { AthleteProfile } from '@repdraft/domain/athleteProfile';
+import { webOrigin } from '../catalog/mediaUrl';
 import { getAthleteProfile } from '../state/prefs';
 import { useLocale } from '../state/locale';
 import { useAppTheme } from '../state/theme';
@@ -124,6 +127,12 @@ export function SettingsHub({
 			</SettingsGroup>
 
 			<SettingsGroup label={tt('settings.group.support')}>
+				<SettingsRow
+					icon={MessageCircle}
+					label={tt('feedback.title')}
+					// Feedback is a web form (SMTP + spam guard live on the server).
+					onPress={() => void WebBrowser.openBrowserAsync(`${webOrigin()}/feedback`)}
+				/>
 				<SettingsRow
 					icon={CloudDownload}
 					label={tt('settings.exportTitle')}

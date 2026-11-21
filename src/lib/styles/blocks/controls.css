@@ -546,6 +546,24 @@ button:focus-visible {
 	border-color: color-mix(in srgb, var(--btn-secondary-border) 55%, transparent) !important;
 }
 
+/* AppChip selected state. The btn-secondary paint above is !important, so a
+   chip marked `is-active` has to restate the accent paint at the same weight,
+   otherwise a picked filter looks exactly like an unpicked one. */
+[data-slot='button'].btn-secondary.is-active {
+	border-color: var(--catalog-filter-chip-active-border) !important;
+	background: var(--color-accent-muted) !important;
+	color: var(--color-accent-text) !important;
+	-webkit-text-fill-color: var(--color-accent-text) !important;
+	font-weight: 600;
+}
+
+[data-slot='button'].btn-secondary.is-active:hover:not(:disabled) {
+	border-color: color-mix(in srgb, var(--color-accent) 65%, var(--color-border)) !important;
+	background: var(--catalog-filter-chip-active-hover-bg) !important;
+	color: var(--color-accent-text) !important;
+	-webkit-text-fill-color: var(--color-accent-text) !important;
+}
+
 [data-slot='button'].btn-danger {
 	background: var(--color-surface) !important;
 	color: var(--color-danger) !important;

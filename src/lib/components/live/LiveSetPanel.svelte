@@ -20,7 +20,8 @@
 		exerciseWeightByWeek,
 		nextHintMessageKey,
 		nextWeightHint,
-		weightAboveLast
+		weightAboveLast,
+		weightStepForEquipment
 	} from '$lib/domain/sessionPayoff';
 	import { exerciseBestWeightKg, loggedSetKind, setKindMessageKey } from '$lib/domain/session';
 	import type { AppLocale } from '$lib/i18n/locale';
@@ -278,7 +279,12 @@
 	let weightUp = $derived(
 		weightAboveLast(currentBest, $live.history, exercise.exerciseId, session.id)
 	);
-	let nextHint = $derived(nextWeightHint($live.history, exercise.exerciseId));
+	let nextHint = $derived(
+		nextWeightHint($live.history, exercise.exerciseId, {
+			stepKg: weightStepForEquipment(exerciseMeta?.equipment),
+			targetReps: exercise.targetReps
+		})
+	);
 
 	function onRepsKeydown(e: KeyboardEvent, si: number) {
 		if (e.key !== 'Enter') return;
@@ -289,9 +295,18 @@
 </script>
 
 <div class="live-panel" class:live-panel--superset={selectedInGroup}>
-	<div class="live-weight-cue" aria-hidden="true">
-		<p class="live-weight-cue__title">{translate(lang, 'quest.weightByWeek')}</p>
-		<div class="live-weight-cue__bars">
+	<div class="live-weight-cue">
+		<div class="live-weight-cue__head">
+			<p class="live-weight-cue__title">{translate(lang, 'quest.weightByWeek')}</p>
+			{#if nextHint?.oneRepMaxKg != null}
+				<p class="live-weight-cue__max">
+					{translate(lang, 'quest.estimatedMax', {
+						weight: String(nextHint.oneRepMaxKg)
+					})}
+				</p>
+			{/if}
+		</div>
+		<div class="live-weight-cue__bars" aria-hidden="true">
 		{#each weightWeeks as week (week.weekKey)}
 			<div class="live-weight-cue__col">
 				<div
@@ -315,7 +330,11 @@
 			{translate(lang, nextHintMessageKey(nextHint.kind), {
 				weight: String(nextHint.weightKg),
 				reps: String(nextHint.reps)
-			})}
+			})}{#if nextHint.percentOfMax != null}<span class="live-weight-cue__percent"
+					>{' · '}{translate(lang, 'quest.ofMax', {
+						percent: String(nextHint.percentOfMax)
+					})}</span
+				>{/if}
 		</p>
 	{/if}
 	<header class="live-panel__hero">
@@ -879,6 +898,23 @@
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		opacity: 0.75;
+	}
+	.live-weight-cue__head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+	.live-weight-cue__max {
+		margin: 0;
+		font-size: 0.6875rem;
+		font-weight: 600;
+		opacity: 0.7;
+		white-space: nowrap;
+	}
+	.live-weight-cue__percent {
+		font-weight: 500;
+		opacity: 0.7;
 	}
 	.live-weight-cue__bars {
 		display: flex;

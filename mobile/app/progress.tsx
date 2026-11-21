@@ -42,7 +42,7 @@ export default function ProgressScreen() {
 			/>
 			<SharesPanel
 				shares={progress.overview.setShares}
-				laggingPart={progress.laggingPart}
+				smallestPart={progress.smallestPart}
 			/>
 			<BestLiftsPanel
 				lifts={progress.overview.bestLifts}

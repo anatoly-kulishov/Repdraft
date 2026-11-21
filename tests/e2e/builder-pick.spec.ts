@@ -57,4 +57,46 @@ test.describe('builder quick pick', () => {
 		await expect(page.locator('.builder-pick__summary')).toContainText('Шея');
 		await expect(page.locator('.builder-pick__list .exercise-card')).toHaveCount(2);
 	});
+
+	test('recap chips jump back to their step, reset keeps the list', async ({ page }) => {
+		await gotoApp(page, '/builder/equipment');
+		await page.locator('.builder-pick__chips button', { hasText: 'Гантели' }).first().click();
+		await page.getByRole('button', { name: 'Дальше' }).click();
+		await page.locator('.builder-pick__zone', { hasText: 'Грудь' }).first().click();
+		await page.getByRole('button', { name: 'Дальше' }).click();
+		await expect(page.getByRole('heading', { name: 'Упражнения под ваш набор' })).toBeVisible();
+
+		// The recap is editable: the kit pill reopens step 1 instead of being a label.
+		await page.locator('.builder-pick__pill', { hasText: 'Гантели' }).click();
+		await expect(page.getByRole('heading', { name: 'Что есть под рукой' })).toBeVisible();
+		await page.getByRole('button', { name: 'Дальше' }).click();
+		await page.getByRole('button', { name: 'Дальше' }).click();
+		await expect(page.getByRole('heading', { name: 'Упражнения под ваш набор' })).toBeVisible();
+
+		// Resetting widens the list in place; it must not send the user back to step 1.
+		await page.getByRole('button', { name: 'Сбросить фильтры' }).click();
+		await expect(page.getByRole('heading', { name: 'Упражнения под ваш набор' })).toBeVisible();
+		await expect(page.locator('.builder-pick__summary')).toContainText('Любое оборудование');
+		await expect(page.locator('.builder-pick__summary')).toContainText('Всё тело');
+	});
+
+	test('the add glyph sits dead centre in its button', async ({ page }) => {
+		await gotoApp(page, '/builder/equipment');
+		await page.getByRole('button', { name: 'Дальше' }).click();
+		await page.getByRole('button', { name: 'Дальше' }).click();
+		const offset = await page
+			.locator('.builder-pick__list .exercise-card-add--inline')
+			.first()
+			.evaluate((button) => {
+				const glyph = button.querySelector('svg')?.getBoundingClientRect();
+				const box = button.getBoundingClientRect();
+				if (!glyph) return { dx: 99, dy: 99 };
+				return {
+					dx: Math.abs(glyph.x + glyph.width / 2 - (box.x + box.width / 2)),
+					dy: Math.abs(glyph.y + glyph.height / 2 - (box.y + box.height / 2))
+				};
+			});
+		expect(offset.dx).toBeLessThan(1.5);
+		expect(offset.dy).toBeLessThan(1.5);
+	});
 });

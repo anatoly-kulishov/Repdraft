@@ -38,6 +38,7 @@ const ROUTES: { path: string; lang: 'ru' | 'en' }[] = [
 	{ path: '/clients', lang: 'ru' },
 	{ path: '/privacy', lang: 'ru' },
 	{ path: '/terms', lang: 'ru' },
+	{ path: '/feedback', lang: 'ru' },
 	{ path: '/legal/requisites', lang: 'ru' },
 	{ path: '/en/tools', lang: 'en' },
 	{ path: '/en/tools/one-rep-max', lang: 'en' },
