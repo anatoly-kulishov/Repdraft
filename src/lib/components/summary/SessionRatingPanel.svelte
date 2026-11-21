@@ -78,7 +78,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		/* 44px tap target with a 26px glyph — thumb-safe without visual bulk. */
+		/* 44px tap target with a 26px glyph, thumb-safe without visual bulk. */
 		width: 44px;
 		height: 44px;
 		padding: 0;

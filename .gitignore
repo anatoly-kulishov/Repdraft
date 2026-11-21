@@ -48,3 +48,9 @@ static/data/exercises.full.json
 
 .playwright-mcp/
 .playwright-cli/
+
+# Playwright E2E
+test-results/
+playwright-report/
+blob-report/
+.playwright/

@@ -26,7 +26,7 @@ export function toolPath(id: ToolId): string {
 	return `${TOOLS_HUB_PATH}/${id}`;
 }
 
-/* ——— Shared bounds: keep parses predictable, avoid Infinity in charts/text ——— */
+/* --- Shared bounds: keep parses predictable, avoid Infinity in charts/text --- */
 
 export const TOOL_LIMITS = {
 	weightKgMin: 25,
@@ -64,7 +64,7 @@ export function parseToolNumber(
 	return clampNumber(parsed, min, max, fallback);
 }
 
-/* ——— BMI ——— */
+/* --- BMI --- */
 
 export type BmiCategory = 'under' | 'normal' | 'over' | 'obese';
 
@@ -87,7 +87,7 @@ export function healthyWeightRange(heightCm: number): { minKg: number; maxKg: nu
 	return { minKg: 18.5 * meters * meters, maxKg: 24.9 * meters * meters };
 }
 
-/* ——— One-rep max ——— */
+/* --- One-rep max --- */
 
 export type OneRepMaxEstimate = {
 	epley: number;
@@ -129,7 +129,7 @@ export function loadTableForOneRepMax(oneRepMax: number): LoadRow[] {
 	});
 }
 
-/* ——— Calories: BMR → TDEE → target + macros ——— */
+/* --- Calories: BMR -> TDEE -> target + macros --- */
 
 export type Sex = 'male' | 'female';
 
@@ -157,7 +157,7 @@ export type CalorieGoal = 'cut' | 'maintain' | 'gain';
 
 export const CALORIE_GOALS = ['cut', 'maintain', 'gain'] as const satisfies readonly CalorieGoal[];
 
-/** Mifflin–St Jeor - the formula most dietetics guidelines still prefer. */
+/** Mifflin–St Jeor, the formula most dietetics guidelines still prefer. */
 export function calcBmrMifflin(args: {
 	sex: Sex;
 	weightKg: number;
@@ -173,7 +173,7 @@ export function calcTdee(bmr: number, activity: ActivityFactorId): number {
 	return Math.max(bmr, 0) * (ACTIVITY_FACTORS[activity] ?? ACTIVITY_FACTORS.moderate);
 }
 
-/** ±15% / +12% - slow enough to keep strength on a cut, lean enough on a bulk. */
+/** ±15% / +12%: slow enough to keep strength on a cut, lean enough on a bulk. */
 const GOAL_DELTA: Record<CalorieGoal, number> = {
 	cut: -0.15,
 	maintain: 0,
@@ -198,7 +198,7 @@ export function calcMacros(calories: number, weightKg: number): Macros {
 	return { proteinG, fatG, carbsG };
 }
 
-/* ——— Heart-rate zones ——— */
+/* --- Heart-rate zones --- */
 
 export type HeartRateZone = {
 	index: 1 | 2 | 3 | 4 | 5;
@@ -209,7 +209,7 @@ export type HeartRateZone = {
 	bpmTo: number;
 };
 
-/** Tanaka (208 − 0.7 × age) - drifts less than 220 − age for adults. */
+/** Tanaka (208 − 0.7 × age) drifts less than 220 − age for adults. */
 export function estimateMaxHeartRate(age: number): number {
 	return Math.round(208 - 0.7 * Math.max(age, 0));
 }
@@ -243,7 +243,7 @@ export function heartRateZones(args: { age: number; restingHr?: number | null })
 	return { maxHr, method, zones };
 }
 
-/* ——— Self-check (run by scripts/check-domain.mjs) ——— */
+/* --- Self-check (run by scripts/check-domain.mjs) --- */
 
 function assert(condition: boolean, message: string): void {
 	if (!condition) throw new Error(`tools: ${message}`);

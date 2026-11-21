@@ -212,7 +212,7 @@ const ru: Dict = {
 	'recognize.invalidFile': 'Этот файл не подходит. Нужны фото, Excel (.xlsx) или CSV',
 	'recognize.tooLarge': 'Файл слишком большой',
 	'recognize.quota':
-		'Лимит распознаваний по фото на сегодня исчерпан. Excel или CSV можно загрузить без ограничений, фото — завтра',
+		'Лимит распознаваний по фото на сегодня исчерпан. Excel или CSV можно загрузить без ограничений, фото можно загрузить завтра',
 	'planTune.cta': 'Подстроить под сегодня',
 	'planTune.title': 'Подстроить тренировку',
 	'planTune.lead': 'Что болит или на чём сделать акцент?',
@@ -244,17 +244,17 @@ const ru: Dict = {
 	'planTune.emptyBrief': 'Опишите, что болит или на чём сделать акцент',
 	'planTune.activeSession': 'Сначала завершите текущую тренировку, потом подстроим план',
 	'cycle.title': 'Волновой цикл',
-	'cycle.lead': 'Объём и интенсивность идут волнами: каждые три недели — разгрузка по объёму, набор объёма и его пик.',
+	'cycle.lead': 'Объём и интенсивность идут волнами: каждые три недели разгрузка по объёму, набор объёма и его пик.',
 	'cycle.localHint': 'Цикл хранится на этом устройстве.',
 	'cycle.defaultName': 'Волновой цикл',
-	'cycle.createHint': 'Выберите планы и цель — дальше каждая неделя сама подстроит подходы и отдых.',
+	'cycle.createHint': 'Выберите планы и цель, дальше каждая неделя сама подстроит подходы и отдых.',
 	'cycle.nameLabel': 'Название',
 	'cycle.namePlaceholder': 'Например, весенний цикл',
 	'cycle.goalLabel': 'Цель',
 	'cycle.lengthLabel': 'Длительность',
 	'cycle.weeksShort': '{n} нед.',
 	'cycle.plansLabel': 'Планы в ротации',
-	'cycle.plansHint': 'Порядок выбора = порядок тренировок. Один план — одна тренировка в неделю.',
+	'cycle.plansHint': 'Порядок выбора = порядок тренировок. Один план даёт одну тренировку в неделю.',
 	'cycle.plansEmpty': 'Сначала соберите хотя бы один план.',
 	'cycle.plansEmptyCta': 'Создать план',
 	'cycle.selected': 'Выбрано: {n}',
@@ -1402,11 +1402,11 @@ const ru: Dict = {
 	'terms.title': 'Условия использования и оферта',
 	'terms.link': 'Условия',
 	'terms.lead':
-		'Настоящий документ — публичная оферта об использовании сайта, PWA и нативных приложений Repdraft, включая платную подписку Repdraft Pro.',
+		'Настоящий документ является публичной офертой об использовании сайта, PWA и нативных приложений Repdraft, включая платную подписку Repdraft Pro.',
 	'terms.updated': 'Дата публикации: 21 ноября 2026 г.',
 	'terms.s0Title': '1. Общие положения',
 	'terms.s0Body':
-		'Документ является публичной офертой (ст. 435, 437 ГК РФ). Регистрация аккаунта, вход по email, оформление подписки Pro или иное использование сервиса означает полный акцепт этих условий. Если вы не согласны — не используйте сервис.',
+		'Документ является публичной офертой (ст. 435, 437 ГК РФ). Регистрация аккаунта, вход по email, оформление подписки Pro или иное использование сервиса означает полный акцепт этих условий. Если вы не согласны, не используйте сервис.',
 	'terms.s1Title': '2. Предмет',
 	'terms.s1Body':
 		'Repdraft помогает составлять и вести тренировки: каталог упражнений, редактор планов, запись подходов, история, рекорды и (в Pro) распознавание программы с фото или Excel. Сервис предоставляется «как есть». Мы не даём медицинских советов и не гарантируем спортивный результат.',
@@ -1421,7 +1421,7 @@ const ru: Dict = {
 		'Иллюстрации упражнений предоставлены Gym Visual и подчиняются их лицензии. Их нельзя копировать из Repdraft для других продуктов без отдельного разрешения Gym Visual.',
 	'terms.s5Title': '6. Цена и оплата',
 	'terms.s5Body':
-		'Базовые функции бесплатны. Repdraft Pro — платная подписка; актуальная цена, срок и состав функций показываются на странице оформления до оплаты. Оплата проходит через ЮKassa (карты РФ) или Stripe. Данные банковской карты обрабатывает платёжный провайдер, мы их не получаем и не храним. Моментом оплаты считается подтверждение платежа провайдером.',
+		'Базовые функции бесплатны. Repdraft Pro это платная подписка; актуальная цена, срок и состав функций показываются на странице оформления до оплаты. Оплата проходит через ЮKassa (карты РФ) или Stripe. Данные банковской карты обрабатывает платёжный провайдер, мы их не получаем и не храним. Моментом оплаты считается подтверждение платежа провайдером.',
 	'terms.s6Title': '7. Автопродление, отмена и возврат',
 	'terms.s6Body':
 		'Подписка продлевается автоматически на тот же срок, пока вы не отмените её в разделе управления подпиской; доступ сохраняется до конца оплаченного периода. Возврат денежных средств выполняется по правилам платёжного провайдера и законодательства РФ: отправьте запрос на {email} с датой и суммой платежа. Если Pro не был активирован по нашей вине, платёж возвращается полностью.',
@@ -1435,13 +1435,13 @@ const ru: Dict = {
 		'Мы можем обновлять условия. Актуальная версия публикуется на этой странице с датой. Существенные изменения отражаются здесь; продолжение использования после публикации означает согласие.',
 	'terms.s10Title': '11. Реквизиты и контакты',
 	'terms.s10Body':
-		'Оператор: {operator}. Запросы по условиям, оплате и возвратам: {email}. Полные реквизиты — на странице «Реквизиты».',
+		'Оператор: {operator}. Запросы по условиям, оплате и возвратам: {email}. Полные реквизиты есть на странице «Реквизиты».',
 	'terms.privacyTitle': '12. Конфиденциальность',
 	'terms.privacyBody': 'Обработка персональных данных описана в документе ',
 	'legal.requisitesTitle': 'Реквизиты',
 	'legal.requisitesLead': 'Сведения об операторе сервиса Repdraft.',
 	'legal.requisitesNote':
-		'Если какой-то реквизит не указан, запросите его по электронной почте — ответим в сроки, установленные законом.',
+		'Если какой-то реквизит не указан, запросите его по электронной почте, ответим в сроки, установленные законом.',
 	'legal.nameLabel': 'Оператор',
 	'legal.innLabel': 'ИНН',
 	'legal.ogrnLabel': 'ОГРН / ОГРНИП',
@@ -1450,8 +1450,8 @@ const ru: Dict = {
 	'legal.licensesTitle': 'Лицензии',
 	'legal.licensesBody':
 		'Шрифт Inter распространяется по лицензии SIL Open Font License 1.1 и размещён на нашем сервере. Иллюстрации и GIF упражнений принадлежат Gym Visual и используются на их условиях.',
-	'legal.licensesFont': 'Inter — SIL OFL 1.1',
-	'legal.licensesMedia': 'Gym Visual — условия использования',
+	'legal.licensesFont': 'Inter, SIL OFL 1.1',
+	'legal.licensesMedia': 'Gym Visual, условия использования',
 	'legal.termsLink': 'Условия использования',
 	'legal.privacyLink': 'Политика конфиденциальности',
 	'legal.footerAria': 'Правовая информация',
@@ -1795,7 +1795,7 @@ const ru: Dict = {
 	'rating.aria': 'Оценка тренировки',
 	'rating.ariaStar': 'Оценка {n} из 5',
 
-	/* ——— Public programs (/programs/*) ——— */
+	/* --- Public programs (/programs/*) --- */
 	'programs.title': 'Программы',
 	'programs.lead':
 		'Готовые блоки на 4 недели: упражнения подобраны по правилам, план собирается в один тап и живёт как обычный.',
@@ -1810,7 +1810,7 @@ const ru: Dict = {
 	'programs.weeksTitle': 'Недели программы',
 	'programs.prescription': '{sets} × {reps} · отдых {rest} с',
 	'programs.start': 'Начать',
-	'programs.starting': 'Готовим…',
+	'programs.starting': 'Готовим...',
 	'programs.openPlan': 'Открыть план',
 	'programs.done': 'Готово',
 	'programs.activeSession': 'Сначала завершите текущую тренировку.',
@@ -1823,15 +1823,15 @@ const ru: Dict = {
 	'programs.how3':
 		'Сохранённый план можно править как любой другой, а прогресс считается по завершённым тренировкам.',
 	'programs.note':
-		'Программа — ориентир, а не обязательство. Нет сил сегодня — сократите подходы и вернитесь к плану в следующий раз.',
+		'Программа не обязательство, а ориентир. Нет сил сегодня, сократите подходы и вернитесь к плану в следующий раз.',
 	'programs.hubNote':
 		'Прогресс хранится на устройстве. Тренировка отмечается выполненной, когда вы завершаете сохранённый план.',
 	'programs.missing': 'Такой программы нет. Вернитесь к списку.',
 
-	/* ——— Public tools (/tools/*) ——— */
+	/* --- Public tools (/tools/*) --- */
 	'tools.title': 'Инструменты',
 	'tools.lead':
-		'Четыре калькулятора, которые заканчиваются тренировкой: посчитали норму или рабочий вес — сразу собираете план. Всё считается в браузере телефона, данные никуда не уходят.',
+		'Четыре калькулятора, которые заканчиваются тренировкой: посчитали норму или рабочий вес, сразу собираете план. Всё считается в браузере телефона, данные никуда не уходят.',
 	'tools.open': 'Открыть',
 	'tools.moreTools': 'Другие инструменты',
 	'tools.ctaBuilder': 'Собрать тренировку',
@@ -1858,7 +1858,7 @@ const ru: Dict = {
 	'seo.toolBmiDescription':
 		'Калькулятор ИМТ: индекс массы тела, категория и здоровый диапазон веса для вашего роста.',
 	'seo.toolHrDescription':
-		'Калькулятор пульсовых зон: максимум пульса по формуле Танаки и пять зон — по возрасту или Карвонену.',
+		'Калькулятор пульсовых зон: максимум пульса по формуле Танаки и пять зон по возрасту или Карвонену.',
 	'tools.orm.title': 'Разовый максимум',
 	'tools.orm.lead':
 		'Оцените 1ПМ по рабочему подходу. Это ориентир для плана, реальный максимум покажет запись подходов.',
@@ -1876,8 +1876,8 @@ const ru: Dict = {
 	'tools.orm.how1': 'Формулы расходятся на 3–5%: берите среднее, а не самый приятный результат.',
 	'tools.orm.how2': 'Начинайте с 90% расчётного максимума и уточняйте по фактическим подходам.',
 	'tools.orm.how3':
-		'Подход длиннее 12–15 повторений для оценки 1ПМ не подходит — там уже выносливость.',
-	'tools.orm.note': 'Оценка, не медицинская рекомендация. Тяжёлые веса — со страховкой и разминкой.',
+		'Подход длиннее 12–15 повторений для оценки 1ПМ не подходит: там уже выносливость.',
+	'tools.orm.note': 'Оценка, не медицинская рекомендация. Тяжёлые веса берите со страховкой и разминкой.',
 	'tools.cal.title': 'Калории и БЖУ',
 	'tools.cal.lead': 'Норма калорий по Миффлину–Сан Жеору с поправкой на активность и цель.',
 	'tools.cal.sexLabel': 'Пол',
@@ -1906,9 +1906,9 @@ const ru: Dict = {
 	'tools.cal.kcalPerDay': 'ккал/день',
 	'tools.cal.gPerDay': 'г/день',
 	'tools.cal.howTitle': 'Что учтено',
-	'tools.cal.how1': 'Mifflin–St Jeor — базовая формула диетологии; коэффициент активности 1.2–1.9.',
+	'tools.cal.how1': 'Mifflin–St Jeor, базовая формула диетологии; коэффициент активности 1.2–1.9.',
 	'tools.cal.how2': 'Похудение −15% и набор +12%: медленно, чтобы не терять силу и не набирать лишнее.',
-	'tools.cal.how3': 'Белки 1.8 г/кг, жиры 25% калорий, остальное — углеводы.',
+	'tools.cal.how3': 'Белки 1.8 г/кг, жиры 25% калорий, остальное приходится на углеводы.',
 	'tools.cal.note': 'Оценка для планирования, не медицинская рекомендация.',
 	'tools.bmi.title': 'Индекс массы тела',
 	'tools.bmi.lead': 'ИМТ и здоровый диапазон веса под ваш рост.',
@@ -1924,8 +1924,8 @@ const ru: Dict = {
 	'tools.bmi.howTitle': 'Что важно знать',
 	'tools.bmi.how1': 'ИМТ не различает мышцы и жир: у тренирующихся он часто завышен.',
 	'tools.bmi.how2': 'Смотрите на тренд за месяцы; один замер утром ничего не значит.',
-	'tools.bmi.how3': 'Ориентир ВОЗ по ИМТ — 18.5–24.9; ниже и выше — повод обсудить питание.',
-	'tools.bmi.note': 'ИМТ — грубая оценка, а не диагноз. При сомнениях — к врачу.',
+	'tools.bmi.how3': 'Ориентир ВОЗ по ИМТ: 18.5–24.9. Значения ниже и выше: повод обсудить питание.',
+	'tools.bmi.note': 'ИМТ даёт грубую оценку, а не диагноз. При сомнениях идите к врачу.',
 	'tools.hr.title': 'Пульсовые зоны',
 	'tools.hr.lead':
 		'Пять зон отдыха и работы: по возрасту или по методу Карвонена, если знаете пульс покоя.',
@@ -1941,7 +1941,7 @@ const ru: Dict = {
 	'tools.hr.zone4': 'Зона 4 · порог',
 	'tools.hr.zone5': 'Зона 5 · максимум',
 	'tools.hr.howTitle': 'Как использовать',
-	'tools.hr.how1': 'Зона 2 — база выносливости, в ней проходит большая часть объёма.',
+	'tools.hr.how1': 'Зона 2 это база выносливости, в ней проходит большая часть объёма.',
 	'tools.hr.how2': 'Зона 4 дозируется: 1–2 интервала в неделю достаточно.',
 	'tools.hr.how3': 'Формула Танаки точнее «220 минус возраст», но часы по-прежнему точнее.',
 	'tools.hr.note': 'Оценка по возрасту. Индивидуальные зоны уточняются на тесте.',
@@ -2181,17 +2181,17 @@ const en: Dict = {
 	'planTune.emptyBrief': 'Say what hurts or what to emphasise',
 	'planTune.activeSession': 'Finish your current workout first, then tune the plan',
 	'cycle.title': 'Wave cycle',
-	'cycle.lead': 'Volume and intensity move in waves: every three weeks — an intensity week, a volume week and a volume peak.',
+	'cycle.lead': 'Volume and intensity move in waves: every three weeks an intensity week, a volume week and a volume peak.',
 	'cycle.localHint': 'The cycle is stored on this device.',
 	'cycle.defaultName': 'Wave cycle',
-	'cycle.createHint': 'Pick plans and a goal — every week will tune sets and rest for you.',
+	'cycle.createHint': 'Pick plans and a goal, then every week tunes sets and rest for you.',
 	'cycle.nameLabel': 'Name',
 	'cycle.namePlaceholder': 'e.g. spring cycle',
 	'cycle.goalLabel': 'Goal',
 	'cycle.lengthLabel': 'Length',
 	'cycle.weeksShort': '{n} wks',
 	'cycle.plansLabel': 'Rotation plans',
-	'cycle.plansHint': 'Selection order is the workout order. One plan — one workout a week.',
+	'cycle.plansHint': 'Selection order is the workout order. One plan gives one workout a week.',
 	'cycle.plansEmpty': 'Create at least one plan first.',
 	'cycle.plansEmptyCta': 'Create a plan',
 	'cycle.selected': 'Selected: {n}',
@@ -3379,7 +3379,7 @@ const en: Dict = {
 	'legal.licensesTitle': 'Licenses',
 	'legal.licensesBody':
 		'The Inter typeface is distributed under the SIL Open Font License 1.1 and self-hosted on our server. Exercise illustrations and GIFs belong to Gym Visual and are used under their terms.',
-	'legal.licensesFont': 'Inter — SIL OFL 1.1',
+	'legal.licensesFont': 'Inter, SIL OFL 1.1',
 	'legal.licensesMedia': 'Gym Visual terms of use',
 	'legal.termsLink': 'Terms of use',
 	'legal.privacyLink': 'Privacy policy',
@@ -3713,11 +3713,11 @@ const en: Dict = {
 
 	'rating.title': 'How did the session go?',
 	'rating.thanks': 'Thanks!',
-	'rating.hint': 'Stored on this device only — it is not sent to the cloud.',
+	'rating.hint': 'Stored on this device only. It is not sent to the cloud.',
 	'rating.aria': 'Session rating',
 	'rating.ariaStar': 'Rate {n} out of 5',
 
-	/* ——— Public programs (/programs/*) ——— */
+	/* --- Public programs (/programs/*) --- */
 	'programs.title': 'Programs',
 	'programs.lead':
 		'Ready four-week blocks: exercises are picked by rules, the plan is built in one tap, and then behaves like any other plan.',
@@ -3732,7 +3732,7 @@ const en: Dict = {
 	'programs.weeksTitle': 'Program weeks',
 	'programs.prescription': '{sets} × {reps} · rest {rest}s',
 	'programs.start': 'Start',
-	'programs.starting': 'Building…',
+	'programs.starting': 'Building...',
 	'programs.openPlan': 'Open plan',
 	'programs.done': 'Done',
 	'programs.activeSession': 'Finish the current workout first.',
@@ -3745,15 +3745,15 @@ const en: Dict = {
 	'programs.how3':
 		'The saved plan can be edited like any other, and progress counts finished workouts.',
 	'programs.note':
-		'A program is a guide, not a contract. No energy today — cut the sets and come back to the plan next time.',
+		'A program is a guide, not a contract. No energy today, so cut the sets and come back to the plan next time.',
 	'programs.hubNote':
 		'Progress is stored on this device. A session is marked done when you finish its saved plan.',
 	'programs.missing': 'No such program. Go back to the list.',
 
-	/* ——— Public tools (/tools/*) ——— */
+	/* --- Public tools (/tools/*) --- */
 	'tools.title': 'Tools',
 	'tools.lead':
-		'Four calculators that end in a workout: get your numbers, then build the plan. Everything runs in your phone browser — nothing leaves the device.',
+		'Four calculators that end in a workout: get your numbers, then build the plan. Everything runs in your phone browser and nothing leaves the device.',
 	'tools.open': 'Open',
 	'tools.moreTools': 'More tools',
 	'tools.ctaBuilder': 'Build a workout',
@@ -3782,7 +3782,7 @@ const en: Dict = {
 		'Heart-rate zone calculator: Tanaka max HR and five training zones from age or Karvonen.',
 	'tools.orm.title': 'One-rep max',
 	'tools.orm.lead':
-		'Estimate your 1RM from a working set. It is a planning guide — logged sets will show the real number.',
+		'Estimate your 1RM from a working set. It is a planning guide; logged sets will show the real number.',
 	'tools.orm.weightLabel': 'Set weight, kg',
 	'tools.orm.repsLabel': 'Reps',
 	'tools.orm.estimate': 'Estimated 1RM',

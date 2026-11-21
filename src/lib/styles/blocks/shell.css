@@ -272,6 +272,11 @@ html[data-pwa-standalone] .ios-pwa-top--bg {
 	padding-bottom: calc(var(--tabbar-chrome-h) + var(--tabbar-float-gap) + var(--safe-bottom));
 }
 
+/* Immersive flows render no footer, so the pad must not hold tabbar space. */
+.shell-footer-pad--bare {
+	padding-bottom: 0;
+}
+
 @media (max-width: 1023px) {
 	.shell-main {
 		padding-bottom: calc(var(--mobile-chrome-bottom) + var(--page-pad-y));
@@ -310,6 +315,11 @@ html[data-pwa-standalone] .ios-pwa-top--bg {
 
 	.app-shell--immersive .shell-footer-pad {
 		padding-bottom: calc(var(--safe-bottom) + 0.35rem);
+	}
+
+	/* Flows without the legal footer: nothing to reserve above the FAB. */
+	body:has(.shell-footer-pad--bare) {
+		--shell-footer-chrome-h: 0rem;
 	}
 
 	/*

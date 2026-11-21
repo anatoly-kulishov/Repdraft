@@ -1,7 +1,7 @@
 /**
  * Language URL scheme.
  *
- * Russian stays on the bare path (`/tools/bmi`) — it is the canonical origin and
+ * Russian stays on the bare path (`/tools/bmi`): it is the canonical origin and
  * the whole `.ru` cutover (301 map, Yandex) points there. English lives under
  * `/en/...` with a self-canonical, so both versions are indexable and the pair
  * is declared with `hreflang`. No cookie-based language switching for crawlers:

@@ -36,12 +36,17 @@
     "bump:version": "node scripts/bump-version.mjs",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:install": "playwright install chromium",
     "build:embeddings": "node --env-file=.env --experimental-strip-types ./scripts/build-embeddings.ts",
     "icons:pwa": "node ./scripts/generate-brand-icons.mjs",
     "backfill:gif-cache": "node --env-file=.env scripts/backfill-technique-gif-cache.mjs"
   },
   "devDependencies": {
     "@internationalized/date": "^3.12.3",
+    "@playwright/test": "^1.65.1",
     "@sveltejs/adapter-node": "^5.5.8",
     "@sveltejs/kit": "^2.63.0",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",

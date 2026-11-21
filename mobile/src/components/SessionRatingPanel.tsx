@@ -9,7 +9,7 @@ import { space, touchMin, type ColorPalette } from '../theme';
 import { Panel } from './Panel';
 
 /**
- * One question after real work. Ratings stay on the device for now — the same
+ * One question after real work. Ratings stay on the device for now, the same
  * local-only contract as the web panel and the program runs.
  */
 export function SessionRatingPanel({ sessionId }: { sessionId: string }) {
