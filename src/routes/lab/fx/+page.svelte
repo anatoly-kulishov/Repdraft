@@ -24,6 +24,7 @@
 	type MorphItem = { id: 'set' | 'timer' | 'plan'; label: string };
 
 	const beamSizes = ['md', 'sm', 'line', 'pulse-inner', 'pulse-outside'] as const;
+	const quietBeamSizes = ['md', 'sm'] as const;
 	const gooeyLabels = ['Push', 'Pull', 'Legs', 'Core'] as const;
 	const morphItems: MorphItem[] = [
 		{ id: 'set', label: 'Add set' },
@@ -61,11 +62,19 @@
 
 	<section class="fx-lab__card">
 		<h2 class="fx-lab__title">Border beam</h2>
-		<p class="fx-lab__hint">Rotate (md, sm, line) and pulse (inner, outside). Radius comes from the host.</p>
+		<p class="fx-lab__hint"
+			>Rotate (md, sm, line) and pulse (inner, outside). Radius comes from the host. The last two
+			tiles run at strength 0.4.</p
+		>
 		<div class="fx-lab__grid">
 			{#each beamSizes as size (size)}
 				<div class="fx-lab__cell">
 					<BorderBeam {size} class="fx-lab__tile w-full">{size}</BorderBeam>
+				</div>
+			{/each}
+			{#each quietBeamSizes as size (size)}
+				<div class="fx-lab__cell">
+					<BorderBeam {size} strength={0.4} class="fx-lab__tile w-full">{size} 0.4</BorderBeam>
 				</div>
 			{/each}
 		</div>

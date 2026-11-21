@@ -538,8 +538,9 @@ button.live-local-save-cue {
 	color: var(--color-danger);
 }
 
-/* Catalog exercise list: inset thumb + rounded row cards */
-.catalog-exercise-list {
+/* Exercise card list: inset thumb + rounded row cards. Shared by the saved
+   exercises page and the builder quick-pick step. */
+.exercise-list--cards {
 	display: flex;
 	flex-direction: column;
 	gap: 0.65rem;
@@ -552,7 +553,7 @@ button.live-local-save-cue {
 	box-shadow: none;
 }
 
-.catalog-exercise-list .exercise-card--list {
+.exercise-list--cards .exercise-card--list {
 	position: relative;
 	display: flex;
 	flex-direction: row;
@@ -569,19 +570,19 @@ button.live-local-save-cue {
 	transition: border-color 160ms ease, background 160ms ease;
 }
 
-.catalog-exercise-list > .swipe-to-delete {
+.exercise-list--cards > .swipe-to-delete {
 	width: 100%;
 	min-width: 0;
 	border-radius: 1.5rem;
 	overflow: hidden;
 }
 
-.catalog-exercise-list > .swipe-to-delete.is-enabled .swipe-to-delete__sheet {
+.exercise-list--cards > .swipe-to-delete.is-enabled .swipe-to-delete__sheet {
 	border-radius: 1.5rem;
 	background: var(--color-surface);
 }
 
-.catalog-exercise-list .exercise-card-list-main {
+.exercise-list--cards .exercise-card-list-main {
 	display: flex;
 	flex: 1 1 auto;
 	flex-direction: row;
@@ -591,7 +592,7 @@ button.live-local-save-cue {
 	overflow: hidden;
 }
 
-.catalog-exercise-list .exercise-card-list-thumb {
+.exercise-list--cards .exercise-card-list-thumb {
 	position: relative;
 	flex: 0 0 auto;
 	display: flex;
@@ -599,7 +600,7 @@ button.live-local-save-cue {
 	justify-content: center;
 }
 
-.catalog-exercise-list .exercise-card--list .exercise-card-media {
+.exercise-list--cards .exercise-card--list .exercise-card-media {
 	appearance: none;
 	flex: 0 0 4.75rem;
 	width: 4.75rem;
@@ -622,17 +623,17 @@ button.live-local-save-cue {
 	user-select: none;
 }
 
-.catalog-exercise-list .exercise-card--list .exercise-card-media::after {
+.exercise-list--cards .exercise-card--list .exercise-card-media::after {
 	display: none;
 }
 
-.catalog-exercise-list .exercise-card--list .exercise-card-media :is(img, .exercise-card-img) {
+.exercise-list--cards .exercise-card--list .exercise-card-media :is(img, .exercise-card-img) {
 	width: 100%;
 	height: 100%;
 	object-fit: contain;
 }
 
-.catalog-exercise-list .exercise-card-bookmark-slot {
+.exercise-list--cards .exercise-card-bookmark-slot {
 	position: absolute;
 	inset: 0;
 	width: 4.75rem;
@@ -641,11 +642,11 @@ button.live-local-save-cue {
 	pointer-events: none;
 }
 
-.catalog-exercise-list .exercise-card-bookmark-slot .exercise-card-bookmark {
+.exercise-list--cards .exercise-card-bookmark-slot .exercise-card-bookmark {
 	pointer-events: auto;
 }
 
-.catalog-exercise-list .exercise-card--list .exercise-card-body {
+.exercise-list--cards .exercise-card--list .exercise-card-body {
 	display: flex;
 	flex: 1 1 0;
 	flex-direction: column;
@@ -660,7 +661,7 @@ button.live-local-save-cue {
 	color: inherit;
 }
 
-.catalog-exercise-list .exercise-card--list .exercise-card-list-title {
+.exercise-list--cards .exercise-card--list .exercise-card-list-title {
 	font-size: 1rem;
 	font-weight: 650;
 	line-height: 1.25;
@@ -668,15 +669,15 @@ button.live-local-save-cue {
 	text-wrap: pretty;
 }
 
-.catalog-exercise-list .exercise-card--list .exercise-card-list-subline,
-.catalog-exercise-list .exercise-card--list .exercise-card-list-target,
-.catalog-exercise-list .exercise-card--list .exercise-card-list-meta-stack {
+.exercise-list--cards .exercise-card--list .exercise-card-list-subline,
+.exercise-list--cards .exercise-card--list .exercise-card-list-target,
+.exercise-list--cards .exercise-card--list .exercise-card-list-meta-stack {
 	font-size: 0.8125rem;
 	line-height: 1.35;
 	color: var(--color-muted);
 }
 
-.catalog-exercise-list .exercise-card-actions--list {
+.exercise-list--cards .exercise-card-actions--list {
 	display: flex;
 	flex: none;
 	align-items: center;
@@ -688,9 +689,9 @@ button.live-local-save-cue {
 	border: none;
 }
 
-.catalog-exercise-list .exercise-card--list .exercise-card-add--inline,
-.catalog-exercise-list .exercise-card--list .exercise-card-add--inline.exercise-card-add,
-.catalog-exercise-list .exercise-card--list [data-slot='button'].exercise-card-add--inline {
+.exercise-list--cards .exercise-card--list .exercise-card-add--inline,
+.exercise-list--cards .exercise-card--list .exercise-card-add--inline.exercise-card-add,
+.exercise-list--cards .exercise-card--list [data-slot='button'].exercise-card-add--inline {
 	position: relative;
 	display: grid;
 	place-items: center;
@@ -714,7 +715,7 @@ button.live-local-save-cue {
 	line-height: 0;
 }
 
-.catalog-exercise-list .exercise-card--list .exercise-card-add--inline::before {
+.exercise-list--cards .exercise-card--list .exercise-card-add--inline::before {
 	content: '';
 	position: absolute;
 	inset: 0.1875rem;
@@ -725,17 +726,17 @@ button.live-local-save-cue {
 	pointer-events: none;
 }
 
-.catalog-exercise-list .exercise-card--list .exercise-card-add--inline::after {
+.exercise-list--cards .exercise-card--list .exercise-card-add--inline::after {
 	content: '';
 	position: absolute;
 	inset: -0.5625rem;
 }
 
-.catalog-exercise-list
+.exercise-list--cards
 	.exercise-card--list
 	.exercise-card-add--inline
 	.exercise-card-add-icon,
-.catalog-exercise-list
+.exercise-list--cards
 	.exercise-card--list
 	.exercise-card-add--inline
 	.exercise-card-add-icon svg {
@@ -748,63 +749,63 @@ button.live-local-save-cue {
 	stroke: currentColor;
 }
 
-.catalog-exercise-list .exercise-card--list .exercise-card-add--inline.is-in-draft::before {
+.exercise-list--cards .exercise-card--list .exercise-card-add--inline.is-in-draft::before {
 	border-color: var(--color-accent-fill);
 	background: var(--color-accent-fill);
 	box-shadow: none;
 }
 
-.catalog-exercise-list .exercise-card--list .exercise-card-add--inline.is-in-draft {
+.exercise-list--cards .exercise-card--list .exercise-card-add--inline.is-in-draft {
 	background: transparent !important;
 	box-shadow: none !important;
 	color: var(--color-accent-ink) !important;
 }
 
-.catalog-exercise-list .exercise-card--list:active {
+.exercise-list--cards .exercise-card--list:active {
 	background: var(--color-surface-muted);
 }
 
-.catalog-exercise-list .exercise-card-body:active {
+.exercise-list--cards .exercise-card-body:active {
 	background: transparent;
 }
 
-.catalog-exercise-list .exercise-card-list-record.is-note {
+.exercise-list--cards .exercise-card-list-record.is-note {
 	max-width: 100%;
 }
 
-.catalog-exercise-list .exercise-card-chevron {
+.exercise-list--cards .exercise-card-chevron {
 	display: none;
 }
 
 @media (min-width: 768px) {
-	.catalog-exercise-list {
+	.exercise-list--cards {
 		gap: 0.75rem;
 	}
 
-	.catalog-exercise-list .exercise-card--list {
+	.exercise-list--cards .exercise-card--list {
 		padding: 0.85rem 1rem;
 	}
 
-	.catalog-exercise-list .exercise-card--list .exercise-card-list-title {
+	.exercise-list--cards .exercise-card--list .exercise-card-list-title {
 		font-size: 0.9375rem;
 		line-height: 1.28;
 		letter-spacing: -0.015em;
 	}
 
-	.catalog-exercise-list .exercise-card--list .exercise-card-list-subline {
+	.exercise-list--cards .exercise-card--list .exercise-card-list-subline {
 		font-size: 0.8125rem;
 		line-height: 1.3;
 	}
 
-	.catalog-exercise-list .exercise-card--list:active {
+	.exercise-list--cards .exercise-card--list:active {
 		background: color-mix(in srgb, var(--color-surface-muted) 40%, var(--color-surface));
 	}
 
-	.catalog-exercise-list .exercise-card-list-main:active {
+	.exercise-list--cards .exercise-card-list-main:active {
 		background: transparent;
 	}
 
-	.catalog-exercise-list .exercise-card-body:active {
+	.exercise-list--cards .exercise-card-body:active {
 		background: color-mix(in srgb, var(--color-surface-muted) 40%, transparent);
 	}
 }
@@ -4264,7 +4265,20 @@ button.clip-composer__pick:hover:not(:disabled),
 [data-slot='sheet-content'][data-side='bottom'].bottom-sheet.bottom-sheet--raised .bottom-sheet__host {
 	align-items: center;
 	padding-top: max(1rem, var(--safe-top));
-	padding-bottom: calc(var(--mobile-chrome-bottom, 0px) + 1rem);
+	/* Lifts the card above the on-screen keyboard (iOS keeps the layout viewport). */
+	padding-bottom: calc(
+		max(var(--mobile-chrome-bottom, 0px), var(--vv-keyboard-inset, 0px)) + 1rem
+	);
+}
+
+/* Raised sheets hold forms. Without a bound the card grows past the visible
+   area: the header slides under the notch and the CTA ends up behind the
+   keyboard. Cap it to the host box (padding stays outside) and scroll inside. */
+[data-slot='sheet-content'][data-side='bottom'].bottom-sheet.bottom-sheet--raised .bottom-sheet__card {
+	max-height: 100%;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
 }
 
 /* Opt-in flush sheet: the card itself is the bottom edge (no floating gap),
@@ -4598,17 +4612,6 @@ button.clip-composer__pick:hover:not(:disabled),
 	.live-finish-offer {
 		align-items: center;
 		padding-bottom: 1rem;
-	}
-}
-
-/*
- * Technique preview: vertically centered on phone/tablet (clear of tabbar via padding).
- */
-@media (max-width: 1023px) {
-	[data-slot='sheet-content'][data-side='bottom'].bottom-sheet.bottom-sheet--raised .bottom-sheet__host {
-		align-items: center;
-		padding-top: max(1rem, var(--safe-top));
-		padding-bottom: calc(var(--mobile-chrome-bottom, 0px) + 1rem);
 	}
 }
 

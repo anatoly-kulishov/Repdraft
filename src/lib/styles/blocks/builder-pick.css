@@ -104,8 +104,22 @@
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;
+	margin: 0;
+}
+
+/* Filter recap: quiet chips read as "current kit", not as body copy. */
+.builder-pick__pill {
+	display: inline-flex;
+	align-items: center;
+	max-width: 100%;
+	padding: 0.15rem 0.55rem;
+	border: 1px solid var(--color-border);
+	border-radius: 999px;
+	background: var(--color-surface);
 	font-size: 0.75rem;
-	color: var(--color-muted-soft);
+	line-height: 1.4;
+	color: var(--color-muted);
+	overflow-wrap: anywhere;
 }
 
 .builder-pick__chips {
@@ -174,10 +188,55 @@
 .builder-pick__list {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: 0.65rem;
 	margin: 0;
 	padding: 0;
 	list-style: none;
+}
+
+/*
+ * Step 3 reuses the shared exercise card list (.exercise-list--cards), then
+ * tightens it for a picker: no 128px legacy min height, a shorter row, a
+ * visible plus ring and a selected row that reads as selected.
+ */
+.builder-pick__list .exercise-card--list {
+	min-height: 0;
+	padding: 0.6rem 0.7rem;
+	border-radius: var(--radius-panel);
+	transition:
+		border-color 160ms ease,
+		background 160ms ease;
+}
+
+.builder-pick__list li:has(.exercise-card-add.is-in-draft) .exercise-card--list {
+	border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-border));
+	background: color-mix(in srgb, var(--color-accent) 4%, var(--color-surface));
+}
+
+.builder-pick__list .exercise-card--list .exercise-card-list-title {
+	font-size: 0.9375rem;
+}
+
+/* Add: accent ring while idle, filled accent once the exercise is in the draft. */
+.builder-pick__list.exercise-list--cards
+	.exercise-card--list
+	.exercise-card-add--inline:not(.is-in-draft)::before {
+	border-color: color-mix(in srgb, var(--color-accent) 30%, var(--color-border));
+	background: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface));
+}
+
+.builder-pick__list.exercise-list--cards
+	.exercise-card--list
+	.exercise-card-add--inline:not(.is-in-draft) {
+	color: var(--color-accent-text) !important;
+}
+
+.builder-pick__list.exercise-list--cards
+	.exercise-card--list
+	.exercise-card-add--inline
+	.exercise-card-add-icon {
+	width: 1.125rem;
+	height: 1.125rem;
 }
 
 .builder-pick__nav {
@@ -206,6 +265,13 @@
 
 	.builder-pick__zones {
 		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	/* Wide screens: two compact columns beat one very long row of empty space. */
+	.builder-pick__list {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		align-items: stretch;
 	}
 
 	.builder-pick__nav {

@@ -242,9 +242,8 @@
 				{translate(lang, 'builder.pickExercisesTitle')}
 			</h2>
 			<p class="builder-pick__summary">
-				<span>{equipmentSummary()}</span>
-				<span aria-hidden="true">·</span>
-				<span>{musclesSummary()}</span>
+				<span class="builder-pick__pill">{equipmentSummary()}</span>
+				<span class="builder-pick__pill">{musclesSummary()}</span>
 			</p>
 			{#if shown.length === 0}
 				<EmptyState
@@ -262,7 +261,7 @@
 						total: matches.length
 					})}
 				</p>
-				<ul class="builder-pick__list">
+				<ul class="builder-pick__list exercise-list--cards">
 					{#each shown as exercise (exercise.id)}
 						<li>
 							<ExerciseCard

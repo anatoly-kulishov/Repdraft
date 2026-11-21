@@ -277,6 +277,16 @@ select.field:focus-visible {
 	box-shadow: var(--shadow-field);
 }
 
+/* Plain inputs outside the shadcn AppInput (intake stepper): same contract as
+ * every other text field. Safari draws its own blue ring around the radius and
+ * leaves broken corner arcs, which reads as a foreign element on the card. */
+.intake-stepper__input:focus,
+.intake-stepper__input:focus-visible {
+	outline: none;
+	border-color: var(--color-accent);
+	box-shadow: var(--shadow-field);
+}
+
 /* Compact builder chips: border only, no outline (tight grid). */
 .workout-ex-chip input[data-slot='input']:focus,
 .workout-ex-chip input[data-slot='input']:focus-visible,

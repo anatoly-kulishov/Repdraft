@@ -95,21 +95,27 @@
 	let showMediaAttribution = $derived(showsExerciseMediaAttribution(path));
 
 	/**
-	 * In-app flows where the footer would fight the sticky CTA or the back-only
-	 * chrome. Public content (`/tools`, `/programs`, `/exercise/:id`, legal pages)
-	 * keeps it: there it is the only entry to `/articles` and the legal documents.
+	 * The footer is a public-site element, not an app one: it stays on indexed
+	 * content (tools, programs, articles, exercise pages) and on legal pages, and
+	 * drops from every app screen. In-app entries live in Profile (`/auth`).
 	 */
-	function hidesLegalFooter(pathname: string): boolean {
-		if (pathname === '/workouts/summary') return true;
+	function showsLegalFooter(pathname: string): boolean {
+		const plain = pathname.replace(/^\/en(?=\/|$)/, '') || '/';
+		if (plain === '/terms' || plain === '/privacy') return true;
 		return (
-			pathname.startsWith('/live/') ||
-			pathname.startsWith('/builder') ||
-			pathname === '/ai' ||
-			pathname.startsWith('/ai/') ||
-			pathname.startsWith('/auth')
+			plain === '/tools' ||
+			plain.startsWith('/tools/') ||
+			plain === '/programs' ||
+			plain.startsWith('/programs/') ||
+			plain === '/articles' ||
+			plain.startsWith('/articles/') ||
+			/^\/exercise\/[^/]+$/.test(plain) ||
+			plain.startsWith('/legal/')
 		);
 	}
-	let showLegalFooter = $derived(!hidesLegalFooter(path));
+	let showLegalFooter = $derived(showsLegalFooter(path));
+	/** Attribution can outlive the legal footer; only an empty block may drop the pad. */
+	let showFooterBlock = $derived(showLegalFooter || showMediaAttribution);
 
 	onNavigate((navigation) => {
 		if (typeof document === 'undefined') return;
@@ -346,7 +352,7 @@
 			{@render children()}
 		</main>
 
-		<div class="shell-footer-pad" class:shell-footer-pad--bare={!showLegalFooter}>
+		<div class="shell-footer-pad" class:shell-footer-pad--bare={!showFooterBlock}>
 			{#if showLegalFooter}
 				<LegalFooter />
 			{/if}

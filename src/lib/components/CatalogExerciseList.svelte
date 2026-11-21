@@ -367,7 +367,7 @@
 	let listClass = $derived(
 		cardVariant === 'grid'
 			? 'catalog-grid grid min-w-0 gap-2.5 sm:gap-3'
-			: 'catalog-exercise-list'
+			: 'exercise-list--cards'
 	);
 	let emptyStateClass = $derived(
 		`catalog-empty-state${savedOnly ? ' catalog-empty-state--saved' : ''}`

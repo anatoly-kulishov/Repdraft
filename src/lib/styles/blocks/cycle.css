@@ -467,6 +467,9 @@
 	flex-direction: column;
 	gap: 8px;
 	padding: 14px 16px;
+	/* The card is a promo above the list, so it owns the air under itself: the
+	   search strip that follows has no top margin and used to butt right against it. */
+	margin-bottom: var(--list-search-content-gap);
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-panel);
 	background: var(--color-surface);

@@ -57,6 +57,7 @@
 	import { plans } from '$lib/stores/plans';
 	import { progressPeriod } from '$lib/stores/progressPeriod';
 	import { resolvedLocale } from '$lib/stores/locale';
+	import { enPath } from '$lib/seo/alternates';
 	import { onboarding, onboardingHydrated } from '$lib/stores/onboarding';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import OnboardingChecklist from '$lib/components/onboarding/OnboardingChecklist.svelte';
@@ -138,6 +139,13 @@
 	}
 
 	let lang = $derived($resolvedLocale);
+	/**
+	 * Home is the indexed entry, so it keeps the only in-app links to the public
+	 * content the site footer used to carry. Tools and programs have `/en` mirrors;
+	 * articles are ru-only.
+	 */
+	let publicToolsHref = $derived(lang === 'en' ? enPath('/tools') : '/tools');
+	let publicProgramsHref = $derived(lang === 'en' ? enPath('/programs') : '/programs');
 
 	let assignment = $state<CoachAssignment | null>(null);
 	let assignmentBusy = $state(false);
@@ -838,5 +846,13 @@
 			</div>
 		{/if}
 	</div>
+
+	<nav class="home-public-links" aria-label={translate(lang, 'home.publicLinksAria')}>
+		<a href={publicToolsHref}>{translate(lang, 'tools.title')}</a>
+		<span class="home-public-links__sep" aria-hidden="true">·</span>
+		<a href={publicProgramsHref}>{translate(lang, 'programs.title')}</a>
+		<span class="home-public-links__sep" aria-hidden="true">·</span>
+		<a href="/articles">{translate(lang, 'articles.title')}</a>
+	</nav>
 	{/if}
 </section>

@@ -139,7 +139,7 @@ button.exercise-card-media {
 :is(
 	.exercise-card-media:not(.exercise-card-media--grid),
 	.exercise-card--list .exercise-card-media,
-	.catalog-exercise-list .exercise-card--list .exercise-card-media,
+	.exercise-list--cards .exercise-card--list .exercise-card-media,
 	.history-exercise__thumb,
 	.workout-preview-thumb
 ) {
