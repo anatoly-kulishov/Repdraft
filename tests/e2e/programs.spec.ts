@@ -25,6 +25,46 @@ test.describe('program library', () => {
 		]);
 	});
 
+	test('cards carry the facts a block needs: frequency, time and kit', async ({ page }) => {
+		await gotoApp(page, '/programs');
+		const first = page.locator('.program-card').first();
+		await expect(first.locator('.program-card__meta')).toContainText('3 тренировки в неделю');
+		await expect(first.locator('.program-card__meta')).toContainText('мин');
+		await expect(first.locator('.program-kit__item')).toContainText([
+			'Штанга',
+			'Гантели',
+			'Свой вес'
+		]);
+
+		await gotoApp(page, '/programs/upper-lower-4x');
+		await expect(page.locator('.program-head')).toContainText('4 тренировки в неделю');
+		await expect(page.locator('.program-head .program-kit__item')).toHaveCount(3);
+	});
+
+	test('save for later floats the block up and survives a reload', async ({ page }) => {
+		await gotoApp(page, '/programs');
+		const second = page.locator('.program-card').nth(1);
+		await expect(second.locator('.program-card__title')).toContainText('Верх / низ');
+
+		const save = second.locator('.program-card__save');
+		await expect(save).toHaveAttribute('aria-pressed', 'false');
+		await save.click();
+		// Saving floats the card to the top, so re-query instead of reusing `second`.
+		const savedCard = page.locator('.program-card').first();
+		await expect(savedCard.locator('.program-card__title')).toContainText('Верх / низ');
+		await expect(savedCard.locator('.program-card__save')).toHaveAttribute('aria-pressed', 'true');
+
+		const saved = await page.evaluate(() => localStorage.getItem('repdraft:saved-programs'));
+		expect(saved).toContain('upper-lower-4x');
+
+		await page.reload({ waitUntil: 'load' });
+		await expect(page.locator('.program-card__title').first()).toContainText('Верх / низ');
+		await expect(page.locator('.program-card').first().locator('.program-card__save')).toHaveAttribute(
+			'aria-pressed',
+			'true'
+		);
+	});
+
 	test('detail lists the full wave: 12 sessions / 4 weeks', async ({ page }) => {
 		await gotoApp(page, '/programs/full-body-3x');
 		await expect(page.locator('.program-week')).toHaveCount(4);

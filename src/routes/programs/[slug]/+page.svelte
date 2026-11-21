@@ -23,6 +23,7 @@
 		programLead,
 		programPath,
 		programProgressView,
+		programSessionMinutes,
 		programShortName,
 		programTitle,
 		programWeeks,
@@ -32,6 +33,7 @@
 		type ProgramSessionTemplate
 	} from '$lib/domain/programs';
 	import type { ExerciseIndexItem } from '$lib/domain/types';
+	import { labelEquipment } from '$lib/domain/labels.ru';
 	import { translate } from '$lib/i18n/messages';
 	import { readActiveSession } from '$lib/storage/localSessionRepository';
 	import { live } from '$lib/stores/live';
@@ -58,6 +60,7 @@
 	let runs = $derived($programs);
 	let run = $derived(program ? (runs[program.slug] ?? null) : null);
 	let progress = $derived(program ? programProgressView(program, run) : null);
+	let minutes = $derived(program ? programSessionMinutes(program) : { min: 0, max: 0 });
 	let finishedPlanIds = $derived(
 		new Set(
 			$live.history
@@ -122,7 +125,12 @@
 			}
 			index = catalog;
 			const prescription = sessionPrescription(session, week);
-			const exercises = buildSessionExercises({ session, prescription, catalog });
+			const exercises = buildSessionExercises({
+				session,
+				prescription,
+				catalog,
+				equipment: program.equipment
+			});
 			if (exercises.length === 0) {
 				toasts.show(translate(lang, 'programs.startFail'), 'error');
 				return;
@@ -184,7 +192,20 @@
 				<span class="program-tag">
 					{translate(lang, 'programs.sessionsPerWeek', { n: program.sessions.length })}
 				</span>
+				<span class="program-tag">
+					{minutes.min === minutes.max
+						? translate(lang, 'programs.sessionMinutes', { n: minutes.min })
+						: translate(lang, 'programs.sessionMinutesRange', {
+								min: minutes.min,
+								max: minutes.max
+							})}
+				</span>
 			</div>
+			<ul class="program-kit" aria-label={translate(lang, 'programs.equipmentTitle')}>
+				{#each program.equipment as kit (kit)}
+					<li class="program-kit__item">{labelEquipment(kit, lang)}</li>
+				{/each}
+			</ul>
 			<p class="program-head__lead">{programLead(program, lang)}</p>
 		</header>
 
