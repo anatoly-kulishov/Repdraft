@@ -29,6 +29,7 @@ import {
 	loadExerciseIndex,
 	refreshCustomsCache
 } from '../../src/catalog/loadIndex';
+import { SessionRatingPanel } from '../../src/components/SessionRatingPanel';
 import { SummaryLoadPanel } from '../../src/components/SummaryLoadPanel';
 import { PageSkeleton } from '../../src/components/PageSkeleton';
 import { Panel } from '../../src/components/Panel';
@@ -154,6 +155,10 @@ export default function SummaryScreen() {
 						) : null}
 					</View>
 				</View>
+
+				{completedSetCount(session) > 0 ? (
+					<SessionRatingPanel sessionId={session.id} />
+				) : null}
 
 				<SummaryLoadPanel
 					session={session}

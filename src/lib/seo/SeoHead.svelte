@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { resolvedLocale } from '$lib/stores/locale';
 	import { resolveSeoLang } from '$lib/seo/seoLang';
+	import { isEnglishPath } from '$lib/seo/alternates';
 	import {
 		absoluteUrl,
 		defaultOgImage,
@@ -27,6 +29,10 @@
 		imageWidth?: number;
 		imageHeight?: number;
 		imageAlt?: string;
+		/** `hreflang` cluster for public pages that exist in ru and en. */
+		alternates?: { lang: string; path: string }[];
+		/** Force page language (English mirrors under `/en/*`). */
+		locale?: AppLocale;
 	}
 
 	let {
@@ -41,17 +47,27 @@
 		image,
 		imageWidth = 1200,
 		imageHeight = 630,
-		imageAlt
+		imageAlt,
+		alternates = [],
+		locale
 	}: Props = $props();
 
-	let seoLang = $derived(resolveSeoLang($page.data.seoLocale, $resolvedLocale));
+	let canonicalPath = $derived(path ?? $page.url.pathname);
+	/**
+	 * A page with an `hreflang` pair declares its language by URL, not by
+	 * `Accept-Language`: otherwise an English browser gets `og:locale=en_US` on the
+	 * Russian canonical page that `hreflang` says is `ru`.
+	 */
+	let pairLang = $derived<AppLocale | null>(
+		alternates.length > 0 ? (isEnglishPath(canonicalPath) ? 'en' : 'ru') : null
+	);
+	let seoLang = $derived(pairLang ?? locale ?? resolveSeoLang($page.data.seoLocale, $resolvedLocale));
 	let resolvedTitle = $derived(
 		title ?? (titleKey ? translate(seoLang, titleKey, vars) : SITE_NAME)
 	);
 	let resolvedDescription = $derived(
 		description.trim() || (descriptionKey ? translate(seoLang, descriptionKey, vars) : '')
 	);
-	let canonicalPath = $derived(path ?? $page.url.pathname);
 	let origin = $derived(resolveSiteOrigin($page.url.origin));
 	let canonicalUrl = $derived(absoluteUrl(canonicalPath, origin));
 	let fullTitle = $derived(formatSeoTitle(resolvedTitle));
@@ -87,6 +103,9 @@
 	{/if}
 	{#if origin}
 		<link rel="canonical" href={canonicalUrl} />
+		{#each alternates as alternate (alternate.lang)}
+			<link rel="alternate" hreflang={alternate.lang} href={absoluteUrl(alternate.path, origin)} />
+		{/each}
 		<meta property="og:site_name" content={SITE_NAME} />
 		<meta property="og:locale" content={ogLocale} />
 		<meta property="og:locale:alternate" content={ogLocaleAlt} />

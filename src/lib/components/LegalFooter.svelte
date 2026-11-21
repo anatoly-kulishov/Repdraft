@@ -1,11 +1,21 @@
 <script lang="ts">
 	import { translate } from '$lib/i18n/messages';
+	import { enPath } from '$lib/seo/alternates';
 	import { resolvedLocale } from '$lib/stores/locale';
 
 	let lang = $derived($resolvedLocale);
+	/** Only tools/programs have `/en/*` mirrors; legal pages are ru-only. */
+	let toolsHref = $derived(lang === 'en' ? enPath('/tools') : '/tools');
+	let programsHref = $derived(lang === 'en' ? enPath('/programs') : '/programs');
 </script>
 
 <nav class="legal-footer" aria-label={translate(lang, 'legal.footerAria')}>
+	<a class="legal-footer__link" href={toolsHref}>{translate(lang, 'tools.title')}</a>
+	<span class="legal-footer__sep" aria-hidden="true">·</span>
+	<a class="legal-footer__link" href={programsHref}>{translate(lang, 'programs.title')}</a>
+	<span class="legal-footer__sep" aria-hidden="true">·</span>
+	<a class="legal-footer__link" href="/articles">{translate(lang, 'articles.title')}</a>
+	<span class="legal-footer__sep" aria-hidden="true">·</span>
 	<a class="legal-footer__link" href="/terms">{translate(lang, 'legal.footerTerms')}</a>
 	<span class="legal-footer__sep" aria-hidden="true">·</span>
 	<a class="legal-footer__link" href="/privacy">{translate(lang, 'legal.footerPrivacy')}</a>

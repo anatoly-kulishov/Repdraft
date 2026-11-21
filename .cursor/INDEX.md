@@ -33,6 +33,8 @@
 | `billing-pro.md` | Pro: YooKassa/Stripe, entitlements, recognize photo/Excel, AI daily quota |
 | `exercise-rag.md` | `/ai` catalog RAG: pgvector SQL + `npm run build:embeddings` |
 | `plan-tune.md` | «Подстроить под сегодня»: `/api/ai/tune-plan`, diff, prescription lock |
+| `periodization.md` | Волновой цикл: 3-недельные волны, goal deltas, прогресс недели |
+| `public-tools.md` | `/tools/*`: калькуляторы 1ПМ/калории/ИМТ/пульс, EN-зеркала, как добавить пятый |
 | `live-picker.md` | Замена упражнения в live: select зоны, `replacementCandidates` (умный подбор), высота шита |
 | `watch-session-ownership.md` | Watch companion spike: session lease / finish race |
 | `rn-visual-backlog.md` | Mobile theme + visual QA findings |

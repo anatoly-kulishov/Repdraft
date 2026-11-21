@@ -1,7 +1,19 @@
 import { articlesForExercise } from '$lib/domain/articles';
 import { loadArticles } from '$lib/data/loadArticles';
 import { getExerciseById } from '$lib/data/loadExerciseCatalog';
+import type { Article } from '$lib/domain/articles';
+import type { Exercise } from '$lib/domain/types';
+import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+
+/**
+ * Shared by the `/en/exercise/:id` mirror, so both routes load the same shape.
+ * `exercise` is never null: an unknown id throws 404 in the load below.
+ */
+export type ExercisePageData = {
+	exercise: Exercise;
+	relatedArticles: Article[];
+};
 
 /** Dynamic exercise pages stay SSR — 1300+ entries, user-specific tabs. */
 export const prerender = false;
@@ -15,9 +27,8 @@ export const prerender = false;
  */
 export const load: PageServerLoad = async ({ params, fetch }) => {
 	const exercise = await getExerciseById(params.id, fetch);
-	if (!exercise) {
-		return { exercise: null, relatedArticles: [] };
-	}
+	// A bad id must 404: a 200 with `noindex` still looks like a live page.
+	if (!exercise) error(404, 'Exercise not found');
 
 	let relatedArticles: Awaited<ReturnType<typeof articlesForExercise>> = [];
 	try {

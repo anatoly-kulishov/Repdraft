@@ -29,7 +29,7 @@
 	import { draft } from '$lib/stores/draft';
 	import { live } from '$lib/stores/live';
 	import { techniqueClipHints } from '$lib/stores/techniqueClipHints';
-	import { resolvedLocale } from '$lib/stores/locale';
+	import { applyDocumentLang, resolvedLocale } from '$lib/stores/locale';
 	import { forceNormalShell } from '$lib/stores/shellChrome';
 	import { toasts } from '$lib/stores/toasts';
 	import { onboarding } from '$lib/stores/onboarding';
@@ -57,6 +57,12 @@
 	let path = $derived($page.url.pathname);
 	let fromParam = $derived(readSearchParam($page.url, 'from'));
 	let lang = $derived($resolvedLocale);
+
+	// `/en/*` mirrors switch the UI to English without touching the stored
+	// preference; keep the document language in sync on client navigation.
+	$effect(() => {
+		applyDocumentLang($resolvedLocale);
+	});
 	let isLight = $derived($appTheme === 'light');
 	let hasActiveSession = $derived(Boolean($live.ready && $live.session && !$live.session.finishedAt));
 

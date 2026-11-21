@@ -1,10 +1,14 @@
 import { dev } from '$app/environment';
 import type { Handle } from '@sveltejs/kit';
 import { runAiDailyQuotaSelfCheck } from '$lib/server/ai/aiDailyQuota';
+import { runAlternatesSelfCheck, isEnglishPath } from '$lib/seo/alternates';
 import { CANONICAL_SITE_ORIGIN } from '$lib/seo/site';
 
 /* Quota math breaks silently (off-by-one, refund drift), so fail loud at dev boot. */
-if (dev) runAiDailyQuotaSelfCheck();
+if (dev) {
+	runAiDailyQuotaSelfCheck();
+	runAlternatesSelfCheck();
+}
 
 /** Apex of the public site (Caddy may also redirect apex → www). */
 const CANONICAL_APEX = 'repdraft.ru';
@@ -41,6 +45,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	if (redirectLegacy || redirectApex) {
 		return Response.redirect(redirectTarget(event.url, CANONICAL_SITE_ORIGIN), 308);
+	}
+
+	// `<html lang>` is static in app.html (ru). English pages are prerendered too,
+	// so the chunk rewrite has to happen here, not in a client-only effect.
+	if (isEnglishPath(event.url.pathname)) {
+		return resolve(event, {
+			transformPageChunk: ({ html }) => html.replace('<html lang="ru">', '<html lang="en">')
+		});
 	}
 
 	return resolve(event);
