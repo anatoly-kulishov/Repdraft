@@ -110,19 +110,20 @@ test.describe('calculators', () => {
 		expect(text).not.toMatch(/\b(?:ИМТ|Вес|Рост|Норма)\b/);
 	});
 
-	test('age asks instead of pretending: empty field, 30 as the placeholder', async ({ page }) => {
+	test('age asks instead of pretending: empty field with a neutral placeholder', async ({ page }) => {
 		await gotoApp(page, '/tools/calories');
 		const age = page.locator('.tool-field input').first();
 		// Age is not in the athlete profile, so a prefilled 30 read as the user's own data.
 		await expect(age).toHaveValue('');
-		await expect(age).toHaveAttribute('placeholder', '30');
+		// Neutral placeholder: no fake age that looks like saved data.
+		await expect(age).toHaveAttribute('placeholder', '-');
 		// An untouched field still needs a number for the formula.
 		await expect(page.locator('.tool-big__value').first()).toHaveText(/^\d+$/);
 
 		await gotoApp(page, '/tools/heart-rate-zones');
 		const hrAge = page.locator('.tool-field input').first();
 		await expect(hrAge).toHaveValue('');
-		await expect(hrAge).toHaveAttribute('placeholder', '30');
+		await expect(hrAge).toHaveAttribute('placeholder', '-');
 	});
 
 	test('calculators never persist anything locally', async ({ page }) => {

@@ -6,12 +6,14 @@
 	import PageSkeleton from '$lib/components/PageSkeleton.svelte';
 	import ScreenHeader from '$lib/components/ScreenHeader.svelte';
 	import { BorderBeam, MetalFx } from '$lib/components/fx';
-	import {
-		buildCoachHints,
-		coachUndertrainedParts,
-		suggestPlanReplace
-	} from '$lib/domain/coachHints';
+	import { suggestPlanReplace } from '$lib/domain/coachHints';
+	import { buildCoachInsights, insightZones, type CoachInsight } from '$lib/domain/coachInsights';
 	import { computeProgressOverview } from '$lib/domain/progressOverview';
+	import {
+		WEEKLY_SETS_AIM,
+		pickCatalogExerciseForBodyPart,
+		weeklySetsByZone
+	} from '$lib/domain/trainingLoad';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { labelCatalogZone } from '$lib/domain/catalogLinks';
 	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
@@ -90,41 +92,93 @@
 			.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''))
 	);
 
-	let undertrained = $derived.by(() => {
-		if (indexById.size === 0) return { shares: [], undertrained: [] as string[] };
-		return coachUndertrainedParts(
-			finishedHistory,
-			(id) => indexById.get(id)?.body_part ?? null
-		);
+	/**
+	 * Working sets per zone over 7 days, thinnest first. The old panel showed a
+	 * 30-day volume share, which reads as a verdict and punishes small groups;
+	 * weekly sets against the 10+ aim is the metric the summary already uses.
+	 */
+	let weeklySets = $derived.by(() => {
+		if (indexById.size === 0) return { rows: [], byZone: new Map<string, number>() };
+		const rows = weeklySetsByZone(finishedHistory, (id) => indexById.get(id)?.body_part ?? null);
+		return { rows, byZone: new Map(rows.map((row) => [row.bodyPart, row.sets] as const)) };
 	});
 
+	let balanceRows = $derived(weeklySets.rows.slice(0, 4));
+
+	function weeklyFor(zone: string): number {
+		return weeklySets.byZone.get(zone) ?? 0;
+	}
+
+	/** Zones still short of the weekly aim, thinnest first. */
+	let weeklyGaps = $derived(
+		weeklySets.rows.filter((row) => row.sets < WEEKLY_SETS_AIM).map((row) => row.bodyPart)
+	);
+
+	/**
+	 * Deeper cards from `coachInsights`: progression, deload, volume spike,
+	 * skipped exercises, push/pull balance. They sit above the plain
+	 * "lagging group" hints because they say what to actually change today.
+	 */
+	let insights = $derived.by(() => {
+		if (indexById.size === 0) return [];
+		return buildCoachInsights(finishedHistory, {
+			planExerciseIds: homePlan?.exercises.map((ex) => ex.exerciseId) ?? [],
+			allPlanExerciseIds: planExerciseIds,
+			catalog: [...indexById.values()],
+			equipmentFor: (id) => indexById.get(id)?.equipment ?? null,
+			bodyPartFor: (id) => indexById.get(id)?.body_part ?? null
+		});
+	});
+
+	let visibleInsights = $derived(insights.filter((item) => !hintHidden($coachHidden, item.scope)));
+
+	/**
+	 * Swap a plan exercise from a zone that is short this week. Same idea as
+	 * `coachHints.suggestPlanReplace`, but the signal is weekly sets, so the
+	 * replace card and the panel above always agree. Zones that already have a
+	 * deep insight card are skipped: the advice would repeat itself.
+	 */
 	let replace = $derived.by(() => {
-		if (!homePlan || indexById.size === 0 || undertrained.undertrained.length === 0) return null;
+		const taken = new Set(insightZones(visibleInsights));
+		const lagging = weeklyGaps.filter((zone) => !taken.has(zone));
+		if (!homePlan || indexById.size === 0 || lagging.length === 0) return null;
 		return suggestPlanReplace(
 			homePlan.exercises.map((ex) => ex.exerciseId),
-			undertrained.undertrained,
+			lagging,
 			[...indexById.values()],
 			(id) => indexById.get(id)?.body_part ?? null
 		);
 	});
 
-	let replaceSharePct = $derived.by(() => {
-		if (!replace) return null;
-		return (
-			undertrained.shares.find((part) => part.bodyPart === replace.bodyPart)?.sharePct ?? null
-		);
-	});
+	type WeeklyHint = { id: string; bodyPart: string; exerciseId: string; sets: number };
 
-	let hints = $derived.by(() => {
-		const focus = finishedHistory[0];
-		if (!focus || indexById.size === 0) return [];
+	/**
+	 * Add-cards for zones below the weekly aim. Zones that already have a card
+	 * (deep insight or replace) are skipped, and exercises already in any plan
+	 * are never proposed again.
+	 */
+	let hints = $derived.by((): WeeklyHint[] => {
+		if (indexById.size === 0) return [];
 		const catalog = [...indexById.values()];
-		const bodyPartFor = (id: string) => indexById.get(id)?.body_part ?? null;
-		const excludeBodyParts = replace ? new Set([replace.bodyPart]) : undefined;
-		return buildCoachHints(focus, finishedHistory, catalog, bodyPartFor, {
-			planExerciseIds,
-			excludeBodyParts
-		});
+		const exclude = new Set(planExerciseIds);
+		const skip = new Set([
+			...(replace ? [replace.bodyPart] : []),
+			...insightZones(visibleInsights)
+		]);
+		const out: WeeklyHint[] = [];
+		for (const zone of weeklyGaps) {
+			if (skip.has(zone)) continue;
+			const exerciseId = pickCatalogExerciseForBodyPart(catalog, zone, exclude);
+			if (!exerciseId) continue;
+			out.push({
+				id: `weekly-${zone}-${exerciseId}`,
+				bodyPart: zone,
+				exerciseId,
+				sets: weeklyFor(zone)
+			});
+			if (out.length >= 3) break;
+		}
+		return out;
 	});
 
 	let visibleHints = $derived(hints.filter((hint) => !hintHidden($coachHidden, hint.bodyPart)));
@@ -132,18 +186,27 @@
 	/** One card up top, the rest behind "show more". */
 	let shownHints = $derived(hintsExpanded ? visibleHints : visibleHints.slice(0, 1));
 
-	let balanceRows = $derived(overview.bodyParts.slice(0, 4));
-
 	let laggingParts = $derived.by(() => {
 		const parts = new Set(visibleHints.map((hint) => hint.bodyPart));
 		if (replace) parts.add(replace.bodyPart);
+		for (const zone of insightZones(visibleInsights)) parts.add(zone);
 		return parts;
 	});
 
 	async function replaceHint() {
 		if (!replace) return;
+		await applyReplace(replace.fromExerciseId, replace.toExerciseId);
+	}
+
+	async function replaceInsight(insight: CoachInsight) {
+		const action = insight.action;
+		if (action.type !== 'replace') return;
+		await applyReplace(action.fromExerciseId, action.toExerciseId);
+	}
+
+	async function applyReplace(fromExerciseId: string, toExerciseId: string) {
 		try {
-			const planId = await replaceExerciseInHomePlan(replace.fromExerciseId, replace.toExerciseId);
+			const planId = await replaceExerciseInHomePlan(fromExerciseId, toExerciseId);
 			if (!planId) {
 				toasts.show(translate(lang, 'coach.noPlan'), 'error');
 				return;
@@ -198,6 +261,13 @@
 			unhideHint(bodyPart);
 		});
 	}
+
+	function hideScope(scope: string) {
+		hideHint(scope);
+		toasts.showUndo(translate(lang, 'coach.hidden'), () => {
+			unhideHint(scope);
+		});
+	}
 </script>
 
 <SeoHead title={translate(lang, 'nav.coach')} noindex />
@@ -220,12 +290,14 @@
 			<BorderBeam size="sm" class="coach-fx-beam">
 				<AppPanel class="coach-balance text-left">
 					<div class="coach-balance__head">
-						<p class="coach-balance__title">{translate(lang, 'coach.balanceTitle')}</p>
+						<p class="coach-balance__title">{translate(lang, 'coach.weekSetsTitle')}</p>
 						<a href="/progress" class="coach-balance__link">
 							{translate(lang, 'home.progressOpen')}
 						</a>
 					</div>
-					<p class="coach-balance__hint">{translate(lang, 'coach.balanceHint')}</p>
+					<p class="coach-balance__hint">
+						{translate(lang, 'coach.weekSetsHint', { aim: WEEKLY_SETS_AIM })}
+					</p>
 					<ul class="coach-balance__list">
 						{#each balanceRows as row (row.bodyPart)}
 							<li
@@ -236,10 +308,10 @@
 								<span class="coach-balance__track" aria-hidden="true">
 									<span
 										class="coach-balance__fill"
-										style={`width:${Math.max(row.sharePct, 2)}%`}
+										style={`width:${Math.min(100, Math.max(Math.round((row.sets / WEEKLY_SETS_AIM) * 100), 2))}%`}
 									></span>
 								</span>
-								<span class="coach-balance__pct">{row.sharePct}%</span>
+								<span class="coach-balance__pct">{row.sets}</span>
 							</li>
 						{/each}
 					</ul>
@@ -247,7 +319,48 @@
 			</BorderBeam>
 		{/if}
 
-		{#if visibleHints.length === 0 && !replace}
+		{#each visibleInsights as insight (insight.id)}
+			{@const meta = insight.exerciseId ? indexById.get(insight.exerciseId) : null}
+			{@const action = insight.action}
+			<AppPanel class="coach-card text-left">
+				<p class="coach-card__title">{translate(lang, insight.titleKey, insight.titleParams)}</p>
+				{#if meta}
+					<p class="coach-card__meta">
+						{translate(
+							lang,
+							'coach.insightMeta',
+							{
+								name: exerciseName(meta, lang),
+								part: insight.zone ? labelCatalogZone(insight.zone, lang) : '',
+								drops: insight.whyParams.drops ?? '',
+								total: insight.whyParams.total ?? ''
+							}
+						)}
+					</p>
+				{/if}
+				<p class="coach-why">{translate(lang, insight.whyKey, insight.whyParams)}</p>
+				<div class="coach-card__actions">
+					{#if action.type === 'add'}
+						<AppButton onclick={() => openPlanSheet(action.exerciseId)}>
+							{translate(lang, 'coach.addToPlan')}
+						</AppButton>
+					{:else if action.type === 'replace'}
+						<AppButton onclick={() => void replaceInsight(insight)}>
+							{translate(lang, 'coach.replace')}
+						</AppButton>
+					{/if}
+					<button
+						type="button"
+						class="coach-card__hide"
+						onclick={() => hideScope(insight.scope)}
+					>
+						{translate(lang, 'coach.hideHint')}
+					</button>
+				</div>
+			</AppPanel>
+		{/each}
+
+		{#if visibleHints.length === 0 && visibleInsights.length === 0 && !replace}
 			<BorderBeam size="sm" class="coach-fx-beam">
 				<AppPanel class="text-left">
 					<p class="coach-muted">
@@ -272,11 +385,15 @@
 								{meta ? exerciseName(meta, lang) : hint.exerciseId}
 							</p>
 							<p class="coach-card__meta">
-								{labelCatalogZone(hint.bodyPart, lang)} · {translate(lang, 'coach.hintShare', {
-									pct: hint.sharePct
+								{translate(lang, 'coach.hintWeeklyMeta', {
+									part: labelCatalogZone(hint.bodyPart, lang),
+									sets: hint.sets,
+									aim: WEEKLY_SETS_AIM
 								})}
 							</p>
-							<p class="coach-why">{translate(lang, hint.reasonKey)}</p>
+							<p class="coach-why">
+								{translate(lang, 'coach.hintWeeklyWhy', { aim: WEEKLY_SETS_AIM })}
+							</p>
 							<div class="coach-card__actions">
 								<MetalFx>
 									<AppButton class="fx-cta-sheen" onclick={() => openPlanSheet(hint.exerciseId)}>
@@ -299,11 +416,15 @@
 							{meta ? exerciseName(meta, lang) : hint.exerciseId}
 						</p>
 						<p class="coach-card__meta">
-							{labelCatalogZone(hint.bodyPart, lang)} · {translate(lang, 'coach.hintShare', {
-								pct: hint.sharePct
+							{translate(lang, 'coach.hintWeeklyMeta', {
+								part: labelCatalogZone(hint.bodyPart, lang),
+								sets: hint.sets,
+								aim: WEEKLY_SETS_AIM
 							})}
 						</p>
-						<p class="coach-why">{translate(lang, hint.reasonKey)}</p>
+						<p class="coach-why">
+							{translate(lang, 'coach.hintWeeklyWhy', { aim: WEEKLY_SETS_AIM })}
+						</p>
 						<div class="coach-card__actions">
 							<AppButton onclick={() => openPlanSheet(hint.exerciseId)}>
 								{translate(lang, 'coach.addToPlan')}
@@ -343,14 +464,19 @@
 						<p class="coach-card__meta">
 							→ {toMeta ? exerciseName(toMeta, lang) : replace.toExerciseId}
 						</p>
-						<p class="coach-card__meta">{labelCatalogZone(replace.bodyPart, lang)}</p>
+						<p class="coach-card__meta">
+							{translate(lang, 'coach.hintWeeklyMeta', {
+								part: labelCatalogZone(replace.bodyPart, lang),
+								sets: weeklyFor(replace.bodyPart),
+								aim: WEEKLY_SETS_AIM
+							})}
+						</p>
 						<p class="coach-why">
-							{replaceSharePct != null
-								? translate(lang, 'coach.replaceWhy', {
-										part: labelCatalogZone(replace.bodyPart, lang),
-										pct: replaceSharePct
-									})
-								: translate(lang, 'coach.replaceWhyGeneric')}
+							{translate(lang, 'coach.replaceWhyWeekly', {
+								part: labelCatalogZone(replace.bodyPart, lang),
+								sets: weeklyFor(replace.bodyPart),
+								aim: WEEKLY_SETS_AIM
+							})}
 						</p>
 						<p class="coach-why">{translate(lang, 'coach.replaceWhat')}</p>
 						<MetalFx>

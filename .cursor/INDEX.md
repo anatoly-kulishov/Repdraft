@@ -33,6 +33,8 @@
 | `billing-pro.md` | Pro: YooKassa/Stripe, entitlements, recognize photo/Excel, AI daily quota |
 | `exercise-rag.md` | `/ai` catalog RAG: pgvector SQL + `npm run build:embeddings` |
 | `plan-tune.md` | «Подстроить под сегодня»: `/api/ai/tune-plan`, diff, prescription lock |
+| `session-rating.md` | Оценка сессии 1-5: локальное хранение, где видна, идея отдавать её ИИ как сигнал самочувствия |
+| `coach-insights.md` | `/coach`: подходы за неделю и глубокие карточки (прогресс, разгрузка, скачок объёма, пропуски, перекос жимы/тяга) |
 | `periodization.md` | Волновой цикл: 3-недельные волны, goal deltas, прогресс недели |
 | `builder-quick-pick.md` | `/builder/equipment`: оборудование -> мышцы -> упражнения в черновик |
 | `public-tools.md` | `/tools/*`: калькуляторы 1ПМ/калории/ИМТ/пульс, EN-зеркала, как добавить пятый |

@@ -104,3 +104,8 @@ Starting a tuned variant would overwrite an unfinished session, so the sheet blo
 3. Check the diff, then «Начать с этим»: `repdraft:active-session` has `prescriptionLocked: true` and the tuned rows; `repdraft:plans` is unchanged.
 4. Reload `/live/<planId>` — the tuned rows survive.
 5. Quota exhausted (429) shows «Лимит ИИ на сегодня исчерпан», the sheet stays open with the brief intact.
+
+## See also
+
+`session-rating.md` - бэклог «оценка сессии как сигнал самочувствия в брифе и в
+клэмпе `tune-plan`» (сейчас не реализовано).
