@@ -96,7 +96,7 @@
 					min={TOOL_LIMITS.ageMin}
 					max={TOOL_LIMITS.ageMax}
 					step="1"
-					placeholder="30"
+					placeholder="-"
 					value={ageRaw}
 					oninput={(event) => (ageRaw = event.currentTarget.value)}
 				/>

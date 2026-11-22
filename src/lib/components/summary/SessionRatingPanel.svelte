@@ -114,6 +114,10 @@
 
 	.session-rating__hint {
 		margin: 0;
+		/* Two short centred lines: balance keeps them even instead of leaving a
+		   lone preposition on the first line. */
+		max-width: 30rem;
+		text-wrap: balance;
 		font-size: 0.75rem;
 		line-height: 1.4;
 		color: var(--color-muted);

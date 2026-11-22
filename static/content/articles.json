@@ -1,340 +1,686 @@
 [
-	{
-		"slug": "warmup-before-press",
-		"title": "Разминка перед жимом",
-		"excerpt": "5 минут, которые снижают риск травмы плеча и делают рабочие подходы стабильнее.",
-		"coverTone": "teal",
-		"locale": "ru",
-		"tags": ["разминка", "грудь", "плечи"],
-		"exerciseIds": ["0025", "0047"],
-		"coverIcon": "flame",
-		"ctaHref": "/catalog/chest",
-		"ctaLabelKey": "articles.ctaCatalog",
-		"bodyMd": "Перед жимом не нужен «полный тренинг».\n\nНужна **активация** и лёгкая мобилизация.\n\n## Чек-лист 5 минут\n\n- 1-2 мин лёгкого кардио (велотренажёр, ходьба)\n- 20 отжиманий от пола или с колен\n- 2×15 разведений с лёгкими гантелями\n- 1 разминочный подход жима с пустым грифом\n\n## Что смотреть в зале\n\nЕсли локти «уезжают» вперёд или плечи поднимаются к ушам, снизьте вес и вернитесь к технике.\n\nВ Repdraft откройте [упражнения на грудь](/catalog/chest) и добавьте разминочные варианты в план."
-	},
-	{
-		"slug": "warmup-before-press",
-		"title": "Warm-up before pressing",
-		"excerpt": "Five minutes that lower shoulder injury risk and make working sets more stable.",
-		"coverTone": "teal",
-		"locale": "en",
-		"tags": ["warmup", "chest", "shoulders"],
-		"exerciseIds": ["0025", "0047"],
-		"coverIcon": "flame",
-		"ctaHref": "/catalog/chest",
-		"ctaLabelKey": "articles.ctaCatalog",
-		"bodyMd": "You do not need a full workout before pressing.\n\nYou need **activation** and light mobility.\n\n## 5-minute checklist\n\n- 1-2 min easy cardio (bike, walk)\n- 20 push-ups from the floor or knees\n- 2×15 light dumbbell flyes\n- 1 warm-up press set with an empty bar\n\n## What to watch in the gym\n\nIf elbows drift forward or shoulders rise toward the ears, drop the load and reset technique.\n\nIn Repdraft open [chest exercises](/catalog/chest) and add warm-up variations to your plan."
-	},
-	{
-		"slug": "read-workout-plan",
-		"title": "Как читать план тренировки",
-		"excerpt": "Подходы, повторы, отдых, суперсеты и альтернативы: короткий гайд для первой недели.",
-		"coverTone": "lime",
-		"locale": "ru",
-		"tags": ["план", "новичок", "getting-started", "суперсет", "альтернативы"],
-		"exerciseIds": [],
-		"coverIcon": "book-open",
-		"ctaHref": "/builder",
-		"ctaLabelKey": "articles.ctaBuilder",
-		"bodyMd": "План в Repdraft - **порядок упражнений** и целевые подходы. Факт вы записываете в live-сессии: вес и повторы.\n\n## Обозначения\n\n- **3×10** - три подхода по десять повторений\n- **Отдых** - пауза после подхода; таймер стартует после «Готово»\n- **Суперсет** - упражнения подряд без длинной паузы\n- **«Или»** - альтернативы: в live-сессии выбираете одно упражнение из группы\n\n## Перед тренировкой\n\nПлан, закреплённый на Главной, показывается как «план на сегодня» - с оценкой времени и зонами.\n\nЕсли упражнение не подходит, замените его в [редакторе](/builder) или пропустите в live-сессии.\n\n## С чего начать\n\nСоберите 4-6 упражнений на одну зону или full-body.\n\nНе гонитесь за объёмом: лучше закончить сессию и сохранить историю, чем бросить на середине."
-	},
-	{
-		"slug": "read-workout-plan",
-		"title": "How to read a workout plan",
-		"excerpt": "Sets, reps, rest, supersets, and alternatives: a short guide for your first week.",
-		"coverTone": "lime",
-		"locale": "en",
-		"tags": ["plan", "beginner", "getting-started", "superset", "alternatives"],
-		"exerciseIds": [],
-		"coverIcon": "book-open",
-		"ctaHref": "/builder",
-		"ctaLabelKey": "articles.ctaBuilder",
-		"bodyMd": "A Repdraft plan is the **exercise order** and target sets. The live session logs what actually happened: weight and reps.\n\n## Notation\n\n- **3×10** - three sets of ten reps\n- **Rest** - the pause after a set; the timer starts after Done\n- **Superset** - exercises back-to-back without a long pause\n- **\"Or\"** - alternatives: in the live session you pick one exercise from the group\n\n## Before training\n\nThe plan pinned on Home is shown as today's plan with a time estimate and target zones.\n\nIf an exercise does not fit, swap it in the [builder](/builder) or skip it in the live session.\n\n## Where to start\n\nBuild 4-6 exercises for one zone or a full-body day.\n\nDo not chase volume: finishing and saving history beats quitting mid-session."
-	},
-	{
-		"slug": "rest-between-sets",
-		"title": "Отдых между подходами",
-		"excerpt": "Сколько отдыхать в базе и изоляции, как работает таймер и где включить звук.",
-		"coverTone": "amber",
-		"locale": "ru",
-		"tags": ["отдых", "сессия", "таймер"],
-		"exerciseIds": [],
-		"coverIcon": "timer",
-		"ctaHref": "/workouts",
-		"ctaLabelKey": "articles.ctaWorkouts",
-		"bodyMd": "Отдых - часть прогресса, а не потерянное время.\n\n## Ориентиры\n\n- **База (присед, жим, тяга):** 2-3 мин, если цель - сила\n- **Изоляция (бицепс, трицепс, дельты):** 60-90 сек\n- **Суперсет:** короткая пауза внутри круга, 2 мин после полного круга\n\n## В Repdraft\n\n- Время отдыха задаётся у упражнения в [редакторе](/builder)\n- После **«Готово»** запускается таймер отдыха\n- **«Пропустить»** - начать следующий подход раньше\n- Звук и вибрацию в конце отдыха включаются в профиле: **«Звук отдыха»** и **«Вибро в конце отдыха»**\n\nИстория сессии сохранится в [«Тренировки» → «История»](/workouts?tab=history)."
-	},
-	{
-		"slug": "rest-between-sets",
-		"title": "Rest between sets",
-		"excerpt": "How long to rest for compounds and isolation, how the timer works, and where the chime is.",
-		"coverTone": "amber",
-		"locale": "en",
-		"tags": ["rest", "session", "timer"],
-		"exerciseIds": [],
-		"coverIcon": "timer",
-		"ctaHref": "/workouts",
-		"ctaLabelKey": "articles.ctaWorkouts",
-		"bodyMd": "Rest is part of progress, not lost time.\n\n## Benchmarks\n\n- **Compounds (squat, bench, deadlift):** 2-3 min when strength is the goal\n- **Isolation (biceps, triceps, delts):** 60-90 sec\n- **Superset:** a short pause inside the round, 2 min after the full round\n\n## In Repdraft\n\n- Rest time is set per exercise in the [builder](/builder)\n- The rest timer starts after **Done**\n- **Skip** starts the next set earlier\n- The end-of-rest chime and vibration live in Profile: **Rest sound** and **Haptic when rest ends**\n\nSession history stays in [Workouts → History](/workouts?tab=history)."
-	},
-	{
-		"slug": "technique-clips",
-		"title": "Зачем смотреть технику перед подходом",
-		"excerpt": "Анимация и короткие GIF от других пользователей - где смотреть и как добавить свой.",
-		"coverTone": "rose",
-		"locale": "ru",
-		"tags": ["техника", "клипы", "гиф"],
-		"exerciseIds": ["0025"],
-		"coverIcon": "library",
-		"ctaHref": "/exercises",
-		"ctaLabelKey": "articles.ctaExercises",
-		"bodyMd": "Каталог - не только список названий.\n\nНа карточке упражнения есть **анимация** и блок **«Техника»** с короткими GIF от других пользователей.\n\n## Когда открывать\n\n- Первый раз делаете упражнение\n- Меняете хват, стойку или угол скамьи\n- Возвращаетесь после перерыва\n\n## Своя техника\n\nВ блоке «Техника» можно нажать **«Добавить GIF»** - ваш ролик увидят другие. Публикация требует входа в аккаунт, просмотр доступен всем.\n\n## Как связать с планом\n\nНашли удачное упражнение → добавьте в [редактор](/builder) → откройте технику в live-сессии перед рабочим весом."
-	},
-	{
-		"slug": "technique-clips",
-		"title": "Why check technique before a set",
-		"excerpt": "Animation plus short user GIFs: where to watch and how to add your own.",
-		"coverTone": "rose",
-		"locale": "en",
-		"tags": ["technique", "clips", "gif"],
-		"exerciseIds": ["0025"],
-		"coverIcon": "library",
-		"ctaHref": "/exercises",
-		"ctaLabelKey": "articles.ctaExercises",
-		"bodyMd": "The catalog is more than a list of names.\n\nEach exercise page has an **animation** and a **Technique** block with short GIFs from other users.\n\n## When to open it\n\n- The first time you do the exercise\n- When you change grip, stance, or bench angle\n- Coming back after a break\n\n## Your own technique\n\nIn the Technique block tap **Add GIF** to publish your clip. Publishing needs an account; browsing is open to everyone.\n\n## Tie it to the plan\n\nFound a good exercise → add it in the [builder](/builder) → check technique in the live session before the working set."
-	},
-	{
-		"slug": "legs-split",
-		"title": "Ноги: ягодицы, квадрицепс и икры",
-		"excerpt": "Как пользоваться подкатегориями в каталоге, чтобы не листать 200+ упражнений.",
-		"coverTone": "teal",
-		"locale": "ru",
-		"tags": ["ноги", "каталог"],
-		"exerciseIds": [],
-		"coverIcon": "dumbbell",
-		"ctaHref": "/catalog/legs",
-		"ctaLabelKey": "articles.ctaLegs",
-		"bodyMd": "Зона **«Ноги»** объединяет бедро и голень.\n\nВнутри chips по целевым мышцам: ягодицы, квадрицепс, бицепс бедра, икры.\n\n## Как пользоваться\n\n1. Откройте [каталог ног](/catalog/legs)\n2. Выберите chip (например, «Ягодицы»)\n3. При необходимости сузьте **оборудование** в фильтрах\n\n## Совет\n\nДля первой тренировки хватит 3-4 упражнений: одно на ягодицы/квадрицепс, одно на заднюю поверхность бедра, одно на икры."
-	},
-	{
-		"slug": "legs-split",
-		"title": "Legs: glutes, quads, and calves",
-		"excerpt": "How to use catalog subcategories so you are not scrolling 200+ moves.",
-		"coverTone": "teal",
-		"locale": "en",
-		"tags": ["legs", "catalog"],
-		"exerciseIds": [],
-		"coverIcon": "dumbbell",
-		"ctaHref": "/catalog/legs",
-		"ctaLabelKey": "articles.ctaLegs",
-		"bodyMd": "The **Legs** zone covers thigh and lower leg.\n\nInside you get chips by target muscle: glutes, quads, hamstrings, calves.\n\n## How to use it\n\n1. Open the [legs catalog](/catalog/legs)\n2. Pick a chip (for example Glutes)\n3. Narrow **equipment** in filters if needed\n\n## Tip\n\nFor a first session, 3-4 exercises are enough: one for glutes/quads, one for hamstrings, one for calves."
-	},
-	{
-		"slug": "first-session",
-		"title": "Первая сохранённая сессия",
-		"excerpt": "План → live → подходы → итог: как пройти цикл и найти результат в истории.",
-		"coverTone": "lime",
-		"locale": "ru",
-		"tags": ["новичок", "сессия", "getting-started", "старт", "история"],
-		"exerciseIds": [],
-		"coverIcon": "history",
-		"ctaHref": "/builder",
-		"ctaLabelKey": "articles.ctaBuilder",
-		"bodyMd": "Базовый путь в Repdraft: **план → сессия → итог → история**.\n\n## Шаги\n\n1. [Соберите план](/builder) из 3-5 упражнений - или возьмите демо на Главной\n2. На [главной](/) откройте план на сегодня и нажмите **«Старт»** - или выберите план в [«Тренировках»](/workouts)\n3. В live-сессии вводите вес и повторы → **«Готово»**. После отметки запускается таймер отдыха\n4. Закончили - **«Завершить»**: на экране итога время, подходы и тоннаж\n5. Результат остаётся в [«Тренировки» → «История»](/workouts?tab=history)\n\n## Полезно знать\n\n- **Пропустить упражнение** - в меню live-сессии; пропуск не попадает в прогресс\n- **Закрыли приложение** - незавершённая сессия сохранится, на Главной появится «Продолжить тренировку»\n- **Ошиблись в подходе** - исправьте вес и повторы до «Готово»\n\nДанные хранятся на телефоне; с аккаунтом синхронизируются между устройствами."
-	},
-	{
-		"slug": "first-session",
-		"title": "Your first saved session",
-		"excerpt": "Plan → live → sets → summary: how the loop works and where history lands.",
-		"coverTone": "lime",
-		"locale": "en",
-		"tags": ["beginner", "session", "getting-started", "start", "history"],
-		"exerciseIds": [],
-		"coverIcon": "history",
-		"ctaHref": "/builder",
-		"ctaLabelKey": "articles.ctaBuilder",
-		"bodyMd": "The core Repdraft loop: **plan → session → summary → history**.\n\n## Steps\n\n1. [Build a plan](/builder) with 3-5 exercises - or take the demo on Home\n2. On [Home](/) open today's plan and tap **Start** - or pick a plan in [Workouts](/workouts)\n3. In the live session log weight and reps → **Done**. The rest timer starts after each set\n4. When done, tap **Finish**: the summary shows time, sets, and volume\n5. The result stays in [Workouts → History](/workouts?tab=history)\n\n## Good to know\n\n- **Skip exercise** lives in the live session menu and is left out of progress\n- **Closed the app?** The unfinished session is kept; Home shows Continue workout\n- **Logged a set wrong?** Fix weight and reps before tapping Done\n\nData lives on the phone; with an account it syncs across devices."
-	},
-	{
-		"slug": "getting-started-quick-demo",
-		"title": "Первая тренировка за 3 минуты",
-		"excerpt": "Демо-план из чеклиста на Главной: превью → live → один подход → итог.",
-		"coverTone": "lime",
-		"locale": "ru",
-		"tags": ["новичок", "getting-started", "демо", "старт"],
-		"exerciseIds": [],
-		"coverIcon": "play",
-		"ctaHref": "/",
-		"ctaLabelKey": "onboarding.tryDemo",
-		"bodyMd": "Самый быстрый путь без регистрации и без пустого экрана.\n\n## Шаги\n\n1. На [главной](/) в блоке **«Первые шаги в Repdraft»** нажмите **«Попробовать демо»**\n2. Откройте превью и нажмите **«Старт»**\n3. Запишите один подход: вес × повторы → **«Готово»**\n4. **«Завершить»** → экран итога\n\nДемо-план «Первая тренировка (демо)» остаётся в [«Тренировки»](/workouts): его можно изменить, начать снова или удалить.\n\n## Что дальше\n\n- Аккаунт по-прежнему не нужен: история хранится на телефоне\n- Захотите синхронизацию - [войдите](/auth), локальные данные объединятся с облаком\n- Разобрать план по шагам помогает [«Как читать план тренировки»](/articles/read-workout-plan)"
-	},
-	{
-		"slug": "getting-started-quick-demo",
-		"title": "First workout in 3 minutes",
-		"excerpt": "A demo plan from the Home checklist: preview → live → one set → summary.",
-		"coverTone": "lime",
-		"locale": "en",
-		"tags": ["beginner", "getting-started", "demo", "start"],
-		"exerciseIds": [],
-		"coverIcon": "play",
-		"ctaHref": "/",
-		"ctaLabelKey": "onboarding.tryDemo",
-		"bodyMd": "The fastest way to try the loop: no sign-up, no blank screen.\n\n## Steps\n\n1. On [Home](/) in **Your first steps in Repdraft**, tap **Try demo**\n2. Open the preview and tap **Start**\n3. Log one set: weight × reps → **Done**\n4. Tap **Finish** → summary screen\n\nThe \"First workout (demo)\" plan stays in [Workouts](/workouts): edit it, start again, or delete it.\n\n## What next\n\n- No account needed: history lives on this phone\n- Want sync - [sign in](/auth) and local data merges with the cloud\n- To read the plan notation, see [How to read a workout plan](/articles/read-workout-plan)"
-	},
-	{
-		"slug": "getting-started-guest-account",
-		"title": "Гость и аккаунт: когда входить",
-		"excerpt": "Когда аккаунт действительно нужен, что переносится и где лежит резервная копия.",
-		"coverTone": "amber",
-		"locale": "ru",
-		"tags": ["аккаунт", "getting-started", "синхронизация", "бэкап"],
-		"exerciseIds": [],
-		"coverIcon": "clipboard-list",
-		"ctaHref": "/auth",
-		"ctaLabelKey": "nav.signIn",
-		"bodyMd": "Repdraft работает **без аккаунта**: планы и история хранятся на телефоне.\n\n## Когда входить\n\n- Перед сменой телефона или браузера\n- Если нужна резервная копия в файл\n- Для синхронизации между устройствами\n- Для [режима тренера](/articles/coach-mode)\n\n## Что переносится\n\nПри входе локальные планы и история **объединяются** с облаком. Данные без аккаунта не пропадают.\n\n## Резервная копия\n\nПрофиль → **«Резервная копия»** → **«Скачать копию»**. Восстановление - **«Восстановить из файла»**.\n\nТот же экран понимает CSV из других дневников - подробнее в [импорте истории](/articles/import-history)."
-	},
-	{
-		"slug": "getting-started-guest-account",
-		"title": "Guest vs account: when to sign in",
-		"excerpt": "When an account actually helps, what moves with it, and where the backup lives.",
-		"coverTone": "amber",
-		"locale": "en",
-		"tags": ["account", "getting-started", "sync", "backup"],
-		"exerciseIds": [],
-		"coverIcon": "clipboard-list",
-		"ctaHref": "/auth",
-		"ctaLabelKey": "nav.signIn",
-		"bodyMd": "Repdraft works **without an account**: plans and history live on your phone.\n\n## When to sign in\n\n- Before switching phones or browsers\n- If you want a file backup\n- To sync between devices\n- For [coach mode](/articles/coach-mode)\n\n## What moves\n\nOn sign-in, local plans and history **merge** with the cloud. Nothing you logged without an account is lost.\n\n## Backup\n\nProfile → **Backup** → **Download backup**. Restore with **Restore from file**.\n\nThe same screen reads CSV from other apps - see [importing history](/articles/import-history)."
-	},
-	{
-		"slug": "ai-workout-draft",
-		"title": "Тренировка с ИИ: черновик за минуту",
-		"excerpt": "Опишите зоны, время и оборудование - ИИ соберёт план из каталога за минуту.",
-		"coverTone": "purple",
-		"locale": "ru",
-		"tags": ["ai", "план", "getting-started", "gigachat"],
-		"exerciseIds": [],
-		"coverIcon": "sparkles",
-		"ctaHref": "/ai",
-		"ctaLabelKey": "articles.ctaAi",
-		"bodyMd": "ИИ-черновик собирает план из каталога Repdraft: не выдумывает упражнения, а подбирает реальные позиции с подходами, повторами и отдыхом.\n\n## Как открыть\n\n- Приложение: «Тренировки» → **«ИИ-черновик»**\n- Веб: пустой список тренировок или [редактор](/builder)\n\nНужен интернет: запрос уходит на сервер Repdraft к настроенному провайдеру (по умолчанию GigaChat). История тренировок остаётся на телефоне.\n\n![Форма запроса](/images/articles/ai-draft-form.jpg)\n\n## Что написать в запросе\n\n- **Зоны**: спина и бицепс, ноги, всё тело\n- **Время**: 45 минут\n- **Оборудование**: штанга, гантели, только резинка\n\nМожно диктовать голосом - кнопка микрофона в поле запроса или микрофон на клавиатуре.\n\n## Черновик плана\n\nИИ возвращает план из каталога: названия на русском, целевые мышцы, схема подходов и отдых.\n\n![Черновик плана](/images/articles/ai-draft-result.jpg)\n\nНе подошло - **«Ещё раз»** пересобирает вариант. **«В редактор»** переносит план в конструктор, дальше священный цикл: live-сессия → запись подходов → история.\n\n## Важно\n\n- План - стартовая точка, а не предписание: веса и технику подбирайте под себя\n- Перед первым подходом откройте упражнение и посмотрите технику\n- Без сети соберите план вручную в [конструкторе](/builder)"
-	},
-	{
-		"slug": "ai-workout-draft",
-		"title": "AI workout: a draft in a minute",
-		"excerpt": "Describe zones, time, and equipment - AI drafts a plan from the catalog in a minute.",
-		"coverTone": "purple",
-		"locale": "en",
-		"tags": ["ai", "plan", "getting-started", "gigachat"],
-		"exerciseIds": [],
-		"coverIcon": "sparkles",
-		"ctaHref": "/ai",
-		"ctaLabelKey": "articles.ctaAi",
-		"bodyMd": "The AI draft builds a plan from the Repdraft catalog: it picks real exercises with sets, reps, and rest instead of inventing names.\n\n## Where to find it\n\n- App: Workouts → **AI draft**\n- Web: an empty workouts list or the [builder](/builder)\n\nInternet is required: the request goes to the Repdraft server and the configured provider (GigaChat by default). Workout history stays on your phone.\n\n![Request form](/images/articles/ai-draft-form.jpg)\n\n## What to put in the brief\n\n- **Zones**: back and biceps, legs, full body\n- **Time**: 45 minutes\n- **Equipment**: barbell, dumbbells, resistance band only\n\nYou can dictate: the mic button in the field or the keyboard mic.\n\n## The plan draft\n\nThe AI returns catalog exercises with localized names, target muscles, set scheme, and rest.\n\n![Plan draft](/images/articles/ai-draft-result.jpg)\n\nNot a fit - **Try again** rebuilds it. **Open in builder** moves the plan into the constructor; from there the loop is the usual one: live session → log sets → history.\n\n## Keep in mind\n\n- The plan is a starting point, not a prescription: pick loads and technique for yourself\n- Before the first set, open the exercise and check technique\n- Offline, build the plan manually in the [builder](/builder)"
-	},
-	{
-		"slug": "coach-mode",
-		"title": "Тренер и клиенты: как подключить клиента",
-		"excerpt": "Код приглашения, назначение плана и что именно видит тренер.",
-		"coverTone": "teal",
-		"locale": "ru",
-		"tags": ["тренер", "coach", "аккаунт"],
-		"exerciseIds": [],
-		"coverIcon": "users",
-		"ctaHref": "/clients",
-		"ctaLabelKey": "articles.ctaCoach",
-		"bodyMd": "Режим тренера работает на аккаунте: войти нужно и тренеру, и клиенту.\n\n![Тренер и клиенты в профиле](/images/articles/coach-client-profile.jpg)\n\n## Тренер\n\n1. Профиль → **«Тренер и клиенты»** → **«Кабинет тренера»**\n2. **«Создать код»** и передайте клиенту: скопировать или «Поделиться»\n3. Клиент подключится - появится в списке с последней тренировкой и итогами\n4. Карточка клиента → **«Назначить тренировку»** → выберите свой план\n\n![Кабинет тренера: приглашение и клиенты](/images/articles/coach-clients.jpg)\n\n## Клиент\n\n1. Профиль → **«Тренер и клиенты»** → **«Мой тренер»**\n2. Введите код из приглашения → **«Подключиться»**\n3. Назначенный план появится на Главной: **«Добавить план»** или **«Скрыть»**\n\n![Мой тренер: подключение по коду](/images/articles/coach-my-coach-sheet.jpg)\n\n## Что видит тренер\n\n- Завершённые тренировки и подходы\n- Назначение - **снимок плана**: правки тренера после назначения не меняют план клиента, и наоборот\n\n## Отключение\n\n- Клиент: «Мой тренер» → **«Отключиться»**\n- Тренер: карточка клиента → **«Отключить»**\n\nПосле отключения доступ к тренировкам закрывается, история остаётся у каждого."
-	},
-	{
-		"slug": "coach-mode",
-		"title": "Coach and clients: how to connect a client",
-		"excerpt": "Invite code, plan assignment, and exactly what a coach can see.",
-		"coverTone": "teal",
-		"locale": "en",
-		"tags": ["coach", "account", "client"],
-		"exerciseIds": [],
-		"coverIcon": "users",
-		"ctaHref": "/clients",
-		"ctaLabelKey": "articles.ctaCoach",
-		"bodyMd": "Coach mode needs an account: both the coach and the client sign in.\n\n![Coach and clients in Profile](/images/articles/coach-client-profile.jpg)\n\n## Coach\n\n1. Profile → **Coach and clients** → **Coach dashboard**\n2. Tap **Create code** and share it with the client\n3. Once connected, the client appears in the list with their last workout and totals\n4. Open the client card → **Assign a workout** → pick one of your plans\n\n![Coach dashboard: invite card and clients](/images/articles/coach-clients.jpg)\n\n## Client\n\n1. Profile → **Coach and clients** → **My coach**\n2. Enter the invite code → **Connect**\n3. The assigned plan shows on Home: **Add plan** or **Hide**\n\n![My coach: connection sheet](/images/articles/coach-my-coach-sheet.jpg)\n\n## What the coach sees\n\n- Finished workouts and sets\n- The assignment is a **snapshot**: later edits on either side do not leak into the other account\n\n## Disconnect\n\n- Client: My coach → **Disconnect**\n- Coach: client card → **Disconnect**\n\nAccess closes after disconnecting; each side keeps its own history."
-	},
-	{
-		"slug": "ai-coach-hints",
-		"title": "ИИ-тренер: подсказки по вашим тренировкам",
-		"excerpt": "Что не попало в последнюю тренировку, доли по группам и что добавить в план.",
-		"coverTone": "purple",
-		"locale": "ru",
-		"tags": ["ии", "прогресс", "тренер"],
-		"exerciseIds": [],
-		"coverIcon": "sparkles",
-		"ctaHref": "/coach",
-		"ctaLabelKey": "articles.ctaAiCoach",
-		"bodyMd": "ИИ-тренер не ведёт чат: он смотрит на завершённые тренировки за 30 дней и предлагает 1-3 упражнения.\n\n![Экран «ИИ-тренер»](/images/articles/ai-coach-hints.jpg)\n\n## Где открыть\n\nПрофиль → блок **«Прогресс»** → **«ИИ-тренер»**. Точка у пункта появляется после новой тренировки.\n\n## Что внутри\n\n- **Баланс за 30 дней** - доля объёма по группам мышц; тап открывает «Прогресс»\n- **Подсказки** - упражнение на группу, которой не было в последней тренировке\n- **Замена** - обмен упражнения в плане на другое той же группы\n\n## Действия\n\n- **«Добавить в план»** → выберите план: упражнение появится в его конце\n- **«Скрыть на 7 дней»** - если группа не в приоритете\n- Уже добавленное не предлагается повторно: подсказки не дублируют планы\n\nПеред первым подходом откройте [технику упражнения](/articles/technique-clips)."
-	},
-	{
-		"slug": "ai-coach-hints",
-		"title": "AI coach: hints from your own workouts",
-		"excerpt": "What your last workout missed, volume shares, and what to add to a plan.",
-		"coverTone": "purple",
-		"locale": "en",
-		"tags": ["ai", "progress", "coach"],
-		"exerciseIds": [],
-		"coverIcon": "sparkles",
-		"ctaHref": "/coach",
-		"ctaLabelKey": "articles.ctaAiCoach",
-		"bodyMd": "The AI coach is not a chat: it looks at finished workouts from the last 30 days and suggests 1-3 exercises.\n\n![AI coach screen](/images/articles/ai-coach-hints.jpg)\n\n## Where to open it\n\nProfile → **Progress** block → **AI coach**. A dot appears after a new workout.\n\n## What is inside\n\n- **30-day balance** - volume share per muscle group; tap to open Progress\n- **Hints** - an exercise for a group missing from your last workout\n- **Replace** - swap a plan exercise for another one from the same group\n\n## Actions\n\n- **Add to plan** → pick a plan and the exercise lands at its end\n- **Hide for 7 days** when the group is not a priority right now\n- Anything already added is not suggested again: hints never duplicate your plans\n\nBefore the first set, open the [exercise technique](/articles/technique-clips)."
-	},
-	{
-		"slug": "progress-overview",
-		"title": "Прогресс: как читать цифры",
-		"excerpt": "Периоды, объём, доли групп и 1RM - что именно считает приложение.",
-		"coverTone": "lime",
-		"locale": "ru",
-		"tags": ["прогресс", "новичок", "статистика"],
-		"exerciseIds": [],
-		"coverIcon": "chart",
-		"ctaHref": "/progress",
-		"ctaLabelKey": "articles.ctaProgress",
-		"bodyMd": "«Прогресс» собирается из завершённых тренировок на этом устройстве.\n\n![Экран «Прогресс»](/images/articles/progress-screen.jpg)\n\n## Период\n\n**7 / 30 / 90 дней** или **«Всё время»** - пересчитывает весь экран: карточки, графики и списки.\n\n## Что показывает\n\n- **Тренировки** и **Всего поднято** - с изменением к прошлому периоду того же размера\n- **Объём по неделям** - килограммы и число тренировок\n- **Доля по группам** - по **количеству рабочих подходов**, чтобы тяжёлые ноги не перевешивали руки\n- **Лучшие подъёмы** - оценка одноповторного максимума (1RM) по лучшему подходу\n- **Прогресс в упражнениях** - как менялся рабочий вес\n\nОткрыть: [Прогресс](/progress), ссылка «Подробнее» есть на Главной.\n\nКакая группа выпала из последней тренировки - подскажет [ИИ-тренер](/articles/ai-coach-hints)."
-	},
-	{
-		"slug": "progress-overview",
-		"title": "Progress: how to read the numbers",
-		"excerpt": "Periods, volume, body-part shares, and 1RM - what the app actually counts.",
-		"coverTone": "lime",
-		"locale": "en",
-		"tags": ["progress", "beginner", "stats"],
-		"exerciseIds": [],
-		"coverIcon": "chart",
-		"ctaHref": "/progress",
-		"ctaLabelKey": "articles.ctaProgress",
-		"bodyMd": "Progress is built from finished workouts stored on this device.\n\n![Progress screen](/images/articles/progress-screen.jpg)\n\n## Period\n\n**7 / 30 / 90 days** or **All time** - recalculates the whole screen: cards, charts, and lists.\n\n## What it shows\n\n- **Workouts** and **Total lifted** - with the change against the previous period of the same length\n- **Volume by week** - kilograms and workout count\n- **Share by body part** - counted by **working sets**, so heavy legs do not outweigh arms\n- **Best lifts** - a one-rep-max (1RM) estimate from the best set\n- **Exercise trends** - how working weight moved\n\nOpen [Progress](/progress); Home has a Details link.\n\nTo see which group your last workout missed, open the [AI coach](/articles/ai-coach-hints)."
-	},
-	{
-		"slug": "import-history",
-		"title": "Импорт истории из Strong, Hevy и FitNotes",
-		"excerpt": "CSV из другого дневника: совпадения с каталогом, единицы и новые упражнения.",
-		"coverTone": "amber",
-		"locale": "ru",
-		"tags": ["импорт", "история", "csv", "гайд"],
-		"exerciseIds": [],
-		"coverIcon": "upload",
-		"ctaHref": "/auth",
-		"ctaLabelKey": "articles.ctaProfile",
-		"bodyMd": "## Где найти\n\n- Приложение: Профиль → **«Импорт тренировок из CSV»**\n- Веб: Профиль → **«Резервная копия»** → **«Восстановить из файла»**\n\n## Какие файлы понимаем\n\n- **Strong** - экспорт CSV\n- **Hevy** - CSV с колонками «exercise_title» и «start_time»\n- **FitNotes** - CSV с упражнением, весом и повторами\n- **Общий CSV** - дата, упражнение, подходы, вес, повторы\n\n## Шаги\n\n1. Выгрузите CSV из старого приложения\n2. Выберите файл: покажем тренировки, подходы, даты и совпадения с каталогом\n3. Проверьте единицы - **кг** или **фунты**\n4. Незнакомые упражнения выберите из каталога или оставьте новыми\n5. **«Восстановить»** → данные появятся в истории и «Прогрессе»\n\n![Предпросмотр импорта CSV](/images/articles/import-csv-preview.jpg)\n\nТекущие данные не удаляются: при совпадении остаётся более новая версия.\n\n## После импорта\n\nОткройте одну-две тренировки и проверьте веса - особенно если в файле были фунты."
-	},
-	{
-		"slug": "import-history",
-		"title": "Import history from Strong, Hevy, and FitNotes",
-		"excerpt": "CSV from another tracker: catalog matches, units, and new exercises.",
-		"coverTone": "amber",
-		"locale": "en",
-		"tags": ["import", "history", "csv", "guide"],
-		"exerciseIds": [],
-		"coverIcon": "upload",
-		"ctaHref": "/auth",
-		"ctaLabelKey": "articles.ctaProfile",
-		"bodyMd": "## Where to find it\n\n- App: Profile → **Import workouts from CSV**\n- Web: Profile → **Backup** → **Restore from file**\n\n## Supported files\n\n- **Strong** - CSV export\n- **Hevy** - CSV with «exercise_title» and «start_time» columns\n- **FitNotes** - CSV with exercise, weight, and reps\n- **Generic CSV** - date, exercise, sets, weight, reps\n\n## Steps\n\n1. Export a CSV from your old app\n2. Pick the file: we show workouts, sets, dates, and catalog matches\n3. Check units - **kg** or **pounds**\n4. Map unknown exercises to the catalog or keep them as new\n5. Tap **Restore** → the data appears in history and Progress\n\n![CSV import preview](/images/articles/import-csv-preview.jpg)\n\nExisting data is never deleted: when records collide, the newer version wins.\n\n## After importing\n\nOpen a workout or two and check the weights - especially if the file used pounds."
-	}
+  {
+    "slug": "warmup-before-press",
+    "title": "Разминка перед жимом",
+    "excerpt": "5 минут, которые снижают риск травмы плеча и делают рабочие подходы стабильнее.",
+    "coverTone": "teal",
+    "locale": "ru",
+    "tags": [
+      "разминка",
+      "грудь",
+      "плечи"
+    ],
+    "exerciseIds": [
+      "0025",
+      "0047"
+    ],
+    "coverIcon": "flame",
+    "ctaHref": "/catalog/chest",
+    "ctaLabelKey": "articles.ctaCatalog",
+    "bodyMd": "Перед жимом не нужен «полный тренинг».\n\nНужна **активация** и лёгкая мобилизация.\n\n## Чек-лист 5 минут\n\n- 1-2 мин лёгкого кардио (велотренажёр, ходьба)\n- 20 отжиманий от пола или с колен\n- 2×15 разведений с лёгкими гантелями\n- 1 разминочный подход жима с пустым грифом\n\n## Что смотреть в зале\n\nЕсли локти «уезжают» вперёд или плечи поднимаются к ушам, снизьте вес и вернитесь к технике.\n\nВ Repdraft откройте [упражнения на грудь](/catalog/chest) и добавьте разминочные варианты в план."
+  },
+  {
+    "slug": "warmup-before-press",
+    "title": "Warm-up before pressing",
+    "excerpt": "Five minutes that lower shoulder injury risk and make working sets more stable.",
+    "coverTone": "teal",
+    "locale": "en",
+    "tags": [
+      "warmup",
+      "chest",
+      "shoulders"
+    ],
+    "exerciseIds": [
+      "0025",
+      "0047"
+    ],
+    "coverIcon": "flame",
+    "ctaHref": "/catalog/chest",
+    "ctaLabelKey": "articles.ctaCatalog",
+    "bodyMd": "You do not need a full workout before pressing.\n\nYou need **activation** and light mobility.\n\n## 5-minute checklist\n\n- 1-2 min easy cardio (bike, walk)\n- 20 push-ups from the floor or knees\n- 2×15 light dumbbell flyes\n- 1 warm-up press set with an empty bar\n\n## What to watch in the gym\n\nIf elbows drift forward or shoulders rise toward the ears, drop the load and reset technique.\n\nIn Repdraft open [chest exercises](/catalog/chest) and add warm-up variations to your plan."
+  },
+  {
+    "slug": "read-workout-plan",
+    "title": "Как читать план тренировки",
+    "excerpt": "Подходы, повторы, отдых, суперсеты и альтернативы: короткий гайд для первой недели.",
+    "coverTone": "lime",
+    "locale": "ru",
+    "tags": [
+      "план",
+      "новичок",
+      "getting-started",
+      "суперсет",
+      "альтернативы"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "book-open",
+    "ctaHref": "/builder",
+    "ctaLabelKey": "articles.ctaBuilder",
+    "bodyMd": "План в Repdraft - **порядок упражнений** и целевые подходы. Факт вы записываете в live-сессии: вес и повторы.\n\n## Обозначения\n\n- **3×10** - три подхода по десять повторений\n- **Отдых** - пауза после подхода; таймер стартует после «Готово»\n- **Суперсет** - упражнения подряд без длинной паузы\n- **«Или»** - альтернативы: в live-сессии выбираете одно упражнение из группы\n\n## Перед тренировкой\n\nПлан, закреплённый на Главной, показывается как «план на сегодня» - с оценкой времени и зонами.\n\nЕсли упражнение не подходит, замените его в [редакторе](/builder), пропустите в live-сессии или подстройте весь план под самочувствие: [Подстроить под сегодня](/articles/plan-tune).\n\n## С чего начать\n\nСоберите 4-6 упражнений на одну зону или full-body.\n\nНе гонитесь за объёмом: лучше закончить сессию и сохранить историю, чем бросить на середине."
+  },
+  {
+    "slug": "read-workout-plan",
+    "title": "How to read a workout plan",
+    "excerpt": "Sets, reps, rest, supersets, and alternatives: a short guide for your first week.",
+    "coverTone": "lime",
+    "locale": "en",
+    "tags": [
+      "plan",
+      "beginner",
+      "getting-started",
+      "superset",
+      "alternatives"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "book-open",
+    "ctaHref": "/builder",
+    "ctaLabelKey": "articles.ctaBuilder",
+    "bodyMd": "A Repdraft plan is the **exercise order** and target sets. The live session logs what actually happened: weight and reps.\n\n## Notation\n\n- **3×10** - three sets of ten reps\n- **Rest** - the pause after a set; the timer starts after Done\n- **Superset** - exercises back-to-back without a long pause\n- **\"Or\"** - alternatives: in the live session you pick one exercise from the group\n\n## Before training\n\nThe plan pinned on Home is shown as today's plan with a time estimate and target zones.\n\nIf an exercise does not fit, swap it in the [builder](/builder), skip it in the live session, or tune the whole plan for how you feel: [Tune today's workout](/articles/plan-tune).\n\n## Where to start\n\nBuild 4-6 exercises for one zone or a full-body day.\n\nDo not chase volume: finishing and saving history beats quitting mid-session."
+  },
+  {
+    "slug": "rest-between-sets",
+    "title": "Отдых между подходами",
+    "excerpt": "Сколько отдыхать в базе и изоляции, как работает таймер и где включить звук.",
+    "coverTone": "amber",
+    "locale": "ru",
+    "tags": [
+      "отдых",
+      "сессия",
+      "таймер"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "timer",
+    "ctaHref": "/workouts",
+    "ctaLabelKey": "articles.ctaWorkouts",
+    "bodyMd": "Отдых - часть прогресса, а не потерянное время.\n\n## Ориентиры\n\n- **База (присед, жим, тяга):** 2-3 мин, если цель - сила\n- **Изоляция (бицепс, трицепс, дельты):** 60-90 сек\n- **Суперсет:** короткая пауза внутри круга, 2 мин после полного круга\n\n## В Repdraft\n\n- Время отдыха задаётся у упражнения в [редакторе](/builder)\n- После **«Готово»** запускается таймер отдыха\n- **«Пропустить»** - начать следующий подход раньше\n- Звук и вибрацию в конце отдыха включаются в профиле: **«Звук отдыха»** и **«Вибро в конце отдыха»**\n\nИстория сессии сохранится в [«Тренировки» → «История»](/workouts?tab=history)."
+  },
+  {
+    "slug": "rest-between-sets",
+    "title": "Rest between sets",
+    "excerpt": "How long to rest for compounds and isolation, how the timer works, and where the chime is.",
+    "coverTone": "amber",
+    "locale": "en",
+    "tags": [
+      "rest",
+      "session",
+      "timer"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "timer",
+    "ctaHref": "/workouts",
+    "ctaLabelKey": "articles.ctaWorkouts",
+    "bodyMd": "Rest is part of progress, not lost time.\n\n## Benchmarks\n\n- **Compounds (squat, bench, deadlift):** 2-3 min when strength is the goal\n- **Isolation (biceps, triceps, delts):** 60-90 sec\n- **Superset:** a short pause inside the round, 2 min after the full round\n\n## In Repdraft\n\n- Rest time is set per exercise in the [builder](/builder)\n- The rest timer starts after **Done**\n- **Skip** starts the next set earlier\n- The end-of-rest chime and vibration live in Profile: **Rest sound** and **Haptic when rest ends**\n\nSession history stays in [Workouts → History](/workouts?tab=history)."
+  },
+  {
+    "slug": "technique-clips",
+    "title": "Зачем смотреть технику перед подходом",
+    "excerpt": "Анимация и короткие GIF от других пользователей - где смотреть и как добавить свой.",
+    "coverTone": "rose",
+    "locale": "ru",
+    "tags": [
+      "техника",
+      "клипы",
+      "гиф"
+    ],
+    "exerciseIds": [
+      "0025"
+    ],
+    "coverIcon": "library",
+    "ctaHref": "/exercises",
+    "ctaLabelKey": "articles.ctaExercises",
+    "bodyMd": "Каталог - не только список названий.\n\nНа карточке упражнения есть **анимация** и блок **«Техника»** с короткими GIF от других пользователей.\n\n## Когда открывать\n\n- Первый раз делаете упражнение\n- Меняете хват, стойку или угол скамьи\n- Возвращаетесь после перерыва\n\n## Своя техника\n\nВ блоке «Техника» можно нажать **«Добавить GIF»** - ваш ролик увидят другие. Публикация требует входа в аккаунт, просмотр доступен всем.\n\n## Как связать с планом\n\nНашли удачное упражнение → добавьте в [редактор](/builder) → откройте технику в live-сессии перед рабочим весом."
+  },
+  {
+    "slug": "technique-clips",
+    "title": "Why check technique before a set",
+    "excerpt": "Animation plus short user GIFs: where to watch and how to add your own.",
+    "coverTone": "rose",
+    "locale": "en",
+    "tags": [
+      "technique",
+      "clips",
+      "gif"
+    ],
+    "exerciseIds": [
+      "0025"
+    ],
+    "coverIcon": "library",
+    "ctaHref": "/exercises",
+    "ctaLabelKey": "articles.ctaExercises",
+    "bodyMd": "The catalog is more than a list of names.\n\nEach exercise page has an **animation** and a **Technique** block with short GIFs from other users.\n\n## When to open it\n\n- The first time you do the exercise\n- When you change grip, stance, or bench angle\n- Coming back after a break\n\n## Your own technique\n\nIn the Technique block tap **Add GIF** to publish your clip. Publishing needs an account; browsing is open to everyone.\n\n## Tie it to the plan\n\nFound a good exercise → add it in the [builder](/builder) → check technique in the live session before the working set."
+  },
+  {
+    "slug": "legs-split",
+    "title": "Ноги: ягодицы, квадрицепс и икры",
+    "excerpt": "Как пользоваться подкатегориями в каталоге, чтобы не листать 200+ упражнений.",
+    "coverTone": "teal",
+    "locale": "ru",
+    "tags": [
+      "ноги",
+      "каталог"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "dumbbell",
+    "ctaHref": "/catalog/legs",
+    "ctaLabelKey": "articles.ctaLegs",
+    "bodyMd": "Зона **«Ноги»** объединяет бедро и голень.\n\nВнутри chips по целевым мышцам: ягодицы, квадрицепс, бицепс бедра, икры.\n\n## Как пользоваться\n\n1. Откройте [каталог ног](/catalog/legs)\n2. Выберите chip (например, «Ягодицы»)\n3. При необходимости сузьте **оборудование** в фильтрах\n\n## Совет\n\nДля первой тренировки хватит 3-4 упражнений: одно на ягодицы/квадрицепс, одно на заднюю поверхность бедра, одно на икры."
+  },
+  {
+    "slug": "legs-split",
+    "title": "Legs: glutes, quads, and calves",
+    "excerpt": "How to use catalog subcategories so you are not scrolling 200+ moves.",
+    "coverTone": "teal",
+    "locale": "en",
+    "tags": [
+      "legs",
+      "catalog"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "dumbbell",
+    "ctaHref": "/catalog/legs",
+    "ctaLabelKey": "articles.ctaLegs",
+    "bodyMd": "The **Legs** zone covers thigh and lower leg.\n\nInside you get chips by target muscle: glutes, quads, hamstrings, calves.\n\n## How to use it\n\n1. Open the [legs catalog](/catalog/legs)\n2. Pick a chip (for example Glutes)\n3. Narrow **equipment** in filters if needed\n\n## Tip\n\nFor a first session, 3-4 exercises are enough: one for glutes/quads, one for hamstrings, one for calves."
+  },
+  {
+    "slug": "first-session",
+    "title": "Первая сохранённая сессия",
+    "excerpt": "План → live → подходы → итог: как пройти цикл и найти результат в истории.",
+    "coverTone": "lime",
+    "locale": "ru",
+    "tags": [
+      "новичок",
+      "сессия",
+      "getting-started",
+      "старт",
+      "история"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "history",
+    "ctaHref": "/builder",
+    "ctaLabelKey": "articles.ctaBuilder",
+    "bodyMd": "Базовый путь в Repdraft: **план → сессия → итог → история**.\n\n## Шаги\n\n1. [Соберите план](/builder) из 3-5 упражнений - или возьмите демо на Главной\n2. На [главной](/) откройте план на сегодня и нажмите **«Старт»** - или выберите план в [«Тренировках»](/workouts)\n3. В live-сессии вводите вес и повторы → **«Готово»**. После отметки запускается таймер отдыха\n4. Закончили - **«Завершить»**: на экране итога время, подходы и тоннаж\n5. Результат остаётся в [«Тренировки» → «История»](/workouts?tab=history)\n\n## Полезно знать\n\n- **Пропустить упражнение** - в меню live-сессии; пропуск не попадает в прогресс\n- **Закрыли приложение** - незавершённая сессия сохранится, на Главной появится «Продолжить тренировку»\n- **Ошиблись в подходе** - исправьте вес и повторы до «Готово»\n- **Оценка 1-5** - поставьте звёзды на итоге: они видны в истории и в деталях тренировки. Оценка хранится на устройстве и не уходит в облако\n\nДанные хранятся на телефоне; с аккаунтом синхронизируются между устройствами."
+  },
+  {
+    "slug": "first-session",
+    "title": "Your first saved session",
+    "excerpt": "Plan → live → sets → summary: how the loop works and where history lands.",
+    "coverTone": "lime",
+    "locale": "en",
+    "tags": [
+      "beginner",
+      "session",
+      "getting-started",
+      "start",
+      "history"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "history",
+    "ctaHref": "/builder",
+    "ctaLabelKey": "articles.ctaBuilder",
+    "bodyMd": "The core Repdraft loop: **plan → session → summary → history**.\n\n## Steps\n\n1. [Build a plan](/builder) with 3-5 exercises - or take the demo on Home\n2. On [Home](/) open today's plan and tap **Start** - or pick a plan in [Workouts](/workouts)\n3. In the live session log weight and reps → **Done**. The rest timer starts after each set\n4. When done, tap **Finish**: the summary shows time, sets, and volume\n5. The result stays in [Workouts → History](/workouts?tab=history)\n\n## Good to know\n\n- **Skip exercise** lives in the live session menu and is left out of progress\n- **Closed the app?** The unfinished session is kept; Home shows Continue workout\n- **Logged a set wrong?** Fix weight and reps before tapping Done\n- **1-5 rating** - tap the stars on the summary: they show up in history and session details. The rating stays on the device and is not sent to the cloud\n\nData lives on the phone; with an account it syncs across devices."
+  },
+  {
+    "slug": "getting-started-quick-demo",
+    "title": "Первая тренировка за 3 минуты",
+    "excerpt": "Демо-план из чеклиста на Главной: превью → live → один подход → итог.",
+    "coverTone": "lime",
+    "locale": "ru",
+    "tags": [
+      "новичок",
+      "getting-started",
+      "демо",
+      "старт"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "play",
+    "ctaHref": "/",
+    "ctaLabelKey": "onboarding.tryDemo",
+    "bodyMd": "Самый быстрый путь без регистрации и без пустого экрана.\n\n## Шаги\n\n1. На [главной](/) в блоке **«Первые шаги в Repdraft»** нажмите **«Попробовать демо»**\n2. Откройте превью и нажмите **«Старт»**\n3. Запишите один подход: вес × повторы → **«Готово»**\n4. **«Завершить»** → экран итога\n\nДемо-план «Первая тренировка (демо)» остаётся в [«Тренировки»](/workouts): его можно изменить, начать снова или удалить.\n\n## Что дальше\n\n- Аккаунт по-прежнему не нужен: история хранится на телефоне\n- Захотите синхронизацию - [войдите](/auth), локальные данные объединятся с облаком\n- Разобрать план по шагам помогает [«Как читать план тренировки»](/articles/read-workout-plan)"
+  },
+  {
+    "slug": "getting-started-quick-demo",
+    "title": "First workout in 3 minutes",
+    "excerpt": "A demo plan from the Home checklist: preview → live → one set → summary.",
+    "coverTone": "lime",
+    "locale": "en",
+    "tags": [
+      "beginner",
+      "getting-started",
+      "demo",
+      "start"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "play",
+    "ctaHref": "/",
+    "ctaLabelKey": "onboarding.tryDemo",
+    "bodyMd": "The fastest way to try the loop: no sign-up, no blank screen.\n\n## Steps\n\n1. On [Home](/) in **Your first steps in Repdraft**, tap **Try demo**\n2. Open the preview and tap **Start**\n3. Log one set: weight × reps → **Done**\n4. Tap **Finish** → summary screen\n\nThe \"First workout (demo)\" plan stays in [Workouts](/workouts): edit it, start again, or delete it.\n\n## What next\n\n- No account needed: history lives on this phone\n- Want sync - [sign in](/auth) and local data merges with the cloud\n- To read the plan notation, see [How to read a workout plan](/articles/read-workout-plan)"
+  },
+  {
+    "slug": "getting-started-guest-account",
+    "title": "Гость и аккаунт: когда входить",
+    "excerpt": "Когда аккаунт действительно нужен, что переносится и где лежит резервная копия.",
+    "coverTone": "amber",
+    "locale": "ru",
+    "tags": [
+      "аккаунт",
+      "getting-started",
+      "синхронизация",
+      "бэкап"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "clipboard-list",
+    "ctaHref": "/auth",
+    "ctaLabelKey": "nav.signIn",
+    "bodyMd": "Repdraft работает **без аккаунта**: планы и история хранятся на телефоне.\n\n## Когда входить\n\n- Перед сменой телефона или браузера\n- Если нужна резервная копия в файл\n- Для синхронизации между устройствами\n- Для [режима тренера](/articles/coach-mode)\n\n## Что переносится\n\nПри входе локальные планы и история **объединяются** с облаком. Данные без аккаунта не пропадают.\n\n## Резервная копия\n\nПрофиль → **«Резервная копия»** → **«Скачать копию»**. Восстановление - **«Восстановить из файла»**.\n\nТот же экран понимает CSV из других дневников - подробнее в [импорте истории](/articles/import-history)."
+  },
+  {
+    "slug": "getting-started-guest-account",
+    "title": "Guest vs account: when to sign in",
+    "excerpt": "When an account actually helps, what moves with it, and where the backup lives.",
+    "coverTone": "amber",
+    "locale": "en",
+    "tags": [
+      "account",
+      "getting-started",
+      "sync",
+      "backup"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "clipboard-list",
+    "ctaHref": "/auth",
+    "ctaLabelKey": "nav.signIn",
+    "bodyMd": "Repdraft works **without an account**: plans and history live on your phone.\n\n## When to sign in\n\n- Before switching phones or browsers\n- If you want a file backup\n- To sync between devices\n- For [coach mode](/articles/coach-mode)\n\n## What moves\n\nOn sign-in, local plans and history **merge** with the cloud. Nothing you logged without an account is lost.\n\n## Backup\n\nProfile → **Backup** → **Download backup**. Restore with **Restore from file**.\n\nThe same screen reads CSV from other apps - see [importing history](/articles/import-history)."
+  },
+  {
+    "slug": "ai-workout-draft",
+    "title": "Тренировка с ИИ: черновик за минуту",
+    "excerpt": "Опишите зоны, время и оборудование - ИИ соберёт план из каталога за минуту.",
+    "coverTone": "purple",
+    "locale": "ru",
+    "tags": [
+      "ai",
+      "план",
+      "getting-started",
+      "gigachat"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "sparkles",
+    "ctaHref": "/ai",
+    "ctaLabelKey": "articles.ctaAi",
+    "bodyMd": "ИИ-черновик собирает план из каталога Repdraft: не выдумывает упражнения, а подбирает реальные позиции с подходами, повторами и отдыхом.\n\n## Как открыть\n\n- Приложение: «Тренировки» → **«ИИ-черновик»**\n- Веб: пустой список тренировок или [редактор](/builder)\n\nНужен интернет: запрос уходит на сервер Repdraft к настроенному провайдеру (по умолчанию GigaChat). История тренировок остаётся на телефоне.\n\n![Форма запроса](/images/articles/ai-draft-form.jpg)\n\n## Что написать в запросе\n\n- **Зоны**: спина и бицепс, ноги, всё тело\n- **Время**: 45 минут\n- **Оборудование**: штанга, гантели, только резинка\n\nМожно диктовать голосом - кнопка микрофона в поле запроса или микрофон на клавиатуре.\n\n## Черновик плана\n\nИИ возвращает план из каталога: названия на русском, целевые мышцы, схема подходов и отдых.\n\n![Черновик плана](/images/articles/ai-draft-result.jpg)\n\nНе подошло - **«Ещё раз»** пересобирает вариант. **«В редактор»** переносит план в конструктор, дальше священный цикл: live-сессия → запись подходов → история.\n\n## Важно\n\n- План - стартовая точка, а не предписание: веса и технику подбирайте под себя\n- Перед первым подходом откройте упражнение и посмотрите технику\n- Без сети соберите план вручную в [конструкторе](/builder)"
+  },
+  {
+    "slug": "ai-workout-draft",
+    "title": "AI workout: a draft in a minute",
+    "excerpt": "Describe zones, time, and equipment - AI drafts a plan from the catalog in a minute.",
+    "coverTone": "purple",
+    "locale": "en",
+    "tags": [
+      "ai",
+      "plan",
+      "getting-started",
+      "gigachat"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "sparkles",
+    "ctaHref": "/ai",
+    "ctaLabelKey": "articles.ctaAi",
+    "bodyMd": "The AI draft builds a plan from the Repdraft catalog: it picks real exercises with sets, reps, and rest instead of inventing names.\n\n## Where to find it\n\n- App: Workouts → **AI draft**\n- Web: an empty workouts list or the [builder](/builder)\n\nInternet is required: the request goes to the Repdraft server and the configured provider (GigaChat by default). Workout history stays on your phone.\n\n![Request form](/images/articles/ai-draft-form.jpg)\n\n## What to put in the brief\n\n- **Zones**: back and biceps, legs, full body\n- **Time**: 45 minutes\n- **Equipment**: barbell, dumbbells, resistance band only\n\nYou can dictate: the mic button in the field or the keyboard mic.\n\n## The plan draft\n\nThe AI returns catalog exercises with localized names, target muscles, set scheme, and rest.\n\n![Plan draft](/images/articles/ai-draft-result.jpg)\n\nNot a fit - **Try again** rebuilds it. **Open in builder** moves the plan into the constructor; from there the loop is the usual one: live session → log sets → history.\n\n## Keep in mind\n\n- The plan is a starting point, not a prescription: pick loads and technique for yourself\n- Before the first set, open the exercise and check technique\n- Offline, build the plan manually in the [builder](/builder)"
+  },
+  {
+    "slug": "coach-mode",
+    "title": "Тренер и клиенты: как подключить клиента",
+    "excerpt": "Код приглашения, назначение плана и что именно видит тренер.",
+    "coverTone": "teal",
+    "locale": "ru",
+    "tags": [
+      "тренер",
+      "coach",
+      "аккаунт"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "users",
+    "ctaHref": "/clients",
+    "ctaLabelKey": "articles.ctaCoach",
+    "bodyMd": "Режим тренера работает на аккаунте: войти нужно и тренеру, и клиенту.\n\n![Тренер и клиенты в профиле](/images/articles/coach-client-profile.jpg)\n\n## Тренер\n\n1. Профиль → **«Тренер и клиенты»** → **«Кабинет тренера»**\n2. **«Создать код»** и передайте клиенту: скопировать или «Поделиться»\n3. Клиент подключится - появится в списке с последней тренировкой и итогами\n4. Карточка клиента → **«Назначить тренировку»** → выберите свой план\n\n![Кабинет тренера: приглашение и клиенты](/images/articles/coach-clients.jpg)\n\n## Клиент\n\n1. Профиль → **«Тренер и клиенты»** → **«Мой тренер»**\n2. Введите код из приглашения → **«Подключиться»**\n3. Назначенный план появится на Главной: **«Добавить план»** или **«Скрыть»**\n\n![Мой тренер: подключение по коду](/images/articles/coach-my-coach-sheet.jpg)\n\n## Что видит тренер\n\n- Завершённые тренировки и подходы\n- Назначение - **снимок плана**: правки тренера после назначения не меняют план клиента, и наоборот\n\n## Отключение\n\n- Клиент: «Мой тренер» → **«Отключиться»**\n- Тренер: карточка клиента → **«Отключить»**\n\nПосле отключения доступ к тренировкам закрывается, история остаётся у каждого."
+  },
+  {
+    "slug": "coach-mode",
+    "title": "Coach and clients: how to connect a client",
+    "excerpt": "Invite code, plan assignment, and exactly what a coach can see.",
+    "coverTone": "teal",
+    "locale": "en",
+    "tags": [
+      "coach",
+      "account",
+      "client"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "users",
+    "ctaHref": "/clients",
+    "ctaLabelKey": "articles.ctaCoach",
+    "bodyMd": "Coach mode needs an account: both the coach and the client sign in.\n\n![Coach and clients in Profile](/images/articles/coach-client-profile.jpg)\n\n## Coach\n\n1. Profile → **Coach and clients** → **Coach dashboard**\n2. Tap **Create code** and share it with the client\n3. Once connected, the client appears in the list with their last workout and totals\n4. Open the client card → **Assign a workout** → pick one of your plans\n\n![Coach dashboard: invite card and clients](/images/articles/coach-clients.jpg)\n\n## Client\n\n1. Profile → **Coach and clients** → **My coach**\n2. Enter the invite code → **Connect**\n3. The assigned plan shows on Home: **Add plan** or **Hide**\n\n![My coach: connection sheet](/images/articles/coach-my-coach-sheet.jpg)\n\n## What the coach sees\n\n- Finished workouts and sets\n- The assignment is a **snapshot**: later edits on either side do not leak into the other account\n\n## Disconnect\n\n- Client: My coach → **Disconnect**\n- Coach: client card → **Disconnect**\n\nAccess closes after disconnecting; each side keeps its own history."
+  },
+  {
+    "slug": "ai-coach-hints",
+    "title": "ИИ-тренер: что менять в тренировках",
+    "excerpt": "Подходы за неделю, следующий вес, разгрузка, перекос в жимы и упражнения, которые вы пропускаете.",
+    "coverTone": "purple",
+    "locale": "ru",
+    "tags": [
+      "ии",
+      "тренер",
+      "прогресс",
+      "нагрузка"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "sparkles",
+    "ctaHref": "/coach",
+    "ctaLabelKey": "articles.ctaAiCoach",
+    "bodyMd": "ИИ-тренер не ведёт чат и не выдаёт мотивацию. Он считает по завершённым тренировкам и показывает до четырёх карточек: что изменить в ближайшую неделю.\n\n![Экран «ИИ-тренер»](/images/articles/ai-coach-hints.jpg)\n\n## Где открыть\n\nПрофиль → блок **«Прогресс»** → **«ИИ-тренер»**. Точка у пункта появляется после новой тренировки.\n\n## Сначала цифры\n\n- **Подходы за неделю** - рабочие подходы за 7 дней по группам мышц, ориентир 10+ на группу\n- **Разобрал N тренировок за 30 дней** - сколько сессий попало в расчёт\n\n## Какие карточки бывают\n\n- **Пора добавить вес** - одинаковый вес и повторы закрыты 4 тренировки подряд. Шаг берётся из оценки 1ПМ и снаряда, а не «+2.5 кг всегда»\n- **Вес пока не идёт** - цель не закрыта два раза подряд. Приложение предлагает шаг вниз, а не долбить тот же вес\n- **Объём вырос резко** - подходов за неделю заметно больше, чем в среднем за три недели. Карточка просит не добавлять ещё\n- **Упражнение не идёт** - пропущено в 2 из 3 последних тренировок. Можно сразу заменить на другое упражнение той же группы\n- **Перекос в жимы** - жимов за месяц заметно больше, чем тяги. Предложит тянущее движение\n\n## Действия\n\n- **«Добавить в план»** → выберите план: упражнение появится в его конце\n- **«Заменить»** - обмен упражнения в плане на Главной\n- **«Скрыть на 7 дней»** - карточка вернётся через неделю, если проблема осталась\n\nПодсказки не повторяют упражнения из ваших планов, а скрытие хранится на устройстве. Как приложение считает следующий вес, разобрано в статье [Сколько вешать](/articles/next-weight).\n"
+  },
+  {
+    "slug": "ai-coach-hints",
+    "title": "AI coach: what to change in your training",
+    "excerpt": "Weekly sets, the next load, a deload, too much pressing and exercises you keep skipping.",
+    "coverTone": "purple",
+    "locale": "en",
+    "tags": [
+      "ai",
+      "coach",
+      "progress",
+      "volume"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "sparkles",
+    "ctaHref": "/coach",
+    "ctaLabelKey": "articles.ctaAiCoach",
+    "bodyMd": "The AI coach does not chat and does not do motivation. It reads your finished sessions and shows up to four cards: what to change in the coming week.\n\n![AI coach screen](/images/articles/ai-coach-hints.jpg)\n\n## Where to open it\n\nProfile → **Progress** → **AI coach**. A dot appears after a new workout.\n\n## Start with the numbers\n\n- **Sets this week** - working sets over 7 days per muscle group, aim 10+ per group\n- **Reviewed N workouts over 30 days** - how many sessions went into the maths\n\n## Which cards exist\n\n- **Time to add load** - the same weight and reps were closed 4 sessions in a row. The step comes from the 1RM estimate and the equipment, not a blind +2.5 kg\n- **The weight is not moving** - the target was missed twice in a row. The app suggests a step down instead of grinding the same load\n- **Volume jumped** - this week has far more sets than the three-week average. The card asks you not to add more\n- **This exercise is not working** - skipped in 2 of the last 3 sessions. Swap it right there for another exercise of the same group\n- **Too much pressing** - pressing volume runs ahead of pulling. It offers a pull\n\n## Actions\n\n- **Add to plan** → pick a plan: the exercise goes to its end\n- **Replace** - swap a plan exercise on Home\n- **Hide for 7 days** - the card comes back in a week if the issue is still there\n\nHints never repeat exercises from your plans, and hiding is stored on the device. How the next load is calculated is covered in [How much to lift](/articles/next-weight).\n"
+  },
+  {
+    "slug": "progress-overview",
+    "title": "Прогресс: как читать цифры",
+    "excerpt": "Периоды, объём, доли групп, 1ПМ и как из оценки считается следующий вес.",
+    "coverTone": "lime",
+    "locale": "ru",
+    "tags": [
+      "прогресс",
+      "новичок",
+      "статистика"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "chart",
+    "ctaHref": "/progress",
+    "ctaLabelKey": "articles.ctaProgress",
+    "bodyMd": "«Прогресс» собирается из завершённых тренировок на этом устройстве.\n\n![Экран «Прогресс»](/images/articles/progress-screen.jpg)\n\n## Период\n\n**7 / 30 / 90 дней** или **«Всё время»** - пересчитывает весь экран: карточки, графики и списки.\n\n## Что показывает\n\n- **Тренировки** и **Всего поднято** - с изменением к прошлому периоду того же размера\n- **Объём по неделям** - килограммы и число тренировок\n- **Доля по группам** - по **количеству рабочих подходов**, чтобы тяжёлые ноги не перевешивали руки\n- **Лучшие подъёмы** - оценка одноповторного максимума (1RM) по лучшему подходу\n- **Прогресс в упражнениях** - как менялся рабочий вес\n\nОткрыть: [Прогресс](/progress), ссылка «Подробнее» есть на Главной.\n\nКакая группа выпала из последней тренировки - подскажет [ИИ-тренер](/articles/ai-coach-hints).\n\nТа же оценка 1ПМ питает подсказку веса в живой тренировке: [Сколько вешать](/articles/next-weight). А что делать с отстающими группами, подскажет [ИИ-тренер](/articles/ai-coach-hints).\n"
+  },
+  {
+    "slug": "progress-overview",
+    "title": "Progress: how to read the numbers",
+    "excerpt": "Periods, volume, muscle shares, 1RM and how the estimate drives the next load.",
+    "coverTone": "lime",
+    "locale": "en",
+    "tags": [
+      "progress",
+      "beginner",
+      "stats"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "chart",
+    "ctaHref": "/progress",
+    "ctaLabelKey": "articles.ctaProgress",
+    "bodyMd": "Progress is built from finished workouts stored on this device.\n\n![Progress screen](/images/articles/progress-screen.jpg)\n\n## Period\n\n**7 / 30 / 90 days** or **All time** - recalculates the whole screen: cards, charts, and lists.\n\n## What it shows\n\n- **Workouts** and **Total lifted** - with the change against the previous period of the same length\n- **Volume by week** - kilograms and workout count\n- **Share by body part** - counted by **working sets**, so heavy legs do not outweigh arms\n- **Best lifts** - a one-rep-max (1RM) estimate from the best set\n- **Exercise trends** - how working weight moved\n\nOpen [Progress](/progress); Home has a Details link.\n\nTo see which group your last workout missed, open the [AI coach](/articles/ai-coach-hints).\n\nThe same 1RM estimate feeds the weight hint in a live session: [How much to lift](/articles/next-weight). And what to do about lagging groups is the job of the [AI coach](/articles/ai-coach-hints).\n"
+  },
+  {
+    "slug": "import-history",
+    "title": "Импорт истории из Strong, Hevy и FitNotes",
+    "excerpt": "CSV из другого дневника: совпадения с каталогом, единицы и новые упражнения.",
+    "coverTone": "amber",
+    "locale": "ru",
+    "tags": [
+      "импорт",
+      "история",
+      "csv",
+      "гайд"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "upload",
+    "ctaHref": "/auth",
+    "ctaLabelKey": "articles.ctaProfile",
+    "bodyMd": "## Где найти\n\n- Приложение: Профиль → **«Импорт тренировок из CSV»**\n- Веб: Профиль → **«Резервная копия»** → **«Восстановить из файла»**\n\n## Какие файлы понимаем\n\n- **Strong** - экспорт CSV\n- **Hevy** - CSV с колонками «exercise_title» и «start_time»\n- **FitNotes** - CSV с упражнением, весом и повторами\n- **Общий CSV** - дата, упражнение, подходы, вес, повторы\n\n## Шаги\n\n1. Выгрузите CSV из старого приложения\n2. Выберите файл: покажем тренировки, подходы, даты и совпадения с каталогом\n3. Проверьте единицы - **кг** или **фунты**\n4. Незнакомые упражнения выберите из каталога или оставьте новыми\n5. **«Восстановить»** → данные появятся в истории и «Прогрессе»\n\n![Предпросмотр импорта CSV](/images/articles/import-csv-preview.jpg)\n\nТекущие данные не удаляются: при совпадении остаётся более новая версия.\n\n## После импорта\n\nОткройте одну-две тренировки и проверьте веса - особенно если в файле были фунты."
+  },
+  {
+    "slug": "import-history",
+    "title": "Import history from Strong, Hevy, and FitNotes",
+    "excerpt": "CSV from another tracker: catalog matches, units, and new exercises.",
+    "coverTone": "amber",
+    "locale": "en",
+    "tags": [
+      "import",
+      "history",
+      "csv",
+      "guide"
+    ],
+    "exerciseIds": [],
+    "coverIcon": "upload",
+    "ctaHref": "/auth",
+    "ctaLabelKey": "articles.ctaProfile",
+    "bodyMd": "## Where to find it\n\n- App: Profile → **Import workouts from CSV**\n- Web: Profile → **Backup** → **Restore from file**\n\n## Supported files\n\n- **Strong** - CSV export\n- **Hevy** - CSV with «exercise_title» and «start_time» columns\n- **FitNotes** - CSV with exercise, weight, and reps\n- **Generic CSV** - date, exercise, sets, weight, reps\n\n## Steps\n\n1. Export a CSV from your old app\n2. Pick the file: we show workouts, sets, dates, and catalog matches\n3. Check units - **kg** or **pounds**\n4. Map unknown exercises to the catalog or keep them as new\n5. Tap **Restore** → the data appears in history and Progress\n\n![CSV import preview](/images/articles/import-csv-preview.jpg)\n\nExisting data is never deleted: when records collide, the newer version wins.\n\n## After importing\n\nOpen a workout or two and check the weights - especially if the file used pounds."
+  },
+  {
+    "slug": "next-weight",
+    "title": "Сколько вешать: как приложение считает следующий вес",
+    "excerpt": "Оценка 1ПМ, шаг под снаряд, добавка за закрытый план и снижение после двух промахов.",
+    "coverTone": "lime",
+    "coverIcon": "dumbbell",
+    "tags": [
+      "вес",
+      "прогресс",
+      "1пм",
+      "тренировка"
+    ],
+    "exerciseIds": [],
+    "ctaHref": "/workouts",
+    "ctaLabelKey": "articles.ctaWorkouts",
+    "bodyMd": "В живой тренировке карточка «Вес по неделям» не прибавляет вслепую 2.5 кг. Она смотрит на лучшие подходы упражнения за последние шесть касаний.\n\n## Оценка 1ПМ\n\n1ПМ - это расчётный одноповторный максимум. Приложение оценивает его по формуле Эпли: вес × (1 + повторы / 30). Чем больше повторов в подходе, тем осторожнее оценка, поэтому 20 повторов не превращаются в фантастический максимум.\n\n## Шаг под снаряд\n\n- Штанга и стек - 2.5 кг\n- Гантели - 2 кг\n- Гиря - 4 кг\n\nШаг берётся из каталога, поэтому на гантелях не появляется «+2.5».\n\n## Когда план закрыт\n\nЕсли все подходы сделаны и повторы добраны, вес растёт. Чем больше запас повторов, тем больше шаг: 12 повторов при плане 8 дают +5 кг, но не больше +10% за раз. Так вы не прыгаете через две ступени после одной удачной тренировки.\n\n## Когда цель не идёт\n\nДва промаха подряд - вес снижается на шаг. Это не наказание, а способ вернуться к рабочим повторам и снова пойти вверх.\n\n## Если идёт цикл\n\nВ [волновом цикле](/articles/cycle-waves) повторы меняются по неделям, и подсказка учитывает неделю: на неделе объёма вес может остаться, а повторов станет больше.\n",
+    "locale": "ru"
+  },
+  {
+    "slug": "next-weight",
+    "title": "How much to lift: how the app picks your next load",
+    "excerpt": "A 1RM estimate, an equipment-aware step, a bump for a closed plan and a step down after two misses.",
+    "coverTone": "lime",
+    "coverIcon": "dumbbell",
+    "tags": [
+      "load",
+      "progress",
+      "1rm",
+      "training"
+    ],
+    "exerciseIds": [],
+    "ctaHref": "/workouts",
+    "ctaLabelKey": "articles.ctaWorkouts",
+    "bodyMd": "In a live session the weight card does not add a blind 2.5 kg. It looks at the best sets of that exercise over the last six exposures.\n\n## The 1RM estimate\n\n1RM is a calculated one-rep max. The app estimates it with the Epley formula: weight x (1 + reps / 30). More reps make the estimate more cautious, so 20 reps do not turn into a fantasy max.\n\n## A step that fits the equipment\n\n- Barbell and stack: 2.5 kg\n- Dumbbells: 2 kg\n- Kettlebell: 4 kg\n\nThe step comes from the catalog, so dumbbells never show \"+2.5\".\n\n## When the plan is closed\n\nIf every set is done and the reps are hit, the load goes up. More spare reps mean a bigger step: 12 reps against a plan of 8 give +5 kg, but never more than +10% at once. One good session does not skip two plates.\n\n## When the target is missed\n\nTwo misses in a row and the weight drops one step. That is not a punishment: it gets you back to working reps and moving up again.\n\n## Inside a cycle\n\nIn a [wave cycle](/articles/cycle-waves) reps change by week, and the hint follows the week: on a volume week the weight may stay while reps go up.\n",
+    "locale": "en"
+  },
+  {
+    "slug": "cycle-waves",
+    "title": "Волновой цикл: три недели волной",
+    "excerpt": "Неделя интенсивности, неделя объёма и разгрузка: как собрать цикл на 8-12 недель и не загнать себя.",
+    "coverTone": "teal",
+    "coverIcon": "chart",
+    "tags": [
+      "цикл",
+      "периодизация",
+      "объём",
+      "план"
+    ],
+    "exerciseIds": [],
+    "ctaHref": "/cycle",
+    "ctaLabelKey": "articles.ctaCycle",
+    "bodyMd": "Волновой цикл - это расписание на 8, 10 или 12 недель, где нагрузка идёт волнами, а не ровной линией.\n\n## Как собрать\n\n1. Откройте [«Волновой цикл»](/cycle)\n2. Выберите цель: сила, масса или привычка\n3. Отметьте планы в ротации: порядок выбора = порядок тренировок\n4. Задайте длительность и старт с понедельника\n\nАктивного цикла может быть только один.\n\n## Три недели внутри волны\n\n- **Неделя интенсивности** - вес выше, подходов меньше\n- **Неделя объёма** - вес ниже, подходов и повторов больше\n- **Разгрузка** - минус минимум один подход, повторы и отдых как в плане\n\nДальше блок повторяется. Цель меняет размер шага: на массе волна глубже по объёму, на силе - по весу.\n\n## Что видно на экране\n\n- График волн на весь цикл: объём и интенсивность в процентах\n- Недели с отметками сделанных тренировок\n- Кнопка «Начать»: план на неделю собирается с учётом волны, сохранённый план не портится\n\nПрогресс цикла хранится на этом устройстве. Если неделя пропущена, цикл не сгорает: вы просто продолжаете со следующей.\n",
+    "locale": "ru"
+  },
+  {
+    "slug": "cycle-waves",
+    "title": "Wave cycle: three weeks in a wave",
+    "excerpt": "An intensity week, a volume week and an unload: build an 8-12 week cycle without burning out.",
+    "coverTone": "teal",
+    "coverIcon": "chart",
+    "tags": [
+      "cycle",
+      "periodization",
+      "volume",
+      "plan"
+    ],
+    "exerciseIds": [],
+    "ctaHref": "/cycle",
+    "ctaLabelKey": "articles.ctaCycle",
+    "bodyMd": "A wave cycle is a schedule for 8, 10 or 12 weeks where load moves in waves instead of a flat line.\n\n## Build one\n\n1. Open the [wave cycle screen](/cycle)\n2. Pick a goal: strength, muscle or habit\n3. Choose the plans in rotation: pick order is workout order\n4. Set the length and start on Monday\n\nOnly one cycle can be active.\n\n## Three weeks in a wave\n\n- **Intensity week** - heavier weight, fewer sets\n- **Volume week** - lighter weight, more sets and reps\n- **Unload** - at least one set less, reps and rest as in the plan\n\nThen the block repeats. The goal sets the depth: muscle leans on volume, strength leans on weight.\n\n## What the screen shows\n\n- A wave chart for the whole cycle: volume and intensity in percent\n- Weeks marked with the workouts you finished\n- A Start button: the week's plan is adjusted to the wave, and your saved plan stays untouched\n\nCycle progress lives on this device. A missed week does not burn the cycle down: you simply continue with the next one.\n",
+    "locale": "en"
+  },
+  {
+    "slug": "plan-tune",
+    "title": "Подстроить тренировку под сегодня",
+    "excerpt": "Болит плечо, мало времени или нужен акцент: ИИ правит существующий план и показывает, что изменил.",
+    "coverTone": "purple",
+    "coverIcon": "sparkles",
+    "tags": [
+      "ии",
+      "план",
+      "тренировка",
+      "гибкость"
+    ],
+    "exerciseIds": [],
+    "ctaHref": "/workouts",
+    "ctaLabelKey": "articles.ctaWorkouts",
+    "bodyMd": "Иногда план на сегодня не подходит: болит плечо, осталось 30 минут или хочется больше груди. Подстройка меняет **существующий** план, а не собирает новый с нуля.\n\n## Как открыть\n\nЭкран плана → **«Подстроить под сегодня»**. Если тренировка уже идёт, сначала завершите её.\n\n## Что написать\n\nСвоими словами или быстрым вариантом:\n\n- «Болит правое плечо, больше груди и меньше жимов над головой»\n- «Сегодня полегче»\n- «Мало времени»\n\n## Что показывает\n\nЧерновик на сегодня с диффом:\n\n- **Добавили** и **убрали** упражнения\n- **Изменили** подходы, повторы или отдых\n- **Поменяли порядок**\n- **Оставили без изменений**\n\n## Два финала\n\n- **«Начать с этим»** - тренировка стартует с версией на сегодня, сохранённый план не перетирается\n- **«Сохранить в план»** - обновляет сам план, если версия нравится надолго\n\nИИ проверяет упражнения по каталогу и держит подходы и отдых в разумных пределах. Запрос списывает один вызов дневного лимита; повторный тап по той же просьбе не тратит его второй раз.\n",
+    "locale": "ru"
+  },
+  {
+    "slug": "plan-tune",
+    "title": "Tune today's workout",
+    "excerpt": "A sore shoulder, little time or a focus: AI edits the plan you already have and shows what changed.",
+    "coverTone": "purple",
+    "coverIcon": "sparkles",
+    "tags": [
+      "ai",
+      "plan",
+      "training",
+      "flexibility"
+    ],
+    "exerciseIds": [],
+    "ctaHref": "/workouts",
+    "ctaLabelKey": "articles.ctaWorkouts",
+    "bodyMd": "Sometimes today's plan does not fit: a sore shoulder, 30 minutes left or a craving for more chest. Tuning edits the plan **you already have** instead of building a new one.\n\n## How to open it\n\nPlan screen → **Tune for today**. If a workout is already running, finish it first.\n\n## What to write\n\nIn your own words or with a quick option:\n\n- \"My right shoulder hurts, more chest and fewer overhead presses\"\n- \"Lighter today\"\n- \"Short on time\"\n\n## What you get\n\nA draft for today with a diff:\n\n- **Added** and **removed** exercises\n- **Changed** sets, reps or rest\n- **Reordered**\n- **Left unchanged**\n\n## Two endings\n\n- **Start with this** - the session starts with today's version and your saved plan is not overwritten\n- **Save to plan** - updates the plan itself if the version is worth keeping\n\nAI checks exercises against the catalog and keeps sets and rest in sane bounds. A request spends one call of the daily limit; tapping the same request again does not spend another.\n",
+    "locale": "en"
+  },
+  {
+    "slug": "equipment-pick",
+    "title": "План под свой инвентарь",
+    "excerpt": "Три шага: что есть под рукой, какие мышцы, короткий список упражнений. Без листания каталога.",
+    "coverTone": "amber",
+    "coverIcon": "clipboard-list",
+    "tags": [
+      "билдер",
+      "инвентарь",
+      "дом",
+      "план"
+    ],
+    "exerciseIds": [],
+    "ctaHref": "/builder",
+    "ctaLabelKey": "articles.ctaBuilder",
+    "bodyMd": "Собирать план из каталога на 1300+ упражнений долго. Быстрый подбор идёт от того, что у вас есть.\n\n## Три шага\n\n1. **Что есть под рукой** - штанга, гантели, тренажёры, турник, резина. «Свой вес» доступен всегда\n2. **Какие мышцы** - счётчики зон считаются под выбранный инвентарь\n3. **Упражнения** - короткий список, не больше 24 карточек\n\n## Что дальше\n\nВыбранное сразу попадает в обычный черновик плана: можно менять подходы, повторы и порядок. Отдельного «режима дома» нет, план остаётся таким же, как собранный вручную.\n\nПодбор пригодится, если вы:\n\n- тренируетесь дома и не хотите видеть упражнения на отсутствующем оборудовании\n- приехали в незнакомый зал и ищете, что делать с тем, что там есть\n- хотите быстро собрать день на одну зону\n\nЕсли упражнение не подошло, [замените его в живой тренировке](/articles/read-workout-plan).\n",
+    "locale": "ru"
+  },
+  {
+    "slug": "equipment-pick",
+    "title": "A plan for your equipment",
+    "excerpt": "Three steps: what you have, which muscles, a short list of exercises. No catalog scrolling.",
+    "coverTone": "amber",
+    "coverIcon": "clipboard-list",
+    "tags": [
+      "builder",
+      "equipment",
+      "home",
+      "plan"
+    ],
+    "exerciseIds": [],
+    "ctaHref": "/builder",
+    "ctaLabelKey": "articles.ctaBuilder",
+    "bodyMd": "Building a plan from a catalog of 1300+ exercises takes time. Quick pick starts from what you actually have.\n\n## Three steps\n\n1. **What you have** - barbell, dumbbells, machines, a pull-up bar, bands. Body weight is always available\n2. **Which muscles** - zone counters follow the chosen equipment\n3. **Exercises** - a short list, at most 24 cards\n\n## What happens next\n\nYour picks land in the normal plan draft: change sets, reps and order as usual. There is no separate \"home mode\"; the plan is the same as a hand-built one.\n\nQuick pick helps when you:\n\n- train at home and do not want exercises for missing equipment\n- walk into an unfamiliar gym and need something that works with what is there\n- want a single-muscle day fast\n\nIf an exercise does not fit, [swap it in a live session](/articles/read-workout-plan).\n",
+    "locale": "en"
+  },
+  {
+    "slug": "programs-4-weeks",
+    "title": "Программы на 4 недели",
+    "excerpt": "Два готовых блока: всё тело 3 раза в неделю и верх/низ 4 раза. План собирается из каталога и сохраняется как обычный.",
+    "coverTone": "rose",
+    "coverIcon": "play",
+    "tags": [
+      "программы",
+      "новичок",
+      "план",
+      "4 недели"
+    ],
+    "exerciseIds": [],
+    "ctaHref": "/programs",
+    "ctaLabelKey": "articles.ctaPrograms",
+    "bodyMd": "Программа - это блок на 4 недели с готовой ротацией тренировок. Не курс и не подписка: план собирается один раз и живёт в вашем списке планов.\n\n## Что в библиотеке\n\n- **Всё тело 3 раза в неделю** - для первого месяца: ноги, жимы и тяги в каждой сессии\n- **Верх / низ 4 раза в неделю** - больше объёма на группу для тех, кто уже ходит стабильно\n\n## Как начать\n\n1. Откройте [программы](/programs)\n2. Посмотрите состав блока: упражнения, время сессии и нужный инвентарь\n3. Нажмите старт у слота: план появится в «Тренировках» как обычный\n\n## Прогресс\n\nСчётчик вида «3 из 12» засчитывает только завершённые тренировки с этим планом. Прогресс хранится на устройстве. Недели повторяют структуру с ростом нагрузки, а не копируют первую.\n\n## Закладки\n\nКарточки можно сохранить на потом: закладки локальные, вход не нужен. Если инвентаря в зале не хватает, соберите [план под свой инвентарь](/articles/equipment-pick).\n",
+    "locale": "ru"
+  },
+  {
+    "slug": "programs-4-weeks",
+    "title": "Four-week programs",
+    "excerpt": "Two ready blocks: full body 3x a week and upper/lower 4x. Built from the catalog, saved as a normal plan.",
+    "coverTone": "rose",
+    "coverIcon": "play",
+    "tags": [
+      "programs",
+      "beginner",
+      "plan",
+      "4 weeks"
+    ],
+    "exerciseIds": [],
+    "ctaHref": "/programs",
+    "ctaLabelKey": "articles.ctaPrograms",
+    "bodyMd": "A program is a four-week block with a ready rotation of sessions. Not a course or a subscription: the plan is built once and lives in your plan list.\n\n## In the library\n\n- **Full body 3x a week** - for the first month: legs, a push and a pull in every session\n- **Upper/Lower 4x a week** - more volume per muscle for people who already train consistently\n\n## How to start\n\n1. Open [programs](/programs)\n2. Read the block: exercises, session time and the kit it needs\n3. Press start on a slot: the plan appears in Workouts like any other\n\n## Progress\n\nA counter like \"3 of 12\" only counts finished workouts with that plan. Progress is stored on the device. Later weeks repeat the structure with progression instead of copying week one.\n\n## Bookmarks\n\nCards can be saved for later: bookmarks are local, no sign-in needed. If the gym lacks the kit, build [a plan for your equipment](/articles/equipment-pick).\n",
+    "locale": "en"
+  },
+  {
+    "slug": "tools-calculators",
+    "title": "Калькуляторы: 1ПМ, калории, ИМТ и пульс",
+    "excerpt": "Четыре расчёта без регистрации: разовый максимум, калории и БЖУ, индекс массы тела, пульсовые зоны.",
+    "coverTone": "lime",
+    "coverIcon": "chart",
+    "tags": [
+      "калькуляторы",
+      "1пм",
+      "калории",
+      "пульс"
+    ],
+    "exerciseIds": [],
+    "ctaHref": "/tools",
+    "ctaLabelKey": "articles.ctaTools",
+    "bodyMd": "Четыре публичных калькулятора отвечают на бытовые вопросы до того, как вы завели аккаунт.\n\n## Разовый максимум (1ПМ)\n\nВведите вес и повторы: получите оценку по трём формулам (Эпли, Бжицки, Ломбарди) и таблицу рабочих весов на 70-95%. Пригодится, чтобы выбрать вес на первой тренировке.\n\n## Калории и БЖУ\n\nБазовый обмен по Миффлину-Сан Жеору, расход с активностью и норма под цель: похудение, поддержание, набор. Ниже - белки, жиры и углеводы на день.\n\n## Индекс массы тела\n\nИМТ и здоровый диапазон веса под ваш рост. Это грубый ориентир: мышцы и телосложение он не различает.\n\n## Пульсовые зоны\n\nМаксимальный пульс по Танаке и зоны по Карвонену, если знаете пульс покоя. Пять зон от восстановления до максимума.\n\n## Приватность\n\nРасчёты идут в браузере: данные никуда не отправляются и не сохраняются. Возраст по умолчанию не подставляется: пустое поле и подсказка 30 под ним.\n\nКогда будете готовы к плану, [соберите тренировку](/builder) или откройте [программы на 4 недели](/articles/programs-4-weeks).\n",
+    "locale": "ru"
+  },
+  {
+    "slug": "tools-calculators",
+    "title": "Calculators: 1RM, calories, BMI and heart rate",
+    "excerpt": "Four calculations, no sign-up: one-rep max, calories and macros, BMI, heart-rate zones.",
+    "coverTone": "lime",
+    "coverIcon": "chart",
+    "tags": [
+      "calculators",
+      "1rm",
+      "calories",
+      "heart rate"
+    ],
+    "exerciseIds": [],
+    "ctaHref": "/tools",
+    "ctaLabelKey": "articles.ctaTools",
+    "bodyMd": "Four public calculators answer everyday questions before you even create an account.\n\n## One-rep max (1RM)\n\nEnter a weight and reps: get an estimate from three formulas (Epley, Brzycki, Lombardi) and a table of working weights at 70-95%. Useful for picking a first-session load.\n\n## Calories and macros\n\nBMR with Mifflin-St Jeor, activity-adjusted burn and a target for cutting, maintaining or gaining. Protein, fat and carbs per day below.\n\n## Body mass index\n\nBMI and a healthy weight range for your height. A rough guide: it does not tell muscle from body fat.\n\n## Heart-rate zones\n\nMax heart rate with Tanaka and zones with Karvonen if you know your resting pulse. Five zones from recovery to max.\n\n## Privacy\n\nThe maths runs in the browser: nothing is sent or stored. Age is not filled in for you: the field is empty with 30 as a hint.\n\nWhen you are ready for a plan, [build a workout](/builder) or open [four-week programs](/articles/programs-4-weeks).\n",
+    "locale": "en"
+  }
 ]

@@ -33,7 +33,7 @@
 | Прогресс | `src/routes/progress/+page.svelte` | `mobile/app/progress.tsx` + `src/progress/*` | copy (нет панели помощи) |
 | Цикл | `src/routes/cycle/+page.svelte` | `mobile/app/cycle.tsx` | ОК (нет тостов) |
 | AI | `src/routes/ai/+page.svelte` | `mobile/app/ai.tsx` | action |
-| Тренер (подсказки) | `src/routes/coach/+page.svelte` | `mobile/app/coach.tsx` | ОК |
+| Тренер (подсказки) | `src/routes/coach/+page.svelte` | `mobile/app/coach.tsx` | info (веб: недельные подходы и глубокие карточки; RN: 30-дневные доли) |
 | Клиенты | `src/routes/clients/+page.svelte` | `mobile/app/clients.tsx` + `src/coach/*` | action |
 | Статьи | `src/routes/articles/+page.svelte` | `mobile/app/articles.tsx` | ОК |
 | Статья | `src/routes/articles/[slug]/+page.svelte` | `mobile/app/articles/[slug].tsx` | ОК |

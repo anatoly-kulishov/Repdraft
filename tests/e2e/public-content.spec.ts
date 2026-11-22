@@ -21,6 +21,13 @@ const ROUTES: { path: string; lang: 'ru' | 'en' }[] = [
 	{ path: '/catalog/chest', lang: 'ru' },
 	{ path: '/exercise/0001', lang: 'ru' },
 	{ path: '/articles', lang: 'ru' },
+	{ path: '/articles/ai-coach-hints', lang: 'ru' },
+	{ path: '/articles/next-weight', lang: 'ru' },
+	{ path: '/articles/cycle-waves', lang: 'ru' },
+	{ path: '/articles/plan-tune', lang: 'ru' },
+	{ path: '/articles/equipment-pick', lang: 'ru' },
+	{ path: '/articles/programs-4-weeks', lang: 'ru' },
+	{ path: '/articles/tools-calculators', lang: 'ru' },
 	{ path: '/workouts', lang: 'ru' },
 	{ path: '/builder', lang: 'ru' },
 	{ path: '/progress', lang: 'ru' },
@@ -70,5 +77,13 @@ for (const { path, lang } of ROUTES) {
 		expect(i18nLeaks(text), `${path} i18n key leaks`).toEqual([]);
 		expect(placeholderLeaks(text), `${path} placeholders`).toEqual([]);
 		expect(text).not.toContain('NaN');
+
+		if (path.startsWith('/articles/')) {
+			const articleBody = page.locator('.article-body');
+			await expect(articleBody, `${path} article body`).toBeVisible();
+			const articleText = await articleBody.innerText();
+			expect(articleText.length, `${path} article body length`).toBeGreaterThan(200);
+			expect(articleText, `${path} article body`).not.toContain('[object Object]');
+		}
 	});
 }
