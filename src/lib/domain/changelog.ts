@@ -14,6 +14,25 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.29.2',
+		highlights: {
+			ru: [
+				'«ИИ-тренер» разбирает прогресс веса, разгрузку, скачок объёма, пропущенные упражнения и перекос жимы/тяга',
+				'На экране тренера подходы за неделю к цели 10+, и советы считаются по той же неделе',
+				'Шесть новых статей в справочнике: следующий вес, волновой цикл, подстройка плана, инвентарь, программы, калькуляторы',
+				'Калькуляторы: поле возраста пустое, 30 стоит подсказкой',
+				'Подпись оценки тренировки переносится двумя ровными строками'
+			],
+			en: [
+				'The AI coach now reads load progress, deloads, volume spikes, skipped exercises and a push/pull imbalance',
+				'The coach screen shows weekly sets against a 10+ aim, and its advice is computed from the same week',
+				'Six new guide articles: next load, wave cycle, tuning a plan, equipment, programs, calculators',
+				'Calculators: the age field is empty with 30 as a hint',
+				'The session rating caption wraps into two even lines'
+			]
+		}
+	},
+	{
 		version: '0.29.1',
 		highlights: {
 			ru: [
