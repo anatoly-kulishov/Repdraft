@@ -17,9 +17,13 @@ import {
 	defaultCycleStartDate,
 	type CycleLength
 } from '@repdraft/domain/cycle';
+import { cycleTargetSetCount, cycleWeekTargets } from '@repdraft/domain/cycleTargets';
+import { exerciseName } from '@repdraft/domain/exerciseName';
 import { clampPlanName } from '@repdraft/domain/inputLimits';
+import type { WorkoutPlan } from '@repdraft/domain/types';
 import { planExerciseSlotCount } from '@repdraft/domain/workout';
 import { translatePlural } from '@repdraft/i18n/messages';
+import { loadExerciseIndex } from '../src/catalog/loadIndex';
 import { AppInput } from '../src/components/AppInput';
 import { Chip } from '../src/components/Chip';
 import { ConfirmSheet } from '../src/components/ConfirmSheet';
@@ -53,6 +57,24 @@ export default function CycleScreen() {
 	const [resetOpen, setResetOpen] = useState(false);
 
 	const cycle = screen.cycle;
+	const catalogById = useMemo(
+		() => new Map(loadExerciseIndex().map((item) => [item.id, item] as const)),
+		[]
+	);
+
+	function exerciseLabel(exerciseId: string): string {
+		const item = catalogById.get(exerciseId);
+		return item ? exerciseName(item, locale) : exerciseId;
+	}
+
+	/** Week prescription: sets/reps from the wave, load from the athlete's history. */
+	function targetsFor(plan: WorkoutPlan, week: number) {
+		if (!cycle) return [];
+		return cycleWeekTargets(plan, week, cycle, {
+			sessions: screen.history,
+			equipmentFor: (exerciseId) => catalogById.get(exerciseId)?.equipment ?? null
+		});
+	}
 
 	/* Web seeds the draft goal from the athlete profile; a hard-coded 'muscle' ignored intake. */
 	useEffect(() => {
@@ -341,25 +363,64 @@ export default function CycleScreen() {
 										<View style={styles.weekPlans}>
 											{rows.map((row) => {
 												const plan = screen.plans.find((item) => item.id === row.planId);
+												const targets = plan ? targetsFor(plan, week.week) : [];
 												return (
 													<View key={row.planId} style={styles.planSlot}>
-														<Text style={styles.planSlotName} numberOfLines={1}>
-															{row.planName}
-														</Text>
-														{row.done ? (
-															<View style={styles.planDone}>
-																<Check color={colors.success} size={16} />
-																<Text style={styles.planDoneText}>{tt('cycle.donePlan')}</Text>
-															</View>
-														) : plan ? (
-															<View style={styles.planStart}>
-																<PrimaryButton
-																	compact
-																	variant="secondary"
-																	label={tt('cycle.start')}
-																	disabled={screen.busyPlanId !== null}
-																	onPress={() => void screen.startWeek(plan, week.week)}
-																/>
+														<View style={styles.planSlotHead}>
+															<Text style={styles.planSlotName} numberOfLines={1}>
+																{row.planName}
+															</Text>
+															{row.done ? (
+																<View style={styles.planDone}>
+																	<Check color={colors.success} size={16} />
+																	<Text style={styles.planDoneText}>{tt('cycle.donePlan')}</Text>
+																</View>
+															) : plan ? (
+																<View style={styles.planStart}>
+																	<PrimaryButton
+																		compact
+																		variant="secondary"
+																		label={tt('cycle.start')}
+																		disabled={screen.busyPlanId !== null}
+																		onPress={() => void screen.startWeek(plan, week.week)}
+																	/>
+																</View>
+															) : null}
+														</View>
+														{targets.length > 0 ? (
+															<View style={styles.planRx}>
+																{targets.map((target, ti) => (
+																	<View key={`${row.planId}-${ti}`} style={styles.planRxRow}>
+																		<Text style={styles.planRxName} numberOfLines={1}>
+																			{exerciseLabel(target.exerciseId)}
+																		</Text>
+																		<Text style={styles.planRxNums}>
+																			<Text style={styles.planRxSets}>
+																				{tt('cycle.prescriptionSets', {
+																					sets: target.sets,
+																					reps: target.reps
+																				})}
+																			</Text>
+																			{' · '}
+																			{target.weightKg != null
+																				? `${tt('cycle.prescriptionLoad', {
+																						weight: target.weightKg
+																					})}${
+																						target.barKg > 0
+																							? ` (${tt('cycle.prescriptionBar', {
+																									weight: target.barKg
+																								})})`
+																							: ''
+																					}`
+																				: tt('cycle.prescriptionOpen')}
+																		</Text>
+																	</View>
+																))}
+																<Text style={styles.planRxTotal}>
+																	{tt('cycle.setsTotal', {
+																		n: cycleTargetSetCount(targets)
+																	})}
+																</Text>
 															</View>
 														) : null}
 													</View>
@@ -573,13 +634,12 @@ function makeStyles(colors: ColorPalette) {
 		weekDoneNow: { color: colors.accentText, fontWeight: '600' },
 		weekPlans: { gap: space.sm, paddingHorizontal: space.md, paddingBottom: space.md },
 		planSlot: {
-			flexDirection: 'row',
-			alignItems: 'center',
 			gap: space.sm,
 			padding: space.sm,
 			borderRadius: radius.md,
 			backgroundColor: colors.panelRaised
 		},
+		planSlotHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
 		planSlotName: {
 			flex: 1,
 			minWidth: 0,
@@ -588,6 +648,17 @@ function makeStyles(colors: ColorPalette) {
 			fontWeight: '500',
 			fontFamily: fontFamily.medium
 		},
+		planRx: {
+			gap: 4,
+			paddingTop: space.xs,
+			borderTopWidth: StyleSheet.hairlineWidth,
+			borderTopColor: colors.border
+		},
+		planRxRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: space.sm },
+		planRxName: { flex: 1, minWidth: 0, color: colors.muted, fontSize: 12 },
+		planRxNums: { color: colors.accentText, fontSize: 12, fontFamily: fontFamily.medium },
+		planRxSets: { color: colors.text, fontWeight: '600', fontFamily: fontFamily.semibold },
+		planRxTotal: { color: colors.mutedSoft, fontSize: 11 },
 		planDone: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 		planDoneText: { color: colors.success, fontSize: 13, fontFamily: fontFamily.medium },
 		planStart: { minWidth: 96 },

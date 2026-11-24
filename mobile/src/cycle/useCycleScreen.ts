@@ -10,13 +10,15 @@ import {
 	type CycleLength,
 	type Mesocycle
 } from '@repdraft/domain/cycle';
+import { cycleTargetWeights, cycleWeekTargets } from '@repdraft/domain/cycleTargets';
 import {
+	fillOpenWeightsFromHistory,
 	lastPerformance,
 	previousSetAtIndex,
-	seedOpenSetsFromLastPerformance,
 	startSessionFromPlan
 } from '@repdraft/domain/session';
 import type { WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
+import { loadExerciseIndex } from '../catalog/loadIndex';
 import { useLocale } from '../state/locale';
 import { clearCycle, readCycle, writeCycle } from '../state/cycle';
 import { plansRepo } from '../storage/plansRepo';
@@ -106,10 +108,22 @@ export function useCycleScreen() {
 				const variant = cycleWeekVariant(plan, week, cycle, {
 					weekLabel: tt('cycle.variantTag', { week })
 				});
-				const session = seedOpenSetsFromLastPerformance(
-					startSessionFromPlan(variant, { lockPrescription: true }),
-					(exerciseId) => lastPerformance(history, exerciseId),
-					(exerciseId, setIndex) => previousSetAtIndex(history, exerciseId, setIndex)
+				const catalog = new Map(loadExerciseIndex().map((item) => [item.id, item] as const));
+				const targets = cycleWeekTargets(plan, week, cycle, {
+					sessions: history,
+					equipmentFor: (exerciseId) => catalog.get(exerciseId)?.equipment ?? null
+				});
+				// The week's sets/reps/load land in the session; history only fills a gap.
+				const started = startSessionFromPlan(variant, {
+					lockPrescription: true,
+					weights: cycleTargetWeights(targets)
+				});
+				const session = fillOpenWeightsFromHistory(
+					started,
+					(exerciseId, setIndex) =>
+						previousSetAtIndex(history, exerciseId, setIndex)?.weightKg ??
+						lastPerformance(history, exerciseId)?.weightKg ??
+						null
 				);
 				await writeActiveSession(session);
 				router.push(`/live/${plan.id}`);

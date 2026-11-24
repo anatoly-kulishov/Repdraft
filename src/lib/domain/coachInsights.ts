@@ -21,8 +21,8 @@ import type { ExerciseIndexItem, WorkoutSession } from './types';
 import { isProgressSet } from './sessionSetKind';
 import { catalogZoneForBodyPart } from './bodyZones';
 import {
+	loadProfileForEquipment,
 	nextWeightHint,
-	weightStepForEquipment,
 	type NextWeightHint
 } from './sessionPayoff';
 import {
@@ -130,8 +130,10 @@ function nextStepFor(
 	top: TopSet,
 	options: CoachInsightOptions
 ): NextWeightHint | null {
+	const profile = loadProfileForEquipment(options.equipmentFor?.(exerciseId));
 	return nextWeightHint(sessions, exerciseId, {
-		stepKg: weightStepForEquipment(options.equipmentFor?.(exerciseId)),
+		stepKg: profile.stepKg,
+		emptyKg: profile.emptyKg,
 		targetReps: top.reps
 	});
 }

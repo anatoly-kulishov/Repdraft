@@ -988,6 +988,9 @@
 			seedBodyPart={names.get(session.exercises[selectedExerciseIndex]?.exerciseId ?? '')
 				?.body_part ?? null}
 			seedExerciseId={session.exercises[selectedExerciseIndex]?.exerciseId ?? null}
+			excludeIds={session.exercises
+				.filter((_, index) => index !== selectedExerciseIndex)
+				.map((exercise) => exercise.exerciseId)}
 			{lang}
 			busy={finishing || switching}
 			onPick={onPickLiveExercise}

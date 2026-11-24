@@ -7,11 +7,21 @@ const CYCLE = {
 	name: 'E2E волна',
 	createdAt: '2026-11-16T00:00:00.000Z',
 	updatedAt: '2026-11-16T00:00:00.000Z',
-	startDate: '2026-11-16',
+	startDate: mondayOfThisWeek(),
 	weeks: 8,
 	goal: 'muscle',
 	planIds: ['plan-e2e']
 };
+
+/** Week 1 must stay current whenever the suite runs, not only in its launch week. */
+function mondayOfThisWeek(): string {
+	const date = new Date();
+	const shift = (date.getDay() + 6) % 7;
+	date.setDate(date.getDate() - shift);
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const day = String(date.getDate()).padStart(2, '0');
+	return `${date.getFullYear()}-${month}-${day}`;
+}
 
 /** The workouts promo only renders above a non-empty plan list. */
 const PLAN = {
@@ -88,4 +98,65 @@ test('a renamed cycle gets its own line in the workouts teaser', async ({ page }
 	await gotoApp(page, '/workouts');
 
 	await expect(page.locator('.cycle-card .cycle-card__name')).toHaveText('E2E волна');
+});
+
+/**
+ * The week is a prescription, not a percentage: it names the sets, the reps and
+ * the load for each exercise — and the load respects the implement (an EZ bar is
+ * ~10 kg, so «12.5 kg» is not a weight the athlete can build).
+ */
+test('a cycle week names sets and load, and starts the session with them', async ({ page }) => {
+	// Last exposure is older than this cycle week, so the week still has its start CTA.
+	const at = new Date(Date.now() - 30 * 86_400_000).toISOString();
+	const ezPlan = {
+		id: 'plan-ez',
+		name: 'E2E бицепс',
+		createdAt: at,
+		updatedAt: at,
+		exercises: [{ exerciseId: '2404', sets: 3, reps: 8, restSec: 90 }]
+	};
+	const ezHistory = {
+		id: 'session-ez',
+		planId: 'plan-ez',
+		planName: 'E2E бицепс',
+		startedAt: at,
+		finishedAt: at,
+		exercises: [
+			{
+				exerciseId: '2404',
+				targetSets: 3,
+				targetReps: 8,
+				restSec: 90,
+				sets: [
+					{ weightKg: 20, reps: 8, completed: true, kind: 'work' },
+					{ weightKg: 20, reps: 8, completed: true, kind: 'work' },
+					{ weightKg: 20, reps: 8, completed: true, kind: 'failure' }
+				]
+			}
+		]
+	};
+	await seedLocalStorage(page, {
+		'repdraft:plans': [ezPlan],
+		'repdraft:cycle': { ...CYCLE, planIds: ['plan-ez'] },
+		'repdraft:sessions': [ezHistory]
+	});
+	await gotoApp(page, '/cycle');
+
+	const slot = page.locator('.cycle-week__plan').first();
+	const row = slot.locator('.cycle-week__rx-row').first();
+	// Intensity week of the muscle goal: 3 × 8 shifts to 2 × 6.
+	await expect(row).toContainText('2 × 6');
+	// «В отказ» closed the plan: hold 20 kg, and the EZ bar is inside the number.
+	await expect(row).toContainText('20 кг');
+	await expect(row).toContainText('гриф 10 кг');
+	await expect(slot.locator('.cycle-week__rx-total')).toContainText('Всего подходов: 2');
+
+	await slot.getByRole('button', { name: 'Начать' }).click();
+	await page.waitForURL('**/live/plan-ez');
+
+	const weights = page.locator('.live-set-weight');
+	const reps = page.locator('.live-set-reps');
+	await expect(weights).toHaveCount(2);
+	await expect(weights.first()).toHaveValue('20');
+	await expect(reps.first()).toHaveValue('6');
 });

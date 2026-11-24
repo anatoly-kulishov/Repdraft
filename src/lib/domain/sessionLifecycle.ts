@@ -10,10 +10,15 @@ import type {
 import { DEFAULT_REPS, DEFAULT_REST_SEC, DEFAULT_SETS } from './workout';
 import { pruneUnchosenAlts, visibleSessionExerciseIndices } from './sessionAlts';
 
-function emptySets(count: number, targetReps: number, scheme?: number[]): LoggedSet[] {
+function emptySets(
+	count: number,
+	targetReps: number,
+	scheme?: number[],
+	weightKg: number | null = null
+): LoggedSet[] {
 	if (scheme && scheme.length > 0) {
 		return scheme.map((reps) => ({
-			weightKg: null,
+			weightKg,
 			reps,
 			completed: false,
 			kind: 'work' as const
@@ -21,7 +26,7 @@ function emptySets(count: number, targetReps: number, scheme?: number[]): Logged
 	}
 	const n = Math.max(1, count);
 	return Array.from({ length: n }, () => ({
-		weightKg: null,
+		weightKg,
 		reps: targetReps,
 		completed: false,
 		kind: 'work' as const
@@ -32,10 +37,12 @@ function emptySets(count: number, targetReps: number, scheme?: number[]): Logged
  * Snapshot a saved plan into a runnable session (prescription → log slots).
  * `lockPrescription` marks a «today» variant: resume must not pull the saved
  * plan's sets/reps/rest back over the tuned snapshot.
+ * `weights` pre-fills the load (cycle weeks prescribe a number per exercise), so
+ * the athlete opens the session on the planned bar instead of an empty field.
  */
 export function startSessionFromPlan(
 	plan: WorkoutPlan,
-	options?: { lockPrescription?: boolean }
+	options?: { lockPrescription?: boolean; weights?: ReadonlyMap<string, number> }
 ): WorkoutSession {
 	const startedAt = new Date().toISOString();
 	return {
@@ -54,7 +61,7 @@ export function startSessionFromPlan(
 				targetSets: ex.sets,
 				targetReps: ex.reps,
 				restSec: ex.restSec,
-				sets: emptySets(ex.sets, ex.reps, ex.repsScheme)
+				sets: emptySets(ex.sets, ex.reps, ex.repsScheme, options?.weights?.get(ex.exerciseId) ?? null)
 			})
 		)
 	};
@@ -288,6 +295,35 @@ export function runSessionLifecycleSelfCheck(): void {
 	const dup = replaceSessionPlan(dupSession, dupPlan);
 	if (dup.exercises[0]?.sets[0]?.weightKg !== 50 || dup.exercises[1]?.sets[0]?.weightKg !== 55) {
 		throw new Error('replaceSessionPlan must match duplicate exerciseIds in order');
+	}
+
+	// Cycle week: the prescribed load opens on the bar, without history touching it.
+	const prescribed = startSessionFromPlan(planA, {
+		lockPrescription: true,
+		weights: new Map([['bench', 62.5]])
+	});
+	if (!prescribed.prescriptionLocked) {
+		throw new Error('prescribed week must stay locked');
+	}
+	if (prescribed.exercises[0]?.sets.some((set) => set.weightKg !== 62.5)) {
+		throw new Error('prescribed load must fill every set of the exercise');
+	}
+	if (prescribed.exercises[1]?.sets.some((set) => set.weightKg !== null)) {
+		throw new Error('a load must not leak onto another exercise');
+	}
+	const schemePlan: WorkoutPlan = {
+		...planA,
+		exercises: [{ exerciseId: 'bench', sets: 3, reps: 8, restSec: 90, repsScheme: [8, 6, 4] }]
+	};
+	const schemeSession = startSessionFromPlan(schemePlan, {
+		lockPrescription: true,
+		weights: new Map([['bench', 50]])
+	});
+	if (schemeSession.exercises[0]?.sets.map((set) => set.reps).join('/') !== '8/6/4') {
+		throw new Error('prescribed rep ladder must survive the load');
+	}
+	if (schemeSession.exercises[0]?.sets.some((set) => set.weightKg !== 50)) {
+		throw new Error('rep ladder sets must all carry the prescribed load');
 	}
 }
 function pruneSkippedEmpty(session: WorkoutSession): WorkoutSession {

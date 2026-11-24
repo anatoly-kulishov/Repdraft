@@ -13,6 +13,7 @@
 	import { Check, Play } from 'phosphor-svelte';
 	import { ATHLETE_GOAL_IDS, type AthleteGoalId } from '$lib/domain/athleteProfile';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
+	import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import {
 		CYCLE_LENGTHS,
 		cycleProgressNow,
@@ -24,8 +25,14 @@
 		type CycleLength,
 		type CycleWeekKind
 	} from '$lib/domain/cycle';
+	import {
+		cycleTargetSetCount,
+		cycleTargetWeights,
+		cycleWeekTargets
+	} from '$lib/domain/cycleTargets';
+	import { exerciseName } from '$lib/domain/exerciseName';
 	import { clampPlanName } from '$lib/domain/inputLimits';
-	import type { WorkoutPlan } from '$lib/domain/types';
+	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
 	import { planExerciseSlotCount } from '$lib/domain/workout';
 	import { translate, translatePlural } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
@@ -64,6 +71,27 @@
 	let expandedWeek = $state<number | null>(null);
 	let resetOpen = $state(false);
 	let startingPlanId = $state<string | null>(null);
+	/** Catalog rows for names and equipment (bar weight / plate step). */
+	let exerciseIndex = $state<ExerciseIndexItem[]>(peekExerciseIndexWithCustoms() ?? []);
+	let exerciseById = $derived(new Map(exerciseIndex.map((item) => [item.id, item])));
+
+	function equipmentFor(exerciseId: string): string | null {
+		return exerciseById.get(exerciseId)?.equipment ?? null;
+	}
+
+	function exerciseLabel(exerciseId: string): string {
+		const item = exerciseById.get(exerciseId);
+		return item ? exerciseName(item, lang) : exerciseId;
+	}
+
+	/** Sets/reps of the week plus the load the athlete's own history calls for. */
+	function targetRows(plan: WorkoutPlan, week: number) {
+		if (!active) return [];
+		return cycleWeekTargets(plan, week, active, {
+			sessions: $live.history,
+			equipmentFor
+		});
+	}
 
 	function goalLabel(id: AthleteGoalId): string {
 		return translate(lang, `intake.goal.${id}`);
@@ -120,7 +148,15 @@
 			const variant = cycleWeekVariant(plan, week, active, {
 				weekLabel: translate(lang, 'cycle.variantTag', { week })
 			});
-			await live.startFromPlan(variant, { lockPrescription: true });
+			const targets = cycleWeekTargets(plan, week, active, {
+				sessions: $live.history,
+				equipmentFor
+			});
+			// The week's sets/reps/load land in the started session, not only on screen.
+			await live.startFromPlan(variant, {
+				lockPrescription: true,
+				weights: cycleTargetWeights(targets)
+			});
 			toasts.show(translate(lang, 'cycle.startToast', { week }), 'success');
 			await goto(`/live/${plan.id}`);
 		} finally {
@@ -133,6 +169,11 @@
 		if (goals[0]) draftGoal = goals[0];
 		const current = get(cycle);
 		if (current) expandedWeek = cycleProgressNow(current).week;
+		void loadExerciseIndexWithCustoms()
+			.then((items) => (exerciseIndex = items))
+			.catch(() => {
+				// Names fall back to exercise ids; weights fall back to the default plate step.
+			});
 	});
 </script>
 
@@ -341,25 +382,75 @@
 							{#each rows as row (row.planId)}
 								{@const plan = plansById.get(row.planId)}
 								<li class="cycle-week__plan">
-									<span class="cycle-week__plan-name">{row.planName}</span>
-									{#if row.done}
-										<span class="cycle-week__plan-done">
-											<LucideIcon icon={Check} size={ICON_SMALL} />
-											{translate(lang, 'cycle.donePlan')}
-										</span>
-									{:else if plan}
-										<AppButton
-											variant="secondary"
-											class="cycle-week__plan-cta"
-											disabled={startingPlanId !== null}
-											aria-busy={startingPlanId === plan.id}
-											onclick={() => void startWeekPlan(week.week, plan)}
+									<div class="cycle-week__plan-head">
+										<span class="cycle-week__plan-name">{row.planName}</span>
+										{#if row.done}
+											<span class="cycle-week__plan-done">
+												<LucideIcon icon={Check} size={ICON_SMALL} />
+												{translate(lang, 'cycle.donePlan')}
+											</span>
+										{:else if plan}
+											<AppButton
+												variant="secondary"
+												class="cycle-week__plan-cta"
+												disabled={startingPlanId !== null}
+												aria-busy={startingPlanId === plan.id}
+												onclick={() => void startWeekPlan(week.week, plan)}
+											>
+												<LucideIcon icon={Play} size={ICON_SMALL} />
+												{translate(lang, 'cycle.start')}
+											</AppButton>
+										{:else}
+											<span class="cycle-week__plan-done">{translate(lang, 'live.noPlan')}</span>
+										{/if}
+									</div>
+									{#if plan}
+										{@const targets = targetRows(plan, week.week)}
+										<ul
+											class="cycle-week__rx"
+											aria-label={translate(lang, 'cycle.prescriptionTitle')}
 										>
-											<LucideIcon icon={Play} size={ICON_SMALL} />
-											{translate(lang, 'cycle.start')}
-										</AppButton>
-									{:else}
-										<span class="cycle-week__plan-done">{translate(lang, 'live.noPlan')}</span>
+											{#each targets as target, ti (ti)}
+												<li class="cycle-week__rx-row">
+													<span class="cycle-week__rx-name">
+														{exerciseLabel(target.exerciseId)}
+													</span>
+													<span class="cycle-week__rx-nums">
+														<span class="cycle-week__rx-sets">
+															{translate(lang, 'cycle.prescriptionSets', {
+																sets: target.sets,
+																reps: target.reps
+															})}
+														</span>
+														{#if target.weightKg != null}
+															<span class="cycle-week__rx-load">
+																{translate(lang, 'cycle.prescriptionLoad', {
+																	weight: target.weightKg
+																})}
+															</span>
+															{#if target.barKg > 0}
+																<span class="cycle-week__rx-bar">
+																	{translate(lang, 'cycle.prescriptionBar', {
+																		weight: target.barKg
+																	})}
+																</span>
+															{/if}
+														{:else}
+															<span
+																class="cycle-week__rx-load cycle-week__rx-load--open"
+															>
+																{translate(lang, 'cycle.prescriptionOpen')}
+															</span>
+														{/if}
+													</span>
+												</li>
+											{/each}
+										</ul>
+										<p class="cycle-week__rx-total">
+											{translate(lang, 'cycle.setsTotal', {
+												n: cycleTargetSetCount(targets)
+											})}
+										</p>
 									{/if}
 								</li>
 							{/each}

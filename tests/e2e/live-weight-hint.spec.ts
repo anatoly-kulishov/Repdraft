@@ -87,3 +87,45 @@ test('two misses in a row ease the load instead of repeating it forever', async 
 	await expect(hint).toContainText('Снизь до 58 кг × 8');
 	await expect(hint).toContainText('% от 1ПМ');
 });
+
+test('a set taken to failure holds the load, and the EZ bar is part of the number', async ({
+	page
+}) => {
+	const at = new Date().toISOString();
+	const ezPlan = {
+		id: 'plan-ez-curl',
+		name: 'E2E EZ',
+		createdAt: at,
+		updatedAt: at,
+		exercises: [{ exerciseId: '2404', sets: 3, reps: 8, restSec: 90 }]
+	};
+	const ezHistory = {
+		id: 'session-ez-curl',
+		planId: 'plan-ez-curl',
+		planName: 'E2E EZ',
+		startedAt: at,
+		finishedAt: at,
+		exercises: [
+			{
+				exerciseId: '2404',
+				targetSets: 3,
+				targetReps: 8,
+				restSec: 90,
+				sets: [
+					{ weightKg: 20, reps: 8, completed: true, kind: 'work' },
+					{ weightKg: 20, reps: 8, completed: true, kind: 'work' },
+					{ weightKg: 20, reps: 8, completed: true, kind: 'failure' }
+				]
+			}
+		]
+	};
+	await seedLocalStorage(page, {
+		'repdraft:plans': [ezPlan],
+		'repdraft:sessions': [ezHistory]
+	});
+	await gotoApp(page, '/live/plan-ez-curl');
+
+	const hint = page.locator('.live-weight-cue__hint');
+	await expect(hint).toContainText('Держи 20 кг × 8');
+	await expect(hint).toContainText('включая гриф 10 кг');
+});

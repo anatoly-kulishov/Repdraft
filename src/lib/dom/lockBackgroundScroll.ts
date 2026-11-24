@@ -22,6 +22,16 @@ function isScrollableOnAxis(el: HTMLElement, horizontal: boolean): boolean {
 		: el.scrollHeight > el.clientHeight + 1;
 }
 
+/** Innermost ancestor of `target` that can pan on the asked axis. */
+function findScrollable(target: EventTarget | null, horizontal: boolean): HTMLElement | null {
+	let node = target instanceof HTMLElement ? target : null;
+	while (node && node !== document.body) {
+		if (isScrollableOnAxis(node, horizontal)) return node;
+		node = node.parentElement;
+	}
+	return null;
+}
+
 function onTouchStart(event: TouchEvent) {
 	startX = event.touches[0]?.clientX ?? 0;
 	startY = event.touches[0]?.clientY ?? 0;
@@ -32,6 +42,27 @@ function isRangeInput(target: EventTarget | null): boolean {
 	return target instanceof HTMLInputElement && target.type === 'range';
 }
 
+/**
+ * A gesture counts as horizontal only when it clearly is one. The first frame of a
+ * thumb swipe is a few pixels of noise, so picking the axis there can hand a
+ * vertical drag to the horizontal branch — and its preventDefault kills the pan
+ * for the whole gesture on iOS.
+ */
+function isHorizontalGesture(deltaX: number, deltaY: number): boolean {
+	return Math.abs(deltaX) > 6 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5;
+}
+
+/** True when the scroller is already pinned at the edge the finger is pulling past. */
+function pullsPastEdge(node: HTMLElement, horizontal: boolean, deltaX: number, deltaY: number) {
+	const atStart = horizontal ? node.scrollLeft <= 0 : node.scrollTop <= 0;
+	const atEnd = horizontal
+		? node.scrollLeft + node.clientWidth >= node.scrollWidth - 1
+		: node.scrollTop + node.clientHeight >= node.scrollHeight - 1;
+	const beyondStart = horizontal ? deltaX < 0 : deltaY < 0;
+	const beyondEnd = horizontal ? deltaX > 0 : deltaY > 0;
+	return (beyondStart && atStart) || (beyondEnd && atEnd);
+}
+
 function onTouchMove(event: TouchEvent) {
 	if (event.touches.length > 1) return;
 	if (isRangeInput(event.target)) return;
@@ -39,22 +70,19 @@ function onTouchMove(event: TouchEvent) {
 	const y = event.touches[0]?.clientY ?? 0;
 	const deltaX = startX - x;
 	const deltaY = startY - y;
-	const horizontal = Math.abs(deltaX) > Math.abs(deltaY);
-	let node = event.target instanceof HTMLElement ? event.target : null;
-	while (node && node !== document.body) {
-		if (isScrollableOnAxis(node, horizontal)) {
-			const atStart = horizontal ? node.scrollLeft <= 0 : node.scrollTop <= 0;
-			const atEnd = horizontal
-				? node.scrollLeft + node.clientWidth >= node.scrollWidth - 1
-				: node.scrollTop + node.clientHeight >= node.scrollHeight - 1;
-			const beyondStart = horizontal ? deltaX < 0 : deltaY < 0;
-			const beyondEnd = horizontal ? deltaX > 0 : deltaY > 0;
-			if ((beyondStart && atStart) || (beyondEnd && atEnd)) event.preventDefault();
-			return;
-		}
-		node = node.parentElement;
+	let horizontal = isHorizontalGesture(deltaX, deltaY);
+	let node = findScrollable(event.target, horizontal);
+	// Slanted start of a vertical swipe: fall back to the other axis before
+	// cancelling anything, otherwise the sheet stops scrolling mid-gesture.
+	if (!node) {
+		horizontal = !horizontal;
+		node = findScrollable(event.target, horizontal);
 	}
-	event.preventDefault();
+	if (!node) {
+		event.preventDefault();
+		return;
+	}
+	if (pullsPastEdge(node, horizontal, deltaX, deltaY)) event.preventDefault();
 }
 
 function attachListeners() {
