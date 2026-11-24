@@ -41,6 +41,7 @@ function compileDomain() {
 			'src/lib/domain/athleteProfile.ts',
 			'src/lib/domain/replacementCandidates.ts',
 			'src/lib/domain/cycle.ts',
+			'src/lib/domain/cycleTargets.ts',
 			'src/lib/domain/tools.ts',
 			'src/lib/domain/sessionRating.ts',
 			'src/lib/domain/programs.ts',
@@ -95,6 +96,7 @@ function run() {
 	const athleteProfile = require(join(outDir, 'domain', 'athleteProfile.js'));
 	const replacementCandidates = require(join(outDir, 'domain', 'replacementCandidates.js'));
 	const cycleDomain = require(join(outDir, 'domain', 'cycle.js'));
+	const cycleTargets = require(join(outDir, 'domain', 'cycleTargets.js'));
 	const toolsDomain = require(join(outDir, 'domain', 'tools.js'));
 	const sessionRatingDomain = require(join(outDir, 'domain', 'sessionRating.js'));
 	const programsDomain = require(join(outDir, 'domain', 'programs.js'));
@@ -144,6 +146,8 @@ function run() {
 	console.log('✓ replacement candidates self-check');
 	cycleDomain.runCycleSelfCheck();
 	console.log('✓ cycle self-check');
+	cycleTargets.runCycleTargetsSelfCheck();
+	console.log('✓ cycle targets self-check');
 	toolsDomain.runToolsSelfCheck();
 	console.log('✓ tools self-check');
 	sessionRatingDomain.runSessionRatingSelfCheck();

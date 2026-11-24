@@ -10,13 +10,13 @@
 		frequentExercises
 	} from '$lib/domain/exerciseFrequency';
 	import { filterExercises, isBodyPart, uniqueSorted } from '$lib/domain/filters';
-	import { HOME_EQUIPMENT_FILTER } from '$lib/domain/homeKit';
+	import { HOME_EQUIPMENT_FILTER, resolveHomeKitGroups } from '$lib/domain/homeKit';
 	import { exerciseMetaHint, labelBodyPart } from '$lib/domain/labels.ru';
 	import { replacementCandidateItems } from '$lib/domain/replacementCandidates';
 	import type { BodyPart, ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
-	import { homeKitSelection } from '$lib/stores/prefs';
+	import { athleteProfile, homeKitSelection } from '$lib/stores/prefs';
 
 	const SEARCH_CAP = 40;
 	const SUGGEST_CAP = 12;
@@ -33,6 +33,8 @@
 		seedBodyPart?: string | null;
 		/** Replace: the exercise being swapped — drives the smart substitute order. */
 		seedExerciseId?: string | null;
+		/** Replace: ids already in this workout (other slots), never offered as a swap. */
+		excludeIds?: readonly string[];
 		lang: AppLocale;
 		busy?: boolean;
 		onPick: (exerciseId: string) => void;
@@ -46,6 +48,7 @@
 		history = [],
 		seedBodyPart = null,
 		seedExerciseId = null,
+		excludeIds = [],
 		lang,
 		busy = false,
 		onPick,
@@ -92,10 +95,13 @@
 		);
 	});
 
+	/** What the athlete actually trains: a familiar substitute is an easy yes. */
+	let frequentIds = $derived.by(() =>
+		frequentExercises(history, { limit: SUGGEST_CAP }).map((f) => f.exerciseId)
+	);
+
 	let suggestItems = $derived.by(() => {
-		const freq = frequentExercises(history, { limit: SUGGEST_CAP });
-		const ids =
-			freq.length > 0 ? freq.map((f) => f.exerciseId) : [...POPULAR_EXERCISE_IDS];
+		const ids = frequentIds.length > 0 ? frequentIds : [...POPULAR_EXERCISE_IDS];
 		const out: ExerciseIndexItem[] = [];
 		const seen = new Set<string>();
 		for (const id of ids) {
@@ -108,6 +114,16 @@
 		}
 		return out;
 	});
+
+	/**
+	 * Home gear only counts when the athlete really trains at home — a gym athlete
+	 * sees the whole gym catalog.
+	 */
+	let homeKit = $derived(
+		$athleteProfile.trainingPlace === 'home'
+			? resolveHomeKitGroups($homeKitSelection)
+			: null
+	);
 
 	/** The exercise being replaced, when the caller knows it. */
 	let seed = $derived.by(() => (seedExerciseId ? (byId.get(seedExerciseId) ?? null) : null));
@@ -122,7 +138,13 @@
 	 */
 	let smartList = $derived.by(() => {
 		if (!seedZone || zone !== seedZone || !seed || query.trim()) return null;
-		return replacementCandidateItems(catalog, seed, { limit: SEARCH_CAP });
+		return replacementCandidateItems(catalog, seed, {
+			limit: SEARCH_CAP,
+			// Never offer a lift that is already scheduled in this workout.
+			excludeIds,
+			familiarIds: frequentIds,
+			homeKit
+		});
 	});
 
 	/**

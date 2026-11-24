@@ -58,10 +58,10 @@ import {
 } from '@repdraft/domain/session';
 import {
 	exerciseWeightByWeek,
+	loadProfileForEquipment,
 	nextHintMessageKey,
 	nextWeightHint,
-	weightAboveLast,
-	weightStepForEquipment
+	weightAboveLast
 } from '@repdraft/domain/sessionPayoff';
 import { isCardioBodyPart, usesExtraKgField } from '@repdraft/domain/workout';
 import type { ExerciseIndexItem, LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
@@ -1157,8 +1157,10 @@ function WeightCue({
 	const max = Math.max(1, ...weeks.map((week) => week.weightKg ?? 0));
 	const current = exerciseBestWeightKg(session, exerciseId);
 	const raised = weightAboveLast(current, history, exerciseId, session.id);
+	const profile = loadProfileForEquipment(equipment);
 	const hint = nextWeightHint(history, exerciseId, {
-		stepKg: weightStepForEquipment(equipment),
+		stepKg: profile.stepKg,
+		emptyKg: profile.emptyKg,
 		targetReps: session.exercises.find((item) => item.exerciseId === exerciseId)?.targetReps
 	});
 	return (

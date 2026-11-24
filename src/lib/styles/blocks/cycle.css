@@ -419,11 +419,17 @@
 
 .cycle-week__plan {
 	display: flex;
-	align-items: center;
-	gap: 10px;
+	flex-direction: column;
+	gap: 8px;
 	padding: 8px 10px;
 	border-radius: var(--radius-control);
 	background: var(--color-surface-muted);
+}
+
+.cycle-week__plan-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
 }
 
 .cycle-week__plan-name {
@@ -451,6 +457,70 @@
 	min-height: 36px;
 	padding: 0 12px;
 	font-size: 0.8125rem;
+}
+
+/* Per-exercise prescription of the week: «4 × 8 · 20 кг». */
+.cycle-week__rx {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin: 0;
+	padding: 6px 0 0;
+	border-top: 1px solid var(--color-border-soft);
+	list-style: none;
+}
+
+.cycle-week__rx-row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 10px;
+	min-width: 0;
+}
+
+.cycle-week__rx-name {
+	min-width: 0;
+	font-size: 0.8125rem;
+	color: var(--color-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.cycle-week__rx-nums {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 6px;
+	flex: 0 0 auto;
+	font-variant-numeric: tabular-nums;
+}
+
+.cycle-week__rx-sets {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--color-ink);
+}
+
+.cycle-week__rx-load {
+	font-size: 0.8125rem;
+	font-weight: 500;
+	color: var(--color-accent-strong, var(--color-accent));
+}
+
+.cycle-week__rx-load--open {
+	font-weight: 400;
+	color: var(--color-muted-soft);
+}
+
+.cycle-week__rx-bar {
+	font-size: 0.6875rem;
+	color: var(--color-muted-soft);
+}
+
+.cycle-week__rx-total {
+	margin: 0;
+	font-size: 0.6875rem;
+	color: var(--color-muted-soft);
 }
 
 .cycle-footer {

@@ -18,10 +18,10 @@
 	import { isCardioBodyPart, usesExtraKgField } from '$lib/domain/workout';
 	import {
 		exerciseWeightByWeek,
+		loadProfileForEquipment,
 		nextHintMessageKey,
 		nextWeightHint,
-		weightAboveLast,
-		weightStepForEquipment
+		weightAboveLast
 	} from '$lib/domain/sessionPayoff';
 	import { exerciseBestWeightKg, loggedSetKind, setKindMessageKey } from '$lib/domain/session';
 	import type { AppLocale } from '$lib/i18n/locale';
@@ -109,14 +109,37 @@
 
 	let overlay = $state<LiveOverlay>({ kind: 'none' });
 	let noteFocused = $state(false);
-	/** Local note while focused — commit via live.patchExerciseNote. */
+	/** Local note while focused — committed on blur/close, not on every keystroke. */
 	let noteDraft = $state<string | null>(null);
+	/** Typing is local: one write after a pause instead of a session write per character. */
+	const NOTE_COMMIT_MS = 900;
+	let noteTimer: ReturnType<typeof setTimeout> | null = null;
 
 	$effect(() => {
 		exercise.exerciseId;
 		exerciseIndex;
 		noteDraft = null;
 	});
+
+	function commitNote() {
+		if (noteTimer !== null) {
+			clearTimeout(noteTimer);
+			noteTimer = null;
+		}
+		if (noteDraft == null) return;
+		const next = noteDraft;
+		if (next === (exercise.note ?? '')) return;
+		// Silent: the sheet says the note is kept, the global «saving» cue is for sets.
+		live.patchExerciseNote(exerciseIndex, next, { silent: true });
+	}
+
+	function scheduleNoteCommit() {
+		if (noteTimer !== null) clearTimeout(noteTimer);
+		noteTimer = setTimeout(() => {
+			noteTimer = null;
+			commitNote();
+		}, NOTE_COMMIT_MS);
+	}
 
 	let noteText = $derived(noteDraft ?? exercise.note ?? '');
 	let hasNote = $derived(noteText.trim().length > 0);
@@ -131,12 +154,12 @@
 		const next = clampNote(el.value);
 		noteDraft = next;
 		if (el.value !== next) el.value = next;
-		live.patchExerciseNote(exerciseIndex, next);
+		scheduleNoteCommit();
 	}
 
 	function clearNote() {
 		noteDraft = '';
-		live.patchExerciseNote(exerciseIndex, '');
+		commitNote();
 	}
 
 	function titleFor(id: string): string {
@@ -157,6 +180,7 @@
 	}
 
 	function closeOverlay() {
+		commitNote();
 		overlay = { kind: 'none' };
 		noteFocused = false;
 		blurActiveElement();
@@ -279,12 +303,14 @@
 	let weightUp = $derived(
 		weightAboveLast(currentBest, $live.history, exercise.exerciseId, session.id)
 	);
-	let nextHint = $derived(
-		nextWeightHint($live.history, exercise.exerciseId, {
-			stepKg: weightStepForEquipment(exerciseMeta?.equipment),
+	let nextHint = $derived.by(() => {
+		const profile = loadProfileForEquipment(exerciseMeta?.equipment);
+		return nextWeightHint($live.history, exercise.exerciseId, {
+			stepKg: profile.stepKg,
+			emptyKg: profile.emptyKg,
 			targetReps: exercise.targetReps
-		})
-	);
+		});
+	});
 
 	function onRepsKeydown(e: KeyboardEvent, si: number) {
 		if (e.key !== 'Enter') return;
@@ -333,6 +359,10 @@
 			})}{#if nextHint.percentOfMax != null}<span class="live-weight-cue__percent"
 					>{' · '}{translate(lang, 'quest.ofMax', {
 						percent: String(nextHint.percentOfMax)
+					})}</span
+				>{/if}{#if nextHint.barKg > 0}<span class="live-weight-cue__percent"
+					>{' · '}{translate(lang, 'quest.barIncluded', {
+						weight: String(nextHint.barKg)
 					})}</span
 				>{/if}
 		</p>
@@ -838,6 +868,7 @@
 					}}
 					onblur={() => {
 						noteFocused = false;
+						commitNote();
 					}}
 					oninput={onNoteInput}
 					onkeydown={(e) => {

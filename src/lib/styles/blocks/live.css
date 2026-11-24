@@ -1102,6 +1102,10 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	gap: 0.15rem;
 	max-height: min(52vh, 24rem);
 	overflow-y: auto;
+	/* The one and only scroller of this sheet: own pan axis, no chaining into
+	   the card / page behind (iOS was scrolling the wrong box). */
+	touch-action: pan-y;
+	overscroll-behavior: contain;
 	-webkit-overflow-scrolling: touch;
 }
 
@@ -1187,21 +1191,31 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	.bottom-sheet__card {
 	display: flex;
 	flex-direction: column;
-	/* Never taller than the screen: the card used to clip its own header as soon
-	   as the content grew. The results list takes the remaining height. */
-	max-height: calc(
-		var(--app-vh, 100dvh) - var(--mobile-chrome-bottom, 0px) -
-			max(1rem, var(--safe-top, 0px)) - 1rem
+	/* Never taller than the screen. `100%` is the host's content box — the real
+	   visible height minus safe areas — while `--app-vh` is a grow-only floor and
+	   can be taller than what iOS shows with its URL bar out. */
+	max-height: min(
+		100%,
+		calc(
+			var(--app-vh, 100dvh) - var(--mobile-chrome-bottom, 0px) -
+				max(1rem, var(--safe-top, 0px)) - 1rem
+		)
 	);
 	max-width: min(100%, 26rem);
-	/* Last-resort scroll: the results list shrinks first, but on a very short
-	   screen the card scrolls instead of clipping its own title. */
-	overflow-y: auto;
+	/* The results list is the only scroller: a card that scrolls too made a
+	   nested pair of same-axis scrollers, which iOS refuses to drag. */
+	overflow: hidden;
 }
 
-/* Short screens / landscape: one column, one scroller. A ~6rem list with its own
-   scroll inside a card that also scrolls is a nested-scroll trap. */
+/* Short screens / landscape: one column, one scroller. The card takes over the
+   scroll (the list keeps its full height) so the header stays reachable. */
 @media (max-height: 640px) {
+	[data-slot='sheet-content'][data-side='bottom'].bottom-sheet:has(.live-exercise-pick)
+		.bottom-sheet__card {
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
 	[data-slot='sheet-content'][data-side='bottom'].bottom-sheet:has(.live-exercise-pick)
 		.bottom-sheet__card
 		.live-exercise-pick__list {

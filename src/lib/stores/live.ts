@@ -108,16 +108,23 @@ function createLiveStore() {
 		historyHydrated: false
 	});
 
-	function persistActive(session: WorkoutSession | null, restUntil: number | null) {
-		syncState.beginLocalSave();
+	function persistActive(
+		session: WorkoutSession | null,
+		restUntil: number | null,
+		opts?: { silent?: boolean }
+	) {
+		const silent = opts?.silent === true;
+		if (!silent) syncState.beginLocalSave();
 		try {
 			writeActiveSession(session);
 			if (typeof localStorage !== 'undefined') {
 				if (restUntil == null) localStorage.removeItem(REST_UNTIL_KEY);
 				else localStorage.setItem(REST_UNTIL_KEY, String(restUntil));
 			}
-			syncState.markLocalSaved();
+			if (!silent) syncState.markLocalSaved();
 		} catch (err) {
+			// A silent write still has to report a failed save.
+			if (silent) syncState.beginLocalSave();
 			syncState.markLocalSaveError();
 			throw err;
 		}
@@ -302,10 +309,15 @@ function createLiveStore() {
 		refreshHistory,
 		async startFromPlan(
 			plan: WorkoutPlan,
-			options?: { lockPrescription?: boolean }
+			options?: { lockPrescription?: boolean; weights?: ReadonlyMap<string, number> }
 		): Promise<WorkoutSession> {
 			const history = get(store).history;
-			const session = seedFromHistory(startSessionFromPlan(plan, options), history);
+			const started = startSessionFromPlan(plan, options);
+			// A locked «today» variant (cycle week) prescribes its own sets and reps:
+			// history may fill a missing load, never rewrite the prescription.
+			const session = options?.lockPrescription
+				? fillWeightsFromHistory(started, history)
+				: seedFromHistory(started, history);
 			persistActive(session, null);
 			store.update((s) => ({ ...s, session, restUntil: null }));
 			void refreshHistory();
@@ -362,12 +374,12 @@ function createLiveStore() {
 			}
 			store.set({ ...prev, session, restUntil });
 		},
-		patchExerciseNote(exerciseIndex: number, note: string) {
+		patchExerciseNote(exerciseIndex: number, note: string, opts?: { silent?: boolean }) {
 			store.update((s) => {
 				if (!s.session) return s;
 				const session = updateExerciseNote(s.session, exerciseIndex, note);
 				if (session === s.session) return s;
-				persistActive(session, s.restUntil);
+				persistActive(session, s.restUntil, opts);
 				return { ...s, session };
 			});
 		},

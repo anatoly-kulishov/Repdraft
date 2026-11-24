@@ -3,7 +3,7 @@
  */
 import { weekKeyFromDate } from './quest';
 import { exerciseBestWeightKg, sessionVolumeKg } from './sessionStats';
-import { isProgressSet } from './sessionSetKind';
+import { isProgressSet, loggedSetKind } from './sessionSetKind';
 import type { WorkoutSession } from './types';
 
 export type FigureZone = 'chest' | 'shoulders' | 'arms' | 'back' | 'legs' | 'core';
@@ -122,7 +122,15 @@ export function suggestRaiseExerciseId(sessions: readonly WorkoutSession[]): str
 	return null;
 }
 
-export type NextWeightKind = 'raise' | 'repeat' | 'ease' | 'wave';
+export type NextWeightKind =
+	| 'raise'
+	| 'repeat'
+	| 'ease'
+	| 'wave'
+	/** Plan closed, but the top set went to failure: the load is the ceiling. */
+	| 'failure-hold'
+	/** Failure before the prescribed sets/reps: back off instead of grinding the same bar. */
+	| 'failure-ease';
 
 export type NextWeightHint = {
 	weightKg: number;
@@ -132,15 +140,34 @@ export type NextWeightHint = {
 	 * repeat: plan missed or target reps went up, keep the weight.
 	 * ease: missed twice in a row, back off a plate.
 	 * wave: every 4th exposure, an easier week.
+	 * failure-hold: closed the plan but the top set went to failure, hold the load.
+	 * failure-ease: failed before the plan, drop a step.
 	 */
 	kind: NextWeightKind;
 	/** Estimated one-rep max behind the number (Epley, best recent exposure). */
 	oneRepMaxKg: number | null;
 	/** Planned weight as a whole percent of `oneRepMaxKg`. */
 	percentOfMax: number | null;
+	/** Weight of the empty implement included in `weightKg` (bar), 0 when not applicable. */
+	barKg: number;
+};
+
+/**
+ * What the gear can actually be loaded to. The bar itself is part of the number,
+ * so the prescription never falls below an empty bar and always lands on a plate
+ * combination the athlete can build.
+ */
+export type LoadProfile = {
+	/** Smallest real jump the gear offers. */
+	stepKg: number;
+	/** Weight of the empty implement (bar); 0 for dumbbells, stacks and bodyweight. */
+	emptyKg: number;
 };
 
 const PLATE_KG = 2.5;
+/** Common bar weights: a standard bar is 20 kg, an EZ / SZ curl bar about 10 kg. */
+const BAR_KG = 20;
+const EZ_BAR_KG = 10;
 /** Epley extrapolates from a submaximal set; past 12 reps it measures endurance, not strength. */
 const ORM_MAX_REPS = 12;
 /** How many recent exposures feed the 1RM estimate. */
@@ -157,20 +184,39 @@ function roundTenth(kg: number): number {
 }
 
 /** Snap to a real load jump: 2.5 kg on a barbell, 2 kg on dumbbells, 4 kg on kettlebells. */
-function roundToStep(kg: number, step: number): number {
+export function roundToStep(kg: number, step: number): number {
 	return roundTenth(Math.round(kg / step) * step);
 }
 
 /**
- * Smallest load jump the gear actually offers. Barbells and stacks move by
- * 2.5 kg, dumbbell pairs by 2 kg, kettlebells by 4 kg: suggesting 62.5 kg on a
- * dumbbell rack is advice the gym cannot follow.
+ * Smallest load jump the gear actually offers, plus the weight of the empty
+ * implement. Barbells and stacks move by 2.5 kg, dumbbell pairs by 2 kg,
+ * kettlebells by 4 kg: suggesting 62.5 kg on a dumbbell rack is advice the gym
+ * cannot follow, and 12.5 kg on a 20 kg bar is not a load at all.
  */
-export function weightStepForEquipment(equipment: string | null | undefined): number {
+export function loadProfileForEquipment(equipment: string | null | undefined): LoadProfile {
 	const key = (equipment ?? '').trim().toLowerCase();
-	if (key === 'dumbbell') return 2;
-	if (key === 'kettlebell') return 4;
-	return PLATE_KG;
+	if (key === 'dumbbell') return { stepKg: 2, emptyKg: 0 };
+	if (key === 'kettlebell') return { stepKg: 4, emptyKg: 0 };
+	if (key === 'ez barbell') return { stepKg: PLATE_KG, emptyKg: EZ_BAR_KG };
+	if (key === 'barbell' || key === 'olympic barbell' || key === 'trap bar') {
+		return { stepKg: PLATE_KG, emptyKg: BAR_KG };
+	}
+	// Cables, stacks, machines, bands, bodyweight: any plate-sized step, no bar floor.
+	return { stepKg: PLATE_KG, emptyKg: 0 };
+}
+
+/** Smallest load jump the gear actually offers (kept for callers that only need the step). */
+export function weightStepForEquipment(equipment: string | null | undefined): number {
+	return loadProfileForEquipment(equipment).stepKg;
+}
+
+/** Nearest load the gear can be set to, never below the empty implement. */
+export function snapLoad(kg: number, profile: LoadProfile): number {
+	const step = Math.max(0.5, profile.stepKg);
+	const empty = Math.max(0, profile.emptyKg);
+	const steps = Math.max(0, Math.round((kg - empty) / step));
+	return roundTenth(empty + steps * step);
 }
 
 /** Half-kilo display value for the estimated max. */
@@ -195,6 +241,11 @@ function weightForReps(oneRepMaxKg: number, reps: number): number {
 /**
  * Best estimated 1RM of one exercise across recent finished exposures. Not
  * all-time: after a long break the old peak is no longer the current athlete.
+ *
+ * Sets marked «в отказ» win: a set taken to failure is a real rep-max, while a
+ * set stopped short only puts a floor under the estimate (reps left in reserve
+ * are invisible). So when the athlete has marked failure, the number comes from
+ * those sets and the next prescription is built on the true limit.
  */
 export function exerciseOneRepMax(
 	sessions: readonly WorkoutSession[],
@@ -207,14 +258,19 @@ export function exerciseOneRepMax(
 		.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''));
 	let exposureCount = 0;
 	let best: number | null = null;
+	let bestFailure: number | null = null;
 	for (const session of ordered) {
 		const top = topWork(session, exerciseId);
 		if (!top) continue;
 		exposureCount += 1;
 		if (top.e1rmKg != null && (best == null || top.e1rmKg > best)) best = top.e1rmKg;
+		if (top.failureE1rmKg != null && (bestFailure == null || top.failureE1rmKg > bestFailure)) {
+			bestFailure = top.failureE1rmKg;
+		}
 		if (exposureCount >= limit) break;
 	}
-	return best == null ? null : roundHalf(best);
+	const picked = bestFailure ?? best;
+	return picked == null ? null : roundHalf(picked);
 }
 
 type TopWork = {
@@ -225,6 +281,10 @@ type TopWork = {
 	targetReps: number;
 	/** Best Epley estimate among the working sets of this exposure. */
 	e1rmKg: number | null;
+	/** Best estimate among the sets the athlete took to failure. */
+	failureE1rmKg: number | null;
+	/** Any working set of this exposure was marked «в отказ». */
+	hasFailure: boolean;
 };
 
 /** Heaviest working sets of one exercise. Reps are the lowest at that weight. */
@@ -250,10 +310,15 @@ function topWork(session: WorkoutSession, exerciseId: string): TopWork | null {
 		if (value < reps) reps = value;
 	}
 	let e1rmKg: number | null = null;
+	let failureE1rmKg: number | null = null;
+	let hasFailure = false;
 	for (const set of progress) {
 		const estimate = estimateSetOneRepMax(set.weightKg ?? 0, set.reps ?? 0);
 		if (estimate == null) continue;
 		if (e1rmKg == null || estimate > e1rmKg) e1rmKg = estimate;
+		if (loggedSetKind(set) !== 'failure') continue;
+		hasFailure = true;
+		if (failureE1rmKg == null || estimate > failureE1rmKg) failureE1rmKg = estimate;
 	}
 	return {
 		weightKg,
@@ -261,15 +326,16 @@ function topWork(session: WorkoutSession, exerciseId: string): TopWork | null {
 		setsAtWeight: atTop.length,
 		targetSets: ex.targetSets,
 		targetReps: ex.targetReps,
-		e1rmKg
+		e1rmKg,
+		failureE1rmKg,
+		hasFailure
 	};
 }
 
-function lighterWave(weightKg: number, step: number): number {
-	const eased = roundToStep(weightKg * WAVE_RATIO, step);
+function lighterWave(weightKg: number, profile: LoadProfile): number {
+	const eased = snapLoad(weightKg * WAVE_RATIO, profile);
 	if (eased > 0 && eased < weightKg) return eased;
-	const stepped = roundTenth(weightKg - step);
-	return stepped > 0 ? stepped : weightKg;
+	return lowerByStep(weightKg, profile);
 }
 
 /** Did the athlete close the planned sets and reps in this exposure? */
@@ -300,14 +366,19 @@ function consecutiveMisses(
  * fixed plate.
  *
  * - The estimate reads the best recent set (`w × (1 + reps / 30)`), so reps
- *   matter: 60 × 10 says more than 60 × 8;
+ *   matter: 60 × 10 says more than 60 × 8. Sets marked «в отказ» are the real
+ *   rep-max and win the estimate (see `exerciseOneRepMax`);
  * - the planned load is the share of that max the target reps call for
- *   (about 79% for 8 reps), rounded to the gear's real step (2.5 kg bar,
- *   2 kg dumbbells, 4 kg kettlebells). The target comes from today's
- *   prescription when the caller passes it (cycle weeks change reps);
+ *   (about 79% for 8 reps), snapped to a load the gear can be built to: 2.5 kg
+ *   steps and the empty bar (20 kg) for a barbell, 10 kg for an EZ bar, 2 kg
+ *   dumbbells, 4 kg kettlebells. The target comes from today's prescription
+ *   when the caller passes it (cycle weeks change reps);
  * - closed the plan: take that load, but never less than one step and never
  *   more than +10% over the last top weight (a 12-rep set must not jump 7.5 kg);
+ * - hit, but the top set went to failure: the load is the ceiling, hold it;
  * - missed once: keep the weight;
+ * - missed, and the failure came before the prescribed sets/reps: back off a
+ *   step instead of grinding the same bar;
  * - hit, but the recent max is a whole step below the load for these reps
  *   (lagging estimate, higher rep target): keep it too, a raise would miss;
  * - missed twice in a row: back off one step (`ease`) instead of repeating a
@@ -317,9 +388,17 @@ function consecutiveMisses(
 export function nextWeightHint(
 	sessions: readonly WorkoutSession[],
 	exerciseId: string,
-	opts: { stepKg?: number; targetReps?: number } = {}
+	opts: {
+		stepKg?: number;
+		/** Empty implement weight included in the loads; a bar exercise never goes under it. */
+		emptyKg?: number;
+		targetReps?: number;
+	} = {}
 ): NextWeightHint | null {
-	const step = Math.max(0.5, opts.stepKg ?? PLATE_KG);
+	const profile: LoadProfile = {
+		stepKg: Math.max(0.5, opts.stepKg ?? PLATE_KG),
+		emptyKg: Math.max(0, opts.emptyKg ?? 0)
+	};
 	const exposures = sessions
 		.filter((session) => session.finishedAt != null && topWork(session, exerciseId) != null)
 		.sort((a, b) => (b.finishedAt ?? '').localeCompare(a.finishedAt ?? ''));
@@ -333,7 +412,7 @@ export function nextWeightHint(
 		opts.targetReps ?? (top.targetReps > 0 ? top.targetReps : top.reps > 0 ? top.reps : 8)
 	);
 	const oneRepMaxKg = exerciseOneRepMax(sessions, exerciseId);
-	const fromMax = oneRepMaxKg == null ? null : roundToStep(weightForReps(oneRepMaxKg, aimReps), step);
+	const fromMax = oneRepMaxKg == null ? null : snapLoad(weightForReps(oneRepMaxKg, aimReps), profile);
 	const missed = !closedPlan(top);
 	const waveDue = exposures.length % 4 === 3;
 
@@ -341,17 +420,26 @@ export function nextWeightHint(
 	let kind: NextWeightKind;
 	if (waveDue) {
 		kind = 'wave';
-		const eased = lighterWave(fromMax ?? top.weightKg, step);
-		weightKg = eased < top.weightKg ? eased : lowerByStep(top.weightKg, step);
+		const eased = lighterWave(fromMax ?? top.weightKg, profile);
+		weightKg = eased < top.weightKg ? eased : lowerByStep(top.weightKg, profile);
+	} else if (top.hasFailure) {
+		// «В отказ» is the athlete's real limit: adding load there is a guaranteed miss.
+		if (missed) {
+			kind = 'failure-ease';
+			weightKg = lowerByStep(top.weightKg, profile);
+		} else {
+			kind = 'failure-hold';
+			weightKg = roundTenth(top.weightKg);
+		}
 	} else if (missed) {
 		if (consecutiveMisses(exposures, exerciseId) >= MISSES_BEFORE_EASE) {
 			kind = 'ease';
-			weightKg = lowerByStep(top.weightKg, step);
+			weightKg = lowerByStep(top.weightKg, profile);
 		} else {
 			kind = 'repeat';
 			weightKg = roundTenth(top.weightKg);
 		}
-	} else if (fromMax != null && fromMax <= roundTenth(top.weightKg - step)) {
+	} else if (fromMax != null && fromMax <= roundTenth(top.weightKg - profile.stepKg)) {
 		// The recent max is a whole step below the last top weight for these reps
 		// (lagging estimate): hold instead of adding, a raise would miss again.
 		kind = 'repeat';
@@ -359,8 +447,8 @@ export function nextWeightHint(
 	} else {
 		kind = 'raise';
 		const cap = roundTenth(top.weightKg * MAX_RAISE_RATIO);
-		const floor = stepUp(top.weightKg, step);
-		const wanted = roundToStep(Math.min(fromMax ?? floor, cap), step);
+		const floor = stepUp(top.weightKg, profile);
+		const wanted = snapLoad(Math.min(fromMax ?? floor, cap), profile);
 		weightKg = Math.max(floor, wanted);
 	}
 
@@ -368,24 +456,31 @@ export function nextWeightHint(
 		oneRepMaxKg != null && oneRepMaxKg > 0
 			? Math.round((weightKg / oneRepMaxKg) * 100)
 			: null;
-	return { weightKg, reps: aimReps, kind, oneRepMaxKg, percentOfMax };
+	return {
+		weightKg,
+		reps: aimReps,
+		kind,
+		oneRepMaxKg,
+		percentOfMax,
+		barKg: profile.emptyKg
+	};
 }
 
-/** Smallest gym-plausible load above `weightKg`: follows the rack, not a pure grid. */
-function stepUp(weightKg: number, step: number): number {
-	const candidates = [
-		roundTenth(weightKg + step),
-		roundToStep(weightKg + step, step),
-		roundTenth(roundToStep(weightKg, step) + step)
-	].filter((value) => value > weightKg + 0.001);
-	candidates.sort((a, b) => a - b);
-	return candidates[0] ?? roundTenth(weightKg + step);
+/** Smallest achievable load above `weightKg` on this gear's grid. */
+function stepUp(weightKg: number, profile: LoadProfile): number {
+	const next = snapLoad(weightKg + profile.stepKg, profile);
+	if (next > weightKg + 0.001) return next;
+	const stepped = roundTenth(Math.max(weightKg, profile.emptyKg) + profile.stepKg);
+	return stepped > weightKg + 0.001 ? stepped : roundTenth(weightKg + profile.stepKg);
 }
 
-/** One step down, never past the smallest load the math can produce. */
-function lowerByStep(weightKg: number, step: number): number {
-	const lowered = roundToStep(weightKg - step, step);
-	return lowered > 0 ? lowered : roundTenth(weightKg);
+/** One step down, never past the empty implement. */
+function lowerByStep(weightKg: number, profile: LoadProfile): number {
+	const lowered = snapLoad(weightKg - profile.stepKg, profile);
+	if (lowered > 0 && lowered < weightKg && lowered >= profile.emptyKg) return lowered;
+	const floor = profile.emptyKg > 0 ? profile.emptyKg : 0;
+	const stepped = roundTenth(weightKg - profile.stepKg);
+	return stepped >= floor ? stepped : Math.max(floor, roundTenth(weightKg));
 }
 
 export function nextHintMessageKey(kind: NextWeightKind): string {
@@ -398,6 +493,10 @@ export function nextHintMessageKey(kind: NextWeightKind): string {
 			return 'quest.nextHintEase';
 		case 'wave':
 			return 'quest.nextHintWave';
+		case 'failure-hold':
+			return 'quest.nextHintFailureHold';
+		case 'failure-ease':
+			return 'quest.nextHintFailureEase';
 		default: {
 			const exhaustive: never = kind;
 			return exhaustive;
@@ -424,7 +523,7 @@ export function weightAboveLast(
 function hintSession(
 	id: string,
 	at: string,
-	sets: { weightKg: number; reps: number }[],
+	sets: { weightKg: number; reps: number; kind?: 'work' | 'failure' }[],
 	targetSets = 3,
 	targetReps = 8
 ): WorkoutSession {
@@ -444,7 +543,7 @@ function hintSession(
 					weightKg: set.weightKg,
 					reps: set.reps,
 					completed: true,
-					kind: 'work' as const
+					kind: set.kind ?? ('work' as const)
 				}))
 			}
 		]
@@ -637,6 +736,77 @@ export function runSessionPayoffSelfCheck(): void {
 	if (nextWeightHint([], 'squat') != null) {
 		throw new Error('no history must not invent a weight');
 	}
+
+	// «В отказ» on a closed plan: the load is the ceiling, do not raise.
+	const failedClosed = hintSession('f1', '2026-01-06T10:00:00.000Z', [
+		{ weightKg: 60, reps: 8 },
+		{ weightKg: 60, reps: 8 },
+		{ weightKg: 60, reps: 8, kind: 'failure' }
+	]);
+	const held = nextWeightHint([failedClosed], 'squat');
+	if (!held || held.kind !== 'failure-hold' || held.weightKg !== 60) {
+		throw new Error(`failure at the top must hold the load, got ${held?.kind} ${held?.weightKg}`);
+	}
+	// Failure before the prescription closes: a step down, not the same bar again.
+	const failedShort = hintSession('f2', '2026-01-07T10:00:00.000Z', [
+		{ weightKg: 60, reps: 8 },
+		{ weightKg: 60, reps: 5, kind: 'failure' },
+		{ weightKg: 60, reps: 5, kind: 'failure' }
+	]);
+	const backedOff = nextWeightHint([failedShort], 'squat');
+	if (!backedOff || backedOff.kind !== 'failure-ease' || backedOff.weightKg !== 57.5) {
+		throw new Error(`failure before the plan must ease, got ${backedOff?.kind} ${backedOff?.weightKg}`);
+	}
+	// A failure set is a true rep-max: the estimate comes from it, not from an
+	// easier submaximal set earlier in the same exposure.
+	const failureEstimate = hintSession('f3', '2026-01-08T10:00:00.000Z', [
+		{ weightKg: 80, reps: 5, kind: 'failure' },
+		{ weightKg: 60, reps: 12 }
+	], 2, 5);
+	if (exerciseOneRepMax([failureEstimate], 'squat') !== 93.5) {
+		throw new Error(
+			`failure sets own the 1RM, got ${exerciseOneRepMax([failureEstimate], 'squat')}`
+		);
+	}
+
+	// Bar weight: an EZ bar is ~10 kg and never prescribes less than the empty bar.
+	const ez = loadProfileForEquipment('ez barbell');
+	if (ez.stepKg !== 2.5 || ez.emptyKg !== 10) {
+		throw new Error(`EZ bar profile drifted: ${ez.stepKg} / ${ez.emptyKg}`);
+	}
+	if (loadProfileForEquipment('barbell').emptyKg !== 20) {
+		throw new Error('standard bar must be 20 kg');
+	}
+	if (loadProfileForEquipment('dumbbell').emptyKg !== 0) {
+		throw new Error('a dumbbell has no bar floor');
+	}
+	if (snapLoad(12.5, { stepKg: 2.5, emptyKg: 20 }) !== 20) {
+		throw new Error('a 20 kg bar cannot be loaded to 12.5 kg');
+	}
+	if (snapLoad(21, { stepKg: 2.5, emptyKg: 20 }) !== 20 || snapLoad(24, { stepKg: 2.5, emptyKg: 20 }) !== 25) {
+		throw new Error('bar loads must land on 20 + n × 2.5');
+	}
+	// Low-weight isolation on an EZ bar: the prescription keeps the bar in the number.
+	const ezHint = nextWeightHint(
+		[hintSession('e1', '2026-01-09T10:00:00.000Z', [
+			{ weightKg: 20, reps: 8 },
+			{ weightKg: 20, reps: 8 },
+			{ weightKg: 20, reps: 8 }
+		], 3, 8)],
+		'squat',
+		{ stepKg: 2.5, emptyKg: 10 }
+	);
+	if (!ezHint || ezHint.barKg !== 10 || ezHint.weightKg < 10) {
+		throw new Error(`EZ prescription must keep the bar, got ${ezHint?.weightKg}`);
+	}
+	// 10 kg EZ bar + n × 2.5 kg plates, never an off-grid "12.5 kg" load.
+	if ((ezHint.weightKg - 10) % 2.5 !== 0) {
+		throw new Error(`EZ load must sit on the bar grid, got ${ezHint.weightKg}`);
+	}
+	if (ezHint.oneRepMaxKg !== 25.5) {
+		throw new Error(`EZ 1RM basis drifted, got ${ezHint.oneRepMaxKg}`);
+	}
+
 	if (nextHintMessageKey('raise') !== 'quest.nextHint') {
 		throw new Error('raise hint key drifted');
 	}
@@ -645,5 +815,11 @@ export function runSessionPayoffSelfCheck(): void {
 	}
 	if (nextHintMessageKey('wave') !== 'quest.nextHintWave') {
 		throw new Error('wave hint key drifted');
+	}
+	if (
+		nextHintMessageKey('failure-hold') !== 'quest.nextHintFailureHold' ||
+		nextHintMessageKey('failure-ease') !== 'quest.nextHintFailureEase'
+	) {
+		throw new Error('failure hint keys drifted');
 	}
 }
