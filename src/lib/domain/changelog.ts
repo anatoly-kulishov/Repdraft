@@ -14,6 +14,25 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.30.0',
+		highlights: {
+			ru: [
+				'Цикл показывает подходы, повторы и вес по каждому упражнению, а тренировка стартует уже с ними',
+				'Отказ — главный сигнал: после отказа на верхнем весе нагрузка держится, а ранний отказ снижает вес',
+				'Вес считается от грифа: обычная штанга 20 кг, EZ-гриф 10 кг, шаг под снаряд; в подсказке видно, что гриф уже внутри',
+				'Заметка в тренировке больше не сохраняется на каждый символ: пишется после паузы или при закрытии',
+				'Замена упражнения: шторка снова скроллится, а в списке нет упражнений из сегодняшней тренировки и каталожных дублей'
+			],
+			en: [
+				'The cycle shows sets, reps and load per exercise, and the workout starts with them already filled in',
+				'Failure is the main signal: a failed top set holds the load, failing early backs off',
+				'Loads include the bar: a 20 kg bar, a 10 kg EZ bar, and real jumps per implement',
+				'Workout notes no longer save on every character: they write after a pause or when the sheet closes',
+				'Exercise swap: the sheet scrolls again, and the list skips today’s lifts and catalog duplicates'
+			]
+		}
+	},
+	{
 		version: '0.29.2',
 		highlights: {
 			ru: [
