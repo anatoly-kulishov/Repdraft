@@ -28,8 +28,10 @@ import {
 	groupBounds,
 	groupMemberRole,
 	hasLadderScheme,
+	isTimedMeasure,
 	moveByArrow,
 	removeExercise,
+	timingMeasureFor,
 	updateExercise,
 	updateGroupRest,
 	updateGroupSets
@@ -538,7 +540,10 @@ export default function BuilderScreen() {
 										{exerciseDisplayName(item.exerciseId, locale)}
 									</Text>
 									<Text style={styles.meta}>
-										{formatExercisePrescription(item)}
+										{formatExercisePrescription(item, {
+											seconds: tt('common.sec'),
+											minutes: tt('common.min')
+										})}
 										{metaHint ? ` · ${metaHint}` : meta?.equipment ? ` · ${meta.equipment}` : ''}
 									</Text>
 								</View>
@@ -607,7 +612,13 @@ export default function BuilderScreen() {
 								<Text style={styles.times}>×</Text>
 								<Stepper
 									styles={styles}
-									label={tt('common.reps')}
+									label={
+										item.measure === 'minutes'
+											? tt('builder.minutes')
+											: isTimedMeasure(item)
+												? tt('builder.seconds')
+												: tt('common.reps')
+									}
 									value={item.reps}
 									onDec={() =>
 										void persist(
@@ -663,6 +674,34 @@ export default function BuilderScreen() {
 										const scheme = buildLadderScheme(item.reps, Math.max(1, item.reps - 4));
 										void persist(updateExercise(plan, item.exerciseId, { repsScheme: scheme }));
 									}
+								}}
+							/>
+							{/* Holds count seconds, steady cardio minutes: switch the rep field to time. */}
+							<PrimaryButton
+								label={isTimedMeasure(item) ? tt('builder.useReps') : tt('builder.useTime')}
+								variant="ghost"
+								compact
+								onPress={() => {
+									const nextTimed = !isTimedMeasure(item);
+									const nextMeasure = nextTimed
+										? timingMeasureFor(meta?.body_part)
+										: undefined;
+									const reps = nextTimed
+										? nextMeasure === 'minutes'
+											? 20
+											: item.reps <= 20
+												? 30
+												: item.reps
+										: item.reps > 30
+											? 10
+											: item.reps;
+									void persist(
+										updateExercise(plan, item.exerciseId, {
+											measure: nextMeasure,
+											reps,
+											...(nextTimed ? { repsScheme: undefined } : {})
+										})
+									);
 								}}
 							/>
 						</View>

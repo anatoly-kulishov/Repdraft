@@ -14,8 +14,9 @@
 	import { isCustomExerciseId } from '$lib/domain/customExercises';
 	import { exerciseMetaHint } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, SessionExercise, SetKind, WorkoutSession } from '$lib/domain/types';
-	import { NOTE_MAX, REPS_INPUT_MAX_LEN, WEIGHT_INPUT_MAX_LEN, clampNote } from '$lib/domain/inputLimits';
-	import { isCardioBodyPart, usesExtraKgField } from '$lib/domain/workout';
+	import { NOTE_MAX, LIVE_REPS, REPS_INPUT_MAX_LEN, WEIGHT_INPUT_MAX_LEN, clampNote } from '$lib/domain/inputLimits';
+	import { isCardioBodyPart, isTimedMeasure, usesExtraKgField } from '$lib/domain/workout';
+	import { formatRestSec } from '$lib/i18n/format';
 	import {
 		exerciseWeightByWeek,
 		loadProfileForEquipment,
@@ -36,6 +37,7 @@
 		ArrowsLeftRight as Replace,
 		SkipForward,
 		Note as StickyNote,
+		Timer as TimerIcon,
 		Trash as Trash2,
 		X,
 	} from 'phosphor-svelte';
@@ -221,6 +223,69 @@
 		});
 	});
 	let cardio = $derived(isCardioBodyPart(names.get(exercise.exerciseId)?.body_part));
+	/** Duration set: a hold in seconds or steady cardio in minutes. */
+	let measure = $derived(exercise.measure);
+	let timed = $derived(isTimedMeasure(exercise));
+	let minutes = $derived(measure === 'minutes');
+	let repsLabel = $derived(
+		translate(lang, minutes ? 'live.minutes' : timed ? 'live.seconds' : 'live.reps')
+	);
+
+	let timingSet = $state<number | null>(null);
+	let timingFrom = $state(0);
+	let timingNow = $state(0);
+	let tickTimer: ReturnType<typeof setInterval> | null = null;
+
+	function stopTicker() {
+		if (tickTimer !== null) {
+			clearInterval(tickTimer);
+			tickTimer = null;
+		}
+	}
+
+	function timerSeconds(): number {
+		return Math.max(0, Math.floor((timingNow - timingFrom) / 1000));
+	}
+
+	/** Stop the stopwatch. `log` writes the measured duration and marks the set done. */
+	function stopSetTimer(log: boolean) {
+		const si = timingSet;
+		if (si == null) return;
+		const elapsedSec = Math.round((Date.now() - timingFrom) / 1000);
+		const value = Math.min(
+			LIVE_REPS.max,
+			Math.max(1, minutes ? Math.round(elapsedSec / 60) : elapsedSec)
+		);
+		stopTicker();
+		timingSet = null;
+		if (!log) return;
+		onReps(si, String(value));
+		onComplete(si);
+	}
+
+	function toggleSetTimer(si: number) {
+		if (timingSet === si) {
+			stopSetTimer(true);
+			return;
+		}
+		if (timingSet !== null) stopSetTimer(false);
+		timingSet = si;
+		timingFrom = Date.now();
+		timingNow = timingFrom;
+		stopTicker();
+		tickTimer = setInterval(() => {
+			timingNow = Date.now();
+		}, 250);
+	}
+
+	// A stopwatch belongs to the exercise that started it: switching drops the reading.
+	$effect(() => {
+		exerciseIndex;
+		timingSet = null;
+		stopTicker();
+		return stopTicker;
+	});
+
 	let notePh = $derived(translate(lang, cardio ? 'live.notePhCardio' : 'live.notePh'));
 	let weightLabel = $derived(
 		translate(lang, bodyweight ? 'live.weightBw' : 'live.weight')
@@ -266,8 +331,12 @@
 	);
 	let fillRepsAllLabel = $derived(
 		fillReps != null
-			? translate(lang, 'live.repsFillAria', { reps: fillReps })
-			: translate(lang, 'live.reps')
+			? translate(
+					lang,
+					minutes ? 'live.minutesFillAria' : timed ? 'live.secondsFillAria' : 'live.repsFillAria',
+					{ reps: fillReps }
+				)
+			: repsLabel
 	);
 	let exerciseMeta = $derived(names.get(exercise.exerciseId) ?? null);
 	/** Local exercise: no technique sheet content — hero stays static. */
@@ -457,9 +526,13 @@
 	</header>
 
 	<section class="live-panel__log" aria-label={translate(lang, 'live.setLogAria')}>
-		<div class="live-set-head" class:live-set-head--cardio={cardio}>
+		<div
+			class="live-set-head"
+			class:live-set-head--cardio={cardio}
+			class:live-set-head--timed={timed}
+		>
 			<span class="live-set-head__idx">#</span>
-			{#if !cardio}
+			{#if !timed && !cardio}
 				{#if showFillColumn && canFillWeightAll && fillWeightKg != null}
 					<button
 						type="button"
@@ -483,6 +556,8 @@
 						{weightLabel}
 					</span>
 				{/if}
+			{/if}
+			{#if timed || !cardio}
 				{#if showFillColumn && canFillRepsAll && fillReps != null}
 					<button
 						type="button"
@@ -491,13 +566,13 @@
 						title={fillRepsAllLabel}
 						onclick={applyRepsToAllSets}
 					>
-						<span class="live-set-head__fill-main">{translate(lang, 'live.reps')}</span>
+						<span class="live-set-head__fill-main">{repsLabel}</span>
 						<span class="live-set-head__fill-hint" aria-hidden="true">
 							{translate(lang, 'live.fillColumnHint')}
 						</span>
 					</button>
 				{:else}
-					<span class="live-set-head__reps">{translate(lang, 'live.reps')}</span>
+					<span class="live-set-head__reps">{repsLabel}</span>
 				{/if}
 			{:else}
 				<span class="live-set-head__mark">{translate(lang, 'live.cardioCol')}</span>
@@ -524,6 +599,7 @@
 						<div
 							class="live-set-row"
 							class:live-set-row--cardio={cardio}
+							class:live-set-row--timed={timed}
 							class:is-done={set.completed}
 							class:is-current={currentSetIndex === si}
 							class:is-just-done={justDoneSetIndex === si}
@@ -547,7 +623,8 @@
 								</span>
 							{/if}
 						</div>
-					{#if !cardio}
+					{#if timed || !cardio}
+						{#if !timed}
 						<AppInput
 							class={`live-set-weight tabular-nums${invalidSetIndex === si && invalidKind === 'weight' ? ' is-invalid' : ''}`}
 							aria-invalid={invalidSetIndex === si && invalidKind === 'weight'}
@@ -577,6 +654,8 @@
 							}}
 							onkeydown={(e) => onWeightKeydown(e, si)}
 						/>
+						{/if}
+						<div class="live-set-time">
 						<AppInput
 							class={`live-set-reps tabular-nums${invalidSetIndex === si && invalidKind === 'reps' ? ' is-invalid' : ''}`}
 							aria-invalid={invalidSetIndex === si && invalidKind === 'reps'}
@@ -585,7 +664,7 @@
 							autocomplete="off"
 							maxlength={REPS_INPUT_MAX_LEN}
 							enterkeyhint="done"
-							aria-label={`${translate(lang, 'live.reps')} ${si + 1}`}
+							aria-label={`${repsLabel} ${si + 1}`}
 							value={set.reps ?? ''}
 							readonly={set.completed}
 							tabindex={set.completed ? -1 : undefined}
@@ -605,6 +684,30 @@
 							}}
 							onkeydown={(e) => onRepsKeydown(e, si)}
 						/>
+						{#if timed && !set.completed}
+							<button
+								type="button"
+								class="live-set-timer"
+								class:is-running={timingSet === si}
+								aria-label={timingSet === si
+									? translate(lang, 'live.timerStop')
+									: translate(lang, 'live.timerStart')}
+								title={timingSet === si
+									? translate(lang, 'live.timerStop')
+									: translate(lang, 'live.timerStart')}
+								data-swipe-pass=""
+								onclick={() => toggleSetTimer(si)}
+							>
+								{#if timingSet === si}
+									<span class="live-set-timer__time tabular-nums">
+										{formatRestSec(timerSeconds())}
+									</span>
+								{:else}
+									<LucideIcon icon={TimerIcon} size={ICON_BUTTON} />
+								{/if}
+							</button>
+						{/if}
+						</div>
 					{:else}
 						<span class="live-set-cardio-mark" data-swipe-pass="">
 							{set.completed

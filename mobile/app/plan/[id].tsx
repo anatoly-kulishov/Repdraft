@@ -203,7 +203,7 @@ export default function PlanPreviewScreen() {
 										<Text style={styles.cardTitle} numberOfLines={2}>
 											{exerciseDisplayName(ex.exerciseId, locale)}
 										</Text>
-										<Text style={styles.cardMeta}>{formatExercisePrescription(ex)} · {metaHint || item?.equipment || '-'}</Text>
+										<Text style={styles.cardMeta}>{formatExercisePrescription(ex, { seconds: tt('common.sec'), minutes: tt('common.min') })} · {metaHint || item?.equipment || '-'}</Text>
 									</View>
 								</View>
 							</Panel>

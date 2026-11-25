@@ -21,6 +21,7 @@ import {
 	filterRepsInput,
 	filterWeightInput
 } from '@repdraft/domain/inputLimits';
+import { formatRestSec } from '@repdraft/i18n/format';
 import { RECORDS_STORAGE_KEY } from '@repdraft/domain/repository';
 import {
 	addLoggedSet,
@@ -63,7 +64,7 @@ import {
 	nextWeightHint,
 	weightAboveLast
 } from '@repdraft/domain/sessionPayoff';
-import { isCardioBodyPart, usesExtraKgField } from '@repdraft/domain/workout';
+import { isCardioBodyPart, isTimedMeasure, usesExtraKgField } from '@repdraft/domain/workout';
 import type { ExerciseIndexItem, LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { unlockRestAudioFromGesture } from '../../src/audio/restChime';
 import { signalRestDone } from '../../src/audio/restDone';
@@ -324,6 +325,27 @@ export default function LiveScreen() {
 		session && ex && (forceAltPick || altGroupNeedsPick(session, selectedEi))
 	);
 	const skipLift = Boolean(ex && isCardioBodyPart(getIndexItem(ex.exerciseId)?.body_part));
+	/** Timed set: a hold in seconds or steady cardio in minutes, with a stopwatch. */
+	const timed = Boolean(ex && isTimedMeasure(ex));
+	const minutes = ex?.measure === 'minutes';
+	const [timingSet, setTimingSet] = useState<number | null>(null);
+	const [timingFrom, setTimingFrom] = useState(0);
+	const [timingNow, setTimingNow] = useState(0);
+
+	useEffect(() => {
+		if (timingSet == null) return;
+		const id = setInterval(() => setTimingNow(Date.now()), 250);
+		return () => clearInterval(id);
+	}, [timingSet]);
+
+	// A stopwatch belongs to one exercise: switching drops the reading.
+	useEffect(() => {
+		setTimingSet(null);
+	}, [selectedEi]);
+
+	function timerSeconds(): number {
+		return Math.max(0, Math.floor((timingNow - timingFrom) / 1000));
+	}
 	const bodyweight = Boolean(
 		ex &&
 			usesExtraKgField({
@@ -461,21 +483,30 @@ export default function LiveScreen() {
 		return true;
 	}
 
-	async function syncDraftToSession(ei: number, si: number): Promise<WorkoutSession | null> {
+	async function syncDraftToSession(
+		ei: number,
+		si: number,
+		repsOverride?: number
+	): Promise<WorkoutSession | null> {
 		if (!session) return null;
 		const row = drafts[si];
 		if (!row) return session;
 		const weightFiltered = filterWeightInput(row.weight);
 		const repsFiltered = filterRepsInput(row.reps, LIVE_REPS);
 		const weightKg = weightFiltered ? coerceWeightKg(weightFiltered) : null;
-		const reps = repsFiltered ? coerceReps(repsFiltered, LIVE_REPS) : null;
+		const reps =
+			repsOverride != null
+				? repsOverride
+				: repsFiltered
+					? coerceReps(repsFiltered, LIVE_REPS)
+					: null;
 		const next = updateLoggedSet(session, ei, si, { weightKg, reps });
 		await persist(next, restUntil);
 		return next;
 	}
 
-	async function onComplete(ei: number, si: number) {
-		const synced = await syncDraftToSession(ei, si);
+	async function onComplete(ei: number, si: number, opts?: { reps?: number }) {
+		const synced = await syncDraftToSession(ei, si, opts?.reps);
 		if (!synced) return;
 		const set = synced.exercises[ei]?.sets[si];
 		if (!set) return;
@@ -492,6 +523,24 @@ export default function LiveScreen() {
 			return;
 		}
 		await onComplete(ei, si);
+	}
+
+	/** Stopwatch: start counting, stop writes the measured duration and logs the set. */
+	async function toggleSetTimer(si: number) {
+		if (timingSet === si) {
+			const elapsedSec = Math.round((Date.now() - timingFrom) / 1000);
+			const value = Math.min(
+				LIVE_REPS.max,
+				Math.max(1, minutes ? Math.round(elapsedSec / 60) : elapsedSec)
+			);
+			setTimingSet(null);
+			setDrafts((rows) => rows.map((r, i) => (i === si ? { ...r, reps: String(value) } : r)));
+			await onComplete(selectedEi, si, { reps: value });
+			return;
+		}
+		setTimingFrom(Date.now());
+		setTimingNow(Date.now());
+		setTimingSet(si);
 	}
 
 	async function onToggleAllComplete(ei: number) {
@@ -977,6 +1026,11 @@ export default function LiveScreen() {
 									current={si === currentSetIndex}
 									skipLift={skipLift}
 									bodyweight={bodyweight}
+									timed={timed}
+									minutes={minutes}
+									timerRunning={timingSet === si}
+									timerLabel={formatRestSec(timerSeconds())}
+									onToggleTimer={() => void toggleSetTimer(si)}
 									canRemove={ex.sets.length > 1}
 									showKindBadge={loggedSetKind(set) !== 'work'}
 									kindLabel={tt(setKindMessageKey(loggedSetKind(set)))}

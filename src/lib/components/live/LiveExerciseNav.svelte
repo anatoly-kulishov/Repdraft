@@ -74,12 +74,18 @@
 	function metaFor(index: number, inGroup: boolean): string {
 		const ex = session.exercises[index];
 		if (!ex) return '';
+		const unit =
+			ex.measure === 'seconds'
+				? ` ${translate(lang, 'common.sec')}`
+				: ex.measure === 'minutes'
+					? ` ${translate(lang, 'common.min')}`
+					: '';
 		if (inGroup) return translate(lang, 'live.lastReps', { n: ex.targetReps });
 		const planned = ex.sets.map((s) => s.reps).filter((r): r is number => r != null);
 		if (planned.length >= 2 && new Set(planned).size > 1) {
 			return `${ex.sets.length} · ${formatLadderLabel(planned)}`;
 		}
-		return `${ex.sets.length} × ${ex.targetReps}`;
+		return `${ex.sets.length} × ${ex.targetReps}${unit}`;
 	}
 
 	$effect(() => {

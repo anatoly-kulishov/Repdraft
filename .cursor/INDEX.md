@@ -41,6 +41,7 @@
 | `feedback.md` | `/feedback`: SMTP Яндекс 360, honeypot + Origin + лимит, приватность и проверки |
 | `testing.md` | Playwright E2E: прод-сборка, изоляция, что покрыто, CI на PR |
 | `live-picker.md` | Замена упражнения в live: select зоны, `replacementCandidates` (умный подбор), высота шита |
+| `exercise-timing.md` | Время вместо повторов: `measure` (секунды/минуты), переключатель в билдере, секундомер в live |
 | `summary-load.md` | Итоги: подходы за день и за неделю к цели 10+, почему не доля объёма за 30 дней |
 | `watch-session-ownership.md` | Watch companion spike: session lease / finish race |
 | `rn-visual-backlog.md` | Mobile theme + visual QA findings |

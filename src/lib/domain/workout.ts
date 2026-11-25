@@ -20,6 +20,9 @@ export {
 	isCardioBodyPart,
 	defaultRestSecForExercise,
 	LIGHT_EQUIPMENT_REST_SEC,
+	isTimedMeasure,
+	timingMeasureFor,
+	measureUnitMessageKey,
 	type ExerciseRestHint
 } from './workoutDefaults';
 

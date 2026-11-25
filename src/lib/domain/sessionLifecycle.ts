@@ -1,6 +1,7 @@
 import { newId } from './id';
 import { REPS, REST_SEC, SETS } from './inputLimits';
 import type {
+	ExerciseMeasure,
 	LoggedSet,
 	SessionExercise,
 	WorkoutExercise,
@@ -9,6 +10,11 @@ import type {
 } from './types';
 import { DEFAULT_REPS, DEFAULT_REST_SEC, DEFAULT_SETS } from './workout';
 import { pruneUnchosenAlts, visibleSessionExerciseIndices } from './sessionAlts';
+
+/** `seconds` (hold) or `minutes` (steady cardio); `undefined` = plain reps. */
+function timedMeasure(ex: { measure?: ExerciseMeasure }): ExerciseMeasure | undefined {
+	return ex.measure === 'seconds' || ex.measure === 'minutes' ? ex.measure : undefined;
+}
 
 function emptySets(
 	count: number,
@@ -61,6 +67,8 @@ export function startSessionFromPlan(
 				targetSets: ex.sets,
 				targetReps: ex.reps,
 				restSec: ex.restSec,
+				// Holds/cardio log a duration in the same `reps` slot as a lift logs reps.
+				...(timedMeasure(ex) ? { measure: timedMeasure(ex)! } : {}),
 				sets: emptySets(ex.sets, ex.reps, ex.repsScheme, options?.weights?.get(ex.exerciseId) ?? null)
 			})
 		)
@@ -84,12 +92,15 @@ export function syncSessionPrescriptionFromPlan(
 		if (!p) return ex;
 		const groupId = p.groupId ?? null;
 		const altGroupId = p.altGroupId ?? null;
+		const measure =
+			p.measure === 'seconds' || p.measure === 'minutes' ? p.measure : undefined;
 		if (
 			ex.groupId === groupId &&
 			ex.altGroupId === altGroupId &&
 			ex.restSec === p.restSec &&
 			ex.targetSets === p.sets &&
-			ex.targetReps === p.reps
+			ex.targetReps === p.reps &&
+			ex.measure === measure
 		) {
 			return ex;
 		}
@@ -100,7 +111,8 @@ export function syncSessionPrescriptionFromPlan(
 			altGroupId,
 			restSec: p.restSec,
 			targetSets: p.sets,
-			targetReps: p.reps
+			targetReps: p.reps,
+			measure
 		};
 	});
 	return changed ? { ...session, exercises } : session;
@@ -114,6 +126,7 @@ function sessionExerciseFromPlan(ex: WorkoutExercise): SessionExercise {
 		targetSets: ex.sets,
 		targetReps: ex.reps,
 		restSec: ex.restSec,
+		...(timedMeasure(ex) ? { measure: timedMeasure(ex)! } : {}),
 		sets: emptySets(ex.sets, ex.reps, ex.repsScheme)
 	};
 }
@@ -160,6 +173,7 @@ export function replaceSessionPlan(
 			targetSets: planEx.sets,
 			targetReps: planEx.reps,
 			restSec: planEx.restSec,
+			...(timedMeasure(planEx) ? { measure: timedMeasure(planEx)! } : {}),
 			sets: [...completed, ...openTail],
 			...(note ? { note } : {})
 		};
@@ -399,7 +413,8 @@ export function planDraftFromSession(session: WorkoutSession): WorkoutPlan {
 				REST_SEC.max
 			),
 			groupId: ex.groupId ?? null,
-			altGroupId: null
+			altGroupId: null,
+			...(timedMeasure(ex) ? { measure: timedMeasure(ex)! } : {})
 		});
 	}
 	return {

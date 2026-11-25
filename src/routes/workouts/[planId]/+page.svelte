@@ -9,7 +9,7 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { isCustomExerciseId } from '$lib/domain/customExercises';
 	import { exerciseMetaHint } from '$lib/domain/labels.ru';
-	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
+	import type { ExerciseIndexItem, WorkoutExercise, WorkoutPlan } from '$lib/domain/types';
 	import { altGroupMemberRole, formatExercisePrescription, formatLadderLabel, groupMemberRole, hasLadderScheme, planExerciseSlotCount, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
 	import { translate, translatePlural } from '$lib/i18n/messages';
 	import { cycleProgressNow } from '$lib/domain/cycle';
@@ -43,6 +43,18 @@
 	const peekedIndex = peekExerciseIndexWithCustoms();
 
 	let lang = $derived($resolvedLocale);
+	/** `3 × 8` for a lift, `3 × 45 сек` / `3 × 20 мин` for a timed set. */
+	function prescription(ex: WorkoutExercise): string {
+		return formatExercisePrescription(ex, {
+			seconds: translate(lang, 'common.sec'),
+			minutes: translate(lang, 'common.min')
+		});
+	}
+	function repsUnit(ex: WorkoutExercise): string {
+		if (ex.measure === 'seconds') return translate(lang, 'common.sec');
+		if (ex.measure === 'minutes') return translate(lang, 'common.min');
+		return translate(lang, 'builder.reps').toLowerCase();
+	}
 	let showPreviewStartCoachmark = $derived(shouldShowCoachmark($onboarding, 'preview.start'));
 	let plan = $state<WorkoutPlan | null>(null);
 	let indexById = $state<Map<string, ExerciseIndexItem>>(
@@ -306,7 +318,7 @@
 									<p class="workout-preview-row-title">{title}</p>
 									<p class="workout-preview-row-sub tabular-nums">
 										{#if role === 'solo'}
-											{formatExercisePrescription(item)}
+											{prescription(item)}
 										{:else if role === 'first'}
 											{item.sets}
 											{translate(lang, 'builder.rounds').toLowerCase()} ·
@@ -314,12 +326,12 @@
 												{formatLadderLabel(item.repsScheme)}
 											{:else}
 												{item.reps}
-												{translate(lang, 'builder.reps').toLowerCase()}
+												{repsUnit(item)}
 											{/if}
 										{:else if hasLadderScheme(item) && item.repsScheme}
 											{formatLadderLabel(item.repsScheme)}
 										{:else}
-											{item.reps} {translate(lang, 'builder.reps').toLowerCase()}
+											{item.reps} {repsUnit(item)}
 										{/if}
 										<span class="workout-preview-row-dot" aria-hidden="true">·</span>
 										{exerciseMetaHint(meta, lang)}
@@ -337,7 +349,7 @@
 							<span class="media-well workout-preview-thumb is-placeholder" aria-hidden="true"></span>
 							<div class="workout-preview-row-body">
 								<p class="workout-preview-row-title">{item.exerciseId}</p>
-								<p class="workout-preview-row-sub tabular-nums">{formatExercisePrescription(item)}</p>
+								<p class="workout-preview-row-sub tabular-nums">{prescription(item)}</p>
 							</div>
 						</div>
 					{/if}

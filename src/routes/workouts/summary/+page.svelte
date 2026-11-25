@@ -21,7 +21,7 @@
 	} from '$lib/domain/session';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
-	import type { ExerciseIndexItem, LoggedSet, WorkoutSession } from '$lib/domain/types';
+	import type { ExerciseIndexItem, ExerciseMeasure, LoggedSet, WorkoutSession } from '$lib/domain/types';
 	import { formatDurationMs } from '$lib/i18n/format';
 	import { translate } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
@@ -95,12 +95,18 @@
 	let summarySessionId = $derived(readSearchParam($page.url, 'id') ?? '');
 	let skeletonGuestHint = $derived(!$auth.user);
 
-	function formatSet(set: LoggedSet): string {
+	function formatSet(set: LoggedSet, measure?: ExerciseMeasure): string {
+		const unit =
+			measure === 'minutes'
+				? translate(lang, 'common.min')
+				: measure === 'seconds'
+					? translate(lang, 'common.sec')
+					: translate(lang, 'pr.repsShort');
 		if (set.weightKg != null) {
-			return `${set.weightKg} ${translate(lang, 'pr.kg')} × ${set.reps ?? '-'}`;
+			return `${set.weightKg} ${translate(lang, 'pr.kg')} × ${set.reps ?? '-'}${measure && measure !== 'reps' ? ` ${unit}` : ''}`;
 		}
 		if (set.reps != null) {
-			return `${set.reps} ${translate(lang, 'pr.repsShort')}`;
+			return `${set.reps} ${unit}`;
 		}
 		return '-';
 	}
@@ -322,7 +328,7 @@
 											>{si + 1}</span
 										>
 										<span class="summary-exercises-preview__set-val tabular-nums"
-											>{formatSet(set)}</span
+											>{formatSet(set, ex.measure)}</span
 										>
 									</li>
 								{/each}

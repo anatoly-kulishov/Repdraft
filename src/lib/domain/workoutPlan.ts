@@ -64,6 +64,7 @@ export function workoutPlanContentEqual(a: WorkoutPlan, b: WorkoutPlan): boolean
 			ex.restSec === other.restSec &&
 			(ex.groupId ?? null) === (other.groupId ?? null) &&
 			(ex.altGroupId ?? null) === (other.altGroupId ?? null) &&
+			(ex.measure ?? 'reps') === (other.measure ?? 'reps') &&
 			JSON.stringify(ex.repsScheme ?? null) === JSON.stringify(other.repsScheme ?? null)
 		);
 	});

@@ -1,4 +1,4 @@
-import { Check, Trash2 } from 'lucide-react-native';
+import { Check, Timer, Trash2 } from 'lucide-react-native';
 import { memo, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocale } from '../state/locale';
@@ -13,6 +13,14 @@ type Props = {
 	current: boolean;
 	skipLift: boolean;
 	bodyweight: boolean;
+	/** Hold (plank): the rep field is seconds and gets a stopwatch. */
+	timed: boolean;
+	/** Steady cardio: the timed field counts minutes, not seconds. */
+	minutes: boolean;
+	timerRunning: boolean;
+	/** Elapsed mm:ss while the stopwatch runs. */
+	timerLabel: string;
+	onToggleTimer: () => void;
 	canRemove: boolean;
 	showKindBadge: boolean;
 	kindLabel: string;
@@ -31,6 +39,11 @@ function LiveSetRowInner({
 	current,
 	skipLift,
 	bodyweight,
+	timed,
+	minutes,
+	timerRunning,
+	timerLabel,
+	onToggleTimer,
 	canRemove,
 	showKindBadge,
 	kindLabel,
@@ -63,19 +76,21 @@ function LiveSetRowInner({
 						</Text>
 					) : null}
 				</Pressable>
-				{skipLift ? <View style={styles.fields} /> : (
+				{skipLift && !timed ? <View style={styles.fields} /> : (
 					<View style={styles.fields}>
-						<TextInput
-							value={draft.weight}
-							editable={!completed}
-							onChangeText={onChangeWeight}
-							onBlur={onBlur}
-							keyboardType="decimal-pad"
-							style={[styles.input, current && styles.inputCurrent]}
-							placeholder={bodyweight ? tt('live.weightBwPh') : tt('common.kg')}
-							placeholderTextColor={colors.muted}
-							accessibilityLabel={`${tt(bodyweight ? 'live.weightBw' : 'live.weight')} ${n}`}
-						/>
+						{timed ? null : (
+							<TextInput
+								value={draft.weight}
+								editable={!completed}
+								onChangeText={onChangeWeight}
+								onBlur={onBlur}
+								keyboardType="decimal-pad"
+								style={[styles.input, current && styles.inputCurrent]}
+								placeholder={bodyweight ? tt('live.weightBwPh') : tt('common.kg')}
+								placeholderTextColor={colors.muted}
+								accessibilityLabel={`${tt(bodyweight ? 'live.weightBw' : 'live.weight')} ${n}`}
+							/>
+						)}
 						<TextInput
 							value={draft.reps}
 							editable={!completed}
@@ -83,10 +98,30 @@ function LiveSetRowInner({
 							onBlur={onBlur}
 							keyboardType="number-pad"
 							style={[styles.input, current && styles.inputCurrent]}
-							placeholder={tt('common.reps')}
+							placeholder={
+								minutes
+									? tt('live.minutesPh')
+									: timed
+										? tt('live.secondsPh')
+										: tt('common.reps')
+							}
 							placeholderTextColor={colors.muted}
-							accessibilityLabel={`${tt('live.reps')} ${n}`}
+							accessibilityLabel={`${tt(minutes ? 'live.minutes' : timed ? 'live.seconds' : 'live.reps')} ${n}`}
 						/>
+						{timed && !completed ? (
+							<Pressable
+								accessibilityRole="button"
+								accessibilityLabel={timerRunning ? tt('live.timerStop') : tt('live.timerStart')}
+								onPress={onToggleTimer}
+								style={[styles.timer, timerRunning && styles.timerRunning]}
+							>
+								{timerRunning ? (
+									<Text style={styles.timerText}>{timerLabel}</Text>
+								) : (
+									<Timer size={22} color={colors.muted} strokeWidth={2.25} />
+								)}
+							</Pressable>
+						) : null}
 					</View>
 				)}
 				<Pressable
@@ -161,6 +196,25 @@ function makeStyles(colors: ColorPalette) {
 			fontFamily: fontFamily.bold
 		},
 		inputCurrent: { borderColor: colors.accent },
+		timer: {
+			width: touchMin,
+			minWidth: touchMin,
+			height: touchMin,
+			alignItems: 'center',
+			justifyContent: 'center',
+			borderRadius: radius.md,
+			borderWidth: 1,
+			borderColor: colors.borderStrong,
+			backgroundColor: colors.panel
+		},
+		timerRunning: { borderColor: colors.accentFill, backgroundColor: colors.accentFill },
+		timerText: {
+			color: colors.accentInk,
+			fontSize: 14,
+			fontWeight: '800',
+			fontVariant: ['tabular-nums'],
+			fontFamily: fontFamily.bold
+		},
 		done: {
 			width: touchMin,
 			height: touchMin,

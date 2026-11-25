@@ -1103,10 +1103,12 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	max-height: min(52vh, 24rem);
 	overflow-y: auto;
 	/* The one and only scroller of this sheet: own pan axis, no chaining into
-	   the card / page behind (iOS was scrolling the wrong box). */
+	   the card / page behind (iOS was scrolling the wrong box). No legacy
+	   `-webkit-overflow-scrolling: touch`: iOS has momentum by default and the
+	   property only forces the old UIScrollView layer, which is the layer iOS
+	   stops panning inside a composited sheet. */
 	touch-action: pan-y;
 	overscroll-behavior: contain;
-	-webkit-overflow-scrolling: touch;
 }
 
 .live-exercise-pick__row {
@@ -1187,8 +1189,12 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	white-space: nowrap;
 }
 
-[data-slot='sheet-content'][data-side='bottom'].bottom-sheet:has(.live-exercise-pick)
-	.bottom-sheet__card {
+/* `:has()` on the card itself, not on the sheet root: this has to beat
+   `.bottom-sheet--raised .bottom-sheet__card { overflow-y: auto }` no matter
+   which block file the bundler emits last. Two same-axis scrollers (card +
+   list) is the state where iOS simply stops panning the inner one. */
+[data-slot='sheet-content'][data-side='bottom'].bottom-sheet
+	.bottom-sheet__card:has(.live-exercise-pick) {
 	display: flex;
 	flex-direction: column;
 	/* Never taller than the screen. `100%` is the host's content box — the real
@@ -1205,19 +1211,64 @@ body:has(.live-sticky-actions--rest-expanded.live-sticky-actions--end) {
 	/* The results list is the only scroller: a card that scrolls too made a
 	   nested pair of same-axis scrollers, which iOS refuses to drag. */
 	overflow: hidden;
+	/* The frost moves off the card onto an empty layer behind the content (see
+	   ::before below). A `backdrop-filter` on the card puts the results list
+	   inside a filtered layer, and WebKit then stops handing touch pans to it
+	   until something inside gets focus — «list scrolls only after you tap in the
+	   sheet». Same pixels, list stays on the normal touch path. */
+	background-color: transparent;
+	background-image: none;
+	-webkit-backdrop-filter: none;
+	backdrop-filter: none;
+}
+
+[data-slot='sheet-content'][data-side='bottom'].bottom-sheet
+	.bottom-sheet__card:has(.live-exercise-pick)::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	/* Card background/border first, then this plate, then the content. */
+	z-index: -1;
+	border-radius: inherit;
+	pointer-events: none;
+	background-color: var(--glass-bg-strong);
+	background-image: var(--glass-sheen);
+	-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+	backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+	[data-slot='sheet-content'][data-side='bottom'].bottom-sheet
+		.bottom-sheet__card:has(.live-exercise-pick)::before {
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+		background-color: var(--color-surface);
+		background-image: none;
+	}
 }
 
 /* Short screens / landscape: one column, one scroller. The card takes over the
    scroll (the list keeps its full height) so the header stays reachable. */
 @media (max-height: 640px) {
-	[data-slot='sheet-content'][data-side='bottom'].bottom-sheet:has(.live-exercise-pick)
-		.bottom-sheet__card {
+	[data-slot='sheet-content'][data-side='bottom'].bottom-sheet
+		.bottom-sheet__card:has(.live-exercise-pick) {
 		overflow-y: auto;
-		-webkit-overflow-scrolling: touch;
+		overscroll-behavior: contain;
+		/* The card scrolls here, so the glass goes back onto it: an absolutely
+		   positioned plate would scroll away with the content. */
+		background-color: var(--glass-bg-strong);
+		background-image: var(--glass-sheen);
+		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 	}
 
-	[data-slot='sheet-content'][data-side='bottom'].bottom-sheet:has(.live-exercise-pick)
-		.bottom-sheet__card
+	[data-slot='sheet-content'][data-side='bottom'].bottom-sheet
+		.bottom-sheet__card:has(.live-exercise-pick)::before {
+		display: none;
+	}
+
+	[data-slot='sheet-content'][data-side='bottom'].bottom-sheet
+		.bottom-sheet__card:has(.live-exercise-pick)
 		.live-exercise-pick__list {
 		flex: 0 0 auto;
 		min-height: 0;
@@ -3004,6 +3055,71 @@ button.live-panel-thumb {
 .live-set-head--cardio,
 .live-set-row--cardio {
 	grid-template-columns: 3.35rem minmax(0, 1fr) 3rem;
+}
+
+/* Hold (plank, wall sit): no weight column — seconds + stopwatch + done. */
+.live-set-head--timed,
+.live-set-row--timed {
+	grid-template-columns: 3.35rem minmax(0, 1fr) 3rem;
+}
+
+.live-set-time {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-width: 0;
+}
+
+.live-set-time .live-set-reps[data-slot='input'] {
+	flex: 1 1 auto;
+}
+
+.live-set-timer {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	box-sizing: border-box;
+	width: 3rem;
+	height: 3rem;
+	min-width: 3rem;
+	padding: 0;
+	border: 1px solid var(--color-field-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+	color: var(--color-muted);
+	font: inherit;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease,
+		color 0.15s ease;
+}
+
+.live-set-timer:hover {
+	border-color: color-mix(in srgb, var(--color-border) 95%, transparent);
+	background: var(--color-surface-muted);
+	color: var(--color-ink);
+}
+
+.live-set-timer.is-running {
+	border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+	background: color-mix(in srgb, var(--color-accent-muted) 55%, var(--color-surface));
+	color: var(--color-accent-text);
+}
+
+.live-set-timer__time {
+	font-size: 0.875rem;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.live-set-timer {
+		transition: none;
+	}
 }
 
 .live-set-head {

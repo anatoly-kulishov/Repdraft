@@ -11,8 +11,7 @@
 	import ExerciseTechniqueSheet from '$lib/components/ExerciseTechniqueSheet.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_BUTTON, ICON_SMALL } from '$lib/components/icons/sizes';
-	import type { ExerciseIndexItem } from '$lib/domain/types';
-	import type { WorkoutExercise } from '$lib/domain/types';
+	import type { ExerciseIndexItem, ExerciseMeasure, WorkoutExercise } from '$lib/domain/types';
 	import {
 		coerceReps,
 		coerceRestSec,
@@ -34,7 +33,9 @@
 	import {
 		buildLadderScheme,
 		formatLadderLabel,
-		hasLadderScheme
+		hasLadderScheme,
+		isTimedMeasure,
+		timingMeasureFor
 	} from '$lib/domain/workout';
 	import { scrollFieldIntoView } from '$lib/dom/scrollFieldIntoView';
 	import {
@@ -49,6 +50,7 @@
 		ListNumbers as ListOrdered,
 		SlidersHorizontal,
 		Sparkle as Sparkles,
+		Timer as TimerIcon,
 		Trash as Trash2,
 		LinkBreak as Unlink,
 	} from 'phosphor-svelte';
@@ -127,6 +129,12 @@
 	let restDraft = $state<string | null>(null);
 	let inGroup = $derived(Boolean(item.groupId));
 	let inOrGroup = $derived(Boolean(item.altGroupId));
+	/** Timed set: a hold in seconds or steady cardio in minutes. */
+	let timed = $derived(isTimedMeasure(item));
+	let minutesUnit = $derived(item.measure === 'minutes');
+	let repsLabel = $derived(
+		translate(lang, minutesUnit ? 'builder.minutes' : timed ? 'builder.seconds' : 'builder.reps')
+	);
 	let ladderOn = $derived(hasLadderScheme(item));
 	let ladderLabel = $derived(
 		ladderOn && item.repsScheme ? formatLadderLabel(item.repsScheme) : ''
@@ -233,6 +241,33 @@
 	function removeFromMenu() {
 		actionsOpen = false;
 		onremove();
+	}
+
+	/**
+	 * Reps ↔ duration. The unit follows the exercise: cardio counts minutes, a hold
+	 * counts seconds. A timed set starts from a plausible value instead of the rep
+	 * count it replaced (and back), because 3×10 «сек» is never what anyone meant.
+	 */
+	function toggleMeasure() {
+		actionsOpen = false;
+		const nextTimed = !timed;
+		const nextMeasure: ExerciseMeasure | undefined = nextTimed
+			? timingMeasureFor(meta?.body_part)
+			: undefined;
+		const reps = nextTimed
+			? nextMeasure === 'minutes'
+				? 20
+				: item.reps <= 20
+					? 30
+					: item.reps
+			: item.reps > 30
+				? 10
+				: item.reps;
+		onupdate({
+			measure: nextMeasure,
+			reps,
+			...(nextTimed ? { repsScheme: undefined } : {})
+		});
 	}
 
 	function applyLadder() {
@@ -436,7 +471,7 @@
 							</button>
 						{:else}
 							<label class="workout-ex-chip workout-ex-chip--reps">
-								<span>{translate(lang, 'builder.reps')}</span>
+								<span>{repsLabel}</span>
 								<AppInput
 									class={chipInputClass}
 									type="text"
@@ -503,7 +538,7 @@
 							</button>
 						{:else}
 							<label class="workout-ex-chip">
-								<span>{translate(lang, 'builder.reps')}</span>
+								<span>{repsLabel}</span>
 								<AppInput
 									class={chipInputClass}
 									type="text"
@@ -607,15 +642,33 @@
 			role="group"
 			aria-labelledby={`builder-ex-actions-${item.exerciseId}`}
 		>
-			<button type="button" class="builder-ex-action" onclick={openLadderFromMenu}>
+			{#if !timed}
+				<button type="button" class="builder-ex-action" onclick={openLadderFromMenu}>
+					<span class="builder-ex-action__well" aria-hidden="true">
+						<LucideIcon icon={ListOrdered} size={ICON_BUTTON} />
+					</span>
+					<span class="builder-ex-action__label">
+						{ladderOn ? translate(lang, 'builder.ladderEditShort') : translate(lang, 'builder.ladder')}
+					</span>
+					{#if ladderOn}
+						<span class="builder-ex-action__meta tabular-nums">{ladderLabel}</span>
+					{/if}
+				</button>
+			{/if}
+			<button
+				type="button"
+				class="builder-ex-action"
+				aria-pressed={timed}
+				onclick={toggleMeasure}
+			>
 				<span class="builder-ex-action__well" aria-hidden="true">
-					<LucideIcon icon={ListOrdered} size={ICON_BUTTON} />
+					<LucideIcon icon={TimerIcon} size={ICON_BUTTON} />
 				</span>
 				<span class="builder-ex-action__label">
-					{ladderOn ? translate(lang, 'builder.ladderEditShort') : translate(lang, 'builder.ladder')}
+					{timed ? translate(lang, 'builder.useReps') : translate(lang, 'builder.useTime')}
 				</span>
-				{#if ladderOn}
-					<span class="builder-ex-action__meta tabular-nums">{ladderLabel}</span>
+				{#if timed}
+					<span class="builder-ex-action__meta">{repsLabel}</span>
 				{/if}
 			</button>
 			{#if aiTuneAvailable && !isCustom}

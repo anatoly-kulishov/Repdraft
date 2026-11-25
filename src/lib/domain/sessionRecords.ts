@@ -24,6 +24,8 @@ export function recordsFromFinishedSession(session: WorkoutSession): PersonalRec
 	const now = new Date().toISOString();
 	for (const ex of session.exercises) {
 		if (ex.skipped) continue;
+		// Holds/cardio log a duration in `reps`; a "best 45 reps" record would lie.
+		if (ex.measure === 'seconds' || ex.measure === 'minutes') continue;
 		let bestW: number | null = null;
 		let bestR: number | null = null;
 		for (const set of ex.sets) {
