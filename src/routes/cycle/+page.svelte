@@ -10,7 +10,7 @@
 	import CycleWaveChart from '$lib/components/cycle/CycleWaveChart.svelte';
 	import LucideIcon from '$lib/components/icons/LucideIcon.svelte';
 	import { ICON_SMALL } from '$lib/components/icons/sizes';
-	import { Check, Play } from 'phosphor-svelte';
+	import { CaretDown, Check, Play } from 'phosphor-svelte';
 	import { ATHLETE_GOAL_IDS, type AthleteGoalId } from '$lib/domain/athleteProfile';
 	import { BUILDER_NEW_HREF } from '$lib/domain/catalogLinks';
 	import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
@@ -32,7 +32,7 @@
 	} from '$lib/domain/cycleTargets';
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { clampPlanName } from '$lib/domain/inputLimits';
-	import type { ExerciseIndexItem, WorkoutPlan } from '$lib/domain/types';
+	import type { ExerciseIndexItem, WorkoutExercise, WorkoutPlan } from '$lib/domain/types';
 	import { planExerciseSlotCount } from '$lib/domain/workout';
 	import { translate, translatePlural } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
@@ -69,6 +69,8 @@
 	let draftWeeks = $state<CycleLength>(10);
 	let draftPlanIds = $state<string[]>([]);
 	let expandedWeek = $state<number | null>(null);
+	/** Day (plan) whose prescription is open inside the expanded week. */
+	let expandedDay = $state<string | null>(null);
 	let resetOpen = $state(false);
 	let startingPlanId = $state<string | null>(null);
 	/** Catalog rows for names and equipment (bar weight / plate step). */
@@ -82,6 +84,14 @@
 	function exerciseLabel(exerciseId: string): string {
 		const item = exerciseById.get(exerciseId);
 		return item ? exerciseName(item, lang) : exerciseId;
+	}
+
+	/** Timed sets prescribe a duration, so the row says «3 × 45 сек» / «3 × 20 мин». */
+	function planExerciseMeasure(
+		plan: WorkoutPlan,
+		exerciseId: string
+	): WorkoutExercise['measure'] {
+		return plan.exercises.find((ex) => ex.exerciseId === exerciseId)?.measure;
 	}
 
 	/** Sets/reps of the week plus the load the athlete's own history calls for. */
@@ -121,6 +131,7 @@
 		);
 		draftName = '';
 		expandedWeek = 1;
+		expandedDay = null;
 		toasts.show(translate(lang, 'cycle.createdToast'), 'success');
 	}
 
@@ -128,12 +139,20 @@
 		resetOpen = false;
 		cycle.reset();
 		expandedWeek = null;
+		expandedDay = null;
 		draftPlanIds = [];
 		toasts.show(translate(lang, 'cycle.resetToast'), 'success');
 	}
 
 	function toggleWeek(week: number) {
+		// One open week, one open day inside it: folding the week also drops the
+		// open day, so the next week cannot open with a leftover plan expanded.
+		expandedDay = null;
 		expandedWeek = expandedWeek === week ? null : week;
+	}
+
+	function toggleDay(planId: string) {
+		expandedDay = expandedDay === planId ? null : planId;
 	}
 
 	async function startWeekPlan(week: number, plan: WorkoutPlan) {
@@ -381,9 +400,36 @@
 						<ul class="cycle-week__plans">
 							{#each rows as row (row.planId)}
 								{@const plan = plansById.get(row.planId)}
-								<li class="cycle-week__plan">
+								{@const dayOpen = !!plan && expandedDay === row.planId}
+								{@const targets = dayOpen && plan ? targetRows(plan, week.week) : []}
+								<li class="cycle-week__plan" class:cycle-week__plan--open={dayOpen}>
 									<div class="cycle-week__plan-head">
-										<span class="cycle-week__plan-name">{row.planName}</span>
+										{#if plan}
+											<button
+												type="button"
+												class="cycle-week__plan-toggle"
+												aria-expanded={dayOpen}
+												onclick={() => toggleDay(row.planId)}
+											>
+												<span class="cycle-week__plan-main">
+													<span class="cycle-week__plan-name">{row.planName}</span>
+													<span class="cycle-week__plan-meta">
+														{translatePlural(
+															lang,
+															'home.pillExercises',
+															planExerciseSlotCount(plan)
+														)}
+													</span>
+												</span>
+												<span class="cycle-week__plan-chevron" aria-hidden="true">
+													<LucideIcon icon={CaretDown} size={ICON_SMALL} />
+												</span>
+											</button>
+										{:else}
+											<span class="cycle-week__plan-main">
+												<span class="cycle-week__plan-name">{row.planName}</span>
+											</span>
+										{/if}
 										{#if row.done}
 											<span class="cycle-week__plan-done">
 												<LucideIcon icon={Check} size={ICON_SMALL} />
@@ -404,53 +450,63 @@
 											<span class="cycle-week__plan-done">{translate(lang, 'live.noPlan')}</span>
 										{/if}
 									</div>
-									{#if plan}
-										{@const targets = targetRows(plan, week.week)}
-										<ul
-											class="cycle-week__rx"
-											aria-label={translate(lang, 'cycle.prescriptionTitle')}
-										>
-											{#each targets as target, ti (ti)}
-												<li class="cycle-week__rx-row">
-													<span class="cycle-week__rx-name">
-														{exerciseLabel(target.exerciseId)}
-													</span>
-													<span class="cycle-week__rx-nums">
-														<span class="cycle-week__rx-sets">
-															{translate(lang, 'cycle.prescriptionSets', {
-																sets: target.sets,
-																reps: target.reps
-															})}
+									{#if dayOpen && plan}
+										{#if targets.length > 0}
+											<ul
+												class="cycle-week__rx"
+												aria-label={translate(lang, 'cycle.prescriptionTitle')}
+											>
+												{#each targets as target, ti (ti)}
+													<li class="cycle-week__rx-row">
+														<span class="cycle-week__rx-name">
+															{exerciseLabel(target.exerciseId)}
 														</span>
-														{#if target.weightKg != null}
-															<span class="cycle-week__rx-load">
-																{translate(lang, 'cycle.prescriptionLoad', {
-																	weight: target.weightKg
-																})}
+														<span class="cycle-week__rx-nums">
+															<span class="cycle-week__rx-sets">
+																{translate(
+																	lang,
+																	planExerciseMeasure(plan, target.exerciseId) === 'minutes'
+																		? 'cycle.prescriptionMinutes'
+																		: planExerciseMeasure(plan, target.exerciseId) === 'seconds'
+																			? 'cycle.prescriptionSeconds'
+																			: 'cycle.prescriptionSets',
+																	{
+																		sets: target.sets,
+																		reps: target.reps,
+																		n: target.reps
+																	}
+																)}
 															</span>
-															{#if target.barKg > 0}
-																<span class="cycle-week__rx-bar">
-																	{translate(lang, 'cycle.prescriptionBar', {
-																		weight: target.barKg
+															{#if target.weightKg != null}
+																<span class="cycle-week__rx-load">
+																	{translate(lang, 'cycle.prescriptionLoad', {
+																		weight: target.weightKg
 																	})}
 																</span>
+																{#if target.barKg > 0}
+																	<span class="cycle-week__rx-bar">
+																		{translate(lang, 'cycle.prescriptionBar', {
+																			weight: target.barKg
+																		})}
+																	</span>
+																{/if}
+															{:else}
+																<span
+																	class="cycle-week__rx-load cycle-week__rx-load--open"
+																>
+																	{translate(lang, 'cycle.prescriptionOpen')}
+																</span>
 															{/if}
-														{:else}
-															<span
-																class="cycle-week__rx-load cycle-week__rx-load--open"
-															>
-																{translate(lang, 'cycle.prescriptionOpen')}
-															</span>
-														{/if}
-													</span>
-												</li>
-											{/each}
-										</ul>
-										<p class="cycle-week__rx-total">
-											{translate(lang, 'cycle.setsTotal', {
-												n: cycleTargetSetCount(targets)
-											})}
-										</p>
+														</span>
+													</li>
+												{/each}
+											</ul>
+											<p class="cycle-week__rx-total">
+												{translate(lang, 'cycle.setsTotal', {
+													n: cycleTargetSetCount(targets)
+												})}
+											</p>
+										{/if}
 									{/if}
 								</li>
 							{/each}

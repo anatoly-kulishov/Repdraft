@@ -51,6 +51,40 @@ GSC ругается `We couldn't find your verification token`, если в DNS
 - В Вебмастере: переобход главной
 - Через 1-2 недели смотреть покрытие; `.xyz` можно оставить с 308 на `.ru`, пока есть трафик/индекс
 
+## Иконка и логотип в поиске
+
+Две разные сущности, и кешируются они отдельно:
+
+| Что | Откуда | Кеш |
+|---|---|---|
+| favicon (кружок слева от URL) | `<link rel="icon">` в `src/app.html` | Google обновляет при переобходе главной |
+| «site logo» (крупная плитка в выдаче) | `Organization.logo` в JSON-LD главной | отдельный кеш картинки, обновляется неделями |
+
+Правила, которые уже зашиты (не ломать):
+
+- Иконки — PNG, размеры **кратные 48** (48 / 96 / 144 / 192): Google берёт самую
+  большую и уменьшает, из маленькой получается мыло. 16/32 остаются для вкладок,
+  120 — для Safari.
+- **Не ставить `sizes="any"`** на ICO: `any` = «векторная, годится в любом
+  размере», Google берёт 16/32-кадр и растягивает его в плитку.
+- `Organization.logo` — отдельный узел на главной (`buildOrganizationJsonLd`),
+  `ImageObject` с `width`/`height` 512. Голый `url` без размеров Google часто
+  игнорирует и падает обратно на favicon.
+- `LOGO_IMAGE_PATH` и `FAVICON_CACHE_BUST` (`scripts/generate-brand-icons.mjs`)
+  держим синхронно: при смене арта бампаем `?v=`, иначе Google/Yandex отдают
+  старую картинку из своего кеша. После бампа — `npm run icons:pwa`.
+
+Проверка, что именно отдаёт Google (без консоли):
+
+```bash
+curl -s "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://www.repdraft.ru&size=128" -o /tmp/g.png
+```
+
+Если тут иконка резкая и правильная, а в выдаче мыло — это кеш плитки site logo:
+GSC → URL Inspection → `https://www.repdraft.ru/` → **Request indexing**.
+Форсировать обновление нельзя, обычно 1-4 недели. Менять URL иконки чаще, чем
+раз в релиз, вредно: каждый новый URL сбрасывает переобход.
+
 ## Env на VPS (опционально)
 
 В `/opt/repdraft/.env`:

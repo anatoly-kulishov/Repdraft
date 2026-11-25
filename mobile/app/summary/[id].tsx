@@ -219,7 +219,12 @@ export default function SummaryScreen() {
 										const kind = loggedSetKind(set);
 										return (
 											<Text key={si} style={styles.setLine}>
-												{si + 1}. {set.weightKg ?? '-'} × {set.reps ?? '-'}
+												{si + 1}.{' '}
+												{ex.measure === 'seconds'
+													? `${set.reps ?? '-'} ${tt('common.sec')}`
+													: ex.measure === 'minutes'
+														? `${set.reps ?? '-'} ${tt('common.min')}`
+														: `${set.weightKg ?? '-'} × ${set.reps ?? '-'}`}
 												{kind !== 'work' ? ` · ${tt(setKindMessageKey(kind))}` : ''}
 											</Text>
 										);

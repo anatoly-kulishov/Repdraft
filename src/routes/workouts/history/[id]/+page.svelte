@@ -25,7 +25,7 @@
 		setKindMessageKey,
 		updateLoggedSet
 	} from '$lib/domain/session';
-	import type { ExerciseIndexItem, LoggedSet, WorkoutSession } from '$lib/domain/types';
+	import type { ExerciseIndexItem, ExerciseMeasure, LoggedSet, WorkoutSession } from '$lib/domain/types';
 	import { formatDurationMs, formatLongDate } from '$lib/i18n/format';
 	import { translate, translateError, translatePlural } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
@@ -331,7 +331,7 @@
 	/>
 {/snippet}
 
-{#snippet viewSets(rows: { set: LoggedSet; setIndex: number }[])}
+{#snippet viewSets(rows: { set: LoggedSet; setIndex: number }[], measure?: ExerciseMeasure)}
 	{#if rows.length > 0}
 		<ul class="history-exercise__sets history-exercise__sets--grid">
 			{#each rows as item, i (item.setIndex)}
@@ -339,7 +339,10 @@
 				<li class="history-exercise__set history-exercise__set--cell tabular-nums">
 					<span class="history-exercise__set-i">{i + 1}</span>
 					<span class="history-exercise__set-value">
-						{#if item.set.weightKg != null || item.set.reps != null}
+						{#if (measure === 'seconds' || measure === 'minutes') && item.set.reps != null}
+							{item.set.reps}
+							{translate(lang, measure === 'minutes' ? 'common.min' : 'common.sec')}
+						{:else if item.set.weightKg != null || item.set.reps != null}
 							{item.set.weightKg != null ? item.set.weightKg : '-'} × {item.set.reps ?? '-'}
 						{:else}
 							{translate(lang, 'live.setMarked')}
@@ -638,7 +641,7 @@
 							<p class="history-exercise__note">{ex.note.trim()}</p>
 						{/if}
 
-						{@render viewSets(rows)}
+						{@render viewSets(rows, ex.measure)}
 					{:else}
 						<div class="history-exercise__head is-static">
 							<span
@@ -649,7 +652,7 @@
 								<p class="workout-preview-row-title">{ex.exerciseId}</p>
 							</div>
 						</div>
-						{@render viewSets(rows)}
+						{@render viewSets(rows, ex.measure)}
 					{/if}
 				</li>
 			{/each}

@@ -2,20 +2,48 @@ import type { AppLocale } from '$lib/i18n/locale';
 import type { Article } from '$lib/domain/articles';
 import type { Exercise } from '$lib/domain/types';
 import { exerciseName } from '$lib/domain/exerciseName';
-import { OG_SQUARE_IMAGE_PATH, SITE_NAME, absoluteUrl } from '$lib/seo/site';
+import { LOGO_IMAGE_PATH, OG_SQUARE_IMAGE_PATH, SITE_NAME, absoluteUrl } from '$lib/seo/site';
 import { articleOgPath } from '$lib/seo/articleOg';
 
 type JsonLd = Record<string, unknown>;
 
+function orgId(origin: string): string {
+	return `${origin.replace(/\/$/, '')}/#organization`;
+}
+
 function orgPublisher(origin: string): JsonLd {
 	return {
 		'@type': 'Organization',
+		'@id': orgId(origin),
 		name: SITE_NAME,
 		url: origin,
-		logo: {
-			'@type': 'ImageObject',
-			url: absoluteUrl('/icon-512-v3.png', origin)
-		}
+		logo: logoObject(origin)
+	};
+}
+
+/** Google wants a sized square image (≥112×112) — a bare `url` is often ignored. */
+function logoObject(origin: string): JsonLd {
+	return {
+		'@type': 'ImageObject',
+		url: absoluteUrl(LOGO_IMAGE_PATH, origin),
+		width: 512,
+		height: 512,
+		caption: SITE_NAME
+	};
+}
+
+/**
+ * Standalone Organization node for the home page. The search logo is picked from
+ * here (not from a nested `publisher`), so keep it a top-level graph node.
+ */
+export function buildOrganizationJsonLd(origin: string): JsonLd {
+	return {
+		'@context': 'https://schema.org',
+		'@type': 'Organization',
+		'@id': orgId(origin),
+		name: SITE_NAME,
+		url: origin.replace(/\/$/, ''),
+		logo: logoObject(origin)
 	};
 }
 
@@ -54,7 +82,7 @@ export function buildWebApplicationJsonLd(origin: string, description: string): 
 		isAccessibleForFree: true,
 		inLanguage: ['ru', 'en'],
 		image: absoluteUrl(OG_SQUARE_IMAGE_PATH, origin),
-		icon: absoluteUrl('/icon-512-v3.png', origin),
+		icon: absoluteUrl(LOGO_IMAGE_PATH, origin),
 		offers: {
 			'@type': 'Offer',
 			price: '0',

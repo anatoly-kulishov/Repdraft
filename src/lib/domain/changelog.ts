@@ -14,6 +14,27 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.31.0',
+		highlights: {
+			ru: [
+				'Планка, вис и стенка считаются секундами: в тренировке есть кнопка-секундомер, она сама записывает время подхода',
+				'Дорожка, велосипед и эллипс считаются минутами: включается в плане, в тренировке поле «Минуты»',
+				'Время видно в превью плана, итогах и истории: «45 сек» или «20 мин» вместо «45 повторов»',
+				'В цикле открыта одна неделя и один день: свёрнутый день - строка с названием и числом упражнений, «Начать» рядом',
+				'Шторка замены упражнения снова листается на iPhone',
+				'Иконка в поиске: резкие размеры и логотип с габаритами на месте, поисковик подтянет их при следующем обходе'
+			],
+			en: [
+				'Planks, hangs and wall sits count seconds: the workout has a stopwatch that logs the set time',
+				'Treadmill, bike and elliptical count minutes: switch it on in the plan, the workout shows a Minutes field',
+				'Time shows up in the plan preview, summary and history: “45 sec” or “20 min” instead of “45 reps”',
+				'The cycle opens one week and one day: a folded day is a row with its name and exercise count, with Start next to it',
+				'The exercise swap sheet scrolls on iPhone again',
+				'Search icon: sharp sizes and a sized logo are in place, search engines pick them up on their next crawl'
+			]
+		}
+	},
+	{
 		version: '0.30.0',
 		highlights: {
 			ru: [

@@ -204,6 +204,8 @@ export function sessionVolumeKg(session: WorkoutSession): number {
 	for (const i of visibleSessionExerciseIndices(session)) {
 		const ex = session.exercises[i];
 		if (!ex) continue;
+		// Holds/cardio log a duration, not reps: weight × seconds is not tonnage.
+		if (ex.measure === 'seconds' || ex.measure === 'minutes') continue;
 		for (const set of ex.sets) {
 			if (!set.completed || set.weightKg == null || set.reps == null) continue;
 			total += set.weightKg * set.reps;

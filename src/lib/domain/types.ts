@@ -37,11 +37,20 @@ export type Exercise = ExerciseIndexItem & {
 	gif_url: string;
 };
 
+/**
+ * What one set is measured in. `reps` is a normal lift, `seconds` a hold (plank,
+ * wall sit, dead hang), `minutes` steady cardio (treadmill, bike, run) — in both
+ * timed cases the `reps` number stores the duration, not repetitions.
+ */
+export type ExerciseMeasure = 'reps' | 'seconds' | 'minutes';
+
 export type WorkoutExercise = {
 	exerciseId: string;
 	sets: number;
 	reps: number;
 	restSec: number;
+	/** `seconds` / `minutes` = the `reps` field means duration, not repetitions. */
+	measure?: ExerciseMeasure;
 	/**
 	 * Per-set planned reps (ladder / scheme). When present, length is the set count;
 	 * `sets` / `reps` stay in sync for back-compat (`reps` = first step).
@@ -100,6 +109,8 @@ export type SessionExercise = {
 	targetSets: number;
 	targetReps: number;
 	restSec: number;
+	/** Copied from the plan: `seconds` / `minutes` = logged `reps` are duration. */
+	measure?: ExerciseMeasure;
 	sets: LoggedSet[];
 	/** Live: excluded from nav/progress; partial logs kept in history. */
 	skipped?: boolean;

@@ -99,10 +99,19 @@ test('the substitute list scrolls by touch inside the sheet', async ({ page }) =
 	await expect.poll(scrollTop).toBeGreaterThan(20);
 
 	// The card must not be a second same-axis scroller — iOS drags the wrong box.
-	const cardOverflow = await page
-		.locator('.bottom-sheet__card')
-		.evaluate((el) => el.scrollHeight - el.clientHeight);
+	const card = page.locator('.bottom-sheet__card');
+	const cardOverflow = await card.evaluate((el) => el.scrollHeight - el.clientHeight);
 	expect(cardOverflow).toBeLessThanOrEqual(1);
+	// CSS invariants of that fix (Chromium cannot reproduce the iOS symptom, but
+	// it can catch a regression): one scroller, and no backdrop-filter layer on
+	// the ancestor of that scroller — WebKit ignores pans inside a filtered card
+	// until the content gets focus.
+	await expect(card).toHaveCSS('overflow-y', 'hidden');
+	await expect(card).toHaveCSS('backdrop-filter', 'none');
+	const plateFilter = await card.evaluate(
+		(el) => getComputedStyle(el, '::before').backdropFilter
+	);
+	expect(plateFilter).not.toBe('none');
 });
 
 test('no two substitute rows are the same movement, and today’s lifts are skipped', async ({

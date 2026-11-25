@@ -1,5 +1,6 @@
 import { usesExtraKgField } from './homeKit';
 import { LADDER_REPS, SETS } from './inputLimits';
+import type { ExerciseMeasure } from './types';
 
 export const DEFAULT_SETS = 3;
 export const DEFAULT_REPS = 10;
@@ -34,15 +35,42 @@ export function formatLadderLabel(scheme: number[]): string {
 	return `${first}→${last}`;
 }
 
-/** Plan / preview line: `3 × 10` or `5 · 5→1` when ladder. */
-export function formatExercisePrescription(ex: {
-	sets: number;
-	reps: number;
-	repsScheme?: number[] | null;
-}): string {
+/** A timed set: a hold in seconds or steady cardio in minutes. */
+export function isTimedMeasure(ex: { measure?: ExerciseMeasure | null }): boolean {
+	return ex.measure === 'seconds' || ex.measure === 'minutes';
+}
+
+/**
+ * Which duration unit fits this exercise when the athlete asks to time it:
+ * cardio counts minutes (a treadmill set is «20 мин»), everything else seconds
+ * (a plank is «45 сек»).
+ */
+export function timingMeasureFor(bodyPart?: string | null): 'seconds' | 'minutes' {
+	return isCardioBodyPart(bodyPart) ? 'minutes' : 'seconds';
+}
+
+/** i18n key for the duration unit of a measure (reps need no unit). */
+export function measureUnitMessageKey(
+	measure: ExerciseMeasure
+): 'common.sec' | 'common.min' {
+	return measure === 'seconds' ? 'common.sec' : 'common.min';
+}
+
+/** Plan / preview line: `3 × 10`, `3 × 45 сек`, `3 × 20 мин`; `5 · 5→1` when ladder. */
+export function formatExercisePrescription(
+	ex: {
+		sets: number;
+		reps: number;
+		repsScheme?: number[] | null;
+		measure?: ExerciseMeasure | null;
+	},
+	units: { seconds?: string; minutes?: string } = {}
+): string {
 	if (hasLadderScheme(ex) && ex.repsScheme) {
 		return `${ex.sets} · ${formatLadderLabel(ex.repsScheme)}`;
 	}
+	if (ex.measure === 'seconds') return `${ex.sets} × ${ex.reps} ${units.seconds ?? 'сек'}`;
+	if (ex.measure === 'minutes') return `${ex.sets} × ${ex.reps} ${units.minutes ?? 'мин'}`;
 	return `${ex.sets} × ${ex.reps}`;
 }
 

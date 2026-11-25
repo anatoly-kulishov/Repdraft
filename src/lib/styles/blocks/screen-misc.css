@@ -4191,8 +4191,11 @@ button.clip-composer__pick:hover:not(:disabled),
 	width: min(100%, 24rem);
 	padding: 1.1rem 1.05rem 1.15rem;
 	box-shadow: var(--shadow-overlay);
-	/* Translate only: scale would shrink CTAs below the 48px touch floor mid-enter. */
-	animation: kineticsSnackbarIn 0.35s var(--ease-toast) both;
+	/* Translate only: scale would shrink CTAs below the 48px touch floor mid-enter.
+	   `backwards`, not `both`: a filled animation keeps `transform` (and a
+	   composited layer) on the card forever, and an inner scroller under a
+	   transformed/backdrop-filtered layer is exactly what iOS refuses to pan. */
+	animation: kineticsSnackbarIn 0.35s var(--ease-toast) backwards;
 }
 
 [data-slot='sheet-overlay'] {
@@ -4232,10 +4235,11 @@ button.clip-composer__pick:hover:not(:disabled),
 	padding: 1rem;
 	padding-bottom: calc(var(--mobile-chrome-bottom, 0px) + 1rem);
 	/* Keep sheet gestures from chaining into the page behind (iOS especially).
-	   Not `none`: Safari resolves touch-action across the whole ancestor chain,
-	   so `none` here also froze chip strips / lists inside the card until focus. */
+	   No `touch-action` here on purpose: Safari resolves it across the whole
+	   ancestor chain, and any value other than `auto` on the sheet chrome froze
+	   pans inside the card («scrolls only after you tap something in the
+	   sheet»). Chaining is stopped by overscroll-behavior + the page lock. */
 	overscroll-behavior: none;
-	touch-action: manipulation;
 }
 
 .bottom-sheet__backdrop {
@@ -4267,8 +4271,8 @@ button.clip-composer__pick:hover:not(:disabled),
 	overflow: hidden;
 	min-width: 0;
 	overscroll-behavior: contain;
-	/* pan-x + pan-y so chip strips / carousels inside the sheet can scroll. */
-	touch-action: manipulation;
+	/* No `touch-action` here: any value but `auto` on the sheet chrome made
+	   Safari resolve the gesture against the card instead of the list inside it. */
 }
 
 [data-slot='sheet-content'][data-side='bottom'].bottom-sheet.bottom-sheet--raised .bottom-sheet__host {
