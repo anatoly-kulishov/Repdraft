@@ -38,7 +38,7 @@
 	import { translate, translateError, translatePlural } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import JsonLd from '$lib/seo/JsonLd.svelte';
-	import { buildWebApplicationJsonLd, buildWebSiteJsonLd } from '$lib/seo/jsonLd';
+	import { buildOrganizationJsonLd, buildWebApplicationJsonLd, buildWebSiteJsonLd } from '$lib/seo/jsonLd';
 	import { resolveSeoLang } from '$lib/seo/seoLang';
 	import { readSearchParam } from '$lib/navigation/urlSearchParams';
 	import { resolveSiteOrigin } from '$lib/seo/site';
@@ -235,6 +235,7 @@
 	let webAppJsonLd = $derived(
 		buildWebApplicationJsonLd(siteOrigin, translate(seoLang, 'app.metaDescription'))
 	);
+	let organizationJsonLd = $derived(buildOrganizationJsonLd(siteOrigin));
 	let active = $derived.by(() => {
 		const fromStore = $live.session;
 		if (fromStore && !fromStore.finishedAt) return fromStore;
@@ -533,7 +534,7 @@
 </script>
 
 <SeoHead titleKey="seo.homeTitle" descriptionKey="app.metaDescription" path="/" />
-<JsonLd data={[websiteJsonLd, webAppJsonLd]} />
+<JsonLd data={[organizationJsonLd, websiteJsonLd, webAppJsonLd]} />
 
 <section
 	class="home-page content-page"

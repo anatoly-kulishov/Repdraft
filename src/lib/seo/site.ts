@@ -3,6 +3,14 @@ export const SITE_NAME = 'Repdraft';
 /** Public production host (apex redirects here). Used when env/request origin is unusable. */
 export const CANONICAL_SITE_ORIGIN = 'https://www.repdraft.ru';
 
+/**
+ * Square brand mark used as `Organization.logo` (search logo + rich results).
+ * `?v=` matches `FAVICON_CACHE_BUST` in scripts/generate-brand-icons.mjs: Google
+ * caches the *image*, so a new query string is the only way to make it refetch.
+ * Bump both together when the icon art changes.
+ */
+export const LOGO_IMAGE_PATH = '/icon-512-v3.png?v=16';
+
 const DEFAULT_OG_IMAGE = '/og-image.jpg';
 /** Square mark. Second og:image so Google can use it instead of cropping the wide card. */
 export const OG_SQUARE_IMAGE_PATH = '/og-square.jpg';

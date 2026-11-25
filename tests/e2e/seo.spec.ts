@@ -71,6 +71,47 @@ test.describe('crawlable URL contract', () => {
 		expect(body).toMatch(/Sitemap:\s*https:\/\/www\.repdraft\.ru\/sitemap\.xml/i);
 	});
 
+	/*
+	 * Google renders the search logo from the biggest icon it can find and
+	 * upscales whatever it picked. `sizes="any"` on the ICO made it pick the
+	 * 16/32px frame → blurry tile, so this guards the fix.
+	 */
+	test('search icons are PNGs at Google-friendly sizes and the logo is sized', async ({
+		request
+	}) => {
+		const response = await request.get('/');
+		expect(response.status()).toBe(200);
+		const html = await response.text();
+
+		const iconLinks = [...html.matchAll(/<link[^>]*rel="(?:icon|shortcut icon)"[^>]*>/gi)].map(
+			(match) => match[0]
+		);
+		const iconHrefs = iconLinks.map((tag) => tag.match(/href="([^"]+)"/)?.[1] ?? '');
+		expect(iconHrefs.some((href) => /favicon-96x96\.png\?v=\d+/.test(href))).toBe(true);
+		expect(iconHrefs.some((href) => /favicon-144x144\.png\?v=\d+/.test(href))).toBe(true);
+		expect(iconHrefs.some((href) => /icon-192-v3\.png\?v=\d+/.test(href))).toBe(true);
+		// A 16/32/48 ICO must not claim to be scalable.
+		expect(iconLinks.some((tag) => /sizes="any"/.test(tag))).toBe(false);
+
+		for (const href of iconHrefs.filter((href) => href.endsWith('.png') || href.includes('.png?'))) {
+			const iconResponse = await request.get(href);
+			expect(iconResponse.status(), `${href} status`).toBe(200);
+			expect(iconResponse.headers()['content-type'], `${href} type`).toContain('image/png');
+		}
+
+		const jsonLd = [...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)].map(
+			(match) => match[1]
+		);
+		const organization = jsonLd
+			.map((payload) => JSON.parse(payload) as Record<string, unknown>)
+			.find((node) => node['@type'] === 'Organization');
+		expect(organization).toBeTruthy();
+		const logo = organization?.logo as Record<string, unknown> | undefined;
+		expect(logo?.width).toBe(512);
+		expect(logo?.height).toBe(512);
+		expect(String(logo?.url)).toMatch(/icon-512-v3\.png\?v=\d+$/);
+	});
+
 	test('sitemap has no duplicate URLs and the sampled pages resolve', async ({ request }) => {
 		const response = await request.get('/sitemap.xml');
 		expect(response.status()).toBe(200);
