@@ -421,7 +421,7 @@
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	padding: 8px 10px;
+	padding: 6px 10px;
 	border-radius: var(--radius-control);
 	background: var(--color-surface-muted);
 }
@@ -432,15 +432,66 @@
 	gap: 10px;
 }
 
-.cycle-week__plan-name {
+/* The day row is the accordion header: name + «N упражнений» + chevron. The
+   week used to print every exercise of every day at once (~7 rows × 4 days),
+   so the whole screen below the chart was a wall of numbers. */
+.cycle-week__plan-toggle {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1 1 auto;
+	min-width: 0;
+	min-height: 48px;
+	padding: 2px 0;
+	border: 0;
+	background: transparent;
+	color: var(--color-ink);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.cycle-week__plan-main {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
 	min-width: 0;
 	flex: 1 1 auto;
-	font-size: 0.875rem;
-	font-weight: 500;
+}
+
+.cycle-week__plan-name {
+	min-width: 0;
+	font-size: 0.9375rem;
+	font-weight: 600;
 	color: var(--color-ink);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+.cycle-week__plan-meta {
+	font-size: 0.75rem;
+	color: var(--color-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.cycle-week__plan-chevron {
+	display: inline-flex;
+	flex: 0 0 auto;
+	color: var(--color-muted-soft);
+	transition: transform 0.18s ease;
+}
+
+.cycle-week__plan--open .cycle-week__plan-chevron {
+	transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cycle-week__plan-chevron {
+		transition: none;
+	}
 }
 
 .cycle-week__plan-done {

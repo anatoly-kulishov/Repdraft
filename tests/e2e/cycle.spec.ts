@@ -143,6 +143,15 @@ test('a cycle week names sets and load, and starts the session with them', async
 	await gotoApp(page, '/cycle');
 
 	const slot = page.locator('.cycle-week__plan').first();
+	// Days start folded — the row is the accordion header (name + exercise count),
+	// so a week opens as four lines instead of four full prescriptions.
+	const toggle = slot.locator('.cycle-week__plan-toggle');
+	await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+	await expect(slot.locator('.cycle-week__rx-row')).toHaveCount(0);
+	await expect(toggle).toContainText('1 упражнение');
+	await toggle.click();
+	await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
 	const row = slot.locator('.cycle-week__rx-row').first();
 	// Intensity week of the muscle goal: 3 × 8 shifts to 2 × 6.
 	await expect(row).toContainText('2 × 6');

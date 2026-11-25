@@ -8,7 +8,7 @@ import {
 	Text,
 	View
 } from 'react-native';
-import { Check } from 'lucide-react-native';
+import { Check, ChevronDown } from 'lucide-react-native';
 import { ATHLETE_GOAL_IDS, type AthleteGoalId } from '@repdraft/domain/athleteProfile';
 import {
 	CYCLE_LENGTHS,
@@ -54,6 +54,8 @@ export default function CycleScreen() {
 	const [draftWeeks, setDraftWeeks] = useState<CycleLength>(10);
 	const [draftPlanIds, setDraftPlanIds] = useState<string[]>([]);
 	const [expandedWeek, setExpandedWeek] = useState<number | null>(null);
+	/** Day (plan) whose prescription is open inside the expanded week. */
+	const [expandedDay, setExpandedDay] = useState<string | null>(null);
 	const [resetOpen, setResetOpen] = useState(false);
 
 	const cycle = screen.cycle;
@@ -338,7 +340,11 @@ export default function CycleScreen() {
 									<Pressable
 										accessibilityRole="button"
 										accessibilityState={{ expanded: open }}
-										onPress={() => setExpandedWeek(open ? null : week.week)}
+										onPress={() => {
+											// One open week, one open day inside it.
+											setExpandedDay(null);
+											setExpandedWeek(open ? null : week.week);
+										}}
 										style={styles.weekHead}
 									>
 										<View style={styles.weekHeadBody}>
@@ -363,13 +369,41 @@ export default function CycleScreen() {
 										<View style={styles.weekPlans}>
 											{rows.map((row) => {
 												const plan = screen.plans.find((item) => item.id === row.planId);
-												const targets = plan ? targetsFor(plan, week.week) : [];
+												const dayOpen = !!plan && expandedDay === row.planId;
+												const targets = dayOpen && plan ? targetsFor(plan, week.week) : [];
 												return (
 													<View key={row.planId} style={styles.planSlot}>
 														<View style={styles.planSlotHead}>
-															<Text style={styles.planSlotName} numberOfLines={1}>
-																{row.planName}
-															</Text>
+															{plan ? (
+																<Pressable
+																	accessibilityRole="button"
+																	accessibilityState={{ expanded: dayOpen }}
+																	onPress={() => setExpandedDay(dayOpen ? null : row.planId)}
+																	style={styles.planSlotToggle}
+																>
+																	<View style={styles.planSlotMain}>
+																		<Text style={styles.planSlotName} numberOfLines={1}>
+																			{row.planName}
+																		</Text>
+																		<Text style={styles.planSlotMeta}>
+																			{translatePlural(
+																				locale,
+																				'home.pillExercises',
+																				planExerciseSlotCount(plan)
+																			)}
+																		</Text>
+																	</View>
+																	<ChevronDown
+																		color={colors.mutedSoft}
+																		size={16}
+																		style={dayOpen ? styles.planSlotChevronOpen : undefined}
+																	/>
+																</Pressable>
+															) : (
+																<Text style={styles.planSlotName} numberOfLines={1}>
+																	{row.planName}
+																</Text>
+															)}
 															{row.done ? (
 																<View style={styles.planDone}>
 																	<Check color={colors.success} size={16} />
@@ -387,7 +421,7 @@ export default function CycleScreen() {
 																</View>
 															) : null}
 														</View>
-														{targets.length > 0 ? (
+														{dayOpen && targets.length > 0 ? (
 															<View style={styles.planRx}>
 																{targets.map((target, ti) => (
 																	<View key={`${row.planId}-${ti}`} style={styles.planRxRow}>
@@ -635,19 +669,33 @@ function makeStyles(colors: ColorPalette) {
 		weekPlans: { gap: space.sm, paddingHorizontal: space.md, paddingBottom: space.md },
 		planSlot: {
 			gap: space.sm,
-			padding: space.sm,
+			paddingHorizontal: space.sm,
+			paddingVertical: 6,
 			borderRadius: radius.md,
 			backgroundColor: colors.panelRaised
 		},
 		planSlotHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-		planSlotName: {
+		/* Day row is the accordion header: name + «N упражнений» + chevron, so an
+		   open week is four lines instead of four full prescriptions. */
+		planSlotToggle: {
 			flex: 1,
 			minWidth: 0,
-			color: colors.text,
-			fontSize: 14,
-			fontWeight: '500',
-			fontFamily: fontFamily.medium
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: space.sm,
+			minHeight: touchMin,
+			paddingVertical: 2
 		},
+		planSlotMain: { flex: 1, minWidth: 0, gap: 1 },
+		planSlotName: {
+			minWidth: 0,
+			color: colors.text,
+			fontSize: 15,
+			fontWeight: '600',
+			fontFamily: fontFamily.semibold
+		},
+		planSlotMeta: { color: colors.muted, fontSize: 12 },
+		planSlotChevronOpen: { transform: [{ rotate: '180deg' }] },
 		planRx: {
 			gap: 4,
 			paddingTop: space.xs,
