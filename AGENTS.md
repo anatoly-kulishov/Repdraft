@@ -27,6 +27,7 @@ npm run check:all # web + mobile typecheck
 npm run check:parity # tokens + versions + check:all
 npm run test:e2e # Playwright on the production build (:4199)
 npm run build:tokens # after editing src/lib/design/tokens.ts
+npm run ads # ad screenshots + post/story/banner cards → marketing/ads/<date>/
 npm run build
 # Web prod: RF VPS https://www.repdraft.ru (GitHub Actions on main, or npm run deploy:vps)
 ```

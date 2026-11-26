@@ -44,7 +44,8 @@
     "test:e2e:install": "playwright install chromium",
     "build:embeddings": "node --env-file=.env --experimental-strip-types ./scripts/build-embeddings.ts",
     "icons:pwa": "node ./scripts/generate-brand-icons.mjs",
-    "backfill:gif-cache": "node --env-file=.env scripts/backfill-technique-gif-cache.mjs"
+    "backfill:gif-cache": "node --env-file=.env scripts/backfill-technique-gif-cache.mjs",
+    "ads": "node scripts/capture-ads.mjs"
   },
   "devDependencies": {
     "@internationalized/date": "^3.12.3",

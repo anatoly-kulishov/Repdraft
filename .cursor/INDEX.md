@@ -42,6 +42,7 @@
 | `testing.md` | Playwright E2E: прод-сборка, изоляция, что покрыто, CI на PR |
 | `live-picker.md` | Замена упражнения в live: select зоны, `replacementCandidates` (умный подбор), высота шита |
 | `exercise-timing.md` | Время вместо повторов: `measure` (секунды/минуты), каталожный дефолт (планка → сек, дорожка → мин), переключатель в билдере, секундомер в live |
+| `marketing-kit.md` | `npm run ads`: скриншоты 1080×2400, посты 4:5, сторис 9:16, баннеры 1600×1000 — из живого приложения на демо-данных |
 | `summary-load.md` | Итоги: подходы за день и за неделю к цели 10+, почему не доля объёма за 30 дней |
 | `watch-session-ownership.md` | Watch companion spike: session lease / finish race |
 | `rn-visual-backlog.md` | Mobile theme + visual QA findings |

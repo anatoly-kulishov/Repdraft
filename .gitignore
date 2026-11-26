@@ -33,6 +33,9 @@ scripts/set-vercel-env.mjs
 .cursor/skills/ui-ux-pro-max/
 .opencode/
 
+# Generated ad captures (`npm run ads`) — keep on disk, not in git
+marketing/ads/
+
 # Competitor UI captures / local mockups (keep on disk, not in public git)
 .cursor/product/competitor-screens/
 .cursor/product/*-mockup.png
