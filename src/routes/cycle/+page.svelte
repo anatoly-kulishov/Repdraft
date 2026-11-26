@@ -33,7 +33,7 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { clampPlanName } from '$lib/domain/inputLimits';
 	import type { ExerciseIndexItem, WorkoutExercise, WorkoutPlan } from '$lib/domain/types';
-	import { planExerciseSlotCount } from '$lib/domain/workout';
+	import { measureOf, planExerciseSlotCount } from '$lib/domain/workout';
 	import { translate, translatePlural } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
 	import { readActiveSession } from '$lib/storage/localSessionRepository';
@@ -91,7 +91,8 @@
 		plan: WorkoutPlan,
 		exerciseId: string
 	): WorkoutExercise['measure'] {
-		return plan.exercises.find((ex) => ex.exerciseId === exerciseId)?.measure;
+		const ex = plan.exercises.find((row) => row.exerciseId === exerciseId);
+		return ex ? measureOf(ex, exerciseById.get(exerciseId)) : undefined;
 	}
 
 	/** Sets/reps of the week plus the load the athlete's own history calls for. */

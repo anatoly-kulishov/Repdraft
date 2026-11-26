@@ -26,6 +26,7 @@
 		updateLoggedSet
 	} from '$lib/domain/session';
 	import type { ExerciseIndexItem, ExerciseMeasure, LoggedSet, WorkoutSession } from '$lib/domain/types';
+	import { measureOf } from '$lib/domain/workout';
 	import { formatDurationMs, formatLongDate } from '$lib/i18n/format';
 	import { translate, translateError, translatePlural } from '$lib/i18n/messages';
 	import SeoHead from '$lib/seo/SeoHead.svelte';
@@ -641,7 +642,7 @@
 							<p class="history-exercise__note">{ex.note.trim()}</p>
 						{/if}
 
-						{@render viewSets(rows, ex.measure)}
+						{@render viewSets(rows, measureOf(ex, indexById.get(ex.exerciseId)))}
 					{:else}
 						<div class="history-exercise__head is-static">
 							<span
@@ -652,7 +653,7 @@
 								<p class="workout-preview-row-title">{ex.exerciseId}</p>
 							</div>
 						</div>
-						{@render viewSets(rows, ex.measure)}
+						{@render viewSets(rows, measureOf(ex, indexById.get(ex.exerciseId)))}
 					{/if}
 				</li>
 			{/each}

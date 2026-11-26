@@ -11,6 +11,7 @@
  */
 
 import { exerciseMatchesEquipment } from './exercisePick';
+import { defaultMeasureFor, durationSeedFor } from './workoutDefaults';
 import type { BodyPart, ExerciseIndexItem, WorkoutExercise } from './types';
 
 export type ProgramLevel = 'novice' | 'intermediate';
@@ -309,11 +310,14 @@ export function buildSessionExercises(args: {
 		);
 		for (const exercise of picked) {
 			used.add(exercise.id);
+			// A program can land on a plank or a treadmill: prescribe a duration.
+			const measure = defaultMeasureFor(exercise);
 			rows.push({
 				exerciseId: exercise.id,
 				sets: prescription.sets,
-				reps: prescription.reps,
-				restSec: prescription.restSec
+				reps: measure === 'reps' ? prescription.reps : durationSeedFor(measure, prescription.reps),
+				restSec: prescription.restSec,
+				...(measure === 'reps' ? {} : { measure })
 			});
 		}
 	}

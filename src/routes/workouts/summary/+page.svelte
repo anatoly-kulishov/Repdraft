@@ -20,6 +20,7 @@
 		previousPlanSession
 	} from '$lib/domain/session';
 	import { exerciseName } from '$lib/domain/exerciseName';
+	import { measureOf } from '$lib/domain/workout';
 	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import type { ExerciseIndexItem, ExerciseMeasure, LoggedSet, WorkoutSession } from '$lib/domain/types';
 	import { formatDurationMs } from '$lib/i18n/format';
@@ -328,7 +329,7 @@
 											>{si + 1}</span
 										>
 										<span class="summary-exercises-preview__set-val tabular-nums"
-											>{formatSet(set, ex.measure)}</span
+											>{formatSet(set, measureOf(ex, indexById.get(ex.exerciseId)))}</span
 										>
 									</li>
 								{/each}

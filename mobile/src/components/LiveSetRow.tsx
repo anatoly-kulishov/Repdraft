@@ -76,54 +76,52 @@ function LiveSetRowInner({
 						</Text>
 					) : null}
 				</Pressable>
-				{skipLift && !timed ? <View style={styles.fields} /> : (
-					<View style={styles.fields}>
-						{timed ? null : (
-							<TextInput
-								value={draft.weight}
-								editable={!completed}
-								onChangeText={onChangeWeight}
-								onBlur={onBlur}
-								keyboardType="decimal-pad"
-								style={[styles.input, current && styles.inputCurrent]}
-								placeholder={bodyweight ? tt('live.weightBwPh') : tt('common.kg')}
-								placeholderTextColor={colors.muted}
-								accessibilityLabel={`${tt(bodyweight ? 'live.weightBw' : 'live.weight')} ${n}`}
-							/>
-						)}
+				<View style={styles.fields}>
+					{timed || skipLift ? null : (
 						<TextInput
-							value={draft.reps}
+							value={draft.weight}
 							editable={!completed}
-							onChangeText={onChangeReps}
+							onChangeText={onChangeWeight}
 							onBlur={onBlur}
-							keyboardType="number-pad"
+							keyboardType="decimal-pad"
 							style={[styles.input, current && styles.inputCurrent]}
-							placeholder={
-								minutes
-									? tt('live.minutesPh')
-									: timed
-										? tt('live.secondsPh')
-										: tt('common.reps')
-							}
+							placeholder={bodyweight ? tt('live.weightBwPh') : tt('common.kg')}
 							placeholderTextColor={colors.muted}
-							accessibilityLabel={`${tt(minutes ? 'live.minutes' : timed ? 'live.seconds' : 'live.reps')} ${n}`}
+							accessibilityLabel={`${tt(bodyweight ? 'live.weightBw' : 'live.weight')} ${n}`}
 						/>
-						{timed && !completed ? (
-							<Pressable
-								accessibilityRole="button"
-								accessibilityLabel={timerRunning ? tt('live.timerStop') : tt('live.timerStart')}
-								onPress={onToggleTimer}
-								style={[styles.timer, timerRunning && styles.timerRunning]}
-							>
-								{timerRunning ? (
-									<Text style={styles.timerText}>{timerLabel}</Text>
-								) : (
-									<Timer size={22} color={colors.muted} strokeWidth={2.25} />
-								)}
-							</Pressable>
-						) : null}
-					</View>
-				)}
+					)}
+					<TextInput
+						value={draft.reps}
+						editable={!completed}
+						onChangeText={onChangeReps}
+						onBlur={onBlur}
+						keyboardType="number-pad"
+						style={[styles.input, current && styles.inputCurrent]}
+						placeholder={
+							minutes
+								? tt('live.minutesPh')
+								: timed
+									? tt('live.secondsPh')
+									: tt('common.reps')
+						}
+						placeholderTextColor={colors.muted}
+						accessibilityLabel={`${tt(minutes ? 'live.minutes' : timed ? 'live.seconds' : 'live.reps')} ${n}`}
+					/>
+					{timed && !completed ? (
+						<Pressable
+							accessibilityRole="button"
+							accessibilityLabel={timerRunning ? tt('live.timerStop') : tt('live.timerStart')}
+							onPress={onToggleTimer}
+							style={[styles.timer, timerRunning && styles.timerRunning]}
+						>
+							{timerRunning ? (
+								<Text style={styles.timerText}>{timerLabel}</Text>
+							) : (
+								<Timer size={22} color={colors.muted} strokeWidth={2.25} />
+							)}
+						</Pressable>
+					) : null}
+				</View>
 				<Pressable
 					accessibilityRole="button"
 					accessibilityLabel={completed ? tt('live.undoSet') : tt('live.log')}

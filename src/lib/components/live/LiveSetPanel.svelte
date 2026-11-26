@@ -15,7 +15,7 @@
 	import { exerciseMetaHint } from '$lib/domain/labels.ru';
 	import type { ExerciseIndexItem, SessionExercise, SetKind, WorkoutSession } from '$lib/domain/types';
 	import { NOTE_MAX, LIVE_REPS, REPS_INPUT_MAX_LEN, WEIGHT_INPUT_MAX_LEN, clampNote } from '$lib/domain/inputLimits';
-	import { isCardioBodyPart, isTimedMeasure, usesExtraKgField } from '$lib/domain/workout';
+	import { isCardioBodyPart, measureOf, usesExtraKgField } from '$lib/domain/workout';
 	import { formatRestSec } from '$lib/i18n/format';
 	import {
 		exerciseWeightByWeek,
@@ -223,9 +223,9 @@
 		});
 	});
 	let cardio = $derived(isCardioBodyPart(names.get(exercise.exerciseId)?.body_part));
-	/** Duration set: a hold in seconds or steady cardio in minutes. */
-	let measure = $derived(exercise.measure);
-	let timed = $derived(isTimedMeasure(exercise));
+	/** Duration set: a hold in seconds or steady cardio in minutes (catalog default). */
+	let measure = $derived(measureOf(exercise, names.get(exercise.exerciseId)));
+	let timed = $derived(measure === 'seconds' || measure === 'minutes');
 	let minutes = $derived(measure === 'minutes');
 	let repsLabel = $derived(
 		translate(lang, minutes ? 'live.minutes' : timed ? 'live.seconds' : 'live.reps')
@@ -557,25 +557,21 @@
 					</span>
 				{/if}
 			{/if}
-			{#if timed || !cardio}
-				{#if showFillColumn && canFillRepsAll && fillReps != null}
-					<button
-						type="button"
-						class="live-set-head__fill live-set-head__reps"
-						aria-label={fillRepsAllLabel}
-						title={fillRepsAllLabel}
-						onclick={applyRepsToAllSets}
-					>
-						<span class="live-set-head__fill-main">{repsLabel}</span>
-						<span class="live-set-head__fill-hint" aria-hidden="true">
-							{translate(lang, 'live.fillColumnHint')}
-						</span>
-					</button>
-				{:else}
-					<span class="live-set-head__reps">{repsLabel}</span>
-				{/if}
+			{#if showFillColumn && canFillRepsAll && fillReps != null}
+				<button
+					type="button"
+					class="live-set-head__fill live-set-head__reps"
+					aria-label={fillRepsAllLabel}
+					title={fillRepsAllLabel}
+					onclick={applyRepsToAllSets}
+				>
+					<span class="live-set-head__fill-main">{repsLabel}</span>
+					<span class="live-set-head__fill-hint" aria-hidden="true">
+						{translate(lang, 'live.fillColumnHint')}
+					</span>
+				</button>
 			{:else}
-				<span class="live-set-head__mark">{translate(lang, 'live.cardioCol')}</span>
+				<span class="live-set-head__reps">{repsLabel}</span>
 			{/if}
 			<AppButton
 				variant="ghost"
@@ -623,98 +619,90 @@
 								</span>
 							{/if}
 						</div>
-					{#if timed || !cardio}
-						{#if !timed}
-						<AppInput
-							class={`live-set-weight tabular-nums${invalidSetIndex === si && invalidKind === 'weight' ? ' is-invalid' : ''}`}
-							aria-invalid={invalidSetIndex === si && invalidKind === 'weight'}
-							type="text"
-							inputmode="decimal"
-							autocomplete="off"
-							maxlength={WEIGHT_INPUT_MAX_LEN}
-							enterkeyhint="next"
-							placeholder={weightPlaceholder}
-							aria-label={`${weightLabel} ${si + 1}`}
-							value={set.weightKg ?? ''}
-							readonly={set.completed}
-							tabindex={set.completed ? -1 : undefined}
-							data-swipe-pass=""
-							onfocus={(e) => {
-								if (set.completed) {
-									e.currentTarget.blur();
-									return;
-								}
-								scrollCurrentSetIntoView(e.currentTarget);
-							}}
-							oninput={(e) => {
-								if (set.completed) return;
-								const el = e.currentTarget;
-								const next = onWeight(si, el.value);
-								if (el.value !== next) el.value = next;
-							}}
-							onkeydown={(e) => onWeightKeydown(e, si)}
-						/>
+						{#if !timed && !cardio}
+							<AppInput
+								class={`live-set-weight tabular-nums${invalidSetIndex === si && invalidKind === 'weight' ? ' is-invalid' : ''}`}
+								aria-invalid={invalidSetIndex === si && invalidKind === 'weight'}
+								type="text"
+								inputmode="decimal"
+								autocomplete="off"
+								maxlength={WEIGHT_INPUT_MAX_LEN}
+								enterkeyhint="next"
+								placeholder={weightPlaceholder}
+								aria-label={`${weightLabel} ${si + 1}`}
+								value={set.weightKg ?? ''}
+								readonly={set.completed}
+								tabindex={set.completed ? -1 : undefined}
+								data-swipe-pass=""
+								onfocus={(e) => {
+									if (set.completed) {
+										e.currentTarget.blur();
+										return;
+									}
+									scrollCurrentSetIntoView(e.currentTarget);
+								}}
+								oninput={(e) => {
+									if (set.completed) return;
+									const el = e.currentTarget;
+									const next = onWeight(si, el.value);
+									if (el.value !== next) el.value = next;
+								}}
+								onkeydown={(e) => onWeightKeydown(e, si)}
+							/>
 						{/if}
 						<div class="live-set-time">
-						<AppInput
-							class={`live-set-reps tabular-nums${invalidSetIndex === si && invalidKind === 'reps' ? ' is-invalid' : ''}`}
-							aria-invalid={invalidSetIndex === si && invalidKind === 'reps'}
-							type="text"
-							inputmode="numeric"
-							autocomplete="off"
-							maxlength={REPS_INPUT_MAX_LEN}
-							enterkeyhint="done"
-							aria-label={`${repsLabel} ${si + 1}`}
-							value={set.reps ?? ''}
-							readonly={set.completed}
-							tabindex={set.completed ? -1 : undefined}
-							data-swipe-pass=""
-							onfocus={(e) => {
-								if (set.completed) {
-									e.currentTarget.blur();
-									return;
-								}
-								scrollCurrentSetIntoView(e.currentTarget);
-							}}
-							oninput={(e) => {
-								if (set.completed) return;
-								const el = e.currentTarget;
-								const next = onReps(si, el.value);
-								if (el.value !== next) el.value = next;
-							}}
-							onkeydown={(e) => onRepsKeydown(e, si)}
-						/>
-						{#if timed && !set.completed}
-							<button
-								type="button"
-								class="live-set-timer"
-								class:is-running={timingSet === si}
-								aria-label={timingSet === si
-									? translate(lang, 'live.timerStop')
-									: translate(lang, 'live.timerStart')}
-								title={timingSet === si
-									? translate(lang, 'live.timerStop')
-									: translate(lang, 'live.timerStart')}
+							<AppInput
+								class={`live-set-reps tabular-nums${invalidSetIndex === si && invalidKind === 'reps' ? ' is-invalid' : ''}`}
+								aria-invalid={invalidSetIndex === si && invalidKind === 'reps'}
+								type="text"
+								inputmode="numeric"
+								autocomplete="off"
+								maxlength={REPS_INPUT_MAX_LEN}
+								enterkeyhint="done"
+								aria-label={`${repsLabel} ${si + 1}`}
+								value={set.reps ?? ''}
+								readonly={set.completed}
+								tabindex={set.completed ? -1 : undefined}
 								data-swipe-pass=""
-								onclick={() => toggleSetTimer(si)}
-							>
-								{#if timingSet === si}
-									<span class="live-set-timer__time tabular-nums">
-										{formatRestSec(timerSeconds())}
-									</span>
-								{:else}
-									<LucideIcon icon={TimerIcon} size={ICON_BUTTON} />
-								{/if}
-							</button>
-						{/if}
+								onfocus={(e) => {
+									if (set.completed) {
+										e.currentTarget.blur();
+										return;
+									}
+									scrollCurrentSetIntoView(e.currentTarget);
+								}}
+								oninput={(e) => {
+									if (set.completed) return;
+									const el = e.currentTarget;
+									const next = onReps(si, el.value);
+									if (el.value !== next) el.value = next;
+								}}
+								onkeydown={(e) => onRepsKeydown(e, si)}
+							/>
+							{#if timed && !set.completed}
+								<button
+									type="button"
+									class="live-set-timer"
+									class:is-running={timingSet === si}
+									aria-label={timingSet === si
+										? translate(lang, 'live.timerStop')
+										: translate(lang, 'live.timerStart')}
+									title={timingSet === si
+										? translate(lang, 'live.timerStop')
+										: translate(lang, 'live.timerStart')}
+									data-swipe-pass=""
+									onclick={() => toggleSetTimer(si)}
+								>
+									{#if timingSet === si}
+										<span class="live-set-timer__time tabular-nums">
+											{formatRestSec(timerSeconds())}
+										</span>
+									{:else}
+										<LucideIcon icon={TimerIcon} size={ICON_BUTTON} />
+									{/if}
+								</button>
+							{/if}
 						</div>
-					{:else}
-						<span class="live-set-cardio-mark" data-swipe-pass="">
-							{set.completed
-								? translate(lang, 'live.setMarked')
-								: translate(lang, 'live.cardioMarkIdle')}
-						</span>
-					{/if}
 					{#if set.completed}
 						<AppButton
 							variant="ghost"

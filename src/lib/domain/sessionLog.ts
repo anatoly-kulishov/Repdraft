@@ -8,6 +8,7 @@ import {
 } from './inputLimits';
 import { visibleSessionExerciseIndices } from './sessionAlts';
 import type {
+	ExerciseMeasure,
 	LastPerformance,
 	LoggedSet,
 	SessionExercise,
@@ -16,20 +17,34 @@ import type {
 } from './types';
 import { loggedSetKind } from './sessionSetKind';
 import { planVsActualParts } from './sessionStats';
-import { DEFAULT_REPS, DEFAULT_REST_SEC, DEFAULT_SETS } from './workoutDefaults';
+import {
+	DEFAULT_REPS,
+	DEFAULT_REST_SEC,
+	DEFAULT_SETS,
+	durationSeedFor
+} from './workoutDefaults';
 
 export type NewSessionExerciseOpts = {
 	sets?: number;
 	reps?: number;
 	restSec?: number;
+	/** Holds count seconds, steady cardio minutes; omitted = plain reps. */
+	measure?: ExerciseMeasure;
 };
+
+/** `reps` only carries a duration for timed sets; `reps` itself means reps. */
+function timedMeasureOf(measure?: ExerciseMeasure): 'seconds' | 'minutes' | undefined {
+	return measure === 'seconds' || measure === 'minutes' ? measure : undefined;
+}
 
 function blankSessionExercise(
 	exerciseId: string,
 	opts: NewSessionExerciseOpts = {}
 ): SessionExercise {
 	const sets = Math.max(1, opts.sets ?? DEFAULT_SETS);
-	const reps = opts.reps ?? DEFAULT_REPS;
+	const measure = timedMeasureOf(opts.measure);
+	const reps =
+		opts.reps ?? (measure ? durationSeedFor(measure, DEFAULT_REPS) : DEFAULT_REPS);
 	const restSec = opts.restSec ?? DEFAULT_REST_SEC;
 	return {
 		exerciseId,
@@ -38,6 +53,7 @@ function blankSessionExercise(
 		targetSets: sets,
 		targetReps: reps,
 		restSec,
+		...(measure ? { measure } : {}),
 		sets: Array.from({ length: sets }, () => ({
 			weightKg: null,
 			reps,
@@ -80,10 +96,14 @@ export function replaceSessionExercise(
 	if (!prev || !id) return session;
 	if (prev.exerciseId === id) return session;
 
+	const measure = timedMeasureOf(opts.measure);
 	const next = blankSessionExercise(id, {
 		sets: opts.sets ?? prev.targetSets,
-		reps: opts.reps ?? prev.targetReps,
-		restSec: opts.restSec ?? prev.restSec
+		reps:
+			opts.reps ??
+			(measure ? durationSeedFor(measure, prev.targetReps) : prev.targetReps),
+		restSec: opts.restSec ?? prev.restSec,
+		...(measure ? { measure } : {})
 	});
 	next.groupId = prev.groupId ?? null;
 

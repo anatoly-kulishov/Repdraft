@@ -21,9 +21,14 @@ export {
 	defaultRestSecForExercise,
 	LIGHT_EQUIPMENT_REST_SEC,
 	isTimedMeasure,
+	defaultMeasureFor,
+	measureOf,
+	durationSeedFor,
+	repsFromDuration,
 	timingMeasureFor,
 	measureUnitMessageKey,
-	type ExerciseRestHint
+	type ExerciseRestHint,
+	type MeasureHint
 } from './workoutDefaults';
 
 export {
@@ -33,6 +38,7 @@ export {
 	insertExerciseAt,
 	updateExercise,
 	replacePlanExercise,
+	planWithResolvedMeasures,
 	type AddExerciseResult
 } from './workoutMutate';
 

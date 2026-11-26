@@ -25,7 +25,9 @@ export function useAddToPlan() {
 				}
 				const { plan: next, added } = addExercise(plan, item.id, {
 					name: item.name,
-					equipment: item.equipment
+					name_ru: item.name_ru,
+					equipment: item.equipment,
+					body_part: item.body_part
 				});
 				if (!added) {
 					Alert.alert(tt('builder.alreadyInPlan'));
