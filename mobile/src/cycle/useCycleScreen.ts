@@ -18,6 +18,7 @@ import {
 	startSessionFromPlan
 } from '@repdraft/domain/session';
 import type { WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
+import { planWithResolvedMeasures } from '@repdraft/domain/workout';
 import { loadExerciseIndex } from '../catalog/loadIndex';
 import { useLocale } from '../state/locale';
 import { clearCycle, readCycle, writeCycle } from '../state/cycle';
@@ -114,10 +115,13 @@ export function useCycleScreen() {
 					equipmentFor: (exerciseId) => catalog.get(exerciseId)?.equipment ?? null
 				});
 				// The week's sets/reps/load land in the session; history only fills a gap.
-				const started = startSessionFromPlan(variant, {
-					lockPrescription: true,
-					weights: cycleTargetWeights(targets)
-				});
+				const started = startSessionFromPlan(
+					planWithResolvedMeasures(variant, (id) => catalog.get(id) ?? null),
+					{
+						lockPrescription: true,
+						weights: cycleTargetWeights(targets)
+					}
+				);
 				const session = fillOpenWeightsFromHistory(
 					started,
 					(exerciseId, setIndex) =>

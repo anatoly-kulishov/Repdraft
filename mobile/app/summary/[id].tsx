@@ -23,6 +23,7 @@ import {
 } from '@repdraft/domain/session';
 import { formatDurationMs } from '@repdraft/i18n/format';
 import type { WorkoutSession } from '@repdraft/domain/types';
+import { measureOf } from '@repdraft/domain/workout';
 import {
 	exerciseDisplayName,
 	getIndexItem,
@@ -217,12 +218,13 @@ export default function SummaryScreen() {
 							{open
 								? done.map((set, si) => {
 										const kind = loggedSetKind(set);
+										const measure = measureOf(ex, getIndexItem(ex.exerciseId));
 										return (
 											<Text key={si} style={styles.setLine}>
 												{si + 1}.{' '}
-												{ex.measure === 'seconds'
+												{measure === 'seconds'
 													? `${set.reps ?? '-'} ${tt('common.sec')}`
-													: ex.measure === 'minutes'
+													: measure === 'minutes'
 														? `${set.reps ?? '-'} ${tt('common.min')}`
 														: `${set.weightKg ?? '-'} × ${set.reps ?? '-'}`}
 												{kind !== 'work' ? ` · ${tt(setKindMessageKey(kind))}` : ''}

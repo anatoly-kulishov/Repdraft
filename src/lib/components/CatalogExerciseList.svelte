@@ -633,7 +633,9 @@
 				onAction: () => {
 					const result = draft.addToDraft(exercise.id, {
 						name: exercise.name,
-						equipment: exercise.equipment
+						name_ru: exercise.name_ru,
+						equipment: exercise.equipment,
+						body_part: exercise.body_part
 					});
 					toasts.show(
 						translate(lang, result.added ? 'exercise.added' : 'exercise.already'),

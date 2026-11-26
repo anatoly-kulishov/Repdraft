@@ -9,8 +9,8 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { isCustomExerciseId } from '$lib/domain/customExercises';
 	import { exerciseMetaHint } from '$lib/domain/labels.ru';
-	import type { ExerciseIndexItem, WorkoutExercise, WorkoutPlan } from '$lib/domain/types';
-	import { altGroupMemberRole, formatExercisePrescription, formatLadderLabel, groupMemberRole, hasLadderScheme, planExerciseSlotCount, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
+	import type { ExerciseIndexItem, ExerciseMeasure, WorkoutExercise, WorkoutPlan } from '$lib/domain/types';
+	import { altGroupMemberRole, formatExercisePrescription, formatLadderLabel, groupMemberRole, hasLadderScheme, measureOf, planExerciseSlotCount, planPrescribedSetCount, planTargetSummary } from '$lib/domain/workout';
 	import { translate, translatePlural } from '$lib/i18n/messages';
 	import { cycleProgressNow } from '$lib/domain/cycle';
 	import { cycle } from '$lib/stores/cycle';
@@ -43,16 +43,24 @@
 	const peekedIndex = peekExerciseIndexWithCustoms();
 
 	let lang = $derived($resolvedLocale);
+	/** Stored unit, or the catalog default (plank -> seconds, treadmill -> minutes). */
+	function resolvedMeasure(ex: WorkoutExercise): ExerciseMeasure {
+		return measureOf(ex, indexById.get(ex.exerciseId));
+	}
 	/** `3 × 8` for a lift, `3 × 45 сек` / `3 × 20 мин` for a timed set. */
 	function prescription(ex: WorkoutExercise): string {
-		return formatExercisePrescription(ex, {
-			seconds: translate(lang, 'common.sec'),
-			minutes: translate(lang, 'common.min')
-		});
+		return formatExercisePrescription(
+			{ ...ex, measure: resolvedMeasure(ex) },
+			{
+				seconds: translate(lang, 'common.sec'),
+				minutes: translate(lang, 'common.min')
+			}
+		);
 	}
 	function repsUnit(ex: WorkoutExercise): string {
-		if (ex.measure === 'seconds') return translate(lang, 'common.sec');
-		if (ex.measure === 'minutes') return translate(lang, 'common.min');
+		const measure = resolvedMeasure(ex);
+		if (measure === 'seconds') return translate(lang, 'common.sec');
+		if (measure === 'minutes') return translate(lang, 'common.min');
 		return translate(lang, 'builder.reps').toLowerCase();
 	}
 	let showPreviewStartCoachmark = $derived(shouldShowCoachmark($onboarding, 'preview.start'));

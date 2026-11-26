@@ -12,6 +12,7 @@ import {
 	altGroupMemberRole,
 	formatExercisePrescription,
 	groupMemberRole,
+	measureOf,
 	planExerciseSlotCount,
 	planPrescribedSetCount,
 	planTargetSummary
@@ -203,7 +204,13 @@ export default function PlanPreviewScreen() {
 										<Text style={styles.cardTitle} numberOfLines={2}>
 											{exerciseDisplayName(ex.exerciseId, locale)}
 										</Text>
-										<Text style={styles.cardMeta}>{formatExercisePrescription(ex, { seconds: tt('common.sec'), minutes: tt('common.min') })} · {metaHint || item?.equipment || '-'}</Text>
+										<Text style={styles.cardMeta}>
+											{formatExercisePrescription(
+												{ ...ex, measure: measureOf(ex, item) },
+												{ seconds: tt('common.sec'), minutes: tt('common.min') }
+											)}{' '}
+											· {metaHint || item?.equipment || '-'}
+										</Text>
 									</View>
 								</View>
 							</Panel>

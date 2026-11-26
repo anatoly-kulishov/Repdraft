@@ -11,9 +11,10 @@ const plank = {
 	updatedAt: at,
 	exercises: [{ exerciseId: '0464', sets: 2, reps: 45, restSec: 60 }]
 };
-const measuredPlank = {
+/** A hold the athlete deliberately counts in reps (e.g. a plank-up drill). */
+const repPlank = {
 	...plank,
-	exercises: [{ exerciseId: '0464', sets: 2, reps: 45, restSec: 60, measure: 'seconds' }]
+	exercises: [{ exerciseId: '0464', sets: 2, reps: 8, restSec: 60, measure: 'reps' }]
 };
 
 /** Steady cardio: a treadmill block is 2 × 20 «минут», not 2 × 20 reps. */
@@ -22,42 +23,42 @@ const cardio = {
 	name: 'E2E дорожка',
 	createdAt: at,
 	updatedAt: at,
-	exercises: [{ exerciseId: '0685', sets: 2, reps: 12, restSec: 60 }]
+	exercises: [{ exerciseId: '0684', sets: 2, reps: 12, restSec: 60 }]
 };
 const measuredCardio = {
 	...cardio,
-	exercises: [{ exerciseId: '0685', sets: 2, reps: 20, restSec: 60, measure: 'minutes' }]
+	exercises: [{ exerciseId: '0684', sets: 2, reps: 20, restSec: 60, measure: 'minutes' }]
 };
 
-test('the builder can count a hold in seconds instead of reps', async ({ page }) => {
+test('a plank opens as a hold and can be forced back to reps', async ({ page }) => {
 	await seedLocalStorage(page, { 'repdraft:plans': [plank] });
 	await gotoApp(page, '/builder/plan-plank');
 
 	const row = page.locator('.workout-ex-row').first();
-	const repsChip = row.locator('.workout-ex-chip').filter({ hasText: 'Повторы' }).first();
-	await expect(repsChip).toBeVisible();
+	// The catalog default: nobody should have to discover the toggle for a plank.
+	await expect(row.locator('.workout-ex-chip').filter({ hasText: 'Секунды' }).first()).toBeVisible();
 
 	await row.getByRole('button', { name: 'Действия упражнения' }).click();
-	await page.getByRole('button', { name: 'Считать по времени' }).click();
+	await page.getByRole('button', { name: 'Считать по повторам' }).click();
 
-	await expect(
-		row.locator('.workout-ex-chip').filter({ hasText: 'Секунды' }).first()
-	).toBeVisible();
+	// «По повторам» is stored explicitly, so the default cannot undo it.
+	await expect(row.locator('.workout-ex-chip').filter({ hasText: 'Повторы' }).first()).toBeVisible();
 
 	await page.getByRole('button', { name: 'Сохранить', exact: true }).first().click();
 	await expect(page).toHaveURL(/\/workouts$/, { timeout: 20_000 });
-	await expect
-		.poll(async () =>
-			page.evaluate(() => {
-				const plans = JSON.parse(localStorage.getItem('repdraft:plans') ?? '[]');
-				return plans[0]?.exercises?.[0]?.measure ?? null;
-			})
-		)
-		.toBe('seconds');
+	const saved = await page.evaluate(() => {
+		const plans = JSON.parse(localStorage.getItem('repdraft:plans') ?? '[]');
+		return plans[0]?.exercises?.[0] ?? null;
+	});
+	expect(saved?.measure).toBe('reps');
+	// 45 сек reads as ~9 controlled reps, not 45.
+	expect(saved?.reps).toBe(9);
 });
 
-test('a hold logs seconds and the stopwatch fills a set', async ({ page }) => {
-	await seedLocalStorage(page, { 'repdraft:plans': [measuredPlank] });
+test('a plan saved before measure still logs seconds and the stopwatch fills a set', async ({
+	page
+}) => {
+	await seedLocalStorage(page, { 'repdraft:plans': [plank] });
 	await gotoApp(page, '/workouts/plan-plank');
 
 	await expect(page.locator('.workout-preview-row-sub').first()).toContainText('2 × 45 сек');
@@ -83,18 +84,31 @@ test('a hold logs seconds and the stopwatch fills a set', async ({ page }) => {
 	expect(seconds).toBeLessThanOrEqual(5);
 });
 
-test('cardio switches to minutes instead of reps', async ({ page }) => {
+test('an explicit rep count keeps a hold on reps in live', async ({ page }) => {
+	await seedLocalStorage(page, { 'repdraft:plans': [repPlank] });
+	await gotoApp(page, '/workouts/plan-plank');
+
+	await expect(page.locator('.workout-preview-row-sub').first()).toContainText('2 × 8');
+
+	await page.getByRole('button', { name: 'Старт', exact: true }).click();
+	await expect(page).toHaveURL(/\/live\//, { timeout: 20_000 });
+
+	const panel = page.locator('.live-panel').first();
+	await expect(panel.locator('.live-set-head__reps')).toHaveText('Повторы');
+	await expect(panel.locator('.live-set-timer')).toHaveCount(0);
+});
+
+test('steady cardio opens in minutes and can be forced back to reps', async ({ page }) => {
 	await seedLocalStorage(page, { 'repdraft:plans': [cardio] });
 	await gotoApp(page, '/builder/plan-treadmill');
 
 	const row = page.locator('.workout-ex-row').first();
-	await expect(row.locator('.workout-ex-chip').filter({ hasText: 'Повторы' }).first()).toBeVisible();
+	await expect(row.locator('.workout-ex-chip').filter({ hasText: 'Минуты' }).first()).toBeVisible();
 
 	await row.getByRole('button', { name: 'Действия упражнения' }).click();
-	await page.getByRole('button', { name: 'Считать по времени' }).click();
+	await page.getByRole('button', { name: 'Считать по повторам' }).click();
 
-	// Cardio counts minutes, so the fresh timed value is a plausible block (20).
-	await expect(row.locator('.workout-ex-chip').filter({ hasText: 'Минуты' }).first()).toBeVisible();
+	await expect(row.locator('.workout-ex-chip').filter({ hasText: 'Повторы' }).first()).toBeVisible();
 
 	await page.getByRole('button', { name: 'Сохранить', exact: true }).first().click();
 	await expect(page).toHaveURL(/\/workouts$/, { timeout: 20_000 });
@@ -102,8 +116,7 @@ test('cardio switches to minutes instead of reps', async ({ page }) => {
 		const plans = JSON.parse(localStorage.getItem('repdraft:plans') ?? '[]');
 		return plans[0]?.exercises?.[0] ?? null;
 	});
-	expect(saved?.measure).toBe('minutes');
-	expect(saved?.reps).toBe(20);
+	expect(saved?.measure).toBe('reps');
 });
 
 test('a treadmill block logs minutes and the stopwatch fills a set', async ({ page }) => {

@@ -64,7 +64,13 @@ import {
 	nextWeightHint,
 	weightAboveLast
 } from '@repdraft/domain/sessionPayoff';
-import { isCardioBodyPart, isTimedMeasure, usesExtraKgField } from '@repdraft/domain/workout';
+import {
+	defaultMeasureFor,
+	isCardioBodyPart,
+	measureOf,
+	planWithResolvedMeasures,
+	usesExtraKgField
+} from '@repdraft/domain/workout';
 import type { ExerciseIndexItem, LoggedSet, WorkoutPlan, WorkoutSession } from '@repdraft/domain/types';
 import { unlockRestAudioFromGesture } from '../../src/audio/restChime';
 import { signalRestDone } from '../../src/audio/restDone';
@@ -181,7 +187,9 @@ export default function LiveScreen() {
 
 	const beginSession = useCallback(
 		async (plan: WorkoutPlan, hist: WorkoutSession[]) => {
-			const started = seedFromHistory(startSessionFromPlan(plan), hist);
+			// Legacy plans have no `measure`: resolve it so a plank opens as seconds.
+			const resolved = planWithResolvedMeasures(plan, getIndexItem);
+			const started = seedFromHistory(startSessionFromPlan(resolved), hist);
 			await writeActiveSession(started);
 			await writeRestUntil(null);
 			setRestUntil(null);
@@ -194,7 +202,8 @@ export default function LiveScreen() {
 
 	const applyPlanReplace = useCallback(
 		async (plan: WorkoutPlan, current: WorkoutSession, hist: WorkoutSession[]) => {
-			const next = seedFromHistory(replaceSessionPlan(current, plan), hist);
+			const resolved = planWithResolvedMeasures(plan, getIndexItem);
+			const next = seedFromHistory(replaceSessionPlan(current, resolved), hist);
 			await writeActiveSession(next);
 			await writeRestUntil(null);
 			setRestUntil(null);
@@ -326,8 +335,9 @@ export default function LiveScreen() {
 	);
 	const skipLift = Boolean(ex && isCardioBodyPart(getIndexItem(ex.exerciseId)?.body_part));
 	/** Timed set: a hold in seconds or steady cardio in minutes, with a stopwatch. */
-	const timed = Boolean(ex && isTimedMeasure(ex));
-	const minutes = ex?.measure === 'minutes';
+	const measure = ex ? measureOf(ex, getIndexItem(ex.exerciseId)) : 'reps';
+	const timed = measure === 'seconds' || measure === 'minutes';
+	const minutes = measure === 'minutes';
 	const [timingSet, setTimingSet] = useState<number | null>(null);
 	const [timingFrom, setTimingFrom] = useState(0);
 	const [timingNow, setTimingNow] = useState(0);
@@ -732,13 +742,16 @@ export default function LiveScreen() {
 		const mode = exercisePickMode;
 		setExercisePickMode(null);
 		if (!session || !mode) return;
+		/** A plank added/replaced mid-session is a hold, not «10 повторов». */
+		const picked = defaultMeasureFor(getIndexItem(exerciseId));
+		const measureOpts = picked === 'reps' ? {} : { measure: picked };
 		if (mode === 'replace') {
 			const current = session;
 			const target = current.exercises[selectedEi];
 			const apply = () => {
 				void (async () => {
 					const next = seedFromHistory(
-						replaceSessionExercise(current, selectedEi, exerciseId),
+						replaceSessionExercise(current, selectedEi, exerciseId, measureOpts),
 						history
 					);
 					await persist(next, null);
@@ -766,7 +779,7 @@ export default function LiveScreen() {
 		void (async () => {
 			const insertAt = selectedEi + 1;
 			const next = seedFromHistory(
-				insertSessionExercise(session, insertAt, exerciseId),
+				insertSessionExercise(session, insertAt, exerciseId, measureOpts),
 				history
 			);
 			await persist(next, restUntil);

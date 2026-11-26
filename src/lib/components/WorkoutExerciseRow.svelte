@@ -34,7 +34,9 @@
 		buildLadderScheme,
 		formatLadderLabel,
 		hasLadderScheme,
-		isTimedMeasure,
+		measureOf,
+		durationSeedFor,
+		repsFromDuration,
 		timingMeasureFor
 	} from '$lib/domain/workout';
 	import { scrollFieldIntoView } from '$lib/dom/scrollFieldIntoView';
@@ -129,9 +131,10 @@
 	let restDraft = $state<string | null>(null);
 	let inGroup = $derived(Boolean(item.groupId));
 	let inOrGroup = $derived(Boolean(item.altGroupId));
-	/** Timed set: a hold in seconds or steady cardio in minutes. */
-	let timed = $derived(isTimedMeasure(item));
-	let minutesUnit = $derived(item.measure === 'minutes');
+	let measure = $derived(measureOf(item, meta));
+	/** A timed set: a hold in seconds or steady cardio in minutes. */
+	let timed = $derived(measure === 'seconds' || measure === 'minutes');
+	let minutesUnit = $derived(measure === 'minutes');
 	let repsLabel = $derived(
 		translate(lang, minutesUnit ? 'builder.minutes' : timed ? 'builder.seconds' : 'builder.reps')
 	);
@@ -247,22 +250,18 @@
 	 * Reps ↔ duration. The unit follows the exercise: cardio counts minutes, a hold
 	 * counts seconds. A timed set starts from a plausible value instead of the rep
 	 * count it replaced (and back), because 3×10 «сек» is never what anyone meant.
+	 * «По повторам» is stored explicitly so the catalog default cannot undo it.
 	 */
 	function toggleMeasure() {
 		actionsOpen = false;
 		const nextTimed = !timed;
-		const nextMeasure: ExerciseMeasure | undefined = nextTimed
+		const current: 'seconds' | 'minutes' = minutesUnit ? 'minutes' : 'seconds';
+		const nextMeasure: ExerciseMeasure = nextTimed
 			? timingMeasureFor(meta?.body_part)
-			: undefined;
+			: 'reps';
 		const reps = nextTimed
-			? nextMeasure === 'minutes'
-				? 20
-				: item.reps <= 20
-					? 30
-					: item.reps
-			: item.reps > 30
-				? 10
-				: item.reps;
+			? durationSeedFor(nextMeasure === 'minutes' ? 'minutes' : 'seconds', item.reps)
+			: repsFromDuration(current, item.reps);
 		onupdate({
 			measure: nextMeasure,
 			reps,

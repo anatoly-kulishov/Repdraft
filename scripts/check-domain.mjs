@@ -102,6 +102,7 @@ function run() {
 	const programsDomain = require(join(outDir, 'domain', 'programs.js'));
 	const exercisePickDomain = require(join(outDir, 'domain', 'exercisePick.js'));
 	const alternates = require(join(outDir, 'seo', 'alternates.js'));
+	const workoutDefaults = require(join(outDir, 'domain', 'workoutDefaults.js'));
 	const catalog = JSON.parse(
 		readFileSync(join(root, 'static', 'data', 'exercises.index.json'), 'utf8')
 	);
@@ -158,6 +159,34 @@ function run() {
 	console.log('✓ exercise pick self-check');
 	alternates.runAlternatesSelfCheck();
 	console.log('✓ URL alternates self-check');
+	workoutDefaults.runWorkoutDefaultsSelfCheck();
+	console.log('✓ workout unit defaults self-check');
+
+	// Real catalog: holds and steady cardio must open as time, plyo stays reps.
+	const measureById = new Map(catalog.map((row) => [row.id, row]));
+	const expectMeasures = [
+		['2135', 'seconds'], // Планка на предплечьях с отягощением
+		['0464', 'seconds'], // Планка со скручиванием
+		['0684', 'minutes'], // Бег на беговой дорожке
+		['3666', 'minutes'], // Ходьба под наклоном на беговой дорожке
+		['0798', 'minutes'], // Езда на велотренажёре в спокойном темпе
+		['1160', 'reps'], // Берпи
+		['3224', 'reps'] // Джекпрыжок
+	];
+	const measureProblems = [];
+	for (const [id, want] of expectMeasures) {
+		const row = measureById.get(id);
+		if (!row) {
+			measureProblems.push(`${id}: missing from the catalog`);
+			continue;
+		}
+		const got = workoutDefaults.defaultMeasureFor(row);
+		if (got !== want) measureProblems.push(`${row.name_ru}: ${got}, want ${want}`);
+	}
+	if (measureProblems.length > 0) {
+		throw new Error(`workout unit defaults: real catalog\n${measureProblems.join('\n')}`);
+	}
+	console.log(`✓ unit defaults against real catalog (${expectMeasures.length} exercises)`);
 
 	// Real catalog: every program session must still build after a catalog rebuild.
 	const realCatalog = JSON.parse(

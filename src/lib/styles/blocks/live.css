@@ -1564,23 +1564,6 @@ input[data-slot='input'].live-ex-note__field.live-ex-note__field--has-clear:not(
 	color: var(--color-danger, #ef4444);
 }
 
-.live-set-head__mark {
-	text-align: start;
-	min-width: 0;
-}
-
-.live-set-cardio-mark {
-	min-width: 0;
-	font-size: 0.875rem;
-	line-height: 1.35;
-	color: var(--color-muted);
-	text-wrap: pretty;
-}
-
-.live-set-row.is-done .live-set-cardio-mark {
-	color: var(--color-fg);
-	font-weight: 550;
-}
 
 .live-panel--superset {
 	border-color: color-mix(in srgb, var(--color-accent) 32%, var(--color-border));

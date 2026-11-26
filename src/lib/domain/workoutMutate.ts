@@ -5,9 +5,12 @@ import {
 	DEFAULT_SETS,
 	DEFAULT_REPS,
 	DEFAULT_REST_SEC,
+	defaultMeasureFor,
 	defaultRestSecForExercise,
+	durationSeedFor,
 	normalizeRepsScheme,
-	type ExerciseRestHint
+	type ExerciseRestHint,
+	type MeasureHint
 } from './workoutDefaults';
 
 export function nowIso(): string {
@@ -86,17 +89,39 @@ export function addExercise(
 		return { plan, added: false };
 	}
 
+	const measure = defaultMeasureFor(hint);
 	const entry: WorkoutExercise = {
 		exerciseId,
 		sets: DEFAULT_SETS,
-		reps: DEFAULT_REPS,
-		restSec: defaultRestSecForExercise(hint)
-	};
-
-	return {
+		// A plank or a treadmill is added as a duration, not as «10 повторов».
+		reps:
+			measure === 'reps' ? DEFAULT_REPS : durationSeedFor(measure, DEFAULT_REPS),
+		restSec: defaultRestSecForExercise(hint),
+		...(measure === 'reps' ? {} : { measure })
+	};	return {
 		plan: withUpdated(plan, [...plan.exercises, entry]),
 		added: true
 	};
+}
+
+/**
+ * Fill `measure` from the catalog on rows that predate the field, so a started
+ * session agrees with the builder / live screens (plank → секунды, treadmill →
+ * минуты) and the volume / record math skips those sets. Explicit choices stay.
+ */
+export function planWithResolvedMeasures(
+	plan: WorkoutPlan,
+	hintFor: (exerciseId: string) => MeasureHint | null | undefined
+): WorkoutPlan {
+	let changed = false;
+	const exercises = plan.exercises.map((ex) => {
+		if (ex.measure) return ex;
+		const measure = defaultMeasureFor(hintFor(ex.exerciseId));
+		if (measure === 'reps') return ex;
+		changed = true;
+		return { ...ex, measure };
+	});
+	return changed ? { ...plan, exercises } : plan;
 }
 
 export function removeExercise(plan: WorkoutPlan, exerciseId: string): WorkoutPlan {

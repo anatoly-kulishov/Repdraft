@@ -5,7 +5,7 @@
 	import { exerciseName } from '$lib/domain/exerciseName';
 	import { visibleSessionExerciseIndices } from '$lib/domain/session';
 	import type { ExerciseIndexItem, WorkoutSession } from '$lib/domain/types';
-	import { formatLadderLabel, groupMemberRole } from '$lib/domain/workout';
+	import { formatLadderLabel, groupMemberRole, measureOf } from '$lib/domain/workout';
 	import type { AppLocale } from '$lib/i18n/locale';
 	import { translate } from '$lib/i18n/messages';
 	import { scrollBehavior } from '$lib/dom/prefersReducedMotion';
@@ -74,10 +74,11 @@
 	function metaFor(index: number, inGroup: boolean): string {
 		const ex = session.exercises[index];
 		if (!ex) return '';
+		const measure = measureOf(ex, names.get(ex.exerciseId));
 		const unit =
-			ex.measure === 'seconds'
+			measure === 'seconds'
 				? ` ${translate(lang, 'common.sec')}`
-				: ex.measure === 'minutes'
+				: measure === 'minutes'
 					? ` ${translate(lang, 'common.min')}`
 					: '';
 		if (inGroup) return translate(lang, 'live.lastReps', { n: ex.targetReps });

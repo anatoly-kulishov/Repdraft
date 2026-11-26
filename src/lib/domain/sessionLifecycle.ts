@@ -11,9 +11,14 @@ import type {
 import { DEFAULT_REPS, DEFAULT_REST_SEC, DEFAULT_SETS } from './workout';
 import { pruneUnchosenAlts, visibleSessionExerciseIndices } from './sessionAlts';
 
-/** `seconds` (hold) or `minutes` (steady cardio); `undefined` = plain reps. */
-function timedMeasure(ex: { measure?: ExerciseMeasure }): ExerciseMeasure | undefined {
-	return ex.measure === 'seconds' || ex.measure === 'minutes' ? ex.measure : undefined;
+/**
+ * Unit stored on the plan row (`reps` / `seconds` / `minutes`). `undefined` means
+ * the row predates `measure`, so both clients fall back to the catalog default.
+ */
+function explicitMeasure(ex: { measure?: ExerciseMeasure }): ExerciseMeasure | undefined {
+	return ex.measure === 'seconds' || ex.measure === 'minutes' || ex.measure === 'reps'
+		? ex.measure
+		: undefined;
 }
 
 function emptySets(
@@ -68,7 +73,7 @@ export function startSessionFromPlan(
 				targetReps: ex.reps,
 				restSec: ex.restSec,
 				// Holds/cardio log a duration in the same `reps` slot as a lift logs reps.
-				...(timedMeasure(ex) ? { measure: timedMeasure(ex)! } : {}),
+				...(explicitMeasure(ex) ? { measure: explicitMeasure(ex)! } : {}),
 				sets: emptySets(ex.sets, ex.reps, ex.repsScheme, options?.weights?.get(ex.exerciseId) ?? null)
 			})
 		)
@@ -92,8 +97,9 @@ export function syncSessionPrescriptionFromPlan(
 		if (!p) return ex;
 		const groupId = p.groupId ?? null;
 		const altGroupId = p.altGroupId ?? null;
-		const measure =
-			p.measure === 'seconds' || p.measure === 'minutes' ? p.measure : undefined;
+		// The plan is silent about the unit (saved before `measure`): keep the one the
+		// session already resolved instead of downgrading a hold back to reps.
+		const measure = explicitMeasure(p) ?? explicitMeasure(ex);
 		if (
 			ex.groupId === groupId &&
 			ex.altGroupId === altGroupId &&
@@ -126,7 +132,7 @@ function sessionExerciseFromPlan(ex: WorkoutExercise): SessionExercise {
 		targetSets: ex.sets,
 		targetReps: ex.reps,
 		restSec: ex.restSec,
-		...(timedMeasure(ex) ? { measure: timedMeasure(ex)! } : {}),
+		...(explicitMeasure(ex) ? { measure: explicitMeasure(ex)! } : {}),
 		sets: emptySets(ex.sets, ex.reps, ex.repsScheme)
 	};
 }
@@ -173,7 +179,7 @@ export function replaceSessionPlan(
 			targetSets: planEx.sets,
 			targetReps: planEx.reps,
 			restSec: planEx.restSec,
-			...(timedMeasure(planEx) ? { measure: timedMeasure(planEx)! } : {}),
+			...(explicitMeasure(planEx) ? { measure: explicitMeasure(planEx)! } : {}),
 			sets: [...completed, ...openTail],
 			...(note ? { note } : {})
 		};
@@ -414,7 +420,7 @@ export function planDraftFromSession(session: WorkoutSession): WorkoutPlan {
 			),
 			groupId: ex.groupId ?? null,
 			altGroupId: null,
-			...(timedMeasure(ex) ? { measure: timedMeasure(ex)! } : {})
+			...(explicitMeasure(ex) ? { measure: explicitMeasure(ex)! } : {})
 		});
 	}
 	return {

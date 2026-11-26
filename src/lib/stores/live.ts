@@ -34,6 +34,8 @@ import type {
 } from '$lib/domain/types';
 import { REST_SEC } from '$lib/domain/inputLimits';
 import { REST_UNTIL_STORAGE_KEY } from '$lib/domain/repository';
+import { loadExerciseIndexWithCustoms, peekExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
+import { defaultMeasureFor, planWithResolvedMeasures } from '$lib/domain/workout';
 import {
 	deleteSession,
 	isSessionsCloudAvailable,
@@ -312,7 +314,16 @@ function createLiveStore() {
 			options?: { lockPrescription?: boolean; weights?: ReadonlyMap<string, number> }
 		): Promise<WorkoutSession> {
 			const history = get(store).history;
-			const started = startSessionFromPlan(plan, options);
+			// Legacy plans have no `measure`: resolve it from the catalog so the session
+			// (and its volume/records math) matches what the builder and live screen show.
+			const index =
+				peekExerciseIndexWithCustoms() ??
+				(await loadExerciseIndexWithCustoms().catch(() => []));
+			const byId = new Map(index.map((row) => [row.id, row]));
+			const started = startSessionFromPlan(
+				planWithResolvedMeasures(plan, (id) => byId.get(id)),
+				options
+			);
 			// A locked «today» variant (cycle week) prescribes its own sets and reps:
 			// history may fill a missing load, never rewrite the prescription.
 			const session = options?.lockPrescription
@@ -331,7 +342,10 @@ function createLiveStore() {
 			const current = get(store).session;
 			if (!current || current.finishedAt) return null;
 			const history = get(store).history;
-			const session = seedFromHistory(replaceSessionPlan(current, plan), history);
+			const index = peekExerciseIndexWithCustoms() ?? [];
+			const byId = new Map(index.map((row) => [row.id, row]));
+			const resolved = planWithResolvedMeasures(plan, (id) => byId.get(id));
+			const session = seedFromHistory(replaceSessionPlan(current, resolved), history);
 			persistActive(session, null);
 			store.update((s) => ({ ...s, session, restUntil: null }));
 			return session;
@@ -463,7 +477,12 @@ function createLiveStore() {
 		insertExercise(atIndex: number, exerciseId: string): WorkoutSession | null {
 			const prev = get(store);
 			if (!prev.session || prev.session.finishedAt) return null;
-			let session = insertSessionExercise(prev.session, atIndex, exerciseId);
+			let session = insertSessionExercise(
+				prev.session,
+				atIndex,
+				exerciseId,
+				measureOpts(exerciseId)
+			);
 			session = seedFromHistory(session, prev.history);
 			persistActive(session, prev.restUntil);
 			store.set({ ...prev, session });
@@ -473,7 +492,12 @@ function createLiveStore() {
 		replaceExercise(exerciseIndex: number, exerciseId: string): WorkoutSession | null {
 			const prev = get(store);
 			if (!prev.session || prev.session.finishedAt) return null;
-			let session = replaceSessionExercise(prev.session, exerciseIndex, exerciseId);
+			let session = replaceSessionExercise(
+				prev.session,
+				exerciseIndex,
+				exerciseId,
+				measureOpts(exerciseId)
+			);
 			if (session === prev.session) return prev.session;
 			session = seedFromHistory(session, prev.history);
 			persistActive(session, null);
@@ -647,6 +671,14 @@ function createLiveStore() {
 			return null;
 		}
 	};
+}
+
+/** A plank added mid-session is a hold, not «10 повторов». */
+function measureOpts(exerciseId: string): { measure?: 'seconds' | 'minutes' } {
+	const measure = defaultMeasureFor(
+		peekExerciseIndexWithCustoms()?.find((row) => row.id === exerciseId)
+	);
+	return measure === 'reps' ? {} : { measure };
 }
 
 export const live = createLiveStore();

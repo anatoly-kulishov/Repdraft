@@ -40,6 +40,59 @@ export function isTimedMeasure(ex: { measure?: ExerciseMeasure | null }): boolea
 	return ex.measure === 'seconds' || ex.measure === 'minutes';
 }
 
+/** Catalog bits the default-unit heuristic reads (no fetch, works in both clients). */
+export type MeasureHint = {
+	name?: string | null;
+	name_ru?: string | null;
+	body_part?: string | null;
+};
+
+/** Planks and isometrics: holding is the point, so reps make no sense. */
+const HOLD_NAME_RE = /планк|\bplank|изометр|isometric/i;
+
+/**
+ * Steady cardio machines and locomotion — one continuous effort you measure in
+ * minutes. Plyometric cardio (burpees, jumps, mountain climbers) stays reps.
+ */
+const STEADY_CARDIO_NAME_RE =
+	/бегов[а-яё]*\s*дорожк|treadmill|велотренаж[а-яё]*|велосипед|езда\s+на\s+вело|\bbik(e|ing)\b|кросс-тренаж|cross[\s-]?trainer|эллипс|elliptical|степмилл|степпер|stair|гребн|row(er|ing)|скакалк|jump\s*rope|бег\s+на\s+месте|jog\s*in\s*place|ходьба|walking/i;
+
+/**
+ * What a catalog exercise is measured in before the athlete says otherwise.
+ * Nobody should have to discover «Считать по времени» to log a plank: planks
+ * come in seconds, the treadmill in minutes, everything else in reps.
+ * The explicit `measure` always wins — this only fills the gap.
+ */
+export function defaultMeasureFor(hint?: MeasureHint | null): ExerciseMeasure {
+	if (!hint) return 'reps';
+	const names = `${hint.name_ru ?? ''} ${hint.name ?? ''}`;
+	if (HOLD_NAME_RE.test(names)) return 'seconds';
+	if (isCardioBodyPart(hint.body_part) && STEADY_CARDIO_NAME_RE.test(names)) {
+		return 'minutes';
+	}
+	return 'reps';
+}
+
+/** Stored unit, or the catalog default when the plan predates `measure`. */
+export function measureOf(
+	ex: { measure?: ExerciseMeasure | null },
+	hint?: MeasureHint | null
+): ExerciseMeasure {
+	return ex.measure ?? defaultMeasureFor(hint);
+}
+
+/** First duration for a row that switches from reps: 30 сек hold, 20 мин cardio. */
+export function durationSeedFor(measure: 'seconds' | 'minutes', reps: number): number {
+	if (measure === 'minutes') return 20;
+	return reps <= 20 ? 30 : reps;
+}
+
+/** Plausible rep count when a duration row goes back to reps (45 сек -> 9, 20 мин -> 10). */
+export function repsFromDuration(measure: 'seconds' | 'minutes', value: number): number {
+	if (measure === 'minutes') return DEFAULT_REPS;
+	return Math.min(20, Math.max(1, Math.round(value / 5)));
+}
+
 /**
  * Which duration unit fits this exercise when the athlete asks to time it:
  * cardio counts minutes (a treadmill set is «20 мин»), everything else seconds
@@ -85,6 +138,8 @@ export function normalizeRepsScheme(scheme: number[]): number[] | null {
 
 export type ExerciseRestHint = {
 	name?: string;
+	name_ru?: string;
+	body_part?: string;
 	equipment?: string;
 };
 
@@ -134,4 +189,48 @@ function isHeavyCompoundLift(name: string, equipment: string): boolean {
 	if (/\bbench press\b/i.test(n)) return true;
 	if (/\bdeadlift\b/i.test(n)) return true;
 	return false;
+}
+
+/**
+ * Domain guard: a plank must never open as «Повторы 10» and a treadmill must
+ * never open as reps either, while plyometric cardio keeps counting reps.
+ */
+export function runWorkoutDefaultsSelfCheck(): void {
+	const cases: Array<[MeasureHint | null, ExerciseMeasure]> = [
+		[null, 'reps'],
+		[{ name_ru: 'Планка на предплечьях с отягощением', body_part: 'waist' }, 'seconds'],
+		[
+			{ name: 'power point plank', name_ru: 'Планка с переходом на предплечья', body_part: 'waist' },
+			'seconds'
+		],
+		[{ name: 'isometric hold', body_part: 'chest' }, 'seconds'],
+		[{ name_ru: 'Бег на беговой дорожке', body_part: 'cardio' }, 'minutes'],
+		[{ name_ru: 'Ходьба на эллипсе', body_part: 'cardio' }, 'minutes'],
+		[{ name_ru: 'Берпи', body_part: 'cardio' }, 'reps'],
+		[{ name_ru: 'Присед прыжок', body_part: 'cardio' }, 'reps'],
+		[{ name_ru: 'Жим лёжа', body_part: 'chest' }, 'reps']
+	];
+	for (const [hint, want] of cases) {
+		const got = defaultMeasureFor(hint);
+		if (got !== want) {
+			throw new Error(`workoutDefaults: ${hint?.name_ru ?? 'no hint'} -> ${got}, want ${want}`);
+		}
+	}
+
+	// An explicit unit (including «по повторам») always beats the catalog default.
+	const plank = { name_ru: 'Планка', body_part: 'waist' };
+	if (measureOf({ measure: 'reps' }, plank) !== 'reps') {
+		throw new Error('workoutDefaults: explicit reps must override the catalog default');
+	}
+	if (measureOf({}, plank) !== 'seconds') {
+		throw new Error('workoutDefaults: unset measure must fall back to the catalog default');
+	}
+
+	// Toggle seeds: 10 reps -> 30 сек, 10 reps -> 20 мин, 45 сек -> 9 reps.
+	if (durationSeedFor('seconds', 10) !== 30 || durationSeedFor('minutes', 40) !== 20) {
+		throw new Error('workoutDefaults: duration seed drift');
+	}
+	if (repsFromDuration('seconds', 45) !== 9 || repsFromDuration('minutes', 20) !== DEFAULT_REPS) {
+		throw new Error('workoutDefaults: reps-from-duration drift');
+	}
 }

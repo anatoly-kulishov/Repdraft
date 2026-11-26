@@ -28,8 +28,10 @@ import {
 	groupBounds,
 	groupMemberRole,
 	hasLadderScheme,
-	isTimedMeasure,
+	measureOf,
+	durationSeedFor,
 	moveByArrow,
+	repsFromDuration,
 	removeExercise,
 	timingMeasureFor,
 	updateExercise,
@@ -226,7 +228,9 @@ export default function BuilderScreen() {
 		}
 		const { plan: next, added } = addExercise(current, item.id, {
 			name: item.name,
-			equipment: item.equipment
+			name_ru: item.name_ru,
+			equipment: item.equipment,
+			body_part: item.body_part
 		});
 		if (!added) {
 			Alert.alert(tt('builder.alreadyInPlan'));
@@ -468,6 +472,12 @@ export default function BuilderScreen() {
 				keyboardShouldPersistTaps="handled"
 				renderItem={({ item, index }) => {
 					const meta = getIndexItem(item.exerciseId);
+					/** Planks default to seconds, steady cardio to minutes. */
+					const measure = measureOf(item, meta);
+					const timed = measure === 'seconds' || measure === 'minutes';
+					const minutes = measure === 'minutes';
+					/** Seconds move in 5s steps: 30 -> 45 without 15 taps. */
+					const repStep = timed && !minutes ? 5 : 1;
 					const gRole = groupMemberRole(plan.exercises, index);
 					const aRole = altGroupMemberRole(plan.exercises, index);
 					const badge =
@@ -540,10 +550,13 @@ export default function BuilderScreen() {
 										{exerciseDisplayName(item.exerciseId, locale)}
 									</Text>
 									<Text style={styles.meta}>
-										{formatExercisePrescription(item, {
-											seconds: tt('common.sec'),
-											minutes: tt('common.min')
-										})}
+										{formatExercisePrescription(
+											{ ...item, measure },
+											{
+												seconds: tt('common.sec'),
+												minutes: tt('common.min')
+											}
+										)}
 										{metaHint ? ` · ${metaHint}` : meta?.equipment ? ` · ${meta.equipment}` : ''}
 									</Text>
 								</View>
@@ -613,21 +626,23 @@ export default function BuilderScreen() {
 								<Stepper
 									styles={styles}
 									label={
-										item.measure === 'minutes'
+										measure === 'minutes'
 											? tt('builder.minutes')
-											: isTimedMeasure(item)
+											: measure === 'seconds'
 												? tt('builder.seconds')
 												: tt('common.reps')
 									}
 									value={item.reps}
 									onDec={() =>
 										void persist(
-											updateExercise(plan, item.exerciseId, { reps: item.reps - 1 })
+											updateExercise(plan, item.exerciseId, {
+												reps: Math.max(1, item.reps - repStep)
+											})
 										)
 									}
 									onInc={() =>
 										void persist(
-											updateExercise(plan, item.exerciseId, { reps: item.reps + 1 })
+											updateExercise(plan, item.exerciseId, { reps: item.reps + repStep })
 										)
 									}
 								/>
@@ -678,23 +693,22 @@ export default function BuilderScreen() {
 							/>
 							{/* Holds count seconds, steady cardio minutes: switch the rep field to time. */}
 							<PrimaryButton
-								label={isTimedMeasure(item) ? tt('builder.useReps') : tt('builder.useTime')}
+								label={timed ? tt('builder.useReps') : tt('builder.useTime')}
 								variant="ghost"
 								compact
 								onPress={() => {
-									const nextTimed = !isTimedMeasure(item);
+									const nextTimed = !timed;
+									// «По повторам» is stored explicitly: the catalog default
+									// (plank -> seconds) must not undo the athlete's choice.
 									const nextMeasure = nextTimed
 										? timingMeasureFor(meta?.body_part)
-										: undefined;
+										: 'reps';
 									const reps = nextTimed
-										? nextMeasure === 'minutes'
-											? 20
-											: item.reps <= 20
-												? 30
-												: item.reps
-										: item.reps > 30
-											? 10
-											: item.reps;
+										? durationSeedFor(
+												nextMeasure === 'minutes' ? 'minutes' : 'seconds',
+												item.reps
+											)
+										: repsFromDuration(minutes ? 'minutes' : 'seconds', item.reps);
 									void persist(
 										updateExercise(plan, item.exerciseId, {
 											measure: nextMeasure,

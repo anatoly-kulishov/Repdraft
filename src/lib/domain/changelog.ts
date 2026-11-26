@@ -14,6 +14,23 @@ export type ChangelogRelease = {
 /** Newest first. */
 export const CHANGELOG: readonly ChangelogRelease[] = [
 	{
+		version: '0.31.1',
+		highlights: {
+			ru: [
+				'Планка и дорожка сразу открываются временем: секунды и минуты больше не нужно включать вручную',
+				'Дорожка и другие тренажёры встают в план как 20 минут, планка - как 30 секунд',
+				'В тренировке у кардио больше нет «Статус / Не отмечен»: есть поле повторов, а у времени - секундомер',
+				'Нужны повторы вместо времени - переключатель «Считать по повторам» сохраняет выбор'
+			],
+			en: [
+				'Planks and the treadmill open as time right away: seconds and minutes no longer need a manual switch',
+				'A treadmill lands in the plan as 20 minutes, a plank as 30 seconds',
+				'Cardio in the workout no longer shows “Status / Not marked”: it has a reps field, and timed sets have the stopwatch',
+				'Need reps instead? “Count in reps” keeps that choice'
+			]
+		}
+	},
+	{
 		version: '0.31.0',
 		highlights: {
 			ru: [
