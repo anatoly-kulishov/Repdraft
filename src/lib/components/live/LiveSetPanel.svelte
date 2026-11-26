@@ -390,51 +390,54 @@
 </script>
 
 <div class="live-panel" class:live-panel--superset={selectedInGroup}>
-	<div class="live-weight-cue">
-		<div class="live-weight-cue__head">
-			<p class="live-weight-cue__title">{translate(lang, 'quest.weightByWeek')}</p>
-			{#if nextHint?.oneRepMaxKg != null}
-				<p class="live-weight-cue__max">
-					{translate(lang, 'quest.estimatedMax', {
-						weight: String(nextHint.oneRepMaxKg)
-					})}
-				</p>
-			{/if}
-		</div>
-		<div class="live-weight-cue__bars" aria-hidden="true">
-		{#each weightWeeks as week (week.weekKey)}
-			<div class="live-weight-cue__col">
-				<div
-					class="live-weight-cue__bar"
-					class:live-weight-cue__bar--empty={week.weightKg == null}
-					style:height="{week.weightKg == null
-						? '2px'
-						: `${Math.max(8, Math.round((week.weightKg / weightMax) * 36))}px`}"
-				></div>
+	<!-- A hold or cardio has no load to plan by week: the empty chart is noise. -->
+	{#if !timed && !cardio}
+		<div class="live-weight-cue">
+			<div class="live-weight-cue__head">
+				<p class="live-weight-cue__title">{translate(lang, 'quest.weightByWeek')}</p>
+				{#if nextHint?.oneRepMaxKg != null}
+					<p class="live-weight-cue__max">
+						{translate(lang, 'quest.estimatedMax', {
+							weight: String(nextHint.oneRepMaxKg)
+						})}
+					</p>
+				{/if}
 			</div>
-		{/each}
+			<div class="live-weight-cue__bars" aria-hidden="true">
+			{#each weightWeeks as week (week.weekKey)}
+				<div class="live-weight-cue__col">
+					<div
+						class="live-weight-cue__bar"
+						class:live-weight-cue__bar--empty={week.weightKg == null}
+						style:height="{week.weightKg == null
+							? '2px'
+							: `${Math.max(8, Math.round((week.weightKg / weightMax) * 36))}px`}"
+					></div>
+				</div>
+			{/each}
+			</div>
 		</div>
-	</div>
-	{#if weightUp}
-		<p class="live-weight-cue__chip">
-			{translate(lang, 'quest.weightUpChip')}
-		</p>
-	{/if}
-	{#if nextHint}
-		<p class="live-weight-cue__hint">
-			{translate(lang, nextHintMessageKey(nextHint.kind), {
-				weight: String(nextHint.weightKg),
-				reps: String(nextHint.reps)
-			})}{#if nextHint.percentOfMax != null}<span class="live-weight-cue__percent"
-					>{' · '}{translate(lang, 'quest.ofMax', {
-						percent: String(nextHint.percentOfMax)
-					})}</span
-				>{/if}{#if nextHint.barKg > 0}<span class="live-weight-cue__percent"
-					>{' · '}{translate(lang, 'quest.barIncluded', {
-						weight: String(nextHint.barKg)
-					})}</span
-				>{/if}
-		</p>
+		{#if weightUp}
+			<p class="live-weight-cue__chip">
+				{translate(lang, 'quest.weightUpChip')}
+			</p>
+		{/if}
+		{#if nextHint}
+			<p class="live-weight-cue__hint">
+				{translate(lang, nextHintMessageKey(nextHint.kind), {
+					weight: String(nextHint.weightKg),
+					reps: String(nextHint.reps)
+				})}{#if nextHint.percentOfMax != null}<span class="live-weight-cue__percent"
+						>{' · '}{translate(lang, 'quest.ofMax', {
+							percent: String(nextHint.percentOfMax)
+						})}</span
+					>{/if}{#if nextHint.barKg > 0}<span class="live-weight-cue__percent"
+						>{' · '}{translate(lang, 'quest.barIncluded', {
+							weight: String(nextHint.barKg)
+						})}</span
+					>{/if}
+			</p>
+		{/if}
 	{/if}
 	<header class="live-panel__hero">
 		{#if selectedInGroup && selectedGroupPos}
