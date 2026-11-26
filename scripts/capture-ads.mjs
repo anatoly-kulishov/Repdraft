@@ -518,17 +518,17 @@ async function captureCards(page, cleanDir, dirs) {
 		page,
 		{ width: 1080, height: 1350 },
 		post(`
-			<div style="display:flex;gap:44px;align-items:center;width:100%">
-				<div style="flex:1;display:flex;flex-direction:column;gap:26px">
+			<div style="display:flex;gap:48px;align-items:center;width:100%">
+				<div style="flex:1;display:flex;flex-direction:column;gap:24px">
 					<div class="kicker"><i></i>Тренировки</div>
 					<h1 style="font-size:64px">Планка —<br>по секундомеру</h1>
-					<p class="sub" style="font-size:30px;max-width:400px">Нажал «старт» — приложение само запишет время подхода. Дорожка — по минутам.</p>
+					<p class="sub" style="font-size:28px;max-width:420px">Нажал «старт» — приложение само запишет время подхода. Дорожка — по минутам.</p>
 					<div style="display:flex;gap:12px;flex-wrap:wrap">
 						<div class="chip"><b>45 сек</b> планка</div>
 						<div class="chip"><b>20 мин</b> дорожка</div>
 					</div>
 				</div>
-				${phone(live, 380, 'flex:0 0 auto;transform:rotate(-3deg)')}
+				${phone(live, 380, 'flex:0 0 auto')}
 			</div>`),
 		join(dirs.posts, 'post-1-plank-stopwatch-1080x1350.jpg')
 	);
@@ -537,18 +537,18 @@ async function captureCards(page, cleanDir, dirs) {
 		page,
 		{ width: 1080, height: 1350 },
 		post(`
-			<div style="display:flex;flex-direction:column;gap:34px;width:100%">
+			<div style="display:flex;height:100%;flex-direction:column;justify-content:center;gap:34px;width:100%">
 				<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:30px">
-					<div style="display:flex;flex-direction:column;gap:20px">
+					<div style="display:flex;flex-direction:column;gap:22px">
 						<div class="kicker"><i></i>Цикл</div>
-						<h1 style="font-size:70px">Нагрузка<br>волнами</h1>
+						<h1 style="font-size:64px">Нагрузка<br>волнами</h1>
 						<p class="sub" style="font-size:28px;max-width:520px">Объём, интенсивность, разгрузка — и вес снаряда в каждой неделе.</p>
 					</div>
 					<div class="chip" style="flex:0 0 auto"><b>8 недель</b> · 4 плана</div>
 				</div>
-				<div style="display:flex;justify-content:center;margin-top:6px">
-					${phone(cycle, 336, 'transform:rotate(-2.5deg)')}
-					${phone(progress, 336, 'margin-left:18px;transform:translateY(46px) rotate(2.5deg)')}
+				<div style="display:flex;justify-content:center;gap:24px;margin-top:22px">
+					${phone(cycle, 336)}
+					${phone(progress, 336)}
 				</div>
 			</div>`),
 		join(dirs.posts, 'post-2-cycle-1080x1350.jpg')
@@ -558,12 +558,12 @@ async function captureCards(page, cleanDir, dirs) {
 		page,
 		{ width: 1080, height: 1350 },
 		post(`
-			<div style="display:flex;gap:40px;align-items:center;width:100%">
-				${phone(home, 404, 'flex:0 0 auto;transform:rotate(2.5deg)')}
-				<div style="flex:1;display:flex;flex-direction:column;gap:26px">
+			<div style="display:flex;gap:48px;align-items:center;width:100%">
+				${phone(home, 380, 'flex:0 0 auto')}
+				<div style="flex:1;display:flex;flex-direction:column;gap:24px">
 					<div class="kicker"><i></i>Дневник</div>
-					<h1 style="font-size:74px">Всё<br>в одном</h1>
-					<p class="sub" style="font-size:29px;max-width:390px">План, подходы, вес, рекорды и история. Без заметок и таблиц.</p>
+					<h1 style="font-size:64px">Всё<br>в одном</h1>
+					<p class="sub" style="font-size:28px;max-width:420px">План, подходы, вес, рекорды и история. Без заметок и таблиц.</p>
 					<div class="cta">repdraft.ru <span>бесплатно</span></div>
 				</div>
 			</div>`),
@@ -574,17 +574,17 @@ async function captureCards(page, cleanDir, dirs) {
 		page,
 		{ width: 1080, height: 1350 },
 		post(`
-			<div style="display:flex;gap:40px;align-items:center;width:100%">
-				<div style="flex:1;display:flex;flex-direction:column;gap:26px">
+			<div style="display:flex;gap:48px;align-items:center;width:100%">
+				<div style="flex:1;display:flex;flex-direction:column;gap:24px">
 					<div class="kicker"><i></i>ИИ-черновик</div>
-					<h1 style="font-size:76px">План<br>за минуту</h1>
-					<p class="sub" style="font-size:29px;max-width:400px">Опиши зал, время и самочувствие — ИИ соберёт тренировку из каталога. Дальше правишь в редакторе.</p>
+					<h1 style="font-size:64px">План<br>за минуту</h1>
+					<p class="sub" style="font-size:28px;max-width:420px">Опиши зал, время и самочувствие — ИИ соберёт тренировку из каталога. Дальше правишь в редакторе.</p>
 					<div style="display:flex;gap:12px;flex-wrap:wrap">
 						<div class="chip"><b>4 упр.</b> за запрос</div>
 						<div class="chip"><b>Свой зал</b></div>
 					</div>
 				</div>
-				${phone(ai, 392, 'flex:0 0 auto;transform:rotate(-2deg)')}
+				${phone(ai, 380, 'flex:0 0 auto')}
 			</div>`),
 		join(dirs.posts, 'post-4-ai-draft-1080x1350.jpg')
 	);
