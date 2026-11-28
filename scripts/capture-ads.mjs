@@ -10,7 +10,7 @@
  */
 import { spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -22,10 +22,16 @@ const ONLY = process.env.ADS_ONLY ?? 'all';
 
 /* ------------------------------------------------------------------ fixtures */
 
+// Moscow is UTC+3 throughout the date range of these fixtures.
+const DEMO_TIME = new Date(`${STAMP}T13:00:00+03:00`);
+if (!/^\d{4}-\d{2}-\d{2}$/.test(STAMP) || Number.isNaN(DEMO_TIME.getTime()) || DEMO_TIME.toISOString().slice(0, 10) !== STAMP) {
+	throw new Error('ADS_STAMP must be a calendar date (YYYY-MM-DD)');
+}
+
 function dayIso(daysAgo, hour = 19, minute = 10) {
-	const d = new Date();
-	d.setHours(hour, minute, 0, 0);
-	d.setDate(d.getDate() - daysAgo);
+	const d = new Date(DEMO_TIME);
+	d.setUTCDate(d.getUTCDate() - daysAgo);
+	d.setUTCHours(hour - 3, minute, 0, 0);
 	return d.toISOString();
 }
 
@@ -81,13 +87,13 @@ const PLANS = [
 	])
 ];
 
-function session(id, planId, planName, daysAgo, exercises) {
+function session(id, planId, planName, daysAgo, exercises, durationMin = 65) {
 	return {
 		id,
 		planId,
 		planName,
 		startedAt: dayIso(daysAgo, 19, 0),
-		finishedAt: dayIso(daysAgo, 20, 5),
+		finishedAt: dayIso(daysAgo, 19, durationMin),
 		exercises
 	};
 }
@@ -106,7 +112,7 @@ const SESSIONS = [
 		sessionExercise('0464', 3, 45, 45, timedSets(45, 3), { measure: 'seconds' }),
 		sessionExercise('3665', 3, 30, 45, timedSets(30, 3), { measure: 'seconds' }),
 		sessionExercise('0684', 1, 20, 0, timedSets(20, 1), { measure: 'minutes' })
-	]),
+	], 32),
 	session('s3', 'plan-push', 'Жим · день A', 3, [
 		sessionExercise('0025', 4, 8, 120, sets(67.5, 8, 4)),
 		sessionExercise('0091', 3, 10, 90, sets(37.5, 10, 3)),
@@ -187,10 +193,9 @@ const ONBOARDING = {
 
 /** Local Monday key a fortnight ago, so the cycle sits in the middle of a wave. */
 function cycleStartDate() {
-	const d = new Date();
-	d.setHours(12, 0, 0, 0);
-	d.setDate(d.getDate() - ((d.getDay() + 6) % 7) - 14);
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	const d = new Date(DEMO_TIME);
+	d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7) - 14);
+	return d.toISOString().slice(0, 10);
 }
 
 const CYCLE = {
@@ -220,7 +225,7 @@ const STORAGE = {
 	'repdraft:athlete-profile': ATHLETE_PROFILE,
 	'repdraft:onboarding': ONBOARDING,
 	'repdraft:home-kit': ['dumbbell', 'band'],
-	'repdraft:progress-period': 'month',
+	'repdraft:progress-period': 30,
 	'repdraft:session-ratings': SESSION_RATINGS
 };
 
@@ -250,9 +255,10 @@ function startServer() {
 	return child;
 }
 
-async function waitForServer(url, timeoutMs = 240_000) {
+async function waitForServer(url, server, timeoutMs = 240_000) {
 	const started = Date.now();
 	while (Date.now() - started < timeoutMs) {
+		if (server?.exitCode != null) throw new Error(`App server exited with code ${server.exitCode}`);
 		try {
 			const res = await fetch(`${url}/tools`);
 			if (res.ok) return;
@@ -268,8 +274,9 @@ async function seedContext(context) {
 	await context.addInitScript((data) => {
 		try {
 			for (const [key, value] of Object.entries(data)) {
-				localStorage.setItem(key, JSON.stringify(value));
+				localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
 			}
+			localStorage.setItem('repdraft:home-next-plan-id', 'plan-push');
 			localStorage.setItem('repdraft:pwa-installed', '1');
 			localStorage.setItem('repdraft:install-hint-dismissed', '1');
 			localStorage.setItem('repdraft:achievements-enabled', 'true');
@@ -282,11 +289,9 @@ async function seedContext(context) {
 }
 
 async function settle(page) {
-	await page
-		.waitForFunction(() => !document.documentElement.hasAttribute('data-boot-pending'), {
-			timeout: 20_000
-		})
-		.catch(() => {});
+	await page.waitForFunction(() => !document.documentElement.hasAttribute('data-boot-pending'), null, {
+		timeout: 20_000
+	});
 	await page.waitForTimeout(450);
 	// Intro sheets / cookie notice can mount a tick later and would end up in the shot.
 	for (let i = 0; i < 6; i += 1) {
@@ -319,7 +324,8 @@ async function goto(page, path, { keepDraft = false } = {}) {
 			})
 			.catch(() => {});
 	}
-	await page.goto(`${BASE}${path}`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+	const response = await page.goto(`${BASE}${path}`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+	if (!response?.ok()) throw new Error(`Failed to load ${path} (${response?.status()})`);
 	await settle(page);
 }
 
@@ -330,9 +336,10 @@ function ensureDir(...parts) {
 }
 
 async function shot(page, file, opts = {}) {
-	const buf = await page.screenshot({ type: 'png', ...opts });
+	await page.evaluate(() => document.fonts.ready);
+	const buf = await page.screenshot({ type: 'png', animations: 'disabled', caret: 'hide', ...opts });
 	writeFileSync(file, buf);
-	console.log('  ->', file.replace(`${ROOT}/`, ''), `${Math.round(buf.length / 1024)} KB`);
+	console.log('  ->', relative(ROOT, file), `${Math.round(buf.length / 1024)} KB`);
 }
 
 /* --------------------------------------------------------------------- shots */
@@ -364,27 +371,19 @@ async function captureClean(page, phoneDir) {
 	await mockAiPlan(page);
 	await goto(page, '/ai');
 	const brief = page.locator('#ai-draft-brief');
-	if (await brief.count()) {
-		await brief.fill('Грудь и спина, 45 минут, штанга и блок');
-		await page.waitForTimeout(200);
-		await page.getByRole('button', { name: 'Сгенерировать' }).click();
-		await page.waitForTimeout(900);
-	}
+	await brief.fill('Грудь и спина, штанга и блок');
+	await page.getByRole('button', { name: 'Сгенерировать' }).click();
+	await page.getByRole('heading', { name: AI_PLAN.plan.name, exact: true }).waitFor();
 	await shot(page, join(phoneDir, '06-ai-plan.png'));
 
-	// Live: start the boot session, then run the plank stopwatch for ~3 seconds.
+	// Only the displayed time advances. The real stopwatch owns both the value and its UI.
 	await goto(page, '/live/plan-cardio');
-	await page.waitForTimeout(600);
-	const timer = page.locator('.live-set-timer').first();
-	if (await timer.count()) {
-		await timer.click();
-		await page.waitForTimeout(3_250);
-	} else {
-		console.warn('  !! live timer not found');
-	}
+	await page.locator('.live-set-timer').first().click();
+	await page.clock.setFixedTime(new Date(DEMO_TIME.getTime() + 32_000));
+	await page.locator('.live-set-timer__time', { hasText: '00:32' }).waitFor();
 	await shot(page, join(phoneDir, '11-live-plank.png'));
 
-	// Summary of the finished cardio session (seeded history).
+	await page.clock.setFixedTime(DEMO_TIME);
 	await goto(page, '/workouts/summary?id=s2');
 	await shot(page, join(phoneDir, '12-summary.png'));
 
@@ -399,12 +398,12 @@ const AI_PLAN = {
 	model: 'GigaChat',
 	droppedUnknownIds: 0,
 	plan: {
-		name: 'Грудь и спина · 45 мин',
+		name: 'Грудь и спина',
 		exercises: [
 			{ exerciseId: '0025', sets: 4, reps: 8, restSec: 120 },
 			{ exerciseId: '3017', sets: 4, reps: 8, restSec: 120 },
-			{ exerciseId: '0091', sets: 3, reps: 10, restSec: 90 },
-			{ exerciseId: '0165', sets: 3, reps: 12, restSec: 60 }
+			{ exerciseId: '0151', sets: 3, reps: 10, restSec: 90 },
+			{ exerciseId: '0150', sets: 3, reps: 12, restSec: 60 }
 		]
 	}
 };
@@ -430,368 +429,243 @@ async function mockAiPlan(page) {
 
 /* --------------------------------------------------------------------- cards */
 
-function dataUri(file) {
-	const buf = readFileSync(file);
-	return `data:image/png;base64,${buf.toString('base64')}`;
+const coreTokens = readFileSync(join(ROOT, 'src/lib/styles/blocks/tokens.core.generated.css'), 'utf8');
+
+function dataUri(file, mime) {
+	return `data:${mime};base64,${readFileSync(file).toString('base64')}`;
 }
 
-const BRAND = {
-	bg: '#0E0E11',
-	text: '#ffffff',
-	muted: '#a1a1a6',
-	accent: '#a259ff',
-	accentText: '#c4a3ff',
-	muscle: '#3ee0c5'
-};
+const logo = dataUri(join(ROOT, 'static/icon-192-v3.png'), 'image/png');
+
+// Use the same Inter files as the app, including Cyrillic, inside the offline template.
+const fontCss = ['latin', 'cyrillic'].map((subset) => {
+	const font = dataUri(join(ROOT, `node_modules/@fontsource-variable/inter/files/inter-${subset}-wght-normal.woff2`), 'font/woff2');
+	return `@font-face{font-family:Inter;src:url('${font}');font-weight:100 900;${subset === 'cyrillic' ? 'unicode-range:U+0400-045F,U+0490-0491,U+2116;' : ''}}`;
+}).join('\n');
 
 const CARD_CSS = `
-	*{box-sizing:border-box;margin:0;padding:0}
-	html,body{background:${BRAND.bg};color:${BRAND.text};
-		font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
-		-webkit-font-smoothing:antialiased}
-	.stage{position:relative;overflow:hidden;background:
-		radial-gradient(900px 700px at 82% -10%, rgba(162,89,255,.42), transparent 62%),
-		radial-gradient(700px 600px at -12% 108%, rgba(62,224,197,.16), transparent 60%),
-		${BRAND.bg};
-		display:flex}
-	.grain{position:absolute;inset:0;opacity:.05;pointer-events:none;
-		background-image:radial-gradient(rgba(255,255,255,.7) 1px, transparent 1px);
-		background-size:3px 3px}
-	.kicker{display:flex;align-items:center;gap:14px;font-size:19px;font-weight:800;
-		letter-spacing:.16em;text-transform:uppercase;color:${BRAND.accentText}}
-	.kicker i{width:34px;height:2px;background:${BRAND.accent};display:block;border-radius:2px}
-	h1{font-weight:850;letter-spacing:-.035em;line-height:1.02}
-	p.sub{color:${BRAND.muted};line-height:1.38;font-weight:500}
-	.cta{display:inline-flex;align-items:center;gap:14px;border-radius:999px;
-		padding:20px 34px;font-weight:800;font-size:24px;color:#fff;
-		background:linear-gradient(135deg,#8a2be2,${BRAND.accent});
-		box-shadow:0 22px 60px rgba(138,43,226,.42)}
-	.cta span{opacity:.72;font-weight:600}
-	.chip{display:inline-flex;align-items:center;gap:10px;padding:11px 18px;border-radius:999px;
-		background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
-		font-size:19px;font-weight:700;color:${BRAND.muted}}
-	.chip b{color:${BRAND.text}}
-	.phone{position:relative;border-radius:56px;padding:13px;
-		background:linear-gradient(160deg,#3a3a40,#141418 52%,#26262c);
-		box-shadow:0 50px 130px rgba(0,0,0,.72), inset 0 0 0 1px rgba(255,255,255,.16)}
-	.phone .screen{position:relative;border-radius:44px;overflow:hidden;background:#000}
-	.phone .screen img{display:block;width:100%;height:100%;object-fit:cover;object-position:top center}
-	.phone .glare{position:absolute;inset:13px;border-radius:44px;pointer-events:none;
-		background:linear-gradient(115deg,rgba(255,255,255,.10),transparent 34%)}
-	.stack{position:relative}
-	.stack .back{position:absolute;filter:brightness(.72) saturate(.9)}
+	${coreTokens}
+	${fontCss}
+	*{box-sizing:border-box;margin:0}
+	body{font-family:Inter,sans-serif;background:var(--color-bg);color:var(--color-ink)}
+	.stage{width:100vw;height:100vh;display:flex;flex-direction:column;padding:64px 72px 54px}
+	header,footer{display:flex;align-items:center;justify-content:space-between}
+	header{border-bottom:2px solid var(--color-border);padding-bottom:28px;gap:32px}
+	.brand{display:flex;align-items:center;gap:16px;font-size:37px;letter-spacing:-.05em;font-weight:740}
+	.brand img{width:55px;height:55px;border-radius:13px}
+	.topic{color:var(--color-accent-text);font-size:29px;font-weight:580}
+	main{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-evenly;gap:20px}
+	.copy{display:grid;gap:24px}
+	h1{font-weight:750;font-size:82px;line-height:1.02;letter-spacing:-.055em;text-wrap:balance}
+	p{font-size:39px;line-height:1.23;letter-spacing:-.025em;color:var(--color-muted-soft);text-wrap:pretty}
+	figure{display:flex;align-items:center;justify-content:center;min-height:0}
+	figure img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;border-radius:22px}
+	footer{border-top:2px solid var(--color-border);padding-top:25px;font-size:32px;line-height:1.1;font-weight:600}
+	footer span:last-child{color:var(--color-accent-text)}
+	.post figure{height:600px}
+	.story{padding:274px 72px}
+	.story main{gap:24px}
+	.story h1{font-size:88px}
+	.story figure{height:720px}
+	.wide{padding:64px 80px 52px}
+	.wide main{display:grid;grid-template-columns:1fr 1.04fr;gap:72px;align-items:center}
+	.wide h1{font-size:76px}
+	.wide p{font-size:35px;line-height:1.3}
+	.wide figure{height:680px}
 `;
 
-async function composeCard(page, size, html, file) {
-	await page.setViewportSize(size);
-	await page.setContent(
-		`<!doctype html><html lang="ru"><head><meta charset="utf-8"><style>${CARD_CSS}</style></head><body>${html}</body></html>`,
-		{ waitUntil: 'load' }
-	);
-	await page.waitForTimeout(250);
-	const buf = await page.screenshot({ type: 'jpeg', quality: 92 });
-	writeFileSync(file, buf);
-	console.log('  ->', file.replace(`${ROOT}/`, ''), `${Math.round(buf.length / 1024)} KB`);
-}
+// Rectangles in the original 360×800 CSS viewport. Keep whole rows and chart legends.
+const DETAILS = {
+	timer:    { file: '11-live-plank.png', x: 18, y: 205, w: 324, h: 240 },
+	wave:     { file: '04-cycle.png', x: 17, y: 400, w: 326, h: 185 },
+	history:  { file: '01-home.png', x: 17, y: 382, w: 326, h: 237 },
+	draft:    { file: '06-ai-plan.png', x: 18, y: 317, w: 324, h: 197 },
+	progress: { file: '05-progress.png', x: 17, y: 194, w: 326, h: 277 },
+	plan:     { file: '02-plan-cardio.png', x: 17, y: 267, w: 326, h: 338 }
+};
 
-function phone(src, w, extraStyle = '') {
-	return `<div class="phone" style="width:${w}px;${extraStyle}">
-		<div class="screen" style="height:${Math.round((w - 26) * (2400 / 1080))}px">
-			<img src="${src}" alt="">
-			<div class="glare"></div>
-		</div>
-	</div>`;
-}
+const POSTS = [
+	{
+		file: 'post-1-plank-stopwatch-1080x1350.jpg', topic: 'Тренировка', detail: 'timer',
+		title: 'Планка по секундомеру',
+		sub: 'Запусти таймер перед планкой. Второе нажатие сохранит время подхода.',
+		caption: 'В плане три подхода по 45 секунд. Запусти секундомер, когда встанешь в планку, и останови его в конце подхода. Repdraft запишет, сколько ты продержался.'
+	},
+	{
+		file: 'post-2-cycle-1080x1350.jpg', topic: 'Волновой цикл', detail: 'wave',
+		title: 'Нагрузка по неделям',
+		sub: 'Сначала неделя интенсивности, затем объём и разгрузка. На графике весь цикл.',
+		caption: 'Собери цикл на 8, 10 или 12 недель из своих планов. На каждую неделю увидишь подходы и повторы. Если по упражнению есть история, появится и подсказка по весу.'
+	},
+	{
+		file: 'post-3-diary-1080x1350.jpg', topic: 'Дневник', detail: 'history',
+		title: 'Когда был день ног?',
+		sub: 'Открой историю. Там дата, длительность и число подходов каждой тренировки.',
+		caption: 'В списке недавних тренировок видно, когда ты в последний раз делал ноги, жим или кардио. Открой запись, чтобы посмотреть упражнения и результат каждого подхода.'
+	},
+	{
+		file: 'post-4-ai-draft-1080x1350.jpg', topic: 'Черновик с ИИ', detail: 'draft',
+		title: 'План по твоему запросу',
+		sub: 'Укажи мышцы и инвентарь. ИИ подберёт упражнения из каталога для твоего черновика.',
+		caption: 'Например, напиши «Грудь и спина, штанга и блок». Получишь черновик с упражнениями, подходами и отдыхом. В редакторе можно изменить упражнения, число подходов и время отдыха.'
+	}
+];
+
+const STORIES = [
+	{ ...POSTS[0], file: 'story-1-plank-1080x1920.jpg' },
+	{
+		...POSTS[1], file: 'story-2-cycle-1080x1920.jpg', title: 'Цикл на 8 недель',
+		sub: 'Следи за объёмом и интенсивностью на графике. В третью неделю нагрузка снижается.'
+	},
+	{
+		file: 'story-3-progress-1080x1920.jpg', topic: 'Прогресс', detail: 'progress',
+		title: 'Сколько ты поднял?',
+		sub: 'Сравни тоннаж по неделям. Рядом с каждым столбцом видно число тренировок.'
+	}
+];
+
+const BANNERS = [
+	{
+		file: 'hero-1600x1000.jpg', topic: 'Дневник тренировок', detail: 'plan',
+		title: 'Твой план на сегодня',
+		sub: 'Открой тренировку и посмотри, что делать дальше. Для планки указаны секунды, для дорожки минуты.'
+	},
+	{
+		file: 'feature-timing-1600x1000.jpg', topic: 'Секундомер', detail: 'timer',
+		title: 'Время вместо повторов',
+		sub: 'Запусти секундомер перед подходом. Нажми на него ещё раз, чтобы записать время и завершить подход.'
+	}
+];
 
 async function captureCards(page, cleanDir, dirs) {
-	const live = dataUri(join(cleanDir, '11-live-plank.png'));
-	const home = dataUri(join(cleanDir, '01-home.png'));
-	const cycle = dataUri(join(cleanDir, '04-cycle.png'));
-	const progress = dataUri(join(cleanDir, '05-progress.png'));
-	const plan = dataUri(join(cleanDir, '02-plan-cardio.png'));
-	const ai = dataUri(join(cleanDir, '06-ai-plan.png'));
+	const { default: sharp } = await import('sharp');
+	const details = {};
+	for (const [name, { file, x, y, w, h }] of Object.entries(DETAILS)) {
+		const image = sharp(join(cleanDir, file));
+		const { width, height } = await image.metadata();
+		if (width !== PHONE.width * 3 || height !== PHONE.height * 3) throw new Error(`Unexpected size of ${file}`);
+		const crop = await image.extract({ left: x * 3, top: y * 3, width: w * 3, height: h * 3 }).png().toBuffer();
+		details[name] = `data:image/png;base64,${crop.toString('base64')}`;
+	}
 
-	const post = (inner) =>
-		`<div class="stage" style="width:1080px;height:1350px;padding:72px 76px">${inner}<div class="grain"></div></div>`;
-
-	await composeCard(
-		page,
-		{ width: 1080, height: 1350 },
-		post(`
-			<div style="display:flex;gap:48px;align-items:center;width:100%">
-				<div style="flex:1;display:flex;flex-direction:column;gap:24px">
-					<div class="kicker"><i></i>Тренировки</div>
-					<h1 style="font-size:64px">Планка —<br>по секундомеру</h1>
-					<p class="sub" style="font-size:28px;max-width:420px">Нажал «старт» — приложение само запишет время подхода. Дорожка — по минутам.</p>
-					<div style="display:flex;gap:12px;flex-wrap:wrap">
-						<div class="chip"><b>45 сек</b> планка</div>
-						<div class="chip"><b>20 мин</b> дорожка</div>
-					</div>
-				</div>
-				${phone(live, 380, 'flex:0 0 auto')}
-			</div>`),
-		join(dirs.posts, 'post-1-plank-stopwatch-1080x1350.jpg')
-	);
-
-	await composeCard(
-		page,
-		{ width: 1080, height: 1350 },
-		post(`
-			<div style="display:flex;height:100%;flex-direction:column;justify-content:center;gap:34px;width:100%">
-				<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:30px">
-					<div style="display:flex;flex-direction:column;gap:22px">
-						<div class="kicker"><i></i>Цикл</div>
-						<h1 style="font-size:64px">Нагрузка<br>волнами</h1>
-						<p class="sub" style="font-size:28px;max-width:520px">Объём, интенсивность, разгрузка — и вес снаряда в каждой неделе.</p>
-					</div>
-					<div class="chip" style="flex:0 0 auto"><b>8 недель</b> · 4 плана</div>
-				</div>
-				<div style="display:flex;justify-content:center;gap:24px;margin-top:22px">
-					${phone(cycle, 336)}
-					${phone(progress, 336)}
-				</div>
-			</div>`),
-		join(dirs.posts, 'post-2-cycle-1080x1350.jpg')
-	);
-
-	await composeCard(
-		page,
-		{ width: 1080, height: 1350 },
-		post(`
-			<div style="display:flex;gap:48px;align-items:center;width:100%">
-				${phone(home, 380, 'flex:0 0 auto')}
-				<div style="flex:1;display:flex;flex-direction:column;gap:24px">
-					<div class="kicker"><i></i>Дневник</div>
-					<h1 style="font-size:64px">Всё<br>в одном</h1>
-					<p class="sub" style="font-size:28px;max-width:420px">План, подходы, вес, рекорды и история. Без заметок и таблиц.</p>
-					<div class="cta">repdraft.ru <span>бесплатно</span></div>
-				</div>
-			</div>`),
-		join(dirs.posts, 'post-3-diary-1080x1350.jpg')
-	);
-
-	await composeCard(
-		page,
-		{ width: 1080, height: 1350 },
-		post(`
-			<div style="display:flex;gap:48px;align-items:center;width:100%">
-				<div style="flex:1;display:flex;flex-direction:column;gap:24px">
-					<div class="kicker"><i></i>ИИ-черновик</div>
-					<h1 style="font-size:64px">План<br>за минуту</h1>
-					<p class="sub" style="font-size:28px;max-width:420px">Опиши зал, время и самочувствие — ИИ соберёт тренировку из каталога. Дальше правишь в редакторе.</p>
-					<div style="display:flex;gap:12px;flex-wrap:wrap">
-						<div class="chip"><b>4 упр.</b> за запрос</div>
-						<div class="chip"><b>Свой зал</b></div>
-					</div>
-				</div>
-				${phone(ai, 380, 'flex:0 0 auto')}
-			</div>`),
-		join(dirs.posts, 'post-4-ai-draft-1080x1350.jpg')
-	);
-
-	const story = (inner) =>
-		`<div class="stage" style="width:1080px;height:1920px;padding:96px 84px;flex-direction:column">${inner}<div class="grain"></div></div>`;
-
-	await composeCard(
-		page,
-		{ width: 1080, height: 1920 },
-		story(`
-			<div style="display:flex;flex-direction:column;gap:30px;align-items:flex-start">
-				<div class="kicker"><i></i>Repdraft</div>
-				<h1 style="font-size:96px">Планка —<br>по времени</h1>
-				<p class="sub" style="font-size:32px;max-width:640px">Секундомер пишет подход сам. Дорожка считает минуты.</p>
-			</div>
-			<div style="display:flex;justify-content:center;margin-top:54px">
-				${phone(live, 520, 'transform:rotate(-2deg)')}
-			</div>
-			<div style="margin-top:auto;display:flex;justify-content:center;width:100%">
-				<div class="cta" style="font-size:28px;padding:24px 42px">repdraft.ru <span>бесплатно</span></div>
-			</div>`),
-		join(dirs.stories, 'story-1-plank-1080x1920.jpg')
-	);
-
-	await composeCard(
-		page,
-		{ width: 1080, height: 1920 },
-		story(`
-			<div style="display:flex;flex-direction:column;gap:26px;align-items:flex-start">
-				<div class="kicker"><i></i>Цикл</div>
-				<h1 style="font-size:92px">10 недель<br>с планом</h1>
-				<p class="sub" style="font-size:32px;max-width:660px">Каждая неделя знает свои подходы, повторы и вес.</p>
-			</div>
-			<div style="display:flex;justify-content:center;margin-top:40px">
-				${phone(cycle, 470, 'transform:rotate(2deg)')}
-			</div>
-			<div style="margin-top:auto;display:flex;justify-content:center;width:100%">
-				<div class="cta" style="font-size:28px;padding:24px 42px">repdraft.ru <span>бесплатно</span></div>
-			</div>`),
-		join(dirs.stories, 'story-2-cycle-1080x1920.jpg')
-	);
-
-	await composeCard(
-		page,
-		{ width: 1080, height: 1920 },
-		story(`
-			<div style="display:flex;flex-direction:column;gap:26px;align-items:flex-start">
-				<div class="kicker"><i></i>Прогресс</div>
-				<h1 style="font-size:92px">Видно,<br>что растёт</h1>
-				<p class="sub" style="font-size:32px;max-width:660px">Тоннаж, объём по неделям и доли по группам мышц — за 7, 30 и 90 дней.</p>
-			</div>
-			<div style="display:flex;justify-content:center;margin-top:40px">
-				${phone(progress, 470, 'transform:rotate(-2deg)')}
-			</div>
-			<div style="margin-top:auto;display:flex;justify-content:center;width:100%">
-				<div class="cta" style="font-size:28px;padding:24px 42px">repdraft.ru <span>бесплатно</span></div>
-			</div>`),
-		join(dirs.stories, 'story-3-progress-1080x1920.jpg')
-	);
-
-	// Wide landing banners: text left, overlapping phones right.
-	const wide = (inner) =>
-		`<div class="stage" style="width:1600px;height:1000px;padding:0;align-items:center">${inner}<div class="grain"></div></div>`;
-
-	await composeCard(
-		page,
-		{ width: 1600, height: 1000 },
-		wide(`
-			<div style="display:grid;grid-template-columns:1fr 760px;gap:40px;align-items:center;width:100%;padding:0 90px">
-				<div style="display:flex;flex-direction:column;gap:28px">
-					<div class="kicker"><i></i>Repdraft · дневник тренировок</div>
-					<h1 style="font-size:84px;max-width:660px">Планка — по секундомеру,<br>дорожка — по минутам</h1>
-					<p class="sub" style="font-size:29px;max-width:560px">План на неделю, подходы и вес, рекорды и история. Всё в одном приложении — на телефоне и в браузере.</p>
-					<div style="display:flex;gap:14px;align-items:center">
-						<div class="cta" style="font-size:26px;padding:22px 38px">Начать бесплатно</div>
-						<div class="chip" style="font-size:21px">repdraft.ru</div>
-					</div>
-				</div>
-				<div style="position:relative;height:1000px;display:flex;align-items:center;justify-content:center">
-					${phone(home, 300, 'position:absolute;left:16px;top:150px;transform:rotate(-5deg)')}
-					${phone(plan, 300, 'position:absolute;left:238px;top:104px;transform:rotate(1deg);z-index:2')}
-					${phone(live, 300, 'position:absolute;left:456px;top:176px;transform:rotate(4.5deg)')}
-				</div>
-			</div>`),
-		join(dirs.landing, 'hero-1600x1000.jpg')
-	);
-
-	await composeCard(
-		page,
-		{ width: 1600, height: 1000 },
-		wide(`
-			<div style="display:grid;grid-template-columns:660px 1fr;gap:50px;align-items:center;width:100%;padding:0 90px">
-				<div style="display:flex;flex-direction:column;gap:26px">
-					<div class="kicker"><i></i>Что нового</div>
-					<h1 style="font-size:76px;max-width:580px">Время вместо повторов</h1>
-					<p class="sub" style="font-size:28px;max-width:540px">Планка и изометрия считаются секундами, дорожка и велотренажёр — минутами. Секундомер закрывает подход сам.</p>
-					<div style="display:flex;gap:12px;flex-wrap:wrap">
-						<div class="chip"><b>30 сек</b> планка</div>
-						<div class="chip"><b>20 мин</b> дорожка</div>
-						<div class="chip"><b>0 тапов</b> вручную</div>
-					</div>
-				</div>
-				<div style="display:flex;justify-content:center;align-items:center;height:1000px">
-					${phone(live, 420, 'transform:rotate(-2deg)')}
-				</div>
-			</div>`),
-		join(dirs.landing, 'feature-timing-1600x1000.jpg')
-	);
+	for (const [format, size, dir, cards] of [
+		['post', { width: 1080, height: 1350 }, dirs.posts, POSTS],
+		['story', { width: 1080, height: 1920 }, dirs.stories, STORIES],
+		['wide', { width: 1600, height: 1000 }, dirs.landing, BANNERS]
+	]) {
+		await page.setViewportSize(size);
+		for (const card of cards) {
+			await page.setContent(`<!doctype html><html lang="ru"><meta charset="utf-8"><style>${CARD_CSS}</style>
+				<article class="stage ${format}">
+					<header><span class="brand"><img src="${logo}" alt="">Repdraft</span><span class="topic">${card.topic}</span></header>
+					<main><div class="copy"><h1>${card.title}</h1><p>${card.sub}</p></div>
+						<figure><img src="${details[card.detail]}" alt=""></figure></main>
+					<footer><span>Открыть дневник</span><span>repdraft.ru</span></footer>
+				</article></html>`);
+			await page.evaluate(() => document.fonts.ready);
+			const file = join(dir, card.file);
+			const buf = await page.screenshot({ type: 'jpeg', quality: 90, path: file });
+			console.log('  ->', relative(ROOT, file), `${Math.round(buf.length / 1024)} KiB`);
+		}
+	}
 }
-
 /* ---------------------------------------------------------------------- main */
 
 async function main() {
-	const cleanDir = ensureDir('clean');
-	const dirs = {
-		posts: ensureDir('posts'),
-		stories: ensureDir('stories'),
-		landing: ensureDir('landing')
-	};
-
-	let server = null;
-	if (!process.env.ADS_BASE) {
-		console.log('[ads] starting app server...');
-		server = startServer();
-	}
-	await waitForServer(BASE);
-
+	if (!['all', 'clean', 'cards'].includes(ONLY)) throw new Error('ADS_ONLY must be all, clean or cards');
+	const cleanDir = join(OUT, 'clean');
 	const { chromium } = await loadPlaywright();
 	const browser = await chromium.launch({ headless: true });
+	let server;
 	try {
-		const context = await browser.newContext({
-			viewport: PHONE,
-			deviceScaleFactor: 3,
-			isMobile: true,
-			hasTouch: true,
-			locale: 'ru-RU',
-			timezoneId: 'Europe/Moscow',
-			serviceWorkers: 'block',
-			colorScheme: 'dark'
-		});
-		await seedContext(context);
-		const page = await context.newPage();
-
-		if (ONLY === 'all' || ONLY === 'clean') {
+		if (ONLY !== 'cards') {
+			if (!process.env.ADS_BASE) {
+				console.log('[ads] starting app server...');
+				server = startServer();
+			}
+			await waitForServer(BASE, server);
+			const context = await browser.newContext({
+				viewport: PHONE,
+				deviceScaleFactor: 3,
+				isMobile: true,
+				hasTouch: true,
+				locale: 'ru-RU',
+				timezoneId: 'Europe/Moscow',
+				serviceWorkers: 'block',
+				colorScheme: 'dark',
+				reducedMotion: 'reduce'
+			});
+			// Exercise detail normally plays a GIF. Use its own static catalog thumbnail.
+			await context.route('**/videos/*.gif', (route) => route.abort());
+			await seedContext(context);
+			const page = await context.newPage();
+			await page.clock.setFixedTime(DEMO_TIME);
 			console.log('[ads] clean phone screens (1080×2400)');
-			await captureClean(page, cleanDir);
+			await captureClean(page, ensureDir('clean'));
+			await context.close();
 		}
 
-		if (ONLY === 'all' || ONLY === 'cards') {
+		if (ONLY !== 'clean') {
 			console.log('[ads] composed cards');
-			const cardContext = await browser.newContext({
-				viewport: { width: 1080, height: 1350 },
-				deviceScaleFactor: 1,
-				locale: 'ru-RU'
+			const page = await browser.newPage({ deviceScaleFactor: 1, locale: 'ru-RU' });
+			await captureCards(page, cleanDir, {
+				posts: ensureDir('posts'),
+				stories: ensureDir('stories'),
+				landing: ensureDir('landing')
 			});
-			const cardPage = await cardContext.newPage();
-			await captureCards(cardPage, cleanDir, dirs);
-			await cardContext.close();
 		}
 	} finally {
+		server?.kill('SIGTERM');
 		await browser.close();
-		if (server) server.kill('SIGTERM');
 	}
 
-	writeFileSync(
-		join(OUT, 'README.md'),
-		`# Реклама · ${STAMP}\n\n` +
-			`Сгенерировано \`npm run ads\` (RU, тёмная тема, локальные демо-данные — без реальных аккаунтов).\n\n` +
-			`## Что внутри\n\n` +
-			`| Папка | Размер | Для чего |\n|---|---|---|\n` +
-			`| \`clean/\` | 1080×2400 PNG | экраны без обвеса: рамки, подписи и кропы накладываются в редакторе |\n` +
-			`| \`posts/\` | 1080×1350 JPEG | лента Telegram / VK, 4:5 |\n` +
-			`| \`stories/\` | 1080×1920 JPEG | сторис, Reels, шортсы, 9:16 |\n` +
-			`| \`landing/\` | 1600×1000 JPEG | широкие блоки сайта и рекламные баннеры |\n\n` +
-			`## Экраны (clean)\n\n` +
-			`1. Главная: следующий план, прогресс за 30 дней, последние тренировки\n` +
-			`2. План «Кор + дорожка»: планка 3×45 сек, дорожка 1×20 мин\n` +
-			`3. Билдер: чипы «сек»/«мин» у упражнений\n` +
-			`4. Волновой цикл: 8 недель, волны объёма и интенсивности\n` +
-			`5. Прогресс: тоннаж, объём по неделям, доли по группам\n` +
-			`6. ИИ-черновик: запрос и готовый план\n` +
-			`7-8. Каталог и карточка «Бег на беговой дорожке»\n` +
-			`9. История тренировки, 10. Список тренировок\n` +
-			`11. Live: планка с идущим секундомером, 12. Итоги сессии\n\n` +
-			`## Тексты к постам\n\n` +
-			`**post-1 · Планка по секундомеру**\n\n` +
-			`> Планка больше не «сколько получится». Жмёшь старт — секундомер сам закрывает подход.\n` +
-			`> Дорожка считается минутами, жим — повторами. Приложение знает, что ты делаешь.\n\n` +
-			`**post-2 · Нагрузка волнами**\n\n` +
-			`> Цикл на 8-10 недель: неделя интенсивности, неделя объёма, разгрузка.\n` +
-			`> Вес снаряда и число подходов меняются по волне, а не «как пойдёт».\n\n` +
-			`**post-3 · Всё в одном**\n\n` +
-			`> План на неделю, подходы и вес, рекорды, история и прогресс — в одном дневнике.\n` +
-			`> Без заметок в телефоне и таблиц в Excel. Бесплатно, работает в браузере и на телефоне.\n\n` +
-			`**post-4 · План за минуту**\n\n` +
-			`> «Грудь и спина, 45 минут, штанга и блок» — и черновик плана готов.\n` +
-			`> Дальше правишь в редакторе: подходы, повторы, отдых.\n\n` +
-			`Хештеги: #тренировки #дневниктренировок #планка #прогресс #фитнес\n\n` +
-			`## Переснять\n\n` +
-			`\`\`\`bash\nnpm run ads              # сборка + сервер + все кадры\n` +
-			`ADS_ONLY=clean npm run ads\nADS_ONLY=cards npm run ads\n` +
-			`ADS_SKIP_BUILD=1 npm run ads   # если build/ уже свежий\n\`\`\`\n\n` +
-			`Экраны снимаются с демо-плана в \`scripts/capture-ads.mjs\`; правь фикстуры и подписи там же.\n` +
-			`Папка \`marketing/ads/\` в git не попадает — это генерируемый артефакт.\n`
-	);
-	console.log('[ads] done →', OUT);
+	if (ONLY !== 'clean') {
+		const captions = POSTS.map(({ file, title, caption }) =>
+			`### ${title}\n\n[${file}](posts/${file})\n\n${caption}\n`
+		).join('\n');
+		writeFileSync(join(OUT, 'README.md'), `# Repdraft · ${STAMP}
+
+Снимки веб-приложения на русском языке в тёмной теме. На экранах локальные демонстрационные данные.
+
+| Папка | Размер | Материалы |
+|---|---|---|
+| clean/ | 1080×2400 PNG | 12 экранов приложения |
+| posts/ | 1080×1350 JPEG | 4 поста для ленты Telegram и VK |
+| stories/ | 1080×1920 JPEG | 3 сторис, поля сверху и снизу по 274 пикселя |
+| landing/ | 1600×1000 JPEG | Главный баннер и блок о секундомере |
+
+## Экраны приложения
+
+1. Главная с планом на сегодня, прогрессом и недавними тренировками.
+2. План «Кор + дорожка» с секундами и минутами.
+3. Те же упражнения в редакторе плана.
+4. Третья неделя восьминедельного цикла.
+5. Тоннаж и распределение нагрузки за 30 дней.
+6. Пример запроса и готового черновика с ИИ.
+7. Каталог упражнений.
+8. Техника бега на дорожке.
+9. Детали завершённой тренировки ног.
+10. Список планов.
+11. Секундомер на 32-й секунде подхода. В плане 45 секунд.
+12. Итоги тренировки «Кор + дорожка».
+
+## Тексты к постам
+
+${captions}
+## Переснять
+
+\`\`\`bash
+npm run ads
+ADS_SKIP_BUILD=1 npm run ads
+ADS_ONLY=clean npm run ads
+ADS_ONLY=cards npm run ads
+\`\`\`
+
+Для быстрой съёмки нужен готовый локальный build с пустыми ключами внешних сервисов.
+Режим cards использует существующие PNG. Фикстуры, подписи и макеты находятся в scripts/capture-ads.mjs.
+`);
+	}
+	console.log('[ads] done →', relative(ROOT, OUT));
 }
 
 main().catch((err) => {

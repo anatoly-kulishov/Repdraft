@@ -11,6 +11,7 @@
 	import { loadExerciseIndexWithCustoms } from '$lib/data/exerciseIndexWithCustoms';
 	import { WORKOUTS_HISTORY_HREF } from '$lib/domain/catalogLinks';
 	import { exerciseName } from '$lib/domain/exerciseName';
+	import { formatKgInt } from '$lib/domain/format';
 	import { isCustomExerciseId } from '$lib/domain/customExercises';
 	import { exerciseMetaHint } from '$lib/domain/labels.ru';
 	import {
@@ -409,9 +410,9 @@
 	<section class="content-page content-page--narrow soft-enter history-detail">
 		<p class="page-lead mt-1 lg:mt-0">
 			{formatLongDate(session.finishedAt ?? session.startedAt, lang)} · {formatDurationMs(
-				sessionDurationMs(session)
+				sessionDurationMs(session), { extended: true }
 			)} · {translatePlural(lang, 'workouts.historySets', completedSetCount(viewSession ?? session))}{#if historyVolumeKg > 0}
-				{' '}· {Math.round(historyVolumeKg)} kg{/if}
+				{' '}· {formatKgInt(historyVolumeKg)} {translate(lang, 'common.kg')}{/if}
 		</p>
 
 		<div class="mt-3">

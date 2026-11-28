@@ -20,7 +20,7 @@
 		if (!peek) return null;
 		const when = peek.finishedAt ?? peek.startedAt;
 		if (!when) return null;
-		return `${formatLongDate(when, lang)} · ${formatDurationMs(sessionDurationMs(peek))} · ${translatePlural(lang, 'workouts.historySets', completedSetCount(peek))}`;
+		return `${formatLongDate(when, lang)} · ${formatDurationMs(sessionDurationMs(peek), { extended: true })} · ${translatePlural(lang, 'workouts.historySets', completedSetCount(peek))}`;
 	});
 
 	let previewExercises = $derived.by((): PreviewExercise[] => {
